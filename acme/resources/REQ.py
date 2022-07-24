@@ -58,8 +58,8 @@ class REQ(Resource):
 		"""
 
 		# Check if a an expiration ts has been set in the request
-		if request.headers.requestExpirationTimestamp:
-			et = request.headers.requestExpirationTimestamp	# This is already an ISO8601 timestamp
+		if request.rqet:
+			et = request.rqet	# This is already an ISO8601 timestamp
 		
 		# Check the rp(ts) argument
 		elif request.args.rpts:
@@ -83,12 +83,12 @@ class REQ(Resource):
 				'op'	: request.op,
 				'tg'	: request.id,
 				'org'	: request.originator,
-				'rid'	: request.requestIdentifier,
+				'rid'	: request.rqi,
 				'mi'	: {
-					'ty'	: request.resourceType,
+					'ty'	: request.ty,
 					'ot'	: DateUtils.getResourceDate(),
-					'rqet'	: request.headers.requestExpirationTimestamp,
-					'rset'	: request.headers.resultExpirationTimestamp,
+					'rqet'	: request.rqet,
+					'rset'	: request.rset,
 					'rt'	: { 
 						'rtv' : request.args.rt
 					},
@@ -99,8 +99,8 @@ class REQ(Resource):
 						'fo'	: request.args.fo,
 					},
 					'drt'	: request.args.drt,
-					'rvi'	: request.releaseVersionIndicator if request.releaseVersionIndicator else CSE.releaseVersion,
-					'vsi'	: request.vendorInformation,
+					'rvi'	: request.rvi if request.rvi else CSE.releaseVersion,
+					'vsi'	: request.vsi,
 				},
 				'rs'	: RequestStatus.PENDING,
 				# 'ors'	: {
@@ -116,7 +116,7 @@ class REQ(Resource):
 			Utils.setXPath(dct, 'm2m:req/pc', request.pc, True)
 
 		# calculate and assign rtu for rt
-		if (rtu := request.headers.responseTypeNUs) and len(rtu) > 0:
+		if (rtu := request.rtu) and len(rtu) > 0:
 			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if not (cseres := Utils.getCSE()).resource:

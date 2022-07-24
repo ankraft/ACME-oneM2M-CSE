@@ -245,7 +245,6 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 @atexit.register
 def shutdown() -> None:
 	if mqttClient:
-		print(222)
 		mqttClient.shutdown()
 
 ###############################################################################

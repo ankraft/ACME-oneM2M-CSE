@@ -124,10 +124,10 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 
 
 	# Originating Timestamp
-	if inResult.request.headers.originatingTimestamp:
-		req['ot'] = inResult.request.headers.originatingTimestamp
-	else:
+	if inResult.request.ot:
 		req['ot'] = DateUtils.getResourceDate()
+	# else:
+	# 	req['ot'] = DateUtils.getResourceDate()
 	
 	# Response Status Code
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
@@ -142,21 +142,21 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	# Type
 	if ty:
 		req['ty'] = int(ty)
-	elif inResult.request.resourceType:
-		req['ty'] = int(inResult.request.resourceType)
+	elif inResult.request.ty:
+		req['ty'] = int(inResult.request.ty)
 	
 	# Request Identifier 
-	if inResult.request.requestIdentifier:					# copy from the original request
-		req['rqi'] = inResult.request.requestIdentifier
+	if inResult.request.rqi:					# copy from the original request
+		req['rqi'] = inResult.request.rqi
 	
 	# Release Version Indicator
 	# TODO handle version 1 correctly
-	if inResult.request.releaseVersionIndicator:			# copy from the original request
-		req['rvi'] = inResult.request.releaseVersionIndicator
+	if inResult.request.rvi:			# copy from the original request
+		req['rvi'] = inResult.request.rvi
 	
 	# Vendor Information
-	if inResult.request.vendorInformation:					# copy from the original request
-		req['vsi'] = inResult.request.vendorInformation
+	if inResult.request.vsi:					# copy from the original request
+		req['vsi'] = inResult.request.vsi
 	
 	# Add additional parameters
 	if inResult.request.parameters:

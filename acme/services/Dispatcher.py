@@ -465,7 +465,7 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.originator)
 
-		if (ty := request.resourceType) is None:	# Check for type parameter in request, integer
+		if (ty := request.ty) is None:	# Check for type parameter in request, integer
 			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
 
 		# Some Resources are not allowed to be created in a request, return immediately
@@ -999,9 +999,9 @@ class Dispatcher(object):
 			Args:
 				request: The request to check.
 		"""
-		if request.headers.operationExecutionTime:
+		if request.oet:
 			# Calculate the dealy
-			delay = DateUtils.timeUntilAbsRelTimestamp(request.headers.operationExecutionTime)
+			delay = DateUtils.timeUntilAbsRelTimestamp(request.oet)
 			L.isDebug and L.logDebug(f'Waiting: {delay:.4f} seconds until delayed execution')
 			# Just wait some time
 			DateUtils.waitFor(delay)	
@@ -1015,7 +1015,7 @@ class Dispatcher(object):
 			Return:
 				 A negative Result status when the timeout timestamp has been reached or passed.
 		"""
-		if request.headers._retUTCts is not None and DateUtils.timeUntilTimestamp(request.headers._retUTCts) <= 0.0:
+		if request._rqetUTCts is not None and DateUtils.timeUntilTimestamp(request._rqetUTCts) <= 0.0:
 			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logDebug('Request timed out'))
 		return Result.successResult()
 

@@ -56,8 +56,8 @@ class PCH_PCU(Resource):
 			return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
 
 		# Determine the request's timeout
-		if request.headers.requestExpirationTimestamp:
-			ret = DateUtils.timeUntilTimestamp(request.headers._retUTCts)
+		if request.rqet:
+			ret = DateUtils.timeUntilTimestamp(request._rqetUTCts)
 			L.isDebug and L.logDebug(f'Polling timeout: {ret} seconds')
 		else:
 			ret = CSE.request.requestExpirationDelta

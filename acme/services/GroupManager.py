@@ -197,7 +197,7 @@ class GroupManager(object):
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.resourceType) == False:
+		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.ty) == False:
 			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
 
 		# check whether there is something after the /fopt ...
@@ -228,8 +228,8 @@ class GroupManager(object):
 			items = []
 			for result in resultList:
 				item = 	{	'rsc' : result.rsc, 
-							'rqi' : request.requestIdentifier,
-							'rvi'	: request.releaseVersionIndicator,
+							'rqi' : request.rqi,
+							'rvi' : request.rvi,
 						}
 				if result.resource and isinstance(result.resource, Resource):
 					item['pc'] = result.resource.asDict()

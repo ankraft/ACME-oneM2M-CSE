@@ -19,12 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
+- [CSE] *Originating Timestamp* are only added to responses when present in the request.
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
+
 
 ### Fixed
 - [CSE] Corrected &lt;timeSeries>'s *cbs* attribute name.
 - [CSE] Adding default value when removing &lt;subscription>'s *enc* attribute in an UPDATE.
 - [TESTS] Corrected test cases.
+- [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
 
 
 ## [0.10.2] - 2022-07-20

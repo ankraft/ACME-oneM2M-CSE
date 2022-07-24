@@ -194,7 +194,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Check contentType and resourceType
-		if request.resourceType == None:
+		if request.ty == None:
 			return Result.errorResult(dbg = 'missing or wrong resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
@@ -330,14 +330,14 @@ class RequestManager(object):
 		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(self._runNonBlockingRequestSync, name=f'request_{request.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(self._runNonBlockingRequestSync, name=f'request_{request.rqi}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(data = { 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(self._runNonBlockingRequestAsync, name=f'request_{request.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(self._runNonBlockingRequestAsync, name=f'request_{request.rqi}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(data = { 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 
@@ -368,16 +368,16 @@ class RequestManager(object):
 		originator = result.resource['ors/fr']
 		responseNotification = {
 			'm2m:rsp' : {
-				'rsc'	:	result.resource['ors/rsc'],
-				'rqi'	:	result.resource['ors/rqi'],
-				'pc'	:	result.resource['ors/pc'],
-				'to' 	:	result.resource['ors/to'],
-				'fr' 	: 	originator,
-				'rvi'	: 	request.releaseVersionIndicator
+				'rsc' : result.resource['ors/rsc'],
+				'rqi' : result.resource['ors/rqi'],
+				'pc'  : result.resource['ors/pc'],
+				'to'  : result.resource['ors/to'],
+				'fr'  : originator,
+				'rvi' : request.rvi
 			}
 		}
 
-		if (nus := request.headers.responseTypeNUs) is None:	# might be an empty list
+		if (nus := request.rtu) is None:	# might be an empty list
 			# RTU is not set, get POA's from the resp. AE.poa
 			aes = CSE.storage.searchByFragment({ 'ty' : T.AE, 'aei' : originator })	# search all <AE>s for aei=originator
 			if len(aes) != 1:
@@ -463,7 +463,7 @@ class RequestManager(object):
 		return self.sendCreateRequest(uri = request.id,
 									  originator = request.originator,
 									  data = request.originalRequest,
-									  ty = request.resourceType,
+									  ty = request.ty,
 									  raw = True)
 
 
@@ -572,7 +572,7 @@ class RequestManager(object):
 			Otherwise, `True` will be returned if there is any request for the `originator`.
 		"""
 		with self._requestLock:
-			return (lst := self._requests.get(originator)) is not None and any(	 (r, t) for r,t in lst if (requestID is None or r.requestIdentifier == requestID) and (t == reqType) )
+			return (lst := self._requests.get(originator)) is not None and any(	 (r, t) for r,t in lst if (requestID is None or r.rqi == requestID) and (t == reqType) )
 
 	
 	def queuePollingRequest(self, request:CSERequest, reqType:RequestType=RequestType.REQUEST) -> None:
@@ -582,20 +582,20 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Add request to queue, reqestType: {reqType}')
 
 		# Some checks
-		if not request.headers.requestExpirationTimestamp:		
+		if not request.rqet:		
 			# Adding a default expiration if none is set in the request
 			ret = DateUtils.getResourceDate(self.requestExpirationDelta)
 			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
-			request.headers.requestExpirationTimestamp = ret
-			request.headers._retUTCts = DateUtils.fromAbsRelTimestamp(ret)
-		if not request.requestIdentifier:
+			request.rqet = ret
+			request._rqetUTCts = DateUtils.fromAbsRelTimestamp(ret)
+		if not request.rqi:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
 		
 		# If no id? Try to determine it via the requestID
 		if not request.id and reqType == RequestType.RESPONSE:
 			with self._requestLock:
-				request.id = self._rqiOriginator.pop(request.requestIdentifier)	# get and remove from dictionary
+				request.id = self._rqiOriginator.pop(request.rqi)	# get and remove from dictionary
 
 		if not request.id:
 			L.logErr(f'Request must have a target originator. Ignored. {request}', showStackTrace=False)
@@ -608,16 +608,16 @@ class RequestManager(object):
 			else:
 				self._requests[originator].append( (request, reqType) )
 			# store mapping between RQI and request originator
-			self._rqiOriginator[request.requestIdentifier] = request.originator
+			self._rqiOriginator[request.rqi] = request.originator
 
 			if reqType == RequestType.RESPONSE:
-				del self._rqiOriginator[request.requestIdentifier]
+				del self._rqiOriginator[request.rqi]
 
 		
 		# Start an actor to remove the request after the timeout		
-		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.requestIdentifier, reqType), 
-										delay=request.headers._retUTCts - DateUtils.utcTime() + 1.0,	# +1 second delay 
-										name=f'unqueuePolling_{request.requestIdentifier}-{reqType}').start()
+		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.rqi, reqType), 
+										delay = request._rqetUTCts - DateUtils.utcTime() + 1.0,	# +1 second delay 
+										name = f'unqueuePolling_{request.rqi}-{reqType}').start()
 	
 
 	def unqueuePollingRequest(self, originator:str, requestID:str, reqType:RequestType) -> CSERequest:
@@ -632,7 +632,7 @@ class RequestManager(object):
 				# extract the queried request or the first one found, and build a new list for the remaining
 				# Building a new list is faster than extracting and removing elements in place
 				for r,t in lst:	
-					if (requestID is None or requestID == r.requestIdentifier) and t == reqType and not resultRequest:	# Either get an uspecified reuqest, or a specific one
+					if (requestID is None or requestID == r.rqi) and t == reqType and not resultRequest:	# Either get an uspecified reuqest, or a specific one
 						resultRequest = r
 					else:
 						requests.append( (r, t) )
@@ -642,7 +642,7 @@ class RequestManager(object):
 					del self._requests[originator]
 				
 			if resultRequest:
-				BackgroundWorkerPool.stopWorkers(f'unqueuePolling_{resultRequest.requestIdentifier}-{reqType}')
+				BackgroundWorkerPool.stopWorkers(f'unqueuePolling_{resultRequest.rqi}-{reqType}')
 					
 			return resultRequest
 
@@ -709,18 +709,18 @@ class RequestManager(object):
 		# If no request is given, we create one here.
 		if not request:
 			# Fill various request attributes
-			request 									= CSERequest()
-			request.id									= pchOriginator
-			request.op 									= operation
-			request.originator							= originator
-			request.resourceType 						= ty
-			request.headers.originatingTimestamp		= DateUtils.getResourceDate()
-			request.requestIdentifier					= Utils.uniqueRI()
-			request.releaseVersionIndicator				= rvi if rvi is not None else CSE.releaseVersion
-			request.pc 									= data
+			request 				= CSERequest()
+			request.id				= pchOriginator
+			request.op 				= operation
+			request.originator		= originator
+			request.ty 	= ty
+			request.ot				= DateUtils.getResourceDate()
+			request.rqi				= Utils.uniqueRI()
+			request.rvi				= rvi if rvi is not None else CSE.releaseVersion
+			request.pc 				= data
 			if parameters:
 				if 'ec' in parameters:			
-					request.parameters[C.hfEC] 			= parameters['ec']	# Event Category
+					request.parameters[C.hfEC] = parameters['ec']	# Event Category
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
@@ -731,7 +731,7 @@ class RequestManager(object):
 
 		# L.isDebug and L.logDebug(request)
 
-		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.requestIdentifier} pc:{request.pc} for polling')
+		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.rqi} pc:{request.pc} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
 	
@@ -739,10 +739,10 @@ class RequestManager(object):
 	def waitForResponseToPCH(self, request:CSERequest) -> Result:
 		"""	Wait for a RESPONSE to a request.
 		"""
-		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.requestIdentifier}')
+		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.rqi}')
 
-		if (response := self.waitForPollingRequest(request.originator, request.requestIdentifier, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
-			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.requestIdentifier} rsc: {response.request.rsc}')
+		if (response := self.waitForPollingRequest(request.originator, request.rqi, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
+			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.rqi} rsc: {response.request.rsc}')
 			if (o1 := Utils.toSPRelative(response.request.originator)) != (o2 := Utils.toSPRelative(request.id)):
 				L.logWarn(dbg := f'Received originator: {o1} is different from original target originator: {o2}')
 				return Result.errorResult(dbg = dbg)
@@ -759,12 +759,12 @@ class RequestManager(object):
 			for originator, requests in list(self._requests.items()):
 				nList = []
 				for tup in list(requests):				# Test all requests for expiration
-					if tup[0].headers._retUTCts > now:	# not expired
+					if tup[0]._rqetUTCts > now:	# not expired
 						nList.append(tup)				# add the request tupple again to the list if it hasnt expired
 					else:
 						L.isDebug and L.logDebug(f'Remove old polling request: {tup}')
 						# Also remove the requestID - originator mapping
-						if (rqi := tup[0].requestIdentifier) in self._rqiOriginator:
+						if (rqi := tup[0].rqi) in self._rqiOriginator:
 							del self._rqiOriginator[rqi]
 				if len(nList) > 0:	# Add the lists again if there still more requests for this originator
 					self._requests[originator] = nList
@@ -1070,7 +1070,7 @@ class RequestManager(object):
 			# RQI - requestIdentifier
 			# Check as early as possible
 			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
-				cseRequest.requestIdentifier = rqi
+				cseRequest.rqi = rqi
 			else:
 				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
 				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
@@ -1081,7 +1081,7 @@ class RequestManager(object):
 				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
 			else:
 				if rvi in CSE.supportedReleaseVersions:
-					cseRequest.releaseVersionIndicator = rvi	
+					cseRequest.rvi = rvi	
 				else:
 					L.logDebug(dbg := f'Release version unsupported: {rvi}')
 					errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
@@ -1100,13 +1100,13 @@ class RequestManager(object):
 			# TY - resource type
 			if (ty := gget(cseRequest.originalRequest, 'ty', greedy = False)) is not None:	# ty is an int
 				if T.has(ty):
-					cseRequest.resourceType = T(ty)
+					cseRequest.ty = T(ty)
 				else:
 					L.logDebug(dbg := f'Unknown/unsupported resource type: {ty}')
 					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
 
 			# FR - originator 
-			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.resourceType == T.AE and cseRequest.op == Operation.CREATE):
+			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == T.AE and cseRequest.op == Operation.CREATE):
 				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
 				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
 			else:
@@ -1134,7 +1134,7 @@ class RequestManager(object):
 					L.logDebug(dbg := 'Error in provided Originating Timestamp')
 					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
 				else:
-					cseRequest.headers.originatingTimestamp = ot
+					cseRequest.ot = ot
 
 			# RQET - requestExpirationTimestamp
 			if rqet := gget(cseRequest.originalRequest, 'rqet', greedy=False):
@@ -1146,8 +1146,8 @@ class RequestManager(object):
 						L.logDebug(dbg := 'Request timeout')
 						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
 					else:
-						cseRequest.headers._retUTCts = _ts		# Re-assign "real" ISO8601 timestamp
-						cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)
+						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
+						cseRequest.rqet = DateUtils.toISO8601Date(_ts)
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.originalRequest, 'rset', greedy=False)):
@@ -1159,7 +1159,7 @@ class RequestManager(object):
 						L.logDebug(dbg := 'Result timeout')
 						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
 					else:
-						cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+						cseRequest.rset = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
@@ -1167,7 +1167,7 @@ class RequestManager(object):
 					L.logDebug(dbg := 'Error in provided Operation Execution Time')
 					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
 				else:
-					cseRequest.headers.operationExecutionTime = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+					cseRequest.oet = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
@@ -1176,7 +1176,7 @@ class RequestManager(object):
 													 request = cseRequest, 
 													 dbg = L.logDebug(f'Release version unsupported: {rvi}'))
 				else:
-					cseRequest.releaseVersionIndicator = rvi	
+					cseRequest.rvi = rvi	
 			else:
 				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, 
 												 request = cseRequest, 
@@ -1184,7 +1184,7 @@ class RequestManager(object):
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
-				cseRequest.vendorInformation = vsi	
+				cseRequest.vsi = vsi	
 
 			# DRT - Desired Identifier Result Type
 			cseRequest.args.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy = False))	# 1=strucured, 2=unstructured
@@ -1265,7 +1265,7 @@ class RequestManager(object):
 				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
 				# TODO nu should only be set when responseType=non-blocking async
 				if (nu := gget(rt, 'nu', greedy = False)) is not None:
-					cseRequest.headers.responseTypeNUs = nu	#  TODO validate for url?
+					cseRequest.rtu = nu	#  TODO validate for url?
 
 			# RP - resultPersistence (also as timestamp)
 			if (rp := gget(cseRequest.originalRequest, 'rp', greedy=False)): 
@@ -1326,10 +1326,10 @@ class RequestManager(object):
 		"""
 		cseRequest = CSERequest()
 		cseRequest.originalData = data
-		cseRequest.headers.contentType = contenType.lower()
+		cseRequest.mediaType = contenType.lower()
 
 		# De-Serialize the content
-		if not (contentResult := self.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
+		if not (contentResult := self.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
 			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
 			return Result(status = False, rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg, )
 		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple

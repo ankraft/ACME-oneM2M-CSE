@@ -470,15 +470,16 @@ class HttpServer(object):
 			resp.rsc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			resp.pc = RequestUtils.deserializeData(r.content, resp.ct)
 			resp.originator = r.headers.get(C.hfOrigin)
-			try: 
+			try:
+				# Add Originating Timestamp if present in request
 				if (ot := r.headers.get(C.hfOT)):
 					isodate.parse_date(ot)
-				resp.headers.originatingTimestamp = ot
+					resp.ot = ot
 			except Exception as ee:
 				return Result.errorResult(dbg = L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
 			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
-				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.requestIdentifier}'))
-			resp.requestIdentifier = rqi
+				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.rqi}'))
+			resp.rqi = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except Exception as e:
@@ -510,14 +511,14 @@ class HttpServer(object):
 			# original request's contentType. If this is not possible, the fallback is still the
 			# CSE's default
 			result.request.originator = originalRequest.originator
-			if originalRequest.headers.accept:																# accept / contentType
-				result.request.ct = CST.getType(originalRequest.headers.accept[0])
+			if originalRequest.httpAccept:																# accept / contentType
+				result.request.ct = CST.getType(originalRequest.httpAccept[0])
 			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.originator):
 				result.request.ct = csz[0]
 
-			result.request.requestIdentifier = originalRequest.requestIdentifier
-			result.request.releaseVersionIndicator = originalRequest.releaseVersionIndicator
-			result.request.vendorInformation = originalRequest.vendorInformation
+			result.request.rqi = originalRequest.rqi
+			result.request.rvi = originalRequest.rvi
+			result.request.vsi = originalRequest.vsi
 	
 			# Add additional parameters
 			if ec := originalRequest.parameters.get(C.hfEC):												# Event Category, copy from the original request
@@ -634,12 +635,12 @@ class HttpServer(object):
 			req['ot'] = f
 
 		# parse and extract content-type header
-		if ct := request.content_type:
-			if not ct.startswith(tuple(CST.supportedContentSerializations())):
-				ct = None
+		if contentType := request.content_type:
+			if not contentType.startswith(tuple(CST.supportedContentSerializations())):
+				contentType = None
 			else:
-				p  = ct.partition(';')		# always returns a 3-tuple
-				ct = p[0] 					# only the content-type without the resource type
+				p  = contentType.partition(';')		# always returns a 3-tuple
+				contentType = p[0] 					# only the content-type without the resource type
 				t  = p[2].partition('=')[2]
 				if len(t) > 0:
 					try:
@@ -647,10 +648,10 @@ class HttpServer(object):
 					except:
 						return Result.errorResult(rsc = RC.badRequest, request = cseRequest, dbg = L.logWarn(f'resource type must be an integer: {t}'))
 
-		cseRequest.headers.contentType = ct
+		cseRequest.mediaType = contentType
 
 		# parse accept header
-		cseRequest.headers.accept 	= [ a for a in request.headers.getlist('accept') if a != '*/*' ]
+		cseRequest.httpAccept 	= [ a for a in request.headers.getlist('accept') if a != '*/*' ]
 		cseRequest.originalHttpArgs	= deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking
@@ -684,7 +685,7 @@ class HttpServer(object):
 			req['fc'] = filterCriteria
 
 		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
+		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
 			return Result.errorResult(rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
 		
 		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved

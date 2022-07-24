@@ -1243,21 +1243,20 @@ class Result:
 		if originalRequest:
 			if not self.request.ct:
 				self.request.ct = originalRequest.ct
-			if originalRequest.headers:
-				if not self.request.requestIdentifier:
-					self.request.requestIdentifier = originalRequest.requestIdentifier
-				if not self.request.releaseVersionIndicator:
-					self.request.releaseVersionIndicator = originalRequest.releaseVersionIndicator
-				if not self.request.vendorInformation:
-					self.request.vendorInformation = originalRequest.vendorInformation
-				if not self.request.headers.accept:
-					self.request.headers.accept = originalRequest.headers.accept
-				if not self.request.headers.contentType:
-					self.request.headers.contentType = originalRequest.headers.contentType
-				if not self.request.originator:
-					self.request.originator = originalRequest.originator
+			if not self.request.rqi:
+				self.request.rqi = originalRequest.rqi
+			if not self.request.rvi:
+				self.request.rvi = originalRequest.rvi
+			if not self.request.vsi:
+				self.request.vsi = originalRequest.vsi
+			if not self.request.httpAccept:
+				self.request.httpAccept = originalRequest.httpAccept
+			if not self.request.mediaType:
+				self.request.mediaType = originalRequest.mediaType
+			if not self.request.originator:
+				self.request.originator = originalRequest.originator
 				
-				# TODO more headers?
+			# TODO more headers?
 			if originalRequest.parameters:
 				for k,v in originalRequest.parameters.items():	# don't overwrite existing parameters
 					if k not in self.request.parameters:
@@ -1274,9 +1273,17 @@ _successResult = Result(status = True)
 #
 
 class RequestType(ACMEIntEnum):
+	"""	Internal type to indicate the purpose of the
+		the CSERequest struct.
+	"""
 	REQUEST							= auto()
+	"""	CSERequest is a request. """
+	
 	RESPONSE 						= auto()
+	""" CSERequest is a response. """
+
 	NOTSET	 						= auto()
+	""" Undetermined. """
 
 
 @dataclass
@@ -1292,58 +1299,97 @@ class RequestArguments:
 	conditions:Conditions 			= field(default_factory=dict)
 	attributes:Parameters 			= field(default_factory=dict)
 
-
-@dataclass
-class RequestHeaders:
-	contentType:str 						= None	# Content-Type
-	accept:list[str]						= None	# Accept
-	requestExpirationTimestamp:str 			= None 	# X-M2M-RET
-	_retUTCts:float							= None 	# X-M2M-RET as UTC based timestamp
-	""" request expiration timeout as UTC-based timestamp """
-	resultExpirationTimestamp:str			= None 	# X-M2M-RST
-	operationExecutionTime:str 				= None 	# X-M2M-OET
-	responseTypeNUs:list[str]				= None	# X-M2M-RTU
-	originatingTimestamp:str				= None  # ot in request
-
-
 @dataclass
 class CSERequest:
 	"""	Structure that holds a Request (or Response) to a CSE.
 	"""
-	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
 	args:RequestArguments 			= field(default_factory=RequestArguments)
 	
-	op:Operation					= None
+	# ID handling
+	to:str = None
+	"""	The request's original target. """
+
+	id:str = None
+	""" Target resource ID. Might be structured or unstructured. Will be determined from `to`. """
+
+	srn:str = None
+	""" The target's structured resource ID. Might not be present in a request. Will be determined from `to`. """
+	
+	csi:str = None
+	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Will be determined from `to`. """
+
+	# Request attributes
+	op:Operation = None
 	"""	Request Operation. """
 
-	originator:str 					= None 
+	originator:str = None 
 	"""	Request originator (from, X-M2M-Origin). """
-	requestIdentifier:str 			= None
+
+	rqi:str = None
 	"""	Request Identifier (X-M2M-RI). """
-	releaseVersionIndicator:str		= None
+	
+	rvi:str = None
 	"""	Release Version Identifier (X-M2M-RVI). """
-	resourceType:ResourceTypes		= None
+	
+	ty:ResourceTypes = None
 	""" Resource type. """
-	vendorInformation:str			= None
+
+	vsi:str = None
 	"""	Vendor Information (X-M2M-VSI). """
+	
+	rqet:str = None
+	"""	Request Expiration Timestamp in ISO8901 format (X-M2M-RET). """
+	
+	_rqetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
+	""" Request Expiration Timestamp as UTC-based timestamp (internal). """
+	
+	ot:str = None  
+	"""	Originating Timestamp in ISO8901 format. """
+	
+	oet:str = None
+	""" Operation Execution Time in ISO8901 format or as ms (X-M2M-OET). """
+	
+	rset:str = None 
+	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
+
+	rtu:list[str] = None
+	""" The notificationURI element of the Response Type parameter(X-M2M-RTU). """
+
+	ct:ContentSerializationType = None
+	"""	Content Serialization Type. """
+	
+	# HTTP specifics
+
+	mediaType:str = None
+	""" Transmitted media type (http: 'Content-Type'). """
+
+	# Generics
+	originalData:bytes = None 
+	""" The request's original data. """
+
+	originalRequest:JSON = None
+	""" The original request after dissection as a dictionary. """
 
 
 
 
 
-	ct:ContentSerializationType		= None
-	originalHttpArgs:Any 			= None	# Actually a MultiDict
-	originalData:bytes				= None 	# The request original data
-	originalRequest:JSON			= None 	# The original request after dissection as a dictionary
 	pc:JSON 						= None	# The request's primitive content as a dictionary
-	id:str 							= None 	# target ID / to
-	srn:str 						= None 	# target structured resource name
-	to:str 							= None	# original to
-	csi:str 						= None 	# target csi
 	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 	requestType:RequestType			= RequestType.NOTSET
 	isResponse:bool					= False	# Default this is a request
+
+
+	#
+	#	HTTP specifics
+	#
+
+	httpAccept:list[str]			= None
+	"""	http Accept header media type. """
+
+	originalHttpArgs:Any 			= None
+	""" Original http request arguments. A MultiDict. """
 
 
 ##############################################################################
