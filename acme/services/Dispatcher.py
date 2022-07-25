@@ -200,19 +200,37 @@ class Dispatcher(object):
 			return Result.errorResult(dbg = 'wrong rcn for RETRIEVE')
 
 
-	def retrieveResource(self, id:str, originator:str=None, request:CSERequest=None) -> Result:
-		"""	If the ID is in SP-relative format then first check whether this is for the
-			local CSE. 
-			If yes, then adjust the ID and try to retrieve it. 
-			If no, then try to retrieve the resource from a connected (!) remote CSE.
+	def retrieveResource(self, id:str, originator:str = None, request:CSERequest = None, postRetrieveHook:bool = False) -> Result:
+		"""	Retrieve a resource locally or from remote CSE.
+
+			Args:
+				id:	If the *id* is in SP-relative format then first check whether this is for the local CSE.
+					If yes, then adjust the ID and try to retrieve it.
+					If no, then try to retrieve the resource from a connected (!) remote CSE.
+				originator:	The originator of the request.
+				postRetrieveHook: Only when retrieving localls, invoke the Resource's `willBeRetrieved()` callback.
+			Return:
+				Result instance.
+
 		"""
 		if id:
 			if id.startswith(CSE.cseCsiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
 				id = id[self.csiSlashLen:]
 			else:
+				# Retrieve from remote
 				if Utils.isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
-		return self.retrieveLocalResource(srn=id, originator=originator, request=request) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id, originator=originator, request=request)
+
+		# Retrieve locally
+		if Utils.isStructured(id):
+			res = self.retrieveLocalResource(srn = id, originator = originator, request = request) 
+		else:
+			res = self.retrieveLocalResource(ri = id, originator = originator, request = request)
+		if res.status and postRetrieveHook:
+			res.resource.willBeRetrieved(originator, request, subCheck = False)
+		return res
+
+
 
 
 	def retrieveLocalResource(self, ri:str = None, srn:str = None, originator:str = None, request:CSERequest = None) -> Result:

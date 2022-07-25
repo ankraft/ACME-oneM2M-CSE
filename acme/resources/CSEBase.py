@@ -103,7 +103,7 @@ class CSEBase(AnnounceableResource):
 		return Result.successResult()
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
 		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
 			return res
 

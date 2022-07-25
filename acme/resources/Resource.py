@@ -358,7 +358,7 @@ class Resource(object):
 		pass
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
 		""" This method is called before a resource will be send back in a RETRIEVE response.
 			
 			This method is implemented in some sub-classes.
@@ -371,7 +371,7 @@ class Resource(object):
 				Result object indicating success or failure.
 		"""
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
-		if subCheck:
+		if subCheck and request:
 			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
 				return res
 		return Result.successResult()
