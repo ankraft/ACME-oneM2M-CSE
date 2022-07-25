@@ -17,6 +17,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 from rich.live import Live
 from rich.text import Text
+from rich.pretty import Pretty
 import plotext as plt
 
 
@@ -83,6 +84,7 @@ class Console(object):
 		self.treeIncludeVirtualResources = Configuration.get('cse.console.treeIncludeVirtualResources')
 		self.confirmQuit     			 = Configuration.get('cse.console.confirmQuit')
 		self.interruptContinous			 = False
+		self.endmessage:str 			 = None
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		if L.isInfo: L.log('Console initialized')
 
@@ -120,6 +122,7 @@ class Console(object):
 			'G'		: self.plotGraph,
 			'i'		: self.inspectResource,
 			'I'		: self.inspectResourceChildren,
+			'\x0b'	: self.continuousInspectResource,
 			'k'		: self.katalogScripts,
 			'l'     : self.toggleScreenLogging,
 			'L'     : self.toggleLogging,
@@ -127,9 +130,9 @@ class Console(object):
 			'r'		: self.cseRegistrations,
 			'R'		: self.runScript,
 			's'		: self.statistics,
-			'\x13'	: self.continuesStatistics,
+			'\x13'	: self.continuousStatistics,
 			't'		: self.resourceTree,
-			'\x14'	: self.continuesTree,
+			'\x14'	: self.continuousTree,
 			'T'		: self.childResourceTree,
 			'u'		: self.openWebUI,
 			'w'		: self.workers,
@@ -186,6 +189,7 @@ class Console(object):
 			('i', 'Inspect resource'),
 			('I', 'Inspect resource and child resources'),
 			('k', 'Catalog of scripts'),
+			('^K', 'Show resource continuously'),
 			('l', 'Toggle screen logging on/off'),
 			('L', 'Toggle through log levels'),
 			('r', 'Show CSE registrations'),
@@ -361,7 +365,7 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def continuesTree(self, key:str) -> None:
+	def continuousTree(self, key:str) -> None:
 		L.off()
 		self.interruptContinous = False
 		self.clearScreen(key)
@@ -407,7 +411,7 @@ Available under the BSD 3-Clause License
 		L.console()
 
 
-	def continuesStatistics(self, key:str) -> None:
+	def continuousStatistics(self, key:str) -> None:
 		L.off()
 		self.interruptContinous = False
 		self.clearScreen(key)
@@ -470,6 +474,50 @@ Available under the BSD 3-Clause License
 				else:
 					CSE.dispatcher.resourceTreeDict(cast(List[Resource], resdis.data), res.resource)	# the function call add attributes to the target resource
 					L.console(res.resource.asDict())
+		L.on()
+
+
+	def continuousInspectResource(self, key:str) -> None:
+		"""	Show a resource continuously.
+		"""
+		L.console('Inspect Resource Continuously', isHeader = True)
+		L.off()		
+		if (ri := L.consolePrompt('ri', default = Console.previousInspectRi)):
+			Console.previousInspectRi = ri
+			if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
+				L.console(res.dbg, isError = True)
+			else: 
+				self.clearScreen(key)
+				self._about(f'Inspect Resource: {ri}')
+				self.interruptContinous = False
+				self.endMessage:str = None
+				with Live(Pretty(res.resource.asDict()), console = L._console, auto_refresh = False) as live:
+
+					def _updateResource(r:Resource = None) -> None:
+						"""	Callback to update the on-screen resource on an event.
+						"""
+						if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
+							self.endMessage = f'Resource is not available anymore: {ri}'
+							self.interruptContinous = True
+							return
+						live.update(Pretty(res.resource.asDict()), refresh = True)
+					
+					# Register events for which the resource is refreshed
+					CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateResource)		# type:ignore[attr-defined]
+
+					while waitForKeypress(self.refreshInterval) in [None, '\x14']:
+						if self.interruptContinous:
+							break
+
+					# Remove the event callback for the events 
+					CSE.event.removeHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource], _updateResource)	# type:ignore[attr-defined]
+
+				# Reset the screen and show error message if there is one
+				self.clearScreen(key)
+				if self.endMessage:
+					L.console(self.endMessage, isError = True)
+
+		# re-enable logging
 		L.on()
 
 

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for &lt;crossResourceSubscription> resource type.
 - [CSE] Added support for notification statistics in (*nse* and *nsi* attributes).
 - [CSE] Added support for *expirationCounter* (&lt;subscription>, &lt;crossResourceSubscription>)
+- [CONSOLE] Added continuous inspection of a resource.
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).

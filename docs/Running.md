@@ -35,6 +35,8 @@ In additions, you can provide additional command line arguments that will overri
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statistics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                               |
 
+
+
 ### Debug Mode
 
 Please see [Development - Debug Mode](Development.md#debug-mode) how to enable the debug mode to see further information in case you run into problems when trying to run the CSE.
@@ -71,6 +73,7 @@ The CSE has a command console interface to execute build-in commands. The follow
 	│ i     │ Inspect resource                                       │        │
 	│ I     │ Inspect resource and child resources                   │        │
 	│ k     │ Catalog of scripts                                     │        │
+	│ ^K    │ Show resource continuously                             │        │
 	│ l     │ Toggle screen logging on/off                           │        │
 	│ L     │ Toggle through log levels                              │        │
 	│ r     │ Show CSE registrations                                 │        │
@@ -80,7 +83,8 @@ The CSE has a command console interface to execute build-in commands. The follow
 	│ T     │ Show child resource tree                               │        │
 	│ ^T    │ Show & refresh resource tree continuously              │        │
 	│ u     │ Open web UI                                            │        │
-	│ w     │ Show workers status                                    │        │
+	│ w     │ Show workers and threads status                        │        │
+	│ =     │ Print a separator line to the log                      │        │
 	├───────┼────────────────────────────────────────────────────────┼────────┤
 	│ Z     │ Reset and restart the CSE                              │   ✔︎    │
 	└───────┴────────────────────────────────────────────────────────┴────────┘
