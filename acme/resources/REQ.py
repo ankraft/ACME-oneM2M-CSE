@@ -62,8 +62,8 @@ class REQ(Resource):
 			et = request.rqet	# This is already an ISO8601 timestamp
 		
 		# Check the rp(ts) argument
-		elif request.args.rpts:
-			et = request.args.rpts
+		elif request._rpts:
+			et = request._rpts
 		
 		# otherwise calculate request et
 		else:	
@@ -90,15 +90,15 @@ class REQ(Resource):
 					'rqet'	: request.rqet,
 					'rset'	: request.rset,
 					'rt'	: { 
-						'rtv' : request.args.rt
+						'rtv' : request.rt
 					},
-					'rp'	: request.args.rp,
-					'rcn'	: request.args.rcn,
+					'rp'	: request.rp,
+					'rcn'	: request.rcn,
 					'fc'	: {
-						'fu'	: request.args.fu,
-						'fo'	: request.args.fo,
+						'fu'	: request.fc.fu,
+						'fo'	: request.fc.fo,
 					},
-					'drt'	: request.args.drt,
+					'drt'	: request.drt,
 					'rvi'	: request.rvi if request.rvi else CSE.releaseVersion,
 					'vsi'	: request.vsi,
 				},
@@ -108,7 +108,7 @@ class REQ(Resource):
 		}}
 
 		# add handlings, conditions and attributes from filter
-		for k,v in { **request.args.handling, **request.args.conditions, **request.args.attributes}.items():
+		for k,v in { **request.fc.criteriaAttributes(), **request.fc.attributes}.items():
 			Utils.setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content

@@ -192,7 +192,7 @@ class Validator(object):
 				attributeType: If `attributeType` is set then that type is taken to perform the check, otherwise the attribute type is determined.
 				rtype: ResourceType. Some attributes depend on the resource type.
 			Return:
-				Result. If successful then Result.data contains the determined attribute.
+				Result. If successful then Result.data contains the determined attribute and the converted value in a tuple.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)

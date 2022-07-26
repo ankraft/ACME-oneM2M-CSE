@@ -8,15 +8,13 @@
 #
 
 from __future__ import annotations
-from cgitb import reset
 import operator
 import sys
 from copy import deepcopy
 from typing import Any, List, Tuple, cast
 
 from ..helpers import TextTools as TextTools
-from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T
+from ..etc.Types import FilterCriteria, FilterUsage as FU, ResourceTypes as T
 from ..etc.Types import FilterOperation
 from ..etc.Types import Permission
 from ..etc.Types import DesiredIdentifierResultType as DRT
@@ -24,7 +22,7 @@ from ..etc.Types import ResultContentType as RCN
 from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
-from ..etc.Types import JSON, Parameters, Conditions
+from ..etc.Types import JSON
 from ..etc import Utils
 from ..etc import DateUtils
 from ..services import CSE
@@ -113,25 +111,25 @@ class Dispatcher(object):
 
 
 
-		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
+		permission = Permission.DISCOVERY if request.fc.fu == FU.discoveryCriteria else Permission.RETRIEVE
 
 		# check rcn & operation
-		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result.errorResult(dbg = f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
-		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result.errorResult(dbg = f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
+		if permission == Permission.DISCOVERY and request.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
+			return Result.errorResult(dbg = f'invalid rcn: {int(request.rcn)} for fu: {int(request.fc.fu)}')
+		if permission == Permission.RETRIEVE and request.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
+			return Result.errorResult(dbg = f'invalid rcn: {int(request.rcn)} for fu: {int(request.fc.fu)}')
 
-		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.args.rcn}, fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
+		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.rcn}, fu: {request.fc.fu.name}, drt: {request.drt.name}, {str(request.fc)}, resultContent: {request.rcn.name}, attributes: {str(request.fc.attributes)})')
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
-		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
+		if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
 			if not (res := self.retrieveResource(id, originator, request)).status:
 				return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
 
 			# if rcn == attributes then we can return here, whatever the result is
-			if request.args.rcn == RCN.attributes:
+			if request.rcn == RCN.attributes:
 				if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 					return resCheck
 				return res
@@ -139,7 +137,7 @@ class Dispatcher(object):
 			resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
 
 			# if rcn == original-resource we retrieve the linked resource
-			if request.args.rcn == RCN.originalResource:
+			if request.rcn == RCN.originalResource:
 				# Some checks for resource validity
 				if not resource.isAnnounced():
 					L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
@@ -157,7 +155,7 @@ class Dispatcher(object):
 
 		# do discovery
 		# TODO simplify arguments
-		if not (res := self.discoverResources(id, originator, request.args.handling, request.args.fo, request.args.conditions, request.args.attributes, permission=permission)).status:	# not found?
+		if not (res := self.discoverResources(id, originator, request.fc, permission = permission)).status:	# not found?
 			return res.errorResultCopy()				
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
@@ -173,28 +171,28 @@ class Dispatcher(object):
 		#	Handle more sophisticated RCN
 		#
 
-		if request.args.rcn == RCN.attributesAndChildResources:
+		if request.rcn == RCN.attributesAndChildResources:
 			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
 			return Result(status = True, rsc = RC.OK, resource = resource)
 
-		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
-			self._resourceTreeReferences(allowedResources, resource, request.args.drt, 'ch')	# the function call add attributes to the target resource
+		elif request.rcn == RCN.attributesAndChildResourceReferences:
+			self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
 			return Result(status = True, rsc = RC.OK, resource = resource)
 
-		elif request.args.rcn == RCN.childResourceReferences: 
+		elif request.rcn == RCN.childResourceReferences: 
 			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt, 'm2m:rrl')
-			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
-			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.args.drt, 'm2m:rrl')
+			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.drt, 'm2m:rrl')
+			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
+			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
 			return Result(status = True, rsc = RC.OK, resource = childResourcesRef)
 
-		elif request.args.rcn == RCN.childResources:
+		elif request.rcn == RCN.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
 			return Result(status = True, rsc = RC.OK, resource = childResources)
 
-		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
-			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(allowedResources, request.args.drt))
+		elif request.rcn == RCN.discoveryResultReferences: # URIList
+			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
 
 		else:
 			return Result.errorResult(dbg = 'wrong rcn for RETRIEVE')
@@ -263,10 +261,7 @@ class Dispatcher(object):
 	def discoverResources(self,
 						  id:str,
 						  originator:str, 
-						  handling:Conditions = {}, 
-						  fo:int = 1, 
-						  conditions:Conditions = None, 
-						  attributes:Parameters = None, 
+						  filterCriteria:FilterCriteria = None,
 						  rootResource:Resource = None, 
 						  permission:Permission = Permission.DISCOVERY) -> Result:
 		L.isDebug and L.logDebug('Discovering resources')
@@ -276,28 +271,33 @@ class Dispatcher(object):
 				return Result.errorResult(rsc = RC.notFound, dbg = res.dbg)
 			rootResource = res.resource
 
-		# get all direct children
-		dcrs = self.directChildResources(id)
+		# Apply defaults. This is not done in the FilterCriteria class bc there we only store he provided values
+		lvl:int = filterCriteria.lvl if filterCriteria.lvl is not None else sys.maxsize
+		fo:FilterOperation = filterCriteria.fo if filterCriteria.fo is not None else FilterOperation.AND
+		ofst:int = filterCriteria.ofst if filterCriteria.ofst is not None else 1
+		lim:int = filterCriteria.lim if filterCriteria.lim is not None else sys.maxsize
 
-		# Slice the page (offset and limit)
-		offset = handling['ofst'] if 'ofst' in handling else 1			# default: 1 (first resource
-		limit = handling['lim'] if 'lim' in handling else sys.maxsize	# default: system max size or "maxint"
-		dcrs = dcrs[offset-1:offset-1+limit]							# now dcrs only contains the desired child resources for ofst and lim
-
-		# Get level
-		level = handling['lvl'] if 'lvl' in handling else sys.maxsize	# default: system max size or "maxint"
+		# get all direct children and slice the page (offset and limit)
+		dcrs = self.directChildResources(id)[ofst-1:ofst-1 + lim]	# now dcrs only contains the desired child resources for ofst and lim
 
 		# a bit of optimization. This length stays the same.
-		allLen = len(attributes) if attributes else 0
-		if conditions:
-			allLen += ( len(conditions) +
-			  (len(conditions.get('ty'))-1 if 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
-			  (len(conditions.get('cty'))-1 if 'cty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1 
-			  (len(conditions.get('lbl'))-1 if 'lbl' in conditions else 0) 		# -1 : compensate for len(conditions) in line 1 
+		allLen = len(filterCriteria.attributes) if filterCriteria.attributes else 0
+		if (criteriaAttributes := filterCriteria.criteriaAttributes()):
+			allLen += ( len(criteriaAttributes) +
+			  (len(_v)-1 if (_v := criteriaAttributes.get('ty'))  is not None else 0) +		# -1 : compensate for len(conditions) in line 1
+			  (len(_v)-1 if (_v := criteriaAttributes.get('cty')) is not None else 0) +		# -1 : compensate for len(conditions) in line 1 
+			  (len(_v)-1 if (_v := criteriaAttributes.get('lbl')) is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
 			)
 
 		# Discover the resources
-		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes, permission=permission)
+		discoveredResources = self._discoverResources(rootResource, 
+													  originator, 
+													  level = lvl, 
+													  fo = fo, 
+													  allLen = allLen, 
+													  dcrs = dcrs, 
+													  filterCriteria = filterCriteria,
+													  permission=permission)
 
 		# NOTE: this list contains all results in the order they could be found while
 		#		walking the resource tree.
@@ -305,12 +305,11 @@ class Dispatcher(object):
 		#		Because otherwise the tree cannot be correctly re-constructed otherwise
 
 		# Apply ARP if provided
-		if 'arp' in handling:
-			arp = handling['arp']
+		if filterCriteria.arp:
 			result = []
 			for resource in discoveredResources:
 				# Check existence and permissions for the .../{arp} resource
-				srn = f'{resource[Resource._srn]}/{arp}'
+				srn = f'{resource[Resource._srn]}/{filterCriteria.arp}'
 				if (res := self.retrieveResource(srn)).resource and CSE.security.hasAccess(originator, res.resource, permission):
 					result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
@@ -324,8 +323,7 @@ class Dispatcher(object):
 								 fo:int, 
 								 allLen:int, 
 								 dcrs:list[Resource] = None, 
-								 conditions:Conditions = None, 
-								 attributes:Parameters = None, 
+								 filterCriteria:FilterCriteria = None,
 								 permission:Permission = Permission.DISCOVERY) -> list[Resource]:
 		if not rootResource or level == 0:		# no resource or level == 0
 			return []
@@ -337,24 +335,33 @@ class Dispatcher(object):
 
 		# Filter and add those left to the result
 		discoveredResources = []
-		for r in dcrs:
+		for resource in dcrs:
 
 			# Exclude virtual resources
-			if r.isVirtual():
+			if resource.isVirtual():
 				continue
 
 			# check permissions and filter. Only then add a resource
 			# First match then access. bc if no match then we don't need to check permissions (with all the overhead)
-			if self._matchResource(r, conditions, attributes, fo, allLen) and CSE.security.hasAccess(originator, r, permission):
-				discoveredResources.append(r)
+			if self._matchResource(resource, 
+								   fo, 
+								   allLen, 
+								   filterCriteria) and CSE.security.hasAccess(originator, resource, permission):
+				discoveredResources.append(resource)
 
-			# Iterate recursively over all (not only the filtered) direct child resources
-			discoveredResources.extend(self._discoverResources(r, originator, level-1, fo, allLen, conditions=conditions, attributes=attributes))
+			# Iterate recursively over all (not only the filtered!) direct child resources
+			discoveredResources.extend(self._discoverResources(resource, 
+															   originator, 
+															   level-1, 
+															   fo, 
+															   allLen, 
+															   filterCriteria = filterCriteria,
+															   permission = permission))
 
 		return discoveredResources
 
 
-	def _matchResource(self, r:Resource, conditions:Conditions, attributes:Parameters, fo:int, allLen:int) -> bool:	
+	def _matchResource(self, r:Resource, fo:int, allLen:int, filterCriteria:FilterCriteria) -> bool:	
 		""" Match a filter to a resource. """
 
 		# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
@@ -375,32 +382,29 @@ class Dispatcher(object):
 		found = 0
 
 		# check conditions
-		if conditions:
+		if filterCriteria:
 
 			# Types
 			# Multiple occurences of ty is always OR'ed. Therefore we add the count of
 			# ty's to found (to indicate that the whole set matches)
-			if tys := conditions.get('ty'):
-				found += len(tys) if ty in tys or str(ty) in tys else 0	# TODO simplify after refactoring requests. ty should only be an int
+			if tys := filterCriteria.ty:
+				found += len(tys) if ty in tys else 0	
 			if ct := r.ct:
-				found += 1 if (c_crb := conditions.get('crb')) and (ct < c_crb) else 0
-				found += 1 if (c_cra := conditions.get('cra')) and (ct > c_cra) else 0
-
+				found += 1 if (c_crb := filterCriteria.crb) and (ct < c_crb) else 0
+				found += 1 if (c_cra := filterCriteria.cra) and (ct > c_cra) else 0
 			if lt := r.lt:
-				found += 1 if (c_ms := conditions.get('ms')) and (lt > c_ms) else 0
-				found += 1 if (c_us := conditions.get('us')) and (lt < c_us) else 0
-
+				found += 1 if (c_ms := filterCriteria.ms) and (lt > c_ms) else 0
+				found += 1 if (c_us := filterCriteria.us) and (lt < c_us) else 0
 			if (st := r.st) is not None:	# st is an int
-				found += 1 if (c_sts := conditions.get('sts')) is not None and (st > c_sts) else 0	# st is an int
-				found += 1 if (c_stb := conditions.get('stb')) is not None and (st < c_stb) else 0
-
+				found += 1 if (c_sts := filterCriteria.sts) is not None and (st > c_sts) else 0	# st is an int
+				found += 1 if (c_stb := filterCriteria.stb) is not None and (st < c_stb) else 0
 			if et := r.et:
-				found += 1 if (c_exb := conditions.get('exb')) and (et < c_exb) else 0
-				found += 1 if (c_exa := conditions.get('exa')) and (et > c_exa) else 0
+				found += 1 if (c_exb := filterCriteria.exb) and (et < c_exb) else 0
+				found += 1 if (c_exa := filterCriteria.exa) and (et > c_exa) else 0
 
 			# Check labels similar to types
 			resourceLbl = r.lbl
-			if resourceLbl and (lbls := conditions.get('lbl')):
+			if resourceLbl and (lbls := filterCriteria.lbl):
 				for l in lbls:
 					if l in resourceLbl:
 						found += len(lbls)
@@ -408,16 +412,16 @@ class Dispatcher(object):
 
 			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
 				if (cs := r.cs) is not None:	# cs is an int
-					found += 1 if (sza := conditions.get('sza')) is not None and (int(cs) >= int(sza)) else 0	# sizes ares ints
-					found += 1 if (szb := conditions.get('szb')) is not None and (int(cs) < int(szb)) else 0
+					found += 1 if (sza := filterCriteria.sza) is not None and cs >= sza else 0	# sizes ares ints
+					found += 1 if (szb := filterCriteria.szb) is not None and cs < szb else 0
 
 			# ContentFormats
 			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
 			# cnf's to found (to indicate that the whole set matches)
 			# Similar to types.
 			if ty in [ T.CIN ]:	# special handling for CIN
-				if cnfs := conditions.get('cty'):
-					found += len(cnfs) if r.cnf in cnfs else 0
+				if filterCriteria.cty:
+					found += len(filterCriteria.cty) if r.cnf in filterCriteria.cty else 0
 
 		# TODO childLabels
 		# TODO parentLabels
@@ -426,18 +430,17 @@ class Dispatcher(object):
 
 
 		# Attributes:
-		if attributes:
-			for name in attributes:
-				val = attributes[name]
-				if isinstance(val, str) and '*' in val:
-					found += 1 if (rval := r[name]) is not None and TextTools.simpleMatch(str(rval), val) else 0
-				else:
-					found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
+		for name, value in filterCriteria.attributes.items():
+			if isinstance(value, str) and '*' in value:
+				found += 1 if (rval := r[name]) is not None and TextTools.simpleMatch(str(rval), value) else 0
+			else:
+				found += 1 if (rval := r[name]) is not None and str(value) == str(rval) else 0
 
 		# TODO childAttribute
 		# TODO parentAttribute
 
 
+		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled
 		if not ((fo == FilterOperation.OR  and found > 0) or 		# OR and found something
 				(fo == FilterOperation.AND and allLen == found)		# AND and found everything
@@ -540,17 +543,17 @@ class Dispatcher(object):
 		#
 
 		tpe = res.resource.tpe
-		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# Just the resource & attributes, integer
+		if request.rcn is None or request.rcn == RCN.attributes:	# Just the resource & attributes, integer
 			return res
-		elif request.args.rcn == RCN.modifiedAttributes:
+		elif request.rcn == RCN.modifiedAttributes:
 			dictOrg = request.pc[tpe]
 			dictNew = res.resource.asDict()[tpe]
 			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc = res.rsc, dbg = res.dbg)
-		elif request.args.rcn == RCN.hierarchicalAddress:
+		elif request.rcn == RCN.hierarchicalAddress:
 			return Result(status = res.status, resource = { 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc = res.rsc, dbg = res.dbg)
-		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
+		elif request.rcn == RCN.hierarchicalAddressAttributes:
 			return Result(status = res.status, resource = { 'm2m:rce' : { Utils.noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc = res.rsc, dbg = res.dbg)
-		elif request.args.rcn == RCN.nothing:
+		elif request.rcn == RCN.nothing:
 			return Result(status = res.status, rsc = res.rsc, dbg = res.dbg)
 		else:
 			return Result.errorResult(dbg = 'wrong rcn for CREATE')
@@ -682,16 +685,16 @@ class Dispatcher(object):
 		#
 
 		tpe = resource.tpe
-		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# rcn is an int
+		if request.rcn is None or request.rcn == RCN.attributes:	# rcn is an int
 			return res
-		elif request.args.rcn == RCN.modifiedAttributes:
+		elif request.rcn == RCN.modifiedAttributes:
 			dictNew = deepcopy(resource.dict)
 			requestPC = request.pc[tpe]
 			# return only the modified attributes. This does only include those attributes that are updated differently, or are
 			# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
 			#  are in the resource's __modified__ variable.
 			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Resource._modified]) }, rsc = res.rsc)
-		elif request.args.rcn == RCN.nothing:
+		elif request.rcn == RCN.nothing:
 			return Result(status = res.status, rsc=res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 
 		else:
@@ -781,29 +784,29 @@ class Dispatcher(object):
 		#
 
 		resultContent:Resource|JSON = None
-		if request.args.rcn is None or request.args.rcn == RCN.nothing:	# rcn is an int
+		if request.rcn is None or request.rcn == RCN.nothing:	# rcn is an int
 			resultContent = None
-		elif request.args.rcn == RCN.attributes:
+		elif request.rcn == RCN.attributes:
 			resultContent = resource
 		# resource and child resources, full attributes
-		elif request.args.rcn == RCN.attributesAndChildResources:
-			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
+		elif request.rcn == RCN.attributesAndChildResources:
+			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
 			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
 			resultContent = resource
 		# direct child resources, NOT the root resource
-		elif request.args.rcn == RCN.childResources:
-			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
+		elif request.rcn == RCN.childResources:
+			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
 			childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self.resourceTreeDict(children, childResources[resource.tpe])
 			resultContent = childResources
-		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
-			self._resourceTreeReferences(children, resource, request.args.drt, 'ch')	# the function call add attributes to the result resource
+		elif request.rcn == RCN.attributesAndChildResourceReferences:
+			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
+			self._resourceTreeReferences(children, resource, request.drt, 'ch')	# the function call add attributes to the result resource
 			resultContent = resource
-		elif request.args.rcn == RCN.childResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
+		elif request.rcn == RCN.childResourceReferences: # child resource references
+			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
 			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
+			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
 			resultContent = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
@@ -952,9 +955,9 @@ class Dispatcher(object):
 		return Factory.resourceFromDict(hit[0]).resource
 
 
-	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:JSON, permission:Permission) -> list[Resource]:
+	def discoverChildren(self, id:str, resource:Resource, originator:str, filterCriteria:FilterCriteria, permission:Permission) -> list[Resource]:
 		# TODO documentation
-		if not (res := self.discoverResources(id, originator, handling, rootResource=resource, permission=permission)).status:
+		if not (res := self.discoverResources(id, originator, filterCriteria = filterCriteria, rootResource = resource, permission = permission)).status:
 			return None
 		# check and filter by ACP
 		children = []

@@ -170,8 +170,8 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNIwithWrongSZB(self) -> None:
 		"""	Retrieve with wrong SZB -> Fail """
-		_, rsc = RETRIEVE(f'{aeURL}?rcn={int(RCN.childResourceReferences)}&szb=-1', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.badRequest)
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={int(RCN.childResourceReferences)}&szb=-1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	# childResourceReferences

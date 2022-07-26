@@ -9,10 +9,8 @@
 
 from __future__ import annotations
 import logging, sys, urllib3
-from sqlite3 import Date
 from copy import deepcopy
 from typing import Any, Callable, cast, Tuple
-
 
 import flask
 from flask import Flask, Request, request
@@ -23,8 +21,8 @@ import requests
 import isodate
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..etc.Types import Operation, CSERequest, ContentSerializationType as CST, Parameters
+from ..etc.Types import ReqResp, RequestType, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from ..etc.Types import Operation, CSERequest, ContentSerializationType as CST
 from ..etc import Utils as Utils, RequestUtils as RequestUtils
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
@@ -363,7 +361,7 @@ class HttpServer(object):
 						originator:str, 
 						ty:T = None, 
 						data:Any = None, 
-						parameters:Parameters = None, 
+						parameters:CSERequest = None, 
 						ct:CST = None, 
 						rvi:str = None,
 						raw:bool = False) -> Result:	 # type: ignore[type-arg]
@@ -395,10 +393,11 @@ class HttpServer(object):
 			hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
 			hds[C.hfOT]		= DateUtils.getResourceDate()
 
+
 			# Add additional headers
 			if parameters:
-				if 'ec' in parameters:				# Event Category
-					hds[C.hfEC] = parameters['ec']
+				if parameters.ec:
+					hds[C.hfEC] = str(parameters.ec)
 			
 		else:	
 			# raw	-> "data" contains a whole requests
@@ -464,8 +463,8 @@ class HttpServer(object):
 			# Actual sending the request
 			r = method(url, data = content, headers = hds, verify = CSE.security.verifyCertificateHttp)
 
-			# Construct CSERequest object from the result
-			resp = CSERequest(isResponse = True)
+			# Construct CSERequest response object from the result
+			resp = CSERequest(requestType = RequestType.RESPONSE)
 			resp.ct = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			resp.rsc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			resp.pc = RequestUtils.deserializeData(r.content, resp.ct)
@@ -519,12 +518,8 @@ class HttpServer(object):
 			result.request.rqi = originalRequest.rqi
 			result.request.rvi = originalRequest.rvi
 			result.request.vsi = originalRequest.vsi
+			result.request.ec  = originalRequest.ec
 	
-			# Add additional parameters
-			if ec := originalRequest.parameters.get(C.hfEC):												# Event Category, copy from the original request
-				result.request.parameters[C.hfEC] = ec
-	
-
 		#
 		#	Transform request to oneM2M request
 		#

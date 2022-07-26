@@ -8,14 +8,12 @@
 #
 
 from __future__ import annotations
-import re
 import urllib.parse
 from typing import Any, List, Tuple, cast, Dict
 from copy import deepcopy
 from threading import Lock
 
-
-from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, ReqResp, RequestCallback, RequestType, ResponseStatusCode, ResultContentType
+from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, RequestCallback, RequestType, ResponseStatusCode, ResultContentType
 from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
@@ -154,10 +152,9 @@ class RequestManager(object):
 
 		# Check content
 		if request.pc is None:
-			L.logDebug(dbg := f'Missing content/request in notification')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logDebug(f'Missing content/request in notification'))
 
-		return self.sendNotifyRequest(id, originator=originator, data=request)
+		return self.sendNotifyRequest(id, originator = originator, data = request)
 
 
 
@@ -169,19 +166,19 @@ class RequestManager(object):
 	def retrieveRequest(self, request:CSERequest) ->  Result:
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
-		if request.args.rt == ResponseType.blockingRequest:
+		if request.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.originator)
 
-		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		elif request.args.rt == ResponseType.flexBlocking:
+		elif request.rt == ResponseType.flexBlocking:
 			if self.flexBlockingBlocking:			# flexBlocking as blocking
 				return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result.errorResult(dbg = 'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = 'Unknown or unsupported ResponseType: {request.rt}')
 
 
 
@@ -197,20 +194,20 @@ class RequestManager(object):
 		if request.ty == None:
 			return Result.errorResult(dbg = 'missing or wrong resourceType in request')
 
-		if request.args.rt == ResponseType.blockingRequest:
+		if request.rt == ResponseType.blockingRequest:
 			res = CSE.dispatcher.processCreateRequest(request, request.originator)
 			return res
 
-		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		elif request.args.rt == ResponseType.flexBlocking:
+		elif request.rt == ResponseType.flexBlocking:
 			if self.flexBlockingBlocking:			# flexBlocking as blocking
 				return CSE.dispatcher.processCreateRequest(request, request.originator)
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 	#########################################################################
@@ -226,19 +223,19 @@ class RequestManager(object):
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
 
 		# Check contentType and resourceType
-		if request.args.rt == ResponseType.blockingRequest:
+		if request.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processUpdateRequest(request, request.originator)
 
-		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		elif request.args.rt == ResponseType.flexBlocking:
+		elif request.rt == ResponseType.flexBlocking:
 			if self.flexBlockingBlocking:			# flexBlocking as blocking
 				return CSE.dispatcher.processUpdateRequest(request, request.originator)
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 	#########################################################################
@@ -254,19 +251,19 @@ class RequestManager(object):
 		if request.id == CSE.cseRi:
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
 
-		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
+		if request.rt == ResponseType.blockingRequest or (request.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
 			return CSE.dispatcher.processDeleteRequest(request, request.originator)
 
-		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		elif request.args.rt == ResponseType.flexBlocking:
+		elif request.rt == ResponseType.flexBlocking:
 			if self.flexBlockingBlocking:			# flexBlocking as blocking
 				return CSE.dispatcher.processDeleteRequest(request, request.originator)
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 	#########################################################################
@@ -278,19 +275,19 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Check contentType and resourceType
-		if request.args.rt == ResponseType.blockingRequest:
+		if request.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processNotifyRequest(request, request.originator)
 
-		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		elif request.args.rt == ResponseType.flexBlocking:
+		elif request.rt == ResponseType.flexBlocking:
 			if self.flexBlockingBlocking:			# flexBlocking as blocking
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 	#########################################################################
@@ -328,21 +325,21 @@ class RequestManager(object):
 			return reqres
 
 		# Synchronous handling
-		if request.args.rt == ResponseType.nonBlockingRequestSynch:
+		if request.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(self._runNonBlockingRequestSync, name=f'request_{request.rqi}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(data = { 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
-		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
+		if request.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(self._runNonBlockingRequestAsync, name=f'request_{request.rqi}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(data = { 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
-		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result.errorResult(dbg = f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:
@@ -680,18 +677,17 @@ class RequestManager(object):
 				if req := self.unqueuePollingRequest(originator, requestID, reqType):
 					return Result(status = True, request = req, rsc = req.rsc)
 			# fall-through
-		L.logWarn(dbg := f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
-		return Result.errorResult(rsc = RC.requestTimeout, dbg = dbg)
+		return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logWarn(f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}'))
 
 
 	def queueRequestForPCH(	self, 
 							pchOriginator:str,
 							operation:Operation = Operation.NOTIFY,
-							parameters:Parameters = None,
 							data:Any = None,
 							ty:T = None,
 							rvi:str = None,
 							request:CSERequest = None,
+							parameters:CSERequest = None,
 							reqType:RequestType = RequestType.REQUEST,
 							originator:str = None) -> CSERequest:
 		"""	Queue a (incoming) `request` or `data` for a <PCH>. It can be retrieved via the target's <PCU> child resource.
@@ -713,14 +709,15 @@ class RequestManager(object):
 			request.id				= pchOriginator
 			request.op 				= operation
 			request.originator		= originator
-			request.ty 	= ty
+			request.ty 				= ty
 			request.ot				= DateUtils.getResourceDate()
 			request.rqi				= Utils.uniqueRI()
 			request.rvi				= rvi if rvi is not None else CSE.releaseVersion
 			request.pc 				= data
-			if parameters:
-				if 'ec' in parameters:			
-					request.parameters[C.hfEC] = parameters['ec']	# Event Category
+
+		# Copy additional parameter attributes
+		if parameters:
+			request.ec = parameters.ec
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
@@ -744,8 +741,7 @@ class RequestManager(object):
 		if (response := self.waitForPollingRequest(request.originator, request.rqi, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
 			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.rqi} rsc: {response.request.rsc}')
 			if (o1 := Utils.toSPRelative(response.request.originator)) != (o2 := Utils.toSPRelative(request.id)):
-				L.logWarn(dbg := f'Received originator: {o1} is different from original target originator: {o2}')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'Received originator: {o1} is different from original target originator: {o2}'))
 			return Result(status = True, rsc = response.request.rsc, request = response.request)
 		
 		return Result.errorResult(rsc = RC.requestTimeout, dbg = response.dbg)
@@ -783,7 +779,7 @@ class RequestManager(object):
 	# TODO id????
 
 
-	def sendRetrieveRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
+	def sendRetrieveRequest(self, uri:str, originator:str, data:Any = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri} id: {appendID}')
@@ -792,7 +788,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, parameters = parameters, originator = originator, rvi = rvi)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, originator = originator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -805,7 +801,6 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
@@ -815,17 +810,15 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
 
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, uri:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False, noAccessIsError:bool = False) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T = None, data:Any = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False, noAccessIsError:bool = False) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri} id: {appendID}')
@@ -835,9 +828,9 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters = parameters, request = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, request = data, originator = originator, rvi = rvi)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters = parameters, data = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE,  data = data, originator = originator, rvi = rvi)
 
 				return self.waitForResponseToPCH(request)
 
@@ -852,7 +845,6 @@ class RequestManager(object):
 													  originator,
 													  ty,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
@@ -863,17 +855,15 @@ class RequestManager(object):
 													  originator,
 													  ty,
 													  data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
 		
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
+	def sendUpdateRequest(self, uri:str, originator:str, data:Any, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri} id: {appendID}')
@@ -883,9 +873,9 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters = parameters, request = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, request = data, originator = originator, rvi = rvi)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters = parameters, data = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, data = data, originator = originator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -898,7 +888,6 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
@@ -908,17 +897,15 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
 		
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendDeleteRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
+	def sendDeleteRequest(self, uri:str, originator:str, data:Any = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri} id: {appendID}')
@@ -927,7 +914,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch.getOriginator(), Operation.DELETE, parameters = parameters, originator = originator, rvi = rvi)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.DELETE, originator = originator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -940,7 +927,6 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
@@ -950,17 +936,15 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  data = data,
-													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
 
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendNotifyRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', noAccessIsError:bool = False, raw:bool = False) -> Result:
+	def sendNotifyRequest(self, uri:str, originator:str, data:Any = None, parameters:CSERequest = None, ct:ContentSerializationType = None, appendID:str = '', noAccessIsError:bool = False, raw:bool = False) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} + id: {appendID} for Originator: {originator}')
@@ -973,9 +957,19 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.NOTIFY, parameters = parameters, request = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), 
+													  Operation.NOTIFY, 
+													  request = data, 
+													  parameters = parameters, 
+													  originator = originator,
+													  rvi = rvi)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.NOTIFY, parameters = parameters, data = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), 
+													  Operation.NOTIFY,
+													  data = data, 
+  													  parameters = parameters, 
+													  originator = originator,
+													  rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -1010,8 +1004,7 @@ class RequestManager(object):
 				CSE.event.acmeNotification(url, originator, data)	# type: ignore [attr-defined]
 				return Result.successResult()
 
-			L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
 		
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
@@ -1046,7 +1039,7 @@ class RequestManager(object):
 		"""
 		# ! Cannot be in RequestUtils bc to prevent circular import of CSE and validator
 
-		def gget(dct:dict, attribute:str, default:Any = None, attributeType:BasicType = None, greedy:bool = True) -> Any:
+		def gget(dct:dict, attribute:str, default:Any = None, attributeType:BasicType = None, checkSubType:bool = False, greedy:bool = True) -> Any:
 			"""	Local helper to greedy check and return a key/value from a dictionary.
 
 				If `dct` is None or `attribute` couldn't be found then the `default` is returned.
@@ -1059,7 +1052,19 @@ class RequestManager(object):
 					del dct[attribute]
 				if not (res := CSE.validator.validateAttribute(attribute, value, attributeType, rtype = T.REQRESP)).status:
 					raise ValueError(f'attribute: {attribute}, value: {value} : {res.dbg}')
-				return res.data[1]	#type: ignore [index]
+					
+				newValue = res.data[1] #type: ignore [index]
+
+				# Test sub-values if they are a list
+				if attributeType == BasicType.list and checkSubType:
+					newValueList = []
+					for v in newValue:
+						if not (res := CSE.validator.validateAttribute(attribute, v, rtype = T.REQRESP)).status:
+							raise ValueError(f'attribute: {attribute}, value: {value} : {res.dbg}')
+						newValueList.append(res.data[1]) #type: ignore [index]
+					return newValueList
+
+				return newValue	#type: ignore [index]
 			return default
 
 
@@ -1072,50 +1077,42 @@ class RequestManager(object):
 			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
 				cseRequest.rqi = rqi
 			else:
-				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('Request Identifier parameter is mandatory in request'))
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):
-				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.')
-				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'))
 			else:
 				if rvi in CSE.supportedReleaseVersions:
 					cseRequest.rvi = rvi	
 				else:
-					L.logDebug(dbg := f'Release version unsupported: {rvi}')
-					errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = L.logDebug(f'Release version unsupported: {rvi}'))
 		
 			# OP - operation
 			if (op := gget(cseRequest.originalRequest, 'op', greedy = False)) is not None:	# op is an int
 				if Operation.isvalid(op):
 					cseRequest.op = Operation(op)
 				else:
-					L.logDebug(dbg := f'Unknown/unsupported operation: {op}')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Unknown/unsupported operation: {op}'))
 			elif not isResponse:
-				L.logDebug(dbg := 'operation parameter is mandatory in request')
-				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('operation parameter is mandatory in request'))
 
 			# TY - resource type
 			if (ty := gget(cseRequest.originalRequest, 'ty', greedy = False)) is not None:	# ty is an int
 				if T.has(ty):
 					cseRequest.ty = T(ty)
 				else:
-					L.logDebug(dbg := f'Unknown/unsupported resource type: {ty}')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Unknown/unsupported resource type: {ty}'))
 
 			# FR - originator 
 			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == T.AE and cseRequest.op == Operation.CREATE):
-				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
-				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('From/Originator parameter is mandatory in request'))
 			else:
 				cseRequest.originator = fr
 
 			# TO - target
 			if not (to := gget(cseRequest.originalRequest, 'to', greedy = False)) and not isResponse:
-				L.logDebug(dbg := 'To/Target parameter is mandatory in request')
-				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('To/Target parameter is mandatory in request'))
 			else:
 				cseRequest.to = to
 				if to:
@@ -1125,26 +1122,22 @@ class RequestManager(object):
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
-				L.logDebug(dbg := 'missing identifier (no id nor srn)')
-				errorResult = Result.errorResult(rsc = RC.notFound, request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(rsc = RC.notFound, request = cseRequest, dbg = L.logDebug('missing identifier (no id nor srn)'))
 
 			# OT - originating timestamp
 			if ot := gget(cseRequest.originalRequest, 'ot', greedy = False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
-					L.logDebug(dbg := 'Error in provided Originating Timestamp')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Originating Timestamp'))
 				else:
 					cseRequest.ot = ot
 
 			# RQET - requestExpirationTimestamp
 			if rqet := gget(cseRequest.originalRequest, 'rqet', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
-					L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Request Expiration Timestamp'))
 				else:
 					if _ts < DateUtils.utcTime():
-						L.logDebug(dbg := 'Request timeout')
-						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
+						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = L.logDebug('Request timeout'))
 					else:
 						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
 						cseRequest.rqet = DateUtils.toISO8601Date(_ts)
@@ -1152,20 +1145,17 @@ class RequestManager(object):
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.originalRequest, 'rset', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rset)) == 0.0:
-					L.logDebug(dbg := 'Error in provided Result Expiration Timestamp')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Result Expiration Timestamp'))
 				else:
 					if _ts < DateUtils.utcTime():
-						L.logDebug(dbg := 'Result timeout')
-						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
+						errorResult = Result.errorResult(request = cseRequest, rsc = RC.requestTimeout, dbg = L.logDebug('Result timeout'))
 					else:
 						cseRequest.rset = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
-					L.logDebug(dbg := 'Error in provided Operation Execution Time')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Operation Execution Time'))
 				else:
 					cseRequest.oet = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
@@ -1187,7 +1177,7 @@ class RequestManager(object):
 				cseRequest.vsi = vsi	
 
 			# DRT - Desired Identifier Result Type
-			cseRequest.args.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy = False))	# 1=strucured, 2=unstructured
+			cseRequest.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy = False))	# 1=strucured, 2=unstructured
 
 			#
 			# Transfer filterCriteria: handling, conditions and attributes
@@ -1196,12 +1186,12 @@ class RequestManager(object):
 			fc = deepcopy(cseRequest.originalRequest.get('fc'))	# copy because we will greedy consume attributes here
 
 			# FU - Filter Usage
-			cseRequest.args.fu = FilterUsage(gget(fc, 'fu', FilterUsage.conditionalRetrieval))
-			if cseRequest.args.fu == FilterUsage.discoveryCriteria and cseRequest.op == Operation.RETRIEVE:	# correct operation if necessary
+			cseRequest.fc.fu = FilterUsage(gget(fc, 'fu', FilterUsage.conditionalRetrieval))
+			if cseRequest.fc.fu == FilterUsage.discoveryCriteria and cseRequest.op == Operation.RETRIEVE:	# correct operation if necessary
 				cseRequest.op = Operation.DISCOVERY
 
 			# FO - Filter Operation
-			cseRequest.args.fo = FilterOperation(gget(fc, 'fo', FilterOperation.AND))
+			cseRequest.fc.fo = FilterOperation(gget(fc, 'fo', FilterOperation.AND))
 
 
 			# RCN Result Content Type
@@ -1209,11 +1199,10 @@ class RequestManager(object):
 				try:
 					rcn = ResultContentType(rcn)
 				except ValueError as e:
-					L.logDebug(dbg := f'Error validating rcn: {str(e)}')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Error validating rcn: {str(e)}'))
 			else:
 				# assign defaults when not provided
-				if cseRequest.args.fu != FilterUsage.discoveryCriteria:	
+				if cseRequest.fc.fu != FilterUsage.discoveryCriteria:	
 					# Different defaults for each operation
 					if cseRequest.op in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
 						rcn = ResultContentType.attributes
@@ -1231,69 +1220,66 @@ class RequestManager(object):
 																	ResultContentType.childResourceReferences,
 																	ResultContentType.childResources,
 																	ResultContentType.originalResource ]:
-				L.logDebug(dbg := f'rcn: {rcn} not allowed in RETRIEVE operation')
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in RETRIEVE operation'))
 			elif cseRequest.op == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 																	ResultContentType.discoveryResultReferences ]:
-				L.logDebug(dbg := f'rcn: {rcn} not allowed in DISCOVERY operation')
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in DISCOVERY operation'))
 			elif cseRequest.op == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.hierarchicalAddress,
 																	ResultContentType.hierarchicalAddressAttributes,
 																	ResultContentType.nothing ]:
-				L.logDebug(dbg := f'rcn: {rcn} not allowed in CREATE operation')
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in CREATE operation'))
 			elif cseRequest.op == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.nothing ]:
-				L.logDebug(dbg := f'rcn: {rcn} not allowed in UPDATE operation')
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in UPDATE operation'))
 			elif cseRequest.op == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.nothing,
 																	ResultContentType.attributesAndChildResources,
 																	ResultContentType.childResources,
 																	ResultContentType.attributesAndChildResourceReferences,
 																	ResultContentType.childResourceReferences ]:
-				L.logDebug(dbg := f'rcn: {rcn} not allowed in DELETE operation')
-				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
-			cseRequest.args.rcn = rcn
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in DELETE operation'))
+			cseRequest.rcn = rcn
 
 
 			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
 			if (rt := gget(cseRequest.originalRequest, 'rt', greedy = False)) is not None: # rt is an int
-				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
+				cseRequest.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
 				# TODO nu should only be set when responseType=non-blocking async
 				if (nu := gget(rt, 'nu', greedy = False)) is not None:
 					cseRequest.rtu = nu	#  TODO validate for url?
 
 			# RP - resultPersistence (also as timestamp)
 			if (rp := gget(cseRequest.originalRequest, 'rp', greedy=False)): 
-				cseRequest.args.rp = rp
+				cseRequest.rp = rp
 				if (rpts := DateUtils.toISO8601Date(DateUtils.fromAbsRelTimestamp(rp))) == 0.0:
-					L.logDebug(dbg := f'"{rp}" is not a valid value for rp')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'"{rp}" is not a valid value for rp'))
 				else:
-					cseRequest.args.rpts = rpts
+					cseRequest._rpts = rpts
 			else:
-				cseRequest.args.rp = None
-				cseRequest.args.rpts = None
+				cseRequest.rp = None
+				cseRequest._rpts = None
 
 			#
 			#	Discovery and FilterCriteria
 			#
-			if fc:	# only when there is a filterCriteria
+			if fc:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
 				for h in [ 'lim', 'lvl', 'ofst', 'arp' ]:
 					if (v := gget(fc, h)) is not None:	# may be int
-						cseRequest.args.handling[h] = v
-				for h in [ 'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr', 'cty', 'lbl' ]:
+						cseRequest.fc.set(h, v)
+				for h in [ 'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr' ]:
 					if (v := gget(fc, h)) is not None:	# may be int
-						cseRequest.args.conditions[h] = v
-				if 'ty' in fc:	# Special handling for ty since this will be an array here
-					if (v := gget(fc, 'ty', attributeType=BasicType.list)) is not None:	# may be int
-						cseRequest.args.conditions['ty'] = v
-				for h in list(fc.keys()):
-					cseRequest.args.attributes[h] = gget(fc, h)
+						cseRequest.fc.set(h, v)
+				for h in [ 'lbl', 'cty' ]: # different handling of list attributes
+					if (v := gget(fc, h, attributeType = BasicType.list, checkSubType = False)) is not None:
+						cseRequest.fc.set(h, v)
+				for h in [ 'ty' ]: # different handling of list attributes that are normally non-lists
+					if (v := gget(fc, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
+						cseRequest.fc.set(h, v)
+				for h in list(fc.keys()): # All remaining attributes
+					cseRequest.fc.attributes[h] = gget(fc, h)
 
 			# Copy rsc
 			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy = False)): 
@@ -1303,8 +1289,7 @@ class RequestManager(object):
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
 			if not (pc := cseRequest.originalRequest.get('pc')):
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
-					L.logDebug(dbg := f'Missing primitive content or body in request for operation: {cseRequest.op}')
-					errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'))
 			else:
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
 				if not (res := CSE.validator.validatePrimitiveContent(cseRequest.pc)).status:
@@ -1314,8 +1299,8 @@ class RequestManager(object):
 
 		# end of try..except
 		except ValueError as e:
-			L.logDebug(dbg := f'Error getting or validating attribute/parameter: {str(e)}')
-			return Result.errorResult(request = cseRequest, dbg = dbg)
+			
+			return Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Error getting or validating attribute/parameter: {str(e)}'))
 
 		# Return the error or success result 
 		return errorResult if errorResult else Result(status = True, rsc = cseRequest.rsc, request = cseRequest, data = cseRequest.pc)

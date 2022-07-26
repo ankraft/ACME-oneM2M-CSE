@@ -8,8 +8,6 @@
 #
 
 from __future__ import annotations
-from ast import Call
-from operator import sub
 import sys, copy
 from typing import Callable, Union, Any, cast
 from threading import Lock, current_thread
@@ -298,7 +296,7 @@ class NotificationManager(object):
 			maxAgeSubscription:float = None
 
 			# Check for maxAge attribute provided in the request
-			if (maxAgeS := request.args.attributes.get('ma')) is not None:	# TODO attribute name
+			if (maxAgeS := request.fc.attributes.get('ma')) is not None:	# TODO attribute name
 				try:
 					maxAgeRequest = DateUtils.fromDuration(maxAgeS)
 				except Exception as e:
@@ -954,10 +952,12 @@ class NotificationManager(object):
 			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
-			additionalParameters = None
+			parameters:CSERequest = None
 			if ln:
 				notifications = notifications[-1:]
-				additionalParameters = { 'ec' : str(EventCategory.Latest.value) }	# event category
+				# Add event category
+				parameters = CSERequest()
+				parameters.ec = EventCategory.Latest.value
 
 			# Aggregate and send
 			notificationRequest = {
@@ -981,9 +981,9 @@ class NotificationManager(object):
 				
 			# Send the request
 			if not CSE.request.sendNotifyRequest(nu, 
-													originator = CSE.cseCsi,
-													data = notificationRequest, 
-													parameters = additionalParameters).status:
+												 originator = CSE.cseCsi,
+												 data = notificationRequest,
+												 parameters = parameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
 			if nse:

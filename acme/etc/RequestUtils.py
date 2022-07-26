@@ -9,7 +9,6 @@
 
 
 from __future__ import annotations
-from urllib import request
 import cbor2, json
 from typing import Any, cast
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
@@ -158,11 +157,11 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	if inResult.request.vsi:					# copy from the original request
 		req['vsi'] = inResult.request.vsi
 	
-	# Add additional parameters
-	if inResult.request.parameters:
-		if (ec := inResult.request.parameters.get(C.hfEC)):			# Event Category, copy from the original request
-			req['ec'] = ec
-	
+	# Event Category
+	if inResult.request.ec:
+		req['ec'] = inResult.request.ec
+
+
 	# If the response contains a request (ie. for polling), then add that request to the pc
 	pc = None
 	# L.isDebug and L.logDebug(inResult)

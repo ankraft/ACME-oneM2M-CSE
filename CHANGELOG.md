@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
 - [CSE] *Originating Timestamp* are only added to responses when present in the request.
+- [CSE] Refactored and simplified request message attribute handling. Improved attribute validations and discovery. 
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 
 
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Adding default value when removing &lt;subscription>'s *enc* attribute in an UPDATE.
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
+- [WEB] Improved handling of SP-relative resource IDs.
 
 
 ## [0.10.2] - 2022-07-20

@@ -16,7 +16,7 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType as CST, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType as CST, RequestType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -123,7 +123,7 @@ class MQTTClientHandler(MQTTHandler):
 			return
 		
 		# Add it to a response queue in the manager
-		dissectResult.request.isResponse = True
+		dissectResult.request.requestType = RequestType.RESPONSE
 		self.mqttClient.addResponse(dissectResult, topic)
 	
 
@@ -386,7 +386,7 @@ class MQTTClient(object):
 						url:str, originator:str,
 						ty:T = None, 
 						data:JSON = None,
-						parameters:Parameters = None, 
+						parameters:CSERequest = None, 
 						ct:CST = None, 
 						rvi:str = None,
 						raw:bool = False) -> Result:	 # type: ignore[type-arg]
@@ -418,7 +418,10 @@ class MQTTClient(object):
 		req.request.ot			= DateUtils.getResourceDate()
 		req.rsc					= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct			= ct if ct else CSE.defaultSerialization 	# get the serialization
-		req.request.parameters	= parameters
+
+		# Add additional parameters. This is a CSERequest
+		if parameters:
+			req.request.ec = parameters.ec
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL

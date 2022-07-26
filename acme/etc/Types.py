@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, astuple
-import enum
 from typing import Tuple, cast, Dict, Any, List, Union
 from enum import IntEnum,  auto
 from http import HTTPStatus
@@ -1255,13 +1254,9 @@ class Result:
 				self.request.mediaType = originalRequest.mediaType
 			if not self.request.originator:
 				self.request.originator = originalRequest.originator
-				
-			# TODO more headers?
-			if originalRequest.parameters:
-				for k,v in originalRequest.parameters.items():	# don't overwrite existing parameters
-					if k not in self.request.parameters:
-						self.request.parameters[k] = v
-
+			if not self.request.ec:
+				self.request.ec = originalRequest.ec
+			
 
 # Result instance to be re-used all over the place
 _successResult = Result(status = True)
@@ -1269,7 +1264,7 @@ _successResult = Result(status = True)
 
 ##############################################################################
 #
-#	Requests
+#	Request and Response structures
 #
 
 class RequestType(ACMEIntEnum):
@@ -1287,23 +1282,128 @@ class RequestType(ACMEIntEnum):
 
 
 @dataclass
-class RequestArguments:
-	fu:FilterUsage 					= FilterUsage.conditionalRetrieval
-	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
-	fo:FilterOperation 				= FilterOperation.AND
-	rcn:ResultContentType 			= ResultContentType.discoveryResultReferences
-	rt:ResponseType					= ResponseType.blockingRequest 					# response type
-	rp:str 							= None 											# result persistence
-	rpts:str 						= None 											# ... as a timestamp (internal)
-	handling:Conditions 			= field(default_factory=dict)
-	conditions:Conditions 			= field(default_factory=dict)
-	attributes:Parameters 			= field(default_factory=dict)
+class FilterCriteria:
+	"""	Sub-structure for CSERequest.
+	
+		It contains the filter criteria and helper attributes.
+	"""
+
+	# Result handling
+	fu:FilterUsage = FilterUsage.conditionalRetrieval
+	""" Filter usage (Default: conditional retrieval). """
+
+	fo:FilterOperation = None
+	""" Filter Operation (default: AND). """
+
+	lim:int = None
+	""" Limit filter criterion (default: sys.maxsize). """
+
+	lvl:int = None
+	""" Level filter criterion (default: sys.maxsize). """
+
+	ofst:int = None
+	"""	Offset filter criterion (default: 1). """
+
+	arp:str = None
+	""" applyRelativePath (default: None). """
+
+	# Conditions
+	crb:str = None
+	""" Created before (default: None). """
+
+	cra:str = None
+	""" Created after (default: None). """
+
+	ms:str = None
+	""" Modified since (default: None). """
+
+	us:str = None
+	""" Unmodified since (default: us). """
+
+	sts:int = None
+	""" State tag smaller (default: None). """
+	
+	stb:int = None
+	""" State tag bigger (default: None). """
+
+	exb:str = None
+	""" Expire before (default: None). """
+	
+	exa:str = None
+	""" Expire after (default: None). """
+
+	lbq:str = None
+	""" Labels query (default: None). """	
+
+	sza:int = None
+	""" Size above (default: None). """
+
+	szb:int = None
+	""" Size before (default: None). """
+
+	catr:str = None
+	""" Child attribute (default: None). """
+
+	patr:str = None
+	""" Parent attribute (default: None). """
+
+	cty:list = None
+	""" List of content types (default: None). """
+
+	ty:list = None
+	""" List of resource types (default: None). """
+
+	lbl:list = None
+	""" List of labels (default: None). """
+
+	# Other filter attributes
+	attributes:Parameters = field(default_factory = dict)
+	""" All other remaining filter resource attributes. """
+
+
+	def set(self, name:str, value:Any) -> None:
+		"""	Set a Filter Criteria attribute by it's name. If it is not a predefined
+			attribute, then add it to the *attributes* attrribute.
+			
+			Args:
+				name: Name of the attribute.
+				value: Value of the attribute.
+		"""
+		if hasattr(self, name):
+			setattr(self, name, value)
+	
+
+	def criteriaAttributes(self) -> dict:
+		"""	Return all the set Filter Criteria attributes, ie. that are not None.
+			The result doesn't include handling attributes, such as 'fu' or 'fo'.
+			
+			Return:
+				Dictionary with set Filter Criteria attributes.
+		"""
+		return { k:v 
+				 for k, v in self.__dict__.items() 
+				 if k is not None and k not in [ 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes' ] and v is not None
+			   }
+
+
+	def __str__(self) -> str:
+		"""	String representation of the Filter Criteria attributes.
+			
+			Return:
+				String representation.
+		"""
+		return ', '.join([ f'{k}: {v}' 
+						   for k, v in self.__dict__.items() 
+						   if k is not None and k != 'attributes' and v is not None ])
+
 
 @dataclass
 class CSERequest:
-	"""	Structure that holds a Request (or Response) to a CSE.
+	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
 	"""
-	args:RequestArguments 			= field(default_factory=RequestArguments)
+
+	fc:FilterCriteria = field(default_factory = FilterCriteria)
+	""" Filter Criteria complex structure. """
 	
 	# ID handling
 	to:str = None
@@ -1325,6 +1425,9 @@ class CSERequest:
 	originator:str = None 
 	"""	Request originator (from, X-M2M-Origin). """
 
+	rsc:ResponseStatusCode = ResponseStatusCode.UNKNOWN
+	""" Response Status Code. """
+
 	rqi:str = None
 	"""	Request Identifier (X-M2M-RI). """
 	
@@ -1333,6 +1436,21 @@ class CSERequest:
 	
 	ty:ResourceTypes = None
 	""" Resource type. """
+
+	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	"""	Desired Indentifier Result Type (default: structured). """
+
+	rcn:ResultContentType = ResultContentType.discoveryResultReferences
+	""" Result Content Type. """
+
+	rt:ResponseType = ResponseType.blockingRequest
+	""" Response Type (default: blocking request)."""
+
+	rp:str = None
+	""" Result Persistence. """
+
+	_rpts:str = None
+	""" Internal: Result Persistence (rp) as a timestamp. """
 
 	vsi:str = None
 	"""	Vendor Information (X-M2M-VSI). """
@@ -1357,28 +1475,27 @@ class CSERequest:
 
 	ct:ContentSerializationType = None
 	"""	Content Serialization Type. """
+
+	ec:int = None
+	"""	Event Category. """
+
+	pc:JSON = None
+	""" The request's primitive content as a dictionary. """
 	
 	# HTTP specifics
 
 	mediaType:str = None
 	""" Transmitted media type (http: 'Content-Type'). """
 
-	# Generics
+	# Generics, internals
 	originalData:bytes = None 
 	""" The request's original data. """
 
 	originalRequest:JSON = None
 	""" The original request after dissection as a dictionary. """
 
-
-
-
-
-	pc:JSON 						= None	# The request's primitive content as a dictionary
-	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
-	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
-	requestType:RequestType			= RequestType.NOTSET
-	isResponse:bool					= False	# Default this is a request
+	requestType:RequestType	= RequestType.NOTSET
+	""" The struture is for a request or a response. """
 
 
 	#
@@ -1450,8 +1567,8 @@ FlexContainerSpecializations = Dict[str, str]
 #
 
 
-Parameters=Dict[str,str]
-Conditions=Dict[str, Any]
+Parameters=Dict[str, str]
+Attributes=Dict[str, Any]
 JSON=Dict[str, Any]
 JSONLIST=List[JSON]
 ReqResp=Dict[str, Union[int, str, List[str], JSON]]
