@@ -46,9 +46,12 @@ function sendRequest(method, node, url, originator, callback, errorCallback) {
       }
     }
   }
-  while(url.charAt(0) === '/') {  // remove possible multiple leading /
-    url = url.slice( 1 ); 
+
+  // Translate SP-relative an address to HTTP repesentation
+  if (url.charAt(0) == '/') {
+  	url = '~' + url;
   }
+
   request.open(method, "/"+url, true );     
   request.setRequestHeader("X-M2M-Origin", originator);
   request.setRequestHeader("Accept", "application/json");
