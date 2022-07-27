@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from zipapp import create_archive
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils, DateUtils
 from ..services import CSE
@@ -254,9 +253,10 @@ class FCNT(AnnounceableResource):
 			if attr == 'at':
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		resource = Factory.resourceFromDict(resDict={ self.tpe : dct }, pi=self.ri, ty=T.FCI).resource
-		CSE.dispatcher.createResource(resource, originator=originator)
-		resource['cs'] = self.cs
+		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = T.FCI).resource
+		CSE.dispatcher.createResource(resource, originator = originator)
+		resource.setAttribute('cs', self.cs)
+		resource.setAttribute('org', originator)
 
 		# Check for mia handling
 		if self.mia is not None:	# mia is an int

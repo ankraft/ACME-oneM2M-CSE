@@ -31,7 +31,7 @@ class FCI(Resource):
 
 		# Resource attributes
 		'cs': None,
-		'or': None
+		'org': None
 	}
 
 
