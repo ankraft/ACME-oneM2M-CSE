@@ -261,7 +261,10 @@ class Importer(object):
 					for entry in attributeDefs:
 						if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
 							return False
-						# L.isDebug and L.logDebug(attributePolicy)
+						#L.isDebug and L.logDebug(attributePolicy)
+						if not attributePolicy.rtypes:
+							L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace = False)
+							return False
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
 							CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
@@ -277,7 +280,7 @@ class Importer(object):
 					if p.typeName == each.ctype:	# found a definition
 						break
 				else:
-					L.logErr(f'No complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+					L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
 					return False
 			elif p.type == BT.list and p.ltype is not None:
 				if p.ltype == BT.complex:
@@ -451,7 +454,7 @@ class Importer(object):
 		# re-type an anonymous dict to a normal dict
 		if typ == BT.adict:
 			typ = BT.dict
-		
+
 
 
 		#	CHeck whether the mandatory rtypes field is set
