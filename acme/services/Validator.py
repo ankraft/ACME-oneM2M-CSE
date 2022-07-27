@@ -8,6 +8,8 @@
 #
 
 from __future__ import annotations
+import base64
+import binascii
 from copy import deepcopy
 import re
 from typing import Any, Dict, Tuple
@@ -217,7 +219,7 @@ class Validator(object):
 			'pc' : AttributePolicy(type=BT.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
 			'to' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
 			'fr' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
-			'or' : AttributePolicy(type=BT.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='or', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
+			'ot' : AttributePolicy(type=BT.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ot', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
 			'rset' : AttributePolicy(type=BT.absRelTimestamp, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rset', lname='resultExpirationTimestamp', namespace='m2m', tpe='m2m:rset'),
 			'ec' : AttributePolicy(type=BT.positiveInteger,   cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ec', lname='eventCategory', namespace='m2m', tpe='m2m:ec'),
 			'cnst' : AttributePolicy(type=BT.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnst', lname='contentStatus', namespace='m2m', tpe='m2m:cnst'),
@@ -600,6 +602,13 @@ class Validator(object):
 				return Result.errorResult(dbg = f'must be an ISO duration: {str(e)}')
 			return Result(status = True, data = (dataType, value))
 		
+		if dataType == BT.base64:
+			try:
+				base64.b64decode(value, validate = True)
+			except binascii.Error as e:
+				return Result.errorResult(dbg = f'value is not base64-encoded: {str(e)}')
+			return Result(status = True, data = (dataType, value))
+
 		if dataType == BT.any:
 			return Result(status = True, data = (dataType, value))
 		

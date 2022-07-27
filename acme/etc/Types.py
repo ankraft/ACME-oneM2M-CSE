@@ -107,6 +107,7 @@ class ResourceTypes(ACMEIntEnum):
 	CSR				= 16
 	REQ 			= 17
 	SUB				= 23
+	SMD				= 24
 	FCNT	 		= 28
 	TS				= 29
 	TSI   			= 30
@@ -156,6 +157,7 @@ class ResourceTypes(ACMEIntEnum):
 	MGMTOBJAnnc 	= 10013
 	NODAnnc 		= 10014
 	CSRAnnc 		= 10016
+	SMDAnnc			= 10024
 	FCNTAnnc 		= 10028
 	TSAnnc			= 10029
 	TSIAnnc			= 10030
@@ -277,6 +279,7 @@ ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.MGMTOBJ	: ResourceTypes.MGMTOBJAnnc,
 	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
 	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
+	ResourceTypes.SMD		: ResourceTypes.SMDAnnc,
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
@@ -302,7 +305,7 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
 	ResourceTypes.CINAnnc,
 	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, 
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.SMDAnnc, ResourceTypes.TSAnnc, 
 	ResourceTypes.TSBAnnc, ResourceTypes.TSIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
@@ -315,7 +318,7 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
+	ResourceTypes.CSRAnnc, ResourceTypes.SMDAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
 	ResourceTypes.TSBAnnc
 ]
 
@@ -326,8 +329,8 @@ ResourceTypes._supportedResourceTypes = [							#  type: ignore
 	ResourceTypes.CIN, ResourceTypes.CRS, 
 	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
 	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
-	ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, ResourceTypes.TSI,
-	ResourceTypes.TSB, 
+	ResourceTypes.SMD, ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, 
+	ResourceTypes.TSI, ResourceTypes.TSB, 
 ] + ResourceTypes._announcedResourceTypes							#  type: ignore
 
 
@@ -373,10 +376,11 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.NOD			: 'm2m:nod',
 		ResourceTypes.PCH			: 'm2m:pch',
 		ResourceTypes.REQ			: 'm2m:req',
+		ResourceTypes.SMD			: 'm2m:smd',
+		ResourceTypes.SUB			: 'm2m:sub',
 		ResourceTypes.TS 			: 'm2m:ts',
 		ResourceTypes.TSB 			: 'm2m:tsb',
 		ResourceTypes.TSI 			: 'm2m:tsi',
-		ResourceTypes.SUB			: 'm2m:sub',
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
 		ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
@@ -388,6 +392,7 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
 		ResourceTypes.NODAnnc 		: 'm2m:nodA',
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
+		ResourceTypes.SMDAnnc 		: 'm2m:smdA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.TSAnnc 		: 'm2m:tsA',
 		ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
@@ -456,6 +461,7 @@ class BasicType(ACMEIntEnum):
 	complex 		= auto()
 	enum	 		= auto()
 	adict			= auto()	# anoymous dict structure
+	base64 			= auto()
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 
