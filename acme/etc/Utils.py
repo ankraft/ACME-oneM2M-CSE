@@ -437,11 +437,27 @@ def toSPRelative(originator:str) -> str:
 		Args:
 			An originator.
 		Return:
-			A string in the format */<csi>/<originator*.
+			A string in the format */<csi>/<originato>*.
 	"""
 	if not isSPRelative(originator):
 		return  f'{CSE.cseCsi}/{originator}'
 	return originator
+
+
+def toCSERelative(id:str) -> str:
+	"""	Convert an id to CSE-Relative format.
+
+		Args:
+			An ID in SP-relative or absolute format.
+		Return:
+			An ID in CSE-Relative format.
+	"""
+	_e = id.split('/')
+	if isSPRelative(id):
+		return '/'.join(_e[2:])
+	elif isAbsolute(id):
+		return '/'.join(_e[3:])
+	return id
 
 
 def compareIDs(id1:str, id2:str) -> bool:

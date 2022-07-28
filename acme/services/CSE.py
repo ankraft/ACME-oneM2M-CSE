@@ -62,9 +62,16 @@ validator:Validator 							= None
 
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
+
 cseCsi:str										= None
-cseCsiRelative:str								= None	# Without the leading /
+""" The CSE-ID """
+
+cseCsiRelative:str								= None
+""" The CSE-ID without the leading /. """
+
 cseCsiSlash:str  								= None
+""" The CSE-ID with an additional trailing /. """
+
 cseSpid:str										= None
 cseRi:str 										= None
 cseRn:str										= None

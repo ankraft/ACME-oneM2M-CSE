@@ -83,6 +83,12 @@ class SecurityManager(object):
 		if originator is None or originator == CSE.cseOriginator or originator.endswith(f'/{CSE.cseOriginator}') and self.fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
+		
+		# Remove CSE-ID if this is the same CSE
+		if Utils.isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
+			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting to CSE-Relative format.')
+			originator = Utils.toCSERelative(originator)
+			L.isDebug and L.logDebug(f'Converted originator: {originator}')
 	
 		if ty is not None:	# ty is an int
 			# Some Separate	 tests for some types
@@ -210,14 +216,15 @@ class SecurityManager(object):
 				# Check custodian attribute
 				if custodian := resource.cstn:
 					if custodian == originator:	# resource.custodian == originator -> all access
-						L.isDebug and L.logDebug('Allow access for custodian')
+						L.isDebug and L.logDebug(f'Allow access for custodian: {custodian}')
 						return True
 					# When custodiabn is set, but doesn't match the originator then fall-through to fail
 					
 				# Check resource creator
-				elif (creator := resource.getOriginator()) and creator == originator:
+				elif (creator := resource.getOriginator()) == originator:
 					L.isDebug and L.logDebug('Allow access for creator')
 					return True
+				L.isDebug and L.logDebug(f'Resource creator: {creator} != originator: {originator}')
 				
 				# Fall-through to fail
 
