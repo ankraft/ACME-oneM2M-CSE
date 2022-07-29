@@ -118,7 +118,7 @@ class TimeManager(object):
 					'ctm' : self.getCSETimestamp()
 				}
 			}
-			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu)
+			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu, originator = CSE.cseCsi)
 			return True
 
 		

@@ -358,7 +358,8 @@ class HttpServer(object):
 	def sendHttpRequest(self, 
 						operation:Operation, 
 						url:str, 
-						originator:str, 
+						originator:str,
+						to:str,
 						ty:T = None, 
 						data:Any = None, 
 						parameters:CSERequest = None, 
@@ -373,7 +374,7 @@ class HttpServer(object):
 		method:Callable = self.operation2method[operation]
 
 		# Make the URL a valid http URL (escape // and ///)
-		url = RequestUtils.toHttpUrl(url)
+		url = RequestUtils.toHttpUrl(url + to) if to else RequestUtils.toHttpUrl(url)
 
 		# get the serialization
 		ct = CSE.defaultSerialization if not ct else ct

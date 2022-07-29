@@ -443,6 +443,7 @@ class NotificationManager(object):
 			}
 			self.sendNotificationWithDict(dct, 
 										  crs.nu, 
+										  originator = CSE.cseCsi,
 										  background = True,
 										  preFunc = lambda target: self.countSentReceivedNotification(crs, target),
 										  postFunc = lambda target: self.countSentReceivedNotification(crs, target, isResponse = True)

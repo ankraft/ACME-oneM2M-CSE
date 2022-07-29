@@ -362,14 +362,16 @@ class RequestManager(object):
 
 		# The result contains the request resource  (the one from the actual operation).
 		# So we can just copy the individual attributes
-		originator = result.resource['ors/fr']
+		# originator = result.resource['ors/fr']
+		originator = CSE.cseCsi
 		responseNotification = {
 			'm2m:rsp' : {
 				'rsc' : result.resource['ors/rsc'],
 				'rqi' : result.resource['ors/rqi'],
 				'pc'  : result.resource['ors/pc'],
 				'to'  : result.resource['ors/to'],
-				'fr'  : originator,
+				# 'fr'  : originator,
+				'fr'  : result.resource['ors/fr'],
 				'rvi' : request.rvi
 			}
 		}
@@ -406,8 +408,8 @@ class RequestManager(object):
 		reqres['ors'] = {	# operationResult
 			'rsc'	: operationResult.rsc,
 			'rqi'	: reqres.rid,
-			'to'	: request.id,
-			'fr'	: reqres.org,
+			'to'	: request.originator,
+			'fr'	: CSE.cseCsi,
 			'ot'	: reqres['mi/ot'],
 			'rset'	: reqres.et
 		}
@@ -784,7 +786,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri} id: {appendID}')
 
-		for url, csz, rvi, pch, to in self.resolveTargetURIetc(uri, 
+		for url, csz, rvi, pch, noriginator, to in self.resolveTargetURIetc(uri, 
 															   appendID = appendID,
 															   originator = originator,
 															   permission = Permission.RETRIEVE,
@@ -792,7 +794,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, originator = originator, rvi = rvi)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, originator = noriginator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -803,7 +805,8 @@ class RequestManager(object):
 				CSE.event.httpSendRetrieve() # type: ignore [attr-defined]
 				return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, 
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -812,7 +815,8 @@ class RequestManager(object):
 				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -827,14 +831,14 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri} id: {appendID}')
 
-		for url, csz, rvi, pch, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.CREATE, noAccessIsError = noAccessIsError, raw = raw):
+		for url, csz, rvi, pch, noriginator, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.CREATE, noAccessIsError = noAccessIsError, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, request = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, request = data, originator = noriginator, rvi = rvi)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE,  data = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE,  data = data, originator = noriginator, rvi = rvi)
 
 				return self.waitForResponseToPCH(request)
 
@@ -846,8 +850,9 @@ class RequestManager(object):
 				CSE.event.httpSendCreate() # type: ignore [attr-defined]
 				return CSE.httpServer.sendHttpRequest(Operation.CREATE,
 													  url,
-													  to,
-													  ty,
+													  originator = noriginator,
+													  to = to,
+													  ty = ty,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -856,9 +861,10 @@ class RequestManager(object):
 				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
 													  url,
-													  to,
-													  ty,
-													  data,
+													  originator = noriginator,
+													  to = to,
+													  ty = ty,
+													  data = data,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
@@ -872,14 +878,14 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri} id: {appendID}')
 
-		for url, csz, rvi, pch, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.UPDATE, raw = raw):
+		for url, csz, rvi, pch, noriginator, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.UPDATE, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, request = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, request = data, originator = noriginator, rvi = rvi)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, data = data, originator = originator, rvi = rvi)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, data = data, originator = noriginator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -890,7 +896,8 @@ class RequestManager(object):
 				CSE.event.httpSendUpdate() # type: ignore [attr-defined]
 				return CSE.httpServer.sendHttpRequest(Operation.UPDATE,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -899,7 +906,8 @@ class RequestManager(object):
 				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -914,11 +922,11 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri} id: {appendID}')
 
-		for url, csz, rvi, pch, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.DELETE, raw = raw):
+		for url, csz, rvi, pch, noriginator, to in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.DELETE, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch.getOriginator(), Operation.DELETE, originator = originator, rvi = rvi)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.DELETE, originator = noriginator, rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -929,7 +937,8 @@ class RequestManager(object):
 				CSE.event.httpSendDelete() # type: ignore [attr-defined]
 				return CSE.httpServer.sendHttpRequest(Operation.DELETE,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -938,7 +947,8 @@ class RequestManager(object):
 				CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.DELETE,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  ct = ct,
 													  rvi = rvi,
@@ -956,7 +966,7 @@ class RequestManager(object):
 		if (resolved := self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.NOTIFY, noAccessIsError = noAccessIsError, raw = raw)) is None:
 			return Result.errorResult()
 
-		for url, csz, rvi, pch, to in resolved:
+		for url, csz, rvi, pch, noriginator, to in resolved:
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -965,14 +975,14 @@ class RequestManager(object):
 													  Operation.NOTIFY, 
 													  request = data, 
 													  parameters = parameters, 
-													  originator = originator,
+													  originator = noriginator,
 													  rvi = rvi)
 				else:
 					request = self.queueRequestForPCH(pch.getOriginator(), 
 													  Operation.NOTIFY,
 													  data = data, 
   													  parameters = parameters, 
-													  originator = originator,
+													  originator = noriginator,
 													  rvi = rvi)
 				return self.waitForResponseToPCH(request)
 
@@ -988,7 +998,8 @@ class RequestManager(object):
 				CSE.event.httpSendNotify() # type: ignore [attr-defined]
 				return CSE.httpServer.sendHttpRequest(Operation.NOTIFY,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  parameters = parameters,
 													  ct = ct,
@@ -998,14 +1009,15 @@ class RequestManager(object):
 				CSE.event.mqttSendNotify()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY,
 													  url,
-													  to,
+													  originator = noriginator,
+													  to = to,
 													  data = data,
 													  parameters = parameters,
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
 			elif Utils.isAcmeUrl(url):
-				CSE.event.acmeNotification(url, originator, data)	# type: ignore [attr-defined]
+				CSE.event.acmeNotification(url, noriginator, data)	# type: ignore [attr-defined]
 				return Result.successResult()
 
 			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
@@ -1376,7 +1388,7 @@ class RequestManager(object):
 							appendID:str = '', 
 							originator:str = None,
 							noAccessIsError:bool = False,
-							raw:bool = False) -> list[ Tuple[str, list[str], str, PCH, str ] ]:
+							raw:bool = False) -> list[ Tuple[str, list[str], str, PCH, str, str ] ]:
 		"""	Resolve the real URL and more message parameters for a request and a target,
 		
 			Args:
@@ -1390,7 +1402,7 @@ class RequestManager(object):
 				The results could differ:
 
 				The result is a list of tuples of (real url including the protocol, list of allowed contentSerializations,
-				targert supported release version, PollingChannel resource, originator with adapted scope).
+				target supported release version, PollingChannel resource, originator with adapted scope).
 				
 				Or, return a list of (url, None, None, None, originator), containing only one element, if the URI is
 				already a URL. We cannot determine the preferred serializations in this case. and we don't know the target entity.
@@ -1415,7 +1427,7 @@ class RequestManager(object):
 		# TODO check whether noAccessIsError is needed anymore
 
 		if Utils.isURL(uri):	# The uri is a direct URL
-			return [ (uri, None, None, None, originator) ]
+			return [ (uri, None, None, None, originator, None) ]
 
 
 		# targetResource will be assigned the real resource that offers the POA
@@ -1461,14 +1473,15 @@ class RequestManager(object):
 					  targetResource.csz,
 					  getTargetReleaseVersion(targetResource.srv),
 					  cast(PCH, pollingChannelResources[0]),
-					  originator) ]
+					  originator,
+					  uri) ]
 
 		# Use the poa of a target resource
 		if not targetResource.poa:	# check that the resource has a poa
 			L.isWarn and L.logWarn(f'Resource {uri} has no "poa" attribute')
 			return []
 		
-		resultList:List[Tuple[str, List[str], str, PCH, str]] = []
+		resultList:List[Tuple[str, List[str], str, PCH, str, str]] = []
 		
 		for p in targetResource.poa:
 			if Utils.isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
@@ -1477,7 +1490,8 @@ class RequestManager(object):
 							   targetResource.csz, 
 							   getTargetReleaseVersion(targetResource.srv), 
 							   None,
-							   Utils.toSPRelative(originator) if targetResource.ty in [ T.CSEBase, T.CSR ] and targetResource.csi != CSE.cseCsi else originator))
+							   Utils.toSPRelative(originator) if targetResource.ty in [ T.CSEBase, T.CSR ] and targetResource.csi != CSE.cseCsi else originator,
+							   f'{uri}{appendID}'))
 		# L.logWarn(result)
 		return resultList
 
