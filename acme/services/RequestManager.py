@@ -1418,7 +1418,10 @@ class RequestManager(object):
 			return [ (uri, None, None, None, originator) ]
 
 
+		# targetResource will be assigned the real resource that offers the POA
+		# It may be an AE, CSE, CSR.
 		targetResource = None
+
 		if Utils.isSPRelative(uri) or Utils.isAbsolute(uri):
 			if uri.startswith(f'{CSE.cseCsi}/'):	# If this the local CSE
 				targetResource = Utils.getCSE().resource
@@ -1474,7 +1477,7 @@ class RequestManager(object):
 							   targetResource.csz, 
 							   getTargetReleaseVersion(targetResource.srv), 
 							   None,
-							   Utils.toSPRelative(originator) if targetResource.ty == T.CSEBase and targetResource.csi != CSE.cseCsi else originator))
+							   Utils.toSPRelative(originator) if targetResource.ty in [ T.CSEBase, T.CSR ] and targetResource.csi != CSE.cseCsi else originator))
 		# L.logWarn(result)
 		return resultList
 
