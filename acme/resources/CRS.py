@@ -222,7 +222,7 @@ class CRS(Resource):
 		# Log any other notification
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
 			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
-		if sur in self.rrats or sur in self.srat:
+		if (self.rats and sur in self.rrats) or (self.srat and sur in self.srat):
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
