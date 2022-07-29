@@ -385,7 +385,7 @@ class RequestManager(object):
 				nus = aes[0].poa
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator=request.originator)
+		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator=CSE.cseCsi)
 
 		return True
 
