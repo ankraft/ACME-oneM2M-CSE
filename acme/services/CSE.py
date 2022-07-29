@@ -66,9 +66,6 @@ cseType:CSEType									= None
 cseCsi:str										= None
 """ The CSE-ID """
 
-cseCsiRelative:str								= None
-""" The CSE-ID without the leading /. """
-
 cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
 
@@ -95,7 +92,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, statistics, storage, time, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseSpid, cseRi, cseRn, releaseVersion
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseSpid, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -126,7 +123,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
-	cseCsiRelative			 = cseCsi[1:]							# no leading slash
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseSpid					 = Configuration.get('cse.spid')
 	cseRi					 = Configuration.get('cse.ri')
