@@ -78,4 +78,4 @@ class CNT_LA(Resource):
 		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
 			return Result.errorResult(rsc = RC.notFound, dbg='no instance for <latest>')
-		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)
+		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)

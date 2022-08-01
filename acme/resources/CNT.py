@@ -79,12 +79,12 @@ class CNT(AnnounceableResource):
 
 		# add latest
 		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_LA).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(latestResource)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(latestResource)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_OL).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(oldestResource)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(oldestResource)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		return Result.successResult()
@@ -186,7 +186,7 @@ class CNT(AnnounceableResource):
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
 				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -203,7 +203,7 @@ class CNT(AnnounceableResource):
 				cbs -= cin.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
 				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 

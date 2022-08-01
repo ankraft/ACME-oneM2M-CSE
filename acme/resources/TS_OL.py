@@ -54,4 +54,4 @@ class TS_OL(Resource):
 		if L.isDebug: L.logDebug('Deleting oldest TSI from TS')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.TSI, oldest = True)):
 			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
-		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)
+		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)

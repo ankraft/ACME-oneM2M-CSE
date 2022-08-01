@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import cast
-from ..etc.Types import AttributePolicyDict, RequestType, ResourceTypes as T, ResponseStatusCode as RC, JSON, CSERequest, Result
+from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes as T, ResponseStatusCode as RC, JSON, CSERequest, Result
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
 from ..services import CSE
@@ -104,9 +104,13 @@ class PCH_PCU(Resource):
 		if not (res := CSE.request.fillAndValidateCSERequest(nrequest, isResponse = True)).status:
 			return res
 		# L.logWarn(res.request)
+		# L.logWarn(innerPC)
 
 		# Enqueue the reqeust
-		CSE.request.queueRequestForPCH(self.getOriginator(), request = res.request, reqType = RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+		CSE.request.queueRequestForPCH(operation = Operation.NOTIFY,
+									   pchOriginator = self.getOriginator(), 
+									   request = res.request, 
+									   reqType = RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
 		
 		return Result(status = True, rsc = RC.OK)
 

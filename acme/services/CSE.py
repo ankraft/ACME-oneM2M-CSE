@@ -70,6 +70,14 @@ cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
 
 cseSpid:str										= None
+""" The Service Provider ID. """
+
+cseAbsolute:str									= None
+"""The CSE's Absolute prefix (SP-ID/CSE-ID). """
+
+cseAbsoluteSlash:str							= None
+"""The CSE's Absolute prefix with an additional trailing /. """
+
 cseRi:str 										= None
 cseRn:str										= None
 cseOriginator:str								= None
@@ -92,7 +100,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, statistics, storage, time, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseSpid, cseRi, cseRn, releaseVersion
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseAbsoluteSlash
+	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -125,6 +134,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseCsi					 = Configuration.get('cse.csi')
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseSpid					 = Configuration.get('cse.spid')
+	cseAbsolute				 = f'//{cseSpid}/{cseCsi}'
+	cseAbsoluteSlash		 = f'{cseAbsolute}/'
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')
 	cseOriginator			 = Configuration.get('cse.originator')

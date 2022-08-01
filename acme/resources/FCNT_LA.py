@@ -52,4 +52,4 @@ class FCNT_LA(Resource):
 		if L.isDebug: L.logDebug('Deleting latest FCI from FCNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI)):
 			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
-		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)
+		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)

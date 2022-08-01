@@ -89,12 +89,12 @@ class TS(AnnounceableResource):
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_LA).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(resource)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_OL).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(resource)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
 		self._validateDataDetect()
@@ -286,7 +286,7 @@ class TS(AnnounceableResource):
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(tsis[0], parentResource = self, doDeleteCheck = False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -301,7 +301,7 @@ class TS(AnnounceableResource):
 				cbs -= tsis[0]['cs']
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(tsis[0], parentResource = self, doDeleteCheck = False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <tsi>
 

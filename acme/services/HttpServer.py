@@ -361,7 +361,7 @@ class HttpServer(object):
 						originator:str,
 						to:str,
 						ty:T = None, 
-						data:Any = None, 
+						content:JSON = None, 
 						parameters:CSERequest = None, 
 						ct:CST = None, 
 						rvi:str = None,
@@ -373,8 +373,11 @@ class HttpServer(object):
 		# Set the request method
 		method:Callable = self.operation2method[operation]
 
+		# Add the to to the base url
+		if to:
+			url = url + to
 		# Make the URL a valid http URL (escape // and ///)
-		url = RequestUtils.toHttpUrl(url + to) if to else RequestUtils.toHttpUrl(url)
+		url = RequestUtils.toHttpUrl(url)
 
 		# get the serialization
 		ct = CSE.defaultSerialization if not ct else ct
@@ -394,75 +397,77 @@ class HttpServer(object):
 			hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
 			hds[C.hfOT]		= DateUtils.getResourceDate()
 
-
 			# Add additional headers
 			if parameters:
-				if parameters.ec:
+				if parameters.ec:	# Event Category
 					hds[C.hfEC] = str(parameters.ec)
 			
 		else:	
 			# raw	-> "data" contains a whole requests
 
-			hds[C.hfOrigin]	= Utils.toSPRelative(data['fr']) if 'fr' in data else ''
-			hds[C.hfRI]		= data['rqi']
-			hds[C.hfRVI]	= data['rvi']
+			hds[C.hfOrigin]	= Utils.toSPRelative(content['fr']) if 'fr' in content else ''
+			hds[C.hfRI]		= content['rqi']
+			hds[C.hfRVI]	= rvi if rvi is not None else content['rvi']
 			
 			# Add additional headers from the request
-			if 'ec' in data:				# Event Category
-				hds[C.hfEC] = data['ec']
-			if 'rqet' in data:
-				hds[C.hfRET] = data['rqet']
-			if 'rset' in data:
-				hds[C.hfRST] = data['rset']
-			if 'oet' in data:
-				hds[C.hfOET] = data['oet']
-			if 'rt' in data:
-				hds[C.hfRTU] = data['rt']
-			if 'vsi' in data:
-				hds[C.hfVSI] = data['vsi']
-			if 'ot' in data:
-				hds[C.hfOT] = data['ot']
+			if 'ec' in content:				# Event Category
+				hds[C.hfEC] = content['ec']
+			if 'rqet' in content:
+				hds[C.hfRET] = content['rqet']
+			if 'rset' in content:
+				hds[C.hfRST] = content['rset']
+			if 'oet' in content:
+				hds[C.hfOET] = content['oet']
+			if 'rt' in content:
+				hds[C.hfRTU] = content['rt']
+			if 'vsi' in content:
+				hds[C.hfVSI] = content['vsi']
+			if 'ot' in content:
+				hds[C.hfOT] = content['ot']
 
 			# Get filter criteria
 			filterCriteria = []
-			if 'rcn' in data:
-				filterCriteria.append(f'rcn={data["rcn"]}')
-			if 'drt' in data:
-				filterCriteria.append(f'drt={data["drt"]}')
-			if fc := data.get('fc'):
+			if 'rcn' in content:
+				filterCriteria.append(f'rcn={content["rcn"]}')
+			if 'drt' in content:
+				filterCriteria.append(f'drt={content["drt"]}')
+			if fc := content.get('fc'):
 				for key in list(fc.keys()):
 					filterCriteria.append(f'{key}={fc[key]}')
 
 			# Add to to URL
 			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
-			if not url.endswith(to := data["to"]):	# Do not append to when forwarding. The URL already contains the target
-				delim = '~'	if url.endswith('/') else '/~'
-				url = f'{url}{delim}{to}'
+			# TODO  check this
+			# if not url.endswith(to := data["to"]):	# Do not append to when forwarding. The URL already contains the target
+			# 	delim = '~'	if url.endswith('/') else '/~'
+			# 	url = f'{url}{delim}{to}'
 
 			# Add filtercriteria to URL
 			if filterCriteria:
 				url += f'?{"&".join(filterCriteria)}'
 				
-			# re-assign the data to pc
-			if 'pc' in data:
-				data = data['pc']
+			# re-assign the content to pc
+			if 'pc' in content:
+				content = content['pc']
 		
 		# serialize data (only if dictionary, pass on non-dict data)
-		content = None
+		data = None
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
-			content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
+			data = RequestUtils.serializeData(content, ct)
+		elif content and not raw:
+			return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'Operation: {operation} doesn\'t allow content'))
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == CST.CBOR:
-				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
-				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data = content, headers = hds, verify = CSE.security.verifyCertificateHttp)
+			r = method(url, data = data, headers = hds, verify = CSE.security.verifyCertificateHttp)
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)
@@ -483,7 +488,7 @@ class HttpServer(object):
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except Exception as e:
-			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
+			L.logErr(f'Failed to send request: {str(e)}', exc = e)
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
 		res = Result(status = True, rsc = resp.rsc, data = resp.pc, request = resp)
 		CSE.event.responseReceived(resp)	# type: ignore [attr-defined]
@@ -621,7 +626,7 @@ class HttpServer(object):
 			req['oet'] = f
 		if f := request.headers.get(C.hfRVI):
 			req['rvi'] = f
-		if (rtu := request.headers.get(C.hfRTU)) is not None:	# handle rtu as a list AND it may be an empty list!
+		if (rtu := request.headers.get(C.hfRTU)) is not None:	# handle rtu as a list AND it might be an empty list!
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
 			req['rt'] = rt					# req.rt.rtu

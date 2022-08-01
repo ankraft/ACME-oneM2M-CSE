@@ -261,7 +261,7 @@ class ACMEPContext(PContext):
 		# Check resource creation
 		if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 			return None
-		if not (res := CSE.dispatcher.createResource(resource)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
 			L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
 			return None
 			
@@ -839,11 +839,11 @@ class ACMEPContext(PContext):
 			if operation == Operation.DELETE:
 				res = CSE.request.sendDeleteRequest(target, originator)
 			elif operation == Operation.CREATE:
-				res = CSE.request.sendCreateRequest(target, originator, ty, data = request.pc)
+				res = CSE.request.sendCreateRequest(target, originator, ty, content = request.pc)
 			elif operation == Operation.UPDATE:
-				res = CSE.request.sendUpdateRequest(target, originator, data = request.pc)
+				res = CSE.request.sendUpdateRequest(target, originator, content = request.pc)
 			elif operation == Operation.NOTIFY:
-				res = CSE.request.sendNotifyRequest(target, originator, data = request.pc)
+				res = CSE.request.sendNotifyRequest(target, originator, content = request.pc)
 
 		else:
 			# Request via CSE-ID, either local, or otherwise a transit reqzest. Let the CSE handle it

@@ -222,7 +222,7 @@ class NotificationManager(object):
 
 		for eachSub in subs:
 
-			notification = {
+			notification:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
 						'net' : NotificationEventType.blockingUpdate.value
@@ -247,7 +247,7 @@ class NotificationManager(object):
 			# Send notification and handle possible negative response status codes
 			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
 														 originator = CSE.cseCsi,
-														 data = notification)).status:
+														 content = notification)).status:
 				return res	# Something else went wrong
 			if res.rsc == RC.OK:
 				if finished:
@@ -344,7 +344,7 @@ class NotificationManager(object):
 
 			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
 														 originator = CSE.cseCsi,
-														 data = notification)).status:
+														 content = notification)).status:
 				# TODO: correct RSC according to 7.3.2.9 - see above!
 				return res
 			if finished:
@@ -457,7 +457,7 @@ class NotificationManager(object):
 				crs.dbUpdate()
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
-					CSE.dispatcher.deleteResource(crs, originator = crs.getOriginator())
+					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
 		data.clear()
 
@@ -585,12 +585,10 @@ class NotificationManager(object):
 				postFunc: Function that is called after each notification sending, with the notification target as a single argument.
 		"""
 
-		def _sender(nu: str, originator:str, data:JSON) -> bool:
+		def _sender(nu: str, originator:str, content:JSON) -> bool:
 			if preFunc:
 				preFunc(nu)
-			CSE.request.sendNotifyRequest(nu, 
-										  originator = originator,
-										  data = data)
+			CSE.request.sendNotifyRequest(nu, originator = originator, content = content)
 			if postFunc:
 				postFunc(nu)
 			return True
@@ -602,9 +600,9 @@ class NotificationManager(object):
 				BackgroundWorkerPool.newActor(_sender, 
 											  name = f'NO_{current_thread().name}').start(nu = nu, 
 																						  originator = originator,
-																						  data = dct)
+																						  content = dct)
 			else:
-				_sender(nu, originator = originator, data = dct)
+				_sender(nu, originator = originator, content = dct)
 
 
 	###########################################################################
@@ -716,7 +714,7 @@ class NotificationManager(object):
 
 		def sender(uri:str) -> bool:
 			L.isDebug and L.logDebug(f'Sending verification request to: {uri}')
-			verificationRequest = {
+			verificationRequest:JSON = {
 				'm2m:sgn' : {
 					'vrq' : True,
 					'sur' : Utils.toSPRelative(ri)
@@ -727,7 +725,7 @@ class NotificationManager(object):
 	
 			if not (res := CSE.request.sendNotifyRequest(uri, 
 														 originator = CSE.cseCsi,
-														 data = verificationRequest, 
+														 content = verificationRequest, 
 														 noAccessIsError = True)).status:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {res.dbg}')
 				return False
@@ -752,7 +750,7 @@ class NotificationManager(object):
 
 		def sender(uri:str) -> bool:
 			L.isDebug and L.logDebug(f'Sending deletion notification to: {uri}')
-			deletionNotification = {
+			deletionNotification:JSON = {
 				'm2m:sgn' : {
 					'sud' : True,
 					'sur' : Utils.toSPRelative(ri)
@@ -761,7 +759,7 @@ class NotificationManager(object):
 
 			if not (res := CSE.request.sendNotifyRequest(uri, 
 														 originator = CSE.cseCsi,
-														 data = deletionNotification)).status:
+														 content = deletionNotification)).status:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {res.dbg}')
 				return False
 			return True
@@ -780,7 +778,7 @@ class NotificationManager(object):
 			"""	Sender callback function for a single normal subscription notifications
 			"""
 			L.isDebug and L.logDebug(f'Sending notification to: {uri}, reason: {notificationEventType}	')
-			notificationRequest = {
+			notificationRequest:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
 						'rep' : {},
@@ -823,7 +821,7 @@ class NotificationManager(object):
 				# Send the notification
 				if not CSE.request.sendNotifyRequest(uri, 
 													 originator = CSE.cseCsi,
-													 data = notificationRequest).status:
+													 content = notificationRequest).status:
 					L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 					return False
 				
@@ -841,7 +839,7 @@ class NotificationManager(object):
 			subResource = CSE.storage.retrieveResource(ri=sub['ri']).resource
 			if exc < 1:
 				L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
-				CSE.dispatcher.deleteResource(subResource)	# This also deletes the internal sub
+				CSE.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate()						# Update the real subscription
@@ -961,8 +959,10 @@ class NotificationManager(object):
 				parameters.ec = EventCategory.Latest.value
 
 			# Aggregate and send
-			notificationRequest = {
-				'm2m:agn' : { 'm2m:sgn' : notifications }
+			notificationRequest:JSON = {
+				'm2m:agn' : {
+					 'm2m:sgn' : notifications 
+				}
 			}
 
 			# Delete old notifications
@@ -983,7 +983,7 @@ class NotificationManager(object):
 			# Send the request
 			if not CSE.request.sendNotifyRequest(nu, 
 												 originator = CSE.cseCsi,
-												 data = notificationRequest,
+												 content = notificationRequest,
 												 parameters = parameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False

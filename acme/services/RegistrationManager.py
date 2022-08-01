@@ -324,7 +324,7 @@ class RegistrationManager(object):
 			if not CSE.storage.hasResource(ri=resource.ri):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
-			CSE.dispatcher.deleteResource(resource, withDeregistration = True)	# ignore result
+			CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)	# ignore result
 			CSE.event.expireResource(resource) # type: ignore
 				
 		return True
@@ -342,7 +342,7 @@ class RegistrationManager(object):
 		# Remove existing ACP with that name first
 		acpSrn = f'{CSE.cseRn}/{rn}'
 		if (acpRes := CSE.dispatcher.retrieveResource(id = acpSrn)).rsc == RC.OK:
-			CSE.dispatcher.deleteResource(acpRes.resource)	# ignore errors
+			CSE.dispatcher.deleteLocalResource(acpRes.resource)	# ignore errors
 
 		# Create the ACP
 		selfPermission = selfPermission if selfPermission is not None else Permission(Configuration.get('cse.acp.pvs.acop'))
@@ -362,7 +362,7 @@ class RegistrationManager(object):
 		if not (res := self.checkResourceCreation(acp, CSE.cseOriginator, parentResource)).status:
 			# return res.errorResultCopy()
 			return res
-		return CSE.dispatcher.createResource(acp, parentResource = parentResource, originator = CSE.cseOriginator)
+		return CSE.dispatcher.createLocalResource(acp, parentResource = parentResource, originator = CSE.cseOriginator)
 
 
 	def _removeACP(self, srn:str, resource:Resource) -> Result:
@@ -372,6 +372,6 @@ class RegistrationManager(object):
 		else:
 			# only delete the ACP when it was created in the course of AE registration internally
 			if  (createdWithRi := acpRes.resource.createdInternally()) and resource.ri == createdWithRi:
-				return CSE.dispatcher.deleteResource(acpRes.resource)
+				return CSE.dispatcher.deleteLocalResource(acpRes.resource)
 		return Result(status = True, rsc = RC.deleted)
 

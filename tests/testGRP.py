@@ -227,7 +227,7 @@ class TestGRP(unittest.TestCase):
 		"""	Retrieve <CNT>'s LA """
 		# Retrieve via fopt
 		r, rsc = RETRIEVE(f'{grpURL}/fopt/la', TestGRP.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)

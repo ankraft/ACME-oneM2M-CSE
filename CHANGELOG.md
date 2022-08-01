@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
 - [CSE] *Originating Timestamp* are only added to responses when present in the request.
 - [CSE] Refactored and simplified request message attribute handling. Improved attribute validations and discovery. 
+- [CSE] The CSE is allowed to send a NOTIFY to a hosted resource directly.
+- [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
-
 
 ### Fixed
 - [CSE] Corrected &lt;timeSeries>'s *cbs* attribute name.

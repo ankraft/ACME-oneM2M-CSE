@@ -101,7 +101,7 @@ class CIN(AnnounceableResource):
 				self.setAttribute('dcnt', dcnt+1)
 			else:
 				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
-				CSE.dispatcher.deleteResource(self, originator = originator)
+				CSE.dispatcher.deleteLocalResource(self, originator = originator)
 
 		return Result.successResult()
 

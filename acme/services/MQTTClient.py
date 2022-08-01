@@ -197,18 +197,16 @@ class MQTTClientHandler(MQTTHandler):
 			if dissectResult.request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
 				_logRequest(dissectResult)
-				L.logWarn(dbg := f'Invalid operation for registration: {request.op.name}')
-				_sendResponse(Result(rsc = RC.badRequest, request = request, dbg = dbg))
+				_sendResponse(Result(rsc = RC.badRequest, request = request, dbg = L.logWarn(f'Invalid operation for registration: {request.op.name}')))
 				return
 
 			if request.ty not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
 				_logRequest(dissectResult)
-				L.logWarn(dbg := f'Invalid resource type for registration: {request.ty}')
 				_sendResponse(Result(status = False, 
 									 rsc = RC.badRequest, 
 									 request = request, 
-									 dbg = f'Invalid resource type for registration: {request.ty.name}'))
+									 dbg = L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
 				return
 			
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
@@ -386,7 +384,7 @@ class MQTTClient(object):
 						url:str, originator:str,
 						to:str = None, # TODO
 						ty:T = None, 
-						data:JSON = None,
+						content:JSON = None,
 						parameters:CSERequest = None, 
 						ct:CST = None, 
 						rvi:str = None,
@@ -412,7 +410,7 @@ class MQTTClient(object):
 		req 					= Result(request = CSERequest())
 		req.request.id			= u.path[1:]
 		req.request.op			= operation
-		req.resource			= data
+		req.resource			= content
 		req.request.originator	= originator
 		req.request.rqi			= Utils.uniqueRI()
 		req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
@@ -457,8 +455,7 @@ class MQTTClient(object):
 
 		# We are not connected, so -> fail
 		if not mqttConnection or not mqttConnection.isConnected:
-			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
-			return Result.errorResult(rsc = RC.targetNotReachable, dbg = dbg)
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = L.logWarn(f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}'))
 
 		# Publish the request and wait for the response.
 		# Then return the response as result

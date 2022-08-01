@@ -81,6 +81,7 @@ class CRS(Resource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if (res := super().activate(parentResource, originator)).status == False:
 			return res
+		self.dbUpdate()	# Update in DB because we need some changes in other functions executed below
 		L.isDebug and L.logDebug(f'Activating crossResourceSubscription: {self.ri}')
 
 		# encs validation happens in validate()
@@ -216,7 +217,7 @@ class CRS(Resource):
 			self.dbUpdate()
 
 			# Delete self. Use the resource's creator for the creator
-			CSE.dispatcher.deleteResource(self, originator = self.getOriginator(), withDeregistration = True)
+			CSE.dispatcher.deleteLocalResource(self, originator = self.getOriginator(), withDeregistration = True)
 			return Result(status = True, rsc = RC.OK)
 		
 		# Log any other notification
@@ -264,21 +265,21 @@ class CRS(Resource):
 		# Add nec if present in <crs> resource
 		if self.nec:
 			setXPath(dct, 'm2m:sub/nec', self.nec)
+
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
-		res = CSE.request.sendCreateRequest((_rratSpRelative := toSPRelative(rrat)), 
-											originator = originator,
-											ty = T.SUB,
-											data = dct,
-											appendID = _rratSpRelative)
+		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, originator = originator)).status:
+			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat}: {res.dbg}'))
 		
 		# Error? Then rollback: delete all created subscriptions so far and return with an error
 		if not res.status or res.rsc != RC.created:
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat} uri: {_rratSpRelative}'))
+			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for: {rrat}: {res.dbg}'))
+		subRi, subCsi, pID = res.data # unpack
 
 		# Add the created <sub>'s full RI to the correct position in the rrats list
 		_rrats = self.rrats
-		_rrats[rratIndex] = f'{csiFromSPRelative(_rratSpRelative)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
+		# _rrats[rratIndex] = f'{csiFromSPRelative(pri)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
+		_rrats[rratIndex] = f'{subCsi}/{subRi}'
 		self.setAttribute('rrats', _rrats)
 
 		return Result.successResult()
@@ -296,72 +297,45 @@ class CRS(Resource):
 		"""
 		# Get subscription
 		L.logDebug(f'Retrieving srat <sub>: {srat}')
-		res = CSE.request.sendRetrieveRequest((_sratSpRelative := toSPRelative(srat)), 
-												originator = originator,
-												appendID = _sratSpRelative)
+		res = CSE.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator = originator)	# local or remote
 		if not res.status or res.rsc != RC.OK:
 			self._deleteSubscriptions(originator)
 			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
-
+		
+		resource = res.resource
+		
 		# Check whether the target is a subscription
-		subDct:JSON = cast(JSON, res.data)
-		if findXPath(subDct, 'm2m:sub') is None:
+		if resource.ty != T.SUB:
 			self._deleteSubscriptions(originator)
 			return Result.errorResult(dbg = L.logWarn(f'Resource is not a subscription for {srat} uri: {_sratSpRelative}'))
 
-
-		subRI = findXPath(subDct, 'm2m:sub/ri')	# Let's assume that there actually is an RI
 		newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
 		# Add to the sub's nu
-		if (nu := findXPath(subDct, 'm2m:sub/nu')) is None:
+		if (nu := resource.nu) is None:
 			nu = []		# Add nu if not present
 		if (spRi := toSPRelative(self.ri)) not in nu:
 			nu.append(spRi)
 		setXPath(newDct, 'm2m:sub/nu', nu)
 
-		# Add to the sub's associatedCrossResourceSub
-		if (acrs := findXPath(subDct, 'm2m:sub/acrs')) is None:
+		# # Add to the sub's associatedCrossResourceSub
+		if (acrs := resource.acrs) is None:
 			acrs = []	# Add acrs if not present
 		if spRi not in acrs:
 			acrs.append(spRi)
 		setXPath(newDct, 'm2m:sub/acrs', acrs)
 
-		# Send UPDATE request
+		# # Send UPDATE request
 		L.logDebug(f'Updating srat <sub>: {srat}')
-		res = CSE.request.sendUpdateRequest(_sratSpRelative, 
-											originator = originator,
-											data = newDct,
-											appendID = _sratSpRelative)
+		res = CSE.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator = originator, resource =resource)
 		if not res.status or res.rsc != RC.updated:
 			self._deleteSubscriptions(originator)
 			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
 
-		# Add <sub> to internal references
+		# Add <sub>'s SP-relative ri to internal references
 		_subRIs = self.attribute(self._subSratRIs)
-		_subRIs[srat] = toSPRelative(subRI)
+		_subRIs[srat] = toSPRelative(_sratSpRelative)
 		self.setAttribute(self._subSratRIs, _subRIs)
-
-		return Result.successResult()
-
-
-	def _updateRratSubscription(self, rrat:str, encs:list[dict], rrats:list[str], originator:str) -> Result:
-		dct:JSON = { 'm2m:sub' : {
-				}}
-
-		setXPath(dct, 'm2m:sub/enc', encs[0] if len(encs) == 1 else encs[rrats.index(rrat)] )	# position of rrat in the list of rrats
-
-		# update (possibly remote) subscription
-		subRI = self.attribute(self._subRratRIs).get(rrat)
-		L.logDebug(f'Updating <sub> to {rrat} -> ri:{subRI}')
-		res = CSE.request.sendUpdateRequest(subRI, 
-											originator = originator,
-											data = dct,
-											appendID = subRI)
-		
-		# Error? Then rollback: delete all created subscriptions so far and return with an error
-		if not res.status or res.rsc != RC.updated:
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot update subscription for {rrat} uri: {subRI}: {res.data}'))
 
 		return Result.successResult()
 
@@ -401,9 +375,9 @@ class CRS(Resource):
 	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> Result:
 		if subRI is not None:
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
-			if not (res := CSE.request.sendDeleteRequest(subRI, originator = originator)).status:
+			if not (res := CSE.dispatcher.deleteResource(subRI, originator = originator)).status:
 				return res
-			
+
 			# To be sure: Set the RI in the rrats list to None
 			_rrats = self.rrats
 			_index = _rrats.index(subRI)
@@ -415,23 +389,21 @@ class CRS(Resource):
 	def _deleteFromSubscriptionsForSrat(self, srat:str, originator:str) -> Result:
 		_subRIs = self.attribute(self._subSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
-			res = CSE.request.sendRetrieveRequest(subRI, 
-												  originator = originator,
-												  appendID = subRI)
+			res = CSE.dispatcher.retrieveResource(subRI, originator = originator)
 			if not res.status or res.rsc != RC.OK:
 				return Result.errorResult(rsc = RC.badRequest, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
-			
-			subDct:JSON = cast(JSON, res.data)
+			resource = res.resource
+
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
 			# remove from to the sub's nu
-			if (nu := findXPath(subDct, 'm2m:sub/nu')) is not None:
+			if (nu := resource.nu) is not None:
 				if (spRi := toSPRelative(self.ri)) in nu:
 					nu.remove(spRi)
 				setXPath(newDct, 'm2m:sub/nu', nu)
 
 			# Add to the sub's associatedCrossResourceSub
-			if (acrs := findXPath(subDct, 'm2m:sub/acrs')) is not None:
+			if (acrs := resource.acrs) is not None:
 				if spRi in acrs:
 					acrs.remove(spRi)
 					if len(acrs) == 0:
@@ -439,10 +411,7 @@ class CRS(Resource):
 					setXPath(newDct, 'm2m:sub/acrs', acrs)
 
 			# Send UPDATE request
-			res = CSE.request.sendUpdateRequest(subRI, 
-												originator = originator,
-												data = newDct,
-												appendID = subRI)
+			res = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
 			if not res.status or res.rsc != RC.updated:
 				return Result.errorResult(dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}'))
 

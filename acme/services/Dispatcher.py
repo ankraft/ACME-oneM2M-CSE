@@ -14,7 +14,7 @@ from copy import deepcopy
 from typing import Any, List, Tuple, cast
 
 from ..helpers import TextTools as TextTools
-from ..etc.Types import FilterCriteria, FilterUsage as FU, ResourceTypes as T
+from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes as T
 from ..etc.Types import FilterOperation
 from ..etc.Types import Permission
 from ..etc.Types import DesiredIdentifierResultType as DRT
@@ -31,6 +31,8 @@ from ..services.Logging import Logging as L
 from ..resources import Factory as Factory
 from ..resources.Resource import Resource
 
+
+# TODO NOTIFY optimize local resource notifications
 
 class Dispatcher(object):
 
@@ -73,7 +75,7 @@ class Dispatcher(object):
 				Result object.
 		"""
 		# handle transit requests first
-		if CSE.request.isTransitID(request.id):
+		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitRetrieveRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -468,7 +470,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}')
 
 		# handle transit requests first
-		if CSE.request.isTransitID(request.id):
+		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitCreateRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -534,7 +536,7 @@ class Dispatcher(object):
 		request.originator = originator	
 
 		# Create the resource. If this fails we deregister everything
-		if not (res := CSE.dispatcher.createResource(newResource, parentResource, originator)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(newResource, parentResource, originator)).resource:
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
@@ -560,7 +562,50 @@ class Dispatcher(object):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
+	def createResourceFromDict(self, dct:JSON, parentID:str, ty:T = None, originator:str = None) -> Result:
+		# TODO doc
+		# Create locally
+		if (pID := Utils.localResourceID(parentID)) is not None:
+			L.isDebug and L.logDebug(f'Creating local resource with ID: {id} originator: {originator}')
+
+			# Retrieve the parent resource
+			if not (res := self.retrieveLocalResource(pID, originator = originator)).status:
+				L.isDebug and L.logDebug(f'Cannot retrieve parent resource: {pID}: {res.dbg}')
+				return res
+			parentResource = res.resource
+
+			# Build a resource instance
+			if not (res := Factory.resourceFromDict(dct, ty = ty, pi = pID)).status:
+				return res
+
+			# Check Permission
+			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource):
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has no CREATE access to: {res.resource.ri}'))
+
+			# Create it locally
+			if not (res := self.createLocalResource(res.resource, parentResource = parentResource, originator = originator)).status:
+				return res
+
+			resRi = res.resource.ri
+			resCsi = CSE.cseCsi
+		
+		# Create remotely
+		else:
+			L.isDebug and L.logDebug(f'Creating remote resource with ID: {id} originator: {originator}')
+			if not (res := CSE.request.sendCreateRequest((pri := Utils.toSPRelative(parentID)), 
+														 originator = originator,
+														 ty = ty,
+														 content = dct)).status:
+				return res
+
+			resRi = Utils.findXPath(res.request.pc, "{*}/ri")
+			resCsi = Utils.csiFromSPRelative(pri)
+		
+		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)
+		return Result(status = True, rsc=RC.created, data = (resRi, resCsi, pID))
+
+
+	def createLocalResource(self, resource:Resource, parentResource:Resource = None, originator:str = None) -> Result:
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
 		if parentResource:
@@ -598,7 +643,7 @@ class Dispatcher(object):
 		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			if not parentResource:
-				self.deleteResource(resource)
+				self.deleteLocalResource(resource)
 				return Result.errorResult(rsc = RC.internalServerError, dbg = L.logWarn('Parent resource not found. Probably removed in between?'))
 			parentResource.childAdded(resource, originator)			# notify the parent resource
 
@@ -624,7 +669,7 @@ class Dispatcher(object):
 				Result object.
 		"""
 		# handle transit requests first
-		if CSE.request.isTransitID(request.id):
+		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitUpdateRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -672,7 +717,7 @@ class Dispatcher(object):
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
 
-		if not (res := self.updateResource(resource, deepcopy(request.pc), originator=originator)).resource:
+		if not (res := self.updateLocalResource(resource, deepcopy(request.pc), originator=originator)).resource:
 			return res.errorResultCopy()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
@@ -701,7 +746,7 @@ class Dispatcher(object):
 			return Result.errorResult(dbg = 'wrong rcn for UPDATE')
 
 
-	def updateResource(self, resource:Resource, dct:JSON = None, doUpdateCheck:bool = True, originator:str = None) -> Result:
+	def updateLocalResource(self, resource:Resource, dct:JSON = None, doUpdateCheck:bool = True, originator:str = None) -> Result:
 		"""	Update a resource in the CSE. Call update() and updated() callbacks on the resource.
 		
 			Args:
@@ -730,9 +775,41 @@ class Dispatcher(object):
 		return resource.dbUpdate()
 
 
+	def updateResourceFromDict(self, dct:JSON, id:str, originator:str = None, resource:Resource = None) -> Result:
+		# TODO doc
+
+		# Update locally
+		if (rID := Utils.localResourceID(id)) is not None:
+			L.isDebug and L.logDebug(f'Updating local resource with ID: {id} originator: {originator}')
+
+			# Retrieve the resource if not given
+			if resource is None:
+				if not (res := self.retrieveLocalResource(rID, originator = originator)).status:
+					L.isDebug and L.logDebug(f'Cannot retrieve resource: {rID}')
+					return res
+				resource = res.resource
+			
+			# Check Permission
+			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE):
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has no UPDATE access to: {resource.ri}'))
+
+			# Update it locally
+			if not (res := self.updateLocalResource(resource, dct, originator = originator)).status:
+				return res
+
+		# Update remotely
+		else:
+			L.isDebug and L.logDebug(f'Updating remote resource with ID: {id} originator: {originator}')
+			if not (res := CSE.request.sendUpdateRequest(id, originator = originator, content = dct)).status:
+				return res
+		
+		# Return success and updated resource 
+		return res
+
+
 	#########################################################################
 	#
-	#	Remove resources
+	#	Delete resources
 	#
 
 	def processDeleteRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
@@ -747,7 +824,7 @@ class Dispatcher(object):
 		"""
 
 		# handle transit requests
-		if CSE.request.isTransitID(request.id):
+		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitDeleteRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -813,11 +890,11 @@ class Dispatcher(object):
 			return Result.errorResult(rsc = RC.badRequest, dbg = 'wrong rcn for DELETE')
 
 		# remove resource
-		res = self.deleteResource(resource, originator, withDeregistration = True)
+		res = self.deleteLocalResource(resource, originator, withDeregistration = True)
 		return Result(status = res.status, resource = resultContent, rsc = res.rsc, dbg = res.dbg)
 
 
-	def deleteResource(self, resource:Resource, originator:str = None, withDeregistration:bool = False, parentResource:Resource  =None, doDeleteCheck:bool = True) -> Result:
+	def deleteLocalResource(self, resource:Resource, originator:str = None, withDeregistration:bool = False, parentResource:Resource  =None, doDeleteCheck:bool = True) -> Result:
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
 		resource.deactivate(originator)	# deactivate it first
@@ -844,13 +921,45 @@ class Dispatcher(object):
 		return Result(status = res.status, resource = resource, rsc = res.rsc, dbg = res.dbg)
 
 
+
+	def deleteResource(self, id:str, originator:str = None) -> Result:
+		# TODO doc
+
+		
+		# Update locally
+		if (rID := Utils.localResourceID(id)) is not None:
+			L.isDebug and L.logDebug(f'Deleting local resource with ID: {id} originator: {originator}')
+
+			# Retrieve the resource
+			if not (res := self.retrieveLocalResource(rID, originator = originator)).status:
+				L.isDebug and L.logDebug(f'Cannot retrieve resource: {rID}')
+				return res
+			
+			# Check Permission
+			if not CSE.security.hasAccess(originator, res.resource, Permission.DELETE):
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has no DELETE access to: {res.resource.ri}'))
+
+			# Update it locally
+			if not (res := self.deleteLocalResource(res.resource, originator = originator)).status:
+				return res
+
+		# Delete remotely
+		else:
+			L.isDebug and L.logDebug(f'Deleting remote resource with ID: {id} originator: {originator}')
+			if not (res := CSE.request.sendDeleteRequest(id, originator = originator)).status:
+				return res
+		
+		# Return success
+		return res
+
+
 	#########################################################################
 	#
 	#	Notify
 	#
 
 	def processNotifyRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
-		"""	Process a NOTIFY request. Send nortifications to resource(s).
+		"""	Process a NOTIFY request. Send notifications to resource(s).
 
 			Args:
 				request: The incoming request.
@@ -859,8 +968,9 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
+		L.isDebug and L.logDebug(f'Processing NOTIFY request for ID: {id} request.id: {request.id}')
 		# handle transit requests
-		if CSE.request.isTransitID(request.id):
+		if Utils.localResourceID(request.id) is None:
 			return CSE.request.handleTransitNotifyRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -898,6 +1008,28 @@ class Dispatcher(object):
 		# error
 		return Result.errorResult(dbg = L.logDebug(f'Unsupported resource type: {targetResource.ty} for notifications.'))
 
+
+	def notifyLocalResource(self, ri:str, originator:str, content:JSON) -> Result:
+		# TODO doc
+
+		L.isDebug and L.logDebug(f'Sending NOTIFY to local resource: {ri}')
+		if not (res := self.retrieveLocalResource(ri, originator =originator)).status:
+			return res
+
+		# Check Permission
+		if not CSE.security.hasAccess(originator, res.resource, Permission.NOTIFY):
+			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has no NOTIFY access to: {res.resource.ri}'))
+		
+		# Send notification
+		request = CSERequest(id = ri,
+							op = OP.NOTIFY,
+							originator = originator,
+							ot = DateUtils.getResourceDate(),
+							rqi = Utils.uniqueRI(),
+							rvi = CSE.releaseVersion,
+							pc = content)
+		return res.resource.handleNotification(request, originator)
+		
 
 
 	#########################################################################
@@ -1006,7 +1138,7 @@ class Dispatcher(object):
 		for r in rs:
 			if ty is None or r.ty == ty:	# ty is an int
 				parentResource.childRemoved(r, originator)	# recursion here
-				self.deleteResource(r, originator, parentResource=parentResource)
+				self.deleteLocalResource(r, originator, parentResource=parentResource)
 
 	#########################################################################
 	#

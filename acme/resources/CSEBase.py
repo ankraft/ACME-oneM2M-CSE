@@ -93,11 +93,11 @@ class CSEBase(AnnounceableResource):
 				if _nl_:
 					if nresource := CSE.dispatcher.retrieveResource(_nl_).resource:
 						nresource['hcl'] = None # remove old link
-						CSE.dispatcher.updateResource(nresource)
+						CSE.dispatcher.updateLocalResource(nresource)
 				self[Resource._node] = nl
 				if nresource := CSE.dispatcher.retrieveResource(nl).resource:
 					nresource['hcl'] = self['ri']
-					CSE.dispatcher.updateResource(nresource)
+					CSE.dispatcher.updateLocalResource(nresource)
 			self[Resource._node] = nl
 
 		return Result.successResult()

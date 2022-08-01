@@ -435,7 +435,7 @@ Available under the BSD 3-Clause License
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else:
-				if not (res := CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)).resource:
+				if not (res := CSE.dispatcher.deleteLocalResource(res.resource, withDeregistration=True)).resource:
 					L.console(res.dbg, isError=True)
 				else:
 					L.console('ok')

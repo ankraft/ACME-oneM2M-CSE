@@ -195,7 +195,7 @@ class FCNT(AnnounceableResource):
 					# remove oldest
 					# Deleting a child must not cause a notification for 'deleteDirectChild'.
 					# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-					CSE.dispatcher.deleteResource(fcis[0], parentResource = self, doDeleteCheck = False)
+					CSE.dispatcher.deleteLocalResource(fcis[0], parentResource = self, doDeleteCheck = False)
 					del fcis[0]	# Remove from list
 					cni -= 1	# decrement cni when deleting a <fci>
 
@@ -210,7 +210,7 @@ class FCNT(AnnounceableResource):
 					cbs -= fcis[0].cs			
 					# Deleting a child must not cause a notification for 'deleteDirectChild'.
 					# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-					CSE.dispatcher.deleteResource(fcis[0], parentResource = self, doDeleteCheck = False)
+					CSE.dispatcher.deleteLocalResource(fcis[0], parentResource = self, doDeleteCheck = False)
 					cni -= 1	# again, decrement cbi when deleting a cni
 
 				# Add "current" atribute, if it is not there
@@ -254,7 +254,7 @@ class FCNT(AnnounceableResource):
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
 		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = T.FCI).resource
-		CSE.dispatcher.createResource(resource, originator = originator)
+		CSE.dispatcher.createLocalResource(resource, originator = originator)
 		resource.setAttribute('cs', self.cs)
 		resource.setAttribute('org', originator)
 
@@ -278,14 +278,14 @@ class FCNT(AnnounceableResource):
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty = T.FCNT_LA).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createResource(resource)).status:
+		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
 			return res
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.FCNT_OL).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createResource(resource)).status:
+		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
 			return res
 		
 		self.setAttribute(self._hasFCI, True)
@@ -299,10 +299,10 @@ class FCNT(AnnounceableResource):
 
 		# remove latest
 		if len(res := CSE.dispatcher.directChildResources(self.ri, T.FCNT_LA)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteResource(res[0])	# ignore errors
+			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
 		# remove oldest
 		if len(res := CSE.dispatcher.directChildResources(self.ri, T.FCNT_OL)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteResource(res[0])	# ignore errors
+			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
 	
 		self.setAttribute(self._hasFCI, False)
 		return Result.successResult()
@@ -315,6 +315,6 @@ class FCNT(AnnounceableResource):
 		rs = CSE.dispatcher.directChildResources(self.ri, ty = T.FCI)
 		for r in rs:
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
-			if not (res := CSE.dispatcher.deleteResource(r, parentResource = self)).status:
+			if not (res := CSE.dispatcher.deleteLocalResource(r, parentResource = self)).status:
 				return res
 		return Result.successResult()
