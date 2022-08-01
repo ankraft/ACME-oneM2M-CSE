@@ -176,6 +176,26 @@ def isStructured(uri:str) -> bool:
 	return False
 
 
+def localResourceID(ri:str) -> str:
+	""" Test whether an ID is a resource ID of the local CSE.
+	
+		Args:
+			ri: A resource ID in CSE-relative, SP-relative, or absolute notation.
+		Return:
+			If the ID targets a local resource then the CSE-relative form of the resource ID
+			is returned, or None otherwise.
+	"""
+	if isAbsolute(ri):
+		if ri.startswith(CSE.cseAbsoluteSlash):
+			return ri[len(CSE.cseAbsoluteSlash):]
+		return None
+	elif isSPRelative(ri):
+		if ri.startswith(CSE.cseCsiSlash):
+			return ri[len(CSE.cseCsiSlash):]
+		return None
+	return ri
+	
+
 def isValidID(id:str, allowEmpty:bool = False) -> bool:
 	""" Test for a valid ID. 
 
@@ -279,6 +299,22 @@ def riFromStructuredPath(srn: str) -> str:
 		return CSE.storage.structuredIdentifier(srn)[0]['ri']
 	except:
 		return None
+
+def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
+	"""	Get the csi from an unstructured CSE-relative, SP-relative, or
+		absolute ID.
+		
+		Args:
+			id: unstructured ID.
+		Return:
+			Tuple (csi ID (no slashes) without any SP-ID or CSE-ID, list of path elements)
+		"""
+	ids = id.split('/')
+	if isSPRelative(id):
+		return ids[1], ids
+	elif isAbsolute(id):
+		return ids[3], ids
+	return id, ids
 
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
