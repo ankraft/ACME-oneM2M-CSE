@@ -23,7 +23,7 @@ headers = {
 headers2 = {
 	C.hfRTU	: NOTIFICATIONSERVER+'&'+NOTIFICATIONSERVER
 }
-headersEmpty = {
+headersRTUEmpty = {
 	C.hfRTU	: ''
 }
 
@@ -399,9 +399,9 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), CSEID[1:])
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), CSEID)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
@@ -426,9 +426,9 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), CSEID[1:])
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), CSEID)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
@@ -442,7 +442,7 @@ class TestREQ(unittest.TestCase):
 	def test_retrieveCSENBAsynchEmptyRTU(self) -> None:
 		""" Retrieve <CB> non-blocking asynchronous w/ empty RTU """
 		clearLastNotification()
-		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestAsynch)}&rp={requestETDuration}', TestREQ.originator, headers=headersEmpty)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestAsynch)}&rp={requestETDuration}', TestREQ.originator, headers=headersRTUEmpty)
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
@@ -470,9 +470,9 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), CSEID[1:])
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), CSEID)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
@@ -547,8 +547,10 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.updated)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), CSEID)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'), T.CNT)

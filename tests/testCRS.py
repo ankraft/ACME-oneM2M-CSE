@@ -55,6 +55,7 @@ class TestCRS(unittest.TestCase):
 					'api' : 'NMyApp1Id',
 				 	'rr'  : True,
 				 	'srv' : [ '3' ],
+					'poa' : [ NOTIFICATIONSERVER ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -248,7 +249,7 @@ class TestCRS(unittest.TestCase):
 		"""	CREATE <CRS> with rrat, one encs, periodic window"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ '/id-in/'+TestCRS.originator ],
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
@@ -277,7 +278,7 @@ class TestCRS(unittest.TestCase):
 		"""	CREATE <CRS> with rrat, one encs, sliding window, stats enabled"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt': 2,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
@@ -371,7 +372,7 @@ class TestCRS(unittest.TestCase):
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'et' : et, 
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt' : 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
@@ -463,7 +464,7 @@ class TestCRS(unittest.TestCase):
 		"""	CREATE <CRS> with srat """
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'srat': [ self.sub1RI ],
@@ -552,7 +553,7 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNotNone(self.sub2RI)
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'srat': [ self.sub1RI, self.sub2RI ],	
@@ -814,7 +815,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
 		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
-		self.assertEqual(findXPath(nsi, '{0}/tg'), NOTIFICATIONSERVER)	
+		self.assertEqual(findXPath(nsi, '{0}/tg'), TestCRS.originator)	
 		self.assertEqual(findXPath(nsi, '{0}/rqs'), 1)	
 		self.assertEqual(findXPath(nsi, '{0}/rsr'), 1)	
 
@@ -855,7 +856,7 @@ class TestCRS(unittest.TestCase):
 		"""	CREATE <CRS> with expiration """
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt': 2,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
@@ -897,7 +898,7 @@ class TestCRS(unittest.TestCase):
 		"""	CREATE <CRS> subscriber URI and DELETE"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
-					'nu' : [ NOTIFICATIONSERVER ],
+					'nu' : [ TestCRS.originator ],
 					'twt': 2,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
@@ -908,11 +909,11 @@ class TestCRS(unittest.TestCase):
 							}
 							]
 						},
-					'su': NOTIFICATIONSERVER
+					'su': TestCRS.originator
 				}}
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
 		self.assertEqual(rsc, RC.created, TestCRS.crs)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/su'), NOTIFICATIONSERVER)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/su'), TestCRS.originator)
 
 		clearLastNotification()
 		r, rsc = DELETE(crsURL, TestCRS.originator)
