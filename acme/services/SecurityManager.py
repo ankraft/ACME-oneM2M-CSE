@@ -12,7 +12,7 @@ from __future__ import annotations
 import ssl
 from typing import List
 
-from ..etc.Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseStatusCode as RC
+from ..etc.Types import Operation, ResourceTypes as T, Permission, Result, CSERequest, ResponseStatusCode as RC
 from ..etc import Utils as Utils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -68,7 +68,7 @@ class SecurityManager(object):
 				originator: The originator to check for.
 				resource: The target resource of a request.
 				requestedPermission: The persmission to test.
-				ty: Mandatory for CREATE, else mandatory. The type of the resoure that is about to be created.
+				ty: Mandatory for CREATE, else optional. The type of the resoure that is about to be created.
 				parentResource: Optional, the parent resource of a target resource.
 			Return:
 				Boolean indicating access.
@@ -202,6 +202,10 @@ class SecurityManager(object):
 			if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 				return False
 
+		if requestedPermission == Permission.NOTIFY and originator == CSE.cseCsi:
+			L.isDebug and L.logDebug(f'NOTIFY permission granted for CSE: {originator}')
+			return True
+
 		#
 		# target is any other resource type
 		#
@@ -218,13 +222,16 @@ class SecurityManager(object):
 					if custodian == originator:	# resource.custodian == originator -> all access
 						L.isDebug and L.logDebug(f'Allow access for custodian: {custodian}')
 						return True
-					# When custodiabn is set, but doesn't match the originator then fall-through to fail
+					# When custodian is set, but doesn't match the originator then fall-through to fail
+					L.isDebug and L.logDebug(f'Resource creator: {custodian} != originator: {originator}')
 					
 				# Check resource creator
-				elif (creator := resource.getOriginator()) == originator:
-					L.isDebug and L.logDebug('Allow access for creator')
-					return True
-				L.isDebug and L.logDebug(f'Resource creator: {creator} != originator: {originator}')
+				else:
+					if (creator := resource.getOriginator()) == originator:
+						L.isDebug and L.logDebug('Allow access for creator')
+						return True
+					# if originator is not the original resource creator
+					L.isDebug and L.logDebug(f'Resource creator: {creator} != originator: {originator}')
 				
 				# Fall-through to fail
 
