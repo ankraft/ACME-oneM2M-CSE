@@ -268,7 +268,7 @@ class CRS(Resource):
 
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
-		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, originator = originator)).status:
+		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, ty = T.SUB, originator = originator)).status:
 			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat}: {res.dbg}'))
 		
 		# Error? Then rollback: delete all created subscriptions so far and return with an error

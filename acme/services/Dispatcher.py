@@ -562,7 +562,7 @@ class Dispatcher(object):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def createResourceFromDict(self, dct:JSON, parentID:str, ty:T = None, originator:str = None) -> Result:
+	def createResourceFromDict(self, dct:JSON, parentID:str, ty:T, originator:str = None) -> Result:
 		# TODO doc
 		# Create locally
 		if (pID := Utils.localResourceID(parentID)) is not None:
