@@ -864,7 +864,7 @@ class Resource(object):
 			Return:
 				String that identifies the resource.
 		"""
-		return f'{self.tpe}(ri={self.ri}, srn={self[self._srn]})'
+		return f'{self.tpe}(ri={self.ri}, srn={self.getSrn()})'
 
 
 	def __eq__(self, other:object) -> bool:
@@ -949,4 +949,22 @@ class Resource(object):
 		# determine and add the srn, only when this is a local resource, otherwise we don't need this information
 		# It is *not* a remote resource when the __remoteID__ is set
 		if not self[self._remoteID]:
-			self[self._srn] = Utils.structuredPath(self)
+			self.setSrn(Utils.structuredPath(self))
+
+
+	def getSrn(self) -> str:
+		"""	Retrieve a resource's full structured resource name.
+
+			Return:
+				The resource's full structured resource name.
+		"""
+		return self[self._srn]
+	
+
+	def setSrn(self, srn:str) -> None:
+		"""	Set a resource's full structured resource name.
+
+			Args:
+				srn: The full structured resource name to assign to a resource.
+		"""
+		self.setAttribute(self._srn, srn, overwrite = True)

@@ -35,22 +35,22 @@ class GRP_FOPT(Resource):
 
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
-		if L.isDebug: L.logDebug('Retrieving resources from fopt')
+		L.isDebug and L.logDebug(f'RETRIEVE resources from fopt. ID: {id}')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		if L.isDebug: L.logDebug('Creating resources at fopt')
+		L.isDebug and L.logDebug(f'CREATE resources at fopt. ID: {id}')
 		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator)
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		if L.isDebug: L.logDebug('Updating resources at fopt')
+		L.isDebug and L.logDebug(f'UPDATE resources at fopt. ID: {id}')
 		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator)
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		if L.isDebug: L.logDebug('Deleting resources at fopt')
+		L.isDebug and L.logDebug(f'DELETE resources at fopt. ID: {id}')
 		return CSE.group.foptRequest(Operation.DELETE, self, request, id, originator)
 
 

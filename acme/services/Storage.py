@@ -120,7 +120,7 @@ class Storage(object):
 
 	def createResource(self, resource:Resource, overwrite:bool = True) -> Result:
 		ri  = resource.ri
-		srn = resource.__srn__
+		srn = resource.getSrn()
 		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn}, srn: {srn}')
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')

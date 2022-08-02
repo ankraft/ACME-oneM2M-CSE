@@ -387,10 +387,6 @@ class TestGRP(unittest.TestCase):
 		self.assertNotIn(self.cnt4RI, findXPath(r, 'm2m:grp/mid'))
 
 
-
-
-
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesGRP2(self) -> None:
 		""" Validate <GRP> attributes after failed MID update"""
@@ -446,6 +442,52 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTviaFopt(self) -> None:
+		""" CREATE <CNT> under other <CNT>s via fopt """
+		dct = 	{ 'm2m:cnt' : { 
+					'rn': 'container'
+				}}
+		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.OK)
+		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
+		self.assertIsNotNone(rsp)
+		self.assertIsInstance(rsp, list)
+		self.assertEqual(len(rsp), 2)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTviaFopt(self) -> None:
+		""" RETRIEVE <CNT> under other <CNT>s via fopt """
+		r, rsc = RETRIEVE(f'{grpURL}/fopt/container', TestGRP.originator)
+		self.assertEqual(rsc, RC.OK)
+		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
+		self.assertIsNotNone(rsp)
+		self.assertIsInstance(rsp, list)
+		self.assertEqual(len(rsp), 2)
+		for r in rsp:
+			self.assertEqual(findXPath(r, 'rsc'), RC.OK)
+			pc = findXPath(r, 'pc')
+			self.assertIsNotNone(pc)
+			self.assertIsNotNone(findXPath(pc, 'm2m:cnt'))
+			self.assertEqual(findXPath(pc, 'm2m:cnt/rn'), 'container')
+			self.assertEqual(findXPath(pc, 'm2m:cnt/ty'), T.CNT)
+			self.assertEqual(findXPath(pc, 'm2m:cnt/cni'), 0)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTCNTviaFopt(self) -> None:
+		""" CREATE <CNT> under other <CNT>/<CNT>s via fopt """
+		dct = 	{ 'm2m:cnt' : { 
+					'rn': 'container'
+				}}
+		r, rsc = CREATE(f'{grpURL}/fopt/container', TestGRP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.OK)
+		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
+		self.assertIsNotNone(rsp)
+		self.assertIsInstance(rsp, list)
+		self.assertEqual(len(rsp), 2)
+
 #TODO check GRP itself: members
 
 
@@ -480,7 +522,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	suite.addTest(TestGRP('test_createGRP'))	# create <GRP> again
 	suite.addTest(TestGRP('test_addDeleteContainerCheckMID'))	
-	
+	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+
+	# Test fopt
+	suite.addTest(TestGRP('test_createGRP'))	# create <GRP> again
+	suite.addTest(TestGRP('test_createCNTviaFopt'))
+	suite.addTest(TestGRP('test_retrieveCNTviaFopt'))
+	suite.addTest(TestGRP('test_createCNTCNTviaFopt'))
+	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

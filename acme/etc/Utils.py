@@ -799,8 +799,6 @@ def fanoutPointResource(id:str) -> Resource:
 		Return:
 			Return either the virtual fanoutPoint resource or None.
 	"""
-	# if not id:
-	# 	return None
 	# Convert to srn
 	if not isStructured(id):
 		if not (id := structuredPathFromRI(id)):
@@ -813,9 +811,6 @@ def fanoutPointResource(id:str) -> Resource:
 		(head, found, _) = id.partition('/fopt/')
 		if found:
 			nid = head + '/fopt'
-	# elif '/fopt/' in id:
-	# 	(head, sep, tail) = id.partition('/fopt/')
-	# 	nid = head + '/fopt'
 
 	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
 		return cast(Resource, result.resource)

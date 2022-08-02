@@ -74,6 +74,8 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
+		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn}')
+
 		# handle transit requests first
 		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitRetrieveRequest(request)
@@ -87,7 +89,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleRetrieveRequest(request, srn, request.originator)
 
 		# Handle PollingChannelURI RETRIEVE
@@ -95,7 +97,7 @@ class Dispatcher(object):
 			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
 				L.logDebug(dbg := f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
 				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
-			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.getSrn()}')
 			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
 
 
@@ -234,7 +236,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str = None, srn:str = None, originator:str = None, request:CSERequest = None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator if originator else "<internal>"}')
+		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
@@ -311,7 +313,7 @@ class Dispatcher(object):
 			result = []
 			for resource in discoveredResources:
 				# Check existence and permissions for the .../{arp} resource
-				srn = f'{resource[Resource._srn]}/{filterCriteria.arp}'
+				srn = f'{resource.getSrn()}/{filterCriteria.arp}'
 				if (res := self.retrieveResource(srn)).resource and CSE.security.hasAccess(originator, res.resource, permission):
 					result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
@@ -467,16 +469,17 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
-		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}')
+		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests first
 		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitCreateRequest(request)
 
-		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
-		if not id:
-			if not (id := request.id):
-				return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
+		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		if not id and not srn:
+			# if not (id := request.id):
+			# 	return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
+			return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)
@@ -484,9 +487,9 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.originator)
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
+			return fanoutPointResource.handleCreateRequest(request, srn, request.originator)
 
 		if (ty := request.ty) is None:	# Check for type parameter in request, integer
 			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
@@ -528,8 +531,8 @@ class Dispatcher(object):
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
 		if CSE.storage.hasResource(ri = newResource.ri):
 			return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource with ri: {newResource.ri} already exists'))
-		if CSE.storage.hasResource(srn = newResource.__srn__):
-			return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource with structured id: {newResource.__srn__} already exists'))
+		if CSE.storage.hasResource(srn = newResource.getSrn()):
+			return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource with structured id: {newResource.getSrn()} already exists'))
 
 		# originator might have changed during this check. Result.data contains this new originator
 		originator = cast(str, rres.data) 					
@@ -617,8 +620,8 @@ class Dispatcher(object):
 					return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = L.logWarn(f'Invalid child resource type: {T(resource.ty).value}'))
 
 		# if not already set: determine and add the srn
-		if not resource.__srn__:
-			resource[resource._srn] = Utils.structuredPath(resource)
+		if not resource.getSrn():
+			resource.setSrn(Utils.structuredPath(resource))
 
 		# add the resource to storage
 		if not (res := resource.dbCreate(overwrite = False)).status:
@@ -668,6 +671,8 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
+		L.isDebug and L.logDebug(f'Process UPDATE request for id: {request.id}|{request.srn}')
+
 		# handle transit requests first
 		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
 			return CSE.request.handleTransitUpdateRequest(request)
@@ -675,7 +680,7 @@ class Dispatcher(object):
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Unknown resource ?
-		if not id:
+		if not id and not fopsrn:
 			return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 
 		# Handle operation execution time and check request expiration
@@ -685,7 +690,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
 		# Get resource to update
@@ -822,6 +827,7 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
+		L.isDebug and L.logDebug(f'Process DELETE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests
 		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
@@ -830,7 +836,7 @@ class Dispatcher(object):
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Unknown resource ?
-		if not id:
+		if not id and not fopsrn:
 			return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 
 		# Handle operation execution time and check request expiration
@@ -840,7 +846,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.originator)
 
 		# get resource to be removed and check permissions
@@ -968,7 +974,8 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
-		L.isDebug and L.logDebug(f'Processing NOTIFY request for ID: {id} request.id: {request.id}')
+		L.isDebug and L.logDebug(f'Process NOTIFY request for id: {request.id}|{request.srn}')
+
 		# handle transit requests
 		if Utils.localResourceID(request.id) is None:
 			return CSE.request.handleTransitNotifyRequest(request)

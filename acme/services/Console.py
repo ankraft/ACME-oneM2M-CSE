@@ -622,7 +622,7 @@ Available under the BSD 3-Clause License
 			plt.plot_size(None, rows/2)
 			plt.xticks([1, int(lcins/4), int(lcins/4) * 2, int(lcins/4) * 3, lcins])
 
-			plt.title(f'{resource[Resource._srn]} ({resource.ri})')
+			plt.title(f'{resource.getSrn()} ({resource.ri})')
 			plt.plot(x, y, color = L.terminalStyleRGBTupple)
 			plt.show()
 			plt.clear_figure()
