@@ -569,7 +569,7 @@ class Dispatcher(object):
 		# TODO doc
 		# Create locally
 		if (pID := Utils.localResourceID(parentID)) is not None:
-			L.isDebug and L.logDebug(f'Creating local resource with ID: {id} originator: {originator}')
+			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
 
 			# Retrieve the parent resource
 			if not (res := self.retrieveLocalResource(pID, originator = originator)).status:
@@ -594,18 +594,18 @@ class Dispatcher(object):
 		
 		# Create remotely
 		else:
-			L.isDebug and L.logDebug(f'Creating remote resource with ID: {id} originator: {originator}')
+			L.isDebug and L.logDebug(f'Creating remote resource with ID: {pID} originator: {originator}')
 			if not (res := CSE.request.sendCreateRequest((pri := Utils.toSPRelative(parentID)), 
 														 originator = originator,
 														 ty = ty,
 														 content = dct)).status:
 				return res
 
-			resRi = Utils.findXPath(res.request.pc, "{*}/ri")
+			resRi = Utils.findXPath(res.request.pc, '{0}/ri')
 			resCsi = Utils.csiFromSPRelative(pri)
 		
 		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)
-		return Result(status = True, rsc=RC.created, data = (resRi, resCsi, pID))
+		return Result(status = True, rsc = RC.created, data = (resRi, resCsi, pID))
 
 
 	def createLocalResource(self, resource:Resource, parentResource:Resource = None, originator:str = None) -> Result:
