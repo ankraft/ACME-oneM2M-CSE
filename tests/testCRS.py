@@ -938,7 +938,7 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'), r)
 		self.assertIsNotNone(rrf := findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 1 if present else 0, r)
-		return findXPath(rrf, '{0}/val')
+		return findXPath(rrf, '{0}/val')	# first in the list
 
 	#########################################################################
 

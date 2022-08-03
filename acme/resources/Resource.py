@@ -262,7 +262,7 @@ class Resource(object):
 			if self.ty not in [T.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
 			else:
-				updatedAttributes = Utils.findXPath(dct, '{0}')
+				updatedAttributes = Utils.findXPath(dct, '{*}')
 
 			# Check that acpi, if present, is the only attribute
 			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	

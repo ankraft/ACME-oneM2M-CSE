@@ -881,10 +881,10 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
-		- If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen.
+		- If an element is specified as `{*}` and is targeting a dictionary then a single random path is chosen.
 		This can be used to skip, for example, unknown first elements in a structure.
 
-		Example: findXPath(resource, '{_}/rn') 
+		Example: findXPath(resource, '{*}/rn') 
 
 	"""
 
@@ -917,7 +917,7 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 				return data
 			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
 
-		elif pathElement == '{_}':
+		elif pathElement == '{*}':
 			if isinstance(data, dict):
 				if keys := list(data.keys()):
 					data = data[keys[0]]

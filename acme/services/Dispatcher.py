@@ -601,7 +601,7 @@ class Dispatcher(object):
 														 content = dct)).status:
 				return res
 
-			resRi = Utils.findXPath(res.request.pc, '{0}/ri')
+			resRi = Utils.findXPath(res.request.pc, '{*}/ri')
 			resCsi = Utils.csiFromSPRelative(pri)
 		
 		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)

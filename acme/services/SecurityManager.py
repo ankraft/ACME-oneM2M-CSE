@@ -274,7 +274,7 @@ class SecurityManager(object):
 	def hasAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> Result:
 		"""	Check whether this is actually a correct update of the acpi attribute, and whether this is actually allowed.
 		"""
-		updatedAttributes = Utils.findXPath(request.pc, '{0}')
+		updatedAttributes = Utils.findXPath(request.pc, '{*}')
 
 		# Check that acpi, if present, is the only attribute
 		if 'acpi' in updatedAttributes:

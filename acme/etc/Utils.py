@@ -638,20 +638,21 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
 		`default` is returned.
 
-		- It is possible to address a specific element in an array. This is done be
+		- It is possible to address a specific element in a list. This is done be
 		specifying the element as `{n}`.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
-		- If an element is specified as `{}` then all elements in that array are returned in
-		an array.
+		- If an element is specified as `{}` then all elements in that list are returned in
+		a list.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
-		- If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen.
-		This can be used to skip, for example, unknown first elements in a structure.
+		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
+		jumped over. This can be used to skip, for example, unknown first elements in a structure. 
+		This is similar but not the same as "{0}" that works on lists.
 
-		Example: findXPath(resource, '{_}/rn') 
+		Example: findXPath(resource, '{*}/rn') 
 
 	"""
 
@@ -684,7 +685,7 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 				return data
 			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
 
-		elif pathElement == '{_}':
+		elif pathElement == '{*}':
 			if isinstance(data, dict):
 				if keys := list(data.keys()):
 					data = data[keys[0]]

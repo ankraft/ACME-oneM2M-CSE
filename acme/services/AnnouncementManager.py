@@ -260,7 +260,7 @@ class AnnouncementManager(object):
 			if res.rsc != RC.conflict:	# assume that it is ok if the remote resource already exists 
 				return Result(status = False, rsc = res.rsc, dbg = L.logDebug(f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})'))
 		else:
-			resource.addAnnouncementToResource(csi, Utils.findXPath(cast(JSON, res.data), '{0}/ri'))
+			resource.addAnnouncementToResource(csi, Utils.findXPath(cast(JSON, res.data), '{*}/ri'))
 		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 		resource.dbUpdate()
 		return Result(status=True)
