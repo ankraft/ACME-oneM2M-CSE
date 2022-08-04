@@ -67,7 +67,7 @@ Those files are imported from the common import / init directory. More than one 
 
 ### Format
 
-The format is a JSON structure that follows the structure described in the following code.  
+The format is a JSON structure that follows the structures described in the following codes.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
 ```jsonc
@@ -125,6 +125,10 @@ attributePolicies = [
 				//	Definition of enumeration values. This can only be an integer value, or range definitions
 				//	in the format "start..end" that evaluate to all the integer values of the given range.
 				"evalues" : [ 1, 2, "3..5", 6 ],
+
+				//	Definition of an enumeration type and an alternative to "evalues".
+				//	This is an enumerated data type name that is referenced. 
+				"etype" : "enumeratedDataType",
 
 				// The "oc" field specifies the CREATE request optionality. Optional, and one from this list:
 				//	- O  : Optional provided (default)
@@ -214,12 +218,14 @@ The following examples show the attribute policies for the *binarySwitch* and *d
 ```
 
 <a name="attributes"></a>
-## Attribute Policies for Common Resources and Complex Types
+## Attribute Policies for Common Resources, Complex Types and Enum Types
 
-During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.  
+During startup the CSE reads the attribute policies for common resource types and complex type definitions from the files with the extension ".ap" in the *init* directory, for example [attributePolicies.ap](../init/attributePolicies.ap). More than one attribute file can be defined.  
 The attributes for attribute policies are the same as for the &lt;flexContainer> attribute definitions above.
 
-### Format
+In addition, enumeration types are defined in files with the extension ".ep". 
+
+### Formats
 
 The format is a JSON structure that follows the structure described in the following code.  
 
@@ -255,6 +261,9 @@ The format is a JSON structure that follows the structure described in the follo
 			"lname" : ...
 			"ns" : ...
 			"type" : ...
+			"ltype" : ...
+			"etype" : ...
+			"evalues" : ...
 			"car" : ...
 			"oc" : ...
 			"ou" : ...
@@ -265,18 +274,48 @@ The format is a JSON structure that follows the structure described in the follo
 }
 ```
 
+The format for enumeration data type definitions is a bit simpler:
+
+```jsonc
+// The attributePolicy.ep file contains a dictionary of enumeration data types
+{
+
+	// Each enumeration definition is identified by its name
+	"enumerationType": {
+
+		// Each definition can only contain a the following attribute (definition see above)
+
+		"evalues" : ...
+	}
+}
+```
+
 **Example**
 
 The following gives an example for the attribute *ty* (*resourceType*).
 
 ```jsonc
 {
+	"rn": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "resourceName",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "O",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"ty": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",
+			"etype": "m2m:resourceType",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -301,10 +340,26 @@ belongs to the complex type *m2m:evalCriteria*.
 			"lname": "operator",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ 1, 2, 3, 4, 5, 6 ],
+			"etype": "m2m:evalCriteriaOperator",
 			"car": "1"
 		}
 	]
+}
+```
+
+**Enumeration Data Type**
+
+The following example show the definition for the enumeration data types used in the examples above.
+
+```jsonc
+{
+	"m2m:evalCriteriaOperator" : {
+		"evalues": [ "1..6" ]
+	},
+	"m2m:resourceType" : {
+		"evalues" : [ "1..5", 9, "13..17", 23, 24, "28..30", 48, 58, 60, 63, 
+					  "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ]
+	}
 }
 ```
 [← README](../README.md) 

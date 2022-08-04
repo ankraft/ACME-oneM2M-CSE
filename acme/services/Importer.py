@@ -34,6 +34,7 @@ class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
 	_firstImporters = [ 'csebase.json']
+	_enumValues:dict[str, list[int]] = {}
 
 	def __init__(self) -> None:
 		self.resourcePath = Configuration.get('cse.resourcesPath')
@@ -53,7 +54,8 @@ class Importer(object):
 		self.removeImports()
 
 		# Do Imports
-		if not (self.importAttributePolicies() and \
+		if not (self.importEnumPolicies() and \
+				self.importAttributePolicies() and \
 				self.importFlexContainerPolicies() and \
 				self.assignAttributePolicies() and \
 				self.importScripts()):
@@ -146,6 +148,41 @@ class Importer(object):
 	#
 	#	Attribute Policies
 	#
+
+	def importEnumPolicies(self, path:str = None) -> bool:
+		"""	Import the enumeration types policies.
+		"""
+		countAP = 0
+
+		# Get import path
+		if not path:
+			if (path := self.resourcePath) is None:
+				L.logErr('cse.resourcesPath not set')
+				raise RuntimeError('cse.resourcesPath not set')
+
+		if not os.path.exists(path):
+			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			return False
+
+		L.isInfo and L.log(f'Importing enumerated data types policies from: {path}')
+
+		filenames = fnmatch.filter(os.listdir(path), '*.ep')
+		for fno in filenames:
+			fn = os.path.join(path, fno)
+			L.isInfo and L.log(f'Importing policies: {fno}')
+			if os.path.exists(fn):
+				
+				# Read the JSON file
+				if not (enums := cast(JSON, self.readJSONFromFile(fn))):
+					return False
+
+				for enumName, enumDef in enums.items():
+					if not (evalues := enumDef.get('evalues')):
+						L.logErr(f'Missing or empty enumeration values (evalues) in file: {fn}')
+						return False
+					self._enumValues[enumName] = self._expandEnumValues(evalues, enumName, fn)
+		return True
+
 
 
 	def importFlexContainerPolicies(self, path:str = None) -> bool:
@@ -410,43 +447,28 @@ class Importer(object):
 				if not (ltype := BT.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BT.complex
 				if ltype == BT.enum:	# check sub-type enums
-					if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
+					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
+						evalues = self._enumValues.get(etype)
+					else:
+						evalues = findXPath(attr, 'evalues')
+					if not evalues or not isinstance(evalues, list):
 						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
 						return None
+					evalues = self._expandEnumValues(evalues, tpe, fn)
 			if typ == BT.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
 		#	Check and get enum definitions
 		evalues = None
 		if typ == BT.enum or (typ == BT.list and ltype == BT.enum):
-			if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
-				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
+				evalues = self._enumValues.get(etype)
+			else:
+				evalues = findXPath(attr, 'evalues')
+			if not evalues or not isinstance(evalues, list):
+				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} etype: {etype} in file: {fn}', showStackTrace=False)
 				return None
-			# get ranges in enums
-			_evalues:list[int] = []
-			for each in evalues:
-				if isinstance(each, int):
-					_evalues.append(each)
-					continue
-				if isinstance(each, str):
-					s, found, e = each.partition('..')
-					if not found:
-						L.logErr(f'Error in evalue range definition: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
-						return None
-					try:
-						si = int(s)
-						ei = int(e)
-					except ValueError:
-						L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
-						return None
-					if not si < ei:
-						L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
-						return None
-					_evalues.extend(list(range(si, ei+1)))
-					continue
-				L.logErr(f'Unsupported value: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
-				return None
-			evalues = _evalues
+			evalues = self._expandEnumValues(evalues, tpe, fn)
 
 		#	Check missing complex type definition
 		if typ == BT.dict or ltype == BT.dict:
@@ -535,3 +557,32 @@ class Importer(object):
 		Configuration.update('cse.security.enableACPChecks', self._oldacp)
 		self.isImporting = False
 
+
+	def _expandEnumValues(self, evalues:list[int, str], tpe:str, fn:str) -> list[int]:
+
+		#	Check and get enum definitions
+		_evalues:list[int] = []
+		for each in evalues:
+			if isinstance(each, int):
+				_evalues.append(each)
+				continue
+			if isinstance(each, str):
+				s, found, e = each.partition('..')
+				if not found:
+					L.logErr(f'Error in evalue range definition: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					return None
+				try:
+					si = int(s)
+					ei = int(e)
+				except ValueError:
+					L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					return None
+				if not si < ei:
+					L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					return None
+				_evalues.extend(list(range(si, ei+1)))
+				continue
+			L.logErr(f'Unsupported value: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+			return None
+
+		return _evalues
