@@ -771,8 +771,9 @@ class ACMEPContext(PContext):
 
 		# Get the request originator
 		if (originator := self.getVariable('request.originator')) is None:
-			pcontext.setError(PError.undefined, f'"originator" is not set. Set before a request with "originator <id>".')
-			return None
+			originator = Configuration.get('cse.originator')
+			# pcontext.setError(PError.undefined, f'"originator" is not set. Set before a request with "originator <id>".')
+			# return None
 
 		# Prepare request structure
 		req = { 'op': operation,

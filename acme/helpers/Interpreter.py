@@ -1650,8 +1650,8 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			Return:
 				The fully replaced macro.
 		"""
-		# remove prefix & trailer
-		macro = macro[1:-1] 			
+		# remove prefix & trailer & strip
+		macro = macro[1:-1].strip()
 
 		# Resolve contained macros recursively
 		if (macro := checkMacros(pcontext, macro)) is None:

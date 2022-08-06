@@ -786,6 +786,8 @@ ORIGINATOR &lt;originator>
 Set the originator for following oneM2M requests.  
 This command also sets the variable [request.originator](ACMEScript-macros.md#macro_req_originator).
 
+The default is the CSE's admin originator, ie. the configuration setting "cse.originator.
+
 
 Example:
 ```text
