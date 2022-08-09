@@ -488,7 +488,7 @@ class HttpServer(object):
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except Exception as e:
-			L.logErr(f'Failed to send request: {str(e)}', exc = e)
+			L.logWarn(f'Failed to send request: {str(e)}')
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
 		res = Result(status = True, rsc = resp.rsc, data = resp.pc, request = resp)
 		CSE.event.responseReceived(resp)	# type: ignore [attr-defined]
