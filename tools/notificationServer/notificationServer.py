@@ -13,7 +13,7 @@ from http.client import HTTPMessage
 from typing import cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import email.parser
-import json, argparse, sys, ssl, signal
+import json, argparse, sys, ssl, signal, time
 import cbor2
 from rich.console import Console
 from rich.syntax import Syntax
@@ -38,6 +38,7 @@ messageColor = 'spring_green2'
 errorColor = 'red'
 
 failVerification = False
+delayResponse:int = 0
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
@@ -62,6 +63,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		requestID = self.headers['X-M2M-RI']
 		post_data = self.rfile.read(length)
 
+		# Print the content data
+		console.print(f'[{messageColor}]### Notification (http)')
+		console.print(self.headers, highlight = False)
+
+		# delay response
+		if delayResponse:
+			console.print(f'[{messageColor}]Delaying response by {delayResponse}s')
+			time.sleep(delayResponse)
+
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
@@ -71,10 +81,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.end_headers()
 
 
-		
-		# Print the content data
-		console.print(f'[{messageColor}]### Notification (http)')
-		console.print(self.headers, highlight = False)
 
 		# Print JSON
 		if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
@@ -219,6 +225,10 @@ class MQTTClientHandler(MQTTHandler):
 		# TODO send a response
 
 		if responseData:
+			# delay response
+			if delayResponse:
+				console.print(f'[{messageColor}]Delaying response by {delayResponse}s')
+				time.sleep(delayResponse)
 			# connection.publish(f'/oneM2M/resp{frm}/{to.lstrip("/").replace("/", ":")}/{encoding}', responseData)
 			connection.publish(f'/oneM2M/resp/{_frm}/{_to}/{encoding}', responseData)
 
@@ -261,6 +271,12 @@ def exitSignalHandler(signal, frame) -> None:	# type: ignore [no-untyped-def]
 def exitAll() -> None:
 	os.kill(os.getpid(), signal.SIGUSR1)
 
+def checkPositive(value):
+	ivalue = int(value)
+	if ivalue <= 0:
+		raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+	return ivalue
+
 signal.signal(signal.SIGUSR1, exitSignalHandler)
 	
 if __name__ == '__main__':
@@ -290,6 +306,7 @@ if __name__ == '__main__':
 
 	# Generic
 	parser.add_argument('--fail-verification', action='store_true', dest='failVerification', default=False, help='Fail verification requests (default: false)')
+	parser.add_argument('--delay-response', action='store', dest='delayResponse',  nargs='?', const=60, type=checkPositive, help='Delay response (default: 60s)')
 
 
 
@@ -297,6 +314,7 @@ if __name__ == '__main__':
 
 	# Generic arguments
 	failVerification = args.failVerification
+	delayResponse = args.delayResponse
 
 	# run http(s) server
 	httpd = HTTPServer(('', args.port), SimpleHTTPRequestHandler)

@@ -29,15 +29,16 @@ In additions, you can provide additional command line arguments:
 | --port &lt;port>                           | Specify the server port (default: 9999).                             |
 | --http, --https                            | Run as http (default) or as https server.                            |
 | --certfile &lt;certfile>                   | Specify the certificate file (mandatory for https).                  |
-| --keyfile &lt;>keyfile>                    | Specify the key file (mandatory for https).                          |
+| --keyfile &lt;keyfile>                     | Specify the key file (mandatory for https).                          |
 | --mqtt                                     | Additionally enable MQTT for notifications                           |
-| --mqtt-address &lt;>host>                  | MQTT broker address (default: localhost)                             |
-| --mqtt-port &lt;>port>                     | MQTT broker port (default: 1883)                                     |
-| --mqtt-topic &lt;>topic> [&lt;>topic> ...] | MQTT topic list to subscribe to (default: ['/oneM2M/req/id-in/+/#']) |
-| --mqtt-username &lt;>username>             | MQTT username (default: None)                                        |
-| --mqtt-password &lt;>password>             | MQTT password (default: None)                                        |
+| --mqtt-address &lt;host>                   | MQTT broker address (default: localhost)                             |
+| --mqtt-port &lt;port>                      | MQTT broker port (default: 1883)                                     |
+| --mqtt-topic &lt;topic> [&lt;topic> ...]   | MQTT topic list to subscribe to (default: ['/oneM2M/req/id-in/+/#']) |
+| --mqtt-username &lt;username>              | MQTT username (default: None)                                        |
+| --mqtt-password &lt;password>              | MQTT password (default: None)                                        |
 | --mqtt-logging                             | MQTT enable logging (default: disabled)                              |
 | --fail-verification                        | Fail all verification requests with "no privileges" (default: False) |
+| --delay-response [&lt;delay>]              | Delay response by n seconds (default: 60s)                           |
 
 
 ### Example: NotificationServer with MQTT
