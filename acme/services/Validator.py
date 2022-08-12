@@ -8,18 +8,18 @@
 #
 
 from __future__ import annotations
-import base64
-import binascii
 from copy import deepcopy
 import re
 from typing import Any, Dict, Tuple
 import isodate
+
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType as BT, Cardinality as CAR
 from ..etc.Types import RequestOptionality as RO, Announced as AN, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..helpers import TextTools
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 
@@ -603,10 +603,8 @@ class Validator(object):
 			return Result(status = True, data = (dataType, value))
 		
 		if dataType == BT.base64:
-			try:
-				base64.b64decode(value, validate = True)
-			except binascii.Error as e:
-				return Result.errorResult(dbg = f'value is not base64-encoded: {str(e)}')
+			if not TextTools.isBase64(value):
+				return Result.errorResult(dbg = f'value is not base64-encoded')
 			return Result(status = True, data = (dataType, value))
 
 		if dataType == BT.any:

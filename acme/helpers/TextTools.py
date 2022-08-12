@@ -10,7 +10,7 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-import re
+import base64, binascii, re
 _commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
 _commentRegex = re.compile(_commentPattern, re.MULTILINE|re.DOTALL)
 
@@ -81,6 +81,20 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 
 	return result
 
+
+def isBase64(value:str) -> bool:
+	"""	Validate that a value is in base64 encoded format.
+	
+		Args:
+			value: The value to test.
+		Return:
+			Boolean indicating the test result.
+	"""
+	try:
+		base64.b64decode(value, validate = True)
+	except binascii.Error as e:
+		return False
+	return True
 
 
 def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
