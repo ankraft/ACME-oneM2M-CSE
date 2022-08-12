@@ -16,9 +16,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "enum",		// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"type": "enum",
+			"etype": "m2m:resourceType",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -1036,6 +1035,19 @@
 			"annc": "OA"
 		}
 	],
+	"dsp": [
+		{
+			"rtypes": [ "SMD", "REQRESP" ],
+			"lname": "descriptor",
+			"ns": "m2m",
+			"type": "base64",	// xs:base64Binary
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"dty": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1745,8 +1757,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
-			"type": "enum",	// m2m:mgmtDefinition
-			"evalues": [ "1001..1010", 1023 ],
+			"type": "enum",	
+			"etype": "m2m:mgmtDefinition",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -1890,8 +1902,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "multicastCapability",
 			"ns": "m2m",
-			"type": "enum",		// m2m:multicastCapability
-			"evalues": [ 1, 2 ],
+			"type": "enum",
+			"etype": "m2m:multicastCapability",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2137,7 +2149,7 @@
 	],
 	"or": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", "FCNT", "FCNTAnnc", "SMD", "TS", "TSAnnc"],
 			"lname": "ontologyRef",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2371,6 +2383,20 @@
 			"annc": "OA"
 		}
 	],
+	"rels": [
+		{
+			"rtypes": [ "SMD" ],
+			"lname": "relatedSemantics",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"rid": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -2569,6 +2595,19 @@
 			"annc": "OA"
 		}
 	],
+	"soe": [
+		{
+			"rtypes": [ "SMD", "REQRESP" ],
+			"lname": "semanticOpExec",
+			"ns": "m2m",
+			"type": "string",	// m2m:sparql
+			"car": "01",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"spty": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2628,9 +2667,8 @@
 			"lname": "supportedResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum",	 // m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
-						 "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ],    
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2697,12 +2735,25 @@
 			"lname": "SUIDs",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "positiveInteger",		// m2m:suid
-			"evalues": [ "10..15", "21..25", "32..35", "40..45" ],
+			"ltype": "enum",
+			"etype": "m2m:suid",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"svd": [
+		{
+			"rtypes": [ "SMD", "REQRESP" ],
+			"lname": "semanticValidated",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "OA"
 		}
 	],
@@ -2842,7 +2893,7 @@
 			"lname": "timeWindowType",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ 1, 2 ],    
+			"etype": "m2m:timeWindowType",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2897,6 +2948,19 @@
 			"type": "anyURI",
 			"car": "1",
 			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"vlde": [
+		{
+			"rtypes": [ "SMD", "REQRESP" ],
+			"lname": "validationEnable",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -2960,13 +3024,27 @@
 			"annc": "NA"
 		}
 	],
+	"dcrp": [
+		{
+			"rtypes": [ "SMD", "REQRESP" ],
+			"lname": "descriptorRepresentation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:semanticFormat",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"drt": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
-			"type": "enum",	// m2m:desIdResType
-			"evalues": [ 1, 2 ],
+			"type": "enum",
+			"etype": "m2m:desIdResType",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3005,8 +3083,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterOperation",
 			"ns": "m2m",
-			"type": "enum",	// m2m:filterOperation
-			"evalues": [ "1..3" ],
+			"type": "enum",
+			"etype": "m2m:filterOperation",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3019,8 +3097,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterUsage",
 			"ns": "m2m",
-			"type": "enum",	// m2m:filterUsage
-			"evalues": [ "1..4" ],
+			"type": "enum",
+			"etype": "m2m:filterUsage",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3267,8 +3345,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "responseTypeValue",
 			"ns": "m2m",
-			"type": "enum",	// m2m:responseType
-			"evalues": [ "1..5" ],
+			"type": "enum",
+			"etype": "m2m:responseType",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

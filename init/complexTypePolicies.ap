@@ -37,9 +37,8 @@
 			"lname": "childResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum", 	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "1"
 		},
 		{
@@ -48,9 +47,8 @@
 			"lname": "childResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum", 	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01L"
 		}, 
 		{
@@ -59,9 +57,8 @@
 			"lname": "childResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum", 	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01L"
 		}
 	],
@@ -126,7 +123,7 @@
 			"lname": "eventCategory",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "2..4", "100..999"],
+			"etype": "m2m:eventCat",
 			"car": "01"
 		},
 		{
@@ -135,7 +132,7 @@
 			"lname": "eventCategory",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "2..4", "100..999"],
+			"etype": "m2m:eventCat",
 			"car": "01"
 		}
 	],
@@ -181,8 +178,8 @@
 			"ctype": "m2m:filterCriteria",
 			"lname": "filterOperation",
 			"ns": "m2m",
-			"type": "enum",		// m2m:filterOperation
-			"evalues" : [ "1..3" ],
+			"type": "enum",
+			"etype": "m2m:filterOperation",
 			"car": "01"
 		},
 		{
@@ -190,8 +187,8 @@
 			"ctype": "m2m:eventNotificationCriteria",
 			"lname": "filterOperation",
 			"ns": "m2m",
-			"type": "enum",		// m2m:filterOperation
-			"evalues" : [ "1..3" ],
+			"type": "enum",
+			"etype": "m2m:filterOperation",
 			"car": "01"
 		}
 	],
@@ -389,9 +386,8 @@
 			"ctype": "accessControlObjectDetails",
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "enum",  	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"type": "enum", 
+			"etype": "m2m:resourceType",
 			"car": "01"
 		},
 		{
@@ -399,9 +395,8 @@
 			"ctype": "m2m:metaInformation",
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "enum",  	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"type": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01"
 		},
 		{
@@ -410,9 +405,8 @@
 			"lname": "resourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum",  	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01l"
 		}
 	],
@@ -423,8 +417,8 @@
 			"ctype": "m2m:geoCoordinates",
 			"ns": "m2m",
 			"lname": "type",
-			"type": "enum",  // m2m:geometryType
-			"evalues": [ "1..6" ],
+			"type": "enum",
+			"etype": "m2m:geometryType",
 			"car": "1"
 		},
 		{
@@ -432,8 +426,8 @@
 			"ctype": "m2m:mgmtLinkRef",
 			"lname": "type",
 			"ns": "m2m",
-			"type": "enum",	// m2m:mgmtDefinition
-			"evalues": [ "1001..1010", 1023 ],
+			"type": "enum",
+			"etype": "m2m:mgmtDefinition",
 			"car": "1"
 		}
 	],
@@ -708,7 +702,7 @@
 			"lname": "status",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "0..3" ],
+			"etype": "m2m:status",
 			"car": "01"
 		}
 	],
@@ -733,8 +727,8 @@
 			"ctype": "m2m:activityPattern",
 			"lname": "stationaryIndication",
 			"ns": "m2m",
-			"type": "enum", // m2m:stationaryIndication
-			"evalues": [ 1, 2 ],
+			"type": "enum",
+			"etype": "m2m:stationaryIndication",
 			"car": "01"
 		}
 	],
@@ -802,8 +796,8 @@
 			"lname": "notificationEventType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum",	// m2m:notificationEventType
-			"evalues": [ "1..8", 9, 10 ],	// 9, 10 experimental
+			"ltype": "enum",
+			"etype": "m2m:notificationEventType",
 			"car": "01"	// 0..5
 		}
 	],
@@ -828,8 +822,8 @@
 			"ctype": "m2m:evalCriteria",
 			"lname": "operator",
 			"ns": "m2m",
-			"type": "enum",  // m2m:evalCriteriaOperator
-			"evalues": [ "1..6" ],
+			"type": "enum",
+			"etype": "m2m:evalCriteriaOperator",
 			"car": "1"
 		}
 	],
@@ -935,9 +929,8 @@
 			"lname": "parentResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum", 	// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
-				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01l"
 		}
 	],
@@ -980,8 +973,8 @@
 			"ctype": "m2m:filterCriteria",
 			"lname": "filterUsage",
 			"ns": "m2m",
-			"type": "enum",	// m2m:filterUsage
-			"evalues" : [ "1..4" ],
+			"type": "enum",
+			"etype": "m2m:filterUsage",
 			"car": "01"
 		}
 	],
@@ -1012,8 +1005,8 @@
 			"ctype": "m2m:filterCriteria",
 			"lname": "contentFilterSyntax",
 			"ns": "m2m",
-			"type": "enum",		// m2m:contentFilterSyntax
-			"evalues" : [ 1 ],
+			"type": "enum",
+			"etype": "m2m:contentFilterSyntax",
 			"car": "01"
 		}
 	],
@@ -1095,8 +1088,8 @@
 			"ctype": "m2m:geoQuery",
 			"lname": "geometryType",
 			"ns": "m2m",
-			"type": "enum", 		 // m2m:geometryType
-			"evalues": [ "1..6" ],
+			"type": "enum", 
+			"etype": "m2m:geometryType",
 			"car": "1"
 		}
 	],
@@ -1117,8 +1110,8 @@
 			"ctype": "m2m:geoQuery",
 			"lname": "geoSpatialFunction",
 			"ns": "m2m",
-			"type": "enum",		// m2m:geoSpatialFunctionType
-			"evalues": [ "1..3" ],
+			"type": "enum",
+			"etype": "m2m:geoSpatialFunctionType",
 			"car": "1"
 		}
 	],
@@ -1202,7 +1195,7 @@
 			"lname": "resultContent",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "0..12" ],
+			"etype": "m2m:resultContent",
 			"car": "01"
 		}
 	],
@@ -1242,8 +1235,8 @@
 			"ctype": "m2m:metaInformation",
 			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
-			"type": "enum",	// m2m:desIdResType
-			"evalues": [ 1, 2],
+			"type": "enum",
+			"etype": "m2m:desIdResType",
 			"car": "01"
 		}
 	],
@@ -1444,12 +1437,7 @@
 			"lname": "responseStatusCode",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "1000..1002", 
-				"2000..2002", 2004,
-				4000, 4001, 4004, 4005, 4008, 4015, "4101..4133", "4135..4143",
-				5000, 5001, 5103, "5105..5107", "5203..5222", "5230..5232",
-				6003, 6005, 6010, "6020..6026", "6028..6034"
-			],
+			"etype": "m2m:responseStatusCode",
 			"car": "1"
 		}
 	],
@@ -1502,7 +1490,7 @@
 			"lname": "contentStatus",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ 1, 2 ],
+			"etype": "m2m:contentStatus",
 			"car": "01"
 		}
 	],
@@ -1553,7 +1541,7 @@
 			"lname": "responseTypeValue",
 			"ns": "m2m",
 			"type": "enum",
-			"evalues": [ "1..5" ],
+			"etype": "m2m:responseType",
 			"car": "1"
 		}
 	],
@@ -1640,8 +1628,9 @@
 			"ctype": "m2m:specializationType",
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
-			"type": "enum",		// m2m:mgmtDefinition
-			"evalues": [ "1001..1010", 1023 ],			"car": "01"
+			"type": "enum",
+			"etype": "m2m:mgmtDefinition",
+			"car": "01"
 		}
 	]
 

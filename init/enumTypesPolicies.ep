@@ -1,0 +1,81 @@
+//	enumTypesPolicies.ep
+//
+//	(c) 2022 by Andreas Kraft
+//	License: BSD 3-Clause License. See the LICENSE file for further details.
+//
+// The enumTypesPolicies.ep file contains a dictionary of enumeration data types and their allowed values
+
+{
+	"m2m:contentStatus" : {
+		"evalues": [ 1, 2 ]
+	},
+	"m2m:evalCriteriaOperator" : {
+		"evalues": [ "1..6" ]
+	},
+	"m2m:eventCat" : {
+		// m2m:stdEventCat + user defined range
+		"evalues" : [ "2..4", "100..999"]
+	},
+	"m2m:filterOperation" : {
+		"evalues" : [ "1..3" ]
+	},
+	"m2m:contentFilterSyntax" : {
+		"evalues" : [ 1 ]
+	},
+	"m2m:desIdResType" : {
+		"evalues": [ 1, 2]
+	},
+	"m2m:filterUsage" : {
+		"evalues" : [ "1..4" ]
+	},
+	"m2m:geometryType" : {
+		"evalues" : [ "1..6" ]
+	},
+	"m2m:geoSpatialFunctionType" : {
+		"evalues": [ "1..3" ]
+	},
+	"m2m:mgmtDefinition" : {
+		// Adapt to supported MgmtObj types
+		"evalues" : [ "1001..1010", 1023 ]
+	},
+	"m2m:multicastCapability" : {
+		"evalues" : [ 1, 2 ]
+	},
+	"m2m:notificationEventType" : {
+		"evalues": [ "1..8", 9, 10 ]	// 9, 10 experimental		
+	},
+	"m2m:responseType" : {
+		"evalues" : [ "1..5" ]
+	},
+	"m2m:resourceType" : {
+		// Adapt to supported resource types
+		"evalues" : [ "1..5", 9, "13..17", 23, 24, "28..30", 48, 58, 60, 63, 
+					  "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ]
+	},
+	"m2m:responseStatusCode" : {
+		"evalues": [ "1000..1002", 
+					 "2000..2002", 2004,
+					 4000, 4001, 4004, 4005, 4008, 4015, "4101..4133", "4135..4143",
+					 5000, 5001, 5103, "5105..5107", "5203..5222", "5230..5232",
+					 6003, 6005, 6010, "6020..6026", "6028..6034"]
+	},
+	"m2m:resultContent" : {
+		"evalues": [ "0..12" ]
+	},
+	"m2m:semanticFormat" : {
+		"evalues" : [ "1..7" ]
+	},
+	"m2m:stationaryIndication" : {
+		"evalues" : [ 1, 2 ]
+	},
+	"m2m:status" : {
+		"evalues" : [ "0..3" ]
+	},
+	"m2m:suid" : {
+		"evalues" : [ "10..15", "21..25", "32..35", "40..45" ]
+	},
+	"m2m:timeWindowType" : {
+		"evalues" : [ 1, 2 ]
+	}
+
+}

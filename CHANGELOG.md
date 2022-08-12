@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] The CSE is allowed to send a NOTIFY to a hosted resource directly.
 - [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
+- [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
 
 ### Fixed
 - [CSE] Corrected &lt;timeSeries>'s *cbs* attribute name.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
 - [WEB] Improved handling of SP-relative resource IDs.
+- [SCRIPTS] Improved handling of spaces in\[ commandorVariable ] command substituions.
 
 
 ## [0.10.2] - 2022-07-20
