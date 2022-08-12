@@ -414,7 +414,17 @@ class Logging:
 			Args:
 				obj: The object to inspect.
 		"""
-		Logging._log(Logging.logLevel, obj, immediate = True)
+		Logging._log(Logging.logLevel, obj, immediate = False)
+	
+
+	@staticmethod
+	def stacktrace(nrFrames:int = 1) -> None:
+		"""	Output the current stacktrace to the log.
+		
+			Args:
+				nrFrames: Number of stack frames to skip. Default of 1 means to ignore the call to this function.
+		"""
+		Logging._log(Logging.logLevel, ''.join(map(str, traceback.format_stack()[:-nrFrames])), immediate = False)
 
 
 	@staticmethod
