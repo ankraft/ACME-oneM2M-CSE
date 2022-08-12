@@ -16,7 +16,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class MgmtObj(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.SMD, T.SUB ]
 
 	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False) -> None:
 		super().__init__(T.MGMTOBJ, dct, pi, tpe=mgd.tpe(), create=create)

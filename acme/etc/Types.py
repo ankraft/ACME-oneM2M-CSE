@@ -316,21 +316,43 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 
 # List of announceable resource types in order
 ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
-	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
-	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
-	ResourceTypes.CSRAnnc, ResourceTypes.SMDAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
-	ResourceTypes.TSBAnnc
+	ResourceTypes.ACPAnnc.value,
+	ResourceTypes.AEAnnc.value,
+	ResourceTypes.CNTAnnc.value,
+	ResourceTypes.CINAnnc.value,
+	ResourceTypes.GRPAnnc.value,
+	ResourceTypes.MGMTOBJAnnc.value,
+	ResourceTypes.NODAnnc.value,
+	ResourceTypes.CSRAnnc.value,
+	ResourceTypes.SMDAnnc.value,
+	ResourceTypes.FCNTAnnc.value,
+	 ResourceTypes.ACTRAnnc.value, 
+	ResourceTypes.TSBAnnc.value
 ]
 
 
 # Supported resource types by this CSE, including the announced resource types
 ResourceTypes._supportedResourceTypes = [							#  type: ignore
-	ResourceTypes.ACP, ResourceTypes.ACTR, ResourceTypes.AE, ResourceTypes.CNT, 
-	ResourceTypes.CIN, ResourceTypes.CRS, 
-	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
-	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
-	ResourceTypes.SMD, ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, 
-	ResourceTypes.TSI, ResourceTypes.TSB, 
+	ResourceTypes.ACP.value,
+	ResourceTypes.ACTR.value,
+	ResourceTypes.AE.value, 
+	ResourceTypes.CNT.value, 
+	ResourceTypes.CIN.value,
+	ResourceTypes.CRS.value, 
+	ResourceTypes.CSEBase.value,
+	ResourceTypes.GRP.value, 
+	ResourceTypes.MGMTOBJ.value,
+	ResourceTypes.NOD.value,
+	ResourceTypes.PCH.value,
+	ResourceTypes.CSR.value,
+	ResourceTypes.REQ.value,
+	ResourceTypes.SUB.value,
+	ResourceTypes.SMD.value,
+	ResourceTypes.FCNT.value,
+	ResourceTypes.FCI.value,
+	ResourceTypes.TS.value,
+	ResourceTypes.TSI.value,
+	ResourceTypes.TSB.value, 
 ] + ResourceTypes._announcedResourceTypes							#  type: ignore
 
 
@@ -1163,6 +1185,29 @@ class TimeWindowType(ACMEIntEnum):
 	SLIDINGWINDOW = 2
 	"""	Sliding Window. """
 
+##############################################################################
+#
+#	Semantic related
+#
+
+class SemanticFormat(ACMEIntEnum):
+	""" Semantic Format.
+	"""
+	
+	IRI = 1
+	"""	IRI."""
+	FF_FunctionalStyle = 2
+	"""	File format: Functional-style. """
+	FF_OwlXml = 3
+	"""	File format: OWL/XML. """
+	FF_RdfXml = 4
+	"""	File format: RDF/XML. """
+	FF_RdfTurtle = 5
+	"""	File format: RDF/Turtle. """
+	FF_Manchester = 6
+	"""	File format: Manchester. """
+	FF_JsonLD = 7
+	"""	File format: JSON-LD. """
 
 
 ##############################################################################

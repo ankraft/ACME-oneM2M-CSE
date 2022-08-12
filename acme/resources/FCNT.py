@@ -21,7 +21,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class FCNT(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.CNT, T.FCNT, T.SUB, T.TS, T.FCI ]
+	_allowedChildResourceTypes = [ T.ACTR, T.CNT, T.FCNT, T.SMD, T.SUB, T.TS, T.FCI ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

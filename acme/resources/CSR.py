@@ -17,7 +17,7 @@ class CSR(AnnounceableResource):
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.AEAnnc, T.CINAnnc, T.CNT, T.CNTAnnc, 
 									T.CRS, T.CSRAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc, 
-									T.MGMTOBJAnnc, T.NODAnnc, T.PCH, T.SUB, T.TS, T.TSAnnc, T.TSB ]
+									T.MGMTOBJAnnc, T.NODAnnc, T.PCH, T.SMDAnnc, T.SUB, T.TS, T.TSAnnc, T.TSB ]
 
 
 	# Attributes and Attribute policies for this Resource Class

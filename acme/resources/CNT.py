@@ -21,7 +21,7 @@ from ..resources import Factory
 
 class CNT(AnnounceableResource):
 
-	_allowedChildResourceTypes =  [ T.ACTR, T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
+	_allowedChildResourceTypes =  [ T.ACTR, T.CNT, T.CIN, T.FCNT, T.SMD, T.SUB, T.TS ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

@@ -611,7 +611,7 @@ def pureResource(dct:JSON) -> Tuple[JSON, str]:
 		Args:
 			dct: JSON dictionary with the resource attributes
 		Return:
-			Tupple with the inner JSON and the tpe
+			Tupple with the inner JSON and the resource type name
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 

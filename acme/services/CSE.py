@@ -29,6 +29,7 @@ from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
 from ..services.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
+from ..services.SemanticManager import SemanticManager
 from ..services.Statistics import Statistics
 from ..services.Storage import Storage
 from ..services.TimeManager import TimeManager
@@ -54,6 +55,7 @@ remote:RemoteCSEManager							= None
 request:RequestManager							= None
 script:ScriptManager							= None
 security:SecurityManager 						= None
+semantic:SemanticManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
 time:TimeManager								= None
@@ -98,7 +100,7 @@ _cseResetLock									= Lock()	# lock for resetting the CSE
 
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
-	global remote, request, script, security, statistics, storage, time, timeSeries, validator
+	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseAbsoluteSlash
 	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion
@@ -177,6 +179,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
+	semantic = SemanticManager()			# Initialize the semantic manager
 	time = TimeManager()					# Initialize the time mamanger
 	script = ScriptManager()				# Initialize the script manager
 
@@ -248,6 +251,7 @@ def _shutdown() -> None:
 	# shutdown the services
 	console and console.shutdown()
 	time and time.shutdown()
+	semantic and semantic.shutdown()
 	remote and remote.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()

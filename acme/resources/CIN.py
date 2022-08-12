@@ -15,7 +15,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class CIN(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ T.SMD ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

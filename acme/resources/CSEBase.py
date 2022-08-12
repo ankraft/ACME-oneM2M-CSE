@@ -108,10 +108,10 @@ class CSEBase(AnnounceableResource):
 			return res
 
 		# add the current time to this resource instance
-		self['ctm'] = CSE.time.getCSETimestamp()
+		self.setAttribute('ctm', CSE.time.getCSETimestamp())
 
 		# add the supported release versions
-		self['srv'] = CSE.supportedReleaseVersions
+		self.setAttribute('srv', CSE.supportedReleaseVersions)
 
 		return Result.successResult()
 

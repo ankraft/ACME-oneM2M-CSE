@@ -24,7 +24,7 @@ from ..resources import Factory as Factory
 class TS(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.TSI, T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.TSI, T.SMD, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

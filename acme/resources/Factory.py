@@ -45,6 +45,7 @@ from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.REQ import REQ
 from ..resources.SUB import SUB
+from ..resources.SMD import SMD
 from ..resources.TS import TS
 from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
@@ -81,7 +82,8 @@ from ..resources.Resource import Resource
 
 
 # type definition for Factory lambda
-FactoryT = Tuple[object, Callable[ [ Dict[str, object], str, str, bool], object ]]
+FactoryT = Tuple[object, 
+				 Callable[ [ Dict[str, object], str, str, bool], object ]]
 
 resourceFactoryMap:Dict[T, FactoryT] = {
 	#	Regular resources
@@ -107,6 +109,7 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.PCH			: (PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)),
 	T.PCH_PCU		: (PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create = create)),
 	T.REQ			: (REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)),
+	T.SMD			: (SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)),
 	T.SUB			: (SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)),
 	T.TS			: (TS,			lambda dct, tpe, pi, create : TS(dct, pi = pi, create = create)),
 	T.TS_LA			: (TS_LA,		lambda dct, tpe, pi, create : TS_LA(dct, pi = pi, create = create)),
@@ -166,26 +169,37 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 
 def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool = False, isImported:bool = False) -> Result:
 	""" Create a resource from a dictionary structure.
-		This will *not* call the activate method, therefore some attributes
-		may be set separately.
+
+		This function will **not** call the resource's *activate()* method, therefore some attributes
+		may need to be set separately.
+
+		Args:
+			resDict: Dictionary with the resource definition.
+			pi: Resource ID of the parent ID.
+			ty: Resource type.
+			create: Resource will be newly created.
+			isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
+		Return:
+			`Result` object with the *resource* attribute set to the created resource object.
+
 	"""
 	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
 
 	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
-	if not typ and (typ := T.fromTPE(tpe)) is  None:
-		return Result.errorResult(dbg = L.logWarn(f'cannot determine type for resource: {tpe}'))
+	if typ is None and (typ := T.fromTPE(tpe)) is None:
+		return Result.errorResult(dbg = L.logWarn(f'cannot determine type for creating the resource: {tpe}'))
 	
 	# Check for Parent
-	if not pi and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
+	if pi is None and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
 		return Result.errorResult(dbg = L.logWarn(f'pi missing in resource: {tpe}'))
 
 	# Check whether given type during CREATE matches the resource's ty attribute
-	if typ != None and ty != None and typ != ty:
+	if typ is not None and ty is not None and typ != ty:
 		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type ({typ}) mismatch'))
 	
 	# Check whether given type during CREATE matches the resource type specifier
-	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
+	if ty is not None and tpe is not None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
 		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# store the import status in the original resDict
