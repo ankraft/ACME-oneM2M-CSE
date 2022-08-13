@@ -11,9 +11,8 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
-from acme.etc.Types import ResultContentType as RCN
-from acme.etc.DateUtils import getResourceDate
+from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.Types import ResultContentType as RCN, Permission
 from init import *
 
 
@@ -60,7 +59,7 @@ class TestSMD(unittest.TestCase):
 
 	#########################################################################
 	#
-	#	General tests
+	#	General attribute tests
 	#
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -86,22 +85,95 @@ class TestSMD(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	#########################################################################
+	#
+	#	Create tests
+	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSMDdspBase64(self) -> None:
 		"""	CREATE <SMD> with DSP encoded as base64"""
 		dct = 	{ 'm2m:smd' : { 
-					'rn' : 'failSMD',
+					'rn' : smdRN,
 					'dcrp' : 2,
 					'dsp' : 'Y29ycmVjdA==',
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
 		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
+		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSMD(self) -> None:
+		"""	DELETE <SMD>"""
+		r, rsc = DELETE(smdURL, TestSMD.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSMDunderACPFail(self) -> None:
+		"""	CREATE <SMD> under ACP -> Fail"""
+		# create ACP
+		dct:JSON = 	{ "m2m:acp": {
+			"rn": acpRN,
+			"pv": {
+			},
+			"pvs": { 
+				"acr": [ {
+					"acor": [ TestSMD.originator],
+					"acop": Permission.ALL
+				} ]
+			},
+		}}
+		r, rsc = CREATE(aeURL, TestSMD.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# Try to create SMD under ACP
+		dct = 	{ 'm2m:smd' : { 
+					'rn' : smdRN,
+					'dcrp' : 2,
+					#'dsp' : 'Y29ycmVjdA==',
+				}}
+		r, rsc = CREATE(f'{aeURL}/{acpRN}', TestSMD.originator, T.SMD, dct)
+		self.assertEqual(rsc, RC.invalidChildResourceType, r)
+
+		# Delete ACP
+		r, rsc = DELETE(f'{aeURL}/{acpRN}', TestSMD.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+	#########################################################################
+	#
+	#	Update tests
+	#
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSMDwithSOEandDSPFail(self) -> None:
+		"""	UPDATE <SMD> with both SOE and DSP -> Fail"""
+		dct = 	{ 'm2m:smd' : { 
+					'soe' : 'aValue',
+					'dsp' : 'Y29ycmVjdA==',
+				}}
+		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSMDwithVLDEfalse(self) -> None:
+		"""	UPDATE <SMD> with VLDE set to False"""
+		dct = 	{ 'm2m:smd' : { 
+					'vlde' : False,
+				}}
+		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+		self.assertFalse(findXPath(r, 'm2m:smd/vlde'))
+		self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
+		self.assertFalse(findXPath(r, 'm2m:smd/svd'))
 
 
 	#########################################################################
 
-# TODO test invald child resource type
-# TODO delete
 # TODO check not-present of semanticOpExec when RETRIEVE
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -110,10 +182,19 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Clear counters
 	clearSleepTimeCount()
 
-	# General test cases
+	# General attribute test cases
 	suite.addTest(TestSMD('test_createSMDdcrpIRIFail'))
 	suite.addTest(TestSMD('test_createSMDdspNotBase64Fail'))
+
+	# Create tests
 	suite.addTest(TestSMD('test_createSMDdspBase64'))
+	suite.addTest(TestSMD('test_deleteSMD'))
+	suite.addTest(TestSMD('test_createSMDunderACPFail'))
+
+	# Update tests
+	suite.addTest(TestSMD('test_createSMDdspBase64'))
+	suite.addTest(TestSMD('test_updateSMDwithSOEandDSPFail'))
+	suite.addTest(TestSMD('test_updateSMDwithVLDEfalse'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)

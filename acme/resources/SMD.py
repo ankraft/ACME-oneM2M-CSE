@@ -63,12 +63,8 @@ class SMD(AnnounceableResource):
 	}
 
 
-# TODO Annc version
-# TODO Factory
 # TODO SOE cannot be retrieved
-# TODO Implement base64 basic type
 # TODO clarify: or is RW or WO?
-# TODO TEST write correct and wrong base64 in dsp
 
 
 
@@ -79,7 +75,9 @@ class SMD(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		
 		# Validation of CREATE is done in self.validate()
+		
 
 		return Result.successResult()
 
@@ -87,21 +85,26 @@ class SMD(AnnounceableResource):
 	def update(self, dct: JSON = None, originator: str = None, doValidateAttributes: bool = True) -> Result:
 
 		# Some checks before the general validation that are necessary only in an UPDATE
+		soeNew = Utils.findXPath(dct, '{*}/soe')
+		dspNew = Utils.findXPath(dct, '{*}/dsp')
+		vldeOrg = self.vlde # store for later
+		vldeNew = Utils.findXPath(dct, '{*}/vlde')
 
-		# TODO 
-		# a) If both semanticOpExec and descriptor attributes exist, the Receiver shall generate a
-		# Response Status Code indicating a "BAD_REQUEST" error.
-		# b) If semanticOpExec attribute exists in the Request check that the syntax of its content corresponds
-		#  to a valid SPARQL query request [33]. If the content does not correspond to a valid SPARQL query request,
-		#  the Receiver shall generate a Response Status Code indicating an "INVALID_SPARQL_QUERY" error.
+		# soe and dsp cannot updated together
+		if soeNew and dspNew:
+			return Result(status = False, rsc = RC.badRequest, dbg = 'Updating soe and dsp in one request is not allowed')
+		
+		# If soe exists then validate it
+		if soeNew and not (res := CSE.semantic.validateSPARQL(soeNew)).status:
+			return res
 
-
+		# Generic update and validation (with semantic procdures)
 		if not (res := super().update(dct, originator, doValidateAttributes)).status:
 			return res
 
-		# TODO 
-		#  If validationEnable attribute is changed from true to false, then the hosting CSE shall set the semanticValidated
-		#  attribute of the addressed <semanticDescriptor> resource as false.
+		# Test whether vlde changed in the request from True to False, then set svd to False as well.
+		if vldeOrg == True and vldeNew == False:
+			self.setAttribute('svd', False)
 
 		return Result.successResult()
 
@@ -119,6 +122,10 @@ class SMD(AnnounceableResource):
 		# Validate validationEnable attribute
 		if not (res := CSE.semantic.validateValidationEnable(self)).status:
 			res.rsc = RC.badRequest
+			return res
+		
+		# Perform Semantic validation process
+		if not (res := CSE.semantic.validateSemantic(self)).status:
 			return res
 		
 		# The above procedures might have updated this instance.		
