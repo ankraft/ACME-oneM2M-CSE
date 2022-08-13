@@ -1037,7 +1037,7 @@
 	],
 	"dsp": [
 		{
-			"rtypes": [ "SMD", "REQRESP" ],
+			"rtypes": [ "SMD", "SMDAnnc", "REQRESP" ],
 			"lname": "descriptor",
 			"ns": "m2m",
 			"type": "base64",	// xs:base64Binary
@@ -1540,7 +1540,7 @@
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SWRAnnc", "TSAnnc", "TSIAnnc",
+						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSIAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
@@ -2149,7 +2149,8 @@
 	],
 	"or": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", "FCNT", "FCNTAnnc", "SMD", "TS", "TSAnnc"],
+			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", 
+						"FCNT", "FCNTAnnc", "SMD", "SMDAnnc", "TS", "TSAnnc" ],
 			"lname": "ontologyRef",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2385,7 +2386,7 @@
 	],
 	"rels": [
 		{
-			"rtypes": [ "SMD" ],
+			"rtypes": [ "SMD", "SMDAnnc" ],
 			"lname": "relatedSemantics",
 			"ns": "m2m",
 			"type": "list",
@@ -2746,7 +2747,7 @@
 	],
 	"svd": [
 		{
-			"rtypes": [ "SMD", "REQRESP" ],
+			"rtypes": [ "SMD", "SMDAnnc", "REQRESP" ],
 			"lname": "semanticValidated",
 			"ns": "m2m",
 			"type": "boolean",
@@ -2955,7 +2956,7 @@
 	],
 	"vlde": [
 		{
-			"rtypes": [ "SMD", "REQRESP" ],
+			"rtypes": [ "SMD", "SMDAnnc", "REQRESP" ],
 			"lname": "validationEnable",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3026,7 +3027,7 @@
 	],
 	"dcrp": [
 		{
-			"rtypes": [ "SMD", "REQRESP" ],
+			"rtypes": [ "SMD", "SMDAnnc", "REQRESP" ],
 			"lname": "descriptorRepresentation",
 			"ns": "m2m",
 			"type": "enum",

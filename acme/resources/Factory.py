@@ -46,6 +46,7 @@ from ..resources.PCH_PCU import PCH_PCU
 from ..resources.REQ import REQ
 from ..resources.SUB import SUB
 from ..resources.SMD import SMD
+from ..resources.SMDAnnc import SMDAnnc
 from ..resources.TS import TS
 from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
@@ -130,6 +131,7 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.FCNTAnnc		: (FCNTAnnc,	lambda dct, tpe, pi, create : FCNTAnnc(dct, pi = pi, create = create)),
 	T.GRPAnnc		: (GRPAnnc,		lambda dct, tpe, pi, create : GRPAnnc(dct, pi = pi, create = create)),
 	T.NODAnnc		: (NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)),
+	T.SMDAnnc		: (SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)),
 	T.TSAnnc		: (TSAnnc,		lambda dct, tpe, pi, create : TSAnnc(dct, pi = pi, create = create)),
 	T.TSIAnnc		: (TSIAnnc,		lambda dct, tpe, pi, create : TSIAnnc(dct, pi = pi, create = create)),
 
