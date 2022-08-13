@@ -76,11 +76,10 @@ class DVC(MgmtObj):
 
 	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		# Check for ena & dis updates 
-		if dct and self.tpe in dct:
-			ena = Utils.findXPath(dct, 'm2m:dvc/ena')
-			dis = Utils.findXPath(dct, 'm2m:dvc/dis')
-			if ena and dis:
-				return Result(status=False, rsc=RC.badRequest, dbg='both ena and dis updated to True is not allowed')
+		ena = Utils.findXPath(dct, '{*}/ena')
+		dis = Utils.findXPath(dct, '{*}/dis')
+		if ena and dis:
+			return Result(status = False, rsc = RC.badRequest, dbg = 'Both ena and dis updated to True is not allowed')
 
 		return super().update(dct, originator)
 
