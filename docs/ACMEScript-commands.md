@@ -46,6 +46,8 @@
 |                              | [UPDATE](#command_update)                       | Send an UPDATE request to a oneM2M CSE                                       |
 | [CSE](#commands_CSE)         | [RESET](#command_reset)                         | Reset and restart the CSE                                                    |
 |                              | [SETCONFIG](#command_setconfig)                 | Assign a new value to a configuration setting                                |
+| [HTTP](#commands_HTTP)       | [HTTP](#command_http)                           | Send http requests                                                           |
+|                              | [ENDHTTP](#command_endhttp)                     | End an http request command                                                  |
 
 
 
@@ -891,7 +893,8 @@ print [response.status]
 print [response.resource]
 ```
 
-### CSE Commands
+<a name="commands_CSE"></a>
+## CSE
 
 <a name="command_reset"></a>
 ### RESET
@@ -926,5 +929,63 @@ setConfig logging.level off
 ```
 
 
+
+<a name="commands_HTTP"></a>
+## HTTP
+
+<a name="command_http"></a>
+### HTTP
+
+Usage:  
+HTTP &lt;method> &lt;URL>
+
+Send a http request with the provided *method* to a *URL*.  
+*method* must be one of *GET*, *POST*, *PUT*, *DELETE*, or *PATCH*.
+
+The following lines after the *HTTP* command may contain multiple http headers in the form 
+`name:value`. The definition of headers are ended with an empty line or the [ENDHTTP](#command_endhttp)
+command.
+
+An optional body may be passed in the request after the empty line.
+
+A http command is finished with the [ENDHTTP](#command_endhttp) command.
+
+After the request is finished the response details are provided in the following variables. They are available
+until the next http or CSE request.
+
+- *response.status* - The http response status code.  
+A status code of -1 means that a connection to the given *URL* was not possible.
+- *response.body* - If the response contains a body then this variable contains this body as
+text, otherwise the variable is undefined.
+- *response.&lt;header>* - All the response's headers are defined as separate variables, e.g. the 
+http *Date* header is stored in the variable *response.Date*.  
+Please note that variable names are case-insensitive.
+
+Example:
+```text
+# Send data via a http post request
+http post https://www.example.com
+Content-Type: plain/text
+
+Hello world.
+endhttp	
+```
+
+<a name="command_endhttp"></a>
+### ENDHTTP
+
+Usage:  
+ENDHTTP 
+
+End an [HTTP](#command_http) command definition.
+
+Example:
+```text
+http get https://www.example.com
+endhttp	
+```
+
+
 [← ACMEScript](ACMEScript.md)  
 [← README](../README.md)  
+

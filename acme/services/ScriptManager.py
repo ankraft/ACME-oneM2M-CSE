@@ -12,7 +12,9 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
-import json, os, fnmatch
+import json, os, fnmatch, re
+import requests
+
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
 from ..services.Configuration import Configuration
 from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCallable
@@ -60,6 +62,7 @@ class ACMEPContext(PContext):
 							 			'clear':				self.doClear,
 							 			'create':				self.doCreate,
 							 			'delete':				self.doDelete,
+										'http':					self.doHttp,
 										'importraw':			self.doImportRaw,
 										'logdivider':			self.doLogDivider,
 							 			'notify':				self.doNotify,
@@ -237,6 +240,99 @@ class ACMEPContext(PContext):
 				The scripts "PContext" object, or None in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.DELETE, arg)
+
+
+	_httpMethods = {
+		'get':		requests.get,
+		'post':		requests.post,
+		'put':		requests.put,
+		'delete':	requests.delete,
+		'patch':	requests.patch,
+	}
+
+
+	def doHttp(self, pcontext:PContext, arg:str) -> PContext:
+		""" Making a http(s) request.
+				
+			Example:
+				http post https://example.com
+				aHeader: a header value
+				anotherHeader: another header value
+
+				body content
+				endhttp
+
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command, only the target.
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
+		"""
+		# clear all response variables first
+		for k, _ in pcontext.getVariables('response\\.*'):
+			pcontext.delVariable(k)
+
+		# Parse first command line
+		op, _, url = arg.partition(' ')
+
+		if not op:
+			pcontext.setError(PError.invalid, 'Missing http method')
+			return None
+		if not url:
+			pcontext.setError(PError.invalid, 'Missing URL')
+			return None
+
+		# Check command -> method
+		if (method := self._httpMethods.get(op.lower())) is None:
+			pcontext.setError(PError.invalid, f'Unsupported http method: {op}')
+			return None
+
+		# Get headers & body
+		headers:dict[str, str] = {}
+		lines = re.split('\n', self.remainingLinesAsString(upto = 'endhttp')) # NO macros are evaluated
+		lenLines = len(lines)
+		pcontext.pc += lenLines + 1 # increment pc, skip over endhttp
+
+		# parse & construct headers
+		idx = 0
+		while idx < lenLines and len(l := lines[idx].strip()):
+			if (l := checkMacros(pcontext, l)) is None:	# evaluate the macros here
+				pcontext.state = PState.terminatedWithError
+				return None
+			key, found, value = l.partition(':')
+			if not found:
+				pcontext.setError(PError.invalid, f'Invalid header: {l}')
+				return None
+			headers[key] = value.strip()
+			idx += 1
+		
+		# construct body
+		bodyLines:list[str] = []
+		for line in lines[idx+1:]:
+			if (l := checkMacros(pcontext, line)) is None:	# evaluate the macros here
+				pcontext.state = PState.terminatedWithError
+				return None
+			bodyLines.append(l)
+		body = '\n'.join(bodyLines)
+		if len(body):
+			headers['Content-Length'] = str(len(body))
+
+		# send http request
+		try:
+			response = method(url, data = body, headers = headers, verify = CSE.security.verifyCertificateHttp)
+		except requests.exceptions.ConnectionError:
+			pcontext.setVariable('response.status', '-1')
+			return pcontext
+		
+		# parse response and assign to variables
+		pcontext.setVariable('response.status', str(response.status_code))
+		if response.text: # fill body variable
+			pcontext.setVariable('response.body', response.text)
+		if response.headers: # fill header variables
+			for k, v in response.headers.items():
+				pcontext.setVariable(f'response.{k}', v)
+		
+		return pcontext
 
 
 	def doImportRaw(self, pcontext:PContext, arg:str) -> PContext:

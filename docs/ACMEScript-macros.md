@@ -9,13 +9,14 @@
 | [Basic](#macros_basic)     | [argc](#macro_argc)                              | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                              | Get script or procedure arguments                                       |
 |                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
-|                            | [in](#macro_in)                                  | Text whether a string exists in another string                          |
+|                            | [in](#macro_in)                                  | Test whether a string exists in another string                          |
+|                            | [isDefined](#macro_isdefined)                    | Test whether a variable, macro, or environment variable exists          |
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
 |                            | [match](#macro_match)                            | Evaluate an argument against a simple regular expression                |
-|                            | [random](#macro_random)                          | Generate a random number.                                               |
+|                            | [random](#macro_random)                          | Generate a random number                                                |
 |                            | [result](#macro_result)                          | Get the last result of a while, procedure etc.                          |
-|                            | [round](#round)                                  | Round a float number.                                                   |
+|                            | [round](#round)                                  | Round a float number                                                    |
 |                            | [runCount](#macro_runcount)                      | Get the number of script runs.                                          |
 |                            | [upper](#macro_upper)                            | Get an upper-case version of the provided string argument               |
 | [Storage](#macros_storage) | [storageGet](#macro_storageget)                  | Get a value from the persistent key/value storage                       |
@@ -107,15 +108,33 @@ print [in Hello "Hello World"]
 ```
 
 
+<a name="macro_isdefined"></a>
+### isDefined
+
+Usage:  
+[isDefined &lt;name> ]
+
+Test whether a variable, macro, or environment variable exists.
+
+Example:
+
+```text
+if [isDefined response.status]
+	print [response.status]
+endif
+```
+
 <a name="macro_loop"></a>
 ### loop
 
 Usage:  
 [loop]
 
-Return the current [while](ACMEScript-commands.md#command_while) loop's loop count. 
+Return the current [while](ACMEScript-commands.md#command_while) loop's *loop* count. 
 This counter is automatically incremented by 1 for every iteration of a while loop. 
-It starts at 0 when the while loop is entered. Every (nested) while loop has its own loop counter.
+It starts at 0 when the while loop is entered. 
+
+Every (nested) while loop has its own *loop* counter.
 
 It is not defined outside a while loop.
 

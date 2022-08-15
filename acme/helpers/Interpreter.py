@@ -289,7 +289,7 @@ class PContext():
 		"""	Reset the context / script. 
 		
 			
-			This methoth ,ay also be implemented in a sub-class, but the must then call this method as well.
+			This methoth may also be implemented in a sub-class, but the must then call this method as well.
 		"""
 		self.pc = 0
 		self.error = PErrorState(PError.noError, 0, '', None)
@@ -574,6 +574,23 @@ class PContext():
 				Variable content, or None.		
 		"""
 		return self.variables.get(key.lower())
+
+
+	def getVariables(self, expression:str) -> list[Tuple[str, str]]:
+		"""	Return all variables and values that names match a
+			regular expression.
+
+			Args:
+				expression: A string with the regular expression.
+			Return:
+				List of tuples ( *variable name*, *variable value* ).
+		"""
+		_expr = re.compile(expression, flags = re.IGNORECASE)
+		_keys = [ k 
+				  for k in self.variables.keys()
+				  if re.match(_expr, k) ]
+		return [ ( k, self.variables[k] ) 
+				 for k in _keys ]
 	
 
 	def setVariable(self, key:str, value:str) -> None:
@@ -1408,6 +1425,28 @@ def _doIn(pcontext:PContext, arg:str, line:str) -> str:
 	return str(args[0] in args[1]).lower()
 
 
+def _doIsDefined(pcontext:PContext, arg:str, line:str) -> str:
+	"""	Test whether a variable, macro, or environment variable is defined.
+
+		Example:
+
+			[isDefined <name>]
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: One arguments´: The name of the variable etc to check.
+			line: The original code line.
+		Return:
+			String with either *false* or *false*, or None in case of an error.	"""
+	if len(args := tokenize(arg)) != 1:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for isDefined: {len(args)}. Must be == 1.')
+		return None
+	c = args[0]
+	return str(pcontext.getVariable(c) is not None or
+			   pcontext.getMacro(c) is not None or
+			   pcontext.getEnvironmentVariable(c) is not None)
+
+
 def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
 	"""	This macro returns the result of a match comparison.
 
@@ -1583,18 +1622,19 @@ _builtinCommands:PCmdDict = {
 _builtinMacros:PMacroDict = {
 	# !!! macro names must be lower case
 
-	'argc':		_doArgc,
-	'argv':		_doArgv,
-	'datetime':	lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
-	'in':		_doIn,
-	'loop':		lambda c, a, l: str(x) if ((x := c.whileLoopCounter()) and x is not None) else x,	# type:ignore [dict-item, return-value]
-	'lower':	lambda c, a, l: a.lower(),
-	'match':	_doMatch,
-	'random':	_doRandom,
-	'result':	lambda c, a, l: c.result,
-	'round':	_doRound,
-	'runcount':	lambda c, a, l: str(c.runs),
-	'upper':	lambda c, a, l: a.upper(),
+	'argc':			_doArgc,
+	'argv':			_doArgv,
+	'datetime':		lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
+	'in':			_doIn,
+	'isdefined':	_doIsDefined,
+	'loop':			lambda c, a, l: str(x) if ((x := c.whileLoopCounter()) and x is not None) else x,	# type:ignore [dict-item, return-value]
+	'lower':		lambda c, a, l: a.lower(),
+	'match':		_doMatch,
+	'random':		_doRandom,
+	'result':		lambda c, a, l: c.result,
+	'round':		_doRound,
+	'runcount':		lambda c, a, l: str(c.runs),
+	'upper':		lambda c, a, l: a.upper(),
 
 	# Math operators
 	'+':		lambda c, a, l: _calculate(c, a, l, operator.add),

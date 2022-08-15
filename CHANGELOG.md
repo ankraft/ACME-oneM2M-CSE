@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *expirationCounter* (&lt;subscription>, &lt;crossResourceSubscription>)
 - [CONSOLE] Added continuous inspection of a resource.
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
+- [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
+- [SCRIPTS] Added *http* command to support making http(s) requests from scripts.
+
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
