@@ -107,6 +107,9 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 		- '+' : one or more characters
 		- '\\' : Escape an expression operator
 
+		A *pattern* must always match the full string *st*. This means that the
+		pattern is implicit "^<pattern>$".
+
 		Examples:
 			"hello" - "h?llo" -> True
 			

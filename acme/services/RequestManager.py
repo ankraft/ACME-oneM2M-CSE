@@ -26,6 +26,16 @@ from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
+TargetDetails = list[ Tuple[str, 				# Real target URL,incl protocol
+							list[str],			# allowed content serializations
+							str, 				# Target's supported release version
+							PCH, 				# PollingChannel resource, if this is to be used
+							str, 				# Originator with adapted scope
+							str, 				# Targets ID (to)
+							ResourceTypes ] ]	# Target's resource type
+
+
+		
 
 # This factor determines how often the monitor looks for expired request resources
 expirationCheckFactor = 2.0
@@ -769,7 +779,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}')
 
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.resolveTargetURIetc(uri, 
+		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri, 
 																					  originator = originator,
 																					  permission = Permission.RETRIEVE,
 																					  raw = raw):
@@ -822,7 +832,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri}')
 
-		for url, csz, rvi, pch, requestOriginator, to, tty in self.resolveTargetURIetc(uri, 
+		for url, csz, rvi, pch, requestOriginator, to, tty in self.determineTargetDetails(uri, 
 																					   originator = originator,
 																					   permission = Permission.CREATE,
 																					   noAccessIsError = noAccessIsError,
@@ -877,7 +887,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}')
 
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.resolveTargetURIetc(uri,
+		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri,
 																					  originator = originator,
 																					  permission = Permission.UPDATE,
 																					  raw = raw):
@@ -929,7 +939,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}')
 
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.resolveTargetURIetc(uri,
+		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri,
 																					  originator = originator, 
 																					  permission = Permission.DELETE, 
 																					  raw = raw):
@@ -982,7 +992,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} for Originator: {originator}')
 
-		if (resolved := self.resolveTargetURIetc(uri, 
+		if (resolved := self.determineTargetDetails(uri, 
 												 originator = originator, 
 												 permission = Permission.NOTIFY, 
 												 noAccessIsError = noAccessIsError, 
@@ -1406,12 +1416,12 @@ class RequestManager(object):
 		return [ ContentSerializationType.getType(c) for c in csz]
 
 
-	def resolveTargetURIetc(self, 
+	def determineTargetDetails(self, 
 							uri:str, 
 							permission:Permission, 
 							originator:str = None,
 							noAccessIsError:bool = False,
-							raw:bool = False) -> list[ Tuple[str, list[str], str, PCH, str, str, ResourceTypes ] ]:
+							raw:bool = False) -> TargetDetails:
 		"""	Resolve the real URL and more message parameters for a request and a target,
 		
 			Args:
