@@ -426,14 +426,19 @@ class HttpServer(object):
 				hds[C.hfOT] = content['ot']
 
 			# Get filter criteria
-			filterCriteria = []
+			arguments = []
 			if 'rcn' in content:
-				filterCriteria.append(f'rcn={content["rcn"]}')
+				arguments.append(f'rcn={content["rcn"]}')
 			if 'drt' in content:
-				filterCriteria.append(f'drt={content["drt"]}')
+				arguments.append(f'drt={content["drt"]}')
 			if fc := content.get('fc'):
 				for key in list(fc.keys()):
-					filterCriteria.append(f'{key}={fc[key]}')
+					arguments.append(f'{key}={fc[key]}')
+			
+			# Add further non-filterCriteria arguments
+			if 'sqi' in content:
+				arguments.append(f'sqi={content["sqi"]}')
+
 
 			# Add to to URL
 			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
@@ -442,9 +447,9 @@ class HttpServer(object):
 			# 	delim = '~'	if url.endswith('/') else '/~'
 			# 	url = f'{url}{delim}{to}'
 
-			# Add filtercriteria to URL
-			if filterCriteria:
-				url += f'?{"&".join(filterCriteria)}'
+			# Add arguments to URL
+			if arguments:
+				url += f'?{"&".join(arguments)}'
 				
 			# re-assign the content to pc
 			if 'pc' in content:
@@ -667,7 +672,7 @@ class HttpServer(object):
 
 		# Handle some parameters differently.
 		# They are not filter criteria, but request attributes
-		for param in ['rcn', 'rp', 'drt']:
+		for param in ['rcn', 'rp', 'drt', 'sqi']:
 			if p := args.get(param):	# type: ignore [assignment]
 				req[param] = p
 				del args[param]

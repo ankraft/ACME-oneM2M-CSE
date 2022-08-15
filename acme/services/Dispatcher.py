@@ -123,7 +123,7 @@ class Dispatcher(object):
 		if permission == Permission.RETRIEVE and request.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
 			return Result.errorResult(dbg = f'invalid rcn: {int(request.rcn)} for fu: {int(request.fc.fu)}')
 
-		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.rcn}, fu: {request.fc.fu.name}, drt: {request.drt.name}, {str(request.fc)}, resultContent: {request.rcn.name}, attributes: {str(request.fc.attributes)})')
+		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.rcn}, fu: {request.fc.fu.name}, drt: {request.drt.name}, fc: {str(request.fc)}, rcn: {request.rcn.name}, attributes: {str(request.fc.attributes)}, sqi: {request.sqi})')
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:

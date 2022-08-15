@@ -125,7 +125,7 @@ class SMD(AnnounceableResource):
 			return res
 		
 		# Perform Semantic validation process
-		if not (res := CSE.semantic.validateSemantic(self)).status:
+		if not (res := CSE.semantic.validateSemantics(self)).status:
 			return res
 		
 		# The above procedures might have updated this instance.		

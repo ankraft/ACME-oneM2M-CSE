@@ -1530,6 +1530,9 @@ class CSERequest:
 	ec:int = None
 	"""	Event Category. """
 
+	sqi:bool = None
+	""" Semantic Query Indicator """
+
 	pc:JSON = None
 	""" The request's primitive content as a dictionary. """
 	
@@ -1547,7 +1550,6 @@ class CSERequest:
 
 	requestType:RequestType	= RequestType.NOTSET
 	""" The struture is for a request or a response. """
-
 
 	#
 	#	HTTP specifics

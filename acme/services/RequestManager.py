@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 import urllib.parse
-from typing import Any, List, Tuple, cast, Dict
+from typing import Any, List, Tuple, cast, Dict, Type
 from copy import deepcopy
 from threading import Lock
 
@@ -26,13 +26,15 @@ from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
-TargetDetails = list[ Tuple[str, 				# Real target URL,incl protocol
-							list[str],			# allowed content serializations
-							str, 				# Target's supported release version
-							PCH, 				# PollingChannel resource, if this is to be used
-							str, 				# Originator with adapted scope
-							str, 				# Targets ID (to)
-							ResourceTypes ] ]	# Target's resource type
+# Type definition
+TargetDetails = List[ 						#type: ignore[misc]
+					Tuple[str, 				# Real target URL,incl protocol			
+						List[str],			# allowed content serializations
+						str, 				# Target's supported release version
+						PCH, 				# PollingChannel resource, if this is to be used 
+						str, 				# Originator with adapted scope
+						str, 				# Targets ID (to)
+						ResourceTypes ] ]	# Target's resource type
 
 
 		
@@ -1307,6 +1309,13 @@ class RequestManager(object):
 				cseRequest.rp = None
 				cseRequest._rpts = None
 
+			# SQI - Semantic Query Indicator
+			if (v := gget(cseRequest.originalRequest, 'sqi')) is not None:
+				if cseRequest.op != Operation.RETRIEVE:
+					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'))
+				else:
+					cseRequest.sqi = v
+
 			#
 			#	Discovery and FilterCriteria
 			#
@@ -1323,7 +1332,10 @@ class RequestManager(object):
 				for h in [ 'ty' ]: # different handling of list attributes that are normally non-lists
 					if (v := gget(fc, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
-				for h in list(fc.keys()): # All remaining attributes
+				
+				# Copy all remaining attributes as filter criteria!
+
+				for h in list(fc.keys()): 
 					cseRequest.fc.attributes[h] = gget(fc, h)
 
 			# Copy rsc

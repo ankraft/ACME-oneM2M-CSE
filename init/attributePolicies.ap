@@ -2635,6 +2635,19 @@
 			"annc": "OA"
 		}
 	],
+	"sqi": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "semanticQueryIndicator",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"srat": [
 		{
 			"rtypes": [ "CRS", "REQRESP" ],

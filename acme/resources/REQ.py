@@ -101,6 +101,7 @@ class REQ(Resource):
 					'drt'	: request.drt,
 					'rvi'	: request.rvi if request.rvi else CSE.releaseVersion,
 					'vsi'	: request.vsi,
+					'sqi'	: request.sqi,
 				},
 				'rs'	: RequestStatus.PENDING,
 				# 'ors'	: {
