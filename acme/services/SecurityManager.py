@@ -10,9 +10,9 @@
 
 from __future__ import annotations
 import ssl
-from typing import List
+from typing import List, cast
 
-from ..etc.Types import Operation, ResourceTypes as T, Permission, Result, CSERequest, ResponseStatusCode as RC
+from ..etc.Types import JSON, Operation, ResourceTypes as T, Permission, Result, CSERequest, ResponseStatusCode as RC
 from ..etc import Utils as Utils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -20,6 +20,7 @@ from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
+from ..resources.ACP import ACP
 from ..helpers import TextTools
 
 
@@ -335,6 +336,33 @@ class SecurityManager(object):
 		"""
 		return originator == resource.getOriginator()
 
+
+
+
+
+	def getRelevantACPforOriginator(self, originator:str, permission:Permission) -> list[ACP]:
+		"""	Return a list of relevant <ACP> resources that currently are relevant for an originator.
+			This list includes <ACP> resources with permissions for the originator, or for "all" originators.
+
+			Args:
+				originator: ID of the originator.
+				permission: The operation permission to filter for.
+			Return:
+				List of <ACP> resources. This list might be empty.
+		"""
+		origs = [ originator, 'all' ]
+
+		def filter(doc:JSON) -> bool:
+			if (acr := Utils.findXPath(doc, 'pv/acr')):
+				for each in acr:
+					if (acop := each.get('acop')) is None or acop & permission == 0:
+						continue
+					if (acor := each.get('acor')) is None or not any(x in acor for x in origs):
+						continue
+					return True
+			return False
+
+		return cast(list[ACP], CSE.storage.searchByFragment(dct = { 'ty' : T.ACP }, filter = filter))
 
 
 	##########################################################################
