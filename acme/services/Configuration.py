@@ -11,7 +11,7 @@
 import configparser, argparse, os, os.path, pathlib, ipaddress, re
 from datetime import datetime
 
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Tuple, List, cast
 from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
 from InquirerPy import prompt, inquirer
@@ -833,8 +833,8 @@ class Configuration(object):
 				}
 			]
 			t = prompt(questionsStart)
-			cseType = t['cseType']
-			cseEnvironment = t['cseEnvironment']
+			cseType = cast(str, ['cseType'])
+			cseEnvironment = cast(str, t['cseEnvironment'])
 			cnf.append(f'cseType={cseType}')
 		
 			# Prompt for the basic configuration

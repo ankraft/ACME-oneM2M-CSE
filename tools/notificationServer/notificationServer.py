@@ -271,10 +271,10 @@ def exitSignalHandler(signal, frame) -> None:	# type: ignore [no-untyped-def]
 def exitAll() -> None:
 	os.kill(os.getpid(), signal.SIGUSR1)
 
-def checkPositive(value):
+def checkPositive(value:str) -> int:
 	ivalue = int(value)
 	if ivalue <= 0:
-		raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+		raise argparse.ArgumentTypeError(f'{value} is an invalid positive int value')
 	return ivalue
 
 signal.signal(signal.SIGUSR1, exitSignalHandler)

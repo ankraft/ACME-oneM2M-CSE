@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 import json, os, fnmatch, re
-from typing import cast
+from typing import cast, Sequence
 from copy import deepcopy
 
 from ..etc.Utils import findXPath, getCSE
@@ -447,6 +447,7 @@ class Importer(object):
 				if not (ltype := BT.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BT.complex
 				if ltype == BT.enum:	# check sub-type enums
+					evalues:Sequence[int|str]
 					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 						evalues = self._enumValues.get(etype)
 					else:
@@ -558,7 +559,7 @@ class Importer(object):
 		self.isImporting = False
 
 
-	def _expandEnumValues(self, evalues:list[int, str], tpe:str, fn:str) -> list[int]:
+	def _expandEnumValues(self, evalues:list[int|str], tpe:str, fn:str) -> list[int]:
 
 		#	Check and get enum definitions
 		_evalues:list[int] = []

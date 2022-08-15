@@ -319,7 +319,7 @@ class ACMEPContext(PContext):
 
 		# send http request
 		try:
-			response = method(url, data = body, headers = headers, verify = CSE.security.verifyCertificateHttp)
+			response = method(url, data = body, headers = headers, verify = CSE.security.verifyCertificateHttp)		# type: ignore[operator]
 		except requests.exceptions.ConnectionError:
 			pcontext.setVariable('response.status', '-1')
 			return pcontext

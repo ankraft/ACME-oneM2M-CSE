@@ -371,7 +371,7 @@ class HttpServer(object):
 			The result is returned in *Result.data*.
 		"""
 		# Set the request method
-		method:Callable = self.operation2method[operation]
+		method:Callable = self.operation2method[operation] 	# type: ignore[assignment]
 
 		# Add the to to the base url
 		if to:

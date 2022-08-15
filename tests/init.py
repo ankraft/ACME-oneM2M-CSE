@@ -674,7 +674,7 @@ def testCaseEnd(name:str) -> None:
 # Surpress warnings for insecure requests, e.g. self-signed certificates
 if not verifyCertificate:
 	#requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
-	urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
+	urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 	# type: ignore[attr-defined]
 
 
 #

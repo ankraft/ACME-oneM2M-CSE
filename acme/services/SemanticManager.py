@@ -114,7 +114,7 @@ class SemanticManager(object):
 		return Result.successResult()
 
 
-	def validateSemantic(self, smd:SMD) -> Result:
+	def validateSemantics(self, smd:SMD) -> Result:
 		"""	Perform the semantic validation of the <SMD> resource
 
 			Todo:
