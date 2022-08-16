@@ -179,21 +179,21 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def tpe(self) -> str:
-		return ResourceTypes._names.get(self.value) 					#  type: ignore
+		return _ResourceTypesNames.get(self)
 
 
-	def announced(self, mgd:int = None) -> ResourceTypes:
+	def announced(self, mgd:ResourceTypes = None) -> ResourceTypes:
 		if self.value != self.MGMTOBJ:
 			# Handling for non-mgmtObjs
-			if self.value in ResourceTypes._announcedMappings:			#  type: ignore
-				return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
+			if self.value in _ResourceTypesAnnouncedMappings:	
+				return 	_ResourceTypesAnnouncedMappings[self]
 		else:
 			# Handling for mgmtObjs
 			if mgd is not None:
-				if mgd in ResourceTypes._announcedMappings:				#  type: ignore
-					return ResourceTypes._announcedMappings[mgd]		#  type: ignore
+				if mgd in _ResourceTypesAnnouncedMappings:
+					return _ResourceTypesAnnouncedMappings[mgd]
 			else:
-				return ResourceTypes._announcedMappings[self.MGMTOBJ] 	#  type: ignore
+				return _ResourceTypesAnnouncedMappings[ResourceTypes(self.MGMTOBJ)] 
 		return ResourceTypes.UNKNOWN
 
 
@@ -203,7 +203,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				Not-announced resource type, or UNKNOWN
 		"""
-		for (k, v) in ResourceTypes._announcedMappings.items():		#  type: ignore
+		for (k, v) in _ResourceTypesAnnouncedMappings.items():
 			if self.value == v:
 				return k
 		return ResourceTypes.UNKNOWN
@@ -215,7 +215,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the type is an announced resource type.
 		"""
-		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
+		return self in _ResourceTypesAnnouncedSetFull
 	
 	
 	def isVirtual(self) -> bool:
@@ -224,13 +224,13 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the type is a virtual resource type.
 		"""
-		return self.value in ResourceTypes._virtualResourcesSet		#  type: ignore
+		return self.value in _ResourceTypesVirtualResourcesSet
 
 
 	@classmethod
 	def fromTPE(cls, tpe:str) -> ResourceTypes:
 		try:
-			return next(key for key, value in ResourceTypes._names.items() if value == tpe)	# type: ignore
+			return next(key for key, value in _ResourceTypesNames.items() if value == tpe)	# type: ignore
 		except StopIteration:
 			return None
 
@@ -239,14 +239,14 @@ class ResourceTypes(ACMEIntEnum):
 	def isVirtualResource(cls, ty:int) -> bool:
 		"""	Check whether `ty` is a virtual resource.
 		"""
-		return ty in ResourceTypes._virtualResourcesSet				#  type: ignore
+		return ty in _ResourceTypesVirtualResourcesSet
 
 
 	@classmethod
 	def isVirtualResourceName(cls, name:str) -> bool:
 		"""	Check whether `name` is the name of a virtual resource.
 		"""
-		return name in ResourceTypes._virtualResourcesNames			#  type: ignore
+		return name in _ResourceTypesVirtualResourcesNames
 
 
 	@classmethod
@@ -254,7 +254,7 @@ class ResourceTypes(ACMEIntEnum):
 		"""	Return the supported resource types, including the 
 			announced resource types.
 		"""
-		return ResourceTypes._supportedResourceTypes				# type: ignore
+		return _ResourceTypesSupportedResourceTypes
 
 
 	@classmethod
@@ -266,10 +266,10 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				Boolean
 		"""
-		return ty in ResourceTypes._instanceResourcesSet	# type: ignore
+		return ty in _ResourceTypesInstanceResourcesSet
 
 
-ResourceTypes._announcedMappings = {								#  type: ignore
+_ResourceTypesAnnouncedMappings = {
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -301,7 +301,7 @@ ResourceTypes._announcedMappings = {								#  type: ignore
 }
 
 
-ResourceTypes._announcedSetFull = [									#  type: ignore
+_ResourceTypesAnnouncedSetFull = [
 	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
 	ResourceTypes.CINAnnc,
 	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
@@ -315,147 +315,152 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 
 
 # List of announceable resource types in order
-ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
-	ResourceTypes.ACPAnnc.value,
-	ResourceTypes.AEAnnc.value,
-	ResourceTypes.CNTAnnc.value,
-	ResourceTypes.CINAnnc.value,
-	ResourceTypes.GRPAnnc.value,
-	ResourceTypes.MGMTOBJAnnc.value,
-	ResourceTypes.NODAnnc.value,
-	ResourceTypes.CSRAnnc.value,
-	ResourceTypes.SMDAnnc.value,
-	ResourceTypes.FCNTAnnc.value,
-	 ResourceTypes.ACTRAnnc.value, 
-	ResourceTypes.TSBAnnc.value
+_ResourceTypesAnnouncedResourceTypes = [
+	ResourceTypes.ACPAnnc,
+	ResourceTypes.AEAnnc,
+	ResourceTypes.CNTAnnc,
+	ResourceTypes.CINAnnc,
+	ResourceTypes.GRPAnnc,
+	ResourceTypes.MGMTOBJAnnc,
+	ResourceTypes.NODAnnc,
+	ResourceTypes.CSRAnnc,
+	ResourceTypes.SMDAnnc,
+	ResourceTypes.FCNTAnnc,
+	 ResourceTypes.ACTRAnnc, 
+	ResourceTypes.TSBAnnc
 ]
 
 
 # Supported resource types by this CSE, including the announced resource types
-ResourceTypes._supportedResourceTypes = [							#  type: ignore
-	ResourceTypes.ACP.value,
-	ResourceTypes.ACTR.value,
-	ResourceTypes.AE.value, 
-	ResourceTypes.CNT.value, 
-	ResourceTypes.CIN.value,
-	ResourceTypes.CRS.value, 
-	ResourceTypes.CSEBase.value,
-	ResourceTypes.GRP.value, 
-	ResourceTypes.MGMTOBJ.value,
-	ResourceTypes.NOD.value,
-	ResourceTypes.PCH.value,
-	ResourceTypes.CSR.value,
-	ResourceTypes.REQ.value,
-	ResourceTypes.SUB.value,
-	ResourceTypes.SMD.value,
-	ResourceTypes.FCNT.value,
-	ResourceTypes.FCI.value,
-	ResourceTypes.TS.value,
-	ResourceTypes.TSI.value,
-	ResourceTypes.TSB.value, 
-] + ResourceTypes._announcedResourceTypes							#  type: ignore
+_ResourceTypesSupportedResourceTypes = [
+	ResourceTypes.ACP,
+	ResourceTypes.ACTR,
+	ResourceTypes.AE, 
+	ResourceTypes.CNT, 
+	ResourceTypes.CIN,
+	ResourceTypes.CRS, 
+	ResourceTypes.CSEBase,
+	ResourceTypes.GRP, 
+	ResourceTypes.MGMTOBJ,
+	ResourceTypes.NOD,
+	ResourceTypes.PCH,
+	ResourceTypes.CSR,
+	ResourceTypes.REQ,
+	ResourceTypes.SUB,
+	ResourceTypes.SMD,
+	ResourceTypes.FCNT,
+	ResourceTypes.FCI,
+	ResourceTypes.TS,
+	ResourceTypes.TSI,
+	ResourceTypes.TSB, 
+] + _ResourceTypesAnnouncedResourceTypes
 
 
 # List of virtual resources
-ResourceTypes._virtualResourcesSet = [								#  type: ignore
-	ResourceTypes.CNT_LA, ResourceTypes.CNT_OL,
-	ResourceTypes.FCNT_LA, ResourceTypes.FCNT_OL,
-	ResourceTypes.TS_LA, ResourceTypes.TS_OL,
+_ResourceTypesVirtualResourcesSet = [
+	ResourceTypes.CNT_LA, 
+	ResourceTypes.CNT_OL,
+	ResourceTypes.FCNT_LA, 
+	ResourceTypes.FCNT_OL,
+	ResourceTypes.TS_LA, 
+	ResourceTypes.TS_OL,
 	ResourceTypes.GRP_FOPT,
 	ResourceTypes.PCH_PCU 
 ]
 
 
-ResourceTypes._instanceResourcesSet = [								#  type: ignore
-	ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI
+_ResourceTypesInstanceResourcesSet = [
+	ResourceTypes.CIN, 
+	ResourceTypes.FCI,
+	ResourceTypes.TSI
 ]
 
 
 # List of possible virtual resource names
-ResourceTypes._virtualResourcesNames = [							#  type: ignore
+_ResourceTypesVirtualResourcesNames = [
 	'la', 'ol', 'fopt', 'pcu' 
 ]
 
 
 # Mapping between oneM2M resource types to type identifies
-ResourceTypes._names 	= {											# type: ignore
-		ResourceTypes.UNKNOWN		: 'unknown',
-		ResourceTypes.ALL 			: 'all',
+_ResourceTypesNames = {
+	ResourceTypes.UNKNOWN		: 'unknown',
+	ResourceTypes.ALL 			: 'all',
 
-		ResourceTypes.MIXED			: 'mixed',
-		ResourceTypes.ACP 			: 'm2m:acp',
-		ResourceTypes.ACTR			: 'm2m:actr',
-		ResourceTypes.AE 			: 'm2m:ae',
-		ResourceTypes.CNT			: 'm2m:cnt',
-		ResourceTypes.CIN 			: 'm2m:cin',
-		ResourceTypes.CSEBase		: 'm2m:cb',
-		ResourceTypes.CRS 			: 'm2m:crs',
-		ResourceTypes.CSR 			: 'm2m:csr',
-		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
-		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
-		ResourceTypes.GRP			: 'm2m:grp',
-		ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
-		ResourceTypes.NOD			: 'm2m:nod',
-		ResourceTypes.PCH			: 'm2m:pch',
-		ResourceTypes.REQ			: 'm2m:req',
-		ResourceTypes.SMD			: 'm2m:smd',
-		ResourceTypes.SUB			: 'm2m:sub',
-		ResourceTypes.TS 			: 'm2m:ts',
-		ResourceTypes.TSB 			: 'm2m:tsb',
-		ResourceTypes.TSI 			: 'm2m:tsi',
+	ResourceTypes.MIXED			: 'mixed',
+	ResourceTypes.ACP 			: 'm2m:acp',
+	ResourceTypes.ACTR			: 'm2m:actr',
+	ResourceTypes.AE 			: 'm2m:ae',
+	ResourceTypes.CNT			: 'm2m:cnt',
+	ResourceTypes.CIN 			: 'm2m:cin',
+	ResourceTypes.CSEBase		: 'm2m:cb',
+	ResourceTypes.CRS 			: 'm2m:crs',
+	ResourceTypes.CSR 			: 'm2m:csr',
+	ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
+	ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
+	ResourceTypes.GRP			: 'm2m:grp',
+	ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
+	ResourceTypes.NOD			: 'm2m:nod',
+	ResourceTypes.PCH			: 'm2m:pch',
+	ResourceTypes.REQ			: 'm2m:req',
+	ResourceTypes.SMD			: 'm2m:smd',
+	ResourceTypes.SUB			: 'm2m:sub',
+	ResourceTypes.TS 			: 'm2m:ts',
+	ResourceTypes.TSB 			: 'm2m:tsb',
+	ResourceTypes.TSI 			: 'm2m:tsi',
 
-		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
-		ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
-		ResourceTypes.AEAnnc 		: 'm2m:aeA',
-		ResourceTypes.CNTAnnc 		: 'm2m:cntA',
-		ResourceTypes.CINAnnc 		: 'm2m:cinA',
-		ResourceTypes.CSEBaseAnnc	: 'm2m:cbA',
-		ResourceTypes.GRPAnnc 		: 'm2m:grpA',
-		ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
-		ResourceTypes.NODAnnc 		: 'm2m:nodA',
-		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
-		ResourceTypes.SMDAnnc 		: 'm2m:smdA',
-		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
-		ResourceTypes.TSAnnc 		: 'm2m:tsA',
-		ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
-		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
+	ResourceTypes.ACPAnnc 		: 'm2m:acpA',
+	ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
+	ResourceTypes.AEAnnc 		: 'm2m:aeA',
+	ResourceTypes.CNTAnnc 		: 'm2m:cntA',
+	ResourceTypes.CINAnnc 		: 'm2m:cinA',
+	ResourceTypes.CSEBaseAnnc	: 'm2m:cbA',
+	ResourceTypes.GRPAnnc 		: 'm2m:grpA',
+	ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
+	ResourceTypes.NODAnnc 		: 'm2m:nodA',
+	ResourceTypes.CSRAnnc 		: 'm2m:csrA',
+	ResourceTypes.SMDAnnc 		: 'm2m:smdA',
+	ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
+	ResourceTypes.TSAnnc 		: 'm2m:tsA',
+	ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
+	ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
-		ResourceTypes.CNT_OL		: 'm2m:ol',
-		ResourceTypes.CNT_LA		: 'm2m:la',
-		ResourceTypes.GRP_FOPT		: 'm2m:fopt',
-		ResourceTypes.FCNT_OL		: 'm2m:ol',
-		ResourceTypes.FCNT_LA		: 'm2m:la',
-		ResourceTypes.PCH_PCU		: 'm2m:pcu',
-		ResourceTypes.TS_OL			: 'm2m:ol',
-		ResourceTypes.TS_LA			: 'm2m:la',
+	ResourceTypes.CNT_OL		: 'm2m:ol',
+	ResourceTypes.CNT_LA		: 'm2m:la',
+	ResourceTypes.GRP_FOPT		: 'm2m:fopt',
+	ResourceTypes.FCNT_OL		: 'm2m:ol',
+	ResourceTypes.FCNT_LA		: 'm2m:la',
+	ResourceTypes.PCH_PCU		: 'm2m:pcu',
+	ResourceTypes.TS_OL			: 'm2m:ol',
+	ResourceTypes.TS_LA			: 'm2m:la',
 
-		# MgmtObj Specializations
+	# MgmtObj Specializations
 
-		ResourceTypes.FWR			: 'm2m:fwr',
-		ResourceTypes.SWR			: 'm2m:swr',
-		ResourceTypes.MEM			: 'm2m:mem',
-		ResourceTypes.ANI			: 'm2m:ani',
-		ResourceTypes.ANDI			: 'm2m:andi',
-		ResourceTypes.BAT			: 'm2m:bat',
-		ResourceTypes.DVI			: 'm2m:dvi',
-		ResourceTypes.DVC			: 'm2m:dvc',
-		ResourceTypes.RBO			: 'm2m:rbo',
-		ResourceTypes.EVL			: 'm2m:evl',
-		ResourceTypes.NYCFC			: 'm2m:nycfc',
+	ResourceTypes.FWR			: 'm2m:fwr',
+	ResourceTypes.SWR			: 'm2m:swr',
+	ResourceTypes.MEM			: 'm2m:mem',
+	ResourceTypes.ANI			: 'm2m:ani',
+	ResourceTypes.ANDI			: 'm2m:andi',
+	ResourceTypes.BAT			: 'm2m:bat',
+	ResourceTypes.DVI			: 'm2m:dvi',
+	ResourceTypes.DVC			: 'm2m:dvc',
+	ResourceTypes.RBO			: 'm2m:rbo',
+	ResourceTypes.EVL			: 'm2m:evl',
+	ResourceTypes.NYCFC			: 'm2m:nycfc',
 
-		ResourceTypes.FWRAnnc		: 'm2m:fwrA',
-		ResourceTypes.SWRAnnc		: 'm2m:swrA',
-		ResourceTypes.MEMAnnc		: 'm2m:memA',
-		ResourceTypes.ANIAnnc		: 'm2m:aniA',
-		ResourceTypes.ANDIAnnc		: 'm2m:andiA',
-		ResourceTypes.BATAnnc		: 'm2m:batA',
-		ResourceTypes.DVIAnnc		: 'm2m:dviA',
-		ResourceTypes.DVCAnnc		: 'm2m:dvcA',
-		ResourceTypes.RBOAnnc		: 'm2m:rboA',
-		ResourceTypes.EVLAnnc		: 'm2m:evlA',
-		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
+	ResourceTypes.FWRAnnc		: 'm2m:fwrA',
+	ResourceTypes.SWRAnnc		: 'm2m:swrA',
+	ResourceTypes.MEMAnnc		: 'm2m:memA',
+	ResourceTypes.ANIAnnc		: 'm2m:aniA',
+	ResourceTypes.ANDIAnnc		: 'm2m:andiA',
+	ResourceTypes.BATAnnc		: 'm2m:batA',
+	ResourceTypes.DVIAnnc		: 'm2m:dviA',
+	ResourceTypes.DVCAnnc		: 'm2m:dvcA',
+	ResourceTypes.RBOAnnc		: 'm2m:rboA',
+	ResourceTypes.EVLAnnc		: 'm2m:evlA',
+	ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
 
-	}
+}
 
 
 class BasicType(ACMEIntEnum):
@@ -606,6 +611,7 @@ class ResponseStatusCode(ACMEIntEnum):
 	originatorHasAlreadyRegistered				= 4117
 	appRuleValidationFailed						= 4126
 	operationDeniedByRemoteEntity				= 4127
+	invalidSPARQLQuery 							= 4143
 	internalServerError							= 5000
 	notImplemented								= 5001
 	targetNotReachable 							= 5103
@@ -621,12 +627,15 @@ class ResponseStatusCode(ACMEIntEnum):
 	invalidArguments							= 6023
 	insufficientArguments						= 6024
 
+
+	INVALID_SPARQL_QUERY
+
 	UNKNOWN										= -1
 
 
 	def httpStatusCode(self) -> int:
 		""" Map the oneM2M RSC to an http status code. """
-		return ResponseStatusCode._httpStatusCodes[self.value]					# type: ignore
+		return _ResponseStatusCodeHttpStatusCodes[self]
 
 
 
@@ -634,48 +643,49 @@ class ResponseStatusCode(ACMEIntEnum):
 #	Mapping of oneM2M return codes to http status codes
 #
 
-ResponseStatusCode._httpStatusCodes = {																		# type: ignore
-		ResponseStatusCode.OK 										: HTTPStatus.OK,						# OK
-		ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
-		ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
-		ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
-		ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
-		ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-		ResponseStatusCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-		ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
-		ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-		ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
-		ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-		ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
-		ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
-		ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
-		ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-		ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-		ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
-		ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
-		ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-		ResponseStatusCode.subscriptionCreatorHasNoPrivilege		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-		ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-		ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
-		ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-		ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
-		ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
-		ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
-		ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
-		ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
-		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-		ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
-		ResponseStatusCode.crossResourceOperationFailure			: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
-		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
-		ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
-		ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
-		ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		ResponseStatusCode.releaseVersionNotSupported				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-		ResponseStatusCode.notImplemented							: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
-		
-		ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+_ResponseStatusCodeHttpStatusCodes = {
+	ResponseStatusCode.OK 										: HTTPStatus.OK,						# OK
+	ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
+	ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
+	ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
+	ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
+	ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+	ResponseStatusCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+	ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
+	ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
+	ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
+	ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
+	ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
+	ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
+	ResponseStatusCode.invalidSPARQLQuery						: HTTPStatus.BAD_REQUEST,				# INVALID SPARQL QUERY
+	ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
+	ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
+	ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
+	ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
+	ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
+	ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
+	ResponseStatusCode.subscriptionCreatorHasNoPrivilege		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+	ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+	ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
+	ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+	ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
+	ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+	ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+	ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
+	ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
+	ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
+	ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+	ResponseStatusCode.crossResourceOperationFailure			: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
+	ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
+	ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
+	ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
+	ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+	ResponseStatusCode.releaseVersionNotSupported				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
+	ResponseStatusCode.notImplemented							: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+	
+	ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 
-	}
+}
 
 
 ##############################################################################
@@ -721,67 +731,6 @@ class EvalMode(ACMEIntEnum):
 	""" Evaluation continous. """
 
 
-##############################################################################
-#
-#	Discovery & Filter
-#
-
-class ResultContentType(ACMEIntEnum):
-	"""	Result Content Types """
-	nothing									= 0
-	attributes 								= 1
-	hierarchicalAddress						= 2
-	hierarchicalAddressAttributes			= 3
-	attributesAndChildResources				= 4	
-	attributesAndChildResourceReferences	= 5
-	childResourceReferences					= 6
-	originalResource 						= 7
-	childResources							= 8
-	modifiedAttributes						= 9
-	discoveryResultReferences				= 11
-
-
-class FilterOperation(ACMEIntEnum):
-	"""	Filter Operation """
-	AND 			= 1 # default
-	OR 				= 2
-	XOR 			= 3
-
-
-class FilterUsage(ACMEIntEnum):
-	"""	Filter Usage """
-	discoveryCriteria		= 1
-	conditionalRetrieval	= 2 # default
-	ipeOnDemandDiscovery	= 3
-	discoveryBasedOperation	= 4
-
-
-class DesiredIdentifierResultType(ACMEIntEnum):
-	""" Desired Identifier Result Type """
-	structured		= 1 # default
-	unstructured	= 2
-
-
-##############################################################################
-#
-#	CSE related
-#
-
-class CSEType(ACMEIntEnum):
-	""" CSE Types """
-	IN					=  1
-	MN					=  2
-	ASN					=  3
-
-
-class CSEStatus(ACMEIntEnum):
-	"""	CSE Status """
-	STOPPED				= auto()
-	STARTING			= auto()
-	RUNNING				= auto()
-	STOPPING			= auto()
-	RESETTING			= auto()
-
 
 ##############################################################################
 #
@@ -824,7 +773,7 @@ class Operation(ACMEIntEnum):
 	def permission(self) -> Permission:
 		""" Return the corresponding permission for an operation.
 		"""
-		return Operation._permissionsMapping[self.value]	#  type: ignore
+		return _OperationPermissionsMapping[self]
 
 
 	def __str__(self) -> str:
@@ -849,7 +798,7 @@ class Operation(ACMEIntEnum):
 
 
 # Mapping between request operations and permissions
-Operation._permissionsMapping =	{				# type: ignore
+_OperationPermissionsMapping =	{
 	Operation.RETRIEVE	: Permission.RETRIEVE,
 	Operation.CREATE 	: Permission.CREATE,
 	Operation.UPDATE 	: Permission.UPDATE,
@@ -858,6 +807,108 @@ Operation._permissionsMapping =	{				# type: ignore
 	Operation.DISCOVERY : Permission.DISCOVERY,
 }
 
+##############################################################################
+#
+#	Discovery & Filter
+#
+
+class ResultContentType(ACMEIntEnum):
+	"""	Result Content Types """
+	nothing									= 0
+	attributes 								= 1
+	hierarchicalAddress						= 2
+	hierarchicalAddressAttributes			= 3
+	attributesAndChildResources				= 4	
+	attributesAndChildResourceReferences	= 5
+	childResourceReferences					= 6
+	originalResource 						= 7
+	childResources							= 8
+	modifiedAttributes						= 9
+	semanticContent							= 10
+	discoveryResultReferences				= 11
+
+
+	def validForOperation(self, op:Operation) -> bool:
+		"""	Check whether an operation is valid with a Result Content.
+
+			Args:
+				op: The operation to check.
+			Return:
+				Boolean indicating the validity.
+		"""
+		return op in _ResultContentTypeForOperations and self.value in _ResultContentTypeForOperations[op] 
+
+_ResultContentTypeForOperations = {
+	Operation.RETRIEVE:		[ ResultContentType.attributes, 					
+		   					  ResultContentType.attributesAndChildResources, 
+							  ResultContentType.childResources, 
+							  ResultContentType.attributesAndChildResourceReferences, 
+							  ResultContentType.originalResource, 
+							  ResultContentType.childResourceReferences,
+							  ResultContentType.semanticContent ],
+	Operation.DISCOVERY:	[ ResultContentType.discoveryResultReferences,
+							  ResultContentType.childResourceReferences ],
+	Operation.CREATE:		[ ResultContentType.attributes,
+							  ResultContentType.modifiedAttributes,
+							  ResultContentType.hierarchicalAddress,
+							  ResultContentType.hierarchicalAddressAttributes,
+							  ResultContentType.nothing ],
+	Operation.UPDATE:		[ ResultContentType.attributes,
+							  ResultContentType.modifiedAttributes,
+							  ResultContentType.nothing ],
+	Operation.DELETE:		[ ResultContentType.attributes,
+							  ResultContentType.nothing,
+							  ResultContentType.attributesAndChildResources,
+							  ResultContentType.childResources,
+							  ResultContentType.attributesAndChildResourceReferences,
+							  ResultContentType.childResourceReferences ],
+	Operation.NOTIFY:		[ ResultContentType.nothing ],
+}
+
+
+	# ResultContentType.discoveryRCN = [ ResultContentType.discoveryResultReferences,		 #  type: ignore
+	# 								   ResultContentType.childResourceReferences ]
+
+class FilterOperation(ACMEIntEnum):
+	"""	Filter Operation """
+	AND 			= 1 # default
+	OR 				= 2
+	XOR 			= 3
+
+
+class FilterUsage(ACMEIntEnum):
+	"""	Filter Usage """
+	discoveryCriteria		= 1
+	conditionalRetrieval	= 2 # default
+	ipeOnDemandDiscovery	= 3
+	discoveryBasedOperation	= 4
+
+
+class DesiredIdentifierResultType(ACMEIntEnum):
+	""" Desired Identifier Result Type """
+	structured		= 1 # default
+	unstructured	= 2
+
+
+##############################################################################
+#
+#	CSE related
+#
+
+class CSEType(ACMEIntEnum):
+	""" CSE Types """
+	IN					=  1
+	MN					=  2
+	ASN					=  3
+
+
+class CSEStatus(ACMEIntEnum):
+	"""	CSE Status """
+	STOPPED				= auto()
+	STARTING			= auto()
+	RUNNING				= auto()
+	STOPPING			= auto()
+	RESETTING			= auto()
 
 ##############################################################################
 #
@@ -1401,6 +1452,9 @@ class FilterCriteria:
 	cty:list = None
 	""" List of content types (default: None). """
 
+	smf:str = None
+	""" Semantic filter (default: None). """
+
 	ty:list = None
 	""" List of resource types (default: None). """
 
@@ -1620,11 +1674,11 @@ FlexContainerSpecializations = Dict[str, str]
 #
 
 
-Parameters=Dict[str, str]
-Attributes=Dict[str, Any]
-JSON=Dict[str, Any]
-JSONLIST=List[JSON]
-ReqResp=Dict[str, Union[int, str, List[str], JSON]]
+Parameters = Dict[str, str]
+Attributes = Dict[str, Any]
+JSON = Dict[str, Any]
+JSONLIST = List[JSON]
+ReqResp = Dict[str, Union[int, str, List[str], JSON]]
 
 RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
 RequestHandler = Dict[Operation, RequestCallback]

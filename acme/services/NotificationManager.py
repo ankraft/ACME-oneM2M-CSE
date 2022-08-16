@@ -14,7 +14,7 @@ from threading import Lock, current_thread
 
 import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
-from ..etc.Types import ResponseStatusCode as RC, EventCategory, JSON, ResourceTypes as T
+from ..etc.Types import ResponseStatusCode as RC, EventCategory, JSON, JSONLIST, ResourceTypes as T
 from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
 from ..services import CSE
@@ -128,7 +128,7 @@ class NotificationManager(object):
 		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
-	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> list[JSON]:
+	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> JSONLIST:
 		"""	Returns a (possible empty) list of subscriptions for a resource. 
 		
 			An optional filter can be used 	to return only those subscriptions with a specific enc/net.
@@ -143,7 +143,7 @@ class NotificationManager(object):
 			"""
 		if not (subs := CSE.storage.getSubscriptionsForParent(ri)):
 			return []
-		result:list[JSON] = []
+		result:JSONLIST = []
 		for each in subs:
 			if net and any(x in net for x in each['net']):
 				result.append(each)

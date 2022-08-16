@@ -337,9 +337,6 @@ class SecurityManager(object):
 		return originator == resource.getOriginator()
 
 
-
-
-
 	def getRelevantACPforOriginator(self, originator:str, permission:Permission) -> list[ACP]:
 		"""	Return a list of relevant <ACP> resources that currently are relevant for an originator.
 			This list includes <ACP> resources with permissions for the originator, or for "all" originators.

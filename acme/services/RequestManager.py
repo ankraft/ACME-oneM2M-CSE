@@ -1230,15 +1230,15 @@ class RequestManager(object):
 			# Transfer filterCriteria: handling, conditions and attributes
 			#
 
-			fc = deepcopy(cseRequest.originalRequest.get('fc'))	# copy because we will greedy consume attributes here
+			fcAttrs = deepcopy(cseRequest.originalRequest.get('fc'))	# copy because we will greedy consume attributes here
 
 			# FU - Filter Usage
-			cseRequest.fc.fu = FilterUsage(gget(fc, 'fu', FilterUsage.conditionalRetrieval))
+			cseRequest.fc.fu = FilterUsage(gget(fcAttrs, 'fu', FilterUsage.conditionalRetrieval))
 			if cseRequest.fc.fu == FilterUsage.discoveryCriteria and cseRequest.op == Operation.RETRIEVE:	# correct operation if necessary
 				cseRequest.op = Operation.DISCOVERY
 
 			# FO - Filter Operation
-			cseRequest.fc.fo = FilterOperation(gget(fc, 'fo', FilterOperation.AND))
+			cseRequest.fc.fo = FilterOperation(gget(fcAttrs, 'fo', FilterOperation.AND))
 
 
 			# RCN Result Content Type
@@ -1261,33 +1261,8 @@ class RequestManager(object):
 
 
 			# Validate rcn depending on operation
-			if cseRequest.op == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
-																	ResultContentType.attributesAndChildResources,
-																	ResultContentType.attributesAndChildResourceReferences,
-																	ResultContentType.childResourceReferences,
-																	ResultContentType.childResources,
-																	ResultContentType.originalResource ]:
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in RETRIEVE operation'))
-			elif cseRequest.op == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
-																	ResultContentType.discoveryResultReferences ]:
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in DISCOVERY operation'))
-			elif cseRequest.op == Operation.CREATE and rcn not in [ ResultContentType.attributes,
-																	ResultContentType.modifiedAttributes,
-																	ResultContentType.hierarchicalAddress,
-																	ResultContentType.hierarchicalAddressAttributes,
-																	ResultContentType.nothing ]:
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in CREATE operation'))
-			elif cseRequest.op == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
-																	ResultContentType.modifiedAttributes,
-																	ResultContentType.nothing ]:
-				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in UPDATE operation'))
-			elif cseRequest.op == Operation.DELETE and rcn not in [ ResultContentType.attributes,
-																	ResultContentType.nothing,
-																	ResultContentType.attributesAndChildResources,
-																	ResultContentType.childResources,
-																	ResultContentType.attributesAndChildResourceReferences,
-																	ResultContentType.childResourceReferences ]:
-				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in DELETE operation'))
+			if rcn and not rcn.validForOperation(cseRequest.op):
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug(f'rcn: {rcn} not allowed in {cseRequest.op.name} operation'))
 			cseRequest.rcn = rcn
 
 
@@ -1319,24 +1294,23 @@ class RequestManager(object):
 			#
 			#	Discovery and FilterCriteria
 			#
-			if fc:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
-				for h in [ 'lim', 'lvl', 'ofst', 'arp' ]:
-					if (v := gget(fc, h)) is not None:	# may be int
-						cseRequest.fc.set(h, v)
-				for h in [ 'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr' ]:
-					if (v := gget(fc, h)) is not None:	# may be int
+			if fcAttrs:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
+				for h in [ 'lim', 'lvl', 'ofst', 'arp',
+						   'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr',
+						   'smf' ]:
+					if (v := gget(fcAttrs, h)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
 				for h in [ 'lbl', 'cty' ]: # different handling of list attributes
-					if (v := gget(fc, h, attributeType = BasicType.list, checkSubType = False)) is not None:
+					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = False)) is not None:
 						cseRequest.fc.set(h, v)
 				for h in [ 'ty' ]: # different handling of list attributes that are normally non-lists
-					if (v := gget(fc, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
+					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
 				
 				# Copy all remaining attributes as filter criteria!
 
-				for h in list(fc.keys()): 
-					cseRequest.fc.attributes[h] = gget(fc, h)
+				for h in list(fcAttrs.keys()): 
+					cseRequest.fc.attributes[h] = gget(fcAttrs, h)
 
 			# Copy rsc
 			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy = False)): 
@@ -1353,10 +1327,15 @@ class RequestManager(object):
 					L.isDebug and L.logDebug(res.dbg)
 					res.request = cseRequest
 					errorResult = res
+			
+			# Check whether none or all of sqi, smf and rcn=semantic content is set, otherwise error
+			if [ cseRequest.sqi is not None, 
+				 cseRequest.fc.smf is not None, 
+				 cseRequest.rcn == ResultContentType.semanticContent].count(True) not in [ 0, 3]:
+				errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi, smf and rcn=smantic-content must be specifed together, or not at all'))
 
 		# end of try..except
 		except ValueError as e:
-			
 			return Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Error getting or validating attribute/parameter: {str(e)}'))
 
 		# Return the error or success result 

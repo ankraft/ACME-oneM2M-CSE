@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import List
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, JSONLIST
 from ..etc import Utils, DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -174,7 +174,7 @@ class CNT(AnnounceableResource):
 		self.__validating = True
 
 		# Only get the CINs in raw format. Instantiate them as resources if needed
-		cinsRaw = cast(List[JSON], sorted(CSE.storage.directChildResources(self.ri, T.CIN, raw = True), key = lambda x: x['ct']))
+		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, T.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
 			
 		# Check number of instances
