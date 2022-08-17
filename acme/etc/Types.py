@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
@@ -627,8 +627,6 @@ class ResponseStatusCode(ACMEIntEnum):
 	invalidArguments							= 6023
 	insufficientArguments						= 6024
 
-
-	INVALID_SPARQL_QUERY
 
 	UNKNOWN										= -1
 
@@ -1269,13 +1267,13 @@ class SemanticFormat(ACMEIntEnum):
 
 @dataclass
 class Result:
-	resource:Resource				= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	data:Any|List[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
-	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
-	dbg:str 						= None
-	request:CSERequest				= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 		= None		# May contain a request as a response, e.g. when polling
-	status:bool 					= None
+	resource:Resource					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	data:Any|Sequence[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
+	rsc:ResponseStatusCode				= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
+	dbg:str 							= None
+	request:CSERequest					= None  	# may contain the processed incoming request object
+	embeddedRequest:CSERequest 			= None		# May contain a request as a response, e.g. when polling
+	status:bool 						= None
 
 
 	def errorResultCopy(self) -> Result:

@@ -827,6 +827,8 @@ Add additional request attributes to a request. The argument to this command is 
 structure with the attributes. The attributes are added to all following requests until
 a new or empty structure is defined with this command.
 
+The attribute names may have a path to set attributes in sub-structures.
+
 Some of the most common attributes are recognized (see following list), all others are 
 assigned to *filterCriteria*.
 
@@ -837,7 +839,8 @@ Example:
 ```text
 requestAttributes
 { 
-	"rqi" : "myOwnRequestID"
+	"rqi" : "myOwnRequestID",
+	"fc/rcn" : "4"
 }
 retrieve /id-in/cse-in/myCnt
 ```

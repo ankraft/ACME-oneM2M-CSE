@@ -1660,6 +1660,9 @@ _builtinMacros:PMacroDict = {
 	'and':		_doAnd,
 	'||':		_doOr,
 	'or':		_doOr,
+
+	# Special characters
+	'nl':		lambda c, a, l: '\n'
 }
 
 

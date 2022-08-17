@@ -14,6 +14,7 @@
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
 |                            | [match](#macro_match)                            | Evaluate an argument against a simple regular expression                |
+|                            | [nl](#macro_nl)                                  | Insert a newline character                                              ]
 |                            | [random](#macro_random)                          | Generate a random number                                                |
 |                            | [result](#macro_result)                          | Get the last result of a while, procedure etc.                          |
 |                            | [round](#round)                                  | Round a float number                                                    |
@@ -198,6 +199,23 @@ if [match hello h*o[]
 	print found
 endif
 # -> hello
+```
+
+
+<a name="macro_nl"></a>
+### nl
+
+Usage:  
+print Hello[nl]World
+
+Insert a newline character. This can be used to produce multi-line strings.
+
+Example:
+
+```text
+print Hello[nl]World
+# -> Hello
+#    World
 ```
 
 

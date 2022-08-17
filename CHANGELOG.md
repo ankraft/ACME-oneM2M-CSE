@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
 - [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
 - [SCRIPTS] Added *http* command to support making http(s) requests from scripts.
-
+- [SCRIPTS] Added *nl* macro to add a newline in strings.
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 - [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
+- [SCRIPTS] *requestAttributes* now supports sub-structures for request attributes, e.g. to set filterCriteria attributes.
 
 ### Fixed
 - [CSE] Corrected &lt;timeSeries>'s *cbs* attribute name.

@@ -159,7 +159,8 @@ class ACMEPContext(PContext):
 		"""
 		if CSE.isHeadless:
 			return
-		L.console(msg, nl = not len(msg))
+		for line in msg.split('\n'):	# handle newlines in the msg
+			L.console(line, nl = not len(msg))
 	
 	
 	@property
@@ -887,7 +888,7 @@ class ACMEPContext(PContext):
 				req['rqi'] = rqi
 			# add remaining attributes to the filterCriteria of a request
 			for key in list(rp.keys()):
-				Utils.setXPath(req, f'fc/{key}', rp.pop(key))
+				Utils.setXPath(req, key, rp.pop(key))
 
 		# Get the resource for some operations
 		dct:JSON = None
@@ -923,11 +924,14 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Invalid resource: {res.dbg}')
 			#L.log(res)
 			return None
+		
 
 		# Replase target with POA if available
 		if target in self.poas:
 			target = self.poas[target]
 			request.to = target
+		
+		L.isDebug and L.logDebug(f'Sending request from script: {res.request.originalRequest}')
 		
 		# Send request
 		if Utils.isURL(target):
@@ -950,12 +954,16 @@ class ACMEPContext(PContext):
 		self.setVariable('response.status', str(res.rsc.value))
 		try:
 			if not res.status:
+				L.isDebug and L.logDebug(f'Request response: {res.dbg}')
 				self.setVariable('response.resource', res.dbg)
 			elif res.data:
+				L.isDebug and L.logDebug(f'Request response: {res.data}')
 				self.setVariable('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
 			elif res.resource:
+				L.isDebug and L.logDebug(f'Request response: {res.resource}')
 				self.setVariable('response.resource', json.dumps(res.resource.asDict()))
 			else:
+				L.isDebug and L.logDebug(f'Request response: (unknown or none)')
 				self.setVariable('response.resource', '')
 		except Exception as e:
 			pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}')
