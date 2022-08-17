@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
 - [SCRIPTS] Added *http* command to support making http(s) requests from scripts.
 - [SCRIPTS] Added *nl* macro to add a newline in strings.
+- [SCRIPTS] Added limited support for multi-line strings.
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).

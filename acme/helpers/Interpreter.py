@@ -16,7 +16,7 @@ from collections import namedtuple
 from enum import IntEnum, auto
 from decimal import Decimal, InvalidOperation
 import datetime, time, re, copy, random, shlex, operator
-from typing import 	Callable, Dict, Tuple, Union
+from typing import 	Callable, Dict, Tuple, Union, Sequence
 
 _maxProcStackSize = 64	
 """ Max number of recursive procedures calls. """
@@ -214,14 +214,29 @@ class PContext():
 			Return:
 				The next line in the script.
 		"""
+		multiline = False
+		lines:list[str] = []
+
 		while True:
 			if self.pc >= self._length:
 				return None
 			line = self.script[self.pc]
 			self.pc += 1 
-			# Only return not-empty lines and no comments 			
-			if line and not self.ignoreLine(line):
+
+			# skip over empty lines and comments while not reading a multiline
+			if not multiline and (not line or self.ignoreLine(line)):
+				continue
+
+			# Look for multiline
+			while '"""' in line:					# There could be multiple multilines in one line
+				multiline = not multiline			# Toggle multilines
+				line = line.replace('"""', '', 1)	# Always remove one multiline indicator 
+			lines.append(line)	# even a single line will be added to the lines
+
+			# Only return not-empty lines if not in multiline mode, otherwiese read next 			
+			if not multiline and lines:
 				break
+		line = '\n'.join(lines)
 		self._line = line
 		return line
 	
@@ -866,7 +881,7 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 #	Extra utility functions
 #
 
-def tokenize(line:str) -> list[str]:
+def tokenize(line:str) -> Sequence[str]:
 	"""	Tokenize an input string.
 
 		This function tokenizes a string like a shell command line. It takes quoted

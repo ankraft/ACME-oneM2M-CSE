@@ -32,6 +32,7 @@ See also
 Scripts are stored in simple text files containing lines with commands that get executed in sequence, one after the other.
 
 A command may have none, one, or multiple arguments.  
+
 Example:
 
 ```text
@@ -43,6 +44,7 @@ The `print` command takes the rest of the line and prints the nice greeting mess
 Some commands that have a JSON structure as an argument, like [IMPORTRAW](#ACMEScript-commands.md#command_importraw) or [CREATE](ACMEScript-commands.md#command_create), allow to span multiple lines and also to start on the line following the command itself. 
 
 Leading and training white spaces are ignored. Lines that start with `#` and `//` characters are treated as comments and are ignored.  
+
 Example:
 
 ```text
@@ -75,10 +77,12 @@ There are different ways to run scripts:
 Scripts may have arguments that can be accessed with the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv) macros.
 
 
-#### Quoting strings
+#### Quoting Strings
 
-In ACMEScript tokens, arguments, number etc. are separated by spaces. If a string or token needs to contain spaces
-then they must be wrapped by double quotes. Everything inside the quotes is then treated as a single token.
+In ACMEScript tokens (commands, macros, arguments, numbers etc.) are separated by one or more spaces. Every such token is stripped
+when executed, that means leading and trailing spaces are removed.
+If a string or token needs to contain spaces then they must be wrapped by double quotes. Everything inside the quotes is then
+treated as a single token.
 
 Example:
 
@@ -86,6 +90,24 @@ Example:
 print [in "ab cd" "12 ab cd 34"]
 # -> true
 ```
+
+#### Multi-Line Strings
+
+It is possible to define multi-line strings. They are started and ended with three double quotes.
+Macros and variables are evaluated in multi-line strings as well.
+
+Example:
+
+```text
+print """This
+is a 
+multi-line string
+[datetime]"""
+```
+
+**Attention**: Multi-line strings are stripped as well. Spaces are removed from the beginning and end of a multi-line string, and also from
+the beginning and end of each line.
+
 
 #### Script Prompt
 

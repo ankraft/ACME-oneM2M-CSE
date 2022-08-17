@@ -160,7 +160,7 @@ class ACMEPContext(PContext):
 		if CSE.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			L.console(line, nl = not len(msg))
+			L.console(line, nl = not len(line))
 	
 	
 	@property
