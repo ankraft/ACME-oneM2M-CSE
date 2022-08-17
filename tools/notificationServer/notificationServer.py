@@ -160,7 +160,7 @@ class MQTTClientHandler(MQTTHandler):
 
 	def onShutdown(self, connection: MQTTConnection) -> None:
 		if not self.isShutdown:
-			os.kill(os.getpid(), signal.SIGUSR1)
+			exitAll()
 	
 
 	def _requestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
@@ -269,7 +269,7 @@ def exitSignalHandler(signal, frame) -> None:	# type: ignore [no-untyped-def]
 	raise ExitCommand()
 
 def exitAll() -> None:
-	os.kill(os.getpid(), signal.SIGUSR1)
+	os.kill(os.getpid(), signal.SIGTERM)
 
 def checkPositive(value:str) -> int:
 	ivalue = int(value)
@@ -277,7 +277,7 @@ def checkPositive(value:str) -> int:
 		raise argparse.ArgumentTypeError(f'{value} is an invalid positive int value')
 	return ivalue
 
-signal.signal(signal.SIGUSR1, exitSignalHandler)
+signal.signal(signal.SIGTERM, exitSignalHandler)
 	
 if __name__ == '__main__':
 	console = Console()
