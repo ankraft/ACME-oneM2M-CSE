@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+from typing import Sequence
+import base64
 from ..resources.SMD import SMD
 from ..services.Logging import Logging as L
 from ..etc.Types import Result, SemanticFormat
@@ -39,7 +41,6 @@ class SemanticManager(object):
 	#
 	#	SMD support functions
 	#
-	
 
 	def validateDescriptor(self, smd:SMD) -> Result:
 		"""	Check that the *descriptor* attribute conforms to the syntax defined by
@@ -76,9 +77,10 @@ class SemanticManager(object):
 			Args:
 				query: String with the SPARQL query to validate.
 			Return:
-				Result object indicating success or error.
+				Result object indicating success or error. In case of an error the *rsc* 
+				is set to *INVALID_SPARQL_QUERY*.
 		"""
-
+		L.isDebug and L.logDebug(f'Validating SPARQL request: {query}')
 		L.isWarn and L.logWarn('Validation of SMD.semanticOpExec is not implemented')
 		return Result.successResult()
 
@@ -161,3 +163,17 @@ class SemanticManager(object):
 			# 	referenced ontology. If any problem occurs, the Hosting CSE shall generate a Response Status Code indicating an "INVALID_SEMANTICS" error.
 		
 		return Result.successResult()
+
+	#########################################################################
+	#
+	#	SMD discovery functions
+	#
+
+	def getAggregatedDescriptions(self, smds:Sequence[SMD]) -> Sequence[str]:
+		return [ base64.decodebytes(bytes(smd.dsp, 'utf-8')).decode('utf-8') 
+				 for smd in smds ]
+	
+
+	def applySPARQLFilter(self, sparqlFilter:str, smds:Sequence[SMD]) -> Result:
+		L.isWarn and L.logWarn('SPARQL filter is not implemented')
+		return Result(status = True, data = f'some SPARQL result: { [ smd.ri for smd in smds] }')

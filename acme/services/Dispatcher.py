@@ -11,7 +11,7 @@ from __future__ import annotations
 import operator
 import sys
 from copy import deepcopy
-from typing import Any, List, Tuple, cast
+from typing import Any, List, Tuple, cast, Sequence
 
 from ..helpers import TextTools as TextTools
 from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes as T
@@ -30,6 +30,7 @@ from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources import Factory as Factory
 from ..resources.Resource import Resource
+from ..resources.SMD import SMD
 
 
 # TODO NOTIFY optimize local resource notifications
@@ -112,20 +113,15 @@ class Dispatcher(object):
 					return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {Permission.RETRIEVE}')
 				return res
 
-
-
-
+		# The permission also indicates whether this is RETRIEVE or DISCOVERY
 		permission = Permission.DISCOVERY if request.fc.fu == FU.discoveryCriteria else Permission.RETRIEVE
-
-		# check rcn & operation
-		if permission == Permission.DISCOVERY and request.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result.errorResult(dbg = f'invalid rcn: {int(request.rcn)} for fu: {int(request.fc.fu)}')
-		if permission == Permission.RETRIEVE and request.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result.errorResult(dbg = f'invalid rcn: {int(request.rcn)} for fu: {int(request.fc.fu)}')
 
 		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.rcn}, fu: {request.fc.fu.name}, drt: {request.drt.name}, fc: {str(request.fc)}, rcn: {request.rcn.name}, attributes: {str(request.fc.attributes)}, sqi: {request.sqi})')
 
-		# Retrieve the target resource, because it is needed for some rcn (and the default)
+		#
+		#	Normal Retrieve
+		# 	 Retrieve the target resource, because it is needed for some rcn (and the default)
+		#
 		if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
 			if not (res := self.retrieveResource(id, originator, request)).status:
 				return res # error
@@ -155,10 +151,26 @@ class Dispatcher(object):
 					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 						return resCheck
 				return res
+		
+		#
+		#	Semantic query request
+		#	This is indicated by rcn = semantic content
+		#
+		if request.rcn == RCN.semanticContent:
+			# Validate SPARQL in semanticFilter
+			if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
+				return res
+			# Get all semanticDescriptors
+			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [T.SMD]))).status:
+				return res
+			if not (res := CSE.semantic.applySPARQLFilter(request.fc.smf, cast(Sequence[SMD], res.data))).status:
+				return res
+			L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
+			return Result(status = True, rsc = RC.OK, data = { 'm2m:qres' : res.data })
 
-
-		# do discovery
-		# TODO simplify arguments
+		#
+		#	Discovery request
+		#
 		if not (res := self.discoverResources(id, originator, request.fc, permission = permission)).status:	# not found?
 			return res.errorResultCopy()				
 
@@ -199,7 +211,7 @@ class Dispatcher(object):
 			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
 
 		else:
-			return Result.errorResult(dbg = 'wrong rcn for RETRIEVE')
+			return Result.errorResult(dbg = 'unsuppored rcn for RETRIEVE')
 
 
 	def retrieveResource(self, id:str, originator:str = None, request:CSERequest = None, postRetrieveHook:bool = False) -> Result:
@@ -310,13 +322,13 @@ class Dispatcher(object):
 
 		# Apply ARP if provided
 		if filterCriteria.arp:
-			result = []
+			_resources = []
 			for resource in discoveredResources:
 				# Check existence and permissions for the .../{arp} resource
 				srn = f'{resource.getSrn()}/{filterCriteria.arp}'
 				if (res := self.retrieveResource(srn)).resource and CSE.security.hasAccess(originator, res.resource, permission):
-					result.append(res.resource)
-			discoveredResources = result	# re-assign the new resources to discoveredResources
+					_resources.append(res.resource)
+			discoveredResources = _resources	# re-assign the new resources to discoveredResources
 
 		return Result(status = True, data = discoveredResources)
 

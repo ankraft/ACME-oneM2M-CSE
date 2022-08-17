@@ -2570,6 +2570,19 @@
 			"annc": "OA"
 		}
 	],
+	"smf": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "semanticsFilter",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"smod": [
 		{
 			"rtypes": [ "ALL" ],

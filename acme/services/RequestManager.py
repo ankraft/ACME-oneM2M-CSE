@@ -1285,7 +1285,7 @@ class RequestManager(object):
 				cseRequest._rpts = None
 
 			# SQI - Semantic Query Indicator
-			if (v := gget(cseRequest.originalRequest, 'sqi')) is not None:
+			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
 				if cseRequest.op != Operation.RETRIEVE:
 					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'))
 				else:
