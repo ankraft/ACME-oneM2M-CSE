@@ -413,7 +413,8 @@ class MQTTClient(object):
 		req.resource			= content
 		req.request.originator	= originator
 		req.request.rqi			= Utils.uniqueRI()
-		req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
+		if rvi != '1':
+			req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
 		req.request.ot			= DateUtils.getResourceDate()
 		req.rsc					= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct			= ct if ct else CSE.defaultSerialization 	# get the serialization

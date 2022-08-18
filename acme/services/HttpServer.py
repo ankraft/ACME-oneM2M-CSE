@@ -394,7 +394,8 @@ class HttpServer(object):
 			# Not raw means we need to construct everything from the request
 			hds[C.hfOrigin] = originator
 			hds[C.hfRI] 	= Utils.uniqueRI()
-			hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
+			if rvi != '1':
+				hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
 			hds[C.hfOT]		= DateUtils.getResourceDate()
 
 			# Add additional headers
@@ -407,7 +408,8 @@ class HttpServer(object):
 
 			hds[C.hfOrigin]	= Utils.toSPRelative(content['fr']) if 'fr' in content else ''
 			hds[C.hfRI]		= content['rqi']
-			hds[C.hfRVI]	= rvi if rvi is not None else content['rvi']
+			if rvi != '1':
+				hds[C.hfRVI]	= rvi if rvi is not None else content['rvi']
 			
 			# Add additional headers from the request
 			if 'ec' in content:				# Event Category

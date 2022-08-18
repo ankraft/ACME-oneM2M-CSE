@@ -785,6 +785,8 @@ class RequestManager(object):
 																					  originator = originator,
 																					  permission = Permission.RETRIEVE,
 																					  raw = raw):
+			# Special handling for Release 1 targets
+			content = self.handleRequestToR1Target(content, rvi)
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -840,6 +842,9 @@ class RequestManager(object):
 																					   noAccessIsError = noAccessIsError,
 																					   raw = raw):
 
+			# Special handling for Release 1 targets
+			content = self.handleRequestToR1Target(content, rvi)
+
 			# Send the request via a PCH, if present
 			if pch:
 				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.CREATE,
@@ -894,6 +899,9 @@ class RequestManager(object):
 																					  permission = Permission.UPDATE,
 																					  raw = raw):
 
+			# Special handling for Release 1 targets
+			content = self.handleRequestToR1Target(content, rvi)
+
 			# Send the request via a PCH, if present
 			if pch:
 				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.UPDATE,
@@ -945,6 +953,9 @@ class RequestManager(object):
 																					  originator = originator, 
 																					  permission = Permission.DELETE, 
 																					  raw = raw):
+
+			# Special handling for Release 1 targets
+			content = self.handleRequestToR1Target(content, rvi)
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -1003,6 +1014,9 @@ class RequestManager(object):
 
 		for url, csz, rvi, pch, requestOriginator, to, ty in resolved:
 
+			# Special handling for Release 1 targets
+			content = self.handleRequestToR1Target(content, rvi)
+			
 			# Send the request via a PCH, if present
 			if pch:
 				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.NOTIFY,
@@ -1405,6 +1419,28 @@ class RequestManager(object):
 		if not csz:
 			return []
 		return [ ContentSerializationType.getType(c) for c in csz]
+
+
+
+	def handleRequestToR1Target(self, content:JSON, targetRvi:str) -> JSON:
+		"""	Remove the *Release Version Indicator* and the *Vendor Information*
+			from a request if the request targets a target that only supports 
+			release 1.
+
+			Args:
+				content: Dictionary with the request.
+				rvi: The target's supported release version.
+			Return:
+				A copy of *content*, with the fields removed.
+		"""
+		if targetRvi != '1':
+			return content
+		newContent = deepcopy(content)
+		if 'rvi' in newContent:
+			del newContent['rvi']
+		if 'vsi' in newContent:
+			del newContent['vsi']
+		return newContent
 
 
 	def determineTargetDetails(self, 
