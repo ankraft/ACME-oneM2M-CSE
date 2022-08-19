@@ -704,8 +704,8 @@ class TestCRS(unittest.TestCase):
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, r)	
 
-		# wait and check notification at half the time
-		testSleep(crsTimeWindowSize + 1.0)
+		# wait and check notification at around half the time
+		testSleep(crsTimeWindowSize + 0.8)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait second half
