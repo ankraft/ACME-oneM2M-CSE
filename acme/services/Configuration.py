@@ -833,7 +833,7 @@ class Configuration(object):
 				}
 			]
 			t = prompt(questionsStart)
-			cseType = cast(str, ['cseType'])
+			cseType = cast(str, t['cseType'])
 			cseEnvironment = cast(str, t['cseEnvironment'])
 			cnf.append(f'cseType={cseType}')
 		
@@ -871,6 +871,11 @@ class Configuration(object):
 						'enableUpperTesterEndpoint=true\n'\
 						'enableStructureEndpoint=true\n'
 			
+			# Add basic registration configuration
+			jcnf += '\n\n'\
+					'[cse.registration]\n'\
+					'allowedCSROriginators=*\n'			
+
 			# Show configuration and confirm write
 			Configuration._print('\n[b]Save configuration\n')
 			_jcnf = jcnf.replace("[", "\[")
