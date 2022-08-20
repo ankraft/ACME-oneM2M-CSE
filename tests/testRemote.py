@@ -108,7 +108,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.originatorHasNoPrivilege:
-			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
@@ -128,7 +128,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.originatorHasNoPrivilege:
-			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
@@ -148,7 +148,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.originatorHasNoPrivilege:
-			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.created, r)	# actually, it is overwritten by the CSE
 
 		_, rsc = DELETE(csrURL, csrOriginator)
@@ -169,7 +169,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.originatorHasNoPrivilege:
-			console.print('\n[red]Please add "id-nocsi" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print('\n[r]Please add "id-nocsi" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.created, r)
 		
 		_, rsc = DELETE(csrURL, ORIGINATOR)
@@ -202,7 +202,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, 'Ctest', T.CSR, dct)
 		if rsc == RC.originatorHasNoPrivilege:
-			console.print('\n[red]Please add "Ctest" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print('\n[r]Please add "Ctest" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.operationNotAllowed, r)
 
 		_, rsc = DELETE(aeURL, ORIGINATOR)

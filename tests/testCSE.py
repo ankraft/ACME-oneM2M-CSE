@@ -56,7 +56,7 @@ class TestCSE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSEWithWrongOriginator(self) -> None:
 		""" Retrieve <CB> with wrong originator -> Fail """
-		_, rsc = RETRIEVE(cseURL, 'CWron')
+		_, rsc = RETRIEVE(cseURL, 'CWrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
