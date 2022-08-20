@@ -100,50 +100,50 @@ class Resource(object):
 			# no Dict, so the resource is instantiated programmatically
 			self.setAttribute(self._isInstantiated, True)
 
-		if self.dict is not None:
-			if not self.tpe: # and _rtype in self:
-				self.tpe = self.__rtype__
-			if not self.hasAttribute('ri'):
-				self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite = False)
-			if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
-				self.setAttribute('pi', pi)
+		# if self.dict is not None:
+		if not self.tpe: 
+			self.tpe = self.__rtype__
+		if not self.hasAttribute('ri'):
+			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite = False)
+		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
+			self.setAttribute('pi', pi)
 
-			# override rn if given
-			if rn:
-				self.setResourceName(rn)
+		# override rn if given
+		if rn:
+			self.setResourceName(rn)
 
-			# Create an RN if there is none (not given, none in the resource)
-			if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
-				self.setResourceName(Utils.uniqueRN(self.tpe))
+		# Create an RN if there is none (not given, none in the resource)
+		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
+			self.setResourceName(Utils.uniqueRN(self.tpe))
 
-			# Check uniqueness of ri. otherwise generate a new one. Only when creating
-			if create:
-				while not Utils.isUniqueRI(ri := self.ri):
-					L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-					self['ri'] = Utils.uniqueRI(self.tpe)
+		# Check uniqueness of ri. otherwise generate a new one. Only when creating
+		if create:
+			while not Utils.isUniqueRI(ri := self.ri):
+				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
+				self['ri'] = Utils.uniqueRI(self.tpe)
 
-			# Set some more attributes
-			if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
-				ts = DateUtils.getResourceDate()
-				self.setAttribute('ct', ts, overwrite = False)
-				self.setAttribute('lt', ts, overwrite = False)
+		# Set some more attributes
+		if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
+			ts = DateUtils.getResourceDate()
+			self.setAttribute('ct', ts, overwrite = False)
+			self.setAttribute('lt', ts, overwrite = False)
 
-			# Handle resource type
-			if ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
-				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite = False) 
-			if ty is not None:
-				self.setAttribute('ty', int(ty))
+		# Handle resource type
+		if ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
+			self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite = False) 
+		if ty is not None:
+			self.setAttribute('ty', int(ty))
 
-			#
-			## Note: ACPI is handled in activate() and update()
-			#
+		#
+		## Note: ACPI is handled in activate() and update()
+		#
 
-			# Remove empty / null attributes from dict
-			# But see also the comment in update() !!!
-			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
+		# Remove empty / null attributes from dict
+		# But see also the comment in update() !!!
+		self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
-			self[self._rtype] = self.tpe
-			self.setAttribute(self._announcedTo, [], overwrite = False)
+		self[self._rtype] = self.tpe
+		self.setAttribute(self._announcedTo, [], overwrite = False)
 
 
 	# Default encoding implementation. Overwrite in subclasses

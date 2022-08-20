@@ -341,7 +341,7 @@ class Importer(object):
 
 		noErrors = True
 		for ty in T:
-			if (rc := Factory.resourceClassByType(ty)):								# Get the Python class for each Resource (only real resources)
+			if (rc := ty.resourceClass()):											# Get the Python class for each Resource (only real resources)
 				if hasattr(rc, '_attributes'):										# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
 						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):

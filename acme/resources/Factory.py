@@ -8,7 +8,7 @@
 #
 
 from typing import Dict, Callable, Tuple, cast
-from ..etc.Types import ResourceTypes as T
+from ..etc.Types import ResourceTypes as T, addResourceFactoryCallback, FactoryCallableT
 from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result, JSON
 from ..etc import Utils as Utils
@@ -82,91 +82,74 @@ from ..resources.SWRAnnc import SWRAnnc
 from ..resources.Resource import Resource
 
 
-# type definition for Factory lambda
-FactoryT = Tuple[object, 
-				 Callable[ [ Dict[str, object], str, str, bool], object ]]
+# Adding factory callbacks to regular resource type details
+addResourceFactoryCallback(T.ACP, 			ACP,			lambda dct, tpe, pi, create : ACP(dct, pi = pi, create = create))
+addResourceFactoryCallback(T.ACPAnnc,		ACPAnnc,		lambda dct, tpe, pi, create : ACPAnnc(dct, pi = pi, create = create))
+addResourceFactoryCallback(T.ACTR, 			ACTR,			lambda dct, tpe, pi, create : ACTR(dct, pi = pi, create = create)) 
+# TODO ACTRAnnc
+addResourceFactoryCallback(T.AE, 			AE,				lambda dct, tpe, pi, create : AE(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.AEAnnc,		AEAnnc,			lambda dct, tpe, pi, create : AEAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CIN, 			CIN,			lambda dct, tpe, pi, create : CIN(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CINAnnc, 		CINAnnc,		lambda dct, tpe, pi, create : CINAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CNT,	 		CNT,			lambda dct, tpe, pi, create : CNT(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CNTAnnc, 		CNTAnnc,		lambda dct, tpe, pi, create : CNTAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CNT_LA,		CNT_LA,			lambda dct, tpe, pi, create : CNT_LA(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CNT_OL,		CNT_OL,			lambda dct, tpe, pi, create : CNT_OL(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CSEBase,		CSEBase,		lambda dct, tpe, pi, create : CSEBase(dct, create = create)) 
+addResourceFactoryCallback(T.CSEBaseAnnc,	CSEBaseAnnc,	lambda dct, tpe, pi, create : CSEBaseAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CRS,			CRS,			lambda dct, tpe, pi, create : CRS(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CSR,			CSR,			lambda dct, tpe, pi, create : CSR(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.CSRAnnc,		CSRAnnc,		lambda dct, tpe, pi, create : CSRAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.FCI,			FCI,			lambda dct, tpe, pi, create : FCI(dct, pi = pi, fcntType = tpe, create = create)) 
+addResourceFactoryCallback(T.FCNT,			FCNT,			lambda dct, tpe, pi, create : FCNT(dct, pi = pi, fcntType = tpe, create = create)) 
+addResourceFactoryCallback(T.FCNTAnnc,		FCNTAnnc,		lambda dct, tpe, pi, create : FCNTAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.FCNT_LA,		FCNT_LA,		lambda dct, tpe, pi, create : FCNT_LA(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.FCNT_OL,		FCNT_OL,		lambda dct, tpe, pi, create : FCNT_OL(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.GRP,			GRP,			lambda dct, tpe, pi, create : GRP(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.GRPAnnc,		GRPAnnc,		lambda dct, tpe, pi, create : GRPAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.GRP_FOPT,		GRP_FOPT,		lambda dct, tpe, pi, create : GRP_FOPT(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.NOD,			NOD,			lambda dct, tpe, pi, create : NOD(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.NODAnnc,		NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.PCH,			PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.PCH_PCU,		PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.REQ,			REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.SMD,			SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.SMDAnnc,		SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.SUB,			SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TS,			TS,				lambda dct, tpe, pi, create : TS(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TSAnnc,		TSAnnc,			lambda dct, tpe, pi, create : TSAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TS_LA,			TS_LA,			lambda dct, tpe, pi, create : TS_LA(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TS_OL,			TS_OL,			lambda dct, tpe, pi, create : TS_OL(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TSB,			TSB,			lambda dct, tpe, pi, create : TSB(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TSI,			TSI,			lambda dct, tpe, pi, create : TSI(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.TSIAnnc,		TSIAnnc,		lambda dct, tpe, pi, create : TSIAnnc(dct, pi = pi, create = create)) 
 
-resourceFactoryMap:Dict[T, FactoryT] = {
-	#	Regular resources
-	#	type -> (Class, factory)
-	
-	T.ACP			: (ACP,			lambda dct, tpe, pi, create : ACP(dct, pi = pi, create = create)),
-	T.ACTR			: (ACTR,		lambda dct, tpe, pi, create : ACTR(dct, pi = pi, create = create)),		# TODO ACTRAnnc
-	T.AE			: (AE,			lambda dct, tpe, pi, create : AE(dct, pi = pi, create = create)),
-	T.CIN			: (CIN,			lambda dct, tpe, pi, create : CIN(dct, pi = pi, create = create)),
-	T.CNT			: (CNT,			lambda dct, tpe, pi, create : CNT(dct, pi = pi, create = create)),
-	T.CNT_LA		: (CNT_LA,		lambda dct, tpe, pi, create : CNT_LA(dct, pi = pi, create = create)),
-	T.CNT_OL		: (CNT_OL,		lambda dct, tpe, pi, create : CNT_OL(dct, pi = pi, create = create)),
-	T.CSEBase		: (CSEBase,		lambda dct, tpe, pi, create : CSEBase(dct, create = create)),
-	T.CRS			: (CRS,			lambda dct, tpe, pi, create : CRS(dct, pi = pi, create = create)),
-	T.CSR			: (CSR,			lambda dct, tpe, pi, create : CSR(dct, pi = pi, create = create)),
-	T.FCNT			: (FCNT,		lambda dct, tpe, pi, create : FCNT(dct, pi = pi, fcntType = tpe, create = create)),
-	T.FCNT_LA		: (FCNT_LA,		lambda dct, tpe, pi, create : FCNT_LA(dct, pi = pi, create = create)),
-	T.FCNT_OL		: (FCNT_OL,		lambda dct, tpe, pi, create : FCNT_OL(dct, pi = pi, create = create)),
-	T.FCI			: (FCI,			lambda dct, tpe, pi, create : FCI(dct, pi = pi, fcntType = tpe, create = create)),
-	T.GRP			: (GRP,			lambda dct, tpe, pi, create : GRP(dct, pi = pi, create = create)),
-	T.GRP_FOPT		: (GRP_FOPT,	lambda dct, tpe, pi, create : GRP_FOPT(dct, pi = pi, create = create)),
-	T.NOD			: (NOD,			lambda dct, tpe, pi, create : NOD(dct, pi = pi, create = create)),
-	T.PCH			: (PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)),
-	T.PCH_PCU		: (PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create = create)),
-	T.REQ			: (REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)),
-	T.SMD			: (SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)),
-	T.SUB			: (SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)),
-	T.TS			: (TS,			lambda dct, tpe, pi, create : TS(dct, pi = pi, create = create)),
-	T.TS_LA			: (TS_LA,		lambda dct, tpe, pi, create : TS_LA(dct, pi = pi, create = create)),
-	T.TS_OL			: (TS_OL,		lambda dct, tpe, pi, create : TS_OL(dct, pi = pi, create = create)),
-	T.TSB			: (TSB,			lambda dct, tpe, pi, create : TSB(dct, pi = pi, create = create)),
-	T.TSI			: (TSI,			lambda dct, tpe, pi, create : TSI(dct, pi = pi, create = create)),
+# Add for MgmtObj specializations
+addResourceFactoryCallback(T.ANDI,			ANDI,			lambda dct, tpe, pi, create : ANDI(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.ANDIAnnc,		ANDIAnnc,		lambda dct, tpe, pi, create : ANDIAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.ANI,			ANI,			lambda dct, tpe, pi, create : ANI(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.ANIAnnc,		ANIAnnc,		lambda dct, tpe, pi, create : ANIAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.BAT,			BAT,			lambda dct, tpe, pi, create : BAT(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.BATAnnc,		BATAnnc,		lambda dct, tpe, pi, create : BATAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.DVC,			DVC,			lambda dct, tpe, pi, create : DVC(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.DVCAnnc,		DVCAnnc,		lambda dct, tpe, pi, create : DVCAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.DVI,			DVI,			lambda dct, tpe, pi, create : DVI(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.DVIAnnc,		DVIAnnc,		lambda dct, tpe, pi, create : DVIAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.EVL,			EVL,			lambda dct, tpe, pi, create : EVL(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.EVLAnnc,		EVLAnnc,		lambda dct, tpe, pi, create : EVLAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.FWR,			FWR,			lambda dct, tpe, pi, create : FWR(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.FWRAnnc,		FWRAnnc,		lambda dct, tpe, pi, create : FWRAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.MEM,			MEM,			lambda dct, tpe, pi, create : MEM(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.MEMAnnc,		MEMAnnc,		lambda dct, tpe, pi, create : MEMAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.NYCFC,			NYCFC,			lambda dct, tpe, pi, create : NYCFC(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.NYCFCAnnc,		NYCFCAnnc,		lambda dct, tpe, pi, create : NYCFCAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.RBO,			RBO,			lambda dct, tpe, pi, create : RBO(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.RBOAnnc,		RBOAnnc,		lambda dct, tpe, pi, create : RBOAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.SWR,			SWR,			lambda dct, tpe, pi, create : SWR(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(T.SWRAnnc,		SWRAnnc,		lambda dct, tpe, pi, create : SWRAnnc(dct, pi = pi, create = create)) 
 
 
-	# 	Announced Resources
-	#	type -> factory
-
-	T.ACPAnnc		: (ACPAnnc,		lambda dct, tpe, pi, create : ACPAnnc(dct, pi = pi, create = create)),
-	T.AEAnnc		: (AEAnnc,		lambda dct, tpe, pi, create : AEAnnc(dct, pi = pi, create = create)),
-	T.CINAnnc		: (CINAnnc,		lambda dct, tpe, pi, create : CINAnnc(dct, pi = pi, create = create)),
-	T.CNTAnnc		: (CNTAnnc,		lambda dct, tpe, pi, create : CNTAnnc(dct, pi = pi, create = create)),
-	T.CSEBaseAnnc	: (CSEBaseAnnc,	lambda dct, tpe, pi, create : CSEBaseAnnc(dct, pi = pi, create = create)),
-	T.CSRAnnc		: (CSRAnnc,		lambda dct, tpe, pi, create : CSRAnnc(dct, pi = pi, create = create)),
-	T.FCNTAnnc		: (FCNTAnnc,	lambda dct, tpe, pi, create : FCNTAnnc(dct, pi = pi, create = create)),
-	T.GRPAnnc		: (GRPAnnc,		lambda dct, tpe, pi, create : GRPAnnc(dct, pi = pi, create = create)),
-	T.NODAnnc		: (NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)),
-	T.SMDAnnc		: (SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)),
-	T.TSAnnc		: (TSAnnc,		lambda dct, tpe, pi, create : TSAnnc(dct, pi = pi, create = create)),
-	T.TSIAnnc		: (TSIAnnc,		lambda dct, tpe, pi, create : TSIAnnc(dct, pi = pi, create = create)),
-
-
-	#	Management specializations
-	#	mgd -> factory
-
-	T.ANDI			: (ANDI,		lambda dct, tpe, pi, create : ANDI(dct, pi = pi, create = create)),
-	T.ANI			: (ANI,			lambda dct, tpe, pi, create : ANI(dct, pi = pi, create = create)),
-	T.BAT			: (BAT,			lambda dct, tpe, pi, create : BAT(dct, pi = pi, create = create)),
-	T.DVC			: (DVC,			lambda dct, tpe, pi, create : DVC(dct, pi = pi, create = create)),
-	T.DVI			: (DVI,			lambda dct, tpe, pi, create : DVI(dct, pi = pi, create = create)),
-	T.EVL			: (EVL,			lambda dct, tpe, pi, create : EVL(dct, pi = pi, create = create)),
-	T.FWR			: (FWR,			lambda dct, tpe, pi, create : FWR(dct, pi = pi, create = create)),
-	T.MEM			: (MEM,			lambda dct, tpe, pi, create : MEM(dct, pi = pi, create = create)),
-	T.NYCFC			: (NYCFC,		lambda dct, tpe, pi, create : NYCFC(dct, pi = pi, create = create)),
-	T.RBO			: (RBO,			lambda dct, tpe, pi, create : RBO(dct, pi = pi, create = create)),
-	T.SWR			: (SWR,			lambda dct, tpe, pi, create : SWR(dct, pi = pi, create = create)),
-
-	#	Announced Management specializations
-	#	mgd -> factory
-
-	T.ANDIAnnc		: (ANDIAnnc,	lambda dct, tpe, pi, create : ANDIAnnc(dct, pi = pi, create = create)),
-	T.ANIAnnc		: (ANIAnnc,		lambda dct, tpe, pi, create : ANIAnnc(dct, pi = pi, create = create)),
-	T.BATAnnc		: (BATAnnc,		lambda dct, tpe, pi, create : BATAnnc(dct, pi = pi, create = create)),
-	T.DVCAnnc		: (DVCAnnc,		lambda dct, tpe, pi, create : DVCAnnc(dct, pi = pi, create = create)),
-	T.DVIAnnc		: (DVIAnnc,		lambda dct, tpe, pi, create : DVIAnnc(dct, pi = pi, create = create)),
-	T.EVLAnnc		: (EVLAnnc,		lambda dct, tpe, pi, create : EVLAnnc(dct, pi = pi, create = create)),
-	T.FWRAnnc		: (FWRAnnc,		lambda dct, tpe, pi, create : FWRAnnc(dct, pi = pi, create = create)),
-	T.MEMAnnc		: (MEMAnnc,		lambda dct, tpe, pi, create : MEMAnnc(dct, pi = pi, create = create)),
-	T.NYCFCAnnc		: (NYCFCAnnc,	lambda dct, tpe, pi, create : NYCFCAnnc(dct, pi = pi, create = create)),
-	T.SWRAnnc		: (SWRAnnc,		lambda dct, tpe, pi, create : SWRAnnc(dct, pi = pi, create = create)),
-	T.RBOAnnc		: (RBOAnnc,		lambda dct, tpe, pi, create : RBOAnnc(dct, pi = pi, create = create)),
-}
-
+_specResources = [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]
 
 
 def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool = False, isImported:bool = False) -> Result:
@@ -188,45 +171,38 @@ def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool 
 	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
 
 	# Determine type
-	typ = resDict['ty'] if 'ty' in resDict else ty
+	typ = T(resDict['ty']) if 'ty' in resDict else ty
 	if typ is None and (typ := T.fromTPE(tpe)) is None:
 		return Result.errorResult(dbg = L.logWarn(f'cannot determine type for creating the resource: {tpe}'))
+
+	if ty is not None:
+		if typ is not None and typ != ty:
+			return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type ({typ}) mismatch'))
+		if tpe is not None and ty.tpe() != tpe and ty not in _specResources:
+			return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# Check for Parent
 	if pi is None and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
 		return Result.errorResult(dbg = L.logWarn(f'pi missing in resource: {tpe}'))
 
-	# Check whether given type during CREATE matches the resource's ty attribute
-	if typ is not None and ty is not None and typ != ty:
-		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type ({typ}) mismatch'))
-	
-	# Check whether given type during CREATE matches the resource type specifier
-	if ty is not None and tpe is not None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
-		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
-	
 	# store the import status in the original resDict
 	if isImported:
 		resDict[Resource._imported] = True	# Indicate that this is an imported resource
 
 	# Determine a factory and call it
-	factory:FactoryT = None
+	factory:FactoryCallableT = None
+
 	if typ == T.MGMTOBJ:										# for <mgmtObj>
-		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = resourceFactoryMap.get(mgd)
+		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+		factory = T(resDict['mgd']).resourceFactory()
 	elif typ == T.MGMTOBJAnnc:									# for <mgmtObjA>
-		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = resourceFactoryMap.get(T(mgd).announced())	# Get the announced version
+		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+		factory = T(resDict['mgd']).announced().resourceFactory()
 	else:
-		factory = resourceFactoryMap.get(typ)
+		factory = typ.resourceFactory()
 	if factory:
-		return Result(status = True, rsc = RC.OK, resource = factory[1](resDict, tpe, pi, create))
+		return Result(status = True, rsc = RC.OK, resource = factory(resDict, tpe, pi, create))
 
 	return Result(status = True, rsc = RC.OK, resource = Unknown(resDict, tpe, pi = pi, create = create))	# Capture-All resource
 
 
-def resourceClassByType(typ:T) -> Resource:
-	"""	Return a resource class by its ResourceType, or None.
-	"""
-	if not (r := resourceFactoryMap.get(typ)):
-		return None
-	return cast(Resource, r[0])

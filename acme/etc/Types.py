@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
@@ -82,8 +82,6 @@ class ACMEIntEnum(IntEnum):
 #	Resource Types
 #
 
-# TODO : Optimize tpe -> ResourceType mapping
-
 class ResourceTypes(ACMEIntEnum):
 
 	UNKNOWN			= -1
@@ -117,7 +115,6 @@ class ResourceTypes(ACMEIntEnum):
 	ACTR			= 63
 
 
-
 	# Virtual resources (some are proprietary resource types)
 
 	CNT_OL			=  20001	# actually a memberType
@@ -132,7 +129,6 @@ class ResourceTypes(ACMEIntEnum):
 
 	# <mgmtObj> Specializations
 	# NOTE Always apply changes also to the m2m:mgmtDefinition in attributePolicies.ap etc
-	# TODO refactor this into a separate type
 
 	FWR				= 1001
 	SWR				= 1002
@@ -177,35 +173,34 @@ class ResourceTypes(ACMEIntEnum):
 	NYCFCAnnc		= -30023
 
 
-
 	def tpe(self) -> str:
 		return _ResourceTypesNames.get(self)
 
 
 	def announced(self, mgd:ResourceTypes = None) -> ResourceTypes:
-		if self.value != self.MGMTOBJ:
+
+		if self != ResourceTypes.MGMTOBJ:
 			# Handling for non-mgmtObjs
-			if self.value in _ResourceTypesAnnouncedMappings:	
-				return 	_ResourceTypesAnnouncedMappings[self]
+			if (r := _ResourceTypesAnnouncedMappings.get(self)):
+				return r
 		else:
 			# Handling for mgmtObjs
 			if mgd is not None:
-				if mgd in _ResourceTypesAnnouncedMappings:
-					return _ResourceTypesAnnouncedMappings[mgd]
+				if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+					return r
 			else:
-				return _ResourceTypesAnnouncedMappings[ResourceTypes(self.MGMTOBJ)] 
+				return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
 		return ResourceTypes.UNKNOWN
 
 
 	def fromAnnounced(self) -> ResourceTypes:
-		"""	Get the orginal resource type for an announced type.
+		"""	Get the orginal announceable resource type for an announced type.
 
 			Return:
-				Not-announced resource type, or UNKNOWN
+				Announceable resource type, or UNKNOWN
 		"""
-		for (k, v) in _ResourceTypesAnnouncedMappings.items():
-			if self.value == v:
-				return k
+		if (r := _ResourceTypesAnnouncedReverseMappings.get(self)):
+			return r
 		return ResourceTypes.UNKNOWN
 
 
@@ -227,24 +222,56 @@ class ResourceTypes(ACMEIntEnum):
 		return self.value in _ResourceTypesVirtualResourcesSet
 
 
+	def resourceClass(self) -> Resource:			# type:ignore [name-defined]
+		"""	Return a Resource class for this resource type.
+
+			Return:
+				The Resource class for the ResourceType.
+		"""
+		return _ResourceTypeDetails.get(self).clazz
+
+
+	def resourceFactory(self) -> FactoryCallableT:
+		"""	Return a Resource factory for this resource type.
+
+			Return:
+				The FactoryCallableT for the ResourceType.
+		"""		
+		return _ResourceTypeDetails.get(self).factory
+
+
 	@classmethod
 	def fromTPE(cls, tpe:str) -> ResourceTypes:
-		try:
-			return next(key for key, value in _ResourceTypesNames.items() if value == tpe)	# type: ignore
-		except StopIteration:
-			return None
+		"""	Get a resource type by its resource name.
+
+			Args:
+				tpe: Type name.
+			Return:
+				The resource type.
+		"""
+		return _ResourceNamesTypes.get(tpe)
 
 
 	@classmethod
 	def isVirtualResource(cls, ty:int) -> bool:
-		"""	Check whether `ty` is a virtual resource.
+		"""	Check whether *ty* is a virtual resource.
+
+			Args:
+				ty: The resource type to check.
+			Return:
+				True if the resource type is a virtual resource.
 		"""
 		return ty in _ResourceTypesVirtualResourcesSet
 
 
 	@classmethod
 	def isVirtualResourceName(cls, name:str) -> bool:
-		"""	Check whether `name` is the name of a virtual resource.
+		"""	Check whether *name* is the name of a virtual resource.
+
+			Args:
+				name: The resource name to check.
+			Return:
+				True if the resource type inidcated by the name is a virtual resource.
 		"""
 		return name in _ResourceTypesVirtualResourcesNames
 
@@ -269,198 +296,181 @@ class ResourceTypes(ACMEIntEnum):
 		return ty in _ResourceTypesInstanceResourcesSet
 
 
-_ResourceTypesAnnouncedMappings = {
-	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
-	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
-	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
-	ResourceTypes.CIN 		: ResourceTypes.CINAnnc,
-	ResourceTypes.CSEBase 	: ResourceTypes.CSEBaseAnnc,
-	ResourceTypes.GRP		: ResourceTypes.GRPAnnc,
-	ResourceTypes.MGMTOBJ	: ResourceTypes.MGMTOBJAnnc,
-	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
-	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
-	ResourceTypes.SMD		: ResourceTypes.SMDAnnc,
-	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
-	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
-	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
-	ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
-	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
+@dataclass()
+class ResourceDescription():
+	typeName:str = None
+	announcedType:ResourceTypes = None
+	isAnnouncedResource:bool= False
+	isMgmtSpecialization:bool = False
+	isInstanceResource:bool = False
+	isInternalType:bool = False
+	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
+	clazz:Resource = None 			# type:ignore [name-defined]
+	factory:FactoryCallableT = None
+	
+_ResourceTypeDetails = {
+	
+	# Normal resource types
+	ResourceTypes.ACP 			: ResourceDescription(typeName = 'm2m:acp', announcedType = ResourceTypes.ACPAnnc),
+	ResourceTypes.ACPAnnc 		: ResourceDescription(typeName = 'm2m:acpA', isAnnouncedResource = True),
+	ResourceTypes.ACTR 			: ResourceDescription(typeName = 'm2m:actr', announcedType = ResourceTypes.ACTRAnnc),
+	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True),
+	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc),
+	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True),
+	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True),
+	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True),
+	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc),
+	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True),
+	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
+	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
+	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs'),
+	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc),
+	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True),
+	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc),
+	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True),
+	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True),					# not an official type name
+	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc), 	# not an official type name
+	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True),				# not an official type name
+	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
+	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
+	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc),
+	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True),
+	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt'),
+	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc),	# not an official type name
+	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True),				# not an official type name
+	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc),
+	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True),
+	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch'),
+	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu'),
+	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req'),
+	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc),
+	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True),
+	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub'),
+	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc),
+	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True),
+	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
+	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
+	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True),
+	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True),
+	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc),
+	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True),
+# TODO implement TSBAnnc
 
-	# ManagementObjs
-	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
-	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
-	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
-	ResourceTypes.ANI		: ResourceTypes.ANIAnnc,
-	ResourceTypes.ANDI		: ResourceTypes.ANDIAnnc,
-	ResourceTypes.BAT		: ResourceTypes.BATAnnc,
-	ResourceTypes.DVI		: ResourceTypes.DVIAnnc,
-	ResourceTypes.DVC		: ResourceTypes.DVCAnnc,
-	ResourceTypes.RBO		: ResourceTypes.RBOAnnc,
-	ResourceTypes.EVL		: ResourceTypes.EVLAnnc,
-	ResourceTypes.NYCFC		: ResourceTypes.NYCFCAnnc,
-}
+	# ManagementObj Specializations
+	ResourceTypes.ANDI			: ResourceDescription(typeName = 'm2m:andi', announcedType = ResourceTypes.ANDIAnnc, isMgmtSpecialization = True),
+	ResourceTypes.ANDIAnnc		: ResourceDescription(typeName = 'm2m:andiA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.ANI			: ResourceDescription(typeName = 'm2m:ani', announcedType = ResourceTypes.ANIAnnc, isMgmtSpecialization = True),
+	ResourceTypes.ANIAnnc		: ResourceDescription(typeName = 'm2m:aniA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.BAT			: ResourceDescription(typeName = 'm2m:bat', announcedType = ResourceTypes.BATAnnc, isMgmtSpecialization = True),
+	ResourceTypes.BATAnnc		: ResourceDescription(typeName = 'm2m:batA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.DVC			: ResourceDescription(typeName = 'm2m:dvc', announcedType = ResourceTypes.DVCAnnc, isMgmtSpecialization = True),
+	ResourceTypes.DVCAnnc		: ResourceDescription(typeName = 'm2m:dvcA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.DVI			: ResourceDescription(typeName = 'm2m:dvi', announcedType = ResourceTypes.DVIAnnc, isMgmtSpecialization = True),
+	ResourceTypes.DVIAnnc		: ResourceDescription(typeName = 'm2m:dviA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.EVL			: ResourceDescription(typeName = 'm2m:evl', announcedType = ResourceTypes.EVLAnnc, isMgmtSpecialization = True),
+	ResourceTypes.EVLAnnc		: ResourceDescription(typeName = 'm2m:evlA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.FWR			: ResourceDescription(typeName = 'm2m:fwr', announcedType = ResourceTypes.FWRAnnc, isMgmtSpecialization = True),
+	ResourceTypes.FWRAnnc		: ResourceDescription(typeName = 'm2m:fwrA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.MEM			: ResourceDescription(typeName = 'm2m:mem', announcedType = ResourceTypes.MEMAnnc, isMgmtSpecialization = True),
+	ResourceTypes.MEMAnnc		: ResourceDescription(typeName = 'm2m:memA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.NYCFC			: ResourceDescription(typeName = 'm2m:nycfc', announcedType = ResourceTypes.NYCFCAnnc, isMgmtSpecialization = True),
+	ResourceTypes.NYCFCAnnc		: ResourceDescription(typeName = 'm2m:nycfctA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.RBO			: ResourceDescription(typeName = 'm2m:rbo', announcedType = ResourceTypes.RBOAnnc, isMgmtSpecialization = True),
+	ResourceTypes.RBOAnnc		: ResourceDescription(typeName = 'm2m:rboA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.SWR			: ResourceDescription(typeName = 'm2m:swr', announcedType = ResourceTypes.SWRAnnc, isMgmtSpecialization = True),
+	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True),
 
-
-_ResourceTypesAnnouncedSetFull = [
-	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
-	ResourceTypes.CINAnnc,
-	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.SMDAnnc, ResourceTypes.TSAnnc, 
-	ResourceTypes.TSBAnnc, ResourceTypes.TSIAnnc,
-
-	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
-	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
-	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
-]
-
-
-# List of announceable resource types in order
-_ResourceTypesAnnouncedResourceTypes = [
-	ResourceTypes.ACPAnnc,
-	ResourceTypes.AEAnnc,
-	ResourceTypes.CNTAnnc,
-	ResourceTypes.CINAnnc,
-	ResourceTypes.GRPAnnc,
-	ResourceTypes.MGMTOBJAnnc,
-	ResourceTypes.NODAnnc,
-	ResourceTypes.CSRAnnc,
-	ResourceTypes.SMDAnnc,
-	ResourceTypes.FCNTAnnc,
-	 ResourceTypes.ACTRAnnc, 
-	ResourceTypes.TSBAnnc
-]
-
-
-# Supported resource types by this CSE, including the announced resource types
-_ResourceTypesSupportedResourceTypes = [
-	ResourceTypes.ACP,
-	ResourceTypes.ACTR,
-	ResourceTypes.AE, 
-	ResourceTypes.CNT, 
-	ResourceTypes.CIN,
-	ResourceTypes.CRS, 
-	ResourceTypes.CSEBase,
-	ResourceTypes.GRP, 
-	ResourceTypes.MGMTOBJ,
-	ResourceTypes.NOD,
-	ResourceTypes.PCH,
-	ResourceTypes.CSR,
-	ResourceTypes.REQ,
-	ResourceTypes.SUB,
-	ResourceTypes.SMD,
-	ResourceTypes.FCNT,
-	ResourceTypes.FCI,
-	ResourceTypes.TS,
-	ResourceTypes.TSI,
-	ResourceTypes.TSB, 
-] + _ResourceTypesAnnouncedResourceTypes
-
-
-# List of virtual resources
-_ResourceTypesVirtualResourcesSet = [
-	ResourceTypes.CNT_LA, 
-	ResourceTypes.CNT_OL,
-	ResourceTypes.FCNT_LA, 
-	ResourceTypes.FCNT_OL,
-	ResourceTypes.TS_LA, 
-	ResourceTypes.TS_OL,
-	ResourceTypes.GRP_FOPT,
-	ResourceTypes.PCH_PCU 
-]
-
-
-_ResourceTypesInstanceResourcesSet = [
-	ResourceTypes.CIN, 
-	ResourceTypes.FCI,
-	ResourceTypes.TSI
-]
-
-
-# List of possible virtual resource names
-_ResourceTypesVirtualResourcesNames = [
-	'la', 'ol', 'fopt', 'pcu' 
-]
-
-
-# Mapping between oneM2M resource types to type identifies
-_ResourceTypesNames = {
-	ResourceTypes.UNKNOWN		: 'unknown',
-	ResourceTypes.ALL 			: 'all',
-
-	ResourceTypes.MIXED			: 'mixed',
-	ResourceTypes.ACP 			: 'm2m:acp',
-	ResourceTypes.ACTR			: 'm2m:actr',
-	ResourceTypes.AE 			: 'm2m:ae',
-	ResourceTypes.CNT			: 'm2m:cnt',
-	ResourceTypes.CIN 			: 'm2m:cin',
-	ResourceTypes.CSEBase		: 'm2m:cb',
-	ResourceTypes.CRS 			: 'm2m:crs',
-	ResourceTypes.CSR 			: 'm2m:csr',
-	ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
-	ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
-	ResourceTypes.GRP			: 'm2m:grp',
-	ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
-	ResourceTypes.NOD			: 'm2m:nod',
-	ResourceTypes.PCH			: 'm2m:pch',
-	ResourceTypes.REQ			: 'm2m:req',
-	ResourceTypes.SMD			: 'm2m:smd',
-	ResourceTypes.SUB			: 'm2m:sub',
-	ResourceTypes.TS 			: 'm2m:ts',
-	ResourceTypes.TSB 			: 'm2m:tsb',
-	ResourceTypes.TSI 			: 'm2m:tsi',
-
-	ResourceTypes.ACPAnnc 		: 'm2m:acpA',
-	ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
-	ResourceTypes.AEAnnc 		: 'm2m:aeA',
-	ResourceTypes.CNTAnnc 		: 'm2m:cntA',
-	ResourceTypes.CINAnnc 		: 'm2m:cinA',
-	ResourceTypes.CSEBaseAnnc	: 'm2m:cbA',
-	ResourceTypes.GRPAnnc 		: 'm2m:grpA',
-	ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
-	ResourceTypes.NODAnnc 		: 'm2m:nodA',
-	ResourceTypes.CSRAnnc 		: 'm2m:csrA',
-	ResourceTypes.SMDAnnc 		: 'm2m:smdA',
-	ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
-	ResourceTypes.TSAnnc 		: 'm2m:tsA',
-	ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
-	ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
-
-	ResourceTypes.CNT_OL		: 'm2m:ol',
-	ResourceTypes.CNT_LA		: 'm2m:la',
-	ResourceTypes.GRP_FOPT		: 'm2m:fopt',
-	ResourceTypes.FCNT_OL		: 'm2m:ol',
-	ResourceTypes.FCNT_LA		: 'm2m:la',
-	ResourceTypes.PCH_PCU		: 'm2m:pcu',
-	ResourceTypes.TS_OL			: 'm2m:ol',
-	ResourceTypes.TS_LA			: 'm2m:la',
-
-	# MgmtObj Specializations
-
-	ResourceTypes.FWR			: 'm2m:fwr',
-	ResourceTypes.SWR			: 'm2m:swr',
-	ResourceTypes.MEM			: 'm2m:mem',
-	ResourceTypes.ANI			: 'm2m:ani',
-	ResourceTypes.ANDI			: 'm2m:andi',
-	ResourceTypes.BAT			: 'm2m:bat',
-	ResourceTypes.DVI			: 'm2m:dvi',
-	ResourceTypes.DVC			: 'm2m:dvc',
-	ResourceTypes.RBO			: 'm2m:rbo',
-	ResourceTypes.EVL			: 'm2m:evl',
-	ResourceTypes.NYCFC			: 'm2m:nycfc',
-
-	ResourceTypes.FWRAnnc		: 'm2m:fwrA',
-	ResourceTypes.SWRAnnc		: 'm2m:swrA',
-	ResourceTypes.MEMAnnc		: 'm2m:memA',
-	ResourceTypes.ANIAnnc		: 'm2m:aniA',
-	ResourceTypes.ANDIAnnc		: 'm2m:andiA',
-	ResourceTypes.BATAnnc		: 'm2m:batA',
-	ResourceTypes.DVIAnnc		: 'm2m:dviA',
-	ResourceTypes.DVCAnnc		: 'm2m:dvcA',
-	ResourceTypes.RBOAnnc		: 'm2m:rboA',
-	ResourceTypes.EVLAnnc		: 'm2m:evlA',
-	ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
+	# Internal resource types
+	ResourceTypes.UNKNOWN	: ResourceDescription(typeName = 'unknown', isInternalType = True),
+	ResourceTypes.ALL		: ResourceDescription(typeName = 'all', isInternalType = True),
+	ResourceTypes.MIXED		: ResourceDescription(typeName = 'm2m:mixed', isInternalType = True),
+	ResourceTypes.REQRESP	: ResourceDescription(typeName = 'reqresp', isInternalType = True),
+	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
 
 }
+
+
+def addResourceFactoryCallback(ty:ResourceTypes, clazz:Resource, factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
+	"""	Add a class and a factory to create an instande for a resource type.
+
+		Args:
+			ty: Resource type.
+			clazz: A resource class.
+			factory: A callable to create an instance for the resource type.
+	"""
+	if ty not in _ResourceTypeDetails:
+		raise RuntimeError(f'Unknown resource type: {ty}')
+	if not clazz:
+		raise RuntimeError('undefined class')
+	if not factory:
+		raise RuntimeError('undefined factory callback')
+	_ResourceTypeDetails[ty].clazz = clazz
+	_ResourceTypeDetails[ty].factory = factory
+
+
+# Fill  resource helper structures
+
+_ResourceTypesAnnouncedMappings = { t : d.announcedType
+								   for t, d in _ResourceTypeDetails.items()
+								   if d.announcedType }
+"""	Mapping between announceable and announced resources. """
+
+
+_ResourceTypesAnnouncedReverseMappings = { d.announcedType : t
+										   for t, d in _ResourceTypeDetails.items()
+										   if d.announcedType }
+"""	Mapping between announced and announceable resources. """
+
+
+_ResourceTypesAnnouncedSetFull = [ t
+								   for t, d in _ResourceTypeDetails.items()
+								   if d.isAnnouncedResource ]
+""" Mapping of resources to their announced counterparts. """
+
+
+_ResourceTypesAnnouncedResourceTypes = [ d.announcedType
+										 for t, d in _ResourceTypeDetails.items()
+										 if d.announcedType and not d.isMgmtSpecialization and t != ResourceTypes.CSEBase]
+""" Sorted list of announced resources without MgmtObj specializations. """
+_ResourceTypesAnnouncedResourceTypes.sort()
+
+
+
+_ResourceTypesSupportedResourceTypes = [ t
+										 for t, d in _ResourceTypeDetails.items()
+										 if not d.isMgmtSpecialization and not d.virtualResourceName and not d.isInternalType and t != ResourceTypes.CSEBaseAnnc]
+""" Sorted list of supported resource types (without MgmtObj spezializations and virtual resources). """
+_ResourceTypesSupportedResourceTypes.sort()
+
+
+_ResourceTypesVirtualResourcesSet = [ t
+									  for t, d in _ResourceTypeDetails.items()
+									  if d.virtualResourceName ]
+""" List of virtual resources. """
+
+
+_ResourceTypesInstanceResourcesSet = [ t
+									   for t, d in _ResourceTypeDetails.items()
+									   if d.isInstanceResource ]
+"""	List of instance resources. """
+
+
+_ResourceTypesVirtualResourcesNames = [ d.virtualResourceName
+										for d in _ResourceTypeDetails.values()
+										if d.virtualResourceName ]
+"""	List of virtual resource names. """
+_ResourceTypesVirtualResourcesNames = list(set(_ResourceTypesVirtualResourcesNames))	# unique names
+
+
+_ResourceTypesNames = { t : d.typeName
+						for t, d in _ResourceTypeDetails.items()
+						if not d.isInternalType }
+""" Mapping between oneM2M resource types to type names. """
+
+_ResourceNamesTypes = { d.typeName : t
+						for t, d in _ResourceTypeDetails.items()
+						if not d.isInternalType }
+""" Mapping between oneM2M resource names to type names. """
 
 
 class BasicType(ACMEIntEnum):
@@ -1680,5 +1690,7 @@ ReqResp = Dict[str, Union[int, str, List[str], JSON]]
 
 RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
 RequestHandler = Dict[Operation, RequestCallback]
-""" Handle an outgoing request operation. """
+""" Type definition for a map between operations and handler for outgoing request operations. """
 
+FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
+"""	Type definition for a factory callback to create and initializy a Resource instance. """
