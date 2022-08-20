@@ -874,7 +874,7 @@ class Configuration(object):
 			# Add basic registration configuration
 			jcnf += '\n\n'\
 					'[cse.registration]\n'\
-					'allowedCSROriginators=*\n'			
+					'allowedCSROriginators=id-in,id-mn,id-asn\n'			
 
 			# Show configuration and confirm write
 			Configuration._print('\n[b]Save configuration\n')
