@@ -31,6 +31,12 @@ if __name__ == '__main__':
 	modules       = []
 	results       = {}
 
+	def checkPositive(value:str) -> int:
+		ivalue = int(value)
+		if ivalue <= 0:
+			raise argparse.ArgumentTypeError(f'{value} is ivalid. It must be a positive int value')
+		return ivalue
+
 	# Parse command line arguments
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
@@ -38,6 +44,7 @@ if __name__ == '__main__':
 	parser.add_argument('--all', action='store_true', dest='runAll', default=False, help='run all tests')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped tests in summary')
 	parser.add_argument('--verbosity', action='store', dest='verbosity', type=int, choices=[0,1,2], default=2, help='set verbosity (default: 2)')
+	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test module n times (default: 1)')
 
 	groupFail = parser.add_mutually_exclusive_group()
 	groupFail.add_argument('--failfast', action='store_true', dest='failFast', default=True, help='Stop tests after failure (default)')
@@ -67,27 +74,30 @@ if __name__ == '__main__':
 			totalSuites += 1
 			name = module.__name__
 			if isRunTest(name): 	# exclude / include some tests
-				console.print(f'[bright_blue]Running tests from [bold]{name}')
-				startProcessTime = time.process_time()
-				startPerfTime = time.perf_counter()
-				startRequestCount = init.requestCount
-				testExecuted, errors, skipped, sleepTimeCount = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
-				init.stopNotificationServer()
+				for n in range(args.numberOfRuns):
+					if args.numberOfRuns > 1:
+						name = f'{module.__name__}_{n}'
+					console.print(f'[bright_blue]Running tests from [bold]{name}')
+					startProcessTime = time.process_time()
+					startPerfTime = time.perf_counter()
+					startRequestCount = init.requestCount
+					testExecuted, errors, skipped, sleepTimeCount = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
+					init.stopNotificationServer()
 
-				durationProcess = time.process_time() - startProcessTime
-				duration = time.perf_counter() - startPerfTime
-				if testExecuted > 0:	# don't count none-run tests
-					totalErrors += errors
-					totalRunTests += testExecuted
-				totalSkipped += skipped
-				totalSleepTime += sleepTimeCount
-				results[name] = ( testExecuted, errors, duration, durationProcess, skipped, init.requestCount - startRequestCount, sleepTimeCount )
-				console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
-				if errors > 0:
-					console.print(f'[red]Errors: {errors}')
-			else:
-				if args.showSkipped:
-					results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount, 0.0 )
+					durationProcess = time.process_time() - startProcessTime
+					duration = time.perf_counter() - startPerfTime
+					if testExecuted > 0:	# don't count none-run tests
+						totalErrors += errors
+						totalRunTests += testExecuted
+					totalSkipped += skipped
+					totalSleepTime += sleepTimeCount
+					results[name] = ( testExecuted, errors, duration, durationProcess, skipped, init.requestCount - startRequestCount, sleepTimeCount )
+					console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
+					if errors > 0:
+						console.print(f'[red]Errors: {errors}')
+				else:
+					if args.showSkipped:
+						results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount, 0.0 )
 
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart
