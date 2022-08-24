@@ -12,7 +12,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
-import json, os, fnmatch, re
+import json, os, fnmatch, re, base64
 import requests
 
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
@@ -82,6 +82,7 @@ class ACMEPContext(PContext):
 						 macros = 	{ 	# !!! macro names must be lower case
 
 							 			'attribute':			self.doAttribute,
+										'b64encode':			self.doB64Encode,
 										'csestatus':			self.doCseStatus,
 							 			'hasattribute':			self.doHasAttribute,
 										'isipython':			self.doIsIPython,
@@ -320,7 +321,7 @@ class ACMEPContext(PContext):
 
 		# send http request
 		try:
-			response = method(url, data = body, headers = headers, verify = CSE.security.verifyCertificateHttp)		# type: ignore[operator]
+			response = method(url, data = body, headers = headers, verify = CSE.security.verifyCertificateHttp)		# type: ignore[operator, call-arg]
 		except requests.exceptions.ConnectionError:
 			pcontext.setVariable('response.status', '-1')
 			return pcontext
@@ -679,6 +680,20 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
 			return None
 		return value
+
+
+	def doB64Encode(self, pcontext:PContext, arg:str, line:str) -> str:
+		"""	Base-64 encode a string.
+
+			Example:
+				[b64encode <string>]
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
+			Returns:
+				Base-64 encoded result.
+		"""
+		return base64.b64encode(arg.encode('utf-8')).decode('utf-8')
 
 
 	def doCseStatus(self, pcontext:PContext, arg:str, line:str) -> str:

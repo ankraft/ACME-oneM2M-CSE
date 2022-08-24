@@ -8,6 +8,7 @@
 |----------------------------|--------------------------------------------------|-------------------------------------------------------------------------|
 | [Basic](#macros_basic)     | [argc](#macro_argc)                              | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                              | Get script or procedure arguments                                       |
+|                            | [b64encode](#macro_b64encode)                    | Encode a string as base64                                               |
 |                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
 |                            | [in](#macro_in)                                  | Test whether a string exists in another string                          |
 |                            | [isDefined](#macro_isdefined)                    | Test whether a variable, macro, or environment variable exists          |
@@ -72,6 +73,22 @@ Example:
 print The name of the script is: [argv 0]
 print The first argument is: [argv 1]
 print All arguments: [argv]
+```
+
+
+<a name="macro_b64encode"></a>
+### b64encode
+
+Usage:  
+[b64encode &lt;string>]
+
+Encode and return the argument as a base64 encoded string.
+
+Example:
+
+```text
+print [b64encode Hello, world]
+# -> SGVsbG8sIHdvcmxk
 ``` 
 
 <a name="macro_datetime"></a>
