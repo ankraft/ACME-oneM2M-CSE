@@ -12,7 +12,7 @@ from typing import cast, List, Tuple
 from ..services.Logging import Logging as L
 from ..resources.TSB import TSB
 from ..services import CSE
-from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes as T, ResponseStatusCode as RC
+from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes, ResponseStatusCode as RC
 from ..etc import DateUtils
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
@@ -87,7 +87,7 @@ class TimeManager(object):
 
 
 	def _getAllPeriodicTimeSyncBeacons(self) -> list[TSB]:
-		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': T.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
+		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
 	def addTimeSyncBeacon(self, tsb:TSB) -> Result:

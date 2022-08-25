@@ -17,7 +17,7 @@ import isodate
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType as BT, Cardinality as CAR
 from ..etc.Types import RequestOptionality as RO, Announced as AN, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
-from ..etc.Types import Result, ResourceTypes as T
+from ..etc.Types import Result, ResourceTypes
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..helpers import TextTools
 from ..services.Logging import Logging as L
@@ -61,7 +61,14 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, resource:JSON, tpe:str, ty:T = T.UNKNOWN, attributes:AttributePolicyDict = None, create:bool = True , isImported:bool = False, createdInternally:bool = False, isAnnounced:bool = False) -> Result:
+	def	validateAttributes(self, resource:JSON, 
+								 tpe:str, 
+								 ty:ResourceTypes = ResourceTypes.UNKNOWN, 
+								 attributes:AttributePolicyDict = None, 
+								 create:bool = True , 
+								 isImported:bool = False, 
+								 createdInternally:bool = False, 
+								 isAnnounced:bool = False) -> Result:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -104,7 +111,7 @@ class Validator(object):
 		# If this is a flexContainer then add the additional attributePolicies.
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
-		if ty in [ T.FCNT, T.FCI ] and tpe:
+		if ty in [ ResourceTypes.FCNT, ResourceTypes.FCI ] and tpe:
 			if (fca := flexContainerAttributes.get(tpe)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
@@ -185,16 +192,16 @@ class Validator(object):
 
 
 
-	def validateAttribute(self, attribute:str, value:Any, attributeType:BT = None, rtype:T = T.ALL) -> Result:
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT = None, rtype:ResourceTypes = ResourceTypes.ALL) -> Result:
 		""" Validate a single attribute. 
 		
 			Args:
 				attribute: Name of the attribute to perform the check.
 				value: Value to validate for the attribute.
-				attributeType: If `attributeType` is set then that type is taken to perform the check, otherwise the attribute type is determined.
-				rtype: ResourceType. Some attributes depend on the resource type.
+				attributeType: If *attributeType* is set then that type is taken to perform the check, otherwise the attribute type is determined.
+				rtype: `ResourceType`. Some attributes depend on the resource type.
 			Return:
-				Result. If successful then Result.data contains the determined attribute and the converted value in a tuple.
+				`Result` object. If successful then *data* contains the determined attribute and the converted value in a tuple.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
@@ -330,13 +337,16 @@ class Validator(object):
 	
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
-		"""	Check whether the attribute `attr` is neither a universal, common, or resource attribute,
-			nor an internal attribute. Basically, this method returns `True` when the attribute
-			is a custom attribute.
-		
+		"""	Check whether the resource attribute *attr* is neither a universal,
+			common, or resource attribute, nor an internal attribute. 
+
+			Args:
+				attr: Short name of the attribute to check.
+				resource: The `Resource` to check.	
+			Return:
+				his method returns *True* when the attribute is a custom attribute.
 		"""
 		return attr not in resource.attributePolicies and not attr.startswith('__')
-
 
 
 	##########################################################################
@@ -442,7 +452,7 @@ class Validator(object):
 		flexContainerSpecializations.clear()
 
 
-	def addAttributePolicy(self, rtype:T|str, attr:str, attrPolicy:AttributePolicy) -> None:
+	def addAttributePolicy(self, rtype:ResourceTypes|str, attr:str, attrPolicy:AttributePolicy) -> None:
 		"""	Add a new attribute policy for normal resources. 
 		"""
 		if (rtype, attr) in attributePolicies:
@@ -450,7 +460,7 @@ class Validator(object):
 		attributePolicies[(rtype, attr)] = attrPolicy
 
 
-	def getAttributePolicy(self, rtype:T|str, attr:str) -> AttributePolicy:
+	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
 		"""
 		# Search for the specific type first
@@ -458,7 +468,7 @@ class Validator(object):
 			return ap
 
 		# If it couldn't be found, look whether it has been defined for ALL
-		if (ap := attributePolicies.get((T.ALL, attr))):
+		if (ap := attributePolicies.get((ResourceTypes.ALL, attr))):
 			return ap
 		
 		# TODO look for other types, requests, filter...
