@@ -16,6 +16,9 @@ from collections import namedtuple
 
 
 class ACMEIntEnum(IntEnum):
+	""" A base class for many oneM2M related enum types in ACME. It provides additional halper
+		methods to simplify working with *IntEnum* classes.
+	"""
 
 	@classmethod
 	def has(cls, value:int|str|List[int|str]|Tuple[int|str]) -> bool:
@@ -1269,6 +1272,18 @@ class SemanticFormat(ACMEIntEnum):
 	"""	File format: JSON-LD. """
 
 
+_SemanticFormatAsString = {
+	SemanticFormat.IRI:					'iri',
+	SemanticFormat.FF_FunctionalStyle:	'functional',
+	SemanticFormat.FF_OwlXml:			'owl-xml',
+	SemanticFormat.FF_RdfXml:			'xml',
+	SemanticFormat.FF_RdfTurtle:		'ttl',
+	SemanticFormat.FF_Manchester:		'manchester',
+	SemanticFormat.FF_JsonLD:			'json-ld',
+	
+
+}
+
 ##############################################################################
 #
 #	Result and Argument and Header Data Classes
@@ -1277,6 +1292,9 @@ class SemanticFormat(ACMEIntEnum):
 
 @dataclass
 class Result:
+	"""	This class represents the generic return state for many functions. It main contain
+		the general result, a status code, values, resources etc.
+	"""
 	resource:Resource					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	data:Any|Sequence[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
 	rsc:ResponseStatusCode				= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
@@ -1297,22 +1315,22 @@ class Result:
 
 	@classmethod
 	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '', request:CSERequest = None, data:Any = None) -> Result:
-		"""	Create and return a Result object with `status = False` and RSC and debug
+		"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
 			message set.
 
 			Args:
-				rsc: ResponseStatusCode to return as an error.
+				rsc: `ResponseStatusCode` to return as an error.
 				dbg: String with the debug message.
-				request: CSERequest to return.
+				request: `CSERequest` to return.
 			Return:
-				Error Result instance.
+				Error `Result` instance.
 		"""
 		return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
 
 
 	@classmethod
 	def successResult(cls) -> Result:
-		"""	Create and return a Result object with `status = True`.
+		"""	Create and return a static Result object with `status = True`.
 
 			Return:
 				Success Result instance. This is always the same Result instance!
@@ -1523,13 +1541,13 @@ class CSERequest:
 	"""	The request's original target. """
 
 	id:str = None
-	""" Target resource ID. Might be structured or unstructured. Will be determined from `to`. """
+	""" Target resource ID. Might be structured or unstructured. Based on the value of `to`. """
 
 	srn:str = None
-	""" The target's structured resource ID. Might not be present in a request. Will be determined from `to`. """
+	""" The target's structured resource ID. Might not be present in a request. Based on the value of `to`. """
 	
 	csi:str = None
-	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Will be determined from `to`. """
+	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
 
 	# Request attributes
 	op:Operation = None

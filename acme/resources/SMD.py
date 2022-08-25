@@ -22,10 +22,14 @@ from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
+
 class SMD(AnnounceableResource):
 	""" The <semanticDescriptor> resource is used to store a semantic description pertaining to a
 		resource and potentially subresources.
 	"""
+
+	_decodedDsp = '__decodedDsp__'
+	""" Name of an internal string attribute that holds the description after base64 decode. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ T.SUB ]
@@ -63,13 +67,15 @@ class SMD(AnnounceableResource):
 	}
 
 
-# TODO SOE cannot be retrieved
+# TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
 
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
 		super().__init__(T.SMD, dct, pi, tpe = fcntType, create = create)
+		self._addToInternalAttributes(self._decodedDsp)
+		self.setAttribute(self._decodedDsp, None, overwrite = False)	
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -114,19 +120,21 @@ class SMD(AnnounceableResource):
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		
+		# Validate validationEnable attribute
+		if not (res := CSE.semantic.validateValidationEnable(self)).status:
+			res.rsc = RC.badRequest
+			return res
+
 		# Validate descriptor attribute
 		if not (res := CSE.semantic.validateDescriptor(self)).status:
 			res.rsc = RC.badRequest
 			return res
 		
-		# Validate validationEnable attribute
-		if not (res := CSE.semantic.validateValidationEnable(self)).status:
-			res.rsc = RC.badRequest
-			return res
-		
 		# Perform Semantic validation process
-		if not (res := CSE.semantic.validateSemantics(self)).status:
-			return res
+		if Utils.findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
+			if not (res := CSE.semantic.addDescriptor(self)).status:
+				return res
+		self.svd = True
 		
 		# The above procedures might have updated this instance.		
 		self.dbUpdate()

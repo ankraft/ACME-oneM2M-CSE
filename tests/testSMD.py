@@ -7,7 +7,7 @@
 #	Unit tests for SMD functionality 
 #
 
-import unittest, sys
+import unittest, sys, base64, urllib.parse
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -16,6 +16,55 @@ from acme.etc.Types import ResultContentType as RCN, Permission
 from init import *
 
 
+#
+#	Semantic descriptors & queries
+#
+rdfxml = """<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+   xmlns:m2m="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+>
+  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-MonitoringFunction-WashingMachineStatus_RESOURCE_ID">
+    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+    <rdf:type rdf:resource="https://saref.etsi.org/core/GetCommand"/>
+    <m2m:oneM2MTargetURI>/myWashingMachine/status/la</m2m:oneM2MTargetURI>
+    <m2m:oneM2MMethod>RETRIEVE</m2m:oneM2MMethod>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-TOGGLE_Command_RESOURCE_ID">
+    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+    <rdf:type rdf:resource="https://saref.etsi.org/core/ToggleCommand"/>
+    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
+    <m2m:hasDataRestriction>TOGGLE</m2m:hasDataRestriction>
+    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-ON_Command_RESOURCE_ID">
+    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+    <rdf:type rdf:resource="https://saref.etsi.org/core/OnCommand"/>
+    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
+    <m2m:hasDataRestriction>ON</m2m:hasDataRestriction>
+    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-OFF_Command_RESOURCE_ID">
+    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+    <rdf:type rdf:resource="https://saref.etsi.org/core/OffCommand"/>
+    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
+    <m2m:hasDataRestriction>OFF</m2m:hasDataRestriction>
+    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
+  </rdf:Description>
+</rdf:RDF>"""
+rdfxmlB64 = base64.b64encode(rdfxml.encode('UTF-8')).decode('UTF-8')
+
+query = """PREFIX sn:<http://www.XYZ.com/WashingMachines#XYZ_Cool>  
+PREFIX m2m: <https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#>  
+PREFIX saref: <https://saref.etsi.org/core/>  
+select  ?wm ?res where { 
+    ?wm a m2m:Operation .
+    ?wm m2m:oneM2MTargetURI ?res
+    FILTER(contains(?res, "myWashingMachine"))
+}"""
+queryURL = urllib.parse.quote(query)
+
+###############################################################################
 
 class TestSMD(unittest.TestCase):
 	ae 				= None
@@ -95,8 +144,8 @@ class TestSMD(unittest.TestCase):
 		"""	CREATE <SMD> with DSP encoded as base64"""
 		dct = 	{ 'm2m:smd' : { 
 					'rn' : smdRN,
-					'dcrp' : 2,
-					'dsp' : 'Y29ycmVjdA==',
+					'dcrp' : 4,
+					'dsp' : rdfxmlB64,
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -147,6 +196,7 @@ class TestSMD(unittest.TestCase):
 	#
 	#	Update tests
 	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSMDwithSOEandDSPFail(self) -> None:
 		"""	UPDATE <SMD> with both SOE and DSP -> Fail"""
@@ -171,6 +221,47 @@ class TestSMD(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
 		self.assertFalse(findXPath(r, 'm2m:smd/svd'))
 
+	#########################################################################
+	#
+	#	Semantic query tests
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_semanticQueryOnlyRCNFail(self) -> None:
+		"""	Semantic query with only RCN -> Fail"""
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={int(RCN.semanticContent)}', TestSMD.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_semanticQueryOnlySQIFail(self) -> None:
+		"""	Semantic query with only SQI -> Fail"""
+		r, rsc = RETRIEVE(f'{aeURL}?sqi=1', TestSMD.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_semanticQueryOnlySMFFail(self) -> None:
+		"""	Semantic query with only SMF -> Fail"""
+		r, rsc = RETRIEVE(f'{aeURL}?smf={queryURL}', TestSMD.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_semanticQueryAsDiscovery(self) -> None:
+		"""	Semantic query as Discovery -> Fail"""
+		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=1&rcn={int(RCN.semanticContent)}&smf={queryURL}', TestSMD.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_semanticQuery(self) -> None:
+		"""	Semantic query as Discovery"""
+		r, rsc = RETRIEVE(f'{aeURL}?sqi=1&rcn={int(RCN.semanticContent)}&smf={queryURL}', TestSMD.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(qres := findXPath(r, 'm2m:qres'))
+		self.assertTrue(qres.startswith('<?xml'), qres)
+		self.assertTrue(qres.endswith('</sparql>'), qres)
 
 	#########################################################################
 
@@ -195,6 +286,13 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestSMD('test_createSMDdspBase64'))
 	suite.addTest(TestSMD('test_updateSMDwithSOEandDSPFail'))
 	suite.addTest(TestSMD('test_updateSMDwithVLDEfalse'))
+
+	# Semantic query tests
+	suite.addTest(TestSMD('test_semanticQueryOnlyRCNFail'))
+	suite.addTest(TestSMD('test_semanticQueryOnlySQIFail'))
+	suite.addTest(TestSMD('test_semanticQueryOnlySMFFail'))
+	suite.addTest(TestSMD('test_semanticQueryAsDiscovery'))
+	suite.addTest(TestSMD('test_semanticQuery'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)

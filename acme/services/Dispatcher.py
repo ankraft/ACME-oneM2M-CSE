@@ -163,7 +163,9 @@ class Dispatcher(object):
 			# Get all semanticDescriptors
 			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [T.SMD]))).status:
 				return res
-			if not (res := CSE.semantic.applySPARQLFilter(request.fc.smf, cast(Sequence[SMD], res.data))).status:
+
+			# TODO: format from request when attribute has been defined
+			if not (res := CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], res.data))).status:
 				return res
 			L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
 			return Result(status = True, rsc = RC.OK, data = { 'm2m:qres' : res.data })

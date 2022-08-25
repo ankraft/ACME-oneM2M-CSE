@@ -1128,7 +1128,6 @@ class RequestManager(object):
 				return newValue	#type: ignore [index]
 			return default
 
-
 		try:
 			errorResult = None
 			# TODO check whether we can return ealier if errorResult is set
@@ -1301,7 +1300,7 @@ class RequestManager(object):
 			# SQI - Semantic Query Indicator
 			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
 				if cseRequest.op != Operation.RETRIEVE:
-					errorResult = Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'))
+					return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'))
 				else:
 					cseRequest.sqi = v
 
