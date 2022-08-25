@@ -794,7 +794,7 @@ Available under the BSD 3-Clause License
 
 		# Adapt the following line when adding resources to keep formatting. 
 		# It fills up the right columns to match the length of the left column.
-		misc += '\n' * ( 2 if CSE.statistics.statisticsEnabled else 7)
+		misc += '\n' * ( 5 if CSE.statistics.statisticsEnabled else 7)
 
 		requestsGrid = Table.grid(expand = True)
 		requestsGrid.add_column(ratio = 28)
@@ -818,9 +818,11 @@ Available under the BSD 3-Clause License
 		resourceTypes += '\n'
 		resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
 		resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'
+		resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(T.ACTR)}\n'
 		resourceTypes += f'CB      : {CSE.dispatcher.countResources(T.CSEBase)}\n'
 		resourceTypes += f'CIN     : {CSE.dispatcher.countResources(T.CIN)}\n'
 		resourceTypes += f'CNT     : {CSE.dispatcher.countResources(T.CNT)}\n'
+		resourceTypes += f'CRS     : {CSE.dispatcher.countResources(T.CRS)}\n'
 		resourceTypes += f'CSR     : {CSE.dispatcher.countResources(T.CSR)}\n'
 		resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(T.FCNT)}\n'
 		resourceTypes += f'FCI     : {CSE.dispatcher.countResources(T.FCI)}\n'
@@ -829,6 +831,7 @@ Available under the BSD 3-Clause License
 		resourceTypes += f'NOD     : {CSE.dispatcher.countResources(T.NOD)}\n'
 		resourceTypes += f'PCH     : {CSE.dispatcher.countResources(T.PCH)}\n'
 		resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
+		resourceTypes += f'SMD     : {CSE.dispatcher.countResources(T.SMD)}\n'
 		resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
 		resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
 		resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
