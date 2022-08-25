@@ -33,6 +33,7 @@ setup(
 		'isodate',
 		'paho-mqtt',
 		'plotext',
+		'rdflib',
 		'requests', 
 		'rich', 
 		'tinydb',
