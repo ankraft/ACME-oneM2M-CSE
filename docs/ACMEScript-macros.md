@@ -12,6 +12,7 @@
 |                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
 |                            | [in](#macro_in)                                  | Test whether a string exists in another string                          |
 |                            | [isDefined](#macro_isdefined)                    | Test whether a variable, macro, or environment variable exists          |
+|                            | [jsonify](#macro_jsonify)                        | Prepare a string for proper use in a JSON structure                     |
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
 |                            | [match](#macro_match)                            | Evaluate an argument against a simple regular expression                |
@@ -141,6 +142,26 @@ if [isDefined response.status]
 	print [response.status]
 endif
 ```
+
+
+<a name="macro_jsonify"></a>
+### jsonify
+
+Usage:  
+[jsonify &lt;string> ]
+
+Prepare a string for proper use in a JSON structure (ie. escape newlines and quote characters).
+
+Example:
+
+```text
+requestAttributes 
+	{	"sqi": "true",
+		"rcn": 10,
+		"fc/smf": "[jsonify [aSPARQLQuery]]"
+	}
+```
+
 
 <a name="macro_loop"></a>
 ### loop

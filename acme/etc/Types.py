@@ -1330,10 +1330,10 @@ class Result:
 
 	@classmethod
 	def successResult(cls) -> Result:
-		"""	Create and return a static Result object with `status = True`.
+		"""	Create and return a static `Result` object with *status* attribute set to *True*.
 
 			Return:
-				Success Result instance. This is always the same Result instance!
+				Success `Result` instance. This is always the same `Result` instance!
 		"""
 		return _successResult
 

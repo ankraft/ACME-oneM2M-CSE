@@ -12,7 +12,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
-import json, os, fnmatch, re, base64
+import json, os, fnmatch, re, base64, urllib.parse
 import requests
 
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
@@ -86,6 +86,7 @@ class ACMEPContext(PContext):
 										'csestatus':			self.doCseStatus,
 							 			'hasattribute':			self.doHasAttribute,
 										'isipython':			self.doIsIPython,
+										'jsonify':				self.doJsonify,
 										'storagehas':			self.doStorageHas,
 										'storageget':			self.doStorageGet,
 						 				'__default__':			lambda c, a, l: Configuration.get(a),
@@ -464,14 +465,13 @@ class ACMEPContext(PContext):
 				arg: remaining argument of the command, the JSON structure.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
-		 """
+		"""
 		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
-			pcontext.setError(PError.invalid, f'No or invalid content found')
+			pcontext.setError(PError.invalid, f'No or invalid content found {pcontext.error.message}')
 			return None
 		cast(ACMEPContext, pcontext).requestParameters = dct
 		return pcontext
 
-	
 
 	def doReset(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Initiate a CSE reset.
@@ -751,7 +751,21 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Invalid format: isIPython')
 			return None
 		return str(Utils.runsInIPython()).lower()
-		
+
+
+	def doJsonify(self, pcontext:PContext, arg:str, line:str) -> str:
+		"""	Escape a string for use in a JSON structure. Newlines and quotes are escaped.
+
+			Example:
+				[jsonify <string>]
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
+			Returns:
+				Escape JSON string.
+		"""
+		return arg.replace('\n', '\\n').replace('"', '\\"')
+
 
 	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> str:
 		"""	Implementation of the `storageHas` macro. Test for a key in the persistent storage.
@@ -862,8 +876,10 @@ class ACMEPContext(PContext):
 
 		pcontext.pc += resultLine.count('\n')
 		try:
+			#L.isDebug and L.logDebug(resultLine)
 			return json.loads(resultLine)
-		except:
+		except Exception as e:
+			pcontext.setError(PError.invalid, f'{str(e)}')
 			return None
 
 
@@ -941,7 +957,7 @@ class ACMEPContext(PContext):
 			return None
 		
 
-		# Replase target with POA if available
+		# Replace target with POA if available
 		if target in self.poas:
 			target = self.poas[target]
 			request.to = target
