@@ -709,13 +709,13 @@ PCmdCallable = Callable[[PContext, str], PContext]
 PCmdDict = Dict[str, PCmdCallable]
 """	Function callback for commands. The callback is called with a `PContext` object
 	and is supposed to return it again, or None in case of an error.
-	# TODO
 """
+# TODO
 
 PMacroCallable = Callable[[PContext, str, str], str]
 """	Signature of a macro callable.
-# TODO
 """
+# TODO
 
 PMatchCallable = Callable[[PContext, str, str], bool]
 """	Signature of a match function callable.
