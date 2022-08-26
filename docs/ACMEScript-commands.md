@@ -832,7 +832,10 @@ The attribute names may have a path to set attributes in sub-structures.
 Some of the most common attributes are recognized (see following list), all others are 
 assigned to *filterCriteria*.
 
-> rqi
+- rqi
+
+Note: The assigned request attributes are only valid for the next request and is unset after
+the request.
 
 
 Example:

@@ -913,13 +913,14 @@ class ACMEPContext(PContext):
 		
 		# Transform the extra request attributes set by the script
 		if pcontext.requestParameters:
-			rp = deepcopy(pcontext.requestParameters)
+			rp = pcontext.requestParameters
 			# requestIentifier
 			if (rqi := rp.pop('rqi', None)) is not None:
 				req['rqi'] = rqi
 			# add remaining attributes to the filterCriteria of a request
 			for key in list(rp.keys()):
 				Utils.setXPath(req, key, rp.pop(key))
+			pcontext.requestParameters = None
 
 		# Get the resource for some operations
 		dct:JSON = None
