@@ -7,8 +7,10 @@
 #	Managing entity for resource groups
 #
 
+"""	This module implements the group service manager functionality. """
+
 from typing import cast, List
-from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
+from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
@@ -20,8 +22,12 @@ from ..services import CSE as CSE
 
 
 class GroupManager(object):
+	"""	Manager for the CSE's group service. 
+	"""
 
 	def __init__(self) -> None:
+		"""	Initialization of the GroupManager.
+		"""
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
 		L.isInfo and L.log('GroupManager initialized')
@@ -31,7 +37,7 @@ class GroupManager(object):
 		"""	Shutdown the Group Manager.
 		
 			Returns:
-				Boolean that indicates the operation
+				*True* when shutdown complete.
 		"""
 		L.isInfo and L.log('GroupManager shut down')
 		return True
@@ -43,10 +49,10 @@ class GroupManager(object):
 		"""	Validate a group and its members (privileges and attribute).
 
 			Args:
-				group: The <group> resource
-				originator: A request originator
+				group: The <group> resource.
+				originator: The request's originator.
 			Return:
-				Result object
+				`Result` instance.
 		"""
 
 		# Get consistencyStrategy
@@ -75,13 +81,13 @@ class GroupManager(object):
 
 
 	def _checkMembersAndPrivileges(self, group:Resource, originator:str) -> Result:
-		"""	Internally check a groups member resources and privileges.
+		"""	Internally check a group's member resources and privileges.
 		
 			Args:
-				group: The group resource
-				originator: The request's originator
+				group: The group resource.
+				originator: The request's originator.
 			Return:
-				Result object with status of the operation
+				`Result` object with the status of the operation.
 			"""
 
 		# check for duplicates and remove them
@@ -133,7 +139,7 @@ class GroupManager(object):
 					return Result.errorResult(rsc = RC.receiverHasNoPrivileges, dbg = f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
-			if (ty := resource.ty) == T.GRP and hasFopt:
+			if (ty := resource.ty) == ResourceTypes.GRP and hasFopt:
 				if isLocalResource:
 					if not (res := self._checkMembersAndPrivileges(resource, originator)).status:
 						return res
@@ -150,13 +156,13 @@ class GroupManager(object):
 
 			# check type of resource and member type of group
 			mt = group.mt
-			if not (mt == T.MIXED or ty == mt):	# types don't match
+			if not (mt == ResourceTypes.MIXED or ty == mt):	# types don't match
 				csy = group.csy
 				if csy == ConsistencyStrategy.abandonMember:		# abandon member
 					continue
 				elif csy == ConsistencyStrategy.setMixed:			# change group's member type
-					mt = T.MIXED
-					group['mt'] = T.MIXED
+					mt = ResourceTypes.MIXED
+					group['mt'] = ResourceTypes.MIXED
 				else:												# abandon group
 					return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
 
@@ -177,16 +183,17 @@ class GroupManager(object):
 
 
 	def foptRequest(self, operation:Operation, fopt:GRP_FOPT, request:CSERequest, id:str, originator:str) -> Result:
-		"""	Handle requests to a fanOutPoint. This method might be called recursivly, when there are groups in groups.
+		"""	Handle requests to a <`GRP`>'s  <`GRP_FOPT`> fanOutPoint. This method might be called recursivly,
+			in case there are groups in groups.
 		
 			Args:
-				operation: The operation type to perform on the group
-				fopt: The <fopt> virtual resource
-				request: The request to perform on the <fopt>
-				id: The original target resource ID
-				originator: The request originator
-			Result:
-				The request's Result object
+				operation: The operation type to perform on the group.
+				fopt: The <`GRP_FOPT`> virtual resource.
+				request: The request to perform on the <`GRP_FOPT`>.
+				id: The original target resource ID.
+				originator: The request's originator.
+			Return:
+				`Result` instance.
 		"""
 
 		# get parent / group and check permissions
@@ -249,12 +256,12 @@ class GroupManager(object):
 	#
 
 	def handleDeleteEvent(self, deletedResource:Resource) -> None:
-		"""	Handle a delete event. Check whether the deleted resource is
-			a member of a group. If yes, remove the member. This method is
-			called by the event manager. 
+		"""	Handle a CSE-internal delete event (ie. whenever a resource is deleted).
+			Check whether the deleted resource is a member of a group. If yes, then remove the member.
+			This method is called by the `EventManager`. 
 
 			Args:
-				deletedResource: The deleted resource to check
+				deletedResource: The deleted resource to check.
 		"""
 		L.isDebug and L.logDebug('Looking for and removing deleted resource from groups')
 
@@ -265,5 +272,5 @@ class GroupManager(object):
 			L.isDebug and L.logDebug(f'Removing deleted resource: {ri} from group: {group.ri}')
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1
-			group.dbUpdate()
+		group.dbUpdate()
 

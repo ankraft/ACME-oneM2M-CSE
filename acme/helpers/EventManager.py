@@ -7,8 +7,10 @@
 #	Managing event handlers and events
 #
 
+"""	Generic event and event handling classes and functions. """
+
 from __future__ import annotations
-from typing import Callable, Any, cast
+from typing import Callable, Any, cast, Optional
 from ..etc import Utils as Utils
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -38,22 +40,43 @@ class Event(list):	# type:ignore[type-arg]
 	for the returns. This might lead to some race conditions, so the synchronizations
 	must be done inside the functions.
 
-	Attention: Since the parent class is *list* `isInstance(obj, list)` will yield True.
+	Attention: 
+		Since the parent class is *list* calling `isInstance(obj, list)` will return True.
+
+	Attributes:
+		runInBackground: Indicator whether an event should be handled in a separate thread.
+		manager: The responsible `EventManager` to handle an event.
 	"""
 
 	def __init__(self, runInBackground:bool = True, manager:EventManager = None):
+		"""	Event initialization.
+
+			Args:
+				runInBackground: Indicator whether an event should be handled in a separate thread.
+				manager: The responsible `EventManager` to handle an event.
+		"""
 		self.runInBackground = runInBackground
 		self.manager = manager
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
-		"""	Handle calling an event. This calls any of the registered callback functions for this
-			event. If the event was created with `runInBackground` as True, then the callbacks
-			are called sequentially (not individually!) as a thread.
+		"""	Handle calling an event instance. This call is forwarded to **all** of the registered
+			callback functions for this event. 
+			
+			If the event was created with `runInBackground` as True,
+			then the callbacks are called sequentially (not individually!) as a thread.
+
+			Args:
+				args: Unnamed function arguments.
+				kwargs: Keyword function arguments.
 		"""
 
 		def _runner(*args:Any, **kwargs:Any) -> None:
-			"""	Call all registered function for this event object. Pass on any argument
+			"""	Call all registered function for this event object. Pass on any argument.
+	
+				Args:
+					args: Unnamed function arguments.
+					kwargs: Keyword function arguments.
 			"""
 			for function in self:
 				function(*args, **kwargs)
@@ -68,33 +91,49 @@ class Event(list):	# type:ignore[type-arg]
 
 
 	def __repr__(self) -> str:
+		"""	Event reprsentation.
+		
+			Return:
+				String representation of the event.
+		"""
 		return f'Event({list.__repr__(self)})' 
 
 
 
 class EventManager(object):
-	"""Event topics are added as new methods of the handler class with the given name and can be raised by calling those new methods, e.g.
+	"""	Event topics are added as new methods to an *EventManager* instance. 
+		Events can be raised by calling those new methods, e.g.
 
-		- manager.addEvent("someName") : add new event topic
-		- manager.addHandler(manager.someName, handlerFunction) : add an event handler
-		- handler.someName() : raises the event
+		- manager.addEvent("someName") : add new `Event` topic,
+		- manager.addHandler(manager.someName, handlerFunction) : add an event handler,
+		- handler.someName() : raises the event,
+
+		Attributes:
+			_running: Running indicator.
 	"""
 
 	def __init__(self) -> None:
+		"""	EventManager initialization.
+		"""
 		self._running = True
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the Event Manager.
+		
+			Returns:
+				*True* when shutdown complete.
+		"""
 		self._running = False
 		return True
 
 	#########################################################################
 
-	def addEvent(self, name:str, runInBackground:bool = True) -> Event:
-		"""	Create and add a new event.
+	def addEvent(self, name:str, runInBackground:Optional[bool] = True) -> Event:
+		"""	Create and add a new `Event`.
 
 			Args:
-				name: Name of the event.
-				runInBackgroun: (optional, default = True) Execute the callbacks in a thread.
+				name: Name of the `Event`.
+				runInBackground: (optional, default = True) Execute the callbacks in a thread.
 			
 			Returns:
 				The created Event
@@ -105,17 +144,17 @@ class EventManager(object):
 
 
 	def removeEvent(self, name:str) -> None:
-		"""	Remove an event by its name.
+		"""	Remove an `Event` by its name.
 
 			Args:
-				name: The name of the event to remove
+				name: The name of the `Event` to remove
 		"""
 		if hasattr(self, name):
 			delattr(self, name)
 	
 	
 	def removeAllEvents(self) -> None:
-		"""	Remove all registered events.
+		"""	Remove all registered `Event`s.
 		"""
 		for n in list(vars(self)):
 			if isinstance(self.__dict__[n], Event):
@@ -127,15 +166,17 @@ class EventManager(object):
 
 			Args:
 				name: Name of the event to check.
+			Return:
+				*True* if an event with *name* exists.
 		"""
 		return name in self.__dict__
 
 
 	def addHandler(self, event:Event|list[Event], func:Callable) -> None:		# type:ignore[type-arg]
-		"""	Add a new event handler for an `event` or a list of events.
+		"""	Add a new event handler for an `Event` or a list of `Event`s.
 
 			Args:
-				event: Either a single Event or a list of Event objects
+				event: Either a single `Event` or a list of `Event` objects
 				func: The function callback to call when the event is raised.
 		"""
 		list(map(lambda e: e.append(func), [event] if isinstance(event, Event) else event))
@@ -145,18 +186,20 @@ class EventManager(object):
 		"""	Test whether one or more events have a specific handler assigned.
 
 			Args:
-				event: Either a single Event or a list of Event objects
+				event: Either a single `Event` or a list of `Event` objects
 				func: The function callback to call when the event is raised.
+			Return:
+				*True* if *func* is a registered event handler.
 		"""
 		l = [ event ] if isinstance(event, Event) else event
 		return any([ e for e in l if func in e ])
 
 
 	def removeHandler(self, event:Event|list[Event], func:Callable) -> None:	# type:ignore[type-arg]
-		"""	Remove an event handler from an `event` or a list of events.
+		"""	Remove an event handler from an `Event` or a list of events.
 
 			Args:
-				event: Either a single Event or a list of Event objects
+				event: Either a single `Event` or a list of `Event` objects
 				func: The function callback to remove from the even t.
 		"""
 		list(map(lambda e: e.remove(func), [event] if isinstance(event, Event) else event))
