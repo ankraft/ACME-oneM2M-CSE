@@ -14,7 +14,7 @@ from copy import deepcopy
 from typing import Any, List, Tuple, cast, Sequence
 
 from ..helpers import TextTools as TextTools
-from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes as T
+from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes
 from ..etc.Types import FilterOperation
 from ..etc.Types import Permission
 from ..etc.Types import DesiredIdentifierResultType as DRT
@@ -89,7 +89,7 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleRetrieveRequest(request, srn, request.originator)
 
@@ -161,7 +161,7 @@ class Dispatcher(object):
 			if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
 				return res
 			# Get all semanticDescriptors
-			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [T.SMD]))).status:
+			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))).status:
 				return res
 
 			# TODO: format from request when attribute has been defined
@@ -428,7 +428,7 @@ class Dispatcher(object):
 						found += len(lbls)
 						break
 
-			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
+			if ResourceTypes.isInstanceResource(ty):	# special handling for instance resources
 				if (cs := r.cs) is not None:	# cs is an int
 					found += 1 if (sza := filterCriteria.sza) is not None and cs >= sza else 0	# sizes ares ints
 					found += 1 if (szb := filterCriteria.szb) is not None and cs < szb else 0
@@ -437,7 +437,7 @@ class Dispatcher(object):
 			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
 			# cnf's to found (to indicate that the whole set matches)
 			# Similar to types.
-			if ty in [ T.CIN ]:	# special handling for CIN
+			if ty in [ ResourceTypes.CIN ]:	# special handling for CIN
 				if filterCriteria.cty:
 					found += len(filterCriteria.cty) if r.cnf in filterCriteria.cty else 0
 
@@ -501,7 +501,7 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleCreateRequest(request, srn, request.originator)
 
@@ -509,7 +509,7 @@ class Dispatcher(object):
 			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
 
 		# Some Resources are not allowed to be created in a request, return immediately
-		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
+		if not ResourceTypes.isRequestCreatable(ty):
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = f'CREATE not allowed for type: {ty}')
 
 		# Get parent resource and check permissions
@@ -519,7 +519,7 @@ class Dispatcher(object):
 		parentResource = cast(Resource, res.resource)
 
 		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource) == False:
-			if ty == T.AE:
+			if ty == ResourceTypes.AE:
 				return Result.errorResult(rsc = RC.securityAssociationRequired, dbg = 'security association required')
 			else:
 				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges for CREATE')
@@ -579,7 +579,7 @@ class Dispatcher(object):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def createResourceFromDict(self, dct:JSON, parentID:str, ty:T, originator:str = None) -> Result:
+	def createResourceFromDict(self, dct:JSON, parentID:str, ty:ResourceTypes, originator:str = None) -> Result:
 		# TODO doc
 		# Create locally
 		if (pID := Utils.localResourceID(parentID)) is not None:
@@ -628,10 +628,10 @@ class Dispatcher(object):
 		if parentResource:
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
-				if resource.ty == T.SUB:
+				if resource.ty == ResourceTypes.SUB:
 					return Result.errorResult(rsc = RC.targetNotSubscribable, dbg = L.logWarn('Parent resource is not subscribable'))
 				else:
-					return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = L.logWarn(f'Invalid child resource type: {T(resource.ty).value}'))
+					return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = L.logWarn(f'Invalid child resource type: {ResourceTypes(resource.ty).value}'))
 
 		# if not already set: determine and add the srn
 		if not resource.getSrn():
@@ -703,7 +703,7 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
@@ -716,7 +716,7 @@ class Dispatcher(object):
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource is read-only')
 
 		# Some Resources are not allowed to be updated in a request, return immediately
-		if T.isInstanceResource(resource.ty):
+		if ResourceTypes.isInstanceResource(resource.ty):
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = f'UPDATE not allowed for type: {resource.ty}')
 
 		#
@@ -859,7 +859,7 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.originator)
 
@@ -1012,18 +1012,18 @@ class Dispatcher(object):
 		
 		# Check for <pollingChannelURI> resource
 		# This is also the only resource type supported that can receive notifications, yet
-		if targetResource.ty == T.PCH_PCU :
+		if targetResource.ty == ResourceTypes.PCH_PCU :
 			if not CSE.security.hasAccessToPollingChannel(originator, targetResource):
 				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
 			return targetResource.handleNotifyRequest(request, originator)	# type: ignore[no-any-return]
 
-		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
+		if ResourceTypes.isNotificationEntity(targetResource.ty):
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
 				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug('fOriginator has no NOTIFY privilege for: {id}'))
 			#  A Notification to one of these resources will always be a Received Notify Request
 			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
 		
-		if targetResource.ty == T.CRS:
+		if targetResource.ty == ResourceTypes.CRS:
 			return targetResource.handleNotification(request, originator)
 
 		# error
@@ -1058,20 +1058,20 @@ class Dispatcher(object):
 	#	Public Utility methods
 	#
 
-	def directChildResources(self, pi:str, ty:T = None) -> list[Resource]:
+	def directChildResources(self, pi:str, ty:ResourceTypes = None) -> list[Resource]:
 		"""	Return all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
 		"""
 		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
 
 
-	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
+	def countDirectChildResources(self, pi:str, ty:ResourceTypes = None) -> int:
 		"""	Return the number of all child resources of resource, optionally filtered by type. 
 		"""
 		return CSE.storage.countDirectChildResources(pi, ty)
 
 
-	def retrieveLatestOldestInstance(self, pi:str, ty:T, oldest:bool = False) -> Resource:
+	def retrieveLatestOldestInstance(self, pi:str, ty:ResourceTypes, oldest:bool = False) -> Resource:
 		"""	Get the latest or oldest x-Instance resource for a parent.
 
 			This is done by searching through all resources once to find the fitting resource 
@@ -1120,7 +1120,7 @@ class Dispatcher(object):
 		return children
 
 
-	def countResources(self, ty:T|Tuple[T, ...]=None) -> int:
+	def countResources(self, ty:ResourceTypes|Tuple[ResourceTypes, ...]=None) -> int:
 		""" Return total number of resources.
 			Optional filter by type.
 		"""
@@ -1140,8 +1140,13 @@ class Dispatcher(object):
 		return len(CSE.storage.retrieveResourcesByType(ty))
 
 
-	def retrieveResourcesByType(self, ty:T) -> list[Resource]:
+	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Resource]:
 		""" Retrieve all resources of a type. 
+
+			Args:
+				ty: Resouce type to search for.
+			Return:
+				A list of retrieved `Resource` objects. This list might be empty.
 		"""
 		result = []
 		rss = CSE.storage.retrieveResourcesByType(ty)
@@ -1150,7 +1155,7 @@ class Dispatcher(object):
 		return result
 	
 
-	def deleteChildResources(self, parentResource:Resource, originator:str, ty:T=None) -> None:
+	def deleteChildResources(self, parentResource:Resource, originator:str, ty:ResourceTypes=None) -> None:
 		"""	Remove all child resources of a parent recursively. 
 			If `ty` is set only the resources of this type are removed.
 		"""
@@ -1243,8 +1248,8 @@ class Dispatcher(object):
 				# sort resources by type and then by lowercase rn
 				if self.sortDiscoveryResources:
 					# result.sort(key=lambda x:(x.ty, x.rn.lower()))
-					result.sort(key=lambda x: (x.ty, x.ct) if x.ty in [ T.CIN, T.FCI, T.TSI ] else (x.ty, x.rn.lower()))
-				targetResource[result[0].tpe] = [r.asDict(embedded=False) for r in result]
+					result.sort(key = lambda x: (x.ty, x.ct) if ResourceTypes.isInstanceResource(x.ty) else (x.ty, x.rn.lower()))
+				targetResource[result[0].tpe] = [r.asDict(embedded = False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
 			else:
 				break # end of list, leave while loop
@@ -1264,13 +1269,13 @@ class Dispatcher(object):
 			resources.sort(key=lambda x:(x.ty, x.rn.lower()))
 		
 		for r in resources:
-			if r.ty in [ T.CNT_OL, T.CNT_LA, T.FCNT_OL, T.FCNT_LA ]:	# Skip latest, oldest virtual resources
+			if ResourceTypes.isVirtualResource(r.ty):	# Skip virtual resources
 				continue
 			ref = { 'nm' : r['rn'], 
 					'typ' : r['ty'], 
 					'val' : Utils.toSPRelative(Utils.structuredPath(r) if drt == DRT.structured else r.ri)
 			}
-			if r.ty == T.FCNT:
+			if r.ty == ResourceTypes.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
 

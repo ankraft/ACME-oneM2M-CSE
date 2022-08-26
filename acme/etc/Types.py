@@ -13,6 +13,7 @@ from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
+from urllib import request
 
 
 class ACMEIntEnum(IntEnum):
@@ -283,20 +284,48 @@ class ResourceTypes(ACMEIntEnum):
 	def supportedResourceTypes(self) -> list[ResourceTypes]:
 		"""	Return the supported resource types, including the 
 			announced resource types.
+
+			Return:
+				List of supported `ResourceTypes`.
 		"""
 		return _ResourceTypesSupportedResourceTypes
 
 
 	@classmethod
 	def isInstanceResource(cls, ty:int) -> bool:
-		"""	Test whether this is an instance data resource type
+		"""	Test whether a resource type is an instance data resource type
 
 			Args:
-				ty: Type to test
+				ty: Type to test.
 			Return:
-				Boolean
+				*True* if the resource type is an instance resource.
 		"""
 		return ty in _ResourceTypesInstanceResourcesSet
+
+
+	@classmethod
+	def isRequestCreatable(cls, ty:ResourceTypes) -> bool:
+		"""	Test whether a resource type is creatable through a request.
+		
+			Args:
+				ty: `ResourceTypes` value to test.
+			Return:
+				*True* if the resource type can be created through a request.
+		"""
+		return ty in _ResourceTypesIsRequestCreatable
+
+
+	@classmethod
+	def isNotificationEntity(cls, ty:ResourceTypes) -> bool:
+		"""	Test whether a resource type represents an entity that can be a notification target.
+			This is different from any resource, that can be a notification target as well.
+		
+			Args:
+				ty: `ResourceTypes` value to test.
+			Return:
+				*True* if the resource type represents a notification target.
+		"""
+		return ty in _ResourceTypesIsNotificationEntity
 
 
 @dataclass()
@@ -310,6 +339,8 @@ class ResourceDescription():
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
 	clazz:Resource = None 			# type:ignore [name-defined]
 	factory:FactoryCallableT = None
+	isRequestCreatable:bool = True	# Can be created by a request
+	isNotificationEntity:bool = False	# Is a direct notification target
 	
 _ResourceTypeDetails = {
 	
@@ -318,7 +349,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.ACPAnnc 		: ResourceDescription(typeName = 'm2m:acpA', isAnnouncedResource = True),
 	ResourceTypes.ACTR 			: ResourceDescription(typeName = 'm2m:actr', announcedType = ResourceTypes.ACTRAnnc),
 	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True),
-	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc),
+	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True),
 	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True),
 	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True),
 	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True),
@@ -327,11 +358,11 @@ _ResourceTypeDetails = {
 	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
 	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
 	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs'),
-	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc),
+	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True),
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True),
-	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc),
+	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True),
 	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True),
-	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True),					# not an official type name
+	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False),					# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True),				# not an official type name
 	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
@@ -345,7 +376,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu'),
-	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req'),
+	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False),
 	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc),
 	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub'),
@@ -475,6 +506,16 @@ _ResourceNamesTypes = { d.typeName : t
 						if not d.isInternalType }
 """ Mapping between oneM2M resource names to type names. """
 
+_ResourceTypesIsRequestCreatable = [ t
+									 for t, d in _ResourceTypeDetails.items()
+									 if d.isRequestCreatable ]
+"""	List of resource types that can be created by a request. """
+
+
+_ResourceTypesIsNotificationEntity = [ t
+									   for t, d in _ResourceTypeDetails.items()
+									   if d.isNotificationEntity ]
+"""	List of resource types that represent an entity that can be a notification target. """
 
 class BasicType(ACMEIntEnum):
 	""" Basic resource types.
