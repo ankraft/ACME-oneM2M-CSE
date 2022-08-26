@@ -70,6 +70,13 @@ class EVL(MgmtObj):
 		self.setAttribute('lgt', defaultLogTypeId, overwrite = False)
 		self.setAttribute('lgd', '', overwrite = False)
 		self.setAttribute('lgst', defaultLogStatus, overwrite = False)
-		self.setAttribute('lga', False, overwrite = False)
-		self.setAttribute('lgo', False, overwrite = False)
+		self.setAttribute('lga', False)
+		self.setAttribute('lgo', False)
 
+
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+		# Check for rbo & far updates 
+		if Utils.findXPath(dct, '{*}/lga') and Utils.findXPath(dct, '{*}/lgo'):
+			return Result.errorResult(dbg = 'update both lga and lgo to True at the same time is not allowed')
+
+		return super().update(dct, originator)
