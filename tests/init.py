@@ -208,8 +208,8 @@ subRN	= 'testSUB'
 tsRN	= 'testTS'
 tsbRN	= 'testTSB'
 tsiRN	= 'testTSI'
-memRN	= 'mem'
-batRN	= 'bat'
+memRN	= 'testMEM'
+wificRN	= 'testWIFIC'
 
 
 URL		= f'{SERVER}{ROOTPATH}'

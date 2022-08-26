@@ -23,7 +23,10 @@
 		"evalues" : [ 1 ]
 	},
 	"m2m:desIdResType" : {
-		"evalues": [ 1, 2]
+		"evalues": [ 1, 2 ]
+	},	
+	"m2m:logTypeId" : {
+		"evalues": [ "1..5" ]
 	},
 	"m2m:filterUsage" : {
 		"evalues" : [ "1..4" ]
@@ -34,9 +37,12 @@
 	"m2m:geoSpatialFunctionType" : {
 		"evalues": [ "1..3" ]
 	},
+	"m2m:logStatus" : {
+		"evalues": [ "1..5" ]
+	},
 	"m2m:mgmtDefinition" : {
 		// Adapt to supported MgmtObj types
-		"evalues" : [ "1001..1010", 1023 ]
+		"evalues" : [ "1001..1010", 1023, 1028 ]
 	},
 	"m2m:multicastCapability" : {
 		"evalues" : [ 1, 2 ]
@@ -76,6 +82,11 @@
 	},
 	"m2m:timeWindowType" : {
 		"evalues" : [ 1, 2 ]
+	},
+	"dcfg:wifiConnectionStatus" : {
+		"evalues" : [ "0..6" ]
+	},
+	"dcfg:wifiEncryptionType" : {
+		"evalues" : [ "1..8" ]
 	}
-
 }

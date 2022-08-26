@@ -663,6 +663,19 @@
 			"annc": "NA"
 		}
 	],
+	"chanl": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "channel",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"cmlk": [
 		{
 			"rtypes": [ "ALL" ],
@@ -776,6 +789,20 @@
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"cons": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "connectionStatus",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:wifiConnectionStatus",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}
@@ -1474,7 +1501,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "logStatus",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",
+			"etype": "m2m:logStatus",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1487,7 +1515,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "logTypeId",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",
+			"etype": "m2m:logTypeId",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1540,7 +1569,7 @@
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSIAnnc",
+						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
@@ -1560,6 +1589,19 @@
 			"lname": "maxAge",
 			"ns": "m2m",
 			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"maca": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "macAddress",
+			"ns": "dcfg",
+			"type": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2371,6 +2413,19 @@
 			"annc": "OA"
 		}
 	],
+	"rdst": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "radioStatus",
+			"ns": "dcfg",
+			"type": "boolean",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"regs": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2528,6 +2583,33 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"scan": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "scan",
+			"ns": "dcfg",
+			"type": "boolean",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"scanr": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "scanResult",
+			"ns": "dcfg",
+			"type": "list",
+			"ltype": "string",
+			"car": "1L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"scp": [
@@ -2743,6 +2825,19 @@
 			"annc": "OA"
 		}
 	],
+	"ssid": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "ssid",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"su": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2849,6 +2944,19 @@
 			"annc": "NA"
 		}
 	],
+	"trdst": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "toggleRadioStatus",
+			"ns": "dcfg",
+			"type": "boolean",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"tren": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2930,8 +3038,19 @@
 	],
 	"ud": [
 		{
+			"rtypes": [ "WIFIC", "WIFICAnnc" ],
+			"lname": "update",
+			"ns": "dcfg",
+			"type": "boolean",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		},
+		{
 			"rtypes": [ "ALL" ],
-			"lname": "contentSerialization",
+			"lname": "update",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "1",
@@ -2949,8 +3068,8 @@
 			"type": "m2m:actionStatus",
 			"car": "01",
 			"oc": "NP",
-			"ou": "O",
-			"od": "O",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "OA"
 		}
 	],
@@ -3001,6 +3120,19 @@
 			"type": "string",
 			"car": "1",
 			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"wcrds": [
+		{
+			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
+			"lname": "credentials",
+			"ns": "dcfg",
+			"type": "dcfg:wifiCredentials",
+			"car": "01",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"

@@ -883,51 +883,182 @@ class TestMgmtObj(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createEVL(self) -> None:
 		"""	CREATE [EventLog] """
-		dct =  { 'm2m:bat' : {
-					'mgd' : T.BAT,
-					'rn'  : batRN,
-					'dc'  : 'aBat',
-					'btl' : 23,
-					'bts' : 5
+		dct =  { 'm2m:evl' : {
+					'mgd' : T.EVL,
+					'rn'  : self.evlRN,
+					'dc'  : 'aEvl',
+					'lgt' : 1,
+					'lgd' : 'log',
+					'lgst': 2
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.created)
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/ri'))
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/ri'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveEVL(self) -> None:
 		"""	RETRIEVE [eventLog] """
-		r, rsc = RETRIEVE(batURL, ORIGINATOR)
+		r, rsc = RETRIEVE(self.evlURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
+		self.assertEqual(findXPath(r, 'm2m:evl/mgd'), T.EVL)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesEVL(self) -> None:
 		"""	Test [eventLog] attributes """
-		r, rsc = RETRIEVE(batURL, ORIGINATOR)
+		r, rsc = RETRIEVE(self.evlURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
-		self.assertEqual(findXPath(r, 'm2m:bat/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
-		self.assertEqual(findXPath(r, 'm2m:bat/rn'), batRN)
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/ct'))
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/lt'))
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/et'))
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/dc'))
-		self.assertEqual(findXPath(r, 'm2m:bat/dc'), 'aBat')
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/btl'))
-		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 23)
-		self.assertIsNotNone(findXPath(r, 'm2m:bat/bts'))
-		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 5)
+		self.assertEqual(findXPath(r, 'm2m:evl/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:evl/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:evl/rn'), self.evlRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/dc'))
+		self.assertEqual(findXPath(r, 'm2m:evl/dc'), 'aEvl')
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lgt'))
+		self.assertEqual(findXPath(r, 'm2m:evl/lgt'), 1)
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lgd'))
+		self.assertEqual(findXPath(r, 'm2m:evl/lgd'), 'log')
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lgst'))
+		self.assertEqual(findXPath(r, 'm2m:evl/lgst'), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lga'), r)
+		self.assertTrue(findXPath(r, 'm2m:evl/lga'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:evl/lgo'), r)
+		self.assertTrue(findXPath(r, 'm2m:evl/lgo'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteEVL(self) -> None:
 		""" DELETE [eventLog] """
-		_, rsc = DELETE(batURL, ORIGINATOR)
+		_, rsc = DELETE(self.evlURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
+
+	#
+	#	WifiClient
+	#
+
+	wificRN		= 'WIFIC'
+	wificURL	= f'{nodURL}/{wificRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWIFIC(self) -> None:
+		"""	CREATE [wificlient] """
+		dct =  { 'dcfg:wific' : {
+					'mgd' : T.WIFIC,
+					'rn'  : self.wificRN,
+					'dc'  : 'aWificlient',
+					'ssid':	'aSSID',
+					'wcrds': {
+						'enct': 8,
+						'unm': 'user',
+						'pwd': 'pwd',
+
+					}
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/ri'), r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveWIFIC(self) -> None:
+		"""	RETRIEVE [wificlient] """
+		r, rsc = RETRIEVE(self.wificURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertEqual(findXPath(r, 'dcfg:wific/mgd'), T.WIFIC, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesWIFIC(self) -> None:
+		"""	Test [wificlient] attributes """
+		r, rsc = RETRIEVE(self.wificURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:wific/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:wific/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/rn'), self.wificRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/ssid'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/ssid'), 'aSSID')
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/wcrds'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/wcrds/enct'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/wcrds/enct'), 8)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/wcrds/unm'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/wcrds/unm'), 'user')
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/wcrds/pwd'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/wcrds/pwd'), 'pwd')
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/scan'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/scan'), False)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/scanr'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/scanr'), [])
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/ud'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/ud'), False)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/trdst'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/trdst'), False)
+		self.assertIsNotNone(findXPath(r, 'dcfg:wific/rdst'))
+		self.assertEqual(findXPath(r, 'dcfg:wific/rdst'), False)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteWIFIC(self) -> None:
+		""" DELETE [wificlient] """
+		_, rsc = DELETE(self.wificURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWIFICCred1Fail(self) -> None:
+		"""	CREATE [wificlient] with wrong creds 1 -> Fails"""
+		dct =  { 'dcfg:wific' : {
+					'mgd' : T.WIFIC,
+					'rn'  : self.wificRN,
+					'dc'  : 'aWificlient',
+					'ssid':	'aSSID',
+					'wcrds': {
+						'enct': 2,
+						'unm': 'user',
+						'pwd': 'pwd',
+					}
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWIFICCred2Fail(self) -> None:
+		"""	CREATE [wificlient] with wrong creds 2 -> Fails"""
+		dct =  { 'dcfg:wific' : {
+					'mgd' : T.WIFIC,
+					'rn'  : self.wificRN,
+					'dc'  : 'aWificlient',
+					'ssid':	'aSSID',
+					'wcrds': {
+						'enct': 4,
+						'wepk': 'user',
+					}
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWIFICCred3Fail(self) -> None:
+		"""	CREATE [wificlient] with wrong creds 3 -> Fails"""
+		dct =  { 'dcfg:wific' : {
+					'mgd' : T.WIFIC,
+					'rn'  : self.wificRN,
+					'dc'  : 'aWificlient',
+					'ssid':	'aSSID',
+					'wcrds': {
+						'enct': 8,
+						'wpap': 'wpa',
+					}
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 
@@ -1004,7 +1135,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestMgmtObj('test_retrieveEVL'))
 	suite.addTest(TestMgmtObj('test_attributesEVL'))
 	suite.addTest(TestMgmtObj('test_deleteEVL'))
-	
+
+	suite.addTest(TestMgmtObj('test_createWIFIC'))
+	suite.addTest(TestMgmtObj('test_retrieveWIFIC'))
+	suite.addTest(TestMgmtObj('test_attributesWIFIC'))
+	suite.addTest(TestMgmtObj('test_deleteWIFIC'))
+	suite.addTest(TestMgmtObj('test_createWIFICCred1Fail'))
+	suite.addTest(TestMgmtObj('test_createWIFICCred2Fail'))
+	suite.addTest(TestMgmtObj('test_createWIFICCred3Fail'))
+
 		
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

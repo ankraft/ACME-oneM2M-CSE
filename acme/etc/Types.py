@@ -145,6 +145,7 @@ class ResourceTypes(ACMEIntEnum):
 	RBO 			= 1009
 	EVL 			= 1010
 	NYCFC			= 1023	# myCertFileCred
+	WIFIC			= 1028	# WifiClient
 
 	# Announced Resources
 
@@ -175,6 +176,7 @@ class ResourceTypes(ACMEIntEnum):
 	RBOAnnc			= -30009
 	EVLAnnc			= -30010
 	NYCFCAnnc		= -30023
+	WIFICAnnc		= -30028
 
 
 	def tpe(self) -> str:
@@ -413,6 +415,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.RBOAnnc		: ResourceDescription(typeName = 'm2m:rboA', isAnnouncedResource = True, isMgmtSpecialization = True),
 	ResourceTypes.SWR			: ResourceDescription(typeName = 'm2m:swr', announcedType = ResourceTypes.SWRAnnc, isMgmtSpecialization = True),
 	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True),
+	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True),
 
 	# Internal resource types
 	ResourceTypes.UNKNOWN	: ResourceDescription(typeName = 'unknown', isInternalType = True),

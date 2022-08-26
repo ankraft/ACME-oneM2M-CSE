@@ -4,12 +4,12 @@
 
 ## oneM2M Specification Conformance
 
-The CSE implementation successfully passes most of the oneM2M Release 1 test cases (353 out of 361), and all relevant test cases from Release 2, 3 and 4.
+The CSE implementation successfully passes most of the oneM2M Release 1 test cases, and all relevant test cases from Release 2, 3 and 4.
 
 
 ## Release Versions
 
-The ACME CSE supports oneM2M release 2a, 3, and 4 for the supported resource types and functionalities listed below. 
+The ACME CSE supports oneM2M release 1, 2a, 3, and 4 for the supported resource types and functionalities listed below. 
 
 ## CSE Types
 
@@ -42,7 +42,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual resource. *requestAggregation* functionality is supported, too.                                                       |
 | Remote CSE (CSR)                |  &check;  | Announced resources are  supported. Transit request to resources on registered CSE's are supported.                                                                                                               |
 | Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                |
-| SemanticDescriptor (SMD)        |  &check;  | Support for basic resource handling, but no semantic functionalities, validations etc are implemented yet.                                                                                                        |
+| SemanticDescriptor (SMD)        |  &check;  | Support for basic resource handling and semantic queries.                                                                                                                                                         |
 | Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
 | TimeSeries (TS)                 |  &check;  | Including missing data notifications.                                                                                                                                                                             |
 | TimeSeriesInstance (TSI)        |  &check;  | *dataGenerationTime* attribute only supports absolute timestamps.                                                                                                                                                 |
@@ -66,7 +66,8 @@ The following table presents the supported management object specifications.
 | DeviceCapability (DVC)   |
 | Reboot (REB)             |
 | EventLog (EVL)           |
-| myCertFileCred (NYCFC)   |
+| MyCertFileCred (NYCFC)   |
+| WifiClient (WIFIC)       |
 
 ## oneM2M Service Features
 
@@ -90,8 +91,16 @@ The following table presents the supported management object specifications.
 | Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
 | Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
-| Testing: Upper Tester         |  &check;  | Basic support for the Upper Tester protocol defined in TS-0019.                           |
+| Time Synchronization          |  &check;  |                                                                                           |
+| Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries.                              |
 
+### Additional CSE Features
+| Functionality         | Supported | Remark                                                                                                    |
+|:----------------------|:---------:|:----------------------------------------------------------------------------------------------------------|
+| Web UI                |  &check;  |                                                                                                           |
+| Text Console          |  &check;  | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
+| Testing: Upper Tester |  &check;  | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
+| Script Interpreter    |  &check;  | Simple batch scripting support to extent functionalities, implement simple AEs, prototypes, test, ...     |
 
 ## Result Content Types
 The following result contents are implemented for standard oneM2M requests & discovery:
@@ -108,6 +117,7 @@ The following result contents are implemented for standard oneM2M requests & dis
 | original-resource                      | 7   |
 | child-resources                        | 8   |
 | modified attributes                    | 9   |
+| semantic content                       | 10  |
 | discovery result references            | 11  |
 
 
@@ -147,6 +157,19 @@ The following serialization types are supported:
 | XML                |  &cross;  |                      
 
 The supported serializations can be used together, e.g. between different or even the same entity.
+
+
+<a name="runtime"></a>
+# Runtime Environments
+The ACME CSE runs at least on the following runtime environments:
+
+| Runtime Environment | Supported | Remark                                                     |
+|:--------------------|:---------:|:-----------------------------------------------------------|
+| Generic Linux       |  &check;  | Including Raspberry Pi OS (32bit) on Raspberry Pi 3 and 4. |
+| Mac OS              |  &check;  | Intel and Apple silicon.                                   |
+| MS Windows          |  &check;  |                                                            |
+| Jupyter Notebooks   |  &check;  | ACME CSE may be run headless inside a Jupyter Notebook.    |
+
 
 
 <a name="limitations"></a>
