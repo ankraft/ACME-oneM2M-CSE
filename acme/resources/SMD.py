@@ -84,6 +84,10 @@ class SMD(AnnounceableResource):
 		
 		# Validation of CREATE is done in self.validate()
 		
+		# Perform Semantic validation process and add descriptor
+		if not (res := CSE.semantic.addDescriptor(self)).status:
+			return res
+		self.setAttribute('svd', True)
 
 		return Result.successResult()
 
@@ -112,7 +116,15 @@ class SMD(AnnounceableResource):
 		if vldeOrg == True and vldeNew == False:
 			self.setAttribute('svd', False)
 
+		# Update the semantic graph 
+		#CSE.semantic.updateDescription(self)
+
 		return Result.successResult()
+
+	
+	def deactivate(self, originator: str) -> None:
+		CSE.semantic.removeDescriptor(self)
+		return super().deactivate(originator)
 
 
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
@@ -130,11 +142,11 @@ class SMD(AnnounceableResource):
 			res.rsc = RC.badRequest
 			return res
 		
-		# Perform Semantic validation process
+		# Perform Semantic validation process and add descriptor
 		if Utils.findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
 			if not (res := CSE.semantic.addDescriptor(self)).status:
 				return res
-		self.svd = True
+		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		
 		self.dbUpdate()

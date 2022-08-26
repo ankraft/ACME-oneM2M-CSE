@@ -267,6 +267,11 @@ class TestSMD(unittest.TestCase):
 
 # TODO check not-present of semanticOpExec when RETRIEVE
 
+# TODO Update of smd
+# TODO Delete of smd
+
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 	

@@ -11,14 +11,14 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Sequence, cast, Optional
 from abc import ABC, abstractmethod
 import base64, binascii
 
 from ..resources.SMD import SMD
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..etc.Types import Result, SemanticFormat
+from ..etc.Types import ResourceTypes, Result, SemanticFormat
 
 
 class SemanticHandler(ABC):
@@ -44,10 +44,36 @@ class SemanticHandler(ABC):
 		
 			Args:
 				description: A string with the semantic description.
-				format: The format of the string in *description*. It must be supported.
+				format: The format of the string in *description*. It must be a supported format.
 				id: Identifier for the graph. It should be a resouce identifier.
 			Return:
 				A `Result` object. The query result is returned in its *data* attribute.
+		"""
+		...
+
+
+	@abstractmethod
+	def updateDescription(self, description:str, format:SemanticFormat, id: str) -> Result:
+		"""	Update a description in the graph store.
+		
+			Args:
+				description: A string with the semantic description.
+				format: The format of the string in *description*.  It must be a supported format.
+				id: Identifier for the graph. It should be a resouce identifier.
+			Return:
+				A `Result` object indicating success or error.
+		"""
+		...
+
+
+	@abstractmethod
+	def removeDescription(self, id:str) -> Result:
+		"""	Remove a description from the graph store.
+		
+			Args:
+				id: Identifier for the graph. It should be a resouce identifier.
+			Return:
+				A `Result` object indicating success or error.
 		"""
 		...
 
@@ -74,7 +100,12 @@ class SemanticHandler(ABC):
 
 
 class SemanticManager(object):
-	"""	This Class implements semantic service and helper functions. 
+	"""	This class implements semantic service and helper functions.
+
+		Note:
+			The semantic graphs are not persisted and only hold in memory at the moment.
+			When the CSE is started the *SemanticManager* rebuilds the whole semantic graph
+			from the existing <`SMD`> resources in the resource tree.
 
 		Attributes:
 			semanticHandler: The semantic graph store handler to be used for the CSE.
@@ -82,13 +113,17 @@ class SemanticManager(object):
 	"""
 
 	# TODO: configurable store
-	# TODO: reset of DB during startup
-	# TODO: shutdown
+	# TODO Update graph
 	def __init__(self) -> None:
-		"""	Initialization of the SemanticManager module.
+		"""	Initialization of the SemanticManager module. This includes re-building of the
+			semantic graph in memory from the existing resources.
 		"""
 		self.semanticHandler = RdfLibHandler()
 		self.defaultFormat = SemanticFormat.FF_RdfXml	# TODO configurable
+
+		# Re-Build graph in memory from <SMD> resources.
+		for smd in cast(Sequence[SMD], CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
+			self.addDescriptor(smd)
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
@@ -191,9 +226,9 @@ class SemanticManager(object):
 			Args:
 				smd: `SMD` resource object to use in the validation. **Attn**: This procedure might update and change the provided *smd* object.
 			Return:
-				Result object indicating success or error.
+				`Result` object indicating success or error.
 		"""
-		L.isDebug and L.logDebug('Adding descriptor')
+		L.isDebug and L.logDebug('Adding descriptor for: {smd.ri}')
 
 		res = self.semanticHandler.addDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
 		if not res.status and smd.vlde:
@@ -233,6 +268,31 @@ class SemanticManager(object):
 		# 	referenced ontology. If any problem occurs, the Hosting CSE shall generate a Response Status Code indicating an "INVALID_SEMANTICS" error.
 
 		return Result.successResult()
+
+
+	def updateDescriptor(self, smd:SMD) -> Result:
+		"""	Update the graph for a semantic descriptor.
+			
+			Args:
+				smd: `SMD` resource for which the graph is to be updated.
+			Return:
+				`Result` object indicating success or error.
+		"""
+		L.isDebug and L.logDebug(f'Removing descriptor for: {smd.ri}')
+		return self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
+
+
+	def removeDescriptor(self, smd:SMD) -> Result:
+		"""	Remove the graph for a semantic descriptor.
+			
+			Args:
+				smd: `SMD` resource for which the graph is to be update.
+			Return:
+				`Result` object indicating success or error.
+		"""
+		L.isDebug and L.logDebug(f'Updating descriptor for: {smd.ri}')
+		return self.semanticHandler.removeDescription(smd.ri)
+
 	
 
 	#########################################################################
@@ -246,7 +306,7 @@ class SemanticManager(object):
 	# 			 for smd in smds ]
 	
 
-	def executeSPARQLQuery(self, query:str, smds:Sequence[SMD], format:SemanticFormat = None) -> Result:
+	def executeSPARQLQuery(self, query:str, smds:Sequence[SMD], format:Optional[SemanticFormat] = None) -> Result:
 		"""	Run a SPARQL query against a list of <`SMD`> resources.
 		
 			Args:
@@ -275,12 +335,17 @@ from rdflib.term import URIRef
 class RdfLibHandler(SemanticHandler):
 	"""	A SemanticHandler implementation for the *rdflib* library.
 
+		Note:
+			Only the in-memory storage method is supported.
+
 		Attributes:
 			store: The store that stores the graphs.
 			graph: The root graph for the CSE.
 	"""
 
-	supportedFormats =	{ SemanticFormat.FF_RdfXml : 'xml',
+	supportedFormats =	{ SemanticFormat.FF_RdfXml		: 'xml',
+						  SemanticFormat.FF_JsonLD		: 'json-ld',
+						  SemanticFormat.FF_RdfTurtle	: 'turtle',
 						}
 	"""	A map between the *SemanticFormat* enum and the rdflib string representation. Only the
 		supported formats are listed here.
@@ -300,7 +365,6 @@ class RdfLibHandler(SemanticHandler):
 		self._openStore()
 
 		self.graph = rdflib.Dataset(store = self.store)		# type:ignore [no-untyped-call]
-		# TODO memory or db...
 	
 
 	#
@@ -331,6 +395,24 @@ class RdfLibHandler(SemanticHandler):
 			L.logErr('', exc = e)
 			return Result.errorResult(dbg = L.logWarn(f'Invalid descriptor: {str(e)}'))
 		return Result.successResult()
+	
+
+	def updateDescription(self, description:str, format:SemanticFormat, id: str) -> Result:
+		if not (res := self.removeDescription(id)).status:
+			return res
+		return self.addDescription(description, format, id)
+		
+		
+	def removeDescription(self, id:str) -> Result:
+		graph = self.getGraph(id)
+
+		# Remove the triples from the graph
+		for i in list(graph):	
+			graph.remove(i)						# type:ignore [no-untyped-call]
+		
+		# Remove the grapth from the store. In theory, this should also delete the triples, but doesn't seem in reality, though
+		self.store.remove_graph(URIRef(id))		# type:ignore [no-untyped-call]
+		return Result.successResult()
 
 
 	def query(self, query:str, ids:Sequence[str], format:SemanticFormat) -> Result:
@@ -340,7 +422,6 @@ class RdfLibHandler(SemanticHandler):
 
 		# Aggregate a new graph for the query
 		aggregatedGraph = self.getAggregatedGraph(ids)
-		L.logWarn(f'{len(aggregatedGraph)}')
 
 		# Query the graph
 		qres = aggregatedGraph.query(query)
