@@ -70,8 +70,8 @@ class EVL(MgmtObj):
 		self.setAttribute('lgt', defaultLogTypeId, overwrite = False)
 		self.setAttribute('lgd', '', overwrite = False)
 		self.setAttribute('lgst', defaultLogStatus, overwrite = False)
-		self.setAttribute('lga', False)
-		self.setAttribute('lgo', False)
+		self.setAttribute('lga', True)
+		self.setAttribute('lgo', True)
 
 
 	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
@@ -79,4 +79,6 @@ class EVL(MgmtObj):
 		if Utils.findXPath(dct, '{*}/lga') and Utils.findXPath(dct, '{*}/lgo'):
 			return Result.errorResult(dbg = 'update both lga and lgo to True at the same time is not allowed')
 
+		self.setAttribute('lga', True)
+		self.setAttribute('lgo', True)
 		return super().update(dct, originator)
