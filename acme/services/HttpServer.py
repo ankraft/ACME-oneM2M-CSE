@@ -53,6 +53,7 @@ class HttpServer(object):
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
 		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
+		self.requestTimeout 	= Configuration.get('http.timeout')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
 		self.isStopped			= False
@@ -370,6 +371,9 @@ class HttpServer(object):
 		
 			The result is returned in *Result.data*.
 		"""
+		# Request timeout
+		timeout:float = None
+
 		# Set the request method
 		method:Callable = self.operation2method[operation] 	# type: ignore[assignment]
 
@@ -416,6 +420,7 @@ class HttpServer(object):
 				hds[C.hfEC] = content['ec']
 			if 'rqet' in content:
 				hds[C.hfRET] = content['rqet']
+				timeout = DateUtils.timeUntilAbsRelTimestamp(content['rqet'])
 			if 'rset' in content:
 				hds[C.hfRST] = content['rset']
 			if 'oet' in content:
@@ -457,6 +462,9 @@ class HttpServer(object):
 			if 'pc' in content:
 				content = content['pc']
 		
+		# Get request timeout
+		timeout = self.requestTimeout if timeout is None else timeout
+
 		# serialize data (only if dictionary, pass on non-dict data)
 		data = None
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
@@ -474,7 +482,11 @@ class HttpServer(object):
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data = data, headers = hds, verify = CSE.security.verifyCertificateHttp)
+			r = method(url, 
+					   data = data,
+					   headers = hds,
+					   verify = CSE.security.verifyCertificateHttp,
+					   timeout = timeout)
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)
@@ -494,6 +506,8 @@ class HttpServer(object):
 			resp.rqi = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
+		except requests.Timeout as e:
+			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logWarn('http request timeout'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')

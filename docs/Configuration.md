@@ -142,6 +142,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**.<br/>Default: false                                                                                                                                      | http.enableResetEndpoint       |
 | enableUpperTesterEndpoint | Enable an endpoint for supporting Upper Tester commands to the CSE. This is to support certain testing and certification systems. See oneM2M's TS-0019 for further details.<br/>**ATTENTION: Enabling this feature may lead to a total loss of data.**<br/>Default: false                                                               | http.enableUpperTesterEndpoint |
 | allowPatchForDelete       | Allow the http PATCH method to be used as a replacement for the DELETE method. This is useful for constraint devices that only support http/1.0, which doesn't specify the DELETE method.<br />Default: False                                                                                                                           | http.allowPatchForDelete       |
+| timeout                   | Timeout when sending http requests and waiting for responses.<br />Default: 10.0 seconds                                                                                                                                                                                                                                                | http.timeout                   |
 
 
 <a name="security_http"></a>
@@ -167,7 +168,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
 | keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
 | topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
-| timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 5.0 seconds   | mqtt.timeout       |
+| timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 10.0 seconds  | mqtt.timeout       |
 
 
 <a name="security_mqtt"></a>

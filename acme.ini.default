@@ -217,7 +217,9 @@ enableUpperTesterEndpoint=false
 ; which doesn't specify the DELETE method.
 ; Default: False
 allowPatchForDelete=false
-
+; Timeout when sending http requests and waiting for responses.
+; Default: see cse.requestExpirationDelta
+timeout=${cse:requestExpirationDelta}
 
 ;
 ;	HTTP security settings
@@ -265,8 +267,8 @@ listenIF=${basic.config:networkInterface}
 ; Default: empty string
 topicPrefix=
 ; Timeout when sending MQTT requests and waiting for responses.
-; Default: 5.0 seconds
-timeout=5.0
+; Default: see cse.requestExpirationDelta
+timeout=${cse:requestExpirationDelta}
 
 
 ;

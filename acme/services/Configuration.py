@@ -162,6 +162,7 @@ class Configuration(object):
 				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', 		fallback = False),
 				'http.enableUpperTesterEndpoint'		: config.getboolean('server.http', 'enableUpperTesterEndpoint', 	fallback = False),
 				'http.allowPatchForDelete'				: config.getboolean('server.http', 'allowPatchForDelete', 			fallback = False),
+				'http.timeout' 							: config.getfloat('server.http', 'timeout',							fallback = 10.0),
 
 				#
 				#	HTTP Server Security
@@ -183,7 +184,7 @@ class Configuration(object):
 				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',							fallback = 60),
 				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',								fallback = '127.0.0.1'),
 				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',							fallback = ''),
-				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',							fallback = 5.0),
+				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',							fallback = 10.0),
 
 				#
 				#	MQTT Client Security
