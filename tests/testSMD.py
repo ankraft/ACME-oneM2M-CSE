@@ -209,6 +209,18 @@ class TestSMD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSMDwithVLDEtrue(self) -> None:
+		"""	UPDATE <SMD> with VLDE set to True"""
+		dct = 	{ 'm2m:smd' : { 
+					'vlde' : True,
+				}}
+		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+		self.assertTrue(findXPath(r, 'm2m:smd/vlde'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSMDwithVLDEfalse(self) -> None:
 		"""	UPDATE <SMD> with VLDE set to False"""
 		dct = 	{ 'm2m:smd' : { 
@@ -290,6 +302,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Update tests
 	suite.addTest(TestSMD('test_createSMDdspBase64'))
 	suite.addTest(TestSMD('test_updateSMDwithSOEandDSPFail'))
+	suite.addTest(TestSMD('test_updateSMDwithVLDEtrue'))
 	suite.addTest(TestSMD('test_updateSMDwithVLDEfalse'))
 
 	# Semantic query tests
