@@ -507,7 +507,7 @@ class HttpServer(object):
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except requests.Timeout as e:
-			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logWarn('http request timeout'))
+			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logWarn(f'http request timeout after {timeout}s'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
