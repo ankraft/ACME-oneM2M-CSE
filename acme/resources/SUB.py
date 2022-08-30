@@ -185,7 +185,6 @@ class SUB(Resource):
 						return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator for blocking notifications'))
 				
 		# Validate missingData
-		L.logDebug(self['enc/md'])
 		if (md := self['enc/md']) is not None:
 			if len(md.keys() & {'dur', 'num'}) != 2:
 				return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "enc/md" attribute'))
