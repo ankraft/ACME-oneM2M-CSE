@@ -1632,6 +1632,21 @@
 
 
 	//
+	//	m2m:scheduleEntries
+	//
+
+	"sce": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:scheduleEntries",
+			"lname": "scheduleEntry",
+			"ns": "m2m",
+			"type": "schedule",
+			"car": "01"
+		}
+	],
+
+	//
 	//	m2m:setOfNotificationStatsInfo
 	//
 	"tg": [

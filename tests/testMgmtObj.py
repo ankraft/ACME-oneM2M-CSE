@@ -1061,6 +1061,67 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	#
+	#	DataCollection
+	#
+
+	datcRN		= 'DATC'
+	datcURL		= f'{nodURL}/{datcRN}'
+	cntPath		= f'{CSERN}/{aeRN}/{cntRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createDATC(self) -> None:
+		"""	CREATE [dataCollection] """
+		dct =  { 'dcfg:datc' : {
+					'mgd' : T.DATC,
+					'rn'  : self.datcRN,
+					'dc'  : 'aDataCollection',
+					'cntp': self.cntPath,
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/ri'), r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATC(self) -> None:
+		"""	CREATE [dataCollection] """
+		dct =  { 'dcfg:datc' : {
+					'rpsc':	10000,
+					'mesc': 20000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/rpsc'), 10000, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/mesc'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/mesc'), 20000, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesDATC(self) -> None:
+		"""	Test [dataCollection] attributes """
+		r, rsc = RETRIEVE(self.datcURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:datc/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:datc/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:datc/rn'), self.datcRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/cntp'))
+		self.assertEqual(findXPath(r, 'dcfg:datc/cntp'), self.cntPath, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/rpsc'), 10000, r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/mesc'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/mesc'), 20000, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteDATC(self) -> None:
+		""" DELETE [dataCollection] """
+		_, rsc = DELETE(self.datcURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+
+
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
@@ -1144,7 +1205,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestMgmtObj('test_createWIFICCred2Fail'))
 	suite.addTest(TestMgmtObj('test_createWIFICCred3Fail'))
 
-		
+	suite.addTest(TestMgmtObj('test_createDATC'))
+	suite.addTest(TestMgmtObj('test_updateDATC'))
+	suite.addTest(TestMgmtObj('test_attributesDATC'))
+	suite.addTest(TestMgmtObj('test_deleteDATC'))
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

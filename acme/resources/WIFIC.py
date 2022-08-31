@@ -10,11 +10,6 @@
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import *
 
-statusUninitialized = 0
-statusSuccessful = 1
-statusFailure = 2
-statusInProcess = 3
-
 
 class WIFIC(MgmtObj):
 

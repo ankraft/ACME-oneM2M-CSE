@@ -144,6 +144,7 @@ class ResourceTypes(ACMEIntEnum):
 	DVC 			= 1008
 	RBO 			= 1009
 	EVL 			= 1010
+	DATC			= 1021	# dataCollection
 	NYCFC			= 1023	# myCertFileCred
 	WIFIC			= 1028	# WifiClient
 
@@ -175,6 +176,7 @@ class ResourceTypes(ACMEIntEnum):
 	DVCAnnc			= -30008
 	RBOAnnc			= -30009
 	EVLAnnc			= -30010
+	DATCAnnc		= -30021
 	NYCFCAnnc		= -30023
 	WIFICAnnc		= -30028
 
@@ -399,6 +401,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.ANIAnnc		: ResourceDescription(typeName = 'm2m:aniA', isAnnouncedResource = True, isMgmtSpecialization = True),
 	ResourceTypes.BAT			: ResourceDescription(typeName = 'm2m:bat', announcedType = ResourceTypes.BATAnnc, isMgmtSpecialization = True),
 	ResourceTypes.BATAnnc		: ResourceDescription(typeName = 'm2m:batA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.DATC			: ResourceDescription(typeName = 'dcfg:datc', announcedType = ResourceTypes.DATCAnnc, isMgmtSpecialization = True),
+	ResourceTypes.DATCAnnc		: ResourceDescription(typeName = 'dcfg:datcA', isAnnouncedResource = True, isMgmtSpecialization = True),
 	ResourceTypes.DVC			: ResourceDescription(typeName = 'm2m:dvc', announcedType = ResourceTypes.DVCAnnc, isMgmtSpecialization = True),
 	ResourceTypes.DVCAnnc		: ResourceDescription(typeName = 'm2m:dvcA', isAnnouncedResource = True, isMgmtSpecialization = True),
 	ResourceTypes.DVI			: ResourceDescription(typeName = 'm2m:dvi', announcedType = ResourceTypes.DVIAnnc, isMgmtSpecialization = True),
@@ -547,6 +551,7 @@ class BasicType(ACMEIntEnum):
 	enum	 		= auto()
 	adict			= auto()	# anoymous dict structure
 	base64 			= auto()
+	schedule		= auto()	# scheduleEntry
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 

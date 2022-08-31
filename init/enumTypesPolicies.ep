@@ -42,7 +42,7 @@
 	},
 	"m2m:mgmtDefinition" : {
 		// Adapt to supported MgmtObj types
-		"evalues" : [ "1001..1010", 1023, 1028 ]
+		"evalues" : [ "1001..1010", 1021, 1023, 1028 ]
 	},
 	"m2m:multicastCapability" : {
 		"evalues" : [ 1, 2 ]
@@ -56,7 +56,7 @@
 	"m2m:resourceType" : {
 		// Adapt to supported resource types
 		"evalues" : [ "1..5", 9, "13..17", 23, 24, "28..30", 48, 58, 60, 63, 
-					  "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ]
+					  "10001..10005", 10009, "10013..10014", 10016, 10021, "10028..10030", 10060, 10063 ]
 	},
 	"m2m:responseStatusCode" : {
 		"evalues": [ "1000..1002", 

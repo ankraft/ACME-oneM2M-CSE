@@ -49,6 +49,9 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 
 class Validator(object):
 
+	_scheduleRegex = re.compile('(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
+	"""	Compiled regular expression that matches a valid cron-like schedule. """
+
 
 	def __init__(self) -> None:
 		if L.isInfo: L.log('Validator initialized')
@@ -616,6 +619,11 @@ class Validator(object):
 			if not TextTools.isBase64(value):
 				return Result.errorResult(dbg = f'value is not base64-encoded')
 			return Result(status = True, data = (dataType, value))
+		
+		if dataType == BT.schedule:
+			if isinstance(value, str) and re.match(self._scheduleRegex, value):
+				return Result(status = True, data = (dataType, value))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
 
 		if dataType == BT.any:
 			return Result(status = True, data = (dataType, value))

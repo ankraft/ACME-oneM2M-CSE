@@ -66,6 +66,8 @@ from ..resources.ANI import ANI
 from ..resources.ANIAnnc import ANIAnnc
 from ..resources.BAT import BAT
 from ..resources.BATAnnc import BATAnnc
+from ..resources.DATC import DATC
+from ..resources.DATCAnnc import DATCAnnc
 from ..resources.DVC import DVC
 from ..resources.DVCAnnc import DVCAnnc
 from ..resources.DVI import DVI
@@ -137,6 +139,8 @@ addResourceFactoryCallback(ResourceTypes.ANI,			ANI,			lambda dct, tpe, pi, crea
 addResourceFactoryCallback(ResourceTypes.ANIAnnc,		ANIAnnc,		lambda dct, tpe, pi, create : ANIAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.BAT,			BAT,			lambda dct, tpe, pi, create : BAT(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.BATAnnc,		BATAnnc,		lambda dct, tpe, pi, create : BATAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.DATC,			DATC,			lambda dct, tpe, pi, create : DATC(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.DATCAnnc,		DATCAnnc,		lambda dct, tpe, pi, create : DATCAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.DVC,			DVC,			lambda dct, tpe, pi, create : DVC(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.DVCAnnc,		DVCAnnc,		lambda dct, tpe, pi, create : DVCAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.DVI,			DVI,			lambda dct, tpe, pi, create : DVI(dct, pi = pi, create = create)) 

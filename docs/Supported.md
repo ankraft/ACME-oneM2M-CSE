@@ -56,17 +56,18 @@ The following table presents the supported management object specifications.
 
 | Management Objects       |
 |--------------------------|
-| Firmware (FWR)           |
-| Software (SWR)           |
-| Memory (MEM)             |
-| AreaNwkInfo (ANI)        |
 | AreaNwkDeviceInfo (ANDI) |
+| AreaNwkInfo (ANI)        |
 | Battery (BAT)            |
-| DeviceInfo (DVI)         |
+| DataCollect (DATC)       |
 | DeviceCapability (DVC)   |
-| Reboot (REB)             |
+| DeviceInfo (DVI)         |
 | EventLog (EVL)           |
+| Firmware (FWR)           |
+| Memory (MEM)             |
 | MyCertFileCred (NYCFC)   |
+| Reboot (REB)             |
+| Software (SWR)           |
 | WifiClient (WIFIC)       |
 
 ## oneM2M Service Features

@@ -742,6 +742,19 @@
 			"annc": "NA"
 		}
 	],
+	"cntp": [
+		{
+			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
+			"lname": "containerPath",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"cnty": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1567,7 +1580,7 @@
 	"lnk": [
 		{
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
-						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
+						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
@@ -1752,6 +1765,22 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"mesc": [
+		{
+			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
+			"lname": "measurementSchedule",
+			"ns": "dcfg",
+			"type": "positiveInteger",
+			"car": "01",
+			//"type": "list",
+			//"ltype": "m2m:scheduleEntries",
+			//"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"mfd": [
@@ -2488,6 +2517,22 @@
 			"car": "01",
 			"oc": "NP",
 			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"rpsc": [
+		{
+			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
+			"lname": "reportingSchedule",
+			"ns": "dcfg",
+			"type": "positiveInteger",
+			//"type": "list",
+			//"ltype": "m2m:scheduleEntries",
+			//"car": "01L",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}

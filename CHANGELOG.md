@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *expirationCounter* (&lt;subscription>, &lt;crossResourceSubscription>)
 - [CSE] *rvi* and *vsi* are removed from forwarded requests when forwarding to a Release 1 target.
 - [CSE] Added support for *wificlient* ManagementObject specialization.
+- [CSE] Added support for *dataCollect* ManagementObject specialization.
+- [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
 - [CONSOLE] Added continuous inspection of a resource.
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
 - [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
