@@ -50,7 +50,7 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 class Validator(object):
 
 	_scheduleRegex = re.compile('(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
-	"""	Compiled regular expression that matches a valid cron-like schedule. """
+	"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
 
 
 	def __init__(self) -> None:
@@ -640,7 +640,8 @@ class Validator(object):
 						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {typeName}')
 					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
 						return res
-			return Result(status = True, data = (dataType, value))
+				return Result(status = True, data = (dataType, value))
+			return Result.errorResult(dbg = f'Expected complex type, found: {value}')
 
 		return Result.errorResult(dbg = f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 
