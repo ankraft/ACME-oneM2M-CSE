@@ -1767,16 +1767,27 @@
 			"annc": "NA"
 		}
 	],
+	"meil": [
+		{
+			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
+			"lname": "measurementInterval",
+			"ns": "dcfg",
+			"type": "positiveInteger",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"mesc": [
 		{
 			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
 			"lname": "measurementSchedule",
 			"ns": "dcfg",
-			"type": "positiveInteger",
-			"car": "01",
-			//"type": "list",
-			//"ltype": "m2m:scheduleEntries",
-			//"car": "01L",
+			"type": "list",
+			"ltype": "m2m:scheduleEntries",
+			"car": "01L",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
@@ -2521,16 +2532,27 @@
 			"annc": "OA"
 		}
 	],
+	"rpil": [
+		{
+			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
+			"lname": "reportingInterval",
+			"ns": "dcfg",
+			"type": "positiveInteger",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"rpsc": [
 		{
 			"rtypes": [ "DATC", "DATCAnnc", "REQRESP" ],
 			"lname": "reportingSchedule",
 			"ns": "dcfg",
-			"type": "positiveInteger",
-			//"type": "list",
-			//"ltype": "m2m:scheduleEntries",
-			//"car": "01L",
-			"car": "01",
+			"type": "list",
+			"ltype": "m2m:scheduleEntries",
+			"car": "01L",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",

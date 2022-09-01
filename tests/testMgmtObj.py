@@ -1084,18 +1084,144 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDATC(self) -> None:
-		"""	CREATE [dataCollection] """
+	def test_updateDATCrpscIntegerFail(self) -> None:
+		"""	UPDATE [dataCollection] rpsc with integer value -> FAIL"""
 		dct =  { 'dcfg:datc' : {
 					'rpsc':	10000,
-					'mesc': 20000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmescIntegerFail(self) -> None:
+		"""	UPDATE [dataCollection] mesc with integer value -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCrpscInvalidSchedule1Fail(self) -> None:
+		"""	UPDATE [dataCollection] rpsc with an invalid schedule -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'rpsc':	[ 10 ],	# must be [ scheduleEntries ]
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCrpscInvalidSchedule2Fail(self) -> None:
+		"""	UPDATE [dataCollection] rpsc with an invalid schedule -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'rpsc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCrpscValidSchedule(self) -> None:
+		"""	UPDATE [dataCollection] rpsc with a valid schedule"""
+		dct =  { 'dcfg:datc' : {
+					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
-		self.assertEqual(findXPath(r, 'dcfg:datc/rpsc'), 10000, r)
+		self.assertIsInstance(findXPath(r, 'dcfg:datc/rpsc'), list, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCrpilWhileRpscFail(self) -> None:
+		"""	UPDATE [dataCollection] rpil while rpsc is alread set -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'rpil':	10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCrpscRpilFail(self) -> None:
+		"""	UPDATE [dataCollection] rpsc and rpil together -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
+					'rpil': 10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmescInvalidSchedule1Fail(self) -> None:
+		"""	UPDATE [dataCollection] mesc with an invalid schedule -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	[ 10 ],	# must be [ scheduleEntries ]
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmescInvalidSchedule2Fail(self) -> None:
+		"""	UPDATE [dataCollection] mesc with an invalid schedule -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmescValidSchedule(self) -> None:
+		"""	UPDATE [dataCollection] mesc with a valid schedule"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	[ { 'sce': '10 * * * * * *' } ],
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/mesc'), r)
-		self.assertEqual(findXPath(r, 'dcfg:datc/mesc'), 20000, r)
+		self.assertIsInstance(findXPath(r, 'dcfg:datc/mesc'), list, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmeilWhileMescFail(self) -> None:
+		"""	UPDATE [dataCollection] meil while mesc is alread set -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'meil':	10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCmescMeilFail(self) -> None:
+		"""	UPDATE [dataCollection] mesc and meil together -> FAIL"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	[ { 'sce': '10 * * * * * *' } ],
+					'meil': 10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateDATCremoveMescAddMeil(self) -> None:
+		"""	UPDATE [dataCollection] remove mesc and and meil"""
+		dct =  { 'dcfg:datc' : {
+					'mesc':	None,
+					'meil': 10000,
+				}}
+		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNone(findXPath(r, 'dcfg:datc/mesc'), r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/meil'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/meil'), 10000, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1108,10 +1234,15 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'dcfg:datc/rn'), self.datcRN)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/cntp'))
 		self.assertEqual(findXPath(r, 'dcfg:datc/cntp'), self.cntPath, r)
+		self.assertIsNone(findXPath(r, 'dcfg:datc/mesc'), r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:datc/meil'), r)
+		self.assertEqual(findXPath(r, 'dcfg:datc/meil'), 10000, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
-		self.assertEqual(findXPath(r, 'dcfg:datc/rpsc'), 10000, r)
-		self.assertIsNotNone(findXPath(r, 'dcfg:datc/mesc'), r)
-		self.assertEqual(findXPath(r, 'dcfg:datc/mesc'), 20000, r)
+		self.assertIsInstance((rpsc := findXPath(r, 'dcfg:datc/rpsc')), list, r)
+		self.assertEqual(len(rpsc), 1, r)
+		self.assertIsInstance((rpsce := rpsc[0]), dict, r)
+		self.assertIsNotNone((sce := rpsce.get('sce')), r)
+		self.assertEqual(sce, '10 * * * * * *', r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1206,7 +1337,19 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestMgmtObj('test_createWIFICCred3Fail'))
 
 	suite.addTest(TestMgmtObj('test_createDATC'))
-	suite.addTest(TestMgmtObj('test_updateDATC'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpscIntegerFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCmescIntegerFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpscInvalidSchedule1Fail'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpscInvalidSchedule2Fail'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpscValidSchedule'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpilWhileRpscFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCrpscRpilFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCmescInvalidSchedule1Fail'))
+	suite.addTest(TestMgmtObj('test_updateDATCmescInvalidSchedule2Fail'))
+	suite.addTest(TestMgmtObj('test_updateDATCmescValidSchedule'))
+	suite.addTest(TestMgmtObj('test_updateDATCmeilWhileMescFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCmescMeilFail'))
+	suite.addTest(TestMgmtObj('test_updateDATCremoveMescAddMeil'))
 	suite.addTest(TestMgmtObj('test_attributesDATC'))
 	suite.addTest(TestMgmtObj('test_deleteDATC'))
 
