@@ -1,30 +1,26 @@
 #
-#	TSAnnc.py
+#	TSBAnnc.py
 #
-#	(c) 2021 by Andreas Kraft
+#	(c) 2022 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	TS : Announceable variant
+#	TSB : Announceable variant
 #
 
 from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..resources.Resource import *
 from ..resources.AnnouncedResource import AnnouncedResource
 
-class TSAnnc(AnnouncedResource):
+
+class TSBAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
-								   ResourceTypes.ACTRAnnc, 
-								   ResourceTypes.SUB, 
-								   ResourceTypes.TSI,
-								   ResourceTypes.TSIAnnc ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes for announced resources
+		# Common and universal attributes
 		'rn': None,
 		'ty': None,
 		'ri': None,
@@ -32,26 +28,20 @@ class TSAnnc(AnnouncedResource):
 		'ct': None,
 		'lt': None,
 		'et': None,
+		'acpi': None,
 		'lbl': None,
-		'acpi':None,
 		'daci': None,
-		'ast': None,
-		'loc': None,
 		'lnk': None,
 
 		# Resource attributes
-		'mni': None,
-		'mbs': None,
-		'mia': None,
-		'pei': None,
-		'peid': None,
-		'mdn': None,
-		'mdt': None,
-		'cnf': None,
-		'or': None
+		'bcnr': None,
+		'bcnc': None,
+		'bcni': None,
+		'bcnt': None,
+		'bcnu': None,
 	}
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(ResourceTypes.TSAnnc, dct, pi = pi, create = create)
+		super().__init__(ResourceTypes.TSBAnnc, dct, pi = pi, create = create)
 

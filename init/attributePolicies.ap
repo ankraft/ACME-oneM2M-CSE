@@ -508,7 +508,7 @@
 	],
 	"bcnc": [
 		{
-			"rtypes": [ "TSB", "REQRESP" ],
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconCriteria",
 			"ns": "m2m",
 			"type": "nonNegInteger",	// m2m:beaconCriteria
@@ -521,7 +521,7 @@
 	],
 	"bcni": [
 		{
-			"rtypes": [ "TSB", "REQRESP" ],
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconInterval",
 			"ns": "m2m",
 			"type": "duration",
@@ -534,7 +534,7 @@
 	],
 	"bcnr": [
 		{
-			"rtypes": [ "TSB", "REQRESP" ],
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconRequester",
 			"ns": "m2m",
 			"type": "string",
@@ -547,7 +547,7 @@
 	],
 	"bcnt": [
 		{
-			"rtypes": [ "TSB", "REQRESP" ],
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconThreshold",
 			"ns": "m2m",
 			"type": "duration",
@@ -560,7 +560,7 @@
 	],
 	"bcnu": [
 		{
-			"rtypes": [ "TSB", "REQRESP" ],
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconNotificationURIs",
 			"ns": "m2m",
 			"type": "list",
@@ -1582,7 +1582,7 @@
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
+						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",

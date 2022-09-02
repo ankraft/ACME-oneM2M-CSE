@@ -55,6 +55,7 @@ from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
 from ..resources.TS_OL import TS_OL
 from ..resources.TSB import TSB
+from ..resources.TSBAnnc import TSBAnnc
 from ..resources.TSI import TSI
 from ..resources.TSIAnnc import TSIAnnc
 
@@ -129,6 +130,7 @@ addResourceFactoryCallback(ResourceTypes.TSAnnc,		TSAnnc,			lambda dct, tpe, pi,
 addResourceFactoryCallback(ResourceTypes.TS_LA,			TS_LA,			lambda dct, tpe, pi, create : TS_LA(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TS_OL,			TS_OL,			lambda dct, tpe, pi, create : TS_OL(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TSB,			TSB,			lambda dct, tpe, pi, create : TSB(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.TSBAnnc,		TSBAnnc,		lambda dct, tpe, pi, create : TSBAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TSI,			TSI,			lambda dct, tpe, pi, create : TSI(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TSIAnnc,		TSIAnnc,		lambda dct, tpe, pi, create : TSIAnnc(dct, pi = pi, create = create)) 
 

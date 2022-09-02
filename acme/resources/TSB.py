@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, Result, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
@@ -22,7 +22,7 @@ from ..services.Logging import Logging as L
 class TSB(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -60,14 +60,14 @@ class TSB(AnnounceableResource):
 
 
 # DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
-#  good would be that if not present then the CSE provides a value. Add to TS-0004 procedures
+#  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
 
 
 # TODO Implement Annc
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.TSB, dct, pi, create = create)
+		super().__init__(ResourceTypes.TSB, dct, pi, create = create)
 		# Add to internal attributes to ignore in validation etc
 		self._addToInternalAttributes(self._bcni)	
 		self._addToInternalAttributes(self._bcnt)
