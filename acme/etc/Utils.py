@@ -701,24 +701,64 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	return data
 
 
-def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
-	"""	Set a structured `key` and `value` in the dictionary `dict`. 
-		Create if necessary, and observe the `overwrite` option (True overwrites an
+
+def setXPath(dct:JSON, key:str, value:Any = None, overwrite:bool = True, delete:bool = False) -> bool:
+	"""	Set a structured *key* and *value* in the dictionary *dict*.
+
+		Create the attribute if necessary, and observe the *overwrite* option (True overwrites an
 		existing key/value).
+
+		When the *delete* argument is set to *True* then the *key* attribute is deleted from the dictionary.
+
+		Examples:
+			setXPath(aDict, 'a/b/c', 'aValue)
+
+			setXPath(aDict, 'a/{2}/c', 'aValue)
+
+		Args:
+			dct: A dictionary in which to set or add the *key* and *value*.
+			key: The attribute's name to set in *dct*. This could by a path in *dct*, where the separator is a slash character (/). To address an element in a list, one can use the *{n}* operator in the path.
+			value: The value to set for the attribute. Could be left out when deleting an attribute or value.
+			overwrite: If True that overwrite an already existing value, otherwise skip.
+			delete: If True then remove the atribute or list attribute *key* from the dictionary.
+		
+		Retun:
+			Boolean indicating the success of the operation.
 	"""
+
 	paths = key.split("/")
 	ln1 = len(paths)-1
 	data = dct
 	if ln1 > 0:	# Small optimization. don't check if there is no extended path
 		for i in range(0, ln1):
-			if (_p := paths[i]) not in data:
-				data[_p] = {}
-			data = data[_p]
-	# if not isinstance(data, dict):
-	# 	return False
-	if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
-		return True # don't overwrite
-	data[paths[ln1]] = value
+			_p = paths[i]
+			if isinstance(data, list):
+				if (m := decimalMatch.search(_p)) is not None:
+					data = data[int(m.group(1))]
+			else:
+				if _p not in data:
+					data[_p] = {}
+				data = data[_p]
+	if isinstance(data, list):
+		if (m := decimalMatch.search(paths[ln1])) is not None:
+			idx = int(m.group(1))
+			if not overwrite and idx < len(data): # test overwrite first, it's faster
+				return True # don't overwrite
+			if delete :
+				if idx < len(data):
+					del data[idx]
+				return True
+			else:
+				data[idx] = value
+			return True
+		return False
+	else:
+		if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
+			return True # don't overwrite
+		if delete:
+			del data[paths[ln1]]
+			return True
+		data[paths[ln1]] = value
 	return True
 
 
