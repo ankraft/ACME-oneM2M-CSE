@@ -17,7 +17,7 @@
 			"lname": "attribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "m2m:attribute",
+			"ltype": "string",		//m2m:attributeList
 			"car": "01L"
 		},
 		{
@@ -26,7 +26,7 @@
 			"lname": "attribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "m2m:attribute",
+			"ltype": "string",		//m2m:attributeList
 			"car": "01L"
 		}
 	],
