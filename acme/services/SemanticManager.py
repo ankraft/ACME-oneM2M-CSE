@@ -424,7 +424,11 @@ class RdfLibHandler(SemanticHandler):
 		aggregatedGraph = self.getAggregatedGraph(ids)
 
 		# Query the graph
-		qres = aggregatedGraph.query(query)
+		try:
+			qres = aggregatedGraph.query(query)
+		except Exception as e:
+			return Result.errorResult(dbg = L.logWarn(f'Query error: {str(e)} for result'))
+
 
 		# Serialize the result in the desired format and return
 		return Result(status = True, data = qres.serialize(format = _format).decode('UTF-8'))
