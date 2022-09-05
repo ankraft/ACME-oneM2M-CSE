@@ -9,11 +9,12 @@
 
 
 from __future__ import annotations
-from copy import deepcopy
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
-import json, os, fnmatch, re, base64, urllib.parse
+import json, os, fnmatch, re, base64
 import requests
+
+from ..helpers.KeyHandler import FunctionKey
 
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
 from ..services.Configuration import Configuration
@@ -1132,8 +1133,10 @@ class ScriptManager(object):
 			Args:
 				ch: The key pressed.
 		"""
+		# Check for function key names first
 		# Look for the shutdown script(s) and run them. 
-		self.runEventScripts(_metaOnKey, ch)
+		self.runEventScripts(_metaOnKey, 
+							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 
 
 	def onNotification(self, uri:str, originator:str, data:JSON) -> None:
