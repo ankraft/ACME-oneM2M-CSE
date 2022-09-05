@@ -125,7 +125,11 @@ except ImportError:
 			pass
 			# while msvcrt.kbhit():	# type: ignore
 			# 	msvcrt.getch()		# type: ignore
-
+		
+		class FunctionKey(str, Enum):	# type: ignore[no-redef]
+			# TODO
+			pass
+		
 else:
 
 
