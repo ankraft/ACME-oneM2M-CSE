@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *dataCollect* ManagementObject specialization.
 - [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
 - [CONSOLE] Added continuous inspection of a resource.
+- [CONSOLE] Added support for handling function and cursor keys in the console (currently only for POSIX, yet).
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
 - [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
 - [SCRIPTS] Added *http* command to support making http(s) requests from scripts.

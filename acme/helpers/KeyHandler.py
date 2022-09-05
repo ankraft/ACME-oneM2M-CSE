@@ -9,13 +9,107 @@
 #
 
 from __future__ import annotations
+from ast import Call
 import sys, time, select
-from typing import Callable, Dict
+from enum import Enum
+from typing import Callable, Dict, Tuple, Union
 
 _timeout = 0.5
 
 try:
+	# Posix, Linux, Mac OS
 	import tty, termios
+
+	class FunctionKey(str, Enum):
+		
+		# Cursor keys
+		UP 					= '\x1b\x5b\x41'
+		DOWN				= '\x1b\x5b\x42'
+		LEFT				= '\x1b\x5b\x44'
+		RIGHT				= '\x1b\x5b\x43'
+		SHIFT_UP			= '\x1b\x5b\x31\x3b\x32\x41'
+		SHIFT_DOWN			= '\x1b\x5b\x31\x3b\x32\x42'
+		SHIFT_RIGHT			= '\x1b\x5b\x31\x3b\x32\x43'
+		SHIFT_LEFT			= '\x1b\x5b\x31\x3b\x32\x44'
+		CTRL_UP				= '\x1b\x5b\x31\x3b\x35\x41'
+		CTRL_DOWN			= '\x1b\x5b\x31\x3b\x35\x42'
+		CTRL_RIGHT			= '\x1b\x5b\x31\x3b\x35\x43'
+		CTRL_LEFT			= '\x1b\x5b\x31\x3b\x35\x44'
+		ALT_UP				= '\x1b\x1b\x5b\x41'
+		ALT_DOWN			= '\x1b\x1b\x5b\x42'
+		ALT_RIGHT			= '\x1b\x1b\x5b\x43'
+		ALT_LEFT			= '\x1b\x1b\x5b\x44'
+		SHIFT_ALT_UP		= '\x1b\x5b\x31\x3b\x31\x30\x41'
+		SHIFT_ALT_DOWN		= '\x1b\x5b\x31\x3b\x31\x30\x42'
+		SHIFT_ALT_RIGHT		= '\x1b\x5b\x31\x3b\x31\x30\x43'
+		SHIFT_ALT_LEFT		= '\x1b\x5b\x31\x3b\x31\x30\x44'
+		SHIFT_CTRL_UP		= '\x1b\x5b\x31\x3b\x36\x41'
+		SHIFT_CTRL_DOWN		= '\x1b\x5b\x31\x3b\x36\x42'
+		SHIFT_CTRL_RIGHT	= '\x1b\x5b\x31\x3b\x36\x43'
+		SHIFT_CTRL_LEFT		= '\x1b\x5b\x31\x3b\x36\x44'
+		SHIFT_CTRL_ALT_UP	= '\x1b\x5b\x31\x3b\x31\x34\x41'
+		SHIFT_CTRL_ALT_DOWN	= '\x1b\x5b\x31\x3b\x31\x34\x42'
+		SHIFT_CTRL_ALT_RIGHT= '\x1b\x5b\x31\x3b\x31\x34\x43'
+		SHIFT_CTRL_ALT_LEFT	= '\x1b\x5b\x31\x3b\x31\x34\x44'
+
+
+		# navigation keys
+		INSERT 				= '\x1b\x5b\x32\x7e'
+		SUPR				= '\x1b\x5b\x33\x7e'
+
+		HOME				= '\x1b\x5b\x48'
+		SHIFT_HOME			= '\x1b\x5b\x31\x3b\x32\x48'
+		CTRL_HOME			= '\x1b\x5b\x31\x3b\x35\x48'
+		ALT_HOME			= '\x1b\x5b\x31\x3b\x39\x48'
+		SHIFT_CTRL_HOME		= '\x1b\x5b\x31\x3b\x36\x48'
+		SHIFT_ALT_HOME		= '\x1b\x5b\x31\x3b\x31\x30\x48'
+		SHIFT_CTRL_ALT_HOME	= '\x1b\x5b\x31\x3b\x31\x34\x48'
+
+		END					= '\x1b\x5b\x46'
+		SHIFT_END			= '\x1b\x5b\x31\x3b\x32\x46'
+		CTRL_END			= '\x1b\x5b\x31\x3b\x35\x46'
+		ALT_END				= '\x1b\x5b\x31\x3b\x39\x46'
+		SHIFT_CTRL_END		= '\x1b\x5b\x31\x3b\x36\x46'
+		SHIFT_ALT_END		= '\x1b\x5b\x31\x3b\x31\x30\x46'
+		SHIFT_CTRL_ALT_END	= '\x1b\x5b\x31\x3b\x31\x34\x46'
+
+		PAGE_UP				= '\x1b\x5b\x35\x7e'
+		ALT_PAGE_UP			= '\x1b\x1b\x5b\x35\x7e'
+		PAGE_DOWN			= '\x1b\x5b\x36\x7e'
+		ALT_PAGE_DOWN		= '\x1b\x1b\x5b\x36\x7e'
+
+
+		# funcion keys
+		F1					= '\x1b\x4f\x50'
+		F2					= '\x1b\x4f\x51'
+		F3					= '\x1b\x4f\x52'
+		F4					= '\x1b\x4f\x53'
+		F5					= '\x1b\x5b\x31\x35\x7e'
+		F6					= '\x1b\x5b\x31\x37\x7e'
+		F7					= '\x1b\x5b\x31\x38\x7e'
+		F8					= '\x1b\x5b\x31\x39\x7e'
+		F9					= '\x1b\x5b\x32\x30\x7e'
+		F10					= '\x1b\x5b\x32\x31\x7e'
+		F11					= '\x1b\x5b\x32\x33\x7e'
+		F12					= '\x1b\x5b\x32\x34\x7e'
+		SHIFT_F1			= '\x1b\x5b\x31\x3b\x32\x50'
+		SHIFT_F2			= '\x1b\x5b\x31\x3b\x32\x51'
+		SHIFT_F3			= '\x1b\x5b\x31\x3b\x32\x52'
+		SHIFT_F4			= '\x1b\x5b\x31\x3b\x32\x53'
+		SHIFT_F5			= '\x1b\x5b\x31\x35\x3b\x32\x7e'
+		SHIFT_F6			= '\x1b\x5b\x31\x37\x3b\x32\x7e'
+		SHIFT_F7			= '\x1b\x5b\x31\x38\x3b\x32\x7e'
+		SHIFT_F8			= '\x1b\x5b\x31\x39\x3b\x32\x7e'
+		SHIFT_F9			= '\x1b\x5b\x32\x30\x3b\x32\x7e'
+		SHIFT_F10			= '\x1b\x5b\x32\x31\x3b\x32\x7e'
+		SHIFT_F11			= '\x1b\x5b\x32\x33\x3b\x32\x7e'
+		SHIFT_F12			= '\x1b\x5b\x32\x34\x3b\x32\x7e'
+
+		# Common
+		BACKSPACE			= '\x7f'
+		SHIFT_TAB			= '\x1b\x5b\x5a'
+
+
 except ImportError:
 	# Probably Windows.
 	try:
@@ -33,8 +127,10 @@ except ImportError:
 			# 	msvcrt.getch()		# type: ignore
 
 else:
+
+
 	_errorInGetch:bool = False
-	def getch() -> str:
+	def getch() -> str|FunctionKey:
 		"""getch() -> key character
 
 		Read a single keypress from stdin and return the resulting character. 
@@ -61,12 +157,7 @@ else:
 			#tty.setraw(fd)
 			tty.setcbreak(fd)	# Not extra lines in input
 			if select.select([sys.stdin,], [], [], _timeout)[0]:
-				ch = sys.stdin.read(1)
-				if ch == '\x1b':
-					ch2 = sys.stdin.read(1)
-					if ch2 == '[':
-						ch3 = sys.stdin.read(1)
-						ch += ch2 + ch3
+				ch = _getKey(lambda : sys.stdin.read(1))
 			else:
 				ch = None
 		finally:
@@ -76,12 +167,74 @@ else:
 	def flushInput() -> None:
 		sys.stdin.flush()
 
+_functionKeys:Tuple[FunctionKey, str] = [(e, e.value) for e in FunctionKey] # type:ignore
+# TODO
 
 Commands = Dict[str, Callable[[str], None]]
 """ Mapping between characters and callback functions. """
 
 _stopLoop = False
 """ Internal variable to indicate to stop the keyboard loop. """
+
+
+# def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
+
+# 	_fkcounts = [ 0 ] * len(_functionKeys) # init with inittial links
+# 	_sequenceIdx = -1
+
+# 	while True:
+# 		key = nextKeyCB()
+# 		#print(hex(ord(key)))
+# 		_sequenceIdx += 1
+
+# 		for i, f in enumerate(_functionKeys):
+# 			g = f[1]
+# 			# Check if the function key sequence-to-be-tested is still long enough,
+# 			# and char at the current index position in the sequence matches the key, 
+# 			# and the function key row was not eliminates from the search (ie -1)
+# 			if (lg := len(g)) > _sequenceIdx and key == g[_sequenceIdx] and _fkcounts[i] >= 0:	
+# 				_fkcounts[i] += 1	# increase the count for that sequence
+# 				if _fkcounts[i] == lg:
+# 					#print([ fkeys[i][0] for i, x in enumerate(_fkcounts) if x>0])
+# 					#print(_functionKeys[_fkcounts.index(max(_fkcounts))][0])
+# 					#print(_functionKeys[_fkcounts.index(max(_fkcounts))][0])
+# 					return _functionKeys[_fkcounts.index(max(_fkcounts))][0]	# break out of the search as soon there is one full match. Filter later
+# 			else:
+# 				_fkcounts[i] = -1	# eliminate the row if no match
+# 		if _fkcounts.count(-1) == len(_fkcounts):
+# 			return key
+
+
+def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
+
+	_fkmatches = [ True ] * len(_functionKeys) # init list with True, one for each function key
+	_escapeSequenceIdx = 0
+
+	while True:
+		key = nextKeyCB()
+		# print(hex(ord(key)))
+
+		for i, f in enumerate(_functionKeys):
+			_escapeSequence = f[1]
+			# Check if the function key sequence-to-be-tested is still long enough,
+			# and char at the current index position in the sequence matches the key, 
+			# and the function key row was not eliminates from the search (ie False)
+			if len(_escapeSequence) > _escapeSequenceIdx and key == _escapeSequence[_escapeSequenceIdx] and _fkmatches[i] :	
+				pass	# Don't do anything with a found entry. Leave the old value in the array
+			else:
+				_fkmatches[i] = False	# eliminate the sequence if no match
+		
+		# Check after each new key and sequence processing
+		if (_fcount := _fkmatches.count(True)) == 1:	# break out of the search as soon there is only one full match left
+			# fn = _functionKeys[_fkmatches.index(True)]
+			# print(fn[0])
+			#return fn[0]		# return the function key
+			return _functionKeys[_fkmatches.index(True)][0]		# return the function key
+
+		if _fcount == 0:
+			return key	# Return the last character if nothing matched
+
+		_escapeSequenceIdx += 1
 
 
 def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True, catchAll:Callable = None) -> None:
