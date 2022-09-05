@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import List, cast
-import datetime, json, os, sys, webbrowser
+import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
 from rich.style import Style
 from rich.table import Table
@@ -22,7 +22,7 @@ import plotext as plt
 
 
 
-from ..helpers.KeyHandler import loop, stopLoop, waitForKeypress
+from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
 from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
@@ -86,11 +86,11 @@ class Console(object):
 		self.interruptContinous			 = False
 		self.endmessage:str 			 = None
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
-		if L.isInfo: L.log('Console initialized')
+		L.isInfo and L.log('Console initialized')
 
 
 	def shutdown(self) -> bool:
-		if L.isInfo: L.log('Console shut down')
+		L.isInfo and L.log('Console shut down')
 		return True
 
 
@@ -108,35 +108,36 @@ class Console(object):
 		#	Execute keyboard commands in the keyboardHandler's loop() function.
 		#
 		commands = {
-			'?'     : self.help,
-			'h'		: self.help,
-			'A'		: self.about,
-			'\n'	: lambda c: L.console(),	# 1 empty line
-			'\r'	: lambda c: L.console(),	# 1 empty line
-			'\x03'  : self.shutdownCSE,			# See handler below
-			'c'		: self.configuration,
-			'C'		: self.clearScreen,
-			'D'		: self.deleteResource,
-			'E'		: self.exportResources,
-			'\x07'	: self.continuesPlotGraph,
-			'G'		: self.plotGraph,
-			'i'		: self.inspectResource,
-			'I'		: self.inspectResourceChildren,
-			'\x0b'	: self.continuousInspectResource,
-			'k'		: self.katalogScripts,
-			'l'     : self.toggleScreenLogging,
-			'L'     : self.toggleLogging,
-			'Q'		: self.shutdownCSE,		# See handler below
-			'r'		: self.cseRegistrations,
-			'R'		: self.runScript,
-			's'		: self.statistics,
-			'\x13'	: self.continuousStatistics,
-			't'		: self.resourceTree,
-			'\x14'	: self.continuousTree,
-			'T'		: self.childResourceTree,
-			'u'		: self.openWebUI,
-			'w'		: self.workers,
-			'='		: self.printLine,
+			'?'    			 	: self.help,
+			'h'					: self.help,
+			FunctionKey.F1		: self.help,
+			'A'					: self.about,
+			'\n'				: lambda c: L.console(),	# 1 empty line
+			'\r'				: lambda c: L.console(),	# 1 empty line
+			'\x03'  			: self.shutdownCSE,			# See handler below
+			'c'					: self.configuration,
+			'C'					: self.clearScreen,
+			'D'					: self.deleteResource,
+			'E'					: self.exportResources,
+			'\x07'				: self.continuesPlotGraph,
+			'G'					: self.plotGraph,
+			'i'					: self.inspectResource,
+			'I'					: self.inspectResourceChildren,
+			'\x0b'				: self.continuousInspectResource,
+			'k'					: self.katalogScripts,
+			'l'     			: self.toggleScreenLogging,
+			'L'     			: self.toggleLogging,
+			'Q'					: self.shutdownCSE,		# See handler below
+			'r'					: self.cseRegistrations,
+			'R'					: self.runScript,
+			's'					: self.statistics,
+			'\x13'				: self.continuousStatistics,
+			't'					: self.resourceTree,
+			'\x14'				: self.continuousTree,
+			'T'					: self.childResourceTree,
+			'u'					: self.openWebUI,
+			'w'					: self.workers,
+			'='					: self.printLine,
 			#'Z'		: self.resetCSE,
 		}
 		#	Endless runtime loop. This handles key input & commands
@@ -177,7 +178,7 @@ class Console(object):
 		# Built-in Console commands
 		commands = [
 			# (Key, description, built-in)
-			('h, ?', 'This help'),
+			('h, ?, F1', 'This help'),
 			('A', 'About'),
 			('Q, ^C', 'Shutdown CSE'),
 			('c', 'Show configuration'),
@@ -782,19 +783,21 @@ Available under the BSD 3-Clause License
 
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
-		misc += f'StartTime : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-		misc += f'Uptime    : {stats.get(Statistics.cseUpTime, "")}\n'
+		misc += f'StartTime  : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+		misc += f'Uptime     : {stats.get(Statistics.cseUpTime, "")}\n'
+		misc += f'Hostname   : {socket.gethostname()}\n'
+		misc += f'IP-Address : {socket.gethostbyname(socket.gethostname())}\n'
 		if hasattr(os, 'getloadavg'):
 			load = os.getloadavg()
-			misc += f'Load      : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+			misc += f'Load       : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
 		else:
 			misc += '\n'
-		misc += f'Platform  : {sys.platform}\n'
-		misc += f'Python    : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+		misc += f'Platform   : {sys.platform}\n'
+		misc += f'Python     : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
 
 		# Adapt the following line when adding resources to keep formatting. 
 		# It fills up the right columns to match the length of the left column.
-		misc += '\n' * ( 5 if CSE.statistics.statisticsEnabled else 7)
+		misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 5)
 
 		requestsGrid = Table.grid(expand = True)
 		requestsGrid.add_column(ratio = 28)
