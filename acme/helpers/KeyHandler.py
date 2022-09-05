@@ -12,15 +12,17 @@ from __future__ import annotations
 from ast import Call
 import sys, time, select
 from enum import Enum
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Tuple, Optional
 
 _timeout = 0.5
+
 
 try:
 	# Posix, Linux, Mac OS
 	import tty, termios
 
 	class FunctionKey(str, Enum):
+		"""	POSIX function keys. """
 		
 		# Cursor keys
 		UP 					= '\x1b\x5b\x41'
@@ -53,7 +55,7 @@ try:
 		SHIFT_CTRL_ALT_LEFT	= '\x1b\x5b\x31\x3b\x31\x34\x44'
 
 
-		# navigation keys
+		# Navigation keys
 		INSERT 				= '\x1b\x5b\x32\x7e'
 		SUPR				= '\x1b\x5b\x33\x7e'
 
@@ -75,11 +77,12 @@ try:
 
 		PAGE_UP				= '\x1b\x5b\x35\x7e'
 		ALT_PAGE_UP			= '\x1b\x1b\x5b\x35\x7e'
+
 		PAGE_DOWN			= '\x1b\x5b\x36\x7e'
 		ALT_PAGE_DOWN		= '\x1b\x1b\x5b\x36\x7e'
 
 
-		# funcion keys
+		# Funcion keys
 		F1					= '\x1b\x4f\x50'
 		F2					= '\x1b\x4f\x51'
 		F3					= '\x1b\x4f\x52'
@@ -127,9 +130,42 @@ except ImportError:
 			# 	msvcrt.getch()		# type: ignore
 		
 		class FunctionKey(str, Enum):	# type: ignore[no-redef]
-			# TODO
-			pass
-		
+			""" MS Windows function keys. """
+
+			# Cursors keys
+
+			UP 					= '\x00\x48'
+			DOWN 				= '\x00\x50'
+			LEFT 				= '\x00\x4b'
+			RIGHT				= '\x00\x4d'
+
+
+			# Navigation keys
+			INSERT 				= '\x00\x52'
+			SUPR 				= '\x00\x53'
+			HOME 				= '\x00\x47'
+			END 				= '\x00\x4f'
+			PAGE_UP 			= '\x00\x49'
+			PAGE_DOWN 			= '\x00\x51'
+
+			# Funcion keys
+			F1 					= '\x00\x3b'
+			F2 					= '\x00\x3c'
+			F3 					= '\x00\x3d'
+			F4 					= '\x00\x3e'
+			F5 					= '\x00\x3f'
+			F6 					= '\x00\x40'
+			F7 					= '\x00\x41'
+			F8 					= '\x00\x42'
+			F9 					= '\x00\x43'
+			F10 				= '\x00\x44'
+			F11					= '\x00\x85'
+			F12					= '\x00\x86'
+
+			# Common
+			BACKSPACE			= '\x08'
+			SHIFT_TAB			= '\x1b\x5b\x5a'
+
 else:
 
 
