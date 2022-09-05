@@ -177,42 +177,23 @@ _stopLoop = False
 """ Internal variable to indicate to stop the keyboard loop. """
 
 
-# def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
-
-# 	_fkcounts = [ 0 ] * len(_functionKeys) # init with inittial links
-# 	_sequenceIdx = -1
-
-# 	while True:
-# 		key = nextKeyCB()
-# 		#print(hex(ord(key)))
-# 		_sequenceIdx += 1
-
-# 		for i, f in enumerate(_functionKeys):
-# 			g = f[1]
-# 			# Check if the function key sequence-to-be-tested is still long enough,
-# 			# and char at the current index position in the sequence matches the key, 
-# 			# and the function key row was not eliminates from the search (ie -1)
-# 			if (lg := len(g)) > _sequenceIdx and key == g[_sequenceIdx] and _fkcounts[i] >= 0:	
-# 				_fkcounts[i] += 1	# increase the count for that sequence
-# 				if _fkcounts[i] == lg:
-# 					#print([ fkeys[i][0] for i, x in enumerate(_fkcounts) if x>0])
-# 					#print(_functionKeys[_fkcounts.index(max(_fkcounts))][0])
-# 					#print(_functionKeys[_fkcounts.index(max(_fkcounts))][0])
-# 					return _functionKeys[_fkcounts.index(max(_fkcounts))][0]	# break out of the search as soon there is one full match. Filter later
-# 			else:
-# 				_fkcounts[i] = -1	# eliminate the row if no match
-# 		if _fkcounts.count(-1) == len(_fkcounts):
-# 			return key
-
-
 def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
+	"""	Read and process a keypress. If the key is a start of a sequence then process all further
+		keys until a single sequence has been identified and full read. Then return the key as a
+		function key enum.
+		
+		Args:
+			nextKeyCB: A function the provides the next key from a keypress.
+		Return:
+			Either a string with a single non-function key, or a function key enum value.
+	"""
 
 	_fkmatches = [ True ] * len(_functionKeys) # init list with True, one for each function key
 	_escapeSequenceIdx = 0
 
 	while True:
 		key = nextKeyCB()
-		# print(hex(ord(key)))
+		#print(hex(ord(key)))
 
 		for i, f in enumerate(_functionKeys):
 			_escapeSequence = f[1]
@@ -226,10 +207,9 @@ def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
 		
 		# Check after each new key and sequence processing
 		if (_fcount := _fkmatches.count(True)) == 1:	# break out of the search as soon there is only one full match left
-			# fn = _functionKeys[_fkmatches.index(True)]
-			# print(fn[0])
-			#return fn[0]		# return the function key
-			return _functionKeys[_fkmatches.index(True)][0]		# return the function key
+			fn = _functionKeys[_fkmatches.index(True)]
+			if len(fn[1]) == _escapeSequenceIdx+1:		# But only return when the whole sequence was read
+				return fn[0]							# return the function key
 
 		if _fcount == 0:
 			return key	# Return the last character if nothing matched
