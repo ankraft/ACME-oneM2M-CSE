@@ -16,6 +16,7 @@
 |                              | [ENDPROCEDURE](#command_endprocedure)           | End a [PROCEDURE](#command_procedure)                                        |
 |                              | [ENDSWITCH](#command_endswitch)                 | End a [SWITCH](#command_switch) block                                        |
 |                              | [ENDWHILE](#command_endwhile)                   | End a [WHILE](#command_while) loop                                           |
+|                              | [EXPANDMACROS](#command_expandmacros)           | Enable or disable macro and variable expansions                              |
 |                              | [IF](#command_if)                               | Check comparison condition and begin a conditional IF block                  |
 |                              | [INC](#command_inc)                             | Increments a numeric variable                                                |
 |                              | [LOG](#command_log)                             | Print a message to the debug-level log                                       |
@@ -277,6 +278,25 @@ Example:
 while [< [i] 10]
 	...
 endWhile aResult
+```
+
+
+<a name="command_expandmacros"></a>
+### EXPANDMACROS
+
+Usage:
+EXPANDMACROS &lt;on|off>
+
+Temporarily disable or enable macro and variable expansion for the following code execution.  
+This is useful, for example, when using the [IMPORTRAW](#command_importraw) command and not escaping otherwise reserved characters, 
+e.g. `[ ... ]`.
+
+Example:
+```text
+expandMacros off
+importraw
+	...
+expandMacros on
 ```
 
 

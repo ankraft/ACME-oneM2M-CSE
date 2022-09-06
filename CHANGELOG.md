@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
 - [SCRIPTS] Added *isDefined* macro to test whether a variable, macro, or environment variable exists.
 - [SCRIPTS] Added *http* command to support making http(s) requests from scripts.
+- [SCRIPTS] Added *expandMacros* command to temporarily disable and enable macro and variable expansions.
 - [SCRIPTS] Added *nl* macro to add a newline in strings.
 - [SCRIPTS] Added *jsonify* macro to prepare a string for proper use in a JSON structure.
 - [SCRIPTS] Added *b64encode* macro to encode a string as base64.

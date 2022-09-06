@@ -135,6 +135,7 @@ class PContext():
 		self._macros:PMacroDict				= None		# builtins + provided macros
 		self._verbose:bool					= None		# Store the runtime verbosity of the run() function
 		self._line:str						= ''		# Currently executed line
+		self._enableMacroExpansion			= True		# Expand macros
 
 		#
 		# Further initializations and copying of context information
@@ -1092,6 +1093,15 @@ def _doError(pcontext:PContext, arg:str) -> PContext:
 	return None
 
 
+def _doExpandMacros(pcontext:PContext, arg:str) -> PContext:
+	arg = arg.lower()
+	if arg not in ['true', 'false', 'on', 'off']:
+		pcontext.setError(PError.invalid, f'invalid argument for command "expandMacros": {arg}')
+		return None
+	pcontext._enableMacroExpansion = arg in [ 'true', 'on' ]
+	return pcontext
+
+
 def _doIf(pcontext:PContext, arg:str) -> PContext:
 	"""	Handle an if...else...endif command operation.
 
@@ -1619,6 +1629,7 @@ _builtinCommands:PCmdDict = {
 	'endprocedure':	_doEndProcedure,
 	'endswitch':	_doEndSwitch,
 	'endwhile':		_doEndWhile,
+	'expandmacros':	_doExpandMacros,
 	'if':			_doIf,
 	'inc':			lambda p, a : _doIncDec(p, a),
 	'log':			lambda p, a : _doLog(p, a,),
@@ -1761,13 +1772,9 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		return pcontext_.result
 
 
-	# replace macros
-	# _macroMatch = re.compile(r"\$\{[\s\w-.]+\}")
-	# items = re.findall(_macroMatch, line)
-	# for item in items:
-	# 	if (r := _replaceMacro(item)) is None:
-	# 		return None
-	# 	line = line.replace(item, r)
+
+	if not pcontext._enableMacroExpansion:
+		return line
 
 	# The following might be easier with a regex, but we want to allow recursive macros, therefore
 	# parsing the string is simpler for now. Suggestions welcome!
