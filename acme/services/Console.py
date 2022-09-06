@@ -554,24 +554,33 @@ Available under the BSD 3-Clause License
 	def exportResources(self, _:str) -> None:
 		L.console('Export Resources', isHeader = True)
 		L.off()
-		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
-			L.console(resdis.dbg, isError=True)
-		else:
-			resources:list[Resource] = []
-			for r in cast(List[Resource], resdis.data):
-				if r.isImported:
-					continue
-				resources.append(r)
-			if resources:
-				fn = f'{datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")}.as'
-				fpn = f'{CSE.importer.resourcePath}/{fn}'
-				L.console(f'Exporting to {fn}')
-				with open(fpn, 'w') as exportFile:
-					for r in resources:
-						exportFile.write('importRaw\n')
-						json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
-						exportFile.write('\n')
-			L.console(f'Exported {len(resources)} resources')
+		try:
+			if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
+				L.console(resdis.dbg, isError=True)
+			else:
+				resources:list[Resource] = []
+				for r in cast(List[Resource], resdis.data):
+					if r.isImported:
+						continue
+					resources.append(r)
+				if resources:
+					fn = f'{datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")}.as'
+					fpn = f'{CSE.importer.resourcePath}/{fn}'
+					L.console(f'Exporting to {fn}')
+					with open(fpn, 'w') as exportFile:
+						exportFile.write(f'expandMacros off\n')
+						for r in resources:
+							exportFile.write(f'originator {r.getOriginator()}\n')
+							exportFile.write(f'print Importing {r.ri}\n')
+							exportFile.write('importraw\n')
+							json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
+							exportFile.write('\n')
+						exportFile.write(f'expandMacros on\n')
+				L.console(f'Exported {len(resources)} resources')
+		except Exception as e:
+			import traceback
+			print(traceback.format_exc())
+			L.inspect(e)
 		L.on()
 	
 

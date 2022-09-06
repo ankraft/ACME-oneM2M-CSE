@@ -362,10 +362,23 @@ class ACMEPContext(PContext):
 
 		resource = Factory.resourceFromDict(dct, create=True, isImported=True).resource
 
+		# Get the originator for the request
+		if (originator := self.getVariable('request.originator')) is None:
+			originator = CSE.cseOriginator
+
 		# Check resource creation
-		if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
+		if not CSE.registration.checkResourceCreation(resource, originator):
 			return None
-		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
+
+		# Get a potential parent resource
+		parentResource:Any = None
+		if resource.pi:
+			if not (pres := CSE.dispatcher.retrieveLocalResource(ri = resource.pi)).status:
+				return None
+			parentResource = pres.resource
+
+		# Create the resource
+		if not (res := CSE.dispatcher.createLocalResource(resource, parentResource = parentResource, originator = originator)).resource:
 			L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
 			return None
 			

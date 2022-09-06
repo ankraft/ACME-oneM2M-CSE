@@ -288,6 +288,9 @@ class Dispatcher(object):
 			if not (res := self.retrieveResource(id)).resource:
 				return Result.errorResult(rsc = RC.notFound, dbg = res.dbg)
 			rootResource = res.resource
+		
+		if not filterCriteria:
+			filterCriteria = FilterCriteria()
 
 		# Apply defaults. This is not done in the FilterCriteria class bc there we only store he provided values
 		lvl:int = filterCriteria.lvl if filterCriteria.lvl is not None else sys.maxsize
