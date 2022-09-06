@@ -81,6 +81,13 @@
 1. **Can I use the web UI also with other CSE implementations?**  
     The web UI can also be run as an independent application.  Since it communicates with the CSE via the Mca interface it should be possible to use it with other CSE implementations as well as long as those third party CSEs follow the oneM2M http binding specification. It only supports the resource types that the ACME CSE supports, but at least it will present all other resource types as *unknown*.
 
+
+## Console
+
+1. **Some of the tables, text graphics etc are not aligned or correctly displayed in the console**  
+	Some mono-spaced fonts don't work well with UTF-8 character sets and graphic elements. Especially the MS Windows *cmd.exe* console seems to have problems.
+	Try one of the more extended fonts like *JuliaMono* or *DejaVu Sans Mono*.
+
 ## Operating Systems
 
 ### RaspberryPi
@@ -90,5 +97,6 @@
 1. **Timing Issues**  
 	 Also, the resolution of the available Python timers is rather low on Raspbian, and background tasks might not run exactly on the desired time.  
 	 Unfortunately, this is also why sometimes a couple of the CSE's tests cases may fail randomly.
+
 
 [← README](../README.md) 
