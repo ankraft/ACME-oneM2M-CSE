@@ -115,15 +115,17 @@ Usage:
 With this meta tag a script registers for a key-press event of the console interface. If the key is pressed then the
 script is run. The event and the key are passed as the script arguments.
 
+The keys may be normal ASCII characters or a function key. Please consult the console's [supported function key table](Console.md#function_keys) for the function key's names. Please note, that not all function keys are available on all OS platforms.
+
 A script can only register for a single key.
 
 Example:
 ```text
 # Run the script when the '9' key is pressed
-@onkey 9
+@onkey F9
 
 print [argv]
-# -> onkey 9
+# -> onkey F9
 ```
 
 

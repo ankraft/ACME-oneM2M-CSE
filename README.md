@@ -23,6 +23,7 @@ Please consult the following pages for further instructions.
 - [Installation](docs/Installation.md)
 - [Configuration](docs/Configuration.md)
 - [Running](docs/Running.md)
+	- [Console](docs/Console.md)
 	- [Docker](docs/Docker.md)
 	- [Notification Server](tools/notificationServer/README.md)
 - [Web & Rest UI](docs/WebUI.md)
