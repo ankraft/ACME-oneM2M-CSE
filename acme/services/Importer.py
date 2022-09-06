@@ -96,7 +96,7 @@ class Importer(object):
 
 		self._prepareImporting()
 		try:
-			L.isInfo and L.log(f'Importing scripts from directories: {path}')
+			L.isInfo and L.log(f'Importing scripts from directory(s): {path}')
 			if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
 				return False
 		
@@ -164,12 +164,12 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing enumerated data types policies from: {path}')
+		L.isInfo and L.log(f'Importing enumerated data types policies from: {os.path.relpath(path)}')
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ep')
 		for fno in filenames:
 			fn = os.path.join(path, fno)
-			L.isInfo and L.log(f'Importing policies: {fno}')
+			L.isInfo and L.log(f'Importing policies: {os.path.relpath(fno)}')
 			if os.path.exists(fn):
 				
 				# Read the JSON file
@@ -200,11 +200,11 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for flexContainer policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing flexContainer attribute policies from: {path}')
+		L.isInfo and L.log(f'Importing flexContainer attribute policies from: {os.path.relpath(path)}')
 		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
 		for each in filenames:
 			fn = os.path.join(path, each)
-			L.isDebug and L.logDebug(f'Importing policies: {each}')
+			L.isDebug and L.logDebug(f'Importing policies: {os.path.relpath(fn)}')
 			if os.path.exists(fn):
 				if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					return False

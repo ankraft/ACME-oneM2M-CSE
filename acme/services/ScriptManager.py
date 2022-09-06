@@ -1252,7 +1252,8 @@ class ScriptManager(object):
 				if _hasScriptWithFilename(ffn):	# Skip existing scripts, ie only new scripts
 					continue
 				# read the file and add it to the script manager
-				L.isDebug and L.logDebug(f'Importing script: {ffn}')
+
+				L.isDebug and L.logDebug(f'Importing script: {os.path.relpath(ffn)}')
 				if not self.loadScriptFromFile(ffn):
 					return -1
 				countScripts += 1
