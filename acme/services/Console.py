@@ -213,7 +213,8 @@ class Console(object):
 
 		# Add Scripts that have a key binding
 		for eachScript in (scripts :=  sorted(CSE.script.findScripts(meta = 'onkey'), key = lambda x: x.getMeta('onkey'))):
-			table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '✔︎')
+			# table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '✔︎')
+			table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '+')
 		L.console(table, nl=True)
 
 
@@ -542,7 +543,8 @@ Available under the BSD 3-Clause License
 				key = n.getMeta('onkey')
 				table.add_row(n.scriptName, 
 							  desc, 
-							  '✔︎' if ut else '',
+							  # '✔︎' if ut else '',
+							  '+' if ut else '',
 							  key,
 							  at )
 		L.console(table, nl = True)
