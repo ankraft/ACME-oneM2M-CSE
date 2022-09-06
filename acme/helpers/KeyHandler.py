@@ -122,7 +122,13 @@ except ImportError:
 		# Just give up here.
 		raise ImportError('getch not available')
 	else:
-		getch = msvcrt.getch	# type: ignore
+
+		def getch() -> str|FunctionKey:
+			try:
+				# ch = msvcrt.getch	# type: ignore
+				return _getKey(lambda : msvcrt.getch()) # type: ignore
+			except Exception:
+				return None
 
 		def flushInput() -> None:
 			pass
@@ -130,23 +136,44 @@ except ImportError:
 			# 	msvcrt.getch()		# type: ignore
 		
 		class FunctionKey(str, Enum):	# type: ignore[no-redef]
-			""" MS Windows function keys. """
+			""" MS Windows function keys in cmd.exe. """
 
 			# Cursors keys
 
-			UP 					= '\x00\x48'
-			DOWN 				= '\x00\x50'
-			LEFT 				= '\x00\x4b'
-			RIGHT				= '\x00\x4d'
+			UP 					= '\xe0\x48'
+			CTRL_UP 			= '\xe0\x8d'
+			ALT_UP 				= '\x00\x98'
+
+			DOWN 				= '\xe0\x50'
+			CTRL_DOWN 			= '\xe0\x91'
+			ALT_DOWN 			= '\x00\xa0'
+
+			LEFT 				= '\xe0\x4b'
+			CTRL_LEFT 			= '\xe0\x73'
+			ALT_LEFT 			= '\x00\x9b'
+
+			RIGHT				= '\xe0\x4d'
+			CTRL_RIGHT			= '\xe0\x74'
+			ALT_RIGHT			= '\x00\x9d'
 
 
 			# Navigation keys
-			INSERT 				= '\x00\x52'
-			SUPR 				= '\x00\x53'
-			HOME 				= '\x00\x47'
-			END 				= '\x00\x4f'
-			PAGE_UP 			= '\x00\x49'
-			PAGE_DOWN 			= '\x00\x51'
+			INSERT 				= '\xe0\x52'
+			SUPR 				= '\xe0\x53'
+			HOME 				= '\xe0\x47'
+			CTRL_HOME 			= '\xe0\x77'
+			ALT_HOME 			= '\x00\x97'
+
+			END 				= '\xe0\x4f'
+			CTRL_END 			= '\xe0\x75'
+			ALT_END 			= '\x00\x9f'
+			
+			PAGE_UP 			= '\xe0\x49'
+			ALT_PAGE_UP 		= '\x00\x99'
+
+			PAGE_DOWN 			= '\xe0\x51'
+			CTRL_PAGE_DOWN 		= '\xe0\x76'
+			ALT_PAGE_DOWN 		= '\x00\xa1'
 
 			# Funcion keys
 			F1 					= '\x00\x3b'
@@ -159,12 +186,49 @@ except ImportError:
 			F8 					= '\x00\x42'
 			F9 					= '\x00\x43'
 			F10 				= '\x00\x44'
-			F11					= '\x00\x85'
-			F12					= '\x00\x86'
-
+			F11					= '\xe0\x85'
+			F12					= '\xe0\x86'
+			SHIFT_F1			= '\x00\x54'
+			SHIFT_F2			= '\x00\x55'
+			SHIFT_F3			= '\x00\x56'
+			SHIFT_F4			= '\x00\x57'
+			SHIFT_F5			= '\x00\x58'
+			SHIFT_F6			= '\x00\x59'
+			SHIFT_F7			= '\x00\x5a'
+			SHIFT_F8			= '\x00\x5b'
+			SHIFT_F9			= '\x00\x5c'
+			SHIFT_F10			= '\x00\x5d'
+			SHIFT_F11			= '\xe0\x87'
+			SHIFT_F12			= '\xe0\x88'
+			CTRL_F1				= '\x00\x5e'
+			CTRL_F2				= '\x00\x5f'
+			CTRL_F3				= '\x00\x60'
+			CTRL_F4				= '\x00\x61'
+			CTRL_F5				= '\x00\x62'
+			CTRL_F6				= '\x00\x63'
+			CTRL_F7				= '\x00\x64'
+			CTRL_F8				= '\x00\x65'
+			CTRL_F9				= '\x00\x66'
+			CTRL_F10			= '\x00\x67'
+			CTRL_F11			= '\xe0\x89'
+			CTRL_F12			= '\xe0\x8a'
+			ALT_F1				= '\x00\x68'
+			ALT_F2				= '\x00\x69'
+			ALT_F3				= '\x00\x6a'
+			ALT_F4				= '\x00\x6b'
+			ALT_F5				= '\x00\x6c'
+			ALT_F6				= '\x00\x6d'
+			ALT_F7				= '\x00\x6e'
+			ALT_F8				= '\x00\x6f'
+			ALT_F9				= '\x00\x70'
+			ALT_F10				= '\x00\x71'
+			ALT_F11				= '\xe0\x8b'
+			ALT_F12				= '\xe0\x8c'
+			
 			# Common
 			BACKSPACE			= '\x08'
-			SHIFT_TAB			= '\x1b\x5b\x5a'
+			CTRL_BACKSPACE		= '\x7f'
+			CTRL_TAB			= '\x00\x94'
 
 else:
 
@@ -232,8 +296,8 @@ def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
 	_escapeSequenceIdx = 0
 
 	while True:
-		key = nextKeyCB()
-		#print(hex(ord(key)))
+		key = chr(ord(nextKeyCB()))
+		# print(hex(ord(key)))
 
 		for i, f in enumerate(_functionKeys):
 			_escapeSequence = f[1]
@@ -248,6 +312,7 @@ def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
 		# Check after each new key and sequence processing
 		if (_fcount := _fkmatches.count(True)) == 1:	# break out of the search as soon there is only one full match left
 			fn = _functionKeys[_fkmatches.index(True)]
+			# print(fn)
 			if len(fn[1]) == _escapeSequenceIdx+1:		# But only return when the whole sequence was read
 				return fn[0]							# return the function key
 
