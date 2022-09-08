@@ -157,16 +157,26 @@ class Dispatcher(object):
 		#	This is indicated by rcn = semantic content
 		#
 		if request.rcn == RCN.semanticContent:
+			L.isDebug and L.logDebug('Performing semantic discovery / query')
 			# Validate SPARQL in semanticFilter
 			if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
 				return res
 			# Get all semanticDescriptors
 			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))).status:
 				return res
+			
+			# Execute semantic query
+			if request.sqi:
+				# TODO: format from request when attribute has been defined
+				if not (res := CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], res.data))).status:
+					return res
+			
+			# Execute semantic resource discovery
+			else:
+				L.isDebug and L.logDebug(f'Direct discovered SMD: {res.data}')
+				if not (res := CSE.semantic.executeSemanticResourceDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
+					return res
 
-			# TODO: format from request when attribute has been defined
-			if not (res := CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], res.data))).status:
-				return res
 			L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
 			return Result(status = True, rsc = RC.OK, data = { 'm2m:qres' : res.data })
 

@@ -1341,10 +1341,11 @@ class RequestManager(object):
 					return res
 			
 			# Check whether none or all of sqi, smf and rcn=semantic content is set, otherwise error
-			if [ cseRequest.sqi is not None, 
-				 cseRequest.fc.smf is not None, 
-				 cseRequest.rcn == ResultContentType.semanticContent].count(True) not in [ 0, 3]:
-				return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi, smf and rcn=smantic-content must be specifed together, or not at all'))
+			if [ cseRequest.fc.smf is not None, 
+				 cseRequest.rcn == ResultContentType.semanticContent].count(True) not in [ 0, 2 ]:
+				return Result.errorResult(request = cseRequest, dbg = L.logDebug('smf and rcn=smantic-content must be specifed together, or not at all'))
+			if cseRequest.sqi and not (cseRequest.fc.smf and cseRequest.rcn == ResultContentType.semanticContent):
+				return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi must not be specifed without smf and rcn=smantic-content'))
 
 		# end of try..except
 		except ValueError as e:

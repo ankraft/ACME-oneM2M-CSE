@@ -18,8 +18,9 @@ import base64, binascii
 from ..resources.SMD import SMD
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..etc.Types import ResourceTypes, Result, SemanticFormat
+from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat
 
+GraphIDsT = dict[str, SMD]
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.
@@ -323,6 +324,69 @@ class SemanticManager(object):
 		# aggregatedGraph = self.semanticHandler.getAggregatedGraph([ smd.ri for smd in smds ])
 		# qres = self.semanticHandler.query(query, aggregatedGraph).data
 		# return Result(status = True, data = qres.serialize(format='xml').decode('UTF-8'))
+
+
+	def executeSemanticDiscoverySPARQLQuery(self, originator:str, query:str, smds:Sequence[SMD], format:Optional[SemanticFormat] = None) -> Result:
+		"""	Recursively discover link-related <`SMD`> resources and run a SPARQL query against the result.
+		
+			This implementation support the "resource link-based" method, but not the "annotation-based" method.
+
+			When ann originator doesn't have access to a Link-related <`SMD`> resource then this resource is ignored.
+			
+			Args:
+				query: String with the SPARQL query.
+				originator: The originator of the original request. It is used to determine the access to related resources.
+				smds: A list of <`SMD`> resources which are to be aggregated and for the query. 
+				format: Serialization format to use.
+			
+			Return:
+				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
+		"""
+		L.isDebug and L.logDebug('Performing semantic resource discovery')
+		L.isDebug and L.logDebug('Note: Annotation-based method is not supported')
+		graphIDs:GraphIDsT = {}	# Dictionary of related ri -> SMD
+
+		for smd in smds:
+			graphIDs[smd.ri] = smd
+			if smd.rels:
+				# Build a recursive list of linked SMD's
+				self._buildLinkedBasedGraphIDs(smd.rels, originator, graphIDs)
+		L.isDebug and L.logDebug(f'Found SMDs for semantic discovery: {graphIDs}')
+		return self.executeSPARQLQuery(query, 
+									   [ smd for smd in graphIDs.values() ],
+									   format)
+
+
+	def _buildLinkedBasedGraphIDs(self, ris:list[str], originator:str, graphIDs:GraphIDsT) -> None:
+		""" Retrieve the resources in the *ris* attribute and follow the optional *rels* attribute recursively.
+
+			The result does not contain duplicates.
+		
+			Args:
+				ris: List of resource IDs to be included in the result and followed recursively.
+				originator: The originator of the original request. It is used to determine the access to related resources.
+				graphIDs: A dictionary of resource IDs and <`SMD`> resources that is extended during the recursive walk.
+		 """
+		# TODO doc
+		if ris:
+			for ri in ris:
+				# Retrieve the resource for the ri and check permissions
+				if not (res := CSE.dispatcher.retrieveResource(ri, originator)).status:
+					continue
+				ri = res.resource.ri
+				if ri in graphIDs:	# Skip over existing IDS
+					# TODO warning or error when finding duplicates?
+					continue
+				if not CSE.security.hasAccess(originator, res.resource, Permission.DISCOVERY):
+					L.isDebug and L.logDebug(f'No DISCOVERY access to: {ri} for: {originator}')
+					continue
+
+				# Add found ri to list
+				graphIDs[ri] = res.resource
+
+				# Recursively check relations
+				self._buildLinkedBasedGraphIDs(res.resource.rels, originator, graphIDs)
+
 
 
 ###############################################################################
