@@ -1,4 +1,4 @@
- #
+#
 #	SemanticManager.py
 #
 #	(c) 2022 by Andreas Kraft
@@ -33,6 +33,7 @@ class SemanticHandler(ABC):
 			Args:
 				description: A string with the semantic description.
 				format: The format of the string in *description*. It must be supported.
+
 			Return:
 				A `Result` object indicating a valid description, or with an error status.
 		"""
@@ -47,10 +48,24 @@ class SemanticHandler(ABC):
 				description: A string with the semantic description.
 				format: The format of the string in *description*. It must be a supported format.
 				id: Identifier for the graph. It should be a resouce identifier.
+
 			Return:
 				A `Result` object. The query result is returned in its *data* attribute.
 		"""
 		...
+
+
+	@abstractmethod
+	def addParentID(self, id:str, pi:str) -> Result:
+		"""	Add the parent ID to a resource's graph.
+		
+			Args:
+				id: Identifier for the graph. It should be a resouce identifier.
+				pi: Parent ID to add.
+			
+			Return:
+				A `Result` object indicating success or error.
+		"""
 
 
 	@abstractmethod
@@ -61,6 +76,7 @@ class SemanticHandler(ABC):
 				description: A string with the semantic description.
 				format: The format of the string in *description*.  It must be a supported format.
 				id: Identifier for the graph. It should be a resouce identifier.
+
 			Return:
 				A `Result` object indicating success or error.
 		"""
@@ -73,6 +89,7 @@ class SemanticHandler(ABC):
 		
 			Args:
 				id: Identifier for the graph. It should be a resouce identifier.
+
 			Return:
 				A `Result` object indicating success or error.
 		"""
@@ -87,6 +104,7 @@ class SemanticHandler(ABC):
 				query: SPARQL query.
 				ids: List of resource / graph identifiers used to build the graph for the query.
 				format: Desired serialization format for the result. It must be supported.
+
 			Return:
 				`Result` object. The serialized query result is stored in *data*.
 		"""
@@ -163,6 +181,7 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` object to use in the validation.
+
 			Return:
 				`Result` object indicating success or error.
 		"""
@@ -191,6 +210,7 @@ class SemanticManager(object):
 
 			Args:
 				query: String with the SPARQL query to validate.
+
 			Return:
 				`Result` object indicating success or error. In case of an error the *rsc* 
 				is set to *INVALID_SPARQL_QUERY*.
@@ -208,6 +228,7 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` object to use in the validation. **Attn**: This procedure might update and change the provided *smd* object.
+
 			Return:
 				`Result` object indicating success or error.
 		"""
@@ -226,6 +247,7 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` resource object to use in the validation. **Attn**: This procedure might update and change the provided *smd* object.
+
 			Return:
 				`Result` object indicating success or error.
 		"""
@@ -233,6 +255,10 @@ class SemanticManager(object):
 
 		res = self.semanticHandler.addDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
 		if not res.status and smd.vlde:
+			return res
+		
+		# Add parent ID
+		if not (res := self.semanticHandler.addParentID(smd.ri, smd.pi)).status:
 			return res
 		
 		# TODO more validation!
@@ -276,11 +302,17 @@ class SemanticManager(object):
 			
 			Args:
 				smd: `SMD` resource for which the graph is to be updated.
+
 			Return:
 				`Result` object indicating success or error.
 		"""
 		L.isDebug and L.logDebug(f'Removing descriptor for: {smd.ri}')
-		return self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
+		if not (res := self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)).status:
+			return res
+		
+		# Add parent ID
+		return self.semanticHandler.addParentID(smd.ri, smd.pi)
+
 
 
 	def removeDescriptor(self, smd:SMD) -> Result:
@@ -288,6 +320,7 @@ class SemanticManager(object):
 			
 			Args:
 				smd: `SMD` resource for which the graph is to be update.
+
 			Return:
 				`Result` object indicating success or error.
 		"""
@@ -314,6 +347,7 @@ class SemanticManager(object):
 				query: String with the SPARQL query.
 				smds: A list of <`SMD`> resources which are to be aggregated for the query.
 				format: Serialization format to use.
+
 			Return:
 				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
 		"""
@@ -461,6 +495,11 @@ class RdfLibHandler(SemanticHandler):
 		return Result.successResult()
 	
 
+	def addParentID(self, id: str, pi: str) -> Result:
+		graph = self.graph.get_graph(URIRef(id))
+		graph.add( (rdflib.Literal('m2m:resource'), rdflib.Literal('m2m:isChildOf'), rdflib.Literal(pi)) )
+		return Result.successResult()
+
 	def updateDescription(self, description:str, format:SemanticFormat, id: str) -> Result:
 		if not (res := self.removeDescription(id)).status:
 			return res
@@ -486,6 +525,7 @@ class RdfLibHandler(SemanticHandler):
 
 		# Aggregate a new graph for the query
 		aggregatedGraph = self.getAggregatedGraph(ids)
+		L.logWarn(aggregatedGraph.serialize())
 
 		# Query the graph
 		try:
