@@ -525,7 +525,6 @@ class RdfLibHandler(SemanticHandler):
 
 		# Aggregate a new graph for the query
 		aggregatedGraph = self.getAggregatedGraph(ids)
-		L.logWarn(aggregatedGraph.serialize())
 
 		# Query the graph
 		try:
