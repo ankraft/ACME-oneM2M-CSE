@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+from pyclbr import Function
 from typing import List, cast
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
@@ -112,18 +113,18 @@ class Console(object):
 			'h'					: self.help,
 			FunctionKey.F1		: self.help,
 			'A'					: self.about,
-			'\n'				: lambda c: L.console(),	# 1 empty line
-			'\r'				: lambda c: L.console(),	# 1 empty line
-			'\x03'  			: self.shutdownCSE,			# See handler below
+			FunctionKey.CR		: lambda c: L.console(),	# 1 empty line
+			FunctionKey.LF		: lambda c: L.console(),	# 1 empty line
+			FunctionKey.CTRL_C 	: self.shutdownCSE,			# See handler below
 			'c'					: self.configuration,
 			'C'					: self.clearScreen,
 			'D'					: self.deleteResource,
 			'E'					: self.exportResources,
-			'\x07'				: self.continuesPlotGraph,
+			FunctionKey.CTRL_G	: self.continuesPlotGraph,
 			'G'					: self.plotGraph,
 			'i'					: self.inspectResource,
 			'I'					: self.inspectResourceChildren,
-			'\x0b'				: self.continuousInspectResource,
+			FunctionKey.CTRL_I	: self.continuousInspectResource,
 			'k'					: self.katalogScripts,
 			'l'     			: self.toggleScreenLogging,
 			'L'     			: self.toggleLogging,
@@ -131,9 +132,9 @@ class Console(object):
 			'r'					: self.cseRegistrations,
 			'R'					: self.runScript,
 			's'					: self.statistics,
-			'\x13'				: self.continuousStatistics,
+			FunctionKey.CTRL_S	: self.continuousStatistics,
 			't'					: self.resourceTree,
-			'\x14'				: self.continuousTree,
+			FunctionKey.CTRL_T	: self.continuousTree,
 			'T'					: self.childResourceTree,
 			'u'					: self.openWebUI,
 			'w'					: self.workers,

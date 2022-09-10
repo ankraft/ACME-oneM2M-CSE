@@ -12,7 +12,7 @@ from __future__ import annotations
 from ast import Call
 import sys, time, select
 from enum import Enum
-from typing import Callable, Dict, Tuple, Optional
+from typing import Callable, Dict, Tuple
 
 _timeout = 0.5
 
@@ -23,6 +23,43 @@ try:
 
 	class FunctionKey(str, Enum):
 		"""	POSIX function keys. """
+
+		# Common
+		LF					= '\x0a'
+		CR					= '\x0d'
+		SPACE				= '\x20'
+		# ESC				= '\x1b'
+		BACKSPACE			= '\x7f'
+		TAB					= '\x09'
+		SHIFT_TAB			= '\x1b\x5b\x5a'
+		
+		# CTRL-Keys
+		CTRL_A				= '\x01'
+		CTRL_B				= '\x02'
+		CTRL_C				= '\x03'
+		CTRL_D				= '\x04'
+		CTRL_E				= '\x05'
+		CTRL_F				= '\x06'
+		CTRL_G				= '\x07'
+		CTRL_H				= '\x08'
+		CTRL_I				= TAB
+		CTRL_J				= LF
+		CTRL_K				= '\x0b'
+		CTRL_L				= '\x0c'
+		CTRL_M	 			= CR
+		CTRL_N				= '\x0e'
+		CTRL_O				= '\x0f'
+		CTRL_P				= '\x10'
+		CTRL_Q				= '\x11'
+		CTRL_R				= '\x12'
+		CTRL_S				= '\x13'
+		CTRL_T				= '\x14'
+		CTRL_U				= '\x15'
+		CTRL_V				= '\x16'
+		CTRL_W				= '\x17'
+		CTRL_X				= '\x18'
+		CTRL_Y				= '\x19'
+		CTRL_Z				= '\x1a'
 		
 		# Cursor keys
 		UP 					= '\x1b\x5b\x41'
@@ -53,7 +90,6 @@ try:
 		SHIFT_CTRL_ALT_DOWN	= '\x1b\x5b\x31\x3b\x31\x34\x42'
 		SHIFT_CTRL_ALT_RIGHT= '\x1b\x5b\x31\x3b\x31\x34\x43'
 		SHIFT_CTRL_ALT_LEFT	= '\x1b\x5b\x31\x3b\x31\x34\x44'
-
 
 		# Navigation keys
 		INSERT 				= '\x1b\x5b\x32\x7e'
@@ -108,10 +144,6 @@ try:
 		SHIFT_F11			= '\x1b\x5b\x32\x33\x3b\x32\x7e'
 		SHIFT_F12			= '\x1b\x5b\x32\x34\x3b\x32\x7e'
 
-		# Common
-		BACKSPACE			= '\x7f'
-		SHIFT_TAB			= '\x1b\x5b\x5a'
-
 
 except ImportError:
 	# Probably Windows.
@@ -130,14 +162,54 @@ except ImportError:
 			except Exception:
 				return None
 
+
 		def flushInput() -> None:
 			pass
 			# while msvcrt.kbhit():	# type: ignore
 			# 	msvcrt.getch()		# type: ignore
 		
+
 		class FunctionKey(str, Enum):	# type: ignore[no-redef]
 			""" MS Windows function keys in cmd.exe. """
 
+			# Common
+			LF					= '\x0a'
+			CR					= '\x0d'
+			SPACE				= '\x20'
+			# ESC				= '\x1b'
+			BACKSPACE			= '\x08'
+			CTRL_BACKSPACE		= '\x7f'
+			TAB					= '\x09'
+			CTRL_TAB			= '\x00\x94'
+
+			# CTRL-Keys
+			CTRL_A				= '\x01'
+			CTRL_B				= '\x02'
+			CTRL_C				= '\x03'
+			CTRL_D				= '\x04'
+			CTRL_E				= '\x05'
+			CTRL_F				= '\x06'
+			CTRL_G				= '\x07'
+			CTRL_H				= '\x08'
+			CTRL_I				= TAB
+			CTRL_J				= LF
+			CTRL_K				= '\x0b'
+			CTRL_L				= '\x0c'
+			CTRL_M	 			= CR
+			CTRL_N				= '\x0e'
+			CTRL_O				= '\x0f'
+			CTRL_P				= '\x10'
+			CTRL_Q				= '\x11'
+			CTRL_R				= '\x12'
+			CTRL_S				= '\x13'
+			CTRL_T				= '\x14'
+			CTRL_U				= '\x15'
+			CTRL_V				= '\x16'
+			CTRL_W				= '\x17'
+			CTRL_X				= '\x18'
+			CTRL_Y				= '\x19'
+			CTRL_Z				= '\x1a'
+		
 			# Cursors keys
 
 			UP 					= '\xe0\x48'
@@ -155,7 +227,6 @@ except ImportError:
 			RIGHT				= '\xe0\x4d'
 			CTRL_RIGHT			= '\xe0\x74'
 			ALT_RIGHT			= '\x00\x9d'
-
 
 			# Navigation keys
 			INSERT 				= '\xe0\x52'
@@ -225,11 +296,6 @@ except ImportError:
 			ALT_F11				= '\xe0\x8b'
 			ALT_F12				= '\xe0\x8c'
 			
-			# Common
-			BACKSPACE			= '\x08'
-			CTRL_BACKSPACE		= '\x7f'
-			CTRL_TAB			= '\x00\x94'
-
 else:
 
 

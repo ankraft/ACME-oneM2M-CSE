@@ -75,14 +75,14 @@ Resource that have been imported this way are ignored in the export to avoid con
 The consoles and their emulations of different operating systems support different sets of function key bindings. The following
 table lists the names that can be used, e.g. in scripts.
 
-| POSIX (Linux, Mac OS)                                                                                          | MS Windows                                               |
-|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| UP, DOWN, LEFT, RIGHT, HOME, END<br>Modifiers: SHIFT, CTRL, ALT, SHIFT + ALT, SHIFT + CTRL, SHIFT + CTRL + ALT | UP, DOWN, LEFT, RIGHT, HOME, END<br>Modifiers: CTRL, ALT |
-| PAGE_UP, PAGE_DOWN<br>Modifiers: ALT                                                                           | PAGE_UP, PAGE_DOWN<br>Modifiers: CTRL, ALT               |
-| F1 - F12<br>Modifiers: SHIFT                                                                                   | F1 - F12<br>Modifiers: SHIFT, CTRL, ALT                  |
-| INSERT, DEL, BACKSPACE,                                                                                        | INSERT, DEL                                              |
-| SHIFT_TAB                                                                                                      | BACKSPACE<br>Modifiers: CTRL                             |
-|                                                                                                                | CTRL_TAB                                                 |
+| POSIX (Linux, Mac OS)                                                                                  | MS Windows                                               |
+|--------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| CTRL_A - CTRL_Z                                                                                        | CTRL_A - CTRL_Z                                          |
+| F1 - F12<br>Modifiers: SHIFT                                                                           | F1 - F12<br>Modifiers: SHIFT, CTRL, ALT                  |
+| UP, DOWN, LEFT, RIGHT, HOME, END<br>Modifiers: SHIFT, CTRL, ALT, SHIFT_ALT, SHIFT_CTRL, SHIFT_CTRL_ALT | UP, DOWN, LEFT, RIGHT, HOME, END<br>Modifiers: CTRL, ALT |
+| PAGE_UP, PAGE_DOWN<br>Modifiers: ALT                                                                   | PAGE_UP, PAGE_DOWN<br>Modifiers: CTRL, ALT               |
+| INSERT, DEL, BACKSPACE, LF, CR, SPACE                                                                  | INSERT, DEL, LF, CR, SPACE                               |
+| TAB<br>Modifiers: SHIFT                                                                                | BACKSPACE, TAB<br>Modifiers: CTRL                        |
 
 Note, that modifiers are prepend to key names with an underline, e.g. `SHIFT_CTRL_UP`.
 
