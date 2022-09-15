@@ -1036,10 +1036,10 @@ def getIPAddress(hostname:str = None) -> str:
 		#	need to add a 'local' ir 'lan' postfix, depending on the local 
 		#	device configuration
 		try:
-			if ip == '127.0.0.1':
+			if ip.startswith('127.'):	# All local host addresses
 				ip = socket.gethostbyname(hostname + '.local')
 		except:
-			ip = '127.0.0.1'
+			pass
 		return ip
 	except Exception:
 		return ''
