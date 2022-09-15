@@ -300,6 +300,7 @@ def riFromStructuredPath(srn: str) -> str:
 	except:
 		return None
 
+
 def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 	"""	Get the csi from an unstructured CSE-relative, SP-relative, or
 		absolute ID.

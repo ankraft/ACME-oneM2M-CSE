@@ -598,8 +598,11 @@ class Dispatcher(object):
 		if (pID := Utils.localResourceID(parentID)) is not None:
 			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
 
+			# Get the unstructured resource ID if necessary
+			pID = Utils.riFromStructuredPath(pID) if Utils.isStructured(pID) else pID
+
 			# Retrieve the parent resource
-			if not (res := self.retrieveLocalResource(pID, originator = originator)).status:
+			if not (res := self.retrieveLocalResource(ri = pID, originator = originator)).status:
 				L.isDebug and L.logDebug(f'Cannot retrieve parent resource: {pID}: {res.dbg}')
 				return res
 			parentResource = res.resource
