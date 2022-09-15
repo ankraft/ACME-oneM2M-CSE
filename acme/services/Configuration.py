@@ -850,7 +850,7 @@ class Configuration(object):
 			# Header for the configuration
 			# Split it into a header and configuration. 
 			# Also easier to print with rich and the [...]'s
-			cnfheader = [
+			cnfHeader = [
 					f'; {configFile}',
 					';',
 					'; Simplified configuration file for the [ACME] CSE',
@@ -863,6 +863,15 @@ class Configuration(object):
 					'',
 					'',
 			]
+
+			# Footer for configuration
+			# Some extra configurations added at the end
+			cnfAppend = [
+					'',
+					# Add basic registration configuration
+					'[cse.registration]',
+					'allowedCSROriginators=id-in,id-mn,id-asn'
+			]
 		
 			# Construct the configuration
 			jcnf = '[basic.config]\n' + '\n'.join(cnf)
@@ -872,11 +881,6 @@ class Configuration(object):
 						'enableUpperTesterEndpoint=true\n'\
 						'enableStructureEndpoint=true\n'
 			
-			# Add basic registration configuration
-			jcnf += '\n\n'\
-					'[cse.registration]\n'\
-					'allowedCSROriginators=id-in,id-mn,id-asn\n'			
-
 			# Show configuration and confirm write
 			Configuration._print('\n[b]Save configuration\n')
 			_jcnf = jcnf.replace("[", "\[")
@@ -892,8 +896,9 @@ class Configuration(object):
 
 		try:
 			with open(configFile, 'w') as file:
-				file.write('\n'.join(cnfheader))
+				file.write('\n'.join(cnfHeader))
 				file.write(jcnf)
+				file.write('\n'.join(cnfAppend))
 		except Exception as e:
 			Configuration._print(str(e))
 			return False
