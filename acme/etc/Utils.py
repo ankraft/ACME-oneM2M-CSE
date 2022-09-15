@@ -1035,11 +1035,12 @@ def getIPAddress(hostname:str = None) -> str:
 		#	Try to resolve a local address. For example, sometimes raspbian
 		#	need to add a 'local' ir 'lan' postfix, depending on the local 
 		#	device configuration
-		try:
-			if ip.startswith('127.'):	# All local host addresses
-				ip = socket.gethostbyname(hostname + '.local')
-		except:
-			pass
+		if ip.startswith('127.'):	# All local host addresses
+			for ext in ['.local', '.lan']:
+				try:
+					ip = socket.gethostbyname(hostname + ext)
+				except:
+					pass
 		return ip
 	except Exception:
 		return ''
