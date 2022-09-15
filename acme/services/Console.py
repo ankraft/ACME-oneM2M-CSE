@@ -798,7 +798,11 @@ Available under the BSD 3-Clause License
 		misc += f'StartTime  : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 		misc += f'Uptime     : {stats.get(Statistics.cseUpTime, "")}\n'
 		misc += f'Hostname   : {socket.gethostname()}\n'
-		misc += f'IP-Address : {socket.gethostbyname(socket.gethostname())}\n'
+		# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
+		try:
+			misc += f'IP-Address : {Utils.getIPAddress()}\n'
+		except Exception as e:
+			print(e)
 		if hasattr(os, 'getloadavg'):
 			load = os.getloadavg()
 			misc += f'Load       : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'

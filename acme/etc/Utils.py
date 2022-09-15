@@ -9,7 +9,7 @@
 #
 
 from __future__ import annotations
-import random, string, sys, re, threading
+import random, string, sys, re, threading, socket
 import traceback
 from typing import Any, Callable, Tuple, cast, Dict
 from functools import wraps
@@ -1013,6 +1013,36 @@ def resourceState(state:str) -> Callable:
 		return wrapper
 	return decorate
 
+##############################################################################
+#
+#	Network
+
+
+def getIPAddress(hostname:str = None) -> str:
+	"""	Lookup and return the IP address for a host name.
+	
+		Args:
+			hostname: The host name to look-up. If none is given, the own host name is tried.
+		Return:
+			IP address, or 127.0.0.1 as a last resort. *None* is returned in case of an error.
+	"""
+	if not hostname:
+		hostname = socket.gethostname()
+	
+	try:
+		ip = socket.gethostbyname(hostname)
+
+		#	Try to resolve a local address. For example, sometimes raspbian
+		#	need to add a 'local' ir 'lan' postfix, depending on the local 
+		#	device configuration
+		try:
+			if ip == '127.0.0.1':
+				ip = socket.gethostbyname(hostname + '.local')
+		except:
+			ip = '127.0.0.1'
+		return ip
+	except Exception:
+		return ''
 
 ##############################################################################
 #
