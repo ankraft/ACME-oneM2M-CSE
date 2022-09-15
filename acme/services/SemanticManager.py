@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence, cast, Optional
+from typing import Sequence, cast, Optional, Dict
 from abc import ABC, abstractmethod
 import base64, binascii
 
@@ -19,8 +19,6 @@ from ..resources.SMD import SMD
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat
-
-GraphIDsT = dict[str, SMD]
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.
@@ -378,7 +376,7 @@ class SemanticManager(object):
 		"""
 		L.isDebug and L.logDebug('Performing semantic resource discovery')
 		L.isDebug and L.logDebug('Note: Annotation-based method is not supported')
-		graphIDs:GraphIDsT = {}	# Dictionary of related ri -> SMD
+		graphIDs:dict[str, SMD] = {}	# Dictionary of related ri -> SMD
 
 		for smd in smds:
 			graphIDs[smd.ri] = smd
@@ -391,7 +389,7 @@ class SemanticManager(object):
 									   format)
 
 
-	def _buildLinkedBasedGraphIDs(self, ris:list[str], originator:str, graphIDs:GraphIDsT) -> None:
+	def _buildLinkedBasedGraphIDs(self, ris:list[str], originator:str, graphIDs:dict[str, SMD]) -> None:
 		""" Retrieve the resources in the *ris* attribute and follow the optional *rels* attribute recursively.
 
 			The result does not contain duplicates.

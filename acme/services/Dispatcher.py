@@ -174,7 +174,7 @@ class Dispatcher(object):
 			# Execute semantic resource discovery
 			else:
 				L.isDebug and L.logDebug(f'Direct discovered SMD: {res.data}')
-				if not (res := CSE.semantic.executeSemanticResourceDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
+				if not (res := CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
 					return res
 
 			L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
