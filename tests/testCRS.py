@@ -88,7 +88,7 @@ class TestCRS(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		testCaseStart('TearDown TestCRS')
-		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		#DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestCRS')
 		stopNotificationServer()
 
@@ -381,8 +381,8 @@ class TestCRS(unittest.TestCase):
 							{
 								'net': [ NET.createDirectChild ],
 							}
-							]
-						}
+						]
+					}
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
@@ -397,6 +397,28 @@ class TestCRS(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{URL}/{rrats[1][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertEqual(findXPath(r, 'm2m:sub/et'), et)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithRratWrongTarget(self) -> None:
+		"""	CREATE <CRS> with rrat with wrong target"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt' : 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ 'wrongRI' ],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+						]
+					}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.crossResourceOperationFailure, TestCRS.crs)
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -969,6 +991,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 	suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
 
 	# Test srat
 	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))

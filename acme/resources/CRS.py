@@ -351,11 +351,12 @@ class CRS(Resource):
 
 		# Remove subscriptions for rrat. For this use the RI stored in the rrats attribute
 		if rrats := self.rrats:
+			L.isDebug and L.logDebug(f'Deleting rrat subscriptions')
 			for subRI in rrats:
 				if not subRI:	# could be None!
 					continue
-				if Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
-					L.isDebug and L.logDebug(f'Skipping deleton initiating subscription: {sudRI}')
+				if sudRI and Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
+					L.isDebug and L.logDebug(f'Skipping deletion initiating subscription (from notification): {sudRI}')
 					continue
 				if not (res := self._deleteSubscriptionForRrat(subRI, originator)).status:
 					return res
@@ -363,9 +364,10 @@ class CRS(Resource):
 		# Remove self from successfully done srat subscriptions
 		# This is the internal list, not srat, bc this list may be smaller
 		if _subSratRIs := self.attribute(self._subSratRIs):
+			L.isDebug and L.logDebug(f'Removing from srat subscriptions')
 			for subRI in list(_subSratRIs.keys()):
-				if Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
-					L.isDebug and L.logDebug(f'Skipping deleton initiating subscription: {sudRI}')
+				if sudRI and Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
+					L.isDebug and L.logDebug(f'Skipping deletion initiating subscription (from notification): {sudRI}')
 					continue
 				if not (res := self._deleteFromSubscriptionsForSrat(subRI, originator)).status:
 					return res

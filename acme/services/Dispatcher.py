@@ -630,6 +630,13 @@ class Dispatcher(object):
 														 ty = ty,
 														 content = dct)).status:
 				return res
+			
+			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
+			# We need to set the status and the dbg attributes and return
+			if res.rsc != RC.created:
+				res.status = False
+				res.dbg = res.request.pc.get('dbg')
+				return res
 
 			resRi = Utils.findXPath(res.request.pc, '{*}/ri')
 			resCsi = Utils.csiFromSPRelative(pri)
@@ -838,6 +845,13 @@ class Dispatcher(object):
 			if not (res := CSE.request.sendUpdateRequest(id, originator = originator, content = dct)).status:
 				return res
 		
+			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
+			# We need to set the status and the dbg attributes and return
+			if res.rsc != RC.updated:
+				res.status = False
+				res.dbg = res.request.pc.get('dbg')
+				return res
+
 		# Return success and updated resource 
 		return res
 
