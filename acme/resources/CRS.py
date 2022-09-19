@@ -223,8 +223,10 @@ class CRS(Resource):
 		# Log any other notification
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
 			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
-		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat):
-			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)
+
+		_subSratRIs = self.attribute(self._subSratRIs)
+		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat) or (_subSratRIs.values() and sur in _subSratRIs.values()):
+			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
 
@@ -334,7 +336,9 @@ class CRS(Resource):
 
 		# Add <sub>'s SP-relative ri to internal references
 		_subRIs = self.attribute(self._subSratRIs)
-		_subRIs[srat] = toSPRelative(_sratSpRelative)
+		_sratCsi = Utils.csiFromSPRelative(_sratSpRelative)
+		_sratRi = resource.ri
+		_subRIs[srat] = f'{_sratCsi}/{_sratRi}'
 		self.setAttribute(self._subSratRIs, _subRIs)
 
 		return Result.successResult()
