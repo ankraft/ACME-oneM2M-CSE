@@ -224,6 +224,7 @@ class CRS(Resource):
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
 			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
 
+		# Test whether the received sur points to one of the rrat or srat resources	
 		_subSratRIs = self.attribute(self._subSratRIs)
 		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat) or (_subSratRIs.values() and sur in _subSratRIs.values()):
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
@@ -276,7 +277,7 @@ class CRS(Resource):
 		# Error? Then rollback: delete all created subscriptions so far and return with an error
 		if not res.status or res.rsc != RC.created:
 			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for: {rrat}: {res.dbg}'))
-		subRi, subCsi, pID = res.data # unpack
+		subRi, subCsi, pID = res.data # type: ignore [misc] # unpack
 
 		# Add the created <sub>'s full RI to the correct position in the rrats list
 		_rrats = self.rrats

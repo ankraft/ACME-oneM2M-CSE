@@ -1271,6 +1271,14 @@ class RequestManager(object):
 					# discovery-result-references as default for Discovery operation
 					rcn = ResultContentType.discoveryResultReferences
 
+			# SQI - Semantic Query Indicator
+			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
+				if cseRequest.op != Operation.RETRIEVE:
+					return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE/DISCOVERY operations'))
+				else:
+					cseRequest.sqi = v
+					cseRequest.op = Operation.DISCOVERY
+
 
 			# Validate rcn depending on operation
 			if rcn and not rcn.validForOperation(cseRequest.op):
@@ -1295,13 +1303,6 @@ class RequestManager(object):
 			else:
 				cseRequest.rp = None
 				cseRequest._rpts = None
-
-			# SQI - Semantic Query Indicator
-			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
-				if cseRequest.op != Operation.RETRIEVE:
-					return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'))
-				else:
-					cseRequest.sqi = v
 
 			#
 			#	Discovery and FilterCriteria
@@ -1341,11 +1342,18 @@ class RequestManager(object):
 					return res
 			
 			# Check whether none or all of sqi, smf and rcn=semantic content is set, otherwise error
-			if [ cseRequest.fc.smf is not None, 
-				 cseRequest.rcn == ResultContentType.semanticContent].count(True) not in [ 0, 2 ]:
-				return Result.errorResult(request = cseRequest, dbg = L.logDebug('smf and rcn=smantic-content must be specifed together, or not at all'))
-			if cseRequest.sqi and not (cseRequest.fc.smf and cseRequest.rcn == ResultContentType.semanticContent):
-				return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi must not be specifed without smf and rcn=smantic-content'))
+			if [ cseRequest.fc.smf is not None, cseRequest.sqi is not None ].count(True) not in [ 0, 2 ]:
+				return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi and smf must be specified together'))
+			if cseRequest.sqi and cseRequest.rcn != ResultContentType.semanticContent:
+				return Result.errorResult(request = cseRequest, dbg = L.logDebug('Wrong ResultContentType for sqi == True (must be semanticContent)'))
+			if cseRequest.sqi is not None and not cseRequest.sqi and cseRequest.rcn != ResultContentType.discoveryResultReferences:
+				return Result.errorResult(request = cseRequest, dbg = L.logDebug('Wrong ResultContentType for sqi == False (must be discoveryResultReferences)'))
+			
+			# if [ cseRequest.fc.smf is not None, 
+			# 	 cseRequest.rcn == ResultContentType.semanticContent].count(True) not in [ 0, 2 ]:
+			# 	return Result.errorResult(request = cseRequest, dbg = L.logDebug('smf and rcn=smantic-content must be specifed together, or not at all'))
+			# if cseRequest.sqi and not (cseRequest.fc.smf and cseRequest.rcn == ResultContentType.semanticContent):
+			# 	return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi must not be specifed without smf and rcn=smantic-content'))
 
 		# end of try..except
 		except ValueError as e:
@@ -1364,9 +1372,9 @@ class RequestManager(object):
 
 		# De-Serialize the content
 		if not (contentResult := self.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
-			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+			_, cseRequest.ct = contentResult.data	# type: ignore[assignment, misc] # Actual, .data contains a tuple
 			return Result(status = False, rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg, )
-		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment, misc] # Actual, .data contains a tuple
 
 		# Validate the request
 		try:

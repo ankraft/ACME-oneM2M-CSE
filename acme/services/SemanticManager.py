@@ -10,15 +10,17 @@
 """	This module implements semantic service and helper functions. """
 
 from __future__ import annotations
+import re
 
-from typing import Sequence, cast, Optional, Dict
+from typing import Sequence, cast, Optional, Union
 from abc import ABC, abstractmethod
+from xml.etree import ElementTree as ET
 import base64, binascii
 
 from ..resources.SMD import SMD
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat
+from ..etc.Types import Permission, ResourceTypes, ResponseStatusCode, Result, SemanticFormat
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.
@@ -338,18 +340,20 @@ class SemanticManager(object):
 	# 			 for smd in smds ]
 	
 
-	def executeSPARQLQuery(self, query:str, smds:Sequence[SMD], format:Optional[SemanticFormat] = None) -> Result:
+	def executeSPARQLQuery(self, query:str, smds:Union[Sequence[SMD], SMD], format:Optional[SemanticFormat] = None) -> Result:
 		"""	Run a SPARQL query against a list of <`SMD`> resources.
 		
 			Args:
 				query: String with the SPARQL query.
-				smds: A list of <`SMD`> resources which are to be aggregated for the query.
+				smds: A list of <`SMD`> resources, or a single <`SMD`> resource, which are to be aggregated for the query.
 				format: Serialization format to use.
 
 			Return:
 				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
 		"""
 		L.isDebug and L.logDebug('Performing SPARQL query')
+		if isinstance(smds, SMD):
+			smds = [ smds ]
 		return self.semanticHandler.query(query, 
 										  [ smd.ri for smd in smds ], 
 										  self.defaultFormat if not format else format)
@@ -359,7 +363,7 @@ class SemanticManager(object):
 
 
 	def executeSemanticDiscoverySPARQLQuery(self, originator:str, query:str, smds:Sequence[SMD], format:Optional[SemanticFormat] = None) -> Result:
-		"""	Recursively discover link-related <`SMD`> resources and run a SPARQL query against the result.
+		"""	Recursively discover link-related <`SMD`> resources and run a SPARQL query against each of the results.
 		
 			This implementation support the "resource link-based" method, but not the "annotation-based" method.
 
@@ -375,7 +379,7 @@ class SemanticManager(object):
 				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
 		"""
 		L.isDebug and L.logDebug('Performing semantic resource discovery')
-		L.isDebug and L.logDebug('Note: Annotation-based method is not supported')
+		L.isWarn and L.logWarn('Annotation-based method is not supported')
 		graphIDs:dict[str, SMD] = {}	# Dictionary of related ri -> SMD
 
 		for smd in smds:
@@ -384,9 +388,24 @@ class SemanticManager(object):
 				# Build a recursive list of linked SMD's
 				self._buildLinkedBasedGraphIDs(smd.rels, originator, graphIDs)
 		L.isDebug and L.logDebug(f'Found SMDs for semantic discovery: {graphIDs}')
-		return self.executeSPARQLQuery(query, 
-									   [ smd for smd in graphIDs.values() ],
-									   format)
+
+		# Determine the matches and add the parent resources for those who have one
+		from ..resources.Resource import Resource
+		pis:list[Resource] = []
+		for smd in graphIDs.values():
+			if not (res := self.executeSPARQLQuery(query, smd, format)).status:
+				return res
+			try:
+				for e in ET.fromstring(cast(str, res.data)):	
+					if e.tag.endswith('results'):	# ignore namespace
+						if len(e) > 0:				# Found at least 1 result, so add the *parent resource* to the result set
+							pis.append(smd.retrieveParentResource())
+							break
+			except Exception as e:
+				return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'Error parsing SPARQL result: {str(e)}'))
+		
+		return Result(status = True, data = pis)
+		
 
 
 	def _buildLinkedBasedGraphIDs(self, ris:list[str], originator:str, graphIDs:dict[str, SMD]) -> None:

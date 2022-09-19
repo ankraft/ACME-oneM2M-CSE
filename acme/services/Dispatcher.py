@@ -122,63 +122,70 @@ class Dispatcher(object):
 		#	Normal Retrieve
 		# 	 Retrieve the target resource, because it is needed for some rcn (and the default)
 		#
-		if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
-			if not (res := self.retrieveResource(id, originator, request)).status:
-				return res # error
-			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
 
-			# if rcn == attributes then we can return here, whatever the result is
-			if request.rcn == RCN.attributes:
-				if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
-					return resCheck
-				return res
-
-			resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
-
-			# if rcn == original-resource we retrieve the linked resource
-			if request.rcn == RCN.originalResource:
-				# Some checks for resource validity
-				if not resource.isAnnounced():
-					L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
-					return Result.errorResult(dbg = dbg)
-				if not (lnk := resource.lnk):	# no link attribute?
-					L.logErr(dbg := 'Internal Error: missing lnk attribute in target resource')
-					return Result.errorResult(rsc = RC.internalServerError, dbg = 'missing lnk attribute in target resource')
-
-				# Retrieve and check the linked-to request
-				if (res := self.retrieveResource(lnk, originator, request)).resource:
-					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
-						return resCheck
-				return res
-		
-		#
-		#	Semantic query request
-		#	This is indicated by rcn = semantic content
-		#
-		if request.rcn == RCN.semanticContent:
-			L.isDebug and L.logDebug('Performing semantic discovery / query')
-			# Validate SPARQL in semanticFilter
-			if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
-				return res
-			# Get all semanticDescriptors
+		# Check semantic discovery (sqi present and False)
+		if request.sqi is not None and not request.sqi:
+			# Get all accessible semanticDescriptors
 			if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))).status:
 				return res
-			
-			# Execute semantic query
-			if request.sqi:
-				# TODO: format from request when attribute has been defined
-				if not (res := CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], res.data))).status:
-					return res
-			
+			L.isDebug and L.logDebug(f'Direct discovered SMD: {res.data}')
+
 			# Execute semantic resource discovery
-			else:
-				L.isDebug and L.logDebug(f'Direct discovered SMD: {res.data}')
-				if not (res := CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
+			if not (res := CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
+				return res
+			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(cast(list[Resource], res.data), request.drt))
+
+		else:
+			if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
+				if not (res := self.retrieveResource(id, originator, request)).status:
+					return res # error
+				if not CSE.security.hasAccess(originator, res.resource, permission):
+					return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
+
+				# if rcn == attributes then we can return here, whatever the result is
+				if request.rcn == RCN.attributes:
+					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
+						return resCheck
 					return res
 
-			L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
-			return Result(status = True, rsc = RC.OK, data = { 'm2m:qres' : res.data })
+				resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
+
+				# if rcn == original-resource we retrieve the linked resource
+				if request.rcn == RCN.originalResource:
+					# Some checks for resource validity
+					if not resource.isAnnounced():
+						L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
+						return Result.errorResult(dbg = dbg)
+					if not (lnk := resource.lnk):	# no link attribute?
+						L.logErr(dbg := 'Internal Error: missing lnk attribute in target resource')
+						return Result.errorResult(rsc = RC.internalServerError, dbg = 'missing lnk attribute in target resource')
+
+					# Retrieve and check the linked-to request
+					if (res := self.retrieveResource(lnk, originator, request)).resource:
+						if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
+							return resCheck
+					return res
+			
+			#
+			#	Semantic query request
+			#	This is indicated by rcn = semantic content
+			#
+			if request.rcn == RCN.semanticContent:
+				L.isDebug and L.logDebug('Performing semantic discovery / query')
+				# Validate SPARQL in semanticFilter
+				if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
+					return res
+
+				# Get all accessible semanticDescriptors
+				if not (res := self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))).status:
+					return res
+				
+				# Execute semantic query
+				if not (res := CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], res.data))).status:
+					return res
+
+				L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
+				return Result(status = True, rsc = RC.OK, data = { 'm2m:qres' : res.data })
 
 		#
 		#	Discovery request

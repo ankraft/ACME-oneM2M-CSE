@@ -904,10 +904,10 @@ _ResultContentTypeForOperations = {
 							  ResultContentType.childResources, 
 							  ResultContentType.attributesAndChildResourceReferences, 
 							  ResultContentType.originalResource, 
+							  ResultContentType.childResourceReferences ],
+	Operation.DISCOVERY:	[ ResultContentType.discoveryResultReferences,
 							  ResultContentType.childResourceReferences,
 							  ResultContentType.semanticContent ],
-	Operation.DISCOVERY:	[ ResultContentType.discoveryResultReferences,
-							  ResultContentType.childResourceReferences ],
 	Operation.CREATE:		[ ResultContentType.attributes,
 							  ResultContentType.modifiedAttributes,
 							  ResultContentType.hierarchicalAddress,
@@ -1344,13 +1344,13 @@ class Result:
 	"""	This class represents the generic return state for many functions. It main contain
 		the general result, a status code, values, resources etc.
 	"""
-	resource:Resource					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	data:Any|Sequence[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
-	rsc:ResponseStatusCode				= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
-	dbg:str 							= None
-	request:CSERequest					= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 			= None		# May contain a request as a response, e.g. when polling
-	status:bool 						= None
+	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
+	rsc:ResponseStatusCode					= ResponseStatusCode.UNKNOWN	#	The responseStatusCode of a Result
+	dbg:str 								= None
+	request:CSERequest						= None  	# may contain the processed incoming request object
+	embeddedRequest:CSERequest 				= None		# May contain a request as a response, e.g. when polling
+	status:bool 							= None
 
 
 	def errorResultCopy(self) -> Result:

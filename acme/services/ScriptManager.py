@@ -1011,7 +1011,7 @@ class ACMEPContext(PContext):
 				self.setVariable('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
 			elif res.resource:
 				L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				self.setVariable('response.resource', json.dumps(res.resource.asDict()))
+				self.setVariable('response.resource', json.dumps(res.resource) if isinstance(res.resource, dict) else json.dumps(res.resource.asDict()))
 			else:
 				L.isDebug and L.logDebug(f'Request response: (unknown or none)')
 				self.setVariable('response.resource', '')
