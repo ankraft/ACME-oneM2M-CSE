@@ -1175,7 +1175,7 @@ class RequestManager(object):
 			else:
 				cseRequest.to = to
 				if to:
-					cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi, CSE.cseSpid)
+					cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = Utils.retrieveIDFromPath(to)
 					if dbg:
 						return Result.errorResult(request = cseRequest, dbg = dbg)
 

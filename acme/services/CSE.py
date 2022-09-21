@@ -7,6 +7,11 @@
 #	Container that holds references to instances of various managing entities.
 #
 
+"""	This module implements various functions for CSE startip, running, resetting, shutdown etc.
+	It also provides various global variable that hold fixed configuration values.
+	In addition is holds pointers to the various runtime instance of CSE modules, packages etc.
+"""
+
 from __future__ import annotations
 import atexit, argparse, os, sys
 from threading import Lock
@@ -42,27 +47,71 @@ from .AnnouncementManager import AnnouncementManager
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
 announce:AnnouncementManager					= None
+"""	Runtime instance of the `AnnouncementManager`. """
+
 console:Console									= None
+""" Runtime instance of the `Console`. """
+
 dispatcher:Dispatcher							= None
+"""	Runtime instance of the `Dispatcher`. """
+
 event:EventManager								= None
+"""	Runtime instance of the `EventManager`. """
+
 group:GroupManager								= None
+"""	Runtime instance of the `GroupManager`. """
+
 httpServer:HttpServer							= None
+"""	Runtime instance of the `HttpServer`. """
+
 importer:Importer								= None
+"""	Runtime instance of the `Importer`. """
+
 mqttClient:MQTTClient							= None
+"""	Runtime instance of the `MQTTClient`. """
+
 notification:NotificationManager				= None
+"""	Runtime instance of the `NotificationManager`. """
+
 registration:RegistrationManager 				= None
+"""	Runtime instance of the `RegistrationManager`. """
+
 remote:RemoteCSEManager							= None
+"""	Runtime instance of the `RemoteCSEManager`. """
+
 request:RequestManager							= None
+"""	Runtime instance of the `RequestManager`. """
+
 script:ScriptManager							= None
+"""	Runtime instance of the `ScriptManager`. """
+
 security:SecurityManager 						= None
+"""	Runtime instance of the `SecurityManager`. """
+
 semantic:SemanticManager 						= None
+"""	Runtime instance of the `SemanticManager`. """
+
 statistics:Statistics							= None
+"""	Runtime instance of the `Statistics`. """
+
 storage:Storage									= None
+"""	Runtime instance of the `Storage`. """
+
 time:TimeManager								= None
+"""	Runtime instance of the `TimeManager`. """
+
 timeSeries:TimeSeriesManager					= None
+"""	Runtime instance of the `TimeSeriesManager`. """
+
 validator:Validator 							= None
+"""	Runtime instance of the `Validator`. """
+
+
+# Global variables to hold various (configuation) values.
 
 supportedReleaseVersions:list[str]				= None
+"""	List of the supported release versions. """
+
 cseType:CSEType									= None
 
 cseCsi:str										= None
@@ -71,38 +120,59 @@ cseCsi:str										= None
 cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
 
+cseCsiSlashLess:str  								= None
+""" The CSE-ID without the leading /. """
+
 cseSpid:str										= None
 """ The Service Provider ID. """
 
 cseAbsolute:str									= None
-"""The CSE's Absolute prefix (SP-ID/CSE-ID). """
+""" The CSE's Absolute prefix (SP-ID/CSE-ID). """
 
 cseAbsoluteSlash:str							= None
-"""The CSE's Absolute prefix with an additional trailing /. """
+""" The CSE's Absolute prefix with an additional trailing /. """
 
 cseRi:str 										= None
+""" The CSE's Resource ID. """
+
 cseRn:str										= None
+""" The CSE's Resource Name. """
+
 cseOriginator:str								= None
+"""	The CSE's admin originator. """
+
 defaultSerialization:ContentSerializationType	= None
+""" The default / preferred content serialization type. """
+
 releaseVersion:str								= None
+""" The default / preferred release version. """
+
 isHeadless 										= False
+""" Indicator whether the CSE is running in headless mode. """
+
 cseStatus:CSEStatus								= CSEStatus.STOPPED
+""" The CSE's internal runtime status. """
 
 _cseResetLock									= Lock()	# lock for resetting the CSE
-
-
-# TODO move further configurable "constants" here
-
+""" Internal CSE's lock when resetting. """
 
 
 ##############################################################################
 
 
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
+	"""	Startup of the CSE. Initialization of various global variables, creating and initializing of manager instances etc.
+	
+		Args:
+			args: Startup command line arguments.
+			kwargs: Optional, additional keyword arguments which are added as attributes to the *args* object.
+		Return:
+			False if the CSE couldn't initialized and started. 
+	"""
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseAbsoluteSlash
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless, cseStatus
@@ -132,6 +202,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
 	cseCsiSlash				 = f'{cseCsi}/'
+	cseCsiSlashLess			 = cseCsi[1:]
 	cseSpid					 = Configuration.get('cse.spid')
 	cseAbsolute				 = f'//{cseSpid}/{cseCsi}'
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
@@ -211,6 +282,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 def shutdown() -> None:
 	"""	Gracefully shutdown the CSE programmatically. This will end the mail console loop
 		to terminate.
+
 		The actual shutdown happens in the _shutdown() method.
 	"""
 	global cseStatus
@@ -231,7 +303,7 @@ def shutdown() -> None:
 
 @atexit.register
 def _shutdown() -> None:
-	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
+	"""	Shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
 	global cseStatus
 
@@ -311,4 +383,6 @@ def resetCSE() -> None:
 
 
 def run() -> None:
+	"""	Run the CSE.
+	"""
 	console.run()

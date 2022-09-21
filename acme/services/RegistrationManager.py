@@ -168,7 +168,7 @@ class RegistrationManager(object):
 		# 	originator = Utils.uniqueAEI('S')
 
 		# Check whether an originator has already registered with the same AE-ID
-		if Utils.hasRegisteredAE(originator):
+		if self.hasRegisteredAE(originator):
 			return Result.errorResult(rsc = RC.originatorHasAlreadyRegistered, dbg = L.logWarn(f'Originator has already registered: {originator}'))
 		
 		# Make some adjustments to set the originator in the <AE> resource
@@ -193,6 +193,15 @@ class RegistrationManager(object):
 		return True
 
 
+	def hasRegisteredAE(self, originator:str) -> bool:
+		"""	Check wether an AE with *originator* is registered at the CSE.
+
+			Args:
+				originator: ID of the originator / AE.
+			Return
+				True if the originator is registered with the CSE.
+		"""
+		return len(CSE.storage.searchByFragment({'aei' : originator})) > 0
 
 	#########################################################################
 
@@ -205,7 +214,7 @@ class RegistrationManager(object):
 
 		# Check whether an AE with the same originator has already registered
 
-		if originator != CSE.cseOriginator and Utils.hasRegisteredAE(originator):
+		if originator != CSE.cseOriginator and self.hasRegisteredAE(originator):
 			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = L.logWarn(f'Originator has already registered an AE: {originator}'))
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)

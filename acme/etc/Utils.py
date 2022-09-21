@@ -8,6 +8,7 @@
 #	modules and entities of the CSE.
 #
 
+""" This module provides various utility functions. """
 from __future__ import annotations
 import random, string, sys, re, threading, socket
 import traceback
@@ -223,7 +224,7 @@ def hasOnlyUnreserved(id:str) -> bool:
 	return re.match(_unreserved, id) is not None
 
 
-csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+_csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 def isValidCSI(csi:str) -> bool:
 	"""	Test for valid CSE-ID format.
 
@@ -232,7 +233,7 @@ def isValidCSI(csi:str) -> bool:
 		Return:
 			Boolean
 	"""
-	return re.fullmatch(csiRx, csi) is not None
+	return re.fullmatch(_csiRx, csi) is not None
 
 
 def csiFromSPRelative(ri:str) -> str:
@@ -319,7 +320,15 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
-	""" Handle Hybrid ID. """
+	""" Get the structured part of a hybrid resource ID, including the necessary handling of virtual
+		resources in the path.
+
+		Args:
+			srn: Structured version of a resource ID. This part will be filled in when ommitted.
+			id: Resource ID to check.
+		Return:
+			Tuple of the (possible new & filled) structured path and the resource ID.
+	"""
 	if id:
 		ids = id.split('/')
 		if not srn and len(ids) > 1  and T.isVirtualResourceName(ids[-1]): # Hybrid
@@ -329,15 +338,19 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	return srn, id
 
 
-def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, str, str, str]:
-	""" Split a full path e.g. from a http request into its component and return a local ri .
+def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
+	""" Split a full path e.g. from a http request into its component and return a CSE local ri .
 		Also handle retargeting paths.
-		The return tupple is (RI, CSI, SRN, debug message).
+
+		Args:
+			id: A resource ID to process. This could be a structured or unstructured, and in CSE-relative, SP-relative or Absolute format.
+		Return:
+			The return tupple is (RI, CSI of the resource ID, structured path of the ID, debug message or None).
 	"""
 
 	if not id:
 		return None, None, None, 'ID must not be empty'
-		
+	
 	csi 		= None
 	spi 		= None
 	srn 		= None
@@ -346,7 +359,6 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 
 	# split path
 	idsLen = len(ids := id.split('/'))
-	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
 	# # Test for empty ID
 	# if (idsLen := len(ids)) == 0:	# There must be something!
@@ -371,11 +383,11 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 	# CSE-Relative (first element is not /)
 	if lvl == 0:								
 		# L.logDebug("CSE-Relative")
-		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
+		if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
 			ri = ids[0]
 		else:									# structured
 			if ids[0] == '-':					# replace placeholder "-"
-				ids[0] = csern
+				ids[0] = CSE.cseRn
 			srn = '/'.join(ids)
 	
 	# SP-Relative (first element is  /)
@@ -384,7 +396,7 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 		if idsLen < 1:
 			return None, None, None, 'ID too short'
 		csi = ids[0]							# extract the csi
-		if csi != csecsi:						# Not for this CSE? retargeting
+		if csi != CSE.cseCsiSlashLess:			# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
 			return id, csi, srn, None					# Early return. ri is the (un)structured path
@@ -392,8 +404,8 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 			ri = ids[0]
 		elif idsLen > 1:
 			if ids[1] == '-':						# replace placeholder "-"
-				ids[1] = csern
-			if ids[1] == csern:						# structured
+				ids[1] = CSE.cseRn
+			if ids[1] == CSE.cseRn:					# structured
 				srn = '/'.join(ids[1:])				# remove the csi part
 			elif idsLen == 2:						# unstructured
 				ri = ids[1]
@@ -407,9 +419,9 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 			return None, None, None, 'ID too short'
 		spi = ids[0]
 		csi = ids[1]
-		if spi != SPID:							# Check for SP-ID
-			return None, None, None, f'SP-ID: {SPID} does not match the request\'s target ID SP-ID: {spi}'
-		if csi != csecsi:						# Check for CSE-ID
+		if spi != CSE.cseSpid:					# Check for SP-ID
+			return None, None, None, f'SP-ID: {CSE.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
+		if csi != CSE.cseCsiSlashLess:			# Check for CSE-ID
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
 			return id, csi, srn, None	# Not for this CSE? retargeting
@@ -417,8 +429,8 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 			ri = ids[1]
 		elif idsLen > 2:
 			if ids[2] == '-':						# replace placeholder "-"
-				ids[2] = csern
-			if ids[2] == csern:						# structured
+				ids[2] = CSE.cseRn
+			if ids[2] == CSE.cseRn:					# structured
 				srn = '/'.join(ids[2:])
 			elif idsLen == 3:						# unstructured
 				ri = ids[2]
@@ -530,7 +542,7 @@ def compareIDs(id1:str, id2:str) -> bool:
 #
 #	URL and Addressung related
 #
-urlregex = re.compile(
+_urlregex = re.compile(
 		r'^(?:http|ftp|mqtt)s?://|^(?:coap)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
@@ -542,46 +554,58 @@ urlregex = re.compile(
 		# r'\S+' # re.IGNORECASE		 			# optional path
 
 		)
-def isURL(url: str) -> bool:
-	""" Check whether a given string is a URL. """
-	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
+def isURL(url:str) -> bool:
+	""" Check whether a given string is a URL. 
+
+		Args:
+			url: String to check for URL-ness.
+		Return:
+			Boolean indicating whether the argument is a valid URL.
+	"""
+	return isinstance(url, str) and re.match(_urlregex, url) is not None
 
 
 def isHttpUrl(url:str) -> bool:
-	"""	Test whether a URL is a http URL. 
+	"""	Test whether a URL is a valid URL, and indicates an http or https scheme.
 
 		Args:
-			url: URL to check
+			url: String to check.
 		Returns:
-			Boolean True or False
+			True if the argument is a URL, and is an http or https scheme.
 	"""
-	return url.startswith(('http', 'https'))
+	return isURL(url) and url.startswith(('http', 'https'))
 
 
 def isMQTTUrl(url:str) -> bool:
-	"""	Test whether a URL is an mqtt URL. 
+	"""	Test whether a URL is a valid URL, and indicates an mqtt URL. 
 
 		Args:
-			url: URL to check
+			url: String to check.
 		Returns:
-			Boolean True or False
+			True if the argument is a URL, and is an mqtt or mqtts scheme.
 	"""
-	return url.startswith(('mqtt', 'mqtts'))
+	return isURL(url) and url.startswith(('mqtt', 'mqtts'))
 
 
 def isAcmeUrl(url:str) -> bool:
-	"""	Test whether a URL is an internal ACME event URL. 
+	"""	Test whether a URL is a valid URL and an internal ACME event URL. 
 
 		Args:
-			url: URL to check
+			url: URL to check.
 		Returns:
-			Boolean True or False
+			True if the argument is a URL, and is an internal ACME scheme.
 	"""
-	return url.startswith('acme')
+	return isURL(url) and url.startswith('acme')
 
 
 def normalizeURL(url: str) -> str:
-	""" Remove trailing / from the url. """
+	""" Remove trailing / from a url. 
+
+		Args:
+			url: URL to remove trailing /'s from.
+		Returns:
+			URL without trailing /'s.
+	"""
 	if url:
 		while len(url) > 0 and url[-1] == '/':
 			url = url[:-1]
@@ -593,30 +617,20 @@ def normalizeURL(url: str) -> str:
 #	Resource and content related
 #
 
-mgmtObjTPEs = 		[	T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(),
-						T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
-			  		]
-
-mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnnc.tpe(),
-						T.ANDIAnnc.tpe(), T.BATAnnc.tpe(), T.DVIAnnc.tpe(), T.DVCAnnc.tpe(),
-						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
-			  		]
-
-
-excludeFromRoot = [ 'pi' ]
-pureResourceRegex = re.compile('[\w]+:[\w]')
+_excludeFromRoot = [ 'pi' ]
+_pureResourceRegex = re.compile('[\w]+:[\w]')
 
 def pureResource(dct:JSON) -> Tuple[JSON, str]:
 	"""	Return the "pure" structure without "<domain>:xxx" resource specifier, and the oneM2M type identifier. 
 
 		Args:
-			dct: JSON dictionary with the resource attributes
+			dct: JSON dictionary with the resource attributes.
 		Return:
-			Tupple with the inner JSON and the resource type name
+			Tupple with the inner JSON and the resource type name.
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
-	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match(pureResourceRegex, rk):
+	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
 		return dct[rootKeys[0]], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
@@ -625,16 +639,8 @@ def pureResource(dct:JSON) -> Tuple[JSON, str]:
 	return dct, root
 
 
-def deleteNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
-	"""	Remove Null-values from a dictionary, but ignore the ones speciefed in 'allowedNull.
-		Return a new dictionary.
-	"""
-	if not isinstance(dct, dict):
-		return dct
-	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
 
-
-decimalMatch = re.compile(r'{(\d+)}')
+_decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
 		`default` is returned.
@@ -670,7 +676,7 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 		pathElement = paths[i]
 		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
-		elif (m := decimalMatch.search(pathElement)) is not None:	# Match array index {i}
+		elif (m := _decimalMatch.search(pathElement)) is not None:	# Match array index {i}
 			idx = int(m.group(1))
 			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
 				return default
@@ -734,14 +740,14 @@ def setXPath(dct:JSON, key:str, value:Any = None, overwrite:bool = True, delete:
 		for i in range(0, ln1):
 			_p = paths[i]
 			if isinstance(data, list):
-				if (m := decimalMatch.search(_p)) is not None:
+				if (m := _decimalMatch.search(_p)) is not None:
 					data = data[int(m.group(1))]
 			else:
 				if _p not in data:
 					data[_p] = {}
 				data = data[_p]
 	if isinstance(data, list):
-		if (m := decimalMatch.search(paths[ln1])) is not None:
+		if (m := _decimalMatch.search(paths[ln1])) is not None:
 			idx = int(m.group(1))
 			if not overwrite and idx < len(data): # test overwrite first, it's faster
 				return True # don't overwrite
@@ -763,28 +769,47 @@ def setXPath(dct:JSON, key:str, value:Any = None, overwrite:bool = True, delete:
 	return True
 
 
-def removeKeyFromDict(dct:dict, keys:list[str]) -> Any:
-	"""	Recursively remove all occurences of `keys` from a dictionary `dct`.
+# def removeKeyFromDict(jsn:dict, keys:list[str]) -> Any:
+# 	"""	Recursively remove all occurences of *keys* from a dictionary *dct*.
+# 	"""
+# 	if not isinstance(jsn, dict):
+# 		return jsn
+# 	return {key:value for key, value in ((key, removeKeyFromDict(value, keys)) for key, value in jsn.items()) if key not in keys}
+#
+#
+# def removeNoneValuesFromDict(jsn:JSON, allowedNull:list[str]=[]) -> JSON:
+# 	"""	Recursively remove Null-values from a dictionary, but ignore the ones speciefed in the `allowedNull` list.
+# 		Return a new dictionary.
+# 	"""
+# 	if not isinstance(jsn, dict):
+# 		return jsn
+# 	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in jsn.items()) if value is not None or key in allowedNull }
+
+def removeNoneValuesFromDict(jsn:JSON, allowedNull:list[str]=[]) -> JSON:
+	"""	Remove Null/None-values from a dictionary, but ignore the ones specified in *allowedNull*.
+
+		Args:
+			jsn: JSON dictionary.
+			allowedNull: Optional list of attribute names to ignore.
+		Return:
+			Return a new dictionary with None-value attributes removed.
 	"""
-	if not isinstance(dct, dict):
-		return dct
-	return {key:value for key, value in ((key, removeKeyFromDict(value, keys)) for key, value in dct.items()) if key not in keys}
+	if not isinstance(jsn, dict):
+		return jsn
+	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in jsn.items()) if value is not None or key in allowedNull }
 
 
 
-def removeNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
-	"""	Recursively remove Null-values from a dictionary, but ignore the ones speciefed in the `allowedNull` list.
-		Return a new dictionary.
-	"""
-	if not isinstance(dct, dict):
-		return dct
-	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
+def resourceDiff(old:JSON, new:JSON, modifiers:JSON=None) -> JSON:
+	"""	Compare an old and a new resource. A comparison happens for keywords and values.
+		Attributes which names start and end with "__" (ie internal attributes) are ignored.
 
-
-def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> JSON:
-	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
-		Return a dictionary.
-		If the modifier dict is given then it contains the changes that let from old to new.
+		Args:
+			old: Old resource dictionary to compare.
+			new: New resource dictionary to compare.
+			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
+		Return:	
+			Return a dictionary of identified changes.
 	"""
 	res = {}
 	for k, v in new.items():
@@ -803,38 +828,46 @@ def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> J
 		if k not in new:
 			res[k] = None
 
-	# ==> Old try to process Null attributes
-	# if modifiers is not None:
-	# 	for k,v in modifiers.items():
-	# 		if v is None:
-	# 			res[k] = v
-
 	return res
 
 
-def resourceModifiedAttributes(old:Resource|JSON, new:Resource|JSON, requestPC:JSON, modifiers:JSON=None) -> JSON:
-	"""	Calculate the diff between a original resource and after it has been updated, and then remove the attributes
-		that are part of the update request. In other words: Return a dictionary of those attributes that have been
-		changed due in a CREATE or UPDATE request.
+def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:JSON=None) -> JSON:
+	"""	Calculate the difference between an original resource and after it has been updated, and then remove the attributes
+		that are part of the update request.
+
+		Args:
+			old: Old resource dictionary to compare.
+			new: New resource dictionary to compare.
+			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
+		Return:	
+			Return a dictionary of those attributes that have been changed in a CREATE or UPDATE request.	
 	"""
 	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
 
 
 def getCSE() -> Result:
 	"""	Return the <CSEBase> resource.
+
+		Return:
+			<CSEBase> resource.
 	"""
 	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
 	return resourceFromCSI(CSE.cseCsi)
 
 
 def resourceFromCSI(csi:str) -> Result:
-	""" Get the CSEBase resource by its csi. """
+	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
+
+		Args:
+			csi: *CSE-ID* of the <CSEBase> resource to retrieve.
+		Return:
+			<CSEBase> resource.
+	"""
 	return CSE.storage.retrieveResource(csi = csi)
 
 	
 def fanoutPointResource(id:str) -> Resource:
-	"""	Check whether the target resource contains a fanoutPoint along its path,
-		is a fanoutPoint itself.
+	"""	Check whether the target resource contains a fanoutPoint along its path is a fanoutPoint.
 
 		Args:
 			id: the target's resource ID.
@@ -903,6 +936,11 @@ def latestOldestResource(id:str) -> Resource:
 def getAttributeSize(attribute:Any) -> int:
 	"""	Return a realistic size for the content of an attribute.
 		Python does not really return good sizes for some of the data types.
+
+		Args:
+			attribute: An attribute's content of any of the suppported types.
+		Return:
+			Byte size of the attribute's value.
 	"""
 	size = 0
 	if isinstance(attribute, str):
@@ -923,20 +961,24 @@ def getAttributeSize(attribute:Any) -> int:
 		size = sys.getsizeof(attribute)	# fallback for not handled types
 	return size
 	
-	
-def hasRegisteredAE(originator:str) -> bool:
-	"""	Check wether an AE with `originator` is registered at the CSE.
-	"""
-	return len(CSE.storage.searchByFragment({'aei' : originator})) > 0
-
 
 ##############################################################################
 #
 #	Threads
 #
 
-# TODO Doc
-def renameCurrentThread(name:str = None, thread:threading.Thread = None, prefix:str = None) -> None:
+def renameThread(name:str = None, thread:threading.Thread = None, prefix:str = None) -> None:
+	"""	Rename a thread.
+
+		If *name* is provided then the thread is renamed to that name.
+		If *name* is not provided, but *prefix* is, then the thread is renamed to the prefix + its thread ID.
+		If neither *name* nor *prefix* is provided, then the thread is renamed to its own ID.
+	
+		Args:
+			name: New name for a thread. 
+			thread: `Thread` to rename. If none is provided then the current thread is renamed.
+			prefix: Used for "prefix + ID" procedure explained above.
+		"""
 	thread = threading.current_thread() if not thread else thread
 	if name is not None:
 		thread.name = name 
@@ -946,8 +988,14 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None, prefix:
 		thread.name = str(thread.native_id)
 
 
-# TODO Doc
 def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
+	"""	Helper function to run a function as a thread.
+
+		Args:
+			task: Function to run in a thread.
+			args: Positional function arguments for *task*.
+			kwargs: Keyword function arguments for *task*.
+	"""
 	thread = threading.Thread(target = task, args = args, kwargs = kwargs)
 	thread.setDaemon(True)		# Make the thread a daemon of the main thread
 	thread.start()
@@ -960,6 +1008,7 @@ def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
 #
 		
 _resourceStates:Dict[str, str]	= {}
+"""	Dictionary for store states for ID's. """
 
 def setResourceState(id:str, state:str) -> None:
 	"""	Store the state of a resource.
@@ -970,7 +1019,7 @@ def setResourceState(id:str, state:str) -> None:
 		Args:
 			id: Resource ID
 			state: Individual state or marker
-			"""
+	"""
 	_resourceStates[id] = state
 
 
@@ -981,7 +1030,7 @@ def getResourceState(id:str) -> str:
 			id: Resource ID
 		Return:
 			The resource state, or None.
-		"""
+	"""
 	return _resourceStates.get(id)
 
 
@@ -1056,7 +1105,7 @@ def exceptionToResult(e:Exception) -> Result:
 			e: Exception
 		Return:
 			Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
-		"""
+	"""
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')

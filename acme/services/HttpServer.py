@@ -218,30 +218,30 @@ class HttpServer(object):
 
 
 	def handleGET(self, path:str=None) -> Response:
-		Utils.renameCurrentThread(prefix = 'HTRE')
+		Utils.renameThread(prefix = 'HTRE')
 		CSE.event.httpRetrieve() # type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:str=None) -> Response:
 		if self._hasContentType():
-			Utils.renameCurrentThread(prefix = 'HTCR')
+			Utils.renameThread(prefix = 'HTCR')
 			CSE.event.httpCreate()		# type: ignore [attr-defined]
 			return self._handleRequest(path, Operation.CREATE)
 		else:
-			Utils.renameCurrentThread(prefix = 'HTNO')
+			Utils.renameThread(prefix = 'HTNO')
 			CSE.event.httpNotify()	# type: ignore [attr-defined]
 			return self._handleRequest(path, Operation.NOTIFY)
 
 
 	def handlePUT(self, path:str=None) -> Response:
-		Utils.renameCurrentThread(prefix = 'HTUP')
+		Utils.renameThread(prefix = 'HTUP')
 		CSE.event.httpUpdate()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
-		Utils.renameCurrentThread(prefix = 'HTDE')
+		Utils.renameThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -251,7 +251,7 @@ class HttpServer(object):
 		"""
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
-		Utils.renameCurrentThread(prefix = 'HTDE')
+		Utils.renameThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -319,7 +319,7 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
 			return resp
 
-		Utils.renameCurrentThread(prefix = 'UT')
+		Utils.renameThread(prefix = 'UT')
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		if request.data:
