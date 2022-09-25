@@ -10,7 +10,7 @@
 """	This module implements semantic service and helper functions. """
 
 from __future__ import annotations
-import re
+import sys
 
 from typing import Sequence, cast, Optional, Union
 from abc import ABC, abstractmethod
@@ -546,6 +546,13 @@ class RdfLibHandler(SemanticHandler):
 		# Query the graph
 		try:
 			qres = aggregatedGraph.query(query)
+
+			# Pretty print the result to the log
+			# ET.indent is only available in Python 3.9+
+			if L.isDebug and sys.version_info >= (3, 9) and _format == 'xml':
+				element = ET.XML(qres.serialize(format = _format).decode('UTF-8'))
+				ET.indent(element)	# type:ignore
+				L.logDebug(ET.tostring(element, encoding = 'unicode'))
 		except Exception as e:
 			return Result.errorResult(dbg = L.logWarn(f'Query error: {str(e)} for result'))
 
