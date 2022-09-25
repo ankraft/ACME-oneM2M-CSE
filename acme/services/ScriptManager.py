@@ -1005,10 +1005,11 @@ class ACMEPContext(PContext):
 		try:
 			if not res.status:
 				L.isDebug and L.logDebug(f'Request response: {res.dbg}')
-				self.setVariable('response.resource', res.dbg)
+				self.setVariable('response.resource', f'{{ "m2m:dbg:": "{str(res.dbg)}"}}')
 			elif res.data:
 				L.isDebug and L.logDebug(f'Request response: {res.data}')
 				self.setVariable('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
+				L.logDebug(self.getVariable('response.resource'))
 			elif res.resource:
 				L.isDebug and L.logDebug(f'Request response: {res.resource}')
 				self.setVariable('response.resource', json.dumps(res.resource) if isinstance(res.resource, dict) else json.dumps(res.resource.asDict()))
