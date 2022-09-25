@@ -29,6 +29,7 @@ from rich.theme import Theme
 from rich.tree import Tree
 from rich.table import Table
 from rich.prompt import Prompt
+from rich.syntax import Syntax
 
 from ..etc.Types import JSON, ACMEIntEnum
 from ..helpers.BackgroundWorker import BackgroundWorker
@@ -354,7 +355,7 @@ class Logging:
 
 	@staticmethod
 	def console(msg:Union[str, Text, Tree, Table, JSON] = '&nbsp;', nl:bool = False, nlb:bool = False, end:str = '\n', plain:bool = False, isError:bool = False, isHeader:bool = False) -> None:
-		"""	Print a message or object on the console.
+		"""	Print a message or object to the console.
 		"""
 		# if this is a header then call the method again with different parameters
 		if isHeader:
@@ -374,6 +375,17 @@ class Logging:
 			Logging._console.print(str(msg), style = style, end = end)
 		if nl:	# Empty line after
 			Logging._console.print()
+	
+	@staticmethod
+	def consoleSyntax(code:str, language:str) -> None:
+		"""	Print a piece of code or data with syntax highlighting to the console.
+			This function does not format the code.
+
+			Args:
+				code: A string with formatted code or data.
+				language: The language or type of data.
+		"""
+		Logging._console.print(Syntax(code, language))
 	
 
 	@staticmethod
