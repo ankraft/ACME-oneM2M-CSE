@@ -37,6 +37,8 @@ class Importer(object):
 	_enumValues:dict[str, list[int]] = {}
 
 	def __init__(self) -> None:
+		"""	Initialization of an *Importer* instance.
+		"""
 		self.resourcePath = Configuration.get('cse.resourcesPath')
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
@@ -151,6 +153,11 @@ class Importer(object):
 
 	def importEnumPolicies(self, path:str = None) -> bool:
 		"""	Import the enumeration types policies.
+
+			Args:
+				path: Optional path to a directory from where to import enumeration policies. The default is the *init* directory.
+			Return:
+				True if the policies were successfully imported, False otherwise.
 		"""
 		countAP = 0
 
@@ -187,6 +194,11 @@ class Importer(object):
 
 	def importFlexContainerPolicies(self, path:str = None) -> bool:
 		"""	Import the attribute and hierarchy policies for flexContainer specializations.
+
+			Args:
+				path: Optional path to a directory from where to import flexContainer policies. The default is the *init* directory.
+			Return:
+				True if the policies were successfully imported, False otherwise.
 		"""
 		countFCP = 0
 
@@ -258,6 +270,11 @@ class Importer(object):
 
 	def importAttributePolicies(self, path:str = None) -> bool:
 		"""	Import the resource attribute policies.
+
+			Args:
+				path: Optional path to a directory from where to import attribute policies. The default is the *init* directory.
+			Return:
+				True if the policies were successfully imported, False otherwise.
 		"""
 		countAP = 0
 
@@ -336,6 +353,9 @@ class Importer(object):
 	def assignAttributePolicies(self) -> bool:
 		"""	Assign the imported attribute policies to each of the resources.
 			This injects the imported attribute policies into all the Python Resource classes.
+
+			Return:
+				True if there were no errors during the assignment, False otherwise.
 		"""
 		L.isInfo and L.log(f'Assigning attribute policies to resource types')
 
@@ -509,6 +529,8 @@ class Importer(object):
 
 
 	def _prepareImporting(self) -> None:
+		"""	Prepare the importing process.
+		"""
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.security.enableACPChecks')
 		Configuration.update('cse.security.enableACPChecks', False)
@@ -516,6 +538,8 @@ class Importer(object):
 
 
 	def replaceMacro(self, macro:str, filename:str) -> str:	# TODO move to helper
+		"""
+		"""
 		macro = macro[2:-1]
 		if (value := Configuration.get(macro)) is None:	# could be int or len == 0
 			L.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
