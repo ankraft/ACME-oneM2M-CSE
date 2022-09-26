@@ -53,7 +53,10 @@ class CNT(AnnounceableResource):
 			'cbs': None,
 			'li': None,
 			'or': None,
-			'disr': None
+			'disr': None,
+
+			# EXPERIMENTAL
+			'subi': None,
 	}
 
 

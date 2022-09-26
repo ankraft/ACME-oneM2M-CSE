@@ -2918,6 +2918,24 @@
 			"annc": "NA"
 		}
 	],
+
+
+	// EXPERIMENTAL
+	"subi": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "subscriptionIDs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "MA"
+		}
+	],
+
 	"suids": [
 		{
 			"rtypes": [ "ALL" ],

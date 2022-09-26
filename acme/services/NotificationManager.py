@@ -171,8 +171,17 @@ class NotificationManager(object):
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
 		# Access to attributes is different bc the structure is flattened
-		if not (subs := CSE.storage.getSubscriptionsForParent(ri)):
+		if (subs := CSE.storage.getSubscriptionsForParent(ri)) is None:
 			return
+		
+		# Add "subi" subscriptions
+		if (subi := resource.subi) is not None:
+			for eachSubi in subi:
+				if (sub := CSE.storage.getSubscription(eachSubi)) is None:
+					L.logErr(f'Cannot retrieve subscription: {eachSubi}')
+				# TODO ensure uniqueness
+				subs.append(sub)
+
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			if childResource and \
@@ -304,7 +313,7 @@ class NotificationManager(object):
 					return Result.errorResult(dbg = dbg)
 
 			# Check for maxAge attribute provided in the subscription
-			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL
+			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL blocking retrieve
 				try:
 					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
 				except Exception as e:
@@ -713,6 +722,11 @@ class NotificationManager(object):
 		# TODO doc
 
 		def sender(uri:str) -> bool:
+			# Skip verification requests to acme: receivers
+			if Utils.isAcmeUrl(uri):
+				L.isDebug and L.logDebug(f'Skip verification request to internal target: {uri}')
+				return True
+
 			L.isDebug and L.logDebug(f'Sending verification request to: {uri}')
 			verificationRequest:JSON = {
 				'm2m:sgn' : {

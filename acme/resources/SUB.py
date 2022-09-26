@@ -61,7 +61,7 @@ class SUB(Resource):
 		'acrs': None,
 		'nse': None,
 		'nsi': None,
-		'ma': None,		# EXPERIMENTAL maxage
+		'ma': None,		# EXPERIMENTAL maxage blocking retrieve
 	}
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
