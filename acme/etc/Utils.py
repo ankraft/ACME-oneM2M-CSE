@@ -543,7 +543,7 @@ def compareIDs(id1:str, id2:str) -> bool:
 #	URL and Addressung related
 #
 _urlregex = re.compile(
-		r'^(?:http|ftp|mqtt)s?://|^(?:coap)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
+		r'^(?:http|ftp|mqtt)s?://|^(?:coap|acme)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
