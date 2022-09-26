@@ -143,10 +143,10 @@ class AnnouncementManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for at in resource.at:
-			if at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash):
-				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
-				self._removeAnnouncementFromResource(resource, at)
-				continue
+			# if at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash):
+			# 	L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
+			# 	self._removeAnnouncementFromResource(resource, at)
+			# 	continue
 			self.announceResourceToCSI(resource, at)	# ignore result
 		return Result(status=True)
 
@@ -253,7 +253,10 @@ class AnnouncementManager(object):
 			targetID = at[1]
 
 		# Create the announed resource on the remote CSE
-		csrID = targetID if Utils.isSPRelative(targetID) else f'{csi}/{targetID}'
+		if targetID:
+			csrID = targetID if Utils.isSPRelative(targetID) else f'{csi}/{targetID}'
+		else:
+			csrID = csi
 		L.isDebug and L.logDebug(f'Creating announced resource at: {csrID}')	
 		res = CSE.request.sendCreateRequest(csrID, CSE.cseCsi, ty = tyAnnc, content = dct)
 		if res.rsc not in [ RC.created, RC.OK ]:

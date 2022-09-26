@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored and simplified request message attribute handling. Improved attribute validations and discovery. 
 - [CSE] The CSE is allowed to send a NOTIFY to a hosted resource directly.
 - [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
+- [CSE] Enable to target announcements to the hosting CSE.
 - [TESTS] Split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 - [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
 - [SCRIPTS] *requestAttributes* now supports sub-structures for request attributes, e.g. to set filterCriteria attributes.

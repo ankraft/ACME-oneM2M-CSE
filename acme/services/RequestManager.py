@@ -841,7 +841,6 @@ class RequestManager(object):
 																					   permission = Permission.CREATE,
 																					   noAccessIsError = noAccessIsError,
 																					   raw = raw):
-
 			# Special handling for Release 1 targets
 			content = self.handleRequestToR1Target(content, rvi)
 
@@ -855,6 +854,7 @@ class RequestManager(object):
 
 			# Otherwise send it via one of the bindings
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+				L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
 				continue
 
 			if Utils.isHttpUrl(url):
