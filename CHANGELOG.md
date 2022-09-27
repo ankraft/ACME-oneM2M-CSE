@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added *nl* macro to add a newline in strings.
 - [SCRIPTS] Added *jsonify* macro to prepare a string for proper use in a JSON structure.
 - [SCRIPTS] Added *b64encode* macro to encode a string as base64.
+- [SCRIPTS] Added *urlencode* macro to encode a string for us in URL parameters.
 - [SCRIPTS] Added limited support for multi-line strings.
 - [TESTS] Added option to run test cases multiple times.
 
