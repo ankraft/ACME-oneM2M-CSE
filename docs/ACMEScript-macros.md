@@ -22,6 +22,7 @@
 |                            | [round](#round)                                  | Round a float number                                                    |
 |                            | [runCount](#macro_runcount)                      | Get the number of script runs.                                          |
 |                            | [upper](#macro_upper)                            | Get an upper-case version of the provided string argument               |
+|                            | [urlencode](#macro_urlencode)                    | URL-encode a string                                                     |
 | [Storage](#macros_storage) | [storageGet](#macro_storageget)                  | Get a value from the persistent key/value storage                       |
 |                            | [storageHas](#macro_storagehas)                  | Test the existence of a key in the persistent key/value storage         |
 | [oneM2M](#macros_onem2m)   | [attribute](#macro_attribute)                    | Get the value of an attribute from a oneM2M resource                    |
@@ -377,6 +378,22 @@ Example:
 ```text
 print [upper hello]
 # -> HELLO
+```
+
+
+<a name="macro_urlencode"></a>
+### urlencode
+
+Usage:  
+[urlencode &lt;string> ]
+
+URL-encode a string.
+
+Example:
+
+```text
+print [urlencode Hello World]
+# -> Hello+World
 ```
 
 

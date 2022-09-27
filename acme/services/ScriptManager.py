@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
-import json, os, fnmatch, re, base64
+import json, os, fnmatch, re, base64, urllib.parse
 import requests
 
 from ..helpers.KeyHandler import FunctionKey
@@ -90,6 +90,7 @@ class ACMEPContext(PContext):
 										'jsonify':				self.doJsonify,
 										'storagehas':			self.doStorageHas,
 										'storageget':			self.doStorageGet,
+										'urlencode':			self.doURLEncode,
 						 				'__default__':			lambda c, a, l: Configuration.get(a),
 						  			},
 						 logFunc = self.log, 
@@ -207,7 +208,7 @@ class ACMEPContext(PContext):
 			Example:
 				CREATE
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -224,7 +225,7 @@ class ACMEPContext(PContext):
 			Example:
 				CREATE <target> <resource>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -238,7 +239,7 @@ class ACMEPContext(PContext):
 			Example:
 				DELETE <target>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, only the target.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -267,7 +268,7 @@ class ACMEPContext(PContext):
 				endhttp
 
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, only the target.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -350,7 +351,7 @@ class ACMEPContext(PContext):
 			Example:
 				importRaw <resource>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, only the resource, which may start on a new line.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -393,7 +394,7 @@ class ACMEPContext(PContext):
 			Example:
 				LOGDIVIDER a message
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -408,7 +409,7 @@ class ACMEPContext(PContext):
 			Example:
 				NOTIFY <target> <resource>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -426,7 +427,7 @@ class ACMEPContext(PContext):
 			with this command the originator can be set to an empty value.
 
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -441,7 +442,7 @@ class ACMEPContext(PContext):
 			Example:
 				poa <identifier> <uri>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -459,7 +460,7 @@ class ACMEPContext(PContext):
 		"""	Print a beautified JSON to the console.
 			
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument of the command, the JSON structure.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -479,7 +480,7 @@ class ACMEPContext(PContext):
 			command is a JSON structure with the attributes.
 			
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument of the command, the JSON structure.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -497,7 +498,7 @@ class ACMEPContext(PContext):
 			Example:
 				RESET
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -518,7 +519,7 @@ class ACMEPContext(PContext):
 			Example:
 				RETRIEVE <target>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -533,7 +534,7 @@ class ACMEPContext(PContext):
 			Example:
 				RUN <script name> [<arguments>]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, name of a script and arguments.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -561,7 +562,7 @@ class ACMEPContext(PContext):
 			Example:
 				setConfig <configuration key> <value>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, the key and the value
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
@@ -661,7 +662,7 @@ class ACMEPContext(PContext):
 			Example:
 				UPDATE <target> <resource>
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The scripts "PContext" object, or "None" in case of an error.
@@ -680,7 +681,7 @@ class ACMEPContext(PContext):
 			Example:
 				[attribute <key path> <resource>]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The value of the resource attribute, or None in case of an error.
@@ -706,7 +707,7 @@ class ACMEPContext(PContext):
 			Example:
 				[b64encode <string>]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				Base-64 encoded result.
@@ -720,7 +721,7 @@ class ACMEPContext(PContext):
 			Example:
 				[cseStatus]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				The CSE status as a string, or None in case of an error.
@@ -734,7 +735,7 @@ class ACMEPContext(PContext):
 			Example:
 			[hasAttribute <key path> <resource>]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
 				True or False, depending whether the `key path` exists in the `resource`.
@@ -760,7 +761,7 @@ class ACMEPContext(PContext):
 			Example:
 			[isIPython]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command. Shall be none.
 			Returns:
 				True or False, depending whether the current environment in IPython.
@@ -777,10 +778,10 @@ class ACMEPContext(PContext):
 			Example:
 				[jsonify <string>]
 			Args:
-				pcontext: PContext object of the runnig script.
+				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command.
 			Returns:
-				Escape JSON string.
+				Escaped JSON string.
 		"""
 		return arg.replace('\n', '\\n').replace('"', '\\"')
 
@@ -824,6 +825,20 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Undefined key in storage: {key}')
 			return None
 		return res
+
+
+	def doURLEncode(self, pcontext:PContext, arg:str, line:str) -> str:
+		"""	URL-Encode a string.
+
+			Example:
+				[urlencode <string>]
+			Args:
+				pcontext: PContext object of the running script.
+				arg: remaining argument(s) of the command.
+			Returns:
+				URL-encoded string.
+		"""
+		return urllib.parse.quote_plus(arg)
 
 
 	#########################################################################
