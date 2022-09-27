@@ -14,6 +14,7 @@ import random, string, sys, re, threading, socket
 import traceback
 from typing import Any, Callable, Tuple, cast, Dict
 from functools import wraps
+from distutils.util import strtobool
 
 
 from .Constants import Constants as C
@@ -961,6 +962,16 @@ def getAttributeSize(attribute:Any) -> int:
 		size = sys.getsizeof(attribute)	# fallback for not handled types
 	return size
 	
+
+def strToBool(value:str) -> bool:
+	"""	Convert a string value to a boolean.
+	
+		Args:
+			value: Any string value that looks like a boolean *true* or *false*.
+		Return:
+			The boolean value.
+	"""
+	return bool(strtobool(str(value)))
 
 ##############################################################################
 #

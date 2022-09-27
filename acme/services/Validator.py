@@ -520,7 +520,7 @@ class Validator(object):
 					return Result.errorResult(dbg = str(e))
 			elif dataType == BT.boolean and isinstance(value, str):	# "true"/"false"
 				try:
-					value = bool(value)
+					value = Utils.strToBool(value)
 				except Exception as e:
 					return Result.errorResult(dbg = str(e))
 			elif dataType == BT.float and isinstance(value, str):
