@@ -174,13 +174,16 @@ class NotificationManager(object):
 		if (subs := CSE.storage.getSubscriptionsForParent(ri)) is None:
 			return
 		
-		# Add "subi" subscriptions
+		# EXPERIMENTAL Add "subi" subscriptions to the list of subscriptions to check
 		if (subi := resource.subi) is not None:
 			for eachSubi in subi:
 				if (sub := CSE.storage.getSubscription(eachSubi)) is None:
 					L.logErr(f'Cannot retrieve subscription: {eachSubi}')
+					continue
 				# TODO ensure uniqueness
 				subs.append(sub)
+
+
 
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
