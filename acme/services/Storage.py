@@ -9,11 +9,14 @@
 #	or just in memory.
 #
 
+"""	This module defines storage managers and drivers for database access.
+"""
+
 from __future__ import annotations
 
 import os, shutil
 from threading import Lock
-from typing import Callable, cast, List
+from typing import Callable, cast, List, Optional
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
@@ -29,8 +32,17 @@ from ..resources import Factory
 
 
 class Storage(object):
+	"""	This class implements the entry points to the CSE's underlying database functions.
+
+		Attributes:
+			inMemory: Indicator whether the database is located in memory (volatile) or on disk.
+			dbPath: In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk.
+			dbReset: Indicator that the database should be reset or cleared during start-up.
+	"""
 
 	def __init__(self) -> None:
+		"""	Initialization of the storage module.
+		"""
 
 		# create data directory
 		self.inMemory 	= Configuration.get('db.inMemory')
@@ -65,6 +77,11 @@ class Storage(object):
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the storage module.
+		
+			Return:
+				Always True.
+		"""
 		self.db.closeDB()
 		self.db = None
 		L.isInfo and L.log('Storage shut down')
@@ -72,7 +89,7 @@ class Storage(object):
 
 
 	def purge(self) -> None:
-		"""	Empty the databases.
+		"""	Reset and clear the databases.
 		"""
 		try:
 			self.db.purgeDB()
@@ -82,7 +99,14 @@ class Storage(object):
 
 
 	def _validateDB(self) -> bool:
-		"""	Trying to validate the database files by reading from them.
+		"""	Trying to validate the database files.
+		
+			This is only a simple test. It performs a couple of read
+			operations on the available database files.
+
+			Return:
+				Boolean indicating the validity of the databases.
+
 		"""
 		L.isDebug and L.logDebug('Validating database files')
 		dbFile = ''
@@ -105,6 +129,9 @@ class Storage(object):
 
 	def _backupDB(self) -> bool:
 		"""	Creating a backup from the DB to a sub directory.
+
+			Return:
+				Boolean indicating the success of the backup operation.
 		"""
 		dir = f'{self.dbPath}/backup'
 		L.isDebug and L.logDebug(f'Creating DB backup in directory: {dir}')
@@ -118,7 +145,16 @@ class Storage(object):
 	##
 
 
-	def createResource(self, resource:Resource, overwrite:bool = True) -> Result:
+	def createResource(self, resource:Resource, overwrite:Optional[bool] = True) -> Result:
+		"""	Create a new resource in the database.
+		
+			Args:
+				resource: The resource to store in the database.
+				overwrite: Indicator whether an existing resource shall be overwritten.
+			
+			Return:
+				Result object indicating success or error status.
+		"""
 		ri  = resource.ri
 		srn = resource.getSrn()
 		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn}, srn: {srn}')
@@ -129,22 +165,42 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				L.isWarn and L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}')
-				return Result.errorResult(rsc = RC.conflict, dbg = 'resource already exists')
+				return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
 		return Result(status = True, rsc = RC.created)
 
 
-	def hasResource(self, ri:str = None, srn:str = None) -> bool:
+	def hasResource(self, ri:Optional[str] = None, srn:Optional[str] = None) -> bool:
 		"""	Check whether a resource with either the ri or the srn already exists.
+
+			Either one of *ri* or *srn* must be provided.
+
+			Args:
+				ri: Optional resource ID.
+				srn: Optional structured resource name.
+			Returns:
+				True when a resource with the ID or name exists.
 		"""
 		return (ri is not None and self.db.hasResource(ri = ri)) or (srn is not None and self.db.hasResource(srn = srn))
 
 
-	def retrieveResource(self, ri:str = None, csi:str = None, srn:str = None, aei:str = None, raw:bool = False) -> Result:
+	def retrieveResource(self,	ri:Optional[str] = None, 
+								csi:Optional[str] = None,
+								srn:Optional[str] = None, 
+								aei:Optional[str] = None) -> Result:
 		""" Return a resource via different addressing methods. 
+
+			Either one of *ri*, *srn*, *csi*, or *aei* must be provided.
+
+			Args:
+				ri:  The resource is retrieved via its rersource ID.
+				csi: The resource is retrieved via its CSE-ID.
+				srn: The resource is retrieved via its structured resource name.
+				aei: The resource is retrieved via its AE-ID.
+			Returns:
+				The resource is returned in a Result object.
 		"""
 		resources = []
 
@@ -167,35 +223,79 @@ class Storage(object):
 		# L.logDebug(resources)
 		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			return Result(status = True, resource = resources[0]) if raw else Factory.resourceFromDict(resources[0])
+			return Factory.resourceFromDict(resources[0])
 		elif l == 0:
 			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
 
 		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
 
 
+	def retrieveResourceRaw(self, ri:str) -> Result:
+		"""	Retrieve a resource as a raw dictionary.
+
+			Args:
+				ri:  The resource is retrieved via its rersource ID.
+			Returns:
+				The resource dictionary is returned in a Result object in the *resource* attribute.
+		"""
+		resources = self.db.searchResources(ri = ri)
+		if (l := len(resources)) == 1:
+			return Result(status = True, resource = resources[0])
+		elif l == 0:
+			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
+		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
+
+
 	def retrieveResourcesByType(self, ty:T) -> list[Document]:
 		""" Return all resources of a certain type. 
+
+			Args:
+				ty: resource type to retrieve.
+			Returns:
+				List of resource `Document`. 
 		"""
 		# L.logDebug(f'Retrieving all resources ty: {ty}')
 		return self.db.searchResources(ty = int(ty))
 
 
 	def updateResource(self, resource:Resource) -> Result:
+		"""	Update a resource in the database.
+
+			Args:
+				resource: Resource to update.
+			Return:
+				Result object.
+		"""
 		# ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
 		return Result(status = True, resource = self.db.updateResource(resource), rsc = RC.updated)
 
 
 	def deleteResource(self, resource:Resource) -> Result:
+		"""	Delete a resource from the database.
+
+			Args:
+				resource: Resource to delete.
+			Return:
+				Result object.
+		"""
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		return Result(status = True, rsc = RC.deleted)
 
 
-	def directChildResources(self, pi:str, ty:T = None, raw:bool = False) -> list[Document]|list[Resource]:
+	def directChildResources(self, pi:str, 
+								   ty:Optional[T] = None, 
+								   raw:Optional[bool] = False) -> list[Document]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
+
+			Args:
+				pi: The parent resource's Resource ID.
+				ty: Optional resource type to filter the result.
+				raw: When "True" then return the child resources as resource dictionary instead of resources.
+			Returns:
+				Return a list of resources, or a list of raw resource dictionaries.
 		"""
 		docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
 		return docs if raw else cast(List[Resource], list(map(lambda x: Factory.resourceFromDict(x).resource, docs)))
@@ -205,33 +305,57 @@ class Storage(object):
 		# 		]
 
 
-	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
-		"""	Count the direct child resources.
+	def countDirectChildResources(self, pi:str, ty:Optional[T] = None) -> int:
+		"""	Count the number of direct child resources.
+
+			Args:
+				pi: The parent resource's Resource ID.
+				ty: Optional resource type to filter the result.
+			Returns:
+				The number of child resources.
 		"""
 		return len(self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None))
 
 
 	def countResources(self) -> int:
+		"""	Count the overall number of CSE resources.
+
+			Returns:
+				The number of CSE resources.
+		"""
 		return self.db.countResources()
 
 
 	def identifier(self, ri:str) -> list[Document]:
-		"""	Search for the resource with the given resource ID,
+		"""	Search for the resource identifer mapping with the given unstructured resource ID.
 
 			Args:
-				ri: Resource ID for the resource to look for
+				ri: Unstructured resource ID for the mapping to look for.
 			Return:
-				List of found resources, or an empty list
+				List of found resources identifier mappings, or an empty list
 		"""
 		return self.db.searchIdentifiers(ri = ri)
 
 
 	def structuredIdentifier(self, srn:str) -> list[Document]:
+		"""	Search for the resource identifer mapping with the given structured resource ID.
+
+			Args:
+				ri: Structured resource ID for the mapping to look for.
+			Return:
+				List of found resources identifier mappings, or an empty list
+		"""
 		return self.db.searchIdentifiers(srn = srn)
 
 
-	def searchByFragment(self, dct:dict, filter:Callable[[JSON], bool] = None) -> list[Resource]:
+	def searchByFragment(self, dct:dict, filter:Optional[Callable[[JSON], bool]] = None) -> list[Resource]:
 		""" Search and return all resources that match the given fragment dictionary/document.
+
+			Args:
+				dct: A fragment dictionary to use as a filter for the search.
+				filter: An optional callback to provide additional filter functionality.
+			Return:
+				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
 						if (not filter or filter(each)) and (res := Factory.resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
@@ -239,7 +363,12 @@ class Storage(object):
 
 
 	def searchByFilter(self, filter:Callable[[JSON], bool]) -> list[Resource]:
-		"""	Return a list of resouces that match the given filter, or an empty list.
+		"""	Return a list of resources that match the given filter, or an empty list.
+
+			Args:
+				filter: A callback to provide filter functionality.
+			Return:
+				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
 						if (res := Factory.resourceFromDict(each).resource)
@@ -251,7 +380,7 @@ class Storage(object):
 	##	Subscriptions
 	##
 
-	def getSubscription(self, ri:str) -> JSON:
+	def getSubscription(self, ri:str) -> Document:
 		# L.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri = ri)
 		if not subs or len(subs) != 1:

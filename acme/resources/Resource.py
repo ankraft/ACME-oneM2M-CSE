@@ -904,7 +904,7 @@ class Resource(object):
 			Return:
 				Document of the parent resource
 		"""
-		return CSE.storage.retrieveResource(self.pi, raw = True).resource
+		return CSE.storage.retrieveResourceRaw(self.pi).resource
 
 
 	def getOriginator(self) -> str:
