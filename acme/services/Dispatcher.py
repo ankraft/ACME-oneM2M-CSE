@@ -133,7 +133,7 @@ class Dispatcher(object):
 			# Execute semantic resource discovery
 			if not (res := CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], res.data))).status:
 				return res
-			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(cast(list[Resource], res.data), request.drt))
+			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(cast(List[Resource], res.data), request.drt))
 
 		else:
 			if request.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
