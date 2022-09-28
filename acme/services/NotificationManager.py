@@ -175,7 +175,7 @@ class NotificationManager(object):
 			return
 		
 		# EXPERIMENTAL Add "subi" subscriptions to the list of subscriptions to check
-		if (subi := resource.subi) is not None:
+		if resource and (subi := resource.subi) is not None:
 			for eachSubi in subi:
 				if (sub := CSE.storage.getSubscription(eachSubi)) is None:
 					L.logErr(f'Cannot retrieve subscription: {eachSubi}')
