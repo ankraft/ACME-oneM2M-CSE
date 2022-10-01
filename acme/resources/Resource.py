@@ -42,6 +42,7 @@ class Resource(object):
 	_originator			= '__originator__'			# Or creator
 	_modified			= '__modified__'
 	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
+	_rvi				= '__rvi__'					# Request version indicator when created
 
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	"""	Resource attributes that are excluded when updating the resource """
@@ -927,6 +928,7 @@ class Resource(object):
 		self.setAttribute(self._originator, originator, overwrite = True)
 	
 
+
 	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
 		"""	Return the internal *announcedTo* list attribute of a resource.
 
@@ -968,3 +970,23 @@ class Resource(object):
 				srn: The full structured resource name to assign to a resource.
 		"""
 		self.setAttribute(self._srn, srn, overwrite = True)
+
+
+	def getRVI(self) -> str:
+		"""	Retrieve a resource's release version indicator.
+
+			Return:
+				The resource's *rvi*.
+		"""
+		return self[self._rvi]
+	
+
+	def setRVI(self, rvi:str) -> None:
+		"""	Assign the release version for a resource.
+
+			This is usually assigned from the *rvi* indicator in the resource's CREATE request.
+
+			Args:
+				rvi: Original CREATE request's *rvi*.
+		"""
+		self.setAttribute(self._rvi, rvi, overwrite = True)

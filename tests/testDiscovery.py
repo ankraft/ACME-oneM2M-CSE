@@ -12,7 +12,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
+from typing import Tuple, Dict
 from acme.etc.Types import ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.Types import DesiredIdentifierResultType, FilterOperation
@@ -767,12 +767,11 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 5)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTwithRCN2(self) -> None:
 		""" Create <CNT> with rcn=2"""
 		# create another container
-		dct = 	{ 'm2m:cnt' : { 
+		dct:JSON = 	{ 'm2m:cnt' : { 
 				}}
 		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.hierarchicalAddress)}', TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
@@ -785,7 +784,7 @@ class TestDiscovery(unittest.TestCase):
 	def test_createCNTwithRCN3(self) -> None:
 		""" Create <CNT> with rcn=3"""
 		# create another container
-		dct = 	{ 'm2m:cnt' : { 
+		dct:JSON = 	{ 'm2m:cnt' : { 
 				}}
 		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.hierarchicalAddressAttributes)}', TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)

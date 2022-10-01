@@ -13,6 +13,8 @@ import sys
 from copy import deepcopy
 from typing import Any, List, Tuple, cast, Sequence
 
+from requests import request
+
 from ..helpers import TextTools as TextTools
 from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes
 from ..etc.Types import FilterOperation
@@ -573,7 +575,7 @@ class Dispatcher(object):
 		request.originator = originator	
 
 		# Create the resource. If this fails we deregister everything
-		if not (res := CSE.dispatcher.createLocalResource(newResource, parentResource, originator)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(newResource, parentResource, originator, request = request)).resource:
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
@@ -652,7 +654,11 @@ class Dispatcher(object):
 		return Result(status = True, rsc = RC.created, data = (resRi, resCsi, pID))
 
 
-	def createLocalResource(self, resource:Resource, parentResource:Resource = None, originator:str = None) -> Result:
+	def createLocalResource(self,
+							resource:Resource,
+							parentResource:Resource = None,
+							originator:str = None,
+							request:CSERequest = None) -> Result:
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
 		if parentResource:
@@ -670,6 +676,10 @@ class Dispatcher(object):
 		# add the resource to storage
 		if not (res := resource.dbCreate(overwrite = False)).status:
 			return res
+		
+		# Set release version to the resource, of available
+		if request and request.rvi:
+			resource.setRVI(request.rvi)
 
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other

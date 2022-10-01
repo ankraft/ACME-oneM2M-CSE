@@ -131,11 +131,15 @@ class AE(AnnounceableResource):
 		if api.startswith('N'):
 			pass # simple format
 		elif api.startswith('R'):
-			if len((apiElements := api.split('.'))) < 3:
+			if len(api.split('.')) < 3:
 				return Result.errorResult(dbg = 'wrong format for registered ID in attribute "api": to few elements')
+
+		# api must normally begin with a lower-case "r", but it is allowed for release 2a and 3
+		elif api.startswith('r'):
+			if (rvi := self.getRVI()) is not None and rvi not in ['2a', '3']:
+				return Result.errorResult(dbg = L.logWarn('lower case "r" is only allowed for release versions "2a" and "3"'))
 		else:
-			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
 
 		return Result.successResult()
 

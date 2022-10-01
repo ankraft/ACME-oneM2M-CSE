@@ -300,6 +300,39 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAPIRVI3LowerCaseR(self) -> None:
+		""" Create <AE> with RVI=3 and lower case API"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'racme',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		headers={ C.hfRVI: '3'
+		}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
+		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAPIRVI4LowerCaseRFail(self) -> None:
+		""" Create <AE> with RVI=4 and lower case API -> Fail"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'racme',
+				 	'rr': False,
+				 	'srv': [ '4' ]
+				}}
+		headers={ C.hfRVI: '4'
+		}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		self.assertEqual(rsc, RC.badRequest, ae)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAENoOriginator(self) -> None:
 		""" Create <AE> without an Originator"""
 		dct = 	{ 'm2m:ae' : {
@@ -343,7 +376,6 @@ class TestAE(unittest.TestCase):
 		ae, rsc = CREATE(cseURL, '', T.AE, dct)
 		self.assertEqual(rsc, RC.contentsUnacceptable)
 
-
 # TODO register multiple AEs
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -372,9 +404,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestAE('test_createAEAPIWrongPrefix'))	
 	suite.addTest(TestAE('test_createAEAPICorrectR'))	
 	suite.addTest(TestAE('test_createAEAPICorrectN'))	
+	suite.addTest(TestAE('test_createAEAPIRVI3LowerCaseR'))	
+	suite.addTest(TestAE('test_createAEAPIRVI4LowerCaseRFail'))
 	suite.addTest(TestAE('test_createAENoOriginator'))	
 	suite.addTest(TestAE('test_createAEEmptyOriginator'))	
 	suite.addTest(TestAE('test_createAEInvalidRNFail'))	
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
