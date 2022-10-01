@@ -739,129 +739,130 @@ Available under the BSD 3-Clause License
 		"""	Generate an overview about various resources and event counts.
 		"""
 
-		stats = CSE.statistics.getStats()
+		with L.consoleStatusWait('Collecting...'):
+			stats = CSE.statistics.getStats()
 
-		if CSE.statistics.statisticsEnabled:
-			resourceOps  =  '[underline]Operations[/underline]\n'
-			resourceOps += 	'\n'
-			resourceOps +=  f'Created       : {stats.get(Statistics.createdResources, 0)}\n'
-			resourceOps +=  f'Updated       : {stats.get(Statistics.updatedResources, 0)}\n'
-			resourceOps +=  f'Deleted       : {stats.get(Statistics.deletedResources, 0)}\n'
-			resourceOps +=  f'Expired       : {stats.get(Statistics.expiredResources, 0)}\n'
-			resourceOps +=  f'Notifications : {stats.get(Statistics.notifications, 0)}\n'
-			resourceOps +=  f'\n[dim]Includes virtual\nresources[/dim]'
+			if CSE.statistics.statisticsEnabled:
+				resourceOps  =  '[underline]Operations[/underline]\n'
+				resourceOps += 	'\n'
+				resourceOps +=  f'Created       : {stats.get(Statistics.createdResources, 0)}\n'
+				resourceOps +=  f'Updated       : {stats.get(Statistics.updatedResources, 0)}\n'
+				resourceOps +=  f'Deleted       : {stats.get(Statistics.deletedResources, 0)}\n'
+				resourceOps +=  f'Expired       : {stats.get(Statistics.expiredResources, 0)}\n'
+				resourceOps +=  f'Notifications : {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps +=  f'\n[dim]Includes virtual\nresources[/dim]'
 
-			httpReceived  = '[underline]HTTP:R[/underline]\n'
-			httpReceived += 	'\n'
-			httpReceived += f'C : {stats.get(Statistics.httpCreates, 0)}\n'
-			httpReceived += f'R : {stats.get(Statistics.httpRetrieves, 0)}\n'
-			httpReceived += f'U : {stats.get(Statistics.httpUpdates, 0)}\n'
-			httpReceived += f'D : {stats.get(Statistics.httpDeletes, 0)}\n'
+				httpReceived  = '[underline]HTTP:R[/underline]\n'
+				httpReceived += 	'\n'
+				httpReceived += f'C : {stats.get(Statistics.httpCreates, 0)}\n'
+				httpReceived += f'R : {stats.get(Statistics.httpRetrieves, 0)}\n'
+				httpReceived += f'U : {stats.get(Statistics.httpUpdates, 0)}\n'
+				httpReceived += f'D : {stats.get(Statistics.httpDeletes, 0)}\n'
 
-			httpSent  = 	'[underline]HTTP:S[/underline]\n'
-			httpSent += 	'\n'
-			httpSent += 	f'C : {stats.get(Statistics.httpSendCreates, 0)}\n'
-			httpSent += 	f'R : {stats.get(Statistics.httpSendRetrieves, 0)}\n'
-			httpSent += 	f'U : {stats.get(Statistics.httpSendUpdates, 0)}\n'
-			httpSent += 	f'D : {stats.get(Statistics.httpSendDeletes, 0)}\n'
+				httpSent  = 	'[underline]HTTP:S[/underline]\n'
+				httpSent += 	'\n'
+				httpSent += 	f'C : {stats.get(Statistics.httpSendCreates, 0)}\n'
+				httpSent += 	f'R : {stats.get(Statistics.httpSendRetrieves, 0)}\n'
+				httpSent += 	f'U : {stats.get(Statistics.httpSendUpdates, 0)}\n'
+				httpSent += 	f'D : {stats.get(Statistics.httpSendDeletes, 0)}\n'
 
-			mqttReceived  = '[underline]MQTT:R[/underline]\n'
-			mqttReceived += 	'\n'
-			mqttReceived += f'C : {stats.get(Statistics.mqttCreates, 0)}\n'
-			mqttReceived += f'R : {stats.get(Statistics.mqttRetrieves, 0)}\n'
-			mqttReceived += f'U : {stats.get(Statistics.mqttUpdates, 0)}\n'
-			mqttReceived += f'D : {stats.get(Statistics.mqttDeletes, 0)}\n'
+				mqttReceived  = '[underline]MQTT:R[/underline]\n'
+				mqttReceived += 	'\n'
+				mqttReceived += f'C : {stats.get(Statistics.mqttCreates, 0)}\n'
+				mqttReceived += f'R : {stats.get(Statistics.mqttRetrieves, 0)}\n'
+				mqttReceived += f'U : {stats.get(Statistics.mqttUpdates, 0)}\n'
+				mqttReceived += f'D : {stats.get(Statistics.mqttDeletes, 0)}\n'
 
-			mqttSent  = 	'[underline]MQTT:S[/underline]\n'
-			mqttSent += 	'\n'
-			mqttSent += 	f'C : {stats.get(Statistics.mqttSendCreates, 0)}\n'
-			mqttSent += 	f'R : {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
-			mqttSent += 	f'U : {stats.get(Statistics.mqttSendUpdates, 0)}\n'
-			mqttSent += 	f'D : {stats.get(Statistics.mqttSendDeletes, 0)}\n'
-
-
-			logs  = '[underline]Logs[/underline]\n'
-			logs += '\n'
-			logs += f'LogLevel : {str(L.logLevel)}\n'
-			logs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
-			logs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
-
-		else:
-			resourceOps  = '\n[dim]statistics are disabled[/dim]\n'
-			httpReceived = '\n[dim]statistics are disabled[/dim]\n'
-			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
-			logs         = '\n[dim]statistics are disabled[/dim]\n'
+				mqttSent  = 	'[underline]MQTT:S[/underline]\n'
+				mqttSent += 	'\n'
+				mqttSent += 	f'C : {stats.get(Statistics.mqttSendCreates, 0)}\n'
+				mqttSent += 	f'R : {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
+				mqttSent += 	f'U : {stats.get(Statistics.mqttSendUpdates, 0)}\n'
+				mqttSent += 	f'D : {stats.get(Statistics.mqttSendDeletes, 0)}\n'
 
 
-		misc  = '[underline]Misc[/underline]\n'
-		misc += '\n'
-		misc += f'StartTime  : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-		misc += f'Uptime     : {stats.get(Statistics.cseUpTime, "")}\n'
-		misc += f'Hostname   : {socket.gethostname()}\n'
-		# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
-		try:
-			misc += f'IP-Address : {Utils.getIPAddress()}\n'
-		except Exception as e:
-			print(e)
-		if hasattr(os, 'getloadavg'):
-			load = os.getloadavg()
-			misc += f'Load       : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
-		else:
+				logs  = '[underline]Logs[/underline]\n'
+				logs += '\n'
+				logs += f'LogLevel : {str(L.logLevel)}\n'
+				logs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
+				logs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
+
+			else:
+				resourceOps  = '\n[dim]statistics are disabled[/dim]\n'
+				httpReceived = '\n[dim]statistics are disabled[/dim]\n'
+				httpSent     = '\n[dim]statistics are disabled[/dim]\n'
+				logs         = '\n[dim]statistics are disabled[/dim]\n'
+
+
+			misc  = '[underline]Misc[/underline]\n'
 			misc += '\n'
-		misc += f'Platform   : {sys.platform}\n'
-		misc += f'Python     : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			misc += f'StartTime  : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			misc += f'Uptime     : {stats.get(Statistics.cseUpTime, "")}\n'
+			misc += f'Hostname   : {socket.gethostname()}\n'
+			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
+			try:
+				misc += f'IP-Address : {Utils.getIPAddress()}\n'
+			except Exception as e:
+				print(e)
+			if hasattr(os, 'getloadavg'):
+				load = os.getloadavg()
+				misc += f'Load       : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+			else:
+				misc += '\n'
+			misc += f'Platform   : {sys.platform}\n'
+			misc += f'Python     : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
 
-		# Adapt the following line when adding resources to keep formatting. 
-		# It fills up the right columns to match the length of the left column.
-		misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 5)
+			# Adapt the following line when adding resources to keep formatting. 
+			# It fills up the right columns to match the length of the left column.
+			misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 5)
 
-		requestsGrid = Table.grid(expand = True)
-		requestsGrid.add_column(ratio = 28)
-		requestsGrid.add_column(ratio = 18)
-		requestsGrid.add_column(ratio = 18)
-		requestsGrid.add_column(ratio = 18)
-		requestsGrid.add_column(ratio = 18)
-		requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
+			requestsGrid = Table.grid(expand = True)
+			requestsGrid.add_column(ratio = 28)
+			requestsGrid.add_column(ratio = 18)
+			requestsGrid.add_column(ratio = 18)
+			requestsGrid.add_column(ratio = 18)
+			requestsGrid.add_column(ratio = 18)
+			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
 
-		infoGrid = Table.grid(expand=True)
-		infoGrid.add_column(ratio = 33)
-		infoGrid.add_column(ratio = 67)
-		infoGrid.add_row(logs, misc)
+			infoGrid = Table.grid(expand=True)
+			infoGrid.add_column(ratio = 33)
+			infoGrid.add_column(ratio = 67)
+			infoGrid.add_row(logs, misc)
 
-		rightGrid = Table.grid(expand=True)
-		rightGrid.add_column()
-		rightGrid.add_row(Panel(requestsGrid, style = style))
-		rightGrid.add_row(Panel(infoGrid, style = style))
+			rightGrid = Table.grid(expand=True)
+			rightGrid.add_column()
+			rightGrid.add_row(Panel(requestsGrid, style = style))
+			rightGrid.add_row(Panel(infoGrid, style = style))
 
-		resourceTypes = '[underline]Resource Types[/underline]\n'
-		resourceTypes += '\n'
-		resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
-		resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'
-		resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(T.ACTR)}\n'
-		resourceTypes += f'CB      : {CSE.dispatcher.countResources(T.CSEBase)}\n'
-		resourceTypes += f'CIN     : {CSE.dispatcher.countResources(T.CIN)}\n'
-		resourceTypes += f'CNT     : {CSE.dispatcher.countResources(T.CNT)}\n'
-		resourceTypes += f'CRS     : {CSE.dispatcher.countResources(T.CRS)}\n'
-		resourceTypes += f'CSR     : {CSE.dispatcher.countResources(T.CSR)}\n'
-		resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(T.FCNT)}\n'
-		resourceTypes += f'FCI     : {CSE.dispatcher.countResources(T.FCI)}\n'
-		resourceTypes += f'GRP     : {CSE.dispatcher.countResources(T.GRP)}\n'
-		resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
-		resourceTypes += f'NOD     : {CSE.dispatcher.countResources(T.NOD)}\n'
-		resourceTypes += f'PCH     : {CSE.dispatcher.countResources(T.PCH)}\n'
-		resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
-		resourceTypes += f'SMD     : {CSE.dispatcher.countResources(T.SMD)}\n'
-		resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
-		resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
-		resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
-		resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
-		resourceTypes += '\n'
-		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU, T.TSB))}\n'	# substract the virtual resources
-		
-		result = Table.grid(expand = True)
-		result.add_column(width=15)
-		result.add_column()
-		result.add_row(Panel(resourceTypes, style = style), rightGrid )
+			resourceTypes = '[underline]Resource Types[/underline]\n'
+			resourceTypes += '\n'
+			resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
+			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'
+			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(T.ACTR)}\n'
+			resourceTypes += f'CB      : {CSE.dispatcher.countResources(T.CSEBase)}\n'
+			resourceTypes += f'CIN     : {CSE.dispatcher.countResources(T.CIN)}\n'
+			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(T.CNT)}\n'
+			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(T.CRS)}\n'
+			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(T.CSR)}\n'
+			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(T.FCNT)}\n'
+			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(T.FCI)}\n'
+			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(T.GRP)}\n'
+			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
+			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(T.NOD)}\n'
+			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(T.PCH)}\n'
+			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
+			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(T.SMD)}\n'
+			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
+			resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
+			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
+			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
+			resourceTypes += '\n'
+			resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU, T.TSB))}\n'	# substract the virtual resources
+			
+			result = Table.grid(expand = True)
+			result.add_column(width=15)
+			result.add_column()
+			result.add_row(Panel(resourceTypes, style = style), rightGrid )
 
 		return result
 
@@ -928,15 +929,17 @@ Available under the BSD 3-Clause License
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
 
-		if parent:
-			if not (res := CSE.dispatcher.retrieveResource(parent).resource):
+		with L.consoleStatusWait('Collecting...'):
+
+			if parent:
+				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
+					return None
+			else:
+				res = Utils.getCSE().resource
+			if not res:
 				return None
-		else:
-			res = Utils.getCSE().resource
-		if not res:
-			return None
-		tree = Tree(info(res), style = style, guide_style = style)
-		getChildren(res, tree, 0)
+			tree = Tree(info(res), style = style, guide_style = style)
+			getChildren(res, tree, 0)
 		return tree
 
 

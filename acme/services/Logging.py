@@ -22,6 +22,7 @@ from rich import inspect as richInspect
 from rich.logging import RichHandler
 from rich.style import Style
 from rich.console import Console
+from rich.status import Status
 from rich.markdown import Markdown
 from rich.text import Text
 from rich.default_styles import DEFAULT_STYLES
@@ -375,7 +376,8 @@ class Logging:
 			Logging._console.print(str(msg), style = style, end = end)
 		if nl:	# Empty line after
 			Logging._console.print()
-	
+
+
 	@staticmethod
 	def consoleSyntax(code:str, language:str) -> None:
 		"""	Print a piece of code or data with syntax highlighting to the console.
@@ -393,6 +395,24 @@ class Logging:
 		"""	Clear the console screen.
 		"""
 		Logging._console.clear()
+
+
+	@staticmethod
+	def consoleStatusWait(msg:str) -> Status:
+		"""	Return and show a progress spinner and message while waiting for a block to complete.
+		
+			Example:
+				
+				with consoleStatusWait('waiting...'):
+					...
+			
+			Args:
+				msg: Message to display
+			Return:
+				Status object.
+				
+		"""
+		return Logging._console.status(f'[{Logging.terminalStyle}]{msg}', spinner_style=Logging.terminalStyle)
 	
 
 	@staticmethod
