@@ -574,12 +574,25 @@ class HttpServer(object):
 		
 		# Assign and encode content accordingly
 		headers['Content-Type'] = (cts := result.request.ct.toHeader())
-		# (re-)add an empty pc if it is missing
+		# (re-)add an empty pc if it is missing	
+
 
 		# From hereon, data is a string or byte string
 		origData:JSON = cast(JSON, outResult.data)
 		outResult.data = RequestUtils.serializeData(cast(JSON, outResult.data)['pc'], result.request.ct) if 'pc' in cast(JSON, outResult.data) else ''
 		
+		#
+		#	Add Content-Location header, if this is a response to a CREATE operation, and uri is present
+		#
+		try:
+			if originalRequest and originalRequest.op == Operation.CREATE:
+				if  (uri := Utils.findXPath(origData, 'pc/m2m:uri')) is not None or \
+					(uri := Utils.findXPath(origData, 'pc/m2m:rce/uri')):
+						headers['Content-Location'] = uri
+		except Exception as e:
+			L.logErr(str(e))
+			quit()
+
 		# Build and return the response
 		if isinstance(outResult.data, bytes):
 			L.isDebug and L.logDebug(f'<== HTTP Response ({result.rsc}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(outResult.data)}\n=>\n{str(result.toData())}')

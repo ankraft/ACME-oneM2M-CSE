@@ -768,6 +768,33 @@ class TestDiscovery(unittest.TestCase):
 
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithRCN2(self) -> None:
+		""" Create <CNT> with rcn=2"""
+		# create another container
+		dct = 	{ 'm2m:cnt' : { 
+				}}
+		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.hierarchicalAddress)}', TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		self.assertIn('Content-Location', lastHeaders())
+		self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:uri'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithRCN3(self) -> None:
+		""" Create <CNT> with rcn=3"""
+		# create another container
+		dct = 	{ 'm2m:cnt' : { 
+				}}
+		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.hierarchicalAddressAttributes)}', TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:rce'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rce/uri'))
+		self.assertIn('Content-Location', lastHeaders())
+		self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:rce/uri'))
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
@@ -826,6 +853,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFO'))
 	suite.addTest(TestDiscovery('test_retrieveMgmtObjsRCN8'))
 	suite.addTest(TestDiscovery('test_retrieveCINmatchLabel'))
+	suite.addTest(TestDiscovery('test_createCNTwithRCN2'))
+	suite.addTest(TestDiscovery('test_createCNTwithRCN3'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

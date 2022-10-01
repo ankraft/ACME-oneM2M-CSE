@@ -200,7 +200,7 @@ class Storage(object):
 				srn: The resource is retrieved via its structured resource name.
 				aei: The resource is retrieved via its AE-ID.
 			Returns:
-				The resource is returned in a Result object.
+				The resource is returned in a `Result` object.
 		"""
 		resources = []
 

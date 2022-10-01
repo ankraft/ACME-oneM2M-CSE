@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] *rvi* and *vsi* are removed from forwarded requests when forwarding to a Release 1 target.
 - [CSE] Added support for *wificlient* ManagementObject specialization.
 - [CSE] Added support for *dataCollect* ManagementObject specialization.
+- [CSE] Added support for "Content-Location" http header for CREATE operations when RCN = 2 or 3.
 - [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
 - [CONSOLE] Added continuous inspection of a resource.
 - [CONSOLE] Added support for handling function and cursor keys in the console (currently only for POSIX, yet).

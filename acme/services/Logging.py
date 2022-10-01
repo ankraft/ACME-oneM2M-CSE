@@ -412,7 +412,7 @@ class Logging:
 				Status object.
 				
 		"""
-		return Logging._console.status(f'[{Logging.terminalStyle}]{msg}', spinner_style=Logging.terminalStyle)
+		return Logging._console.status(f'[{Logging.terminalStyle}]{msg}', spinner_style = terminalColorDark)
 	
 
 	@staticmethod
