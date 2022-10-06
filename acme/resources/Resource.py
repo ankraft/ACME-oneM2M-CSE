@@ -49,7 +49,7 @@ class Resource(object):
 
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, 
-							_isInstantiated, _originator, _announcedTo, _modified, _remoteID ]
+							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi ]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
