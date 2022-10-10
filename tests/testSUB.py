@@ -173,7 +173,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/nse'), False)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/nsi'))
 		self.assertIsInstance(findXPath(r, 'm2m:sub/nsi'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 0)
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1388,8 +1388,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/nse'), True)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/nsi'))
 		self.assertIsInstance(findXPath(r, 'm2m:sub/nsi'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 0)	# Verification request doesn't count
-
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1)	# Verification request doesn't count
 		
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
@@ -1420,6 +1419,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 1, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 1, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1432,6 +1432,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 1, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 1, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1442,7 +1443,11 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 0, r)	# Must be empty
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)	
+		# Must be empty
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)	
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)	
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)	
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1459,8 +1464,10 @@ class TestSUB(unittest.TestCase):
 		# retrieve <sub> to get the stats
 		r, rsc = RETRIEVE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa)	
 		self.assertEqual(rsc, RC.OK, r)
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 1, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 1, r)
 
 		# Set nse to True again, and clear the counts
 		dct =	{ 'm2m:sub' : {
@@ -1468,7 +1475,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 0, r)	# Must be empty
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)		# Change counts if order of TC changes
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1485,7 +1495,10 @@ class TestSUB(unittest.TestCase):
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn/num'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 0, r)	# Must be empty
+		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)	# 
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)
 
 		# Make some Updates and cause a batch notification
 		for _ in range(numberOfBatchNotifications):
@@ -1506,7 +1519,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 5, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 5, r)
-
+		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 5, r)
 
 
 

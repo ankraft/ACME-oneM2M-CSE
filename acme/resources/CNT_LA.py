@@ -37,7 +37,7 @@ class CNT_LA(Resource):
 			r = self	# no instance, so take self as a resource
 
 		# Take the resource, either a CIN or self and check it # EXPERIMENTAL
-		if not (res := CSE.notification.checkPerformBlockingRetrieve(r, originator, request, finished = lambda: self.dbReloadDict())).status:
+		if not (res := CSE.notification.checkPerformBlockingRetrieve(r, request, finished = lambda: self.dbReloadDict())).status:
 			return res
 
 		# Then retrieve it, either for the first time or again

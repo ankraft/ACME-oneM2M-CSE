@@ -827,7 +827,7 @@ class TestCRS(unittest.TestCase):
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 0) # verification request doesn't count
+		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -840,6 +840,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(findXPath(nsi, '{0}/tg'), TestCRS.originator)	
 		self.assertEqual(findXPath(nsi, '{0}/rqs'), 1)	
 		self.assertEqual(findXPath(nsi, '{0}/rsr'), 1)	
+		self.assertEqual(findXPath(nsi, '{0}/noec'), 1)	
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -865,7 +866,10 @@ class TestCRS(unittest.TestCase):
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.updated, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 0)
+		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/rqs'), 0, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/rsr'), 0, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/noec'), 0, TestCRS.crs)
 
 
 	#########################################################################

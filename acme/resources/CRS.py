@@ -122,12 +122,17 @@ class CRS(Resource):
 		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 			return res
 
+		# Handle update notificationStatsEnable attribute
+		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:crs/nse'))
+
 		# Check new NU's
+		previousNus = deepcopy(self.nu)
 		if (newNus := findXPath(dct, 'm2m:crs/nu')):
-			previousNus = deepcopy(self.nu)
 			self.setAttribute('nu', newNus)
-			if not (res := CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)).status:
-				return res
+		
+		# Update the CRS for notifications
+		if not (res := CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)).status:
+			return res
 
 		# Update TimeWindowType and TimeWindowSize
 		oldTwt = self.twt
@@ -146,9 +151,6 @@ class CRS(Resource):
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		# Handle update notificationStatsEnable attribute
-		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:crs/nse'))
-
 		return super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
 	
 

@@ -240,7 +240,7 @@ class TestExpiration(unittest.TestCase):
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created, r)
 		self.assertEqual(findXPath(r, 'cod:tempe/mia'), expirationCheckDelay)
-		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1, r)
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
 		dct = 	{ 'cod:tempe' : {

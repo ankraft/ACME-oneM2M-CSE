@@ -7,9 +7,13 @@
 #	This entity handles subscriptions and sending of notifications. 
 #
 
+"""	This module implements the notification manager service functionality for the CSE.
+"""
+
 from __future__ import annotations
+from re import sub
 import sys, copy
-from typing import Callable, Union, Any, cast
+from typing import Callable, Union, Any, cast, Optional
 from threading import Lock, current_thread
 
 import isodate
@@ -30,15 +34,28 @@ SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definitio
 
 
 class NotificationManager(object):
+	"""	This class defines functionalities to handle subscriptions and notifications.
+
+		Attributes:
+			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
+	"""
 
 
 	def __init__(self) -> None:
+		"""	Initialization of a *NotificationManager* instance.
+		"""
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('NotificationManager initialized')
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the Notification Manager.
+		
+			Returns:
+				Boolean that indicates the success of the operation
+		"""
+
 		L.isInfo and L.log('NotificationManager shut down')
 		return True
 
@@ -80,6 +97,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
 			return res
+		self.validateNotificationStatsInfo(subscription)
 		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
 
@@ -113,6 +131,9 @@ class NotificationManager(object):
 
 	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> Result:
 		"""	Update a subscription.
+
+			This method indirectly updates or rebuild the *notificationStatsInfo* attribute. It should be called
+			add the end when updating a subscription.
 		
 			Args:
 				subscription: The <sub> resource to update.
@@ -125,6 +146,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Updating subscription')
 		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
+		self.validateNotificationStatsInfo(subscription)
 		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
@@ -155,14 +177,28 @@ class NotificationManager(object):
 		return result
 
 
-	def checkSubscriptions(self, resource:Resource, 
-								 reason:NotificationEventType, 
-								 childResource:Resource = None, 
-								 modifiedAttributes:JSON = None,
-								 ri:str = None,
-								 missingData:dict[str, MissingData] = None,
-								 now:float = None) -> None:
-		# TODO doc
+	def checkSubscriptions(	self, 
+							resource:Resource, 
+							reason:NotificationEventType, 
+							childResource:Optional[Resource] = None, 
+							modifiedAttributes:Optional[JSON] = None,
+							ri:Optional[str] = None,
+							missingData:Optional[dict[str, MissingData]] = None) -> None:
+		"""	Check and handle resource events.
+
+			This method looks for subscriptions of a resource and tests, whether an event, like *update* etc, 
+			will lead to a notification. It then creates and sends the notification to all targets.
+
+			Args:
+				resource: The resource that received the event resp. request.
+				reason: The `NotificationEventType` to check.
+				childResource: An optional child resource of `resource` that might be updated or created etc.
+				modifiedAttributes: An optional `JSON` structure that contains updated attributes.
+				ri: Optionally provided resource ID of `Resource`. If it is provided, then `resource` might be *None*.
+					It will then be used to retrieve the resource.
+				missingData: An optional dictionary of missing data structures in case the `TimeSeries` missing data functionality is handled.
+		"""
+		
 		if resource and resource.isVirtual():
 			return 
 		ri = resource.ri if not ri else ri
@@ -187,8 +223,9 @@ class NotificationManager(object):
 
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
+			ri = sub['ri']
 			if childResource and \
-				sub['ri'] == childResource.ri and \
+				ri == childResource.ri and \
 				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
 					continue
 			if reason not in sub['net']:	# check whether reason is actually included in the subscription
@@ -198,6 +235,7 @@ class NotificationManager(object):
 				if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
 					continue
 				self._handleSubscriptionNotification(sub, reason, resource = childResource, modifiedAttributes = modifiedAttributes)
+				self.countNotificationEvents(ri)
 			
 			# Check Update and enc/atr vs the modified attributes 
 			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) and modifiedAttributes:
@@ -207,6 +245,7 @@ class NotificationManager(object):
 						found = True
 				if found:
 					self._handleSubscriptionNotification(sub, reason, resource = resource, modifiedAttributes = modifiedAttributes)
+					self.countNotificationEvents(ri)
 				else:
 					L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
 			
@@ -215,24 +254,35 @@ class NotificationManager(object):
 				md = missingData[sub['ri']]
 				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
 					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData = copy.deepcopy(md))
+					self.countNotificationEvents(ri)
 					md.clearMissingDataList()
 
 			else: # all other reasons that target the resource
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
+				self.countNotificationEvents(ri)
 
 
 	def checkPerformBlockingUpdate(self, resource:Resource, originator:str, updatedAttributes:JSON, finished:Callable = None) -> Result:
-		# TODO doc
-		L.isDebug and L.logDebug('check blocking UPDATE')
+		"""	Check for and perform a *blocking update* request for resource updates that have this event type 
+			configured.
 
-		# Get blockingUpdate <sub> for this resource , if any
-		subs = self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingUpdate])
-		
+			Args:
+				resource: The updated resource.
+				originator: The originator of the original request.
+				updatedAttributes: A structure of all the updated attributes.
+				finished: Callable that is called when the notifications were successfully sent and a response was received.
+			Returns:
+				Result instance indicating success or failure.
+		"""
+
+		L.isDebug and L.logDebug('Looking for blocking UPDATE')
+
 		# Later: BlockingUpdateDirectChild
 
 		# TODO 2) Prevent or block all other UPDATE request primitives to this target resource.
 
-		for eachSub in subs:
+		# Get blockingUpdate <sub> for this resource , if any, and iterate over them
+		for eachSub in self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingUpdate]):
 
 			notification:JSON = {
 				'm2m:sgn' : {
@@ -287,15 +337,33 @@ class NotificationManager(object):
 		return Result.successResult()
 
 
-	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, request:CSERequest, finished:Callable = None) -> Result:
-		# TODO doc
+	def checkPerformBlockingRetrieve(self, 
+									 resource:Resource, 
+									 request:CSERequest, 
+									 finished:Optional[Callable] = None) -> Result:
+		"""	Perform a blocking RETRIEVE. If this notification event type is configured a RETRIEVE operation to
+			a resource causes a notification to a target. It is expected that the target is updating the resource
+			**before** responding to the notification.
+
+			Note:
+				This functionality is experimental and not part of the oneM2M spec yet.
+
+			Args:
+				resource
+				resource: The resource that is the target of the RETRIEVE request.
+				request: The original request.
+				finished: Callable that is called when the notifications were successfully sent and received.
+			Return:
+				Result instance indicating success or failure.
+		"""
+
 		# TODO originator in notification?
 		# TODO check notify permission for originator
 		# TODO blockingRetrieveDirectChildren.
 		# TODO getSubscriptionsByNetChty + chty optional
 		# EXPERIMENTAL
 		
-		L.isDebug and L.logDebug('check blocking RETRIEVE')
+		L.isDebug and L.logDebug('Looking for blocking RETRIEVE')
 
 		# Get blockingRetrieve <sub> for this resource , if any
 		subs = self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingRetrieve])
@@ -385,6 +453,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(crs, originator = originator)).status:	# verification requests happen here
 			return res
+		self.validateNotificationStatsInfo(crs)
 		return Result.successResult()
 
 
@@ -392,6 +461,10 @@ class NotificationManager(object):
 		"""	Update a crossResourcesubscription. 
 		
 			Check each new receipient in the *nu* attribute with verification requests. 
+
+			This method indirectly updates or rebuild the *notificationStatsInfo* attribute. It should be called
+			add the end when updating a subscription.
+
 
 			Args:
 				crs: The new <crs> resource to check.
@@ -404,6 +477,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Updating crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(crs, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
+		self.validateNotificationStatsInfo(crs)
 		return Result.successResult()
 
 
@@ -460,6 +534,7 @@ class NotificationManager(object):
 										  preFunc = lambda target: self.countSentReceivedNotification(crs, target),
 										  postFunc = lambda target: self.countSentReceivedNotification(crs, target, isResponse = True)
 										 )
+			self.countNotificationEvents(crs.ri, sub = crs)	# Count notification events
 			
 			# Check for <crs> expiration
 			if (exc := crs.exc):
@@ -622,7 +697,45 @@ class NotificationManager(object):
 	#	Notification Statistics
 	#
 
-	def countSentReceivedNotification(self, subscription:SUB|CRS, target:str, isResponse:bool = False, count:int = 1) -> None:
+	def validateNotificationStatsInfo(self, sub:SUB|CRS) -> None:
+		"""	Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
+
+			This method adds, if necessary, the necessarry stat info structures for each notification
+			URI. It also removes structures for notification URIs that are not present anymore.
+
+			Note:
+				For this the *notificationURIs* attribute must be fully validated first.
+			
+			Args:
+				sub: The \<sub> or \<crs> resource for whoich to validate the attribute.
+		"""
+
+		if (nsi := sub.nsi) is None:	# nsi attribute must be at least an empty list
+			L.logErr(f'nsi is not present in resource: {sub.ri}')
+			return
+		nus = sub.nu
+
+		# Remove from nsi when not in nu (anymore)
+		for each in list(nsi):
+			if each['tg'] not in nus:
+				nsi.remove(each)
+		
+		# Add new nsi structure for new targets in nu 
+		for nu in sub.nu:
+			for each in nsi:
+				if each['tg'] == nu:
+					break
+
+			# target not found in nsi, add it
+			else:
+				nsi.append({	'tg': nu,
+								'rqs': 0,
+								'rsr': 0,
+								'noec': 0
+							})
+
+
+	def countSentReceivedNotification(self, sub:SUB|CRS, target:str, isResponse:bool = False, count:int = 1) -> None:
 		"""	If Notification Stats are enabled for a <sub> or <crs> resource, then
 			increase the count for sent notifications or received responses.
 
@@ -633,32 +746,54 @@ class NotificationManager(object):
 				count: Number of notifications to count.
 		"""
 
-		if not subscription or not subscription.nse:	# Don't count if disabled
+		if not sub or not sub.nse:	# Don't count if disabled
 			return
 		
-		L.isDebug and L.logDebug(f'Incrementing notification stats for: {subscription.ri} ({"response" if isResponse else "request"})')
+		L.isDebug and L.logDebug(f'Incrementing notification stats for: {sub.ri} ({"response" if isResponse else "request"})')
 
 		activeField  = 'rsr' if isResponse else 'rqs'
 		
 		# Search and add to existing target
-		for each in subscription.nsi:
+		for each in sub.nsi:
 			if each['tg'] == target:
 				each[activeField] += count
 				break
-		else:
-			# target not found in nsi, add it
-			element = {	'tg': target,
-						'rqs': 0,
-						'rsr': 0
-			}
-			element[activeField] = count
-			subscription.nsi.append(element)
-		subscription.dbUpdate()
+		sub.dbUpdate()
+
+
+	def countNotificationEvents(self, ri:str, sub:Optional[SUB|CRS] = None) -> None:
+		"""	This method count and stores the number of notification events for a subscription.
+			It increments the count for each of the notification targets.
+
+			After handling the resource is updated in the database.
+			
+			Args:
+				ri: Resource ID of a \<sub> or \<csr> resource to handle.
+		"""
+
+		if sub is None:
+			if not (res := CSE.dispatcher.retrieveLocalResource(ri)).status:
+				return
+			sub = res.resource
+		if not sub.nse:	# Don't count if disabled
+			return
+		
+		L.isDebug and L.logDebug(f'Incrementing notification event stat for: {sub.ri}')
+		
+		# Search and add to existing target
+		for each in sub.nsi:
+			each['noec'] += 1
+		sub.dbUpdate()
 
 
 	def updateOfNSEAttribute(self, sub:CRS|SUB, newNse:bool) -> None:
 		""" Handle an update of the *notificationStatsEnable* attribute of a <sub> or <crs>
-			resource.
+			resource. 
+
+			Note:
+				This empties the *notificationStatsEnable* attribute, which must be filled later again, 
+				e.g. when validating the *notificationURIs* attribute. 
+				For this the *notificationURIs* attribute must be fully validated first.
 
 			Args:
 				sub: Either a <sub> or <crs> resource.
@@ -676,7 +811,6 @@ class NotificationManager(object):
 			else:	# self.nse == False
 				if newNse == True:
 					sub.setAttribute('nsi', [])
-
 
 
 
@@ -712,6 +846,8 @@ class NotificationManager(object):
 						# Return when even a single verification request fails
 						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 
+		# Add/Update NotificationStatsInfo structure
+		self.validateNotificationStatsInfo(subscription)
 		return Result.successResult()
 
 

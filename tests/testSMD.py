@@ -19,50 +19,56 @@ from init import *
 #
 #	Semantic descriptors & queries
 #
-rdfxml = """<?xml version="1.0" encoding="utf-8"?>
+rdfxml_1 = """<?xml version="1.0" encoding="utf-8"?>
 <rdf:RDF
-   xmlns:m2m="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:m2m="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#"
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 >
-  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-MonitoringFunction-WashingMachineStatus_RESOURCE_ID">
-    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
-    <rdf:type rdf:resource="https://saref.etsi.org/core/GetCommand"/>
-    <m2m:oneM2MTargetURI>/myWashingMachine/status/la</m2m:oneM2MTargetURI>
-    <m2m:oneM2MMethod>RETRIEVE</m2m:oneM2MMethod>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-TOGGLE_Command_RESOURCE_ID">
-    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
-    <rdf:type rdf:resource="https://saref.etsi.org/core/ToggleCommand"/>
-    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
-    <m2m:hasDataRestriction>TOGGLE</m2m:hasDataRestriction>
-    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-ON_Command_RESOURCE_ID">
-    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
-    <rdf:type rdf:resource="https://saref.etsi.org/core/OnCommand"/>
-    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
-    <m2m:hasDataRestriction>ON</m2m:hasDataRestriction>
-    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_XYZ-StartStopFunction-OFF_Command_RESOURCE_ID">
-    <rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
-    <rdf:type rdf:resource="https://saref.etsi.org/core/OffCommand"/>
-    <m2m:oneM2MTargetURI>/myWashingMachine/command</m2m:oneM2MTargetURI>
-    <m2m:hasDataRestriction>OFF</m2m:hasDataRestriction>
-    <m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
-  </rdf:Description>
+<rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_RETRIEVE-MonitoringFunction-WashingMachineStatus_RESOURCE_ID">
+<rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+<rdf:type rdf:resource="https://saref.etsi.org/core/GetCommand"/>
+<m2m:oneM2MTargetURI>/myWashingMachine/status/la</m2m:oneM2MTargetURI>
+<m2m:oneM2MMethod>RETRIEVE</m2m:oneM2MMethod>
+</rdf:Description>
 </rdf:RDF>"""
-rdfxmlB64 = base64.b64encode(rdfxml.encode('UTF-8')).decode('UTF-8')
+rdfxml_1_B64 = base64.b64encode(rdfxml_1.encode('UTF-8')).decode('UTF-8')
 
-query = """PREFIX sn:<http://www.XYZ.com/WashingMachines#XYZ_Cool>  
+
+rdfxml_2 = """<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+xmlns:m2m="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#"
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+>
+<rdf:Description rdf:about="http://www.XYZ.com/WashingMachines#XYZ_CoolWASH_CREATE-MonitoringFunction-WashingMachineStatus_RESOURCE_ID">
+<rdf:type rdf:resource="https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#Operation"/>
+<rdf:type rdf:resource="https://saref.etsi.org/core/GetCommand"/>
+<m2m:oneM2MTargetURI>/myWashingMachine/status/la</m2m:oneM2MTargetURI>
+<m2m:oneM2MMethod>CREATE</m2m:oneM2MMethod>
+</rdf:Description>
+</rdf:RDF>"""
+rdfxml_2_B64 = base64.b64encode(rdfxml_2.encode('UTF-8')).decode('UTF-8')
+
+
+# Queries
+
+query_query = """PREFIX sn:<http://www.XYZ.com/WashingMachines#XYZ_Cool>  
 PREFIX m2m: <https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#>  
-PREFIX saref: <https://saref.etsi.org/core/>  
 select  ?wm ?res where { 
     ?wm a m2m:Operation .
     ?wm m2m:oneM2MTargetURI ?res
     FILTER(contains(?res, "myWashingMachine"))
 }"""
-queryURL = urllib.parse.quote(query)
+query_query_URL = urllib.parse.quote(query_query)
+
+query_discovery =  """
+PREFIX sn:<http://www.XYZ.com/WashingMachines#XYZ_Cool>
+PREFIX m2m:<https://git.onem2m.org/MAS/BaseOntology/raw/master/base_ontology.owl#>
+select  ?wm ?res where {
+	?wm m2m:oneM2MMethod ?res
+	FILTER(contains(?res, "RETRIEVE"))
+}"""
+query_discovery_URL = urllib.parse.quote(query_discovery)
+
 
 ###############################################################################
 
@@ -145,7 +151,7 @@ class TestSMD(unittest.TestCase):
 		dct = 	{ 'm2m:smd' : { 
 					'rn' : smdRN,
 					'dcrp' : 4,
-					'dsp' : rdfxmlB64,
+					'dsp' : rdfxml_1_B64,
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -255,21 +261,21 @@ class TestSMD(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryOnlySMFFail(self) -> None:
 		"""	Semantic query with only SMF -> Fail"""
-		r, rsc = RETRIEVE(f'{aeURL}?smf={queryURL}', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?smf={query_query_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryAsDiscovery(self) -> None:
 		"""	Semantic query as Discovery -> Fail"""
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=1&rcn={int(RCN.semanticContent)}&smf={queryURL}', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=1&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQuery(self) -> None:
 		"""	Semantic query as Discovery"""
-		r, rsc = RETRIEVE(f'{aeURL}?sqi=1&rcn={int(RCN.semanticContent)}&smf={queryURL}', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?sqi=1&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(qres := findXPath(r, 'm2m:qres'))
 		self.assertTrue(qres.startswith('<?xml'), qres)

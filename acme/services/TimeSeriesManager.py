@@ -117,7 +117,7 @@ class TimeSeriesManager(object):
 				
 				# L.logDebug(rts.missingData)
 				# Check for sending the missing data subscriptions in  general
-				CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData, now = rts.missingDataDetectionTime)
+				CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData)
 			else:
 				L.isDebug and L.logDebug(f'<tsi> with dgt:{dgt} within expected dataGenerationTimeRange')
 

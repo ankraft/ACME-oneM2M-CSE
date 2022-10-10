@@ -49,7 +49,7 @@ class Resource(object):
 
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, 
-							_isInstantiated, _originator, _announcedTo, _modified, _remoteID ]
+							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi ]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
@@ -373,7 +373,7 @@ class Resource(object):
 		"""
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
-			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
+			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())).status:
 				return res
 		return Result.successResult()
 

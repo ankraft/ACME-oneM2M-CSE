@@ -1679,6 +1679,16 @@
 			"car": "1"
 		}
 	],
+	"noec": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:setOfNotificationStatsInfo",
+			"lname": "notificationEventCount",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1"
+		}
+	],
 
 
 	//
