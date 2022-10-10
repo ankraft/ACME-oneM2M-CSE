@@ -35,9 +35,11 @@ const types = {
     16 : "RemoteCSE",
     17 : "Request",
     23 : "Subscription",
+	24 : "SemanticDescriptor",
     28 : "FlexContainer",
 	29 : "TimeSeries",
 	30 : "TimeSeriesInstance",
+	48 : "CrossResourceSubscription",
     58 : "FlexContainerInstance",
 
     10001 : "ACPAnnc",
@@ -49,6 +51,7 @@ const types = {
     10013 : "MgmtObjAnnc",
     10014 : "NodeAnnc",
     10016 : "RemoteCSEAnnc",
+	10024 : "SemanticDescriptorAnnc",
     10028 : "FlexContainerAnnc",
 	10029 : "TimeSeriesAnnc",
 	10030 : "TimeSeriesInstanceAnnc",
@@ -67,9 +70,11 @@ const shortTypes = {
     16 : "CSR",
     17 : "REQ",
     23 : "SUB",
+	24 : "SMD",
     28 : "FCNT",
 	29 : "TS",
 	30 : "TSI",
+	48 : "CRS",
     58 : "FCI",
 
     10001 : "ACPAnnc",
@@ -81,6 +86,7 @@ const shortTypes = {
     10013 : "MGMTOBJAnnc",
     10014 : "NODAnnc",
     10016 : "CSRAnnc",
+	10024 : "SMDAnnc",
     10028 : "FCNTAnnc",
 	10029 : "TSAnnc",
 	10030 : "TSIAnnc",
@@ -98,6 +104,7 @@ const mgdTypes = {
   1008 : "DeviceCapability",
   1009 : "Reboot",
   1010 : "EventLog",
+  1021 : "DataCollection",
   1023 : "myCertFileCred"
 }
 
@@ -112,6 +119,7 @@ const mgdShortTypes = {
   1008 : "DVC",
   1009 : "REB",
   1010 : "EVL",
+  1021 : "DATC",
   1023 : "NYCFC"
 }
 
