@@ -22,6 +22,6 @@ docker run -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -it -p 8080:8080 --r
 
 You can adapt (ie. configure a new Docker Hub ID) the build script and *Dockerfile* in the [tools/Docker](../tools/Docker) directory. It might be a good idea, for example, to run the CSE in head-less mode (command line argument *--headless*), which disables screen output.
 
-The build script takes the current scripts, configuration, initialization resources etc., builds a new Docker image, and uploads the image to the configured Docker Hub repository.
+The build script take the current scripts, attribute definitions etc from the *init* directory and includes them in the Docker image. The configuration file for the Docker image's *acme.ini* file is copied from file *acme.docker* from the *Docker* directory. Please make any necessary changes to that file before building the image.
 
 [← README](../README.md) 
