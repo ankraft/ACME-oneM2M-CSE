@@ -185,7 +185,7 @@ class Console(object):
 			('c', 'Show configuration'),
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
-			('E', 'Export resource tree to *init* directory'),
+			('E', 'Export resource tree to [i]init[/i] directory'),
 			('G', 'Plot graph (only for container)'),
 			('^G', 'Plot & refresh graph continuously (only for container)'),
 			('i', 'Inspect resource'),
@@ -401,15 +401,16 @@ Available under the BSD 3-Clause License
 	def cseRegistrations(self, _:str) -> None:
 		"""	Render CSE registrations.
 		"""
-		L.console('CSE Registrations', isHeader=True)
-		L.console(self.getCSERegistrationsRich())
+		L.console('CSE Registrations', isHeader = True)
+		poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
+		L.console(f'- **Point of Access**\n{poas}\n{self.getCSERegistrationsRich()}')
 		L.console()
 
 
 	def statistics(self, _:str) -> None:
 		""" Render various statistics & counts.
 		"""
-		L.console('Statistics', isHeader=True)
+		L.console('Statistics', isHeader = True)
 		L.console(self.getStatisticsRich())
 		L.console()
 
@@ -713,14 +714,19 @@ Available under the BSD 3-Clause License
 		"""
 
 		result = ''
-		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress:
-			registrarCSE = CSE.remote.registrarCSE
-			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-			result += f'- **Registrar CSE**  \n{CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
+
+		if CSE.cseType != CSEType.IN:
+			result += f'- **Registrar CSE**\n'
+			if CSE.remote.remoteAddress:
+				registrarCSE = CSE.remote.registrarCSE
+				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
+				result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
+			else:
+				result += '   - None'
 
 		if CSE.cseType != CSEType.ASN:
+			result += f'- **Registree CSEs**\n'
 			if len(CSE.remote.descendantCSR) > 0:
-				result += f'- **Registree CSEs**\n'
 				for desc in CSE.remote.descendantCSR.keys():
 					(csr, _) = CSE.remote.descendantCSR[desc]
 					if csr:
@@ -729,6 +735,8 @@ Available under the BSD 3-Clause License
 							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
 							if not csr2 and atCsi2 == desc:
 								result += f'    - {desc2[1:]}\n'
+			else:
+				result += '    - None'
 	
 		return result if len(result) else 'None'
 		
@@ -796,25 +804,32 @@ Available under the BSD 3-Clause License
 
 			misc  = '[underline]Misc[/underline]\n'
 			misc += '\n'
-			misc += f'StartTime  : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-			misc += f'Uptime     : {stats.get(Statistics.cseUpTime, "")}\n'
-			misc += f'Hostname   : {socket.gethostname()}\n'
+			misc += f'StartTime         : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			misc += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
+			misc += f'Hostname          : {socket.gethostname()}\n'
+			misc += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
+
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
-				misc += f'IP-Address : {Utils.getIPAddress()}\n'
+				misc += f'IP-Address        : {Utils.getIPAddress()}\n'
 			except Exception as e:
 				print(e)
+			misc += f'PoA               : {CSE.csePOA[0]}\n'
+			if len(CSE.csePOA) > 1:
+				misc += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+
+			misc += '\n'
 			if hasattr(os, 'getloadavg'):
 				load = os.getloadavg()
-				misc += f'Load       : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+				misc += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
 			else:
 				misc += '\n'
-			misc += f'Platform   : {sys.platform}\n'
-			misc += f'Python     : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			misc += f'Platform          : {sys.platform}\n'
+			misc += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
 
 			# Adapt the following line when adding resources to keep formatting. 
 			# It fills up the right columns to match the length of the left column.
-			misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 5)
+			misc += '\n' * ( (2 if CSE.statistics.statisticsEnabled else 3) - len(CSE.csePOA))
 
 			requestsGrid = Table.grid(expand = True)
 			requestsGrid.add_column(ratio = 28)
@@ -856,6 +871,7 @@ Available under the BSD 3-Clause License
 			resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
 			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
+			resourceTypes += '\n'
 			resourceTypes += '\n'
 			resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU, T.TSB))}\n'	# substract the virtual resources
 			
