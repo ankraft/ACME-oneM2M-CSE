@@ -60,7 +60,7 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('srt', T.supportedResourceTypes(), overwrite = False)			#  type: ignore
 		self.setAttribute('csz', CST.supportedContentSerializations(), overwrite = False)	# Will be replaced when retrieved
 		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite = False)			# This must be a list
-		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite = False)		# TODO add more address schemes when available
+		self.setAttribute('poa', CSE.csePOA, overwrite = False)	
 		self.setAttribute('cst', CSE.cseType, overwrite = False)
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	

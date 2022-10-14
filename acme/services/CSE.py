@@ -113,9 +113,10 @@ supportedReleaseVersions:list[str]				= None
 """	List of the supported release versions. """
 
 cseType:CSEType									= None
+""" The kind of CSE: IN, MN, or ASN. """
 
 cseCsi:str										= None
-""" The CSE-ID """
+""" The CSE-ID. """
 
 cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
@@ -140,6 +141,9 @@ cseRn:str										= None
 
 cseOriginator:str								= None
 """	The CSE's admin originator. """
+
+csePOA:list[str]								= []
+""" The CSE's point-of-access's. """
 
 defaultSerialization:ContentSerializationType	= None
 """ The default / preferred content serialization type. """
@@ -173,7 +177,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
-	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion
+	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -212,6 +216,11 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 	releaseVersion 			 = Configuration.get('cse.releaseVersion')
+
+	# Set the CSE's point-of-access
+	csePOA					 = [ Configuration.get('http.address') ]
+	if Configuration.get('mqtt.enable'):
+		csePOA.append(f'mqtt://{Configuration.get("mqtt.address")}:{Configuration.get("mqtt.port")}')
 
 	#
 	# init Logging
