@@ -238,10 +238,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="announcements"></a>
 ### [cse.announcements] - Settings for Resource Announcements 
 
-| Keyword       | Description                                                                                      | Configuration Name              |
-|:--------------|:-------------------------------------------------------------------------------------------------|:--------------------------------|
-| checkInterval | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval |
-
+| Keyword                        | Description                                                                                      | Configuration Name                               |
+|:-------------------------------|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------|
+| checkInterval                  | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval                  |
+| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                          | cse.announcements.allowAnnouncementsToHostingCSE |
 
 
 <a name="statistics"></a>

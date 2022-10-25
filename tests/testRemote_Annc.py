@@ -68,6 +68,10 @@ class TestRemote_Annc(unittest.TestCase):
 	#########################################################################
 
 
+	#
+	#	create an announced AE, but no extra attributes
+	#
+
 	# Create an AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithoutAA(self) -> None:
@@ -141,6 +145,10 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.ae = None
 
 
+	#
+	#	create an announced AE, including announced attribute
+	#
+
 	# Create an AE with AT and AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithAA(self) -> None:
@@ -210,6 +218,10 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 
 
+	#
+	#	create an announced AE, including NA announced attribute
+	#
+
 	# Create an AE with non-announceable attributes
 	# AA should be corrected, null, but still present when rcn=modifiedAttributes
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -237,6 +249,10 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:ae/aa'), r)	# This must be None/Null!
 		TestRemote_Annc.ae = r
 
+
+	#
+	#	create an announced AE, with non-resource announcedAttributes
+	#
 
 	# Create an AE with non-resource attributes
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -290,6 +306,10 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'm2m:aeA/lbl'))
 
+
+	#
+	#	create an announced Node & MgmtObj [bat]
+	#
 
 	# Create a Node with AT
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -567,6 +587,10 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteBatRI = None
 
 
+	#
+	#	create an announced ACP
+	#
+
 	# Create an ACP 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnouncedACP(self) -> None:
@@ -658,6 +682,10 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteAcpRI = None
 
 
+	#
+	#	create an announced CNT with announcedSyncType = bi-directional
+	#
+
 	# Create CNT with announcedSyncType
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnouncedCNTSynced(self) -> None:
@@ -712,6 +740,40 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.cnt = None
 		TestRemote_Annc.remoteCntRI = None
+
+
+	#
+	#	Announcement to hosting CSE
+	#
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_announceToHostingCSE(self) -> None:
+		""" Announcement to own CSE """
+		dct = 	{ 'm2m:cnt' : {
+					'rn': 	cntRN, 
+					'lbl':	[ 'aLabel' ],
+					'mni':	10,
+				 	'at': 	[ CSEID ],
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:cnt/at'), list)
+		TestRemote_Annc.remoteCntRI = findXPath(r, 'm2m:cnt/at')[0]
+		self.assertTrue(TestRemote_Annc.remoteCntRI.startswith(CSEID))
+		self.assertGreater(len(TestRemote_Annc.remoteCntRI), len(CSEID))	# must be longer if succeeded
+
+		# Retrieve locally announced resource
+		r, rsc = RETRIEVE(f'{URL}~{TestRemote_Annc.remoteCntRI}', CSEID)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cntA'))
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_unannounceFromHostingCSE(self) -> None:
+		""" Unannouncement from own CSE """
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
 
 
 
@@ -772,6 +834,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestRemote_Annc('test_updateRemoteCNT'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnouncedCNTSynced'))
 
+	# announcement to own CSE
+	suite.addTest(TestRemote_Annc('test_announceToHostingCSE'))
+	suite.addTest(TestRemote_Annc('test_unannounceFromHostingCSE'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

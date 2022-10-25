@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 import time
-from typing import Optional, Tuple, List, cast
+from typing import Optional, Tuple, List, cast, Any
 from ..etc import Utils
 from ..etc import RequestUtils
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes as T, ResponseStatusCode as RC, JSON, Result, ResultContentType
@@ -22,6 +22,8 @@ from .Configuration import Configuration
 # TODO for anounceable resource:
 # - update: update resource here
 
+# TODO Remove marked code below after 0.10.0, also remove checkInterval configuration setting
+
 waitBeforeAnnouncement = 3	# seconds # TODO configurable
 
 class AnnouncementManager(object):
@@ -33,7 +35,11 @@ class AnnouncementManager(object):
 		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleRemoteCSEHasDeregistered)	# type: ignore
 		
 		# Configuration values
-		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
+		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
+		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
+
+		# Add a handler for configuration changes
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
 		# self.start()	# TODO remove after 0.10.0
 		L.isInfo and L.log('AnnouncementManager initialized')
@@ -47,6 +53,21 @@ class AnnouncementManager(object):
 					self.checkResourcesForUnAnnouncement(csr)
 		L.isInfo and L.log('AnnouncementManager shut down')
 		return True
+
+
+	def configUpdate(self, key:str = None, value:Any = None) -> None:
+		"""	Callback for the `configUpdate` event.
+			
+			Args:
+				key: Name of the updated configuration setting.
+				value: New value for the config setting.
+		"""
+		if key not in [ 'cse.announcements.checkInterval', 'cse.announcements.allowAnnouncementsToHostingCSE' ]:
+			return
+
+		# assign new values
+		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
+		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
 
 
 	# TODO Test this for a while. And remove it if this fully works as expected.
@@ -143,10 +164,10 @@ class AnnouncementManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for at in resource.at:
-			# if at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash):
-			# 	L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
-			# 	self._removeAnnouncementFromResource(resource, at)
-			# 	continue
+			if (at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash)) and not self.allowAnnouncementsToHostingCSE:
+				L.isWarn and L.logWarn('Targeting own CSE for announcement. Ignored.')
+				self._removeAnnouncementFromResource(resource, at)
+				continue
 			self.announceResourceToCSI(resource, at)	# ignore result
 		return Result(status=True)
 

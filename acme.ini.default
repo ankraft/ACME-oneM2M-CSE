@@ -394,6 +394,9 @@ queueSize=5000
 ; Wait n seconds between tries to to announce resources to registered remote CSE.
 ; Default: 10
 checkInterval=10
+; Allow resource announcements to the own hosting CSE.
+; Default: True
+allowAnnouncementsToHostingCSE=True
 
 
 ;
