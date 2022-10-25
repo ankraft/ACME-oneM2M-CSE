@@ -169,11 +169,8 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/nct'))
 		self.assertIsInstance(findXPath(r, 'm2m:sub/nct'), int)
 		self.assertEqual(findXPath(r, 'm2m:sub/nct'), 1)
-		self.assertIsNotNone(findXPath(r, 'm2m:sub/nse'))
-		self.assertEqual(findXPath(r, 'm2m:sub/nse'), False)
-		self.assertIsNotNone(findXPath(r, 'm2m:sub/nsi'))
-		self.assertIsInstance(findXPath(r, 'm2m:sub/nsi'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/nse'))
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1396,16 +1393,6 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateSUBDeleteNSEFail(self) -> None:
-		""" UPDATE <sub> with deleted nse attribute -> Fail """
-		dct =	{ 'm2m:sub' : {
-					'nse' : None
-				}}
-		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
-		self.assertEqual(rsc, RC.badRequest, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAECheckStats(self) -> None:
 		""" UPDATE <AE> and check new stats"""
 		dct =	{ 'm2m:ae' : {
@@ -1522,6 +1509,16 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 5, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSUBDeleteNSE(self) -> None:
+		""" UPDATE <sub> with deleted nse attribute"""
+		dct =	{ 'm2m:sub' : {
+					'nse' : None
+				}}
+		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/nse'), r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
@@ -1629,12 +1626,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# NotificationStats tests
 	suite.addTest(TestSUB('test_createSUBForNotificationStats'))
-	suite.addTest(TestSUB('test_updateSUBDeleteNSEFail'))
 	suite.addTest(TestSUB('test_updateAECheckStats'))
 	suite.addTest(TestSUB('test_updateSUBNSEFalse'))
 	suite.addTest(TestSUB('test_updateSUBNSETrue'))
 	suite.addTest(TestSUB('test_updateSUBNSETrueAgain'))
 	suite.addTest(TestSUB('test_updateSUBcountBatchNotifications'))
+	suite.addTest(TestSUB('test_updateSUBDeleteNSE'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

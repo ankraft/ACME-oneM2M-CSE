@@ -2114,7 +2114,7 @@
 			"lname": "notificationStatsEnable",
 			"ns": "m2m",
 			"type": "boolean",
-			"car": "1",
+			"car": "01",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",

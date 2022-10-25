@@ -97,7 +97,6 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
 			return res
-		self.validateNotificationStatsInfo(subscription)
 		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
 
@@ -146,7 +145,6 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Updating subscription')
 		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
-		self.validateNotificationStatsInfo(subscription)
 		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
@@ -453,7 +451,6 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(crs, originator = originator)).status:	# verification requests happen here
 			return res
-		self.validateNotificationStatsInfo(crs)
 		return Result.successResult()
 
 
@@ -477,7 +474,6 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Updating crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(crs, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
-		self.validateNotificationStatsInfo(crs)
 		return Result.successResult()
 
 
@@ -711,7 +707,6 @@ class NotificationManager(object):
 		"""
 
 		if (nsi := sub.nsi) is None:	# nsi attribute must be at least an empty list
-			L.logErr(f'nsi is not present in resource: {sub.ri}')
 			return
 		nus = sub.nu
 
@@ -811,7 +806,10 @@ class NotificationManager(object):
 			else:	# self.nse == False
 				if newNse == True:
 					sub.setAttribute('nsi', [])
-
+			self.validateNotificationStatsInfo(sub)
+		else:
+			# nse is removed (present in resource, but None, and neither True or False)
+			sub.delAttribute('nsi')
 
 
 	#########################################################################

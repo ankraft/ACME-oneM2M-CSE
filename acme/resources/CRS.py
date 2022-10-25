@@ -73,10 +73,6 @@ class CRS(Resource):
 		self._addToInternalAttributes(self._sudRI)
 		self.setAttribute(self._subSratRIs, {}, overwrite = False)	
 
-		# Add notificationStats attributes
-		self.setAttribute('nse', False, overwrite = False)
-		self.setAttribute('nsi', [], overwrite = False)		# initialize the notificationStatsInfo to empty, if not present
-
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if (res := super().activate(parentResource, originator)).status == False:
@@ -122,8 +118,10 @@ class CRS(Resource):
 		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 			return res
 
-		# Handle update notificationStatsEnable attribute
-		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:crs/nse'))
+		# Handle update notificationStatsEnable attribute, but only if present in the resource.
+		# This is important bc it can be set to True, False, or Null.
+		if 'nse' in Utils.pureResource(dct)[0]:
+			CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:crs/nse'))
 
 		# Check new NU's
 		previousNus = deepcopy(self.nu)

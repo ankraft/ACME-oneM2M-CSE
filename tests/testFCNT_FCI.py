@@ -132,12 +132,14 @@ class TestFCNT_FCI(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0, r)
 
 		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0, r)
 
@@ -182,7 +184,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(rla)
 		self.assertIsNotNone(findXPath(rla, 'cod:tempe/lbl'))
-		self.assertTrue('aLabel', findXPath(rla, 'cod:tempe/lbl'))
+		self.assertIn('aLabel', findXPath(rla, 'cod:tempe/lbl'))
 
 
 
@@ -221,6 +223,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(rla)
+		self.assertIsNotNone(findXPath(rla, 'cod:tempe'))
 		# Update the latest
 		dct = 	{ 'cod:tempe' : { 
 					'curT0'	: 5.0,

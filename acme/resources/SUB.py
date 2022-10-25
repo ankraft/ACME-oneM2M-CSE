@@ -69,8 +69,6 @@ class SUB(Resource):
 
 		# Set defaults for some attribute
 		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
-		self.setAttribute('nse', False, overwrite = False)
-		self.setAttribute('nsi', [], overwrite = False)		# initialize the notificationStatsInfo to empty, if not present
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
@@ -96,6 +94,10 @@ class SUB(Resource):
 		if chty := self['enc/chty']:
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
+		
+		# nsi is at least an empty list if nse is present, otherwise it must not be present
+		if self.nse is not None:
+			self.setAttribute('nsi', [], overwrite = False)
 
 		return CSE.notification.addSubscription(self, originator)
 
@@ -120,8 +122,10 @@ class SUB(Resource):
 														isAnnounced = self.isAnnounced())).status:
 			return res
 
-		# Handle update nse attribute
-		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:sub/nse'))
+		# Handle update notificationStatsEnable attribute, but only if present in the resource.
+		# This is important bc it can be set to True, False, or Null.
+		if 'nse' in Utils.pureResource(dct)[0]:
+			CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:sub/nse'))
 
 		# Handle changes to acrs (send deletion notifications)
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
