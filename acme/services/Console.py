@@ -8,8 +8,7 @@
 #
 
 from __future__ import annotations
-from pyclbr import Function
-from typing import List, cast
+from typing import List, cast, Optional
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
 from rich.style import Style
@@ -360,7 +359,7 @@ Available under the BSD 3-Clause License
 			Console.previousTreeRi = ri
 			L.console()
 		elif len(ri) > 0:
-			if tree := self.getResourceTreeRich(parent = ri):
+			if tree := self.getResourceTreeRich(parent = ri, withProgress = False):
 				L.console(tree)
 			else:
 				L.console('not found', isError = True)
@@ -373,12 +372,12 @@ Available under the BSD 3-Clause License
 		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Resource Tree')
-		with Live(self.getResourceTreeRich(style = L.terminalStyle), auto_refresh = False) as live:
+		with Live(self.getResourceTreeRich(style = L.terminalStyle, withProgress = False), auto_refresh = False) as live:
 
 			def _updateTree(_:Resource = None) -> None:
 				"""	Callback to update the on-screen tree on an event.
 				"""
-				live.update(self.getResourceTreeRich(style = L.terminalStyle), refresh = True)
+				live.update(self.getResourceTreeRich(style = L.terminalStyle, withProgress = False), refresh = True)
 			
 			# Register events for which the tree is refreshed
 			CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateTree)		# type:ignore[attr-defined]
@@ -420,9 +419,9 @@ Available under the BSD 3-Clause License
 		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Statistics')
-		with Live(self.getStatisticsRich(style=L.terminalStyle), auto_refresh=False) as live:
+		with Live(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), auto_refresh = False) as live:
 			while not waitForKeypress(self.refreshInterval):
-				live.update(self.getStatisticsRich(style = L.terminalStyle), refresh=True)
+				live.update(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), refresh=True)
 				if self.interruptContinous:
 					break
 
@@ -743,11 +742,19 @@ Available under the BSD 3-Clause License
 
 # TODO events transit requests
 # TODO notifications
-	def getStatisticsRich(self, style:Style=Style()) -> Table:
-		"""	Generate an overview about various resources and event counts.
+	def getStatisticsRich(self, 
+						  style:Optional[Style] = Style(), 
+						  withProgress:Optional[bool] = True) -> Table:
+		"""	Generate an overview about various resources, event counts, and more.
+
+			Args:
+				style: Rich style.
+				withProgress: Display with progress indicator.
+			Result:
+				Rich Table object.
 		"""
 
-		with L.consoleStatusWait('Collecting...'):
+		def _stats() -> Table:
 			stats = CSE.statistics.getStats()
 
 			if CSE.statistics.statisticsEnabled:
@@ -880,14 +887,30 @@ Available under the BSD 3-Clause License
 			result.add_column()
 			result.add_row(Panel(resourceTypes, style = style), rightGrid )
 
-		return result
+			return result
+
+		if withProgress:
+			with L.consoleStatusWait('Collecting...'):
+				return _stats()
+		else:
+			return _stats()
 
 
-	def getResourceTreeRich(self, maxLevel:int=0, parent:str=None, style:Style=Style()) -> Tree:
-		"""	This function will generate a Rich tree of a CSE's resource structure.
+	def getResourceTreeRich(self, 
+							maxLevel:int = 0, 
+							parent:Optional[str] = None, 
+							style:Optional[Style] = Style(),
+							withProgress:Optional[bool] = True) -> Tree:
+		"""	This function will generate a Rich tree structure of a CSE's resource structure.
+
+			Args:
+				maxLevel: The maximum level for the result tree.
+				parent: The resource ID from where to start the tree. The default is the CSEBase.
+				style: The Rich Style to use.
+				withProgress: Display a progress indicator while gathering the tree.
+			Return:
+				Return a Rich Tree object.
 		"""
-
-		#import resources.FCNT
 
 		def info(res:Resource) -> str:
 
@@ -944,9 +967,8 @@ Available under the BSD 3-Clause License
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
-
-		with L.consoleStatusWait('Collecting...'):
-
+		
+		def getTree() -> Tree:
 			if parent:
 				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
 					return None
@@ -956,6 +978,14 @@ Available under the BSD 3-Clause License
 				return None
 			tree = Tree(info(res), style = style, guide_style = style)
 			getChildren(res, tree, 0)
+			return tree
+
+		if withProgress:
+			with L.consoleStatusWait('Collecting...'):
+				tree = getTree()
+		else:
+			tree = getTree()
+
 		return tree
 
 
@@ -966,6 +996,6 @@ Available under the BSD 3-Clause License
 
 		console = RichConsole(color_system=None)
 		console.begin_capture()
-		console.print(self.getResourceTreeRich())
+		console.print(self.getResourceTreeRich(withProgress = False))
 		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
 
