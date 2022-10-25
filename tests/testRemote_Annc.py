@@ -52,8 +52,7 @@ class TestRemote_Annc(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(acpURL, ORIGINATOR)	# Just delete the ACP 
-		if TestRemote_Annc.cnt is not None:
-			DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)		# Delete the extra container
+		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)		# Delete the extra container
 		testCaseEnd('TearDown TestRemote_Annc')
 
 
