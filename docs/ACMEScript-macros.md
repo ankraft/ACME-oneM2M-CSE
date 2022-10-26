@@ -320,9 +320,9 @@ Example:
 ```text
 print [round 1.6]
 # -> 2
-print ]round 1.678]
+print [round 1.678]
 # -> 1.68
-print ]round 2361.678 -2]
+print [round 2361.678 -2]
 # -> 2400.0
 ```
 
