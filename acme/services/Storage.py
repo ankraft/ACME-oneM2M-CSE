@@ -693,19 +693,20 @@ class TinyDBBinding(object):
 		with self.lockSubscriptions:
 			ri = subscription.ri
 			return self.tabSubscriptions.upsert(
-					{	'ri'  : ri, 
-						'pi'  : subscription.pi,
-						'nct' : subscription.nct,
-						'net' : subscription['enc/net'],	# TODO perhaps store enc as a whole?
-						'atr' : subscription['enc/atr'],
-						'chty': subscription['enc/chty'],
-						'exc' : subscription.exc,
-						'ln'  : subscription.ln,
-						'nus' : subscription.nu,
-						'bn'  : subscription.bn,
-						'cr'  : subscription.cr,
-						'ma'  : subscription.ma, # EXPERIMENTAL ma = maxAge
-						'nse' : subscription.nse
+					{	'ri'  		: ri, 
+						'pi'  		: subscription.pi,
+						'nct' 		: subscription.nct,
+						'net' 		: subscription['enc/net'],	# TODO perhaps store enc as a whole?
+						'atr' 		: subscription['enc/atr'],
+						'chty'		: subscription['enc/chty'],
+						'exc' 		: subscription.exc,
+						'ln'  		: subscription.ln,
+						'nus' 		: subscription.nu,
+						'bn'  		: subscription.bn,
+						'cr'  		: subscription.cr,
+						'originator': subscription.getOriginator(),
+						'ma' 		: subscription.ma, # EXPERIMENTAL ma = maxAge
+						'nse' 		: subscription.nse
 					}, 
 					self.subscriptionQuery.ri == ri) is not None
 
