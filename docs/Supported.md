@@ -95,7 +95,7 @@ The following table presents the supported management object specifications.
 | Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
 | Time Synchronization          |  &check;  |                                                                                           |
-| Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries.                              |
+| Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries and discovery.                |
 
 ### Additional CSE Features
 | Functionality         | Supported | Remark                                                                                                    |
