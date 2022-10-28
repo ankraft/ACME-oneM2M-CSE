@@ -25,6 +25,8 @@ The ACME CSE supports the following CSE types:
 ## Resources
 
 The ACME CSE supports the following oneM2M resource types:
+![](images/resources_uml.png)
+
 
 | Resource Type                   | Supported | Remarks & Limitations                                                                                                                                                                                             |
 |:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
