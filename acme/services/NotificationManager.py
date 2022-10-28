@@ -279,8 +279,11 @@ class NotificationManager(object):
 
 		# TODO 2) Prevent or block all other UPDATE request primitives to this target resource.
 
-		# Get blockingUpdate <sub> for this resource , if any, and iterate over them
+		# Get blockingUpdate <sub> for this resource , if any, and iterate over them.
+		# This should only be one!
 		for eachSub in self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingUpdate]):
+
+			# TODO check notification permission!
 
 			notification:JSON = {
 				'm2m:sgn' : {
@@ -343,11 +346,13 @@ class NotificationManager(object):
 			a resource causes a notification to a target. It is expected that the target is updating the resource
 			**before** responding to the notification.
 
+			A NOTIFY permission check is done against the originator of the \<subscription> resource, not
+			the originator of the request.
+
 			Note:
 				This functionality is experimental and not part of the oneM2M spec yet.
 
 			Args:
-				resource
 				resource: The resource that is the target of the RETRIEVE request.
 				request: The original request.
 				finished: Callable that is called when the notifications were successfully sent and received.
@@ -355,10 +360,8 @@ class NotificationManager(object):
 				Result instance indicating success or failure.
 		"""
 
-		# TODO originator in notification?
 		# TODO check notify permission for originator
-		# TODO blockingRetrieveDirectChildren.
-		# TODO getSubscriptionsByNetChty + chty optional
+		# TODO prevent second notification to same 
 		# EXPERIMENTAL
 		
 		L.isDebug and L.logDebug('Looking for blocking RETRIEVE')
@@ -369,7 +372,9 @@ class NotificationManager(object):
 		subs.extend(self.getSubscriptionsByNetChty(resource.pi, [NotificationEventType.blockingRetrieveDirectChild], chty = resource.ty))
 		# L.logWarn(resource)
 
-		for eachSub in subs:
+		# Do this for all subscriptions
+		countNotifications = 0
+		for eachSub in subs:	# This should be only one!
 			maxAgeRequest:float = None
 			maxAgeSubscription:float = None
 
@@ -395,16 +400,14 @@ class NotificationManager(object):
 				return Result.successResult()
 
 
-			# Is one reached?
+			# Is either "maxAge" of the request or the subscription reached?
 			L.isDebug and L.logDebug(f'request.maxAge: {maxAgeRequest} subscription.maxAge: {maxAgeSubscription}')
 			maxAgeSubscription = maxAgeSubscription if maxAgeSubscription is not None else sys.float_info.max
 			maxAgeRequest = maxAgeRequest if maxAgeRequest is not None else sys.float_info.max
 
-			# L.logWarn(resource)
-
 			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
-				L.isDebug and L.logDebug(f'too early, no blocking RETRIEVE notification necessary')
-				return Result.successResult()
+				# To early for this subscription
+				continue
 			L.isDebug and L.logDebug(f'blocking RETRIEVE notification necessary')
 
 			notification = {
@@ -415,18 +418,28 @@ class NotificationManager(object):
 					'sur' : Utils.toSPRelative(eachSub['ri'])
 				}
 			}
-			# Don't include virtual resources
+			# Add creator of the subscription!
+			(subOriginator := eachSub['originator']) is not None and Utils.setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
+
+			# Add representation, but don't include virtual resources
 			if not resource.isVirtual():
-				# Add representation
 				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
+			countNotifications += 1
 			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
-														 originator = CSE.cseCsi,
+														 originator = subOriginator,
 														 content = notification)).status:
 				# TODO: correct RSC according to 7.3.2.9 - see above!
 				return res
-			if finished:
-				finished()
+		
+		if countNotifications == 0:
+			L.isDebug and L.logDebug(f'No blocking <sub> or too early, no blocking RETRIEVE notification necessary')
+			return Result.successResult()
+		
+		# else
+		L.isDebug and L.logDebug(f'Sent {countNotifications} notification(s) for blocking RETRIEVE')
+		if finished:
+			finished()
 
 		return Result.successResult()
 

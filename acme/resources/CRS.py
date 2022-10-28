@@ -12,7 +12,8 @@
 from __future__ import annotations
 from copy import deepcopy
 
-from ..etc.Utils import toSPRelative, csiFromSPRelative, findXPath, setXPath, resourceState, getResourceState
+from ..etc.Utils import toSPRelative, csiFromSPRelative, findXPath, setXPath
+from ..helpers.ResourceSemaphore import resourceState, getResourceState
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON, TimeWindowType
 from ..resources.Resource import *
 from ..resources import Factory as Factory

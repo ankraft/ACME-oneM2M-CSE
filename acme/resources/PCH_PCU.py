@@ -10,13 +10,13 @@
 from __future__ import annotations
 from typing import cast
 from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes as T, ResponseStatusCode as RC, JSON, CSERequest, Result
-from ..resources.Resource import Resource
+from ..resources.VirtualResource import VirtualResource
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..etc import DateUtils, Utils
 
 
-class PCH_PCU(Resource):
+class PCH_PCU(VirtualResource):
 
 	_aggregate = '__aggregate__'
 

@@ -680,13 +680,13 @@ class TestCRS(unittest.TestCase):
 
 		# Restart the window timer
 		dct:JSON = 	{ 'm2m:crs' : { 
-			'twt': findXPath(TestCRS.crs, 'm2m:crs/twt'),
-			'tws': f'PT{crsTimeWindowSize}S',
+			'twt': (_twt := findXPath(TestCRS.crs, 'm2m:crs/twt')),
+			'tws': (_tws := f'PT{crsTimeWindowSize}S'),
 		}}
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nse'), TestCRS.crs)
-		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/twt'), _twt)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), _tws)
 
 		# Create 
 		dct = 	{ 'm2m:cin' : {

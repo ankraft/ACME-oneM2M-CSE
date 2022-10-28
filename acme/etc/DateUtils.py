@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 from pydoc import isdata
-from typing import Callable, Union, Tuple
+from typing import Callable, Union, Tuple, Optional
 import time
 from email.utils import formatdate
 from datetime import datetime, timedelta
@@ -21,7 +21,7 @@ import isodate
 #	Time, Date, Timestamp related
 #
 
-def getResourceDate(offset:int = 0) -> str:
+def getResourceDate(offset:Optional[int] = 0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
 		Args:
@@ -33,7 +33,7 @@ def getResourceDate(offset:int = 0) -> str:
 	return toISO8601Date(utcTime() + offset)
 
 
-def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:bool = True) -> str:
+def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 	"""
 	if isinstance(ts, float):
@@ -44,7 +44,9 @@ def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:bool = True) -> str:
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def fromAbsRelTimestamp(absRelTimestamp:str, default:float = 0.0, withMicroseconds:bool = True) -> float:
+def fromAbsRelTimestamp(absRelTimestamp:str, 
+						default:Optional[float] = 0.0, 
+						withMicroseconds:Optional[bool] = True) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
 		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
 		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
@@ -99,7 +101,7 @@ def toDuration(ts:float) -> str:
 	return isodate.duration_isoformat(d)
 
 
-def rfc1123Date(timeval:float = None) -> str:
+def rfc1123Date(timeval:Optional[float] = None) -> str:
 	"""	Return a date time string in RFC 1123 format, e.g. for use in HTTP requests.
 		The time stamp is GMT-based.
 
@@ -140,13 +142,14 @@ def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
 	return timeUntilTimestamp(ts)
 
 
-def isodateDelta(isoDateTime:str, now:float = None) -> float:
+def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> float:
 	"""	Calculate the delta between and ISO 8601 date time string
 		and a timestamp.
 		
 		Args:
 			isoDateTime: ISO 8601 compatible string.
 			now: Optional float with a time stamp. If *None* then the current time (UTC-based) will be taken.
+
 		Return:
 			A signed float value indicating the delta (negative when the given ISO date time is earlier then `now`), or *None* in case of an error.
 	"""
@@ -158,19 +161,24 @@ def isodateDelta(isoDateTime:str, now:float = None) -> float:
 		return None
 
 
-def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
+def waitFor(timeout:float, 
+			condition:Optional[Callable[[], bool]] = None,
+			latency:Optional[float] = 0.01) -> bool:
 	"""	Busy waiting for `timeout` seconds, or until the `condition`
 		callback function returns *True*.
 
-		The functionn returns *True* if the `condition` returns *True* 
-		before the timeout is reached, and *False* otherwise.
+		Args:
+			timeout: The time to wait at most for the event to be true. 
+			condition: A callback. It it returns *True* the wait-for condition is met and the waiting stops. If it is None, then only the `timeout` is used, and *False* is always returned.
+			latency: The time between `condition` checks.
 
-		If `condition` is None, then only the `timeout` is used, and *False*
-		is always returned.
+		Return:
+			The functionn returns *True* if the `condition` returns *True* 
+			before the timeout is reached, and *False* otherwise.
+			It returns *False* if `timeout` is negative.
+			If `condition` is not callable then *False* is returned.
 
-		If `timeout` is negative then *False* is returned.
 
-		If `condition` is not callable then *False* is returned.
 	"""
 	if timeout < 0.0:
 		return False
@@ -182,7 +190,7 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 			return False
 		toTs = time.time() + timeout
 		while not (res := condition()) and toTs > time.time():
-			time.sleep(0.01)
+			time.sleep(latency)
 		return res
 
 ##############################################################################
@@ -190,7 +198,7 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 #	Cron
 #
 
-def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:datetime = None) -> bool:
+def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:Optional[datetime] = None) -> bool:
 	'''	A cron parser to determine if the 'cronPattern' matches for the given timestamp `ts`.
 		The cronPattern must follow the usual crontab pattern of 5 fields 
 	
@@ -303,7 +311,10 @@ def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:datetime = None) 
 		and _parseMatchCronArg(cronElements[4], 0 if weekday == 7 else weekday)
 
 
-def cronInPeriod(cronPattern:Union[str, list[str]], startTs:datetime, endTs:datetime = None) -> Tuple[bool, datetime]:
+def cronInPeriod(cronPattern:Union[str, 
+								   list[str]], 
+								   startTs:datetime, 
+								   endTs:Optional[datetime] = None) -> Tuple[bool, datetime]:
 	''' A parser to check whether a cron pattern has been true during a certain time period. This is useful
 		for applications which cannot check every minute or need to catch up during a restart, or want to determine
 		the next run at some time in the future.

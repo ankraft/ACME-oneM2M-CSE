@@ -5,14 +5,14 @@
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 
-""" Base class for all oneM2M resource types """
+""" Base class for all oneM2M resource types.
+"""
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, List, Tuple, cast
+from typing import Any, Tuple, cast, Optional
 from copy import deepcopy
 
-from ..etc.Constants import Constants as C
 from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..etc import DateUtils as DateUtils
@@ -536,7 +536,9 @@ class Resource(object):
 	#	request handler stubs for virtual resources
 	#
 
-	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
+	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
+									id:Optional[str] = None,
+									originator:Optional[str] = None) -> Result:
 		"""	Process a RETRIEVE request that is directed to a virtual resource.
 
 			This method **must** be implemented by virtual resource class.
@@ -545,6 +547,7 @@ class Resource(object):
 				request: The request to process.
 				id: The structured or unstructured resource ID of the target resource.
 				originator: The request's originator.
+
 			Return:
 				Result object indicating success or failure.
 			"""

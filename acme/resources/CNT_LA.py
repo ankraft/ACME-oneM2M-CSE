@@ -7,74 +7,96 @@
 #	ResourceType: latest (virtual resource)
 #
 
+"""	This module implements the virtual <latest> resource type for <container> resources.
+"""
+
 from __future__ import annotations
+from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources.Resource import *
+from ..resources.VirtualResource import VirtualResource
 
 
-class CNT_LA(Resource):
+class CNT_LA(VirtualResource):
+	"""	This class implements the virtual <latest> resource for <container> resources.
+	"""
 
-	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[T] = [ ]
+	"""	A list of allowed child-resource types for this resource type. """
 
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
 		# None for virtual resources
 	}
+	""" A dictionary of the attributes and attribute policies for this resource type. 
+		The attribute policies are assigned during startup by the `Importer`.
+	"""
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.CNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
-	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
-		""" Handle a RETRIEVE request. Return resource """
-		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
+	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
+									id:Optional[str] = None,
+									originator:str = None) -> Result:
+		""" Handle a RETRIEVE request.
 
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
-			r = self	# no instance, so take self as a resource
+			Args:
+				request: The original request.
+				id: Resource ID of the original request.
+				originator: The request's originator.
 
-		# Take the resource, either a CIN or self and check it # EXPERIMENTAL
-		if not (res := CSE.notification.checkPerformBlockingRetrieve(r, request, finished = lambda: self.dbReloadDict())).status:
-			return res
-
-		# Then retrieve it, either for the first time or again
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
-			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
-		
-		# Do again some checks with the final resource, but no subscription checks!
-		if not (res := r.willBeRetrieved(originator, request, subCheck = False)).status:
-			return res
-
-
-
-
-
-		# TODO in all _la, _ol
-
-		# if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
-		# 	return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
-		# Do again some checks with the final resource, but no subscription checks!
-		# if not (res := r.willBeRetrieved(originator, request, subCheck = False)).status:
-		# 	return res
-
-		return Result(status = True, rsc = RC.OK, resource = r)
+			Return:
+				The latest <contentInstance> for the parent <container>, or an error `Result`.
+		"""
+		L.isDebug and L.logDebug('Retrieving latest CIN from CNT')
+		return self.retrieveLatestOldest(request, originator, T.CIN, oldest = False)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a CREATE request. Fail with error code. """
+		""" Handle a CREATE request. 
+
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Fails with error code for this resource type. 
+		"""
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a UPDATE request. Fail with error code. """
+		""" Handle an UPDATE request.			
+	
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Fails with error code for this resource type. 
+		"""
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a DELETE request. Delete the latest resource. """
+		""" Handle a DELETE request.
+
+			Delete the latest resource.
+
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Result object indicating success or failure.
+		"""
 		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
 			return Result.errorResult(rsc = RC.notFound, dbg='no instance for <latest>')

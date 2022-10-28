@@ -10,7 +10,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from ..etc.Types import ResourceTypes as T, Result, JSON, AttributePolicyDict
-from ..etc.Types import Announced as AN, ResponseStatusCode as RC
+from ..etc.Types import Announced as AN
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from .Resource import *

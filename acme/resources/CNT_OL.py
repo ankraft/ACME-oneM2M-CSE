@@ -7,52 +7,97 @@
 #	ResourceType: oldest (virtual resource)
 #
 
+"""	This module implements the virtual <oldest> resource type for <container> resources.
+"""
+
 from __future__ import annotations
-from typing import cast
+from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
-from ..resources.Resource import *
+from ..resources.VirtualResource import VirtualResource
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 
 
-class CNT_OL(Resource):
+class CNT_OL(VirtualResource):
+	"""	This class implements the virtual <oldest> resource for <container> resources.
+	"""
 
-	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[T] = [ ]
+	"""	A list of allowed child-resource types for this resource type. """
 
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
 		# None for virtual resources
 	}
+	""" A dictionary of the attributes and attribute policies for this resource type. 
+		The attribute policies are assigned during startup by the `Importer`.
+	"""
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.CNT_OL, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
 
 
-	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
-		""" Handle a RETRIEVE request. Return resource """
-		if L.isDebug: L.logDebug('Retrieving oldest CIN from CNT')
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN, oldest = True)):
-			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
-		if not (res := r.willBeRetrieved(originator, request)).status:
-			return res
-		return Result(status = True, rsc = RC.OK, resource = r)
+	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
+									id:Optional[str] = None,
+									originator:Optional[str] = None) -> Result:
+		""" Handle a RETRIEVE request.
+
+			Args:
+				request: The original request.
+				id: Resource ID of the original request.
+				originator: The request's originator.
+
+			Return:
+				The oldest <contentInstance> for the parent <container>, or an error `Result`.
+		"""
+		L.isDebug and L.logDebug('Retrieving oldest CIN from CNT')
+		return self.retrieveLatestOldest(request, originator, T.CIN, oldest = True)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a CREATE request. Fail with error code. """
+		""" Handle a CREATE request. 
+
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Fails with error code for this resource type. 
+		"""
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a UPDATE request. Fail with error code. """
+		""" Handle an UPDATE request.			
+	
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Fails with error code for this resource type. 
+		"""
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		""" Handle a DELETE request. Delete the oldest resource. """
-		if L.isDebug: L.logDebug('Deleting oldest CIN from CNT')
+		""" Handle a DELETE request.
+
+			Delete the oldest resource.
+
+			Args:
+				request: The request to process.
+				id: The structured or unstructured resource ID of the target resource.
+				originator: The request's originator.
+			
+			Return:
+				Result object indicating success or failure.
+		"""
+		L.isDebug and L.logDebug('Deleting oldest CIN from CNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN, oldest = True)):
 			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
 		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)

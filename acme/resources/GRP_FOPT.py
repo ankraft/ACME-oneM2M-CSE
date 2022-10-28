@@ -11,7 +11,7 @@ from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, Operation, CSERequest, JSON
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
-from ..resources.Resource import *
+from ..resources.VirtualResource import VirtualResource
 
 # TODO - Handle Group Request Target Members parameter
 # TODO - Handle Group Request Identifier parameter
@@ -19,7 +19,7 @@ from ..resources.Resource import *
 # LIMIT
 # Only blockingRequest is supported
 
-class GRP_FOPT(Resource):
+class GRP_FOPT(VirtualResource):
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[T] = [ ]
