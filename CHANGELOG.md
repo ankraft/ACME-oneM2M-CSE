@@ -11,17 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
-- [Console] Added command to add a separator line to the screen and log (at the current log level).
 - [CSE] Added support for &lt;crossResourceSubscription> resource type.
-- [CSE] Added support for &lt;semanticDescriptor> resource type. Only the basic resource handling is implemented yet, no semantic functionality, validation etc.
+- [CSE] Added support for &lt;semanticDescriptor> resource type. Only basic semantic functionality is implemented yet, including queries and discovery.
+- [CSE] Added support for *wificlient* ManagementObject specialization.
+- [CSE] Added support for *dataCollect* ManagementObject specialization.
 - [CSE] Added support for notification statistics in (*nse* and *nsi* attributes).
 - [CSE] Added support for *expirationCounter* (&lt;subscription>, &lt;crossResourceSubscription>)
 - [CSE] *rvi* and *vsi* are removed from forwarded requests when forwarding to a Release 1 target.
-- [CSE] Added support for *wificlient* ManagementObject specialization.
-- [CSE] Added support for *dataCollect* ManagementObject specialization.
 - [CSE] Added support for "Content-Location" http header for CREATE operations when RCN = 2 or 3.
 - [CSE] Added support for oneM2M spec change that allows for AE.api to start with a lower-case "r" if the release version is "2a" or "3".
 - [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
+- [CONSOLE] Added command to add a separator line to the screen and log (at the current log level).
 - [CONSOLE] Added continuous inspection of a resource.
 - [CONSOLE] Added support for handling function and cursor keys in the console (currently only for POSIX, yet).
 - [IMPORTING] Enum data types can now be defined separately from the attributes.
