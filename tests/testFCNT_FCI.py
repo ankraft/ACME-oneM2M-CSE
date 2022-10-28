@@ -178,7 +178,7 @@ class TestFCNT_FCI(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
-		self.assertTrue('aLabel', findXPath(r, 'cod:tempe/lbl'))
+		self.assertIn('aLabel', findXPath(r, 'cod:tempe/lbl'))
 
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -200,7 +200,7 @@ class TestFCNT_FCI(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
-		self.assertTrue('aLabel', findXPath(r, 'cod:tempe/lbl'))
+		self.assertIn('aLabel', findXPath(r, 'cod:tempe/lbl'))
 		self.assertEqual(cni, findXPath(r, 'cod:tempe/cni'))
 
 
