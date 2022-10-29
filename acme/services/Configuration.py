@@ -8,7 +8,7 @@
 #
 
 
-import configparser, argparse, os, os.path, pathlib, ipaddress, re
+import configparser, argparse, os, os.path, pathlib, ipaddress, re, sys
 from datetime import datetime
 
 from typing import Any, Dict, Tuple, List, cast
@@ -124,7 +124,7 @@ class Configuration(object):
 				'cse.ri'								: config.get('cse', 'resourceID',									fallback = 'id-in'),
 				'cse.rn'								: config.get('cse', 'resourceName',									fallback = 'cse-in'),
 				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 								fallback = './init'),
-				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 							fallback = 60*60*24*365),	# 1 year, in seconds
+				'cse.enableResourceExpiration'			: config.getboolean('cse', 'enableResourceExpiration', 				fallback = True),
 				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
 				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
 				'cse.originator'						: config.get('cse', 'originator',									fallback = 'CAdmin'),
@@ -516,9 +516,11 @@ class Configuration(object):
 
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
-			return False, 'Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0'
+			return False, 'Configuration Error: \[cse]:checkExpirationsInterval must be > 0'
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
-			return False, 'Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0'
+			return False, 'Configuration Error: \[cse.console]:refreshInterval must be > 0.0'
+		if Configuration._configuration['cse.maxExpirationDelta'] <= 0:
+			return False, 'Configuration Error: \[cse]:maxExpirationDelta must be > 0'
 
 		# Console settings
 		from ..services.Console import TreeMode

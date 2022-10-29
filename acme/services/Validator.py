@@ -54,11 +54,11 @@ class Validator(object):
 
 
 	def __init__(self) -> None:
-		if L.isInfo: L.log('Validator initialized')
+		L.isInfo and L.log('Validator initialized')
 
 
 	def shutdown(self) -> bool:
-		if L.isInfo: L.log('Validator shut down')
+		L.isInfo and L.log('Validator shut down')
 		return True
 
 	#########################################################################

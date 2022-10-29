@@ -44,16 +44,21 @@ class RegistrationManager(object):
 		L.isInfo and L.log('RegistrationManager shut down')
 		return True
 
+
 	def _getConfig(self) -> None:
 		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
 		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
 		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
+		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
 
 
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
-		if key not in [ 'cse.checkExpirationsInterval']:
+		if key not in [ 'cse.checkExpirationsInterval', 
+						'cse.registration.allowedCSROriginators',
+						'cse.registration.allowedAEOriginators',
+						'cse.enableResourceExpiration']:
 			return
 		self.checkExpirationsInterval = value
 		self.restartExpirationMonitor()
@@ -304,6 +309,10 @@ class RegistrationManager(object):
 
 	def startExpirationMonitor(self) -> None:
 		# Start background monitor to handle expired resources
+		if not self.enableResourceExpiration:
+			L.isDebug and L.logDebug('Expiration disabled. NOT starting expiration monitor')
+			return
+
 		L.isDebug and L.logDebug('Starting expiration monitor')
 		if self.checkExpirationsInterval > 0:
 			self.expWorker = BackgroundWorkerPool.newWorker(self.checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()

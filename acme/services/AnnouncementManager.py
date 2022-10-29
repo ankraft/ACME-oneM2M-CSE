@@ -35,8 +35,7 @@ class AnnouncementManager(object):
 		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleRemoteCSEHasDeregistered)	# type: ignore
 		
 		# Configuration values
-		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
-		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
+		self._assignConfig()
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
@@ -55,6 +54,13 @@ class AnnouncementManager(object):
 		return True
 
 
+	def _assignConfig(self) -> None:
+		"""	Store relevant configuration values in the manager.
+		"""
+		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
+		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
+
+
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
@@ -66,8 +72,7 @@ class AnnouncementManager(object):
 			return
 
 		# assign new values
-		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
-		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
+		self._assignConfig()
 
 
 	# TODO Test this for a while. And remove it if this fully works as expected.

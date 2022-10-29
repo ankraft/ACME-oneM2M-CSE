@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for &lt;pollingChannel>'s *requestAggregation* attribute and functionality.
 - [CSE] Added support for BLOCKING UPDATE notification event type.
 - [CSE] Added a first support for the &lt;timeSyncBeacon> resource type.
+- [CSE] Added [cse].enableResourceExpiration* configuration setting to enable/disable resource expiration.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [CONSOLE] Added graph plotting for &lt;contentInstance> resources that contain numerical values (also: continuous observation of a container).
@@ -111,8 +112,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DATABASE] Optimizations when working with resource lists.
 
 ### Removed
-- [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint, commands and scripts.
 - [CSE] Removed import of JSON resources from the init directory during startup. This functionality is now provided by a startup script. 
+- [CSE] Removed [cse].expirationDelta configuration setting. The functionality is fully covered by the [cse].maxExpirationDelta setting.
+- [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint, commands and scripts.
 
 ### Fixed
 - [CSE] Improved check that IDs contain only unreserved characters.

@@ -78,7 +78,7 @@ class CNT(AnnounceableResource):
 			return res
 		
 		# register latest and oldest virtual resources
-		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_LA).resource		# rn is assigned by resource itself
@@ -131,14 +131,17 @@ class CNT(AnnounceableResource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Child resource added: {childResource.ri}')
+		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 
 			# Check for mia handling. This sets the et attribute in the CIN
 			if self.mia is not None:
-				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = DateUtils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				# Take either mia or the maxExpirationDelta, whatever is smaller. 
+				# Don't change if maxExpirationDelta is 0.
+				maxEt = DateUtils.getResourceDate(self.mia 
+												  if self.mia <= CSE.request.maxExpirationDelta 
+												  else CSE.request.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)
@@ -149,7 +152,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
+		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self._validateChildren()

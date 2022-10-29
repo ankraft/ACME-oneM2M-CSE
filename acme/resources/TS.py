@@ -231,7 +231,9 @@ class TS(AnnounceableResource):
 			# Check for mia handling. This sets the et attribute in the TSI
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = DateUtils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				maxEt = DateUtils.getResourceDate(self.mia 
+												  if self.mia <= CSE.request.maxExpirationDelta 
+												  else CSE.request.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)

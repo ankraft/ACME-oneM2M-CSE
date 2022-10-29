@@ -45,9 +45,9 @@ expirationCheckFactor = 2.0
 class RequestManager(object):
 
 	def __init__(self) -> None:
-		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
-		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
 
+		# Configuration values
+		self._assignConfig()	
 
 		self.requestHandlers:RequestHandler  = { 		# Map request handlers for operations in the RequestManager and the dispatcher
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
@@ -97,6 +97,14 @@ class RequestManager(object):
 		L.logDebug('RequestManager restarted')
 	
 
+	def _assignConfig(self) -> None:
+		"""	Store relevant configuration values in the manager.
+		"""
+		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
+		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
+		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
+
+
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
@@ -104,11 +112,11 @@ class RequestManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta']:
+		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta', 'cse.maxExpirationDelta']:
 			return
-		# assign new values
-		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
-		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
+
+		# Configuration values
+		self._assignConfig()
 
 		# restart expiration worker
 		if self._pcWorker:

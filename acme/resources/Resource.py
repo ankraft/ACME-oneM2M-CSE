@@ -131,7 +131,7 @@ class Resource(object):
 
 		# Handle resource type
 		if ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
-			self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite = False) 
+			self.setAttribute('et', DateUtils.getResourceDate(CSE.request.maxExpirationDelta), overwrite = False) 
 		if ty is not None:
 			self.setAttribute('ty', int(ty))
 
@@ -289,7 +289,7 @@ class Resource(object):
 
 					# Special handling for et when deleted/set to Null: set a new et
 					if key == 'et' and not value:
-						self['et'] = DateUtils.getResourceDate(Configuration.get('cse.expirationDelta'))
+						self['et'] = DateUtils.getResourceDate(CSE.request.maxExpirationDelta)
 						continue
 					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
 			
@@ -467,12 +467,10 @@ class Resource(object):
 		# expirationTime handling
 		if et := self.et:
 			if self.ty == T.CSEBase:
-				L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
 			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
-				L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
-				return Result.errorResult(dbg = dbg)
-			if et > (etMax := DateUtils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
+				return Result.errorResult(dbg = L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
+			if et > (etMax := DateUtils.getResourceDate(CSE.request.maxExpirationDelta)):
 				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result.successResult()

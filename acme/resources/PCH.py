@@ -61,7 +61,7 @@ class PCH(Resource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		# register pollingChannelURI PCU virtual resource before anything else, because
 		# it will be needed during validation, 
-		if L.isDebug: L.logDebug(f'Registering <PCU> for: {self.ri}')
+		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
 		dct = {
 			'm2m:pcu' : {
 				'rn' : 'pcu'
