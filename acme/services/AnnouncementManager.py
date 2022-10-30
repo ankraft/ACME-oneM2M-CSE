@@ -29,10 +29,10 @@ waitBeforeAnnouncement = 3	# seconds # TODO configurable
 class AnnouncementManager(object):
 
 	def __init__(self) -> None:
-		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegisteredToRemoteCSE)			# type: ignore
-		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleDeRegisteredFromRemoteCSE)	# type: ignore
-		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleRemoteCSEHasRegistered)			# type: ignore
-		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleRemoteCSEHasDeregistered)	# type: ignore
+		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
+		CSE.event.addHandler(CSE.event.deregisteredFromRegistrarCSE, self.handleDeRegisteredFromRegistrarCSE)	# type: ignore
+		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSEHasRegistered)			# type: ignore
+		CSE.event.addHandler(CSE.event.registreeCSEHasDeregistered, self.handleRegistreeCSEHasDeregistered)		# type: ignore
 		
 		# Configuration values
 		self._assignConfig()
@@ -111,29 +111,29 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRemoteCSE(self, remoteCSE:Resource, remoteCSR:Resource) -> None:
+	def handleRegisteredToRegistrarCSE(self, remoteCSE:Resource, remoteCSR:Resource) -> None:
 		"""	Handle registrations to a remote CSE (Registrar CSE).
 		"""
 		time.sleep(waitBeforeAnnouncement)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
-	def handleDeRegisteredFromRemoteCSE(self, remoteCSR:Resource) -> None:
+	def handleDeRegisteredFromRegistrarCSE(self, remoteCSR:Resource) -> None:
 		"""	Handle de-registrations from a remote CSE (registrar CSE).
 		"""
 		# self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this for new Announcement behaviour
 		pass
 
 
-	def handleRemoteCSEHasRegistered(self, remoteCSR:Resource) -> None:
-		"""	Handle registrations when a remote CSE has registered (registree CSE).
+	def handleRegistreeCSEHasRegistered(self, remoteCSR:Resource) -> None:
+		"""	Handle registrations when a registree CSE has registered.
 		"""
-		time.sleep(waitBeforeAnnouncement) 	# Give some time until remote CSE fully connected
+		time.sleep(waitBeforeAnnouncement) 	# Give some time until remote CSE is fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
-	def handleRemoteCSEHasDeregistered(self, remoteCSR:Resource) -> None:
-		""" Handle de-registrations when a remote CSE has de-registered (registree CSE).
+	def handleRegistreeCSEHasDeregistered(self, remoteCSR:Resource) -> None:
+		""" Handle de-registrations when a registree CSE has de-registered.
 		"""
 		#self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this for new Announcement behaviour+
 		pass
@@ -188,6 +188,7 @@ class AnnouncementManager(object):
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if Utils.isSPRelative(t[1]) else f'{csi}/{t[1]}'
 				if CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi).rsc != RC.OK:	# Not a local resource
+					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
 					self._removeAnnouncementFromResource(cseBase, csi)
 					# announce CSE recursively

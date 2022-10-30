@@ -87,7 +87,7 @@ class TestRemote_GRP(unittest.TestCase):
 		"""	Retrieve <GRP>/fopt """
 		# Retrieve via fopt
 		r, rsc = RETRIEVE(f'{grpURL}/fopt', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)

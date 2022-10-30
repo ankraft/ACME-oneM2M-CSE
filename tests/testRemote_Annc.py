@@ -172,7 +172,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:ae/aa'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/aa')), 1)
 		self.assertIn('lbl', findXPath(r, 'm2m:ae/aa'))
-		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith(f'{REMOTECSEID}/'))
+		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith(f'{REMOTECSEID}/'), r)
 		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
 		self.assertIsNotNone(self.remoteAeRI)
 		TestRemote_Annc.ae = r

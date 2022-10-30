@@ -104,7 +104,6 @@ class RequestManager(object):
 		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
 		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
 
-
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			

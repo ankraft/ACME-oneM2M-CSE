@@ -716,10 +716,10 @@ Available under the BSD 3-Clause License
 
 		if CSE.cseType != CSEType.IN:
 			result += f'- **Registrar CSE**\n'
-			if CSE.remote.remoteAddress:
+			if CSE.remote.registrarAddress:
 				registrarCSE = CSE.remote.registrarCSE
 				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-				result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
+				result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
 			else:
 				result += '   - None'
 

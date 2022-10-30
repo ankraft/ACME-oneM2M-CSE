@@ -302,14 +302,14 @@ skinparam rectangle {
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress:
+		if CSE.cseType != CSEType.IN and CSE.remote.registrarAddress:
 			registrarCSE = CSE.remote.registrarCSE
 			bg = 'white' if registrarCSE else 'lightgrey'
 			color = 'green' if registrarCSE else 'black'
-			address = urlparse(CSE.remote.remoteAddress)
+			address = urlparse(CSE.remote.registrarAddress)
 			(ip, port) = tuple(address.netloc.split(':'))
 			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.remoteAddress}" #{bg}\n'
+			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.registrarAddress}" #{bg}\n'
 			result += 'CSE -UP- PARENT\n'
 
 		

@@ -7,6 +7,7 @@
 #	Managing resources and AE, CSE registrations
 #
 
+
 from copy import deepcopy
 from typing import List, cast, Any
 
@@ -18,7 +19,6 @@ from ..services import CSE as CSE
 from ..resources.Resource import Resource
 from ..resources.ACP import ACP
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-
 
 
 class RegistrationManager(object):
@@ -138,7 +138,7 @@ class RegistrationManager(object):
 			if not self.handleREQDeRegistration(resource):
 				return Result.errorResult(dbg = 'cannot deregister REQ')
 		if ty == T.CSR:
-			if not self.handleCSRDeRegistration(resource):
+			if not self.handleRegistreeCSRDeRegistration(resource):
 				return Result.errorResult(dbg = 'cannot deregister CSR')
 		return Result.successResult()
 
@@ -235,7 +235,7 @@ class RegistrationManager(object):
 			return res
 
 		# send event
-		CSE.event.remoteCSEHasRegistered(csr)	# type: ignore
+		CSE.event.registreeCSEHasRegistered(csr)	# type: ignore
 		return Result.successResult()
 
 
@@ -243,10 +243,18 @@ class RegistrationManager(object):
 	#	Handle CSR deregistration
 	#
 
-	def handleCSRDeRegistration(self, csr:Resource) ->  bool:
-		L.isDebug and L.logDebug(f'DeRegistering CSR. csi: {csr.csi}')
+	def handleRegistreeCSRDeRegistration(self, registreeCSR:Resource) ->  bool:
+		"""	Handle the de-registration of a registree <CSR> resource.
+		
+			Args:
+				registreeCSR: The <CSR> resource to de-register.
+			
+			Return:
+				Always *True*.
+		"""
+		L.isDebug and L.logDebug(f'De-registering registree CSR. csi: {registreeCSR.csi}')
 		# send event
-		CSE.event.remoteCSEHasDeregistered(csr)	# type: ignore
+		CSE.event.registreeCSEHasDeregistered(registreeCSR)	# type: ignore
 		return True
 
 
@@ -257,7 +265,7 @@ class RegistrationManager(object):
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
 		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
-		CSE.event.remoteCSEUpdate(csr, updateDict)	# type: ignore
+		CSE.event.registreeCSEUpdate(csr, updateDict)	# type: ignore
 		return True
 
 

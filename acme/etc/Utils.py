@@ -310,7 +310,7 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 		Args:
 			id: unstructured ID.
 		Return:
-			Tuple (csi ID (no slashes) without any SP-ID or CSE-ID, list of path elements)
+			Tuple (CSE ID (no leading slashes) without any SP-ID or CSE-ID, list of path elements)
 		"""
 	ids = id.split('/')
 	if isSPRelative(id):
