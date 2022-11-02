@@ -239,6 +239,14 @@ function tabTo(number) {
 }
 
 
+function toggleLongAttributeNames() {
+  printLongNames = !printLongNames
+  clearAttributesTable()
+  if (nodeClicked.hasDetails) {
+    fillAttributesTable(nodeClicked.resource)        
+  }
+}
+
 function setup() {
   // document.body.style.zoom=0.6;
   this.blur();
@@ -274,11 +282,7 @@ function setup() {
     if (key == 'R' && e.ctrlKey) {
       refreshNode()
     } else if (key == 'H' && e.ctrlKey) {
-      printLongNames = !printLongNames
-      clearAttributesTable()
-      if (nodeClicked.hasDetails) {
-        fillAttributesTable(nodeClicked.resource)        
-      }
+      toggleLongAttributeNames();
     } else if (key == 'C' && e.ctrlKey) {
       connectToCSE();
     }

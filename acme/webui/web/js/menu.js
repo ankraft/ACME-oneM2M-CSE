@@ -10,8 +10,12 @@
 var cmenu = [
 			{
 				"text": "Refresh",
+                "type": ContextMenu.BUTTON,
 				"icon": '&#x27F3;',
 				"events": {
+                    "checkEnabled": function (ty) {
+                        return true; 
+                    },
 					"click": function(e) {
 						refreshNode()
 					}
@@ -19,9 +23,14 @@ var cmenu = [
 			},
 			{
 				"text": "Connect to",
+                "type": ContextMenu.BUTTON,
 				"icon": '&#8594;',
 				"enabled" : false,
 				"events": {
+                    "checkEnabled": function (ty) {
+                        // Can only do connection to CSR type
+                        return ty == 16; 
+                    },
 					"click": function(e) {
 						openPOA(nodeClicked)
 					}
@@ -42,29 +51,36 @@ var cmenu = [
 				"text": "Delete",
 				"icon": '&#x21;',
 				"enabled" : false,
-
+                "type": ContextMenu.BUTTON,
 				"events": {
+                    "checkEnabled": function (ty) {
+                        // Don't allow deletion of the CSE!
+                        return ty != 5; 
+                    },
 					"click": function(e) {
 						removeNode(nodeClicked)
 					}
 				}
-			}
+			},
 		];
 
-var menu
+var menu;
 
 function showContextMenu(event, node) {
-  nodeClicked.setSelected(false)
-  nodeClicked = node
-  
-  // CSE
-  cmenu[3]["enabled"] = (node.resource.ty != 5) 
+  nodeClicked.setSelected(false);
+  nodeClicked = node;
 
-  // CSR
-  cmenu[1]["enabled"] = (node.resource.ty == 16) 
+  for (var i = 0; i < cmenu.length; i++){
+    var item = cmenu[i];
+    if (item.type == ContextMenu.DIVIDER) {
+        // Don't check enable for a divider
+        continue;
+    }
+    cmenu[i]["enabled"] = item.events.checkEnabled(node.resource.ty); 
+  }
 
   nodeClicked.setSelected(true)
-  menu.reload()
+  menu.reload();
   menu.display(event);
 }
 
