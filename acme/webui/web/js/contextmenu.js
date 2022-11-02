@@ -75,7 +75,7 @@ function ContextMenu(menu, options){
 
 
 
-			if(typeof item.type === "undefined"){
+			if(typeof item.type === "undefined" || item.type == ContextMenu.BUTTON){
 				var icon_span = document.createElement("span");
 				icon_span.className = 'cm_icon_span';
 
@@ -206,6 +206,7 @@ function ContextMenu(menu, options){
 
 ContextMenu.count = 0;
 ContextMenu.DIVIDER = "cm_divider";
+ContextMenu.BUTTON = "cm_button";
 
 const ContextUtil = {
 	getProperty: function(options, opt, def){

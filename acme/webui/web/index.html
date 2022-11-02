@@ -21,6 +21,7 @@
 		<img class="brand logo" src="img/acme.png" />
 
 		<div class="menu"><label for="info1" class="pseudo" style="margin-left: 10px">&#9432;</label></div>
+		<div class="menu"><label for="webuiSettings1" class="pseudo" >Settings</label></div>
 		<div class="menu"><a id="refreshButton" href="javascript:toggleRefresh()"class="button" style="padding-left: 10px;">Auto Refresh</a></div>
 		<div class="menu"><a id="connectButton" href="javascript:connectToCSE()" class="button" style="padding-left: 10px;">Connect</a></div>
 
@@ -183,6 +184,25 @@
 	</section>
 	<footer>
 		<label align="right" for="info1" class="button" style="float: right;">Close</label>
+	</footer>
+</article>
+</div>
+
+<!-- WebUI Settings box -->
+<div class="modal">
+<input id="webuiSettings1" type="checkbox" />
+<label for="webuiSettings1" class="overlay"></label>
+<article>
+	<header>
+		<h3 float="left">ACME oneM2M CSE Web UI Settings</h3>
+		<span id="version" style="float: right"></span>
+	</header>
+	<section class="content">
+		<h3>View Settings</h3>
+        <div class="button" onclick="toggleLongAttributeNames()" >Toggle Attribute Name Style</div>
+	</section>
+	<footer>
+		<label align="right" for="webuiSettings1" class="button" style="float: right;">Close</label>
 	</footer>
 </article>
 </div>
