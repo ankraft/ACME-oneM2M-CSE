@@ -124,6 +124,10 @@ function restSendData(method, url, headers, data) {
 				case 404: s = '404 - Not Found'; break;
 				case 405: s = '405 - Method Not Allowed'; break;
 				case 409: s = '409 - Conflict'; break;
+                default:
+                    s = this.status;
+                    console.warn("Unhandled HTTP response code! " + s);
+                break;
 			}
 			document.getElementById("rest-status").value = s;
 
