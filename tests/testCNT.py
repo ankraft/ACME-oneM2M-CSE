@@ -277,6 +277,15 @@ class TestCNT(unittest.TestCase):
 		r, rsc = CREATE(cseURL, None, T.CNT, dct) # Without originator !!
 		self.assertNotEqual(rsc, RC.created)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithWrongTPE(self) -> None:
+		"""	Create <CNT> with wrong TPE -> Fail"""
+		dct = 	{ 'wrong' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # Without originator !!
+		self.assertNotEqual(rsc, RC.created)
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
@@ -307,6 +316,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
 
 	suite.addTest(TestCNT('test_createCNTWithoutOriginator'))
+	suite.addTest(TestCNT('test_createCNTwithWrongTPE'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

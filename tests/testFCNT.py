@@ -79,6 +79,18 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCNTWrongTPE(self) -> None:
+		""" Create <FCNT> [wrong] with wrong TPE -> Fail"""
+		self.assertIsNotNone(TestFCNT.ae)
+		dct = 	{ 'wrong' : { 
+					'rn'	: fcntRN,
+					'cnd' 	: CND, 
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNT(self) -> None:
 		""" Create <FCNT> [cod:tempe] """
 		self.assertIsNotNone(TestFCNT.ae)
@@ -339,6 +351,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	clearSleepTimeCount()
 	
 	suite.addTest(TestFCNT('test_createFCNTWrongCND'))
+	suite.addTest(TestFCNT('test_createFCNTWrongTPE'))
 	suite.addTest(TestFCNT('test_createFCNT'))
 	suite.addTest(TestFCNT('test_retrieveFCNT'))
 	suite.addTest(TestFCNT('test_retrieveFCNTWithWrongOriginator'))

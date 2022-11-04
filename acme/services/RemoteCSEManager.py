@@ -655,7 +655,7 @@ class RemoteCSEManager(object):
 			return res.errorResultCopy()
 		
 		# assign the remote ID to the resource's dictionary
-		_, tpe = Utils.pureResource(cast(JSON, res.data))
+		_, tpe, _ = Utils.pureResource(cast(JSON, res.data))
 		Utils.setXPath(cast(JSON, res.data), f'{tpe}/{Resource._remoteID}', id)
 
 		# Instantiate

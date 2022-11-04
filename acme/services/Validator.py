@@ -103,7 +103,7 @@ class Validator(object):
 			optionalIndex = 5	# index to announced
 
 		# Get the pure resource and the resource's tpe
-		(pureResDict, _tpe) = Utils.pureResource(resource)
+		pureResDict, _tpe, _ = Utils.pureResource(resource)
 
 		tpe = _tpe if _tpe and _tpe != tpe else tpe 				# determine the real tpe
 

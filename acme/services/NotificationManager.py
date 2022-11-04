@@ -296,7 +296,7 @@ class NotificationManager(object):
 
 			# Check attributes in enc
 			if atr := eachSub['atr']:
-				jsn, _ = Utils.pureResource(updatedAttributes)
+				jsn, _, _ = Utils.pureResource(updatedAttributes)
 				if len(set(jsn.keys()).intersection(atr)) == 0:	# if the intersection between updatedAttributes and the enc/atr contains is empty, then continue
 					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')
 					continue

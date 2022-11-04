@@ -13,7 +13,7 @@
 from __future__ import annotations
 import random, string, sys, re, threading, socket
 import traceback
-from typing import Any, Callable, Tuple, cast
+from typing import Any, Callable, Tuple, cast, Optional
 from distutils.util import strtobool
 
 
@@ -621,47 +621,59 @@ def normalizeURL(url: str) -> str:
 _excludeFromRoot = [ 'pi' ]
 _pureResourceRegex = re.compile('[\w]+:[\w]')
 
-def pureResource(dct:JSON) -> Tuple[JSON, str]:
-	"""	Return the "pure" structure without "<domain>:xxx" resource specifier, and the oneM2M type identifier. 
+def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
+	"""	Return the "pure" structure without the "<domain>:xxx" resource type name, and the oneM2M type identifier. 
 
 		Args:
 			dct: JSON dictionary with the resource attributes.
 		Return:
-			Tupple with the inner JSON and the resource type name.
+			Tupple with the inner JSON, the resource type name, and the found key.
+			If the resource type name is not in the correct format, eg the domain is missing, it is *None*.
+			The third element always contains the found outer attribute name.
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
-	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
-		return dct[rootKeys[0]], rootKeys[0]
+	if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
+		return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
 	if Resource._rtype in dct:
 		root = dct[Resource._rtype]
-	return dct, root
+	return dct, root, rootKeys[0] if lrk > 0 else None
 
 
 
 _decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
-	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
-		`default` is returned.
+def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Any:
+	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
+		*default* is returned.
 
 		- It is possible to address a specific element in a list. This is done be
-		specifying the element as `{n}`.
+		specifying the element as "{n}".
 
-		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
-		- If an element is specified as `{}` then all elements in that list are returned in
+		- If an element is specified as "{}" then all elements in that list are returned in
 		a list.
 
-		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
 		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
 		jumped over. This can be used to skip, for example, unknown first elements in a structure. 
 		This is similar but not the same as "{0}" that works on lists.
 
-		Example: findXPath(resource, '{*}/rn') 
-
+		Example: 
+			findXPath(resource, '{*}/rn') 
+		
+		Args:
+			dct: Dictionary to search.
+			key: Key with path to an attribute.
+			default: Optional return value if *key* is not found in *dct*
+		
+		Return:
+			Any found value for the key path, or *None* resp. the provided *default* value.
 	"""
 
 	if not key or not dct:

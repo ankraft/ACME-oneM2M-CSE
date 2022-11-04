@@ -10,7 +10,7 @@
 """	This Module provides a resource factory. 
 """
 
-from typing import Dict, Callable, Tuple, cast
+from typing import Optional
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result, JSON
@@ -166,7 +166,11 @@ addResourceFactoryCallback(ResourceTypes.WIFICAnnc,		WIFICAnnc,		lambda dct, tpe
 _specResources = [ ResourceTypes.FCNT, ResourceTypes.FCNTAnnc, ResourceTypes.FCI, ResourceTypes.MGMTOBJ, ResourceTypes.MGMTOBJAnnc ]
 
 
-def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:ResourceTypes = None, create:bool = False, isImported:bool = False) -> Result:
+def resourceFromDict(resDict:Optional[JSON] = {}, 
+					 pi:Optional[str] = None, 
+					 ty:Optional[ResourceTypes] = None, 
+					 create:Optional[bool] = False, 
+					 isImported:Optional[bool] = False) -> Result:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
@@ -182,18 +186,22 @@ def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:ResourceTypes = None, 
 			`Result` object with the *resource* attribute set to the created resource object.
 
 	"""
-	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+	resDict, tpe, _attr = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+	
+	# Check resouce type name (tpe), especially in FCT resources
+	if tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
+		return Result.errorResult(dbg = L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
 
 	# Determine type
 	typ = ResourceTypes(resDict['ty']) if 'ty' in resDict else ty
 	if typ is None and (typ := ResourceTypes.fromTPE(tpe)) is None:
-		return Result.errorResult(dbg = L.logWarn(f'cannot determine type for creating the resource: {tpe}'))
+		return Result.errorResult(dbg = L.logWarn(f'Cannot determine type for creating the resource: {tpe}'))
 
 	if ty is not None:
 		if typ is not None and typ != ty:
-			return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type ({typ}) mismatch'))
+			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type ({typ}) mismatch'))
 		if tpe is not None and ty.tpe() != tpe and ty not in _specResources:
-			return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
+			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# Check for Parent
 	if pi is None and typ != ResourceTypes.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
