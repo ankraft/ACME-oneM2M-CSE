@@ -203,7 +203,7 @@ def isValidID(id:str, allowEmpty:bool = False) -> bool:
 
 		Args:
 			id: The ID to check
-			allowedEmpty: Indicate whether an ID can be empty.
+			allowEmpty: Indicate whether an ID can be empty.
 		Returns:
 			Boolean
 	"""
@@ -239,7 +239,7 @@ def isValidCSI(csi:str) -> bool:
 
 def csiFromSPRelative(ri:str) -> str:
 	"""	Return the csi from a SP-relative resource ID. It is assumed that
-		the passed `ri` is in SP-relative format.
+		the passed *ri* is in SP-relative format.
 		
 		Args:
 			ri: A SP-relative resource ID
@@ -459,7 +459,7 @@ def riFromCSI(csi:str) -> str:
 		Args:
 			csi: The CSE-ID to search for
 		Return:
-			The resource ID of the resource with the `csi`, or None
+			The resource ID of the resource with the *csi*, or None
 	 """
 	if not (res := resourceFromCSI(csi).resource):
 		return None
@@ -485,7 +485,7 @@ def toSPRelative(originator:str) -> str:
 	"""	Add the CSI to an originator (if not already present).
 
 		Args:
-			An originator.
+			originator: A string with the originator to convert.
 		Return:
 			A string in the format */<csi>/<originato>*.
 	"""
@@ -498,7 +498,7 @@ def toCSERelative(id:str) -> str:
 	"""	Convert an id to CSE-Relative format.
 
 		Args:
-			An ID in SP-relative or absolute format.
+			id: 	An ID in SP-relative or absolute format.
 		Return:
 			An ID in CSE-Relative format.
 	"""
@@ -1000,7 +1000,7 @@ def renameThread(name:str = None, thread:threading.Thread = None, prefix:str = N
 	
 		Args:
 			name: New name for a thread. 
-			thread: `Thread` to rename. If none is provided then the current thread is renamed.
+			thread: The Thread to rename. If none is provided then the current thread is renamed.
 			prefix: Used for "prefix + ID" procedure explained above.
 		"""
 	thread = threading.current_thread() if not thread else thread

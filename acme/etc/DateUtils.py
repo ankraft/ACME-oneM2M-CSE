@@ -4,12 +4,10 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module contains various utilty functions that deal with dates and times
-#
-
+"""	This module contains various utilty functions that deal with dates and times.
+"""
 
 from __future__ import annotations
-from pydoc import isdata
 from typing import Callable, Union, Tuple, Optional
 import time
 from email.utils import formatdate
@@ -25,9 +23,9 @@ def getResourceDate(offset:Optional[int] = 0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
 		Args:
-			offset: adds or substracts `offset` seconds to the generated timestamp
+			offset: adds or substracts *offset* seconds to the generated timestamp.
 		Return:
-			String with UTC-relative ISO 8601 timestamp
+			String with UTC-relative ISO 8601 timestamp.
 	"""
 	# return toISO8601Date(datetime.now(timezone.utc) + timedelta(seconds=delta))
 	return toISO8601Date(utcTime() + offset)
@@ -35,6 +33,12 @@ def getResourceDate(offset:Optional[int] = 0) -> str:
 
 def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
+
+		Args:
+			ts: Timestamp. Either a POSIX float timestamp, of a `datetime` object.
+			isUTCtimestamp: Boolean indicating whether the timestamp is UTC based.
+		Return:
+			ISO 8601 datetime string.
 	"""
 	if isinstance(ts, float):
 		if isUTCtimestamp:
@@ -47,11 +51,21 @@ def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = Tru
 def fromAbsRelTimestamp(absRelTimestamp:str, 
 						default:Optional[float] = 0.0, 
 						withMicroseconds:Optional[bool] = True) -> float:
-	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
-		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
-		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
-		If the `absRelTimestamp` contains an integer then it is treated as a relative offset and a UTC-based
-		timestamp is generated for this offset and returned.
+	"""	Parse a ISO 8601 string and return a UTC-based POSIX timestamp as a float.
+
+		If the *absRelTimestamp* is a period (relatice) timestamp (e.g. "PT2S"), then this function
+		tries to convert it and return an absolute POSIX timestamp as a float, based on the current UTC time.
+
+		If the *absRelTimestamp* contains a stringified integer then it is treated as a relative offset and
+		a UTC-based POSIX timestamp is generated for this offset and returned.
+
+		Args:
+			absRelTimestamp: A string with either a stringified integer that represents a POSIX UTC-based timestamp,
+				or a ISO 8601 period timestamp.
+			default: The default that is returned in case a conversion fails.
+			withMicroseconds: The function handles the timestamps including micro seconds.
+		Return:
+			A float representing a UTC-based POSIX timestamp.
 	"""
 	try:
 		if not withMicroseconds:
@@ -66,14 +80,14 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 
 
 def fromDuration(duration:str) -> float:
-	"""	Convert an duration to a number of seconds (float). 
+	"""	Convert a duration to a number of seconds (float). 
 
 		Args:
-			duration: String with either an ISO period or a number of ms.
+			duration: String with either an ISO 8601 period or a string with a number of ms.
 		Return:
-			Float, number of seconds
+			Float, number of seconds.
 		Raise:
-			Exception if wrong format is provided in `duration`
+			Exception if wrong format is provided in *duration*.
 	"""
 	try:
 		return isodate.parse_duration(duration).total_seconds()
@@ -85,14 +99,13 @@ def fromDuration(duration:str) -> float:
 		except Exception as e:
 			#if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
 			raise
-	return 0.0
 
 
 def toDuration(ts:float) -> str:
-	"""	Convert a time stamp to ISO 8601 duration format.
+	"""	Convert a POSIX timestamp to ISO 8601 duration format.
 
 		Args:
-			ts: Float time stamp.
+			ts: Float with a UTC-based POSIX time stamp.
 		Return:
 			A string with an ISO 8601 duration.
 	"""
@@ -103,12 +116,13 @@ def toDuration(ts:float) -> str:
 
 def rfc1123Date(timeval:Optional[float] = None) -> str:
 	"""	Return a date time string in RFC 1123 format, e.g. for use in HTTP requests.
-		The time stamp is GMT-based.
+
+		The timestamp is UTC-based.
 
 		Args:
-			timeval: optional timestamp to use, otherwise the current time is used.
+			timeval: Optional UTC-based POSIX timestamp to use, otherwise the current time is used.
 		Return:
-			String with the GMT-based time.
+			String with the UTC-based time.
 	"""
 	return formatdate(timeval = timeval, localtime = False, usegmt = True)
 
@@ -117,25 +131,33 @@ def utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 
 		Returns:
-			Float with the curret UTC time.
+			Float with current UTC-based POSIX time.
 	"""
 	return datetime.utcnow().timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
-	"""	Return the time in seconds until the UTC-based `ts` timestamp is reached.
-	
-		Negative values mean that the timestamp lies is the past.
+	"""	Return the time in seconds until the UTC-based POSIX timestamp is reached.
+
+		Args:
+			ts: UTC-based POSIX timestamp.
+
+		Return:
+			Number of seconds until the timestamp. A negative value means that the timestamp lies is the past.
 	"""
 	return ts - utcTime()
 
 
 def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
-	"""	Return the time in seconds until the UTC-based `absRelTimestamp` is reached.
+	"""	Return the time in seconds until the UTC-based POSIX *absRelTimestamp* is reached.
 
-		Negative values mean that the timestamp lies is the past.
+		Args:
+			absRelTimestamp: String with either an ISO 8601 period or a string with an 
+				integer (UTC-based POSIX timestamp in seconds).
 		
-		0.0 is returned in case of an error.
+		Return:
+			Time in seconds until the timestamp is reached. Negative values mean that the timestamp lies is the past.
+			0.0 is returned in case of an error.
 	"""
 	if (ts := fromAbsRelTimestamp(absRelTimestamp)) == 0.0:
 		return 0.0
@@ -143,15 +165,15 @@ def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
 
 
 def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> float:
-	"""	Calculate the delta between and ISO 8601 date time string
-		and a timestamp.
+	"""	Calculate the delta between and ISO 8601 date time string and a UTC-based POSIX timestamp.
 		
 		Args:
 			isoDateTime: ISO 8601 compatible string.
-			now: Optional float with a time stamp. If *None* then the current time (UTC-based) will be taken.
+			now: Optional float with a time stamp. If *None* is given then the current time (UTC-based) will be taken.
 
 		Return:
-			A signed float value indicating the delta (negative when the given ISO date time is earlier then `now`), or *None* in case of an error.
+			A signed float value indicating the delta (negative when the given ISO date time 
+			is earlier then "now"), or *None* in case of an error.
 	"""
 	if now is None:
 		now = utcTime()
@@ -164,21 +186,19 @@ def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> float:
 def waitFor(timeout:float, 
 			condition:Optional[Callable[[], bool]] = None,
 			latency:Optional[float] = 0.01) -> bool:
-	"""	Busy waiting for `timeout` seconds, or until the `condition`
-		callback function returns *True*.
+	"""	Busy waiting for *timeout* seconds, or until a *condition* callback function returns *True*.
 
 		Args:
 			timeout: The time to wait at most for the event to be true. 
-			condition: A callback. It it returns *True* the wait-for condition is met and the waiting stops. If it is None, then only the `timeout` is used, and *False* is always returned.
-			latency: The time between `condition` checks.
+			condition: A callback. It it returns *True* the wait-for condition is met and the waiting stops. 
+				If it is None, then only the *timeout* is used, and *False* is always returned.
+			latency: The time between *condition* checks.
 
 		Return:
-			The functionn returns *True* if the `condition` returns *True* 
+			The functionn returns *True* if the *condition* returns *True* 	
 			before the timeout is reached, and *False* otherwise.
-			It returns *False* if `timeout` is negative.
-			If `condition` is not callable then *False* is returned.
-
-
+			It returns *False* if *timeout* is negative.
+			If *condition* is not callable then *False* is returned.
 	"""
 	if timeout < 0.0:
 		return False
@@ -199,29 +219,30 @@ def waitFor(timeout:float,
 #
 
 def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:Optional[datetime] = None) -> bool:
-	'''	A cron parser to determine if the 'cronPattern' matches for the given timestamp `ts`.
-		The cronPattern must follow the usual crontab pattern of 5 fields 
+	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
+
+		The cronPattern must follow the usual crontab pattern of 5 fields:
 	
 			minute hour dayOfMonth month dayOfWeek
 
 		which each must comply to the following patterns:
 
-		- *            any integer value
-		- */num        step values
-		- num[,num]*   value list separator (either num, range or step)
-		- num-num      range of values
+		- \* : any integer value
+		- \*/num : step values
+		- num[,num]\* : value list separator (either num, range or step)
+		- num-num : range of values
 	
 		see also: https://crontab.guru/crontab.5.html
 
 		Args:
 			cronPattern: Either a string with the pattern or a list of strings, one for each pattern element.
-			ts: Optional timestamp. If none then `utcnow()` is used to fill the timestamp.
+			ts: Optional timestamp. If *None* then a current UTC-based timestamp is used to fill the timestamp.
 		
 		Return:
 			Boolean, indicating whether time pattern matches the given timestamp.
 		
 		Raises:
-			ValueError: If `cronPattern` is invalid.
+			ValueError: If *cronPattern* is invalid.
 	'''
 
 	def _parseMatchCronArg(element:str, target:int) -> bool:
@@ -235,7 +256,7 @@ def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:Optional[datetime
 				Indication whether the target value matches against the pattern element.
 
 			Raises:
-				ValueError: If `element` is invalid.
+				ValueError: If *element* is invalid.
 		"""
 
 		# Return True if element is only a *, because this matches anything
@@ -315,24 +336,27 @@ def cronInPeriod(cronPattern:Union[str,
 								   list[str]], 
 								   startTs:datetime, 
 								   endTs:Optional[datetime] = None) -> Tuple[bool, datetime]:
-	''' A parser to check whether a cron pattern has been true during a certain time period. This is useful
-		for applications which cannot check every minute or need to catch up during a restart, or want to determine
-		the next run at some time in the future.
+	''' A parser to check whether a cron pattern has been true during a certain time period. 
+	
+		This is useful for applications which cannot check every minute or need to catch up during a
+		restart, or want to determinethe next run at some time in the future.
 
-		Be aware that this function just tries every minute between `startTs` and `endTs`, so it might take some
-		time.
+		Attention:
+			Be aware that this function just tries every minute between *startTs* and *endTs*, 
+			so it might take some time to execute.
 	
 		Args:
 			cronPattern: Either a string with the pattern or a list of strings, one for each pattern element.
-			startTs: Start timestamp.
-			endTs: End timestamp. If none then `utcnow()` is used to fill the timestamp. In this case `startTs` must be before `endTs`.
+			startTs: Start UTC-based POSIX timestamp.
+			endTs: End UTC-based POSIX timestamp. If *None* then the current UTC time is used to fill the timestamp. 
+				In this case *startTs* must be before *endTs*.
 		
 		Return:
-			Tupple[bool, datetime]. The first element indicates whether the `cronPattern` matches any time in the given period. The
-			second element provides the matched timestamp.
+			Tupple[bool, datetime]. The first element indicates whether the *cronPattern* matches
+			any time in the given period. The second element provides the matched timestamp.
 		
 		Raises:
-			ValueError: If `cronPattern` is invalid.
+			ValueError: If *cronPattern* is invalid.
 	'''
 
 	# Fill in the default

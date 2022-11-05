@@ -4,15 +4,17 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This entity handles access to resources
-#
+
+"""	This module implements the SecurityManager entity.
+"""
 
 
 from __future__ import annotations
-import ssl
-from typing import List, cast
 
-from ..etc.Types import JSON, Operation, ResourceTypes as T, Permission, Result, CSERequest, ResponseStatusCode as RC
+import ssl
+from typing import List, cast, Optional
+
+from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode as RC
 from ..etc import Utils as Utils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -25,6 +27,8 @@ from ..helpers import TextTools
 
 
 class SecurityManager(object):
+	"""	This manager entity handles access to resources and requests.
+	"""
 
 	def __init__(self) -> None:
 		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
@@ -61,8 +65,8 @@ class SecurityManager(object):
 	def hasAccess(self, originator:str, 
 						resource:Resource, 
 						requestedPermission:Permission, 
-						ty:T = None, 
-						parentResource:Resource = None) -> bool:
+						ty:Optional[ResourceTypes] = None, 
+						parentResource:Optional[Resource] = None) -> bool:
 		""" Test whether an originator has access to a resource for the requested permission.
 		
 			Args:
@@ -95,7 +99,7 @@ class SecurityManager(object):
 			# Some Separate	 tests for some types
 
 			# Checking for AE	
-			if ty == T.AE and requestedPermission == Permission.CREATE:
+			if ty == ResourceTypes.AE and requestedPermission == Permission.CREATE:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
 				# Originator == None or len == 0
@@ -104,7 +108,7 @@ class SecurityManager(object):
 					return True
 
 			# Checking for remoteCSE or CSEBaseAnnc
-			if ty in [ T.CSR, T.CSEBaseAnnc] and requestedPermission == Permission.CREATE:
+			if ty in [ ResourceTypes.CSR, ResourceTypes.CSEBaseAnnc] and requestedPermission == Permission.CREATE:
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
@@ -139,7 +143,7 @@ class SecurityManager(object):
 				return True
 
 		# Allow some Originators to RETRIEVE the CSEBase
-		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
+		if resource.ty == ResourceTypes.CSEBase and requestedPermission & Permission.RETRIEVE:
 
 			# Allow registered AEs to RETRIEVE the CSEBase
 			if CSE.storage.retrieveResource(aei = originator).resource:
@@ -156,7 +160,7 @@ class SecurityManager(object):
 				return True
 
 		# Checking for PollingChannel
-		if resource.ty == T.PCH:
+		if resource.ty == ResourceTypes.PCH:
 			if originator != resource.getParentOriginator():
 				L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
 				return False
@@ -170,7 +174,7 @@ class SecurityManager(object):
 		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission}')
 		# L.logWarn(resource)
 
-		if resource.ty == T.GRP: # target is a group resource
+		if resource.ty == ResourceTypes.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
 			
 			if not (macp := resource.macp):
@@ -191,7 +195,7 @@ class SecurityManager(object):
 
 
 		# target is an ACP or ACPAnnc resource
-		if resource.ty in [T.ACP, T.ACPAnnc]:	
+		if resource.ty in [ResourceTypes.ACP, ResourceTypes.ACPAnnc]:	
 			if resource.checkSelfPermission(originator, requestedPermission):
 				L.isDebug and L.logDebug('Permission granted')
 				return True
@@ -199,7 +203,7 @@ class SecurityManager(object):
 			return False
 
 		# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-		if ty == T.SUB and parentResource:
+		if ty == ResourceTypes.SUB and parentResource:
 			if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 				return False
 
@@ -359,7 +363,7 @@ class SecurityManager(object):
 					return True
 			return False
 
-		return cast(list[ACP], CSE.storage.searchByFragment(dct = { 'ty' : T.ACP }, filter = filter))
+		return cast(List[ACP], CSE.storage.searchByFragment(dct = { 'ty' : ResourceTypes.ACP }, filter = filter))
 
 
 	##########################################################################

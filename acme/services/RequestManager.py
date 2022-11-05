@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 import urllib.parse
-from typing import Any, List, Tuple, cast, Dict
+from typing import Any, List, Tuple, cast, Dict, Optional
 from copy import deepcopy
 from threading import Lock
 
@@ -567,11 +567,11 @@ class RequestManager(object):
 	#
 
 
-	def hasPollingRequest(self, originator:str, requestID:str=None, reqType:RequestType=RequestType.REQUEST) -> bool:
+	def hasPollingRequest(self, originator:str, requestID:str = None, reqType:RequestType = RequestType.REQUEST) -> bool:
 		"""	Check whether there is a pending request or response pending for the tuple (`originator`, `requestID`).
 			This method is also used as a callback for periodic check whether a request or response is queued.
 			If `requestID` is not None then the check is for a request with that ID. 
-			Otherwise, `True` will be returned if there is any request for the `originator`.
+			Otherwise, *True* will be returned if there is any request for the `originator`.
 		"""
 		with self._requestLock:
 			return (lst := self._requests.get(originator)) is not None and any(	 (r, t) for r,t in lst if (requestID is None or r.rqi == requestID) and (t == reqType) )
@@ -649,14 +649,19 @@ class RequestManager(object):
 			return resultRequest
 
 
-	def waitForPollingRequest(self, originator:str, requestID:str, timeout:float, reqType:RequestType = RequestType.REQUEST, aggregate:bool = False) -> Result:
+	def waitForPollingRequest(self, originator:str, 
+									requestID:str, 
+									timeout:float, 
+									reqType:Optional[RequestType] = RequestType.REQUEST, 
+									aggregate:Optional[bool] = False) -> Result:
 		"""	Busy waiting for a polling request.
-			The function returns when there is a new or pending matching request in the queue, or when the `timeout` (in seconds)
-			is met.
+			The function returns when there is a new or pending matching request in the queue, or when the
+			*timeout* (in seconds) is met.
 			
 			Args:
 				originator: Request originator to match.
-				requestID: Request Identifier to match. Might be None to match all request IDs.
+				requestID: Request Identifier to match. Might be *None* to match all request IDs.
+				timeout: Timeout in seconds for the polling request to wait.
 				reqType: Match request or response.
 				aggregate: Boolean indicating whether all the available requests shall be returned in one aggregation, or separately.
 			Return:
@@ -695,7 +700,8 @@ class RequestManager(object):
 							parameters:CSERequest = None,
 							reqType:RequestType = RequestType.REQUEST,
 							originator:str = None) -> CSERequest:
-		"""	Queue a (incoming) `request` or `content` for a <PCH>. It can be retrieved via the target's <PCU> child resource.
+		"""	Queue a (incoming) `request` or `content` for a <PCH>. It can be retrieved via the target's <PCU> 
+			child resource.
 
 			If a `request` is passed then this object is queued. If no `request` but `data` is given then a new request object is created 
 			for `content`.
@@ -1443,7 +1449,7 @@ class RequestManager(object):
 
 			Args:
 				content: Dictionary with the request.
-				rvi: The target's supported release version.
+				targetRvi: The target's supported release version.
 			Return:
 				A copy of *content*, with the fields removed.
 		"""

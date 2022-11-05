@@ -22,7 +22,7 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from ..etc.Types import ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from ..etc.Types import ResourceTypes, Result, ResponseStatusCode as RC, JSON
 from ..etc import DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
@@ -246,7 +246,7 @@ class Storage(object):
 		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
 
 
-	def retrieveResourcesByType(self, ty:T) -> list[Document]:
+	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Document]:
 		""" Return all resources of a certain type. 
 
 			Args:
@@ -286,7 +286,7 @@ class Storage(object):
 
 
 	def directChildResources(self, pi:str, 
-								   ty:Optional[T] = None, 
+								   ty:Optional[ResourceTypes] = None, 
 								   raw:Optional[bool] = False) -> list[Document]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 
@@ -305,7 +305,7 @@ class Storage(object):
 		# 		]
 
 
-	def countDirectChildResources(self, pi:str, ty:Optional[T] = None) -> int:
+	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
 		"""	Count the number of direct child resources.
 
 			Args:
@@ -332,7 +332,7 @@ class Storage(object):
 			Args:
 				ri: Unstructured resource ID for the mapping to look for.
 			Return:
-				List of found resources identifier mappings, or an empty list
+				List of found resources identifier mappings, or an empty list.
 		"""
 		return self.db.searchIdentifiers(ri = ri)
 
@@ -341,9 +341,9 @@ class Storage(object):
 		"""	Search for the resource identifer mapping with the given structured resource ID.
 
 			Args:
-				ri: Structured resource ID for the mapping to look for.
+				srn: Structured resource ID for the mapping to look for.
 			Return:
-				List of found resources identifier mappings, or an empty list
+				List of found resources identifier mappings, or an empty list.
 		"""
 		return self.db.searchIdentifiers(srn = srn)
 

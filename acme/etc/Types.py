@@ -4,16 +4,17 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Various CSE and oneM2M types
-#
+
+"""	Various CSE and oneM2M types.
+"""
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
-from urllib import request
 
 
 class ACMEIntEnum(IntEnum):
@@ -26,8 +27,11 @@ class ACMEIntEnum(IntEnum):
 		"""	Check whether the enum type has an entry with
 			either the given int value or string name. 
 
-			`value` can also be a tuple of values to test. In this
-			case, all the values in the tuple must exist
+			Args:
+				value: *value* can also be a tuple of values to test. 
+					In this case, all the values in the tuple must exist.
+			Return:
+				*True* if the value exists.
 		"""
 
 		def _check(value:int|str) -> bool:
@@ -1462,79 +1466,79 @@ class RequestType(ACMEIntEnum):
 class FilterCriteria:
 	"""	Sub-structure for CSERequest.
 	
-		It contains the filter criteria and helper attributes.
+		It contains the filterCriteria attributes and further helper attributes.
 	"""
 
 	# Result handling
 	fu:FilterUsage = FilterUsage.conditionalRetrieval
-	""" Filter usage (Default: conditional retrieval). """
+	""" Filter usage. Default: conditional retrieval. """
 
 	fo:FilterOperation = None
-	""" Filter Operation (default: AND). """
+	""" Filter Operation. Default is *AND*. """
 
 	lim:int = None
-	""" Limit filter criterion (default: sys.maxsize). """
+	""" Limit filter criterion. Default is *sys.maxsize*. """
 
 	lvl:int = None
-	""" Level filter criterion (default: sys.maxsize). """
+	""" Level filter criterion. Default is *sys.maxsize*. """
 
 	ofst:int = None
-	"""	Offset filter criterion (default: 1). """
+	"""	Offset filter criterion. Default is *1*. """
 
 	arp:str = None
-	""" applyRelativePath (default: None). """
+	""" applyRelativePath. Default is *None*. """
 
 	# Conditions
 	crb:str = None
-	""" Created before (default: None). """
+	""" Created before. Default is *None*. """
 
 	cra:str = None
-	""" Created after (default: None). """
+	""" Created after. Default is *None*. """
 
 	ms:str = None
-	""" Modified since (default: None). """
+	""" Modified since. Default is *None*. """
 
 	us:str = None
-	""" Unmodified since (default: us). """
+	""" Unmodified since. Default is *us*. """
 
 	sts:int = None
-	""" State tag smaller (default: None). """
+	""" State tag smaller. Default is *None*. """
 	
 	stb:int = None
-	""" State tag bigger (default: None). """
+	""" State tag bigger. Default is *None*. """
 
 	exb:str = None
-	""" Expire before (default: None). """
+	""" Expire before. Default is *None*. """
 	
 	exa:str = None
-	""" Expire after (default: None). """
+	""" Expire after. Default is *None*. """
 
 	lbq:str = None
-	""" Labels query (default: None). """	
+	""" Labels query. Default is *None*. """	
 
 	sza:int = None
-	""" Size above (default: None). """
+	""" Size above. Default is *None*. """
 
 	szb:int = None
-	""" Size before (default: None). """
+	""" Size before. Default is *None*. """
 
 	catr:str = None
-	""" Child attribute (default: None). """
+	""" Child attribute. Default is *None*. """
 
 	patr:str = None
-	""" Parent attribute (default: None). """
+	""" Parent attribute. Dfault is *None*. """
 
 	cty:list = None
-	""" List of content types (default: None). """
+	""" List of content types. Default is *None*. """
 
 	smf:str = None
-	""" Semantic filter (default: None). """
+	""" Semantic filter. Default is *None*. """
 
 	ty:list = None
-	""" List of resource types (default: None). """
+	""" List of resource types. Default is *None*. """
 
 	lbl:list = None
-	""" List of labels (default: None). """
+	""" List of labels. Default is *None*. """
 
 	# Other filter attributes
 	attributes:Parameters = field(default_factory = dict)
@@ -1668,7 +1672,7 @@ class CSERequest:
 	# HTTP specifics
 
 	mediaType:str = None
-	""" Transmitted media type (http: 'Content-Type'). """
+	""" Transmitted media type (http ->'Content-Type'). """
 
 	# Generics, internals
 	originalData:bytes = None 

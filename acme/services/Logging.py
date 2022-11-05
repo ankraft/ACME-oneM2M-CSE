@@ -4,17 +4,20 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Wrapper for the logging sub-system. It provides simpler access as well
-#	some more usefull output rendering.
+#	
 #
 
-"""	Wrapper class for the logging subsystem. """
+"""	Wrapper for the logging sub-system. 
+
+	It provides simpler access as well some nicer output rendering.
+"""
 
 from __future__ import annotations
+
 import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
-from typing import List, Any, Union
+from typing import List, Any, Union, Optional
 from logging import LogRecord
 
 
@@ -259,65 +262,96 @@ class Logging:
 
 
 	@staticmethod
-	def log(msg:Any, stackOffset:int = 0) -> None:
-		"""Print a log message with level INFO. 
+	def log(msg:Any, stackOffset:Optional[int] = 0) -> str:
+		"""Print a log message with log-level **INFO**. 
+
+			Args:
+				msg: The log message.
+				stackOffset: Optional offset for printing stacktraces.
+			Return:
+				Return the log *msg* again. 
 		"""
-		Logging._log(logging.INFO, msg, stackOffset = stackOffset)
+		return Logging._log(logging.INFO, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logDebug(msg:Any, stackOffset:int = 0) -> str:
-		"""Print a log message with level DEBUG. 
+	def logDebug(msg:Any, stackOffset:Optional[int] = 0) -> str:
+		"""Print a log message with log-level **DEBUG**. 
+
+			Args:
+				msg: The log message.
+				stackOffset: Optional offset for printing stacktraces.
+			Return:
+				Return the log *msg* again. 
 		"""
-		Logging._log(logging.DEBUG, msg, stackOffset = stackOffset)
-		return msg
+		return Logging._log(logging.DEBUG, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = 0) -> str:
-		"""	Print a log message with level ERROR. 
-			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
-			as well.
+	def logErr(msg:Any, 
+			   showStackTrace:Optional[bool] = True, 
+			   exc:Optional[Exception] = None, 
+			   stackOffset:Optional[int] = 0) -> str:
+		"""	Print a log message with log-level **ERROR**. 
+
+			Args:
+				msg: The log message.
+				showStackTrace: Optional indicates whether a stacktrace shall be logged 
+					together with the error	as well.
+				exc: Optional exception to log.
+				stackOffset: Optional offset for printing stacktraces.
+			Return:
+				Return the log *msg* again. 
 		"""
 		from ..services import CSE
 		# raise logError event
 		CSE.event.logError()	# type: ignore
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
-			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset = stackOffset)
+			return Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset = stackOffset)
 		elif showStackTrace and Logging.stackTraceOnError:
 			strace = ''.join(map(str, traceback.format_stack()[:-1]))
-			Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset = stackOffset)
+			return Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset = stackOffset)
 		else:
-			Logging._log(logging.ERROR, msg, stackOffset = stackOffset)
-		return msg
+			return Logging._log(logging.ERROR, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:int = 0) -> str:
-		"""Print a log message with level WARNING. 
+	def logWarn(msg:Any, stackOffset:Optional[int] = 0) -> str:
+		"""	Print a log message with log-level **WARNING**. 
+
+			Args:
+				msg: The log message.
+				stackOffset: Optional offset for printing stacktraces.
+			Return:
+				Return the log *msg* again. 
 		"""
 		from ..services import CSE as CSE
 		# raise logWarning event
 		CSE.event.logWarning() 	# type: ignore
-		Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
+		return Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
+
+
+	@staticmethod
+	def logWithLevel(level:int, msg:Any, showStackTrace:bool = False, stackOffset:int = 0) -> str:
+		"""	Fallback log method when the `level` is a separate argument.
+		# TODO
+		"""
+		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
+		# TODO change to match in Python10
+		if level == logging.DEBUG:
+			return Logging.logDebug(msg, stackOffset = stackOffset)
+		elif level == logging.INFO:
+			return Logging.log(msg, stackOffset = stackOffset)
+		elif level == logging.WARNING:
+			return Logging.logWarn(msg, stackOffset = stackOffset)
+		elif level == logging.ERROR:
+			return Logging.logErr(msg, showStackTrace = showStackTrace, stackOffset = stackOffset)
 		return msg
 
 
 	@staticmethod
-	def logWithLevel(level:int, message:Any, showStackTrace:bool = False, stackOffset:int = 0) -> None:
-		"""	Fallback log method when the `level` is a separate argument.
-		"""
-		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
-		# TODO change to match in Python10
-		level == logging.DEBUG and Logging.logDebug(message, stackOffset = stackOffset)
-		level == logging.INFO and Logging.log(message, stackOffset = stackOffset)
-		level == logging.WARNING and Logging.logWarn(message, stackOffset = stackOffset)
-		level == logging.ERROR and Logging.logErr(message, showStackTrace = showStackTrace, stackOffset = stackOffset)
-
-
-	@staticmethod
-	def logDivider(level:int = None, message:str = '') -> None:
+	def logDivider(level:Optional[int] = None, message:Optional[str] = '') -> None:
 		"""	Add a divider line to the log.
 		
 			Args:
@@ -331,13 +365,18 @@ class Logging:
 
 
 	@staticmethod
-	def _log(level:int, msg:Any, stackOffset:int = 0, immediate:bool = False) -> None:
+	def _log(level:int, msg:Any, stackOffset:Optional[int] = 0, immediate:Optional[bool] = False) -> str:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 
 			Args:
-				level: The log level
-				stackOffset: Offset in the stack frame
+				level: The log level.
+				msg: The log message.
+				stackOffset: Optional offset in the stack frame.
+				immediate: Immediately log the message, don't put it into the log queue.
+			
+			Return:
+				The log *msg*.
 		"""
 		if Logging.logLevel <= level:
 			try:
@@ -352,6 +391,7 @@ class Logging:
 				print(e)
 				# sometimes this raises an exception. Just ignore it.
 				pass
+		return msg
 
 
 	@staticmethod

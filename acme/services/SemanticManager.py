@@ -4,10 +4,9 @@
 #	(c) 2022 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module implements semantic service functions
-#
 
-"""	This module implements semantic service and helper functions. """
+"""	This module implements semantic service and helper functions.
+"""
 
 from __future__ import annotations
 import sys

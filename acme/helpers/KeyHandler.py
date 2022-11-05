@@ -4,15 +4,16 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	These module implements a handler for keyboard inputs.
-#	It should run on *IX-alikes and Windows OS.
-#
+"""	This module implements a handler for keyboard inputs.
+
+	It should run on \*IX-alikes and Windows OS.
+"""
 
 from __future__ import annotations
-from ast import Call
+
+from typing import Callable, Dict, Tuple, Optional
 import sys, time, select
 from enum import Enum
-from typing import Callable, Dict, Tuple
 
 _timeout = 0.5
 
@@ -388,24 +389,27 @@ def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
 		_escapeSequenceIdx += 1
 
 
-def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True, catchAll:Callable = None) -> None:
+def loop(commands:Commands, 
+		 quit:Optional[str] = None, 
+		 catchKeyboardInterrupt:Optional[bool] = False, 
+		 headless:Optional[bool] = False, 
+		 ignoreException:Optional[bool] = True,
+		 catchAll:Optional[Callable] = None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
-		a handler function for that key (from the dictionary `commands`).
-		If a single 'key' value is set in `quit` and this key is pressed, then
-		the loop terminates.
+		a handler function for that key (from the dictionary *commands*).
 
-		If `catchKeyboardInterrupt` is True, then this key is handled as the ^C key,
-		otherweise a KeyboardInterrupt event is raised.
-
-		If `headless` is True, then operate differently. Ignore all key inputs, but handle
-		a keyboard interrupt. If the `quit` key is set then the loop is just interrupted. Otherwise
-		tread the keyboard interrupt as ^C key. It must be hanled in the `commands`.
-
-		If `ignoreException` is True, then exceptions raised during command execution is ignore, or
-		passed on otherwise.
-
-		If `catchAll` is given then this callback is called in case the pressed key was not found
-		in `commands`.
+		Args:
+			commands: A dictionary of `Commands` that map between input keys and callbacks.
+			quit: If a single 'key' value is set in *quit* and this key is pressed, then the loop terminates.
+			catchKeyboardInterrupt: If *catchKeyboardInterrupt* is *True*, then this event is handled as the "^C" key,
+				otherweise a KeyboardInterrupt event is raised.
+			headless: If *headless* is *True*, then operate differently. Ignore all key inputs, but handle
+					a keyboard interrupt. If in this case the *quit* key is set then the loop is just interrupted.
+					Otherwise tread the keyboard interrupt as the "^C" key. It must also be handled in *commands*.
+			ignoreException: If *ignoreException* is *True* then exceptions raised during command execution are
+				ignore, or passed on otherwise.
+			catchAll: If this attribute is set to a callback function then this callback is called in case a pressed
+				key was not found in *commands*.
 	"""
 	
 	# main loop
