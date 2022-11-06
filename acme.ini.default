@@ -230,18 +230,27 @@ timeout=${cse:requestExpirationDelta}
 ; Enable TLS for communications.
 ; See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 ; Default: False
-useTLS=False
+useTLS=false
 ; TLS version to be used in connections.
 ; Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
 ; version negotiation.
 ; Default: auto
 tlsVersion=auto
 ; Verify certificates in requests. Set to False when using self-signed certificates. Default: False
-verifyCertificate=False
+verifyCertificate=false
 ; Path and filename of the certificate file. Default: None
 caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. Default: None
 caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
+
+
+[server.http.cors]
+; Enable CORS support for the HTTP binding.
+; Default: false
+enable=false
+; A comma separated list of allowed resource paths. The list elements could be regular exporessions.
+; Default: "/*" , ie. all resources under the HTTP server's root
+resources=/*
 
 
 ;
@@ -250,8 +259,8 @@ caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
 
 [client.mqtt]
 ; Enable the MQTT binding.
-; Default: False
-enable=False
+; Default: false
+enable=false
 ; The hostname of the MQTT broker.
 ; Default; 127.0.0.1
 address=127.0.0.1

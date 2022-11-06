@@ -10,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.10.0',
+    version='0.11.0',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
@@ -29,6 +29,7 @@ setup(
 	install_requires=[
 		'cbor2',
 		'flask',
+		'flask-cors',
 		'InquirerPy',
 		'isodate',
 		'paho-mqtt',

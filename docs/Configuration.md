@@ -62,6 +62,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [\[cse.operation\] - CSE Operations Settings](#operation)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[server.http.security\] - HTTP Security Settings](#security_http)  
+[\[server.http.cors\] - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
 [\[client.mqtt\] - MQTT Client Settings](#client_mqtt)  
 [\[client.mqtt.security\] - MQTT Security Settings](#security_mqtt)  
 [\[database\] - Database Settings](#database)  
@@ -155,6 +156,14 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                         | http.security.verifyCertificate |
 | caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | http.security.caCertificateFile |
 | caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | http.security.caPrivateKeyFile  |
+
+<a name="http_cors"></a>
+### [server.http.cors] - HTTP CORS (Cross-Origin Resource Sharing) Settings
+
+| Keyword   | Description                                                                                                                                               | Configuration Name  |
+|:----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------|
+| enable    | Enable CORS support for the HTTP binding.<br />Default: false                                                                                             | http.cors.enable    |
+| resources | A comma separated list of allowed resource paths. The list elements could be regular expressions.<br />Default: "/*" , ie. all resources under the HTTP server's root | http.cors.resources |
 
 
 <a name="client_mqtt"></a>

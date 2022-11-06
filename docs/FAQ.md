@@ -29,6 +29,17 @@
    operation: Instead of sending oneM2M DELETE requests using the http DELETE method one can send the same request with the http PATCH method.  
    This feature is disabled by default and can be enabled by setting the configuration setting *[server.http].allowPatchForDelete*
    to *true*.
+1. **Is there a way to enable CORS (Cross-Origin Resource Sharing) for ACME?**  
+   CORS allows browser-based applications to access resources on a web server outside the domain of the
+   original hosting web server. This could be useful, for example, to allow a web UI that is hosted on 
+   one web server to access oneM2M resources that are hosted on external CSE(s).  
+   ACME's http binding implementation supports CORS. This feature is disabled by default and can be 
+   enabled by setting the configuration setting *[server.http.cors].enable* to *true*. CORS access is granted
+   by default to all HTTP resources. This can be limited by specifying the resource paths in the 
+   configuration setting *[server.http.cors].resources*.  
+   **Note**: Most modern web browsers don't allow unsecured (http) access via CORS. This means that the
+   CSE must be configured to run the http server with TLS support enabled (https).
+
 
 ## MQTT
 
@@ -39,6 +50,7 @@
    Identify the other client, stop it, and assign it a different CSE-ID.
 1. **What does "cannot connect to broker: [Errno 49] Can't assign requested address" mean?**  
    You most likely want to connect to an MQTT broker that does not run on your local machine and you configured the listen interface to "127.0.0.1", which means that only local running services can be reached. Try to set the configuration *[client.mqtt].listenIF* to "0.0.0.0".
+
 
 ## Resources
 

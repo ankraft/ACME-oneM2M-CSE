@@ -59,7 +59,7 @@ expiration date.
 
 Please also consult the *openssl* manual for further instructions. 
 
-After you generated these files you can move them to a separate directory (for example you may create a new directory named *cert* in ACME's installation directory) and set the *caCertificateFile* and *caPrivateKeyFile* configuration parameters accordingly.
+After you generated these files you can move them to a separate directory (for example you may create a new directory named *cert* in ACME's installation directory) and set the *caCertificateFile* and *caPrivateKeyFile* configuration parameters in the *acme.ini* configuration file under the *\[server.http.security\]* section accordingly.
 
 ---
 
@@ -69,6 +69,7 @@ The following third-party components are used by the ACME CSE.
 ### Core CSE
 - The [cbor2](https://github.com/agronholm/cbor2) package is used to parse and create CBOR serializations. MIT License
 - The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework to service http(s) requests. BSD 3-Clause License
+- [flask-cors](https://github.com/corydolphin/flask-cors/) is a *Flask* extension for handling Cross Origin Resource Sharing (CORS), making cross-origin AJAX possible.
 - [InquirerPy](https://github.com/kazhala/InquirerPy/) is a collection of common interactive command-line interfaces. MIT License
 - The [isodate](https://github.com/gweis/isodate) package is used to parse and handle ISO 8601 time, date, and duration. BSD License
 - The [paho-mqtt](https://www.eclipse.org/paho/) library provides a client class which enables applications to connect to an MQTT broker. Eclipse Public License 1.0 

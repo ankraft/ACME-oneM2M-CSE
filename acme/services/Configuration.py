@@ -175,6 +175,13 @@ class Configuration(object):
 				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 			fallback = None),
 
 				#
+				#	HTTP Server CORS
+				#
+
+				'http.cors.enable'						: config.getboolean('server.http.cors', 'enable', 					fallback = False),
+				'http.cors.resources'					: config.getlist('server.http.cors', 'resources', 					fallback = [ r'/*' ]),	# type: ignore [attr-defined]
+
+				#
 				#	MQTT Client
 				#
 

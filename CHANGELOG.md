@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for "Content-Location" http header for CREATE operations when RCN = 2 or 3.
 - [CSE] Added support for oneM2M spec change that allows for AE.api to start with a lower-case "r" if the release version is "2a" or "3".
 - [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
+- [HTTP] Added support for CORS (Cross-Origin Resource Sharing - support for request from web browsers across domains).
 - [CONSOLE] Added command to add a separator line to the screen and log (at the current log level).
 - [CONSOLE] Added continuous inspection of a resource.
 - [CONSOLE] Added support for handling function and cursor keys in the console (currently only for POSIX, yet).
@@ -53,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
 - [WEB] Improved handling of SP-relative resource IDs.
-- [SCRIPTS] Improved handling of spaces in\[ commandorVariable ] command substituions.
+- [SCRIPTS] Improved handling of spaces in\[ command or Variable ] command substitutions.
 
 
 ## [0.10.2] - 2022-07-20

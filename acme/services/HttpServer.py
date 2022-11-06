@@ -17,6 +17,7 @@ from flask import Flask, Request, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+from flask_cors import CORS
 import requests
 import isodate
 
@@ -57,7 +58,8 @@ class HttpServer(object):
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
 		self.isStopped			= False
-
+		self.corsEnable			= Configuration.get('http.cors.enable')
+		self.corsResources		= Configuration.get('http.cors.resources')
 
 		self.backgroundActor:BackgroundWorker = None
 
@@ -67,10 +69,16 @@ class HttpServer(object):
 		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
 		if CSE.security.useTLSHttp:
 			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
-
+		
+		# Add CORS support for flask
+		if self.corsEnable:
+			logging.getLogger('flask_cors').level = logging.DEBUG	# switch on flask-cors internal logging
+			L.isInfo and L.log('CORS is enabled for the HTTP server.')
+			CORS(self.flaskApp, resources = self.corsResources)
+		else:
+			L.isDebug and L.logDebug('CORS is NOT enabled for the HTTP server.')
 
 		# Add endpoints
-
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleGET, methods = ['GET'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePOST, methods = ['POST'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePUT, methods = ['PUT'])
