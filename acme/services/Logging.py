@@ -229,7 +229,7 @@ class Logging:
 	@staticmethod
 	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, thread:threading.Thread) -> None:
 		if isinstance(msg, str):
-			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
+			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}\x04{caller.lineno}\x04{thread.name:<10.10}\x04{str(msg)}')
 		else:
 			try:
 				richInspect(msg, private = True, docs = False, dunder = False)
@@ -628,15 +628,15 @@ class ACMERichLogHandler(RichHandler):
 		#path = Path(record.pathname).name
 		
 		message	= self.format(record)
-		if len(messageElements := message.split('*', 3)) == 4:
+		if len(messageElements := message.split('\x04', 3)) == 4:
 			path 	= messageElements[0]
 			lineno 	= int(messageElements[1])
 			threadID= messageElements[2]
 			message = messageElements[3]
 		else:
-			path	= ''
-			lineno	= 0
-			threadID= ''
+			path	= record.filename
+			lineno	= record.lineno
+			threadID= f'{record.threadName:<10.10}'
 
 		self.console.print(
 			self._log_render(
