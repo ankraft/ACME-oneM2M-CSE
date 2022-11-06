@@ -11,7 +11,7 @@
 import configparser, argparse, os, os.path, pathlib, ipaddress, re, sys
 from datetime import datetime
 
-from typing import Any, Dict, Tuple, List, cast
+from typing import Any, Dict, Tuple, List, cast, Optional
 from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
 from InquirerPy import prompt, inquirer
@@ -357,13 +357,13 @@ class Configuration(object):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			# print(config.items('server.http.mappings'))
 		
-		if not (v := Configuration.validate())[0]:
+		if not (v := Configuration.validate(True))[0]:
 			Configuration._print(f'[red]{v[1]}')
 		return v[0]
 
 
 	@staticmethod
-	def validate() -> Tuple[bool, str]:
+	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
 		from ..etc import Utils as Utils	# cannot import at the top because of circel import
@@ -434,7 +434,7 @@ class Configuration(object):
 		# Just in case: check the URL's
 		if Configuration._configuration['http.security.useTLS']:
 			if Configuration._configuration['http.address'].startswith('http:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
+				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in [i]\[server.http]:address[/i]')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
@@ -442,7 +442,7 @@ class Configuration(object):
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if Configuration._configuration['http.address'].startswith('https:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
+				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in [i]\[server.http]:address[/i]')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
@@ -452,11 +452,11 @@ class Configuration(object):
 
 		# Operation
 		if Configuration._configuration['cse.operation.jobBalanceTarget'] <= 0.0:
-			return False, f'Configuration Error: \[cse.operation]:jobBalanceTarget must be > 0.0'
+			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceTarget[/i] must be > 0.0'
 		if Configuration._configuration['cse.operation.jobBalanceLatency'] < 0:
-			return False, f'Configuration Error: \[cse.operation]:jobBalanceLatency must be >= 0'
+			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceLatency[/i] must be >= 0'
 		if Configuration._configuration['cse.operation.jobBalanceReduceFactor'] < 1.0:
-			return False, f'Configuration Error: \[cse.operation]:jobBalanceReduceFactor must be >= 1.0'
+			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceReduceFactor[/i] must be >= 1.0'
 
 
 		#
@@ -471,15 +471,20 @@ class Configuration(object):
 			Configuration._configuration['http.security.caPrivateKeyFile'] = None
 		else:
 			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				return False, f'Configuration Error: Unknown value for \[http.security]:tlsVersion: {val}'
+				return False, f'Configuration Error: Unknown value for [i]\[server.http.security]:tlsVersion[/i]: {val}'
 			if not (val := Configuration._configuration['http.security.caCertificateFile']):
-				return False, 'Configuration Error: \[http.security]:caCertificateFile must be set when TLS is enabled'
+				return False, 'Configuration Error: [i]\[server.http.security]:caCertificateFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: \[http.security]:caCertificateFile does not exists or is not accessible: {val}'
+				return False, f'Configuration Error: [i]\[server.http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
 			if not (val := Configuration._configuration['http.security.caPrivateKeyFile']):
-				return False, 'Configuration Error: \[http.security]:caPrivateKeyFile must be set when TLS is enabled'
+				return False, 'Configuration Error: [i]\[server.http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: \[http.security]:caPrivateKeyFile does not exists or is not accessible: {val}'
+				return False, f'Configuration Error: [i]\[server.http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
+		
+		# HTTP CORS
+		if initial and Configuration._configuration['http.cors.enable'] and not Configuration._configuration['http.security.useTLS']:
+			Configuration._print('[orange3]Configuration Warning: [i]\[server.http.security].useTLS[/i] (https) should be enabled when [i]\[server.http.cors].enable[/i] is enabled.')
+
 		
 		#
 		#	MQTT client
@@ -487,70 +492,70 @@ class Configuration(object):
 		if not Configuration._configuration['mqtt.port']:	# set the default port depending on whether to use TLS
 			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['mqtt.security.useTLS'] else 1883
 		if not (Configuration._configuration['mqtt.security.username']) != (not Configuration._configuration['mqtt.security.password']):
-			return False, f'Configuration Error: Username or password missing for \[mqtt.security]]'
+			return False, f'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]'
 		# remove empty cid from the list
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
 
 		# check the csi format
 		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
-			return False, f'Configuration Error: Wrong format for \[cse]:cseID: {val}'
+			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
 
 		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
 			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
-				return False, f'Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}'
+				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-				return False, 'Configuration Error: Missing configuration \[cse.registrar]:resourceName'
+				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
 
 		# Check default subscription duration
 		if Configuration._configuration['cse.sub.dur'] < 1:
-			return False, 'Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0'
+			return False, 'Configuration Error: [i]\[cse.resource.sub]:batchNotifyDuration[/i] must be > 0'
 
 		# Check flexBlocking value
 		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
 		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
-			return False, 'Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"'
+			return False, 'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"'
 
 		# Check release versions
 		if len(srv := Configuration._configuration['cse.supportedReleaseVersions']) == 0:
-			return False, 'Configuration Error: \[cse]:supportedReleaseVersions must not be empty'
+			return False, 'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty'
 		if len(rvi := Configuration._configuration['cse.releaseVersion']) == 0:
-			return False, 'Configuration Error: \[cse]:releaseVersion must not be empty'
+			return False, 'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty'
 		if rvi not in srv:
-			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}'
+			return False, f'Configuration Error: [i]\[cse]:releaseVersion[/i]: {rvi} not in [i]\[cse].supportedReleaseVersions[/i]: {srv}'
 		# if any([s for s in srv if str(rvi) < s]):
 		#	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}. Either increase the [i]releaseVersion[/i] or reduce the set of [i]supportedReleaseVersions[/i].'
 
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
-			return False, 'Configuration Error: \[cse]:checkExpirationsInterval must be > 0'
+			return False, 'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0'
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
-			return False, 'Configuration Error: \[cse.console]:refreshInterval must be > 0.0'
+			return False, 'Configuration Error: [i]\[cse.console]:refreshInterval[/i] must be > 0.0'
 		if Configuration._configuration['cse.maxExpirationDelta'] <= 0:
-			return False, 'Configuration Error: \[cse]:maxExpirationDelta must be > 0'
+			return False, 'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
 
 		# Console settings
 		from ..services.Console import TreeMode
 		if isinstance(tm := Configuration._configuration['cse.console.treeMode'], str):
 			if not (treeMode := TreeMode.to(tm)):
-				return False, f'Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}'
+				return False, f'Configuration Error: [i]\[cse.console]:treeMode[/i] must be one of {TreeMode.names()}'
 			Configuration._configuration['cse.console.treeMode'] = treeMode
 		
 		Configuration._configuration['cse.console.theme'] = (theme := Configuration._configuration['cse.console.theme'].lower())
 		if theme not in [ 'dark', 'light' ]:
-			return False, f'Configuration Error: \[cse.console]:theme must be "light" or "dark"'
+			return False, f'Configuration Error: [i]\[cse.console]:theme[/i] must be "light" or "dark"'
 
 
 		# Script settings
 		if Configuration._configuration['cse.scripting.fileMonitoringInterval'] < 0.0:
-			return False, f'Configuration Error: \[cse.scripting]:fileMonitoringInterval must be >= 0.0'
+			return False, f'Configuration Error: [i]\[cse.scripting]:fileMonitoringInterval[/i] must be >= 0.0'
 		if (scriptDirs := Configuration._configuration['cse.scripting.scriptDirectories']):
 			lst = []
 			for each in scriptDirs:
 				if not each:
 					continue
 				if not os.path.isdir(each):
-					return False, f'Configuration Error: \[cse.scripting]:scriptDirectory : directory "{each}" does not exist, is not a directory or is not accessible'
+					return False, f'Configuration Error: [i]\[cse.scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
 				lst.append(each)
 			Configuration._configuration['cse.scripting.scriptDirectories'] = lst
 			
@@ -560,7 +565,7 @@ class Configuration(object):
 		try:
 			isodate.parse_duration(bcni)
 		except Exception as e:
-			return False, f'Configuration Error: \[cse.resource.tsb]:bcni : configuration value must be an ISO8601 duration'
+			return False, f'Configuration Error: [i]\[cse.resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
 		
 		# Everything is fine
 		return True, None
