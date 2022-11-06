@@ -733,7 +733,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
 	ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
 	ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
-	ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+	ResponseStatusCode.requestTimeout							: HTTPStatus.GATEWAY_TIMEOUT,			# REQUEST TIMEOUT
 	ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
 	ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
 	ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
