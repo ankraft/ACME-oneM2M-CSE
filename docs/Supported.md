@@ -141,23 +141,23 @@ The following result contents are implemented for standard oneM2M requests & dis
 ## Protocols Bindings
 The following Protocol Bindings are supported:
 
-| Protocol Binding | Supported | Remark                                                                          |
-|:-----------------|:---------:|:--------------------------------------------------------------------------------|
-| http             |  &check;  | incl https.<br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
-| coap             |  &cross;  |                                                                                 |
-| mqtt             |  &check;  | incl. mqtts                                                                     |
-| WebSocket        |  &cross;  |                                                                                 |
+| Protocol Binding | Supported | Remark                                                                                           |
+|:-----------------|:---------:|:-------------------------------------------------------------------------------------------------|
+| http             |  &check;  | incl. TLS (https) and CORS support.<br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
+| coap             |  &cross;  |                                                                                                  |
+| mqtt             |  &check;  | incl. mqtts                                                                                      |
+| WebSocket        |  &cross;  |                                                                                                  |
 
 The supported bindings can be used together, and combined and mixed in any way.
 
 ## Serialization Types
 The following serialization types are supported:
 
-| Serialization Type | Supported | Remark                                                                                                       |
-|:-------------------|:---------:|:-------------------------------------------------------------------------------------------------------------|
+| Serialization Type | Supported | Remark                                                                                                         |
+|:-------------------|:---------:|:---------------------------------------------------------------------------------------------------------------|
 | JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/\* ... \*/") are supported as well. |
-| CBOR               |  &check;  |                                                                                                              |
-| XML                |  &cross;  |                      
+| CBOR               |  &check;  |                                                                                                                |
+| XML                |  &cross;  |                                                                                                                |
 
 The supported serializations can be used together, e.g. between different or even the same entity.
 
