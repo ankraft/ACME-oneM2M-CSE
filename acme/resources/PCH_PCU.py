@@ -46,7 +46,7 @@ class PCH_PCU(VirtualResource):
 				request: Mandatory for PCU. The original RETRIEVE request.
 				originator: Request originator.
 			Return:
-				Result instance, with the response set to `embeddedRequest`.
+				Result instance, with the response set to *embeddedRequest*.
 		"""
 		L.isDebug and L.logDebug(f'RETRIEVE request for polling channel. Originator: {originator}')
 

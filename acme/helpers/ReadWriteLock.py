@@ -3,6 +3,7 @@
 #   stream of readers may starve a writer, Lock Promotion and Context Managers
 
 from __future__ import annotations
+from typing import Optional
 import threading
 #import logging
 
@@ -11,7 +12,7 @@ class ReadWriteLock(object):
     """ A lock object that allows many simultaneous "read locks", but
     only one "write lock." """
 
-    def __init__(self, withPromotion:bool=False) -> None:
+    def __init__(self, withPromotion:Optional[bool] = False) -> None:
         self._read_ready = threading.Condition(threading.RLock())
         self._readers = 0
         self._writers = 0

@@ -4,13 +4,15 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: Subscription
-#
+"""	The <subscription> resource contains subscription information for its subscribed-to resource.
+"""
 
 from __future__ import annotations
+
 from copy import deepcopy
 from ..etc.Utils import findXPath
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
+from ..etc.Types import NotificationEventType, ResponseStatusCode, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -23,7 +25,7 @@ from ..resources.Resource import *
 class SUB(Resource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -75,7 +77,7 @@ class SUB(Resource):
 	}
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.SUB, dct, pi, create = create)
+		super().__init__(ResourceTypes.SUB, dct, pi, create = create)
 
 		# Set defaults for some attribute
 		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
@@ -164,7 +166,7 @@ class SUB(Resource):
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
 			if not (parentResource := self.retrieveParentResource()):
-				return Result(status = False, rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+				return Result(status = False, rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
 
@@ -239,8 +241,8 @@ class SUB(Resource):
 					# TODO is this necessary, parent resource should be provided
 					# Check that parent is a TimeSeries
 					if not (parent := self.retrieveParentResource()):
-						return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
-					if parent.ty != T.TS:
+						return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+					if parent.ty != ResourceTypes.TS:
 						return Result.errorResult(dbg = L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
 
 					# Check missing data structure
@@ -304,7 +306,7 @@ class SUB(Resource):
 				dct: Either a resource dict or an update dict.
 			
 			Return:
-				True if the `dct` has any disallowed attributes.
+				True if the *dct* has any disallowed attributes.
 		"""
 		return any([ n
 					 for n in self._disallowedBlockingAttributes
@@ -321,7 +323,7 @@ class SUB(Resource):
 				dct: A Event Notification Criteria structure.
 			
 			Return:
-				True if the `dct` has any disallowed attributes.
+				True if the *dct* has any disallowed attributes.
 	
 			"""
 		return len(set(dct.keys()).difference(self._allowedENCAttributes)) > 0

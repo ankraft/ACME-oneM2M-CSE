@@ -10,9 +10,13 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
+from typing import Optional
+
 import base64, binascii, re
-_commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
-_commentRegex = re.compile(_commentPattern, re.MULTILINE|re.DOTALL)
+
+_commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)',
+						   re.MULTILINE|re.DOTALL)
+"""	Compiled regex expression of recognize comments. """
 
 def removeCommentsFromJSON(data:str) -> str:
 	"""	Remove comments from JSON string input.
@@ -30,7 +34,7 @@ def removeCommentsFromJSON(data:str) -> str:
 		- url = 'http://not.comment.com';
 
 		Args:
-			data: JSON string
+			data: JSON string.
 		Return:
 			JSON string without comments.
 	"""
@@ -44,8 +48,8 @@ def removeCommentsFromJSON(data:str) -> str:
 	return _commentRegex.sub(_replacer, data)
 
 
-def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
-	"""	Print a byte string as hex output, similar to the 'od' command.
+def toHex(bts:bytes, toBinary:Optional[bool] = False, withLength:Optional[bool] = False) -> str:
+	"""	Print a byte string as hex output, similar to the "od" command.
 
 		Args:
 			bts: Byte string to print.
@@ -87,6 +91,7 @@ def isBase64(value:str) -> bool:
 	
 		Args:
 			value: The value to test.
+
 		Return:
 			Boolean indicating the test result.
 	"""
@@ -97,7 +102,7 @@ def isBase64(value:str) -> bool:
 	return True
 
 
-def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
+def simpleMatch(st:str, pattern:str, star:Optional[str] = '*') -> bool:
 	"""	Simple string match function. 
 
 		This class supports the following expression operators:
@@ -124,9 +129,9 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 			"hello" - "\*l?" -> True  
 
 		Args:
-			st : string to test
-			pattern : the pattern string
-			star : optionally specify a different character as the star character
+			st: string to test
+			pattern: the pattern string
+			star: optionally specify a different character as the star character
 		
 		Return:
 			Boolean indicating a match.
@@ -135,6 +140,13 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	def _simpleMatchStar(st:str, pattern:str) -> bool:
 		""" Recursively eat up a string when the pattern is a star at the beginning
 			or middle of a pattern.
+
+			Args:
+				st: Input string.
+				pattern: Match pattern.
+			
+			Return:
+				*True* if there is a match.
 		"""
 		stLen	= len(st)
 		stIndex	= 0
@@ -148,6 +160,13 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	def _simpleMatchPlus(st:str, pattern:str) -> bool:
 		""" Recursively eat up a string when the pattern is a plus at the beginning
 			or middle of a pattern.
+
+			Args:
+				st: Input string.
+				pattern: Match pattern.
+			
+			Return:
+				*True* if there is a match.
 		"""
 		stLen	= len(st)
 		stIndex	= 1
@@ -159,7 +178,17 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 				return False
 		return True
 
+
 	def _simpleMatch(st:str, pattern:str) -> bool:
+		""" Recursively eat up a string for a match pattern.
+
+			Args:
+				st: Input string.
+				pattern: Match pattern.
+			
+			Return:
+				*True* if there is a match.
+		"""
 		last:int		= 0
 		matched:bool	= False
 		reverse:bool	= False

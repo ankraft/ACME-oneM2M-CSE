@@ -17,7 +17,14 @@ from .Resource import *
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:T, dct:JSON = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None) -> None:
+	def __init__(self, ty:T, 
+					   dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   tpe:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   inheritACP:Optional[bool] = False, 
+					   readOnly:Optional[bool] = False, 
+					   rn:Optional[str] = None) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
@@ -41,7 +48,7 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
@@ -59,7 +66,10 @@ class AnnounceableResource(Resource):
 		return res
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
@@ -90,7 +100,7 @@ class AnnounceableResource(Resource):
 		return Result.successResult()
 
 
-	def createAnnouncedResourceDict(self, isCreate:bool = False) -> JSON:
+	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
@@ -109,7 +119,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool = False) -> JSON:
+	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:Optional[bool] = False) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 		# Stub
@@ -171,7 +181,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def addAnnouncementToResource(self, csi:str, remoteRI:str, ) -> None:
+	def addAnnouncementToResource(self, csi:str, remoteRI:str) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered and the CSE-relative ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.

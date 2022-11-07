@@ -333,8 +333,10 @@ class Logging:
 
 
 	@staticmethod
-	def logWithLevel(level:int, msg:Any, showStackTrace:bool = False, stackOffset:int = 0) -> str:
-		"""	Fallback log method when the `level` is a separate argument.
+	def logWithLevel(level:int, msg:Any, 
+								showStackTrace:Optional[bool] = False, 
+								stackOffset:Optional[int] = 0) -> str:
+		"""	Fallback log method when the *level* is a directly given  argument.
 		# TODO
 		"""
 		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
@@ -366,8 +368,10 @@ class Logging:
 
 	@staticmethod
 	def _log(level:int, msg:Any, stackOffset:Optional[int] = 0, immediate:Optional[bool] = False) -> str:
-		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
-			the correct caller. It is set by a calling method in case the log information are re-routed.
+		"""	Internally adding various information to the log output. 
+		
+			The *stackOffset* is used to determine the correct caller. 
+			It is set by a calling method in case the log information are re-routed.
 
 			Args:
 				level: The log level.
@@ -444,7 +448,7 @@ class Logging:
 			Example:
 				
 				with consoleStatusWait('waiting...'):
-					...
+					. . .
 			
 			Args:
 				msg: Message to display

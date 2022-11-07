@@ -420,14 +420,14 @@ class AnnouncementManager(object):
 
 	def _isResourceAnnouncedTo(self, resource:Resource, csi:str) -> bool:
 		"""	Check whether a resource is announced. This is done by looking at the entries in the
-			internal "__announcedTo__" attribute, ie. whether they will contain the `csi`.
-			"""
+			internal "__announcedTo__" attribute, ie. whether they will contain the *csi*.
+		"""
 		return (at := resource.getAnnouncedTo()) is not None and any(csi == _csi for (_csi, _) in at)
 	
 
 	def _announcedInfos(self, resource:Resource, csi:str) -> Optional[Tuple[str, str]]:
-		"""	Return the matching tuple for the given `csi` of a resource announcement,
-			or None if none is set.
+		"""	Return the matching tuple for the given *csi* of a resource announcement,
+			or *None* if none is set.
 		"""
 		if at := resource.getAnnouncedTo():
 			for _at in at:

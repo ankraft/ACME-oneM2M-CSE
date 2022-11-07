@@ -243,7 +243,7 @@ class Dispatcher(object):
 					If yes, then adjust the ID and try to retrieve it.
 					If no, then try to retrieve the resource from a connected (!) remote CSE.
 				originator:	The originator of the request.
-				postRetrieveHook: Only when retrieving localls, invoke the Resource's `willBeRetrieved()` callback.
+				postRetrieveHook: Only when retrieving localls, invoke the Resource's *willBeRetrieved()* callback.
 			Return:
 				Result instance.
 
@@ -1122,7 +1122,7 @@ class Dispatcher(object):
 		"""	Get the latest or oldest x-Instance resource for a parent.
 
 			This is done by searching through all resources once to find the fitting resource 
-			(parent + type)	with the latest or oldest `ct` attribute.
+			(parent + type)	with the latest or oldest *ct* attribute.
 
 			Args:
 				pi: parent resourceIdentifier
@@ -1204,7 +1204,8 @@ class Dispatcher(object):
 
 	def deleteChildResources(self, parentResource:Resource, originator:str, ty:ResourceTypes=None) -> None:
 		"""	Remove all child resources of a parent recursively. 
-			If `ty` is set only the resources of this type are removed.
+
+			If *ty* is set only the resources of this type are removed.
 		"""
 		# Remove directChildResources
 		rs = self.directChildResources(parentResource.ri)
@@ -1351,13 +1352,13 @@ class Dispatcher(object):
 	#
 
 	def _checkHybridID(self, request:CSERequest, id:str) -> Tuple[str, str]:
-		"""	Return a corrected `id` and `srn` in case this is a hybrid ID.
+		"""	Return a corrected *id* and *srn* in case this is a hybrid ID.
 
 			Args:
-				request: A request object that provides `id` and `srn`. `srn` might be None.
-				id: An ID which might be None. If it is not None, then it will be taken to generate the `srn`
+				request: A request object that provides *id* and *srn*. *srn* might be None.
+				id: An ID which might be None. If it is not None, then it will be taken to generate the *srn*.
 			Return:
-				Tuple of `srn` and `id`
+				Tuple of *srn* and *id*
 		"""
 		if id:
 			srn = id if Utils.isStructured(id) else None # Overwrite srn if id is strcutured. This is a bit mixed up sometimes

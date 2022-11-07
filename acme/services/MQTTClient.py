@@ -4,18 +4,15 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Implementation of an MQTT Client for an MQTT Mcx binding implementation.
-#
+"""	Implementation of an MQTT Client for an MQTT Mcx binding implementation.
+"""
 
 from __future__ import annotations
-from dataclasses import field
-from sqlite3 import Date
-from typing import ForwardRef, Tuple, cast, Dict
+
+from typing import Tuple, cast, Dict
 from urllib.parse import urlparse
-from copy import deepcopy
 from threading import Lock
 
-from ..etc.Constants import Constants as C
 from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType as CST, RequestType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
@@ -27,6 +24,11 @@ from ..helpers import TextTools
 
 class MQTTClientHandler(MQTTHandler):
 	"""	Handler registering oneM2M topics and handling resceived requests.
+
+		Attributes:
+			mqttClient: The using MQTTClient instance for this handler.
+			topicPrefix: The used topic prefix to recognize requests for this handler.
+			topicPrefixCont: Count of elements in the prefix.
 	"""
 
 	def __init__(self, mqttClient:MQTTClient) -> None:
@@ -334,8 +336,8 @@ class MQTTClient(object):
 
 	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:str, password:str) -> MQTTConnection:
 		"""	Connect to a oneM2M MQTT Broker. The connection is cached and reused. The key for identifying the
-			broker is a tupple (`address`, `port`). A new MQTTClientHandler() object be used for handling
-			 requests.
+			broker is a tupple (*address*, *port*). A new MQTTClientHandler() object be used for handling
+			requests.
 		"""
 		if self.enable:
 			if not (mqttConnect := self.mqttConnections.get( (address, port) )):
@@ -358,7 +360,7 @@ class MQTTClient(object):
 
 	
 	def disconnectFromMqttBroker(self, address:str, port:int) -> None:
-		"""	Remove the appropriate MQTTConnection for `address` and `port from the 
+		"""	Remove the appropriate MQTTConnection for *address* and *port* from the 
 			connection cache and also shut-down the connection.
 		"""
 		if (mqttConnection := self.getMqttBroker(address, port)):
@@ -367,7 +369,7 @@ class MQTTClient(object):
 	
 
 	def getMqttBroker(self, address:str, port:int) -> MQTTConnection:
-		"""	Return the MQTTConnection for the `address` and `port` from the internal
+		"""	Return the MQTTConnection for the *address* and *port* from the internal
 			connection cache.
 		"""
 		return self.mqttConnections.get( (address, port) )
@@ -468,7 +470,7 @@ class MQTTClient(object):
 
 
 	def addResponse(self, response:Result, topic:str) -> None:
-		"""	Add a response and topic to the response dictionary. The key is the `rqi` (requestIdentifier) of
+		"""	Add a response and topic to the response dictionary. The key is the *rqi* (requestIdentifier) of
 			the response. 
 		"""
 		if (rqi := response.request.rqi):
@@ -477,7 +479,7 @@ class MQTTClient(object):
 
 
 	def waitForResponse(self, rqi:str, timeOut:float) -> Tuple[ Result, str ]:
-		"""	Wait for a response with a specific requestIdentifier `rqi`.
+		"""	Wait for a response with a specific requestIdentifier *rqi*.
 		"""
 		resp = None
 		topic = None

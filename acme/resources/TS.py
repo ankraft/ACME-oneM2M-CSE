@@ -376,7 +376,7 @@ class TS(AnnounceableResource):
 
 
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:
-		"""	Add the dataGenerationTime `dgtToAdd` to the mdlt of this resource.
+		"""	Add a dataGenerationTime *dgtToAdd* to the mdlt of this resource.
 		"""
 		self._clearMdlt(False)												# Add to mdlt, just in case it hasn't created before
 		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))					# Add missing dgt to TS.mdlt

@@ -8,9 +8,10 @@
 #
 
 from __future__ import annotations
+
 import ssl, time
 from dataclasses import dataclass
-from typing import Callable, Any, Tuple
+from typing import Callable, Any, Tuple, Optional
 import logging
 
 from .BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
@@ -86,11 +87,18 @@ class MQTTConnection(object):
 	#	Runtime methods
 	#
 
-	def __init__(self, address:str, port:int=None, keepalive:int=60, interface:str='0.0.0.0', 
-					clientID:str=None, username:str=None, password:str=None,
-					useTLS:bool=False, caFile:str=None, verifyCertificate:bool=False,
-					lowLevelLogging:bool=True,
-					messageHandler:MQTTHandler=None
+	def __init__(self, address:str, 
+					   port:Optional[int] = None, 
+					   keepalive:Optional[int] = 60, 
+					   interface:Optional[str] = '0.0.0.0', 
+					   clientID:Optional[str] = None, 
+					   username:Optional[str] = None, 
+					   password:Optional[str] = None,
+					   useTLS:Optional[bool] = False, 
+					   caFile:Optional[str] = None, 
+					   verifyCertificate:Optional[bool] = False,
+					   lowLevelLogging:Optional[bool] = True,
+					   messageHandler:Optional[MQTTHandler] = None
 				) -> None:
 		self.address								= address
 		self.port									= port if port else 4883 if useTLS else 1883
@@ -267,7 +275,7 @@ class MQTTConnection(object):
 	#	MQTT messaging methods
 	#
 
-	def subscribeTopic(self, topic:str|list[str], callback:MQTTCallback=None, **kwargs:Any) -> None:
+	def subscribeTopic(self, topic:str|list[str], callback:Optional[MQTTCallback] = None, **kwargs:Any) -> None:
 		"""	Add one or more MQTT topics to subscribe to. Add the topic(s) afterwards
 			to the list of subscribed-to topics.
 		"""
@@ -332,7 +340,7 @@ class MQTTConnection(object):
 
 
 	def publish(self, topic:str, data:bytes) -> None:
-		"""	Publish the message `data` with the topic `topic` with the MQTT broker.
+		"""	Publish the message *data* with the topic *topic* with the MQTT broker.
 		"""
 		self.mqttClient.publish(topic, data)
 
@@ -349,12 +357,12 @@ def idToMQTT(id:str) -> str:
 	return f'{id.lstrip("/").replace("/", ":")}'
 
 
-def idToMQTTClientID(id:str, isCSE:bool=True) -> str:
+def idToMQTTClientID(id:str, isCSE:Optional[bool] = True) -> str:
 	"""	Convert a oneM2M ID to an MQTT client ID.
 	"""
 	return f'{"C::" if isCSE else "A::"}{id.lstrip("/")}'
 
-def mqttToId(mqttId:str, isCSE:bool=True) -> Tuple[str, bool]:
+def mqttToId(mqttId:str, isCSE:Optional[bool] = True) -> Tuple[str, bool]:
 	"""	Convert an MQTT compatible path element to an ID.
 	"""
 	if mqttId.startswith('A:'):

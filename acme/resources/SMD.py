@@ -12,11 +12,12 @@
 """
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, SemanticFormat
-from ..etc import Utils, DateUtils
+
+from typing import Optional
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc import Utils
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
 from ..resources import Factory as Factory
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -32,7 +33,7 @@ class SMD(AnnounceableResource):
 	""" Name of an internal string attribute that holds the description after base64 decode. """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 #AE, container, contentInstance, group, node, flexContainer, timeSeries, mgmtObj
 
@@ -72,7 +73,10 @@ class SMD(AnnounceableResource):
 
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   fcntType:Optional[str] = None,
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.SMD, dct, pi, tpe = fcntType, create = create)
 		self._addToInternalAttributes(self._decodedDsp)
 		self.setAttribute(self._decodedDsp, None, overwrite = False)	
@@ -92,7 +96,9 @@ class SMD(AnnounceableResource):
 		return Result.successResult()
 
 
-	def update(self, dct: JSON = None, originator: str = None, doValidateAttributes: bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None,
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 
 		# Some checks before the general validation that are necessary only in an UPDATE
 		soeNew = Utils.findXPath(dct, '{*}/soe')
@@ -102,7 +108,7 @@ class SMD(AnnounceableResource):
 
 		# soe and dsp cannot updated together
 		if soeNew and dspNew:
-			return Result(status = False, rsc = RC.badRequest, dbg = 'Updating soe and dsp in one request is not allowed')
+			return Result(status = False, rsc = ResponseStatusCode.badRequest, dbg = 'Updating soe and dsp in one request is not allowed')
 		
 		# If soe exists then validate it
 		if soeNew and not (res := CSE.semantic.validateSPARQL(soeNew)).status:
@@ -122,24 +128,27 @@ class SMD(AnnounceableResource):
 		return Result.successResult()
 
 	
-	def deactivate(self, originator: str) -> None:
+	def deactivate(self, originator:str) -> None:
 		CSE.semantic.removeDescriptor(self)
 		return super().deactivate(originator)
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None,
+					   create:Optional[bool] = False,
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		
 		# Validate validationEnable attribute
 		if not (res := CSE.semantic.validateValidationEnable(self)).status:
-			res.rsc = RC.badRequest
+			res.rsc = ResponseStatusCode.badRequest
 			return res
 
 		# Validate descriptor attribute
 		if not (res := CSE.semantic.validateDescriptor(self)).status:
-			res.rsc = RC.badRequest
+			res.rsc = ResponseStatusCode.badRequest
 			return res
 		
 		# Perform Semantic validation process and add descriptor
@@ -154,7 +163,9 @@ class SMD(AnnounceableResource):
 		return Result.successResult()
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, 
+							  request:Optional[CSERequest] = None, 
+							  subCheck:Optional[bool] = True) -> Result:
 		if (res := super().willBeRetrieved(originator, request, subCheck)).status == False:
 			return res
 

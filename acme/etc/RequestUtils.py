@@ -9,44 +9,44 @@
 
 
 from __future__ import annotations
+
 import cbor2, json
-from typing import Any, cast
+from typing import Any, cast, Optional
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
 from . import DateUtils
-from .Types import ContentSerializationType as CST, JSON, RequestType, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
+from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode, Result, ResourceTypes, Operation
 from .Constants import Constants as C
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
 
 
-def serializeData(data:JSON, ct:CST) -> str|bytes|JSON:
+def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
 	"""	Serialize a dictionary, depending on the serialization type.
 	"""
-	if ct == CST.PLAIN:
+	if ct == ContentSerializationType.PLAIN:
 		return data
-	encoder = json if ct == CST.JSON else cbor2 if ct == CST.CBOR else None
+	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
 	if not encoder:
 		return None
 	return encoder.dumps(data)	# type:ignore[no-any-return]
 
 
-def deserializeData(data:bytes, ct:CST) -> JSON:
+def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
 		If the len of the data is 0 then an empty dictionary is returned. 
 	"""
 	if len(data) == 0:
 		return {}
-	if ct == CST.JSON:
+	if ct == ContentSerializationType.JSON:
 		return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
-	elif ct == CST.CBOR:
+	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	return None
 
 
 def toHttpUrl(url:str) -> str:
-	"""	Make the `url` a valid http URL (escape // and ///)
-		and return it.
+	"""	Make the *url* a valid http URL (escape // and ///) and return it.
 	"""
 	u = list(urlparse(url))
 	if u[2].startswith('///'):
@@ -58,9 +58,9 @@ def toHttpUrl(url:str) -> str:
 	return url
 
 
-def determineSerialization(url:str, csz:list[str], defaultSerialization:CST) -> CST:
-	"""	Determine the type of serialization for a notification from either the `url`'s `ct` query parameter,
-		or the given list of `csz`(contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
+def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> ContentSerializationType:
+	"""	Determine the type of serialization for a notification from either the *url*'s *ct* query parameter,
+		or the given list of *csz* (contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
 	"""
 	ct = None
 	scheme = None
@@ -84,24 +84,28 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:CST) -> 
 	if ct:
 		# if ct is given then check whether it is supported, 
 		# otherwise ignore this url
-		if ct not in CST.supportedContentSerializationsSimple():
+		if ct not in ContentSerializationType.supportedContentSerializationsSimple():
 			return None	# Requested serialization not supported
-		return CST.toContentSerialization(ct)
+		return ContentSerializationType.toContentSerialization(ct)
 
 	elif csz:
 		# if csz is given then build an intersection between the given list and
 		# the list of supported serializations. Then take the first one
 		# as the one to use.
-		common = [x for x in csz if x in CST.supportedContentSerializations()]	# build intersection, keep the old sort order
+		common = [x for x in csz if x in ContentSerializationType.supportedContentSerializations()]	# build intersection, keep the old sort order
 		if len(common) == 0:
 			return None
-		return CST.toContentSerialization(common[0]) # take the first
+		return ContentSerializationType.toContentSerialization(common[0]) # take the first
 	
 	# Just use default serialization.
 	return defaultSerialization
 
 
-def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Operation = None, isResponse:bool = False) -> Result:
+def requestFromResult(inResult:Result, 
+					  originator:Optional[str] = None, 
+					  ty:Optional[ResourceTypes] = None, 
+					  op:Optional[Operation] = None, 
+					  isResponse:Optional[bool] = False) -> Result:
 	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
 		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
@@ -129,7 +133,7 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	# 	req['ot'] = DateUtils.getResourceDate()
 	
 	# Response Status Code
-	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
+	if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
 		req['rsc'] = int(inResult.rsc)
 	
 	# Operation
@@ -175,7 +179,7 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
-		pc = inResult.toData(CST.PLAIN)	#  type:ignore[assignment]
+		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
 	if pc:
 		# if the request/result is actually an incoming request targeted to the receiver, then the
 		# whole request must be embeded as a "m2m:rqp" request.

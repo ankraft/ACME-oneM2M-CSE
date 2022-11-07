@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
@@ -56,7 +56,7 @@ class ACMEIntEnum(IntEnum):
 
 
 	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:bool=False) -> Any:
+	def to(cls, name:str|Tuple[str], insensitive:Optional[bool]=False) -> Any:
 		# TODO docu
 		
 		def _to(name:str) -> Any:
@@ -189,7 +189,7 @@ class ResourceTypes(ACMEIntEnum):
 		return _ResourceTypesNames.get(self)
 
 
-	def announced(self, mgd:ResourceTypes = None) -> ResourceTypes:
+	def announced(self, mgd:Optional[ResourceTypes] = None) -> ResourceTypes:
 
 		if self != ResourceTypes.MGMTOBJ:
 			# Handling for non-mgmtObjs
@@ -559,7 +559,7 @@ class BasicType(ACMEIntEnum):
 	date			= timestamp	# alias type for date
 
 	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:bool = True) -> BasicType:
+	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
 		""" Convert a type name string to an enum value.
 		
 			Args:
@@ -603,7 +603,7 @@ class Cardinality(ACMEIntEnum):
 	
 	
 	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:bool = True) -> Cardinality:
+	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> Cardinality:
 		""" Convert a cardinality name string to an enum value.
 		
 			Args:
@@ -1067,7 +1067,7 @@ class ContentSerializationType(ACMEIntEnum):
 
 	
 	@classmethod
-	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+	def getType(cls, hdr:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
 		"""	Return the enum from a header definition.
 		"""
 		default = cls.UNKNOWN if not default else default
@@ -1367,7 +1367,10 @@ class Result:
 	
 
 	@classmethod
-	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '', request:CSERequest = None, data:Any = None) -> Result:
+	def errorResult(cls, rsc:Optional[ResponseStatusCode] = ResponseStatusCode.badRequest,
+						 dbg:Optional[str] = '', 
+						 request:Optional[CSERequest] = None,
+						 data:Optional[Any] = None) -> Result:
 		"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
 			message set.
 
@@ -1391,7 +1394,7 @@ class Result:
 		return _successResult
 
 
-	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
+	def toData(self, ct:Optional[ContentSerializationType] = None) -> str|bytes|JSON:
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
 		from ..services.CSE import defaultSerialization

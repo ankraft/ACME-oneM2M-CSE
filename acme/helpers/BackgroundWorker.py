@@ -10,13 +10,11 @@
 """ A pool for background workers, actors, and jobs. """
 
 from __future__ import annotations
-from codecs import strict_errors
-from os import times
-from sqlite3 import Timestamp
+
+from typing import Callable, List, Dict, Any, Tuple, Optional
 from .TextTools import simpleMatch
 import random, sys, heapq, datetime, traceback, time
 from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
-from typing import Callable, List, Dict, Any, Tuple
 import logging
 
 
@@ -41,16 +39,16 @@ class BackgroundWorker(object):
 	def __init__(self,
 						interval:float,
 						callback:Callable, 
-						name:str = None, 
-						startWithDelay:bool = False,
-						maxCount:int = None, 
-						dispose:bool = True, 
-						id:int = None, 
-						runOnTime:bool = True, 
-						runPastEvents:bool = False, 
-						finished:Callable = None,
-						ignoreException:bool = False,
-						data:Any = None) -> None:
+						name:Optional[str] = None, 
+						startWithDelay:Optional[bool] = False,
+						maxCount:Optional[int] = None, 
+						dispose:Optional[bool] = True, 
+						id:Optional[int] = None, 
+						runOnTime:Optional[bool] = True, 
+						runPastEvents:Optional[bool] = False, 
+						finished:Optional[Callable] = None,
+						ignoreException:Optional[bool] = False,
+						data:Optional[Any] = None) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -112,7 +110,7 @@ class BackgroundWorker(object):
 		return self
 	
 
-	def restart(self, interval:float = None) -> BackgroundWorker:
+	def restart(self, interval:Optional[float] = None) -> BackgroundWorker:
 		"""	Restart the worker. Optionally use new interval, and re-use the previous arguments passed with the `start()` method.
 		
 			Args:
@@ -143,7 +141,7 @@ class BackgroundWorker(object):
 		return self
 
 
-	def unpause(self, immediately:bool = False) -> BackgroundWorker:
+	def unpause(self, immediately:Optional[bool] = False) -> BackgroundWorker:
 		""" Continue the running of a worker. 
 
 			Args:
@@ -362,7 +360,7 @@ class Job(Thread):
 		return self
 	
 
-	def setTask(self, task:Callable, finished:Callable = None, name:str = None) -> Job:
+	def setTask(self, task:Callable, finished:Optional[Callable] = None, name:Optional[str] = None) -> Job:
 		"""	Set a task to run for the Job.
 		
 			Args:
@@ -379,7 +377,7 @@ class Job(Thread):
 	
 
 	@classmethod
-	def getJob(cls, task:Callable, finished:Callable = None, name:str = None) -> Job:
+	def getJob(cls, task:Callable, finished:Optional[Callable] = None, name:Optional[str] = None) -> Job:
 		"""	Get a Job object, and set a task and a finished Callable for it to execute.
 			The Job object is either taken from the paused list (if available), or
 			a new one is created.
@@ -417,7 +415,9 @@ class Job(Thread):
 
 
 	@classmethod
-	def setJobBalance(cls, balanceTarget:float = 3.0, balanceLatency:int = 1000, balanceReduceFactor:float = 2.0) -> None:
+	def setJobBalance(cls, balanceTarget:Optional[float] = 3.0, 
+						   balanceLatency:Optional[int] = 1000, 
+						   balanceReduceFactor:Optional[float] = 2.0) -> None:
 		"""	Set parameters to balance the number of paused Jobs.
 
 			Args:
@@ -485,7 +485,9 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def setJobBalance(cls, balanceTarget:float = 3.0, balanceLatency:int = 1000, balanceReduceFactor:float = 2.0) -> None:
+	def setJobBalance(cls, balanceTarget:Optional[float] = 3.0, 
+						   balanceLatency:Optional[int] = 1000, 
+						   balanceReduceFactor:Optional[float] = 2.0) -> None:
 		"""	Set parameters to balance the number of paused Jobs.
 
 			Args:
@@ -499,15 +501,15 @@ class BackgroundWorkerPool(object):
 	@classmethod
 	def newWorker(cls,	interval:float, 
 						workerCallback:Callable,
-						name:str = None, 
-						startWithDelay:bool = False, 
-						maxCount:int = None, 
-						dispose:bool = True, 
-						runOnTime:bool = True, 
-						runPastEvents:bool = False, 
-						finished:Callable = None, 
-						ignoreException:bool = False,
-						data:Any = None) -> BackgroundWorker:	# type:ignore[type-arg]
+						name:Optional[str] = None, 
+						startWithDelay:Optional[bool] = False, 
+						maxCount:Optional[int] = None, 
+						dispose:Optional[bool] = True, 
+						runOnTime:Optional[bool] = True, 
+						runPastEvents:Optional[bool] = False, 
+						finished:Optional[Callable] = None, 
+						ignoreException:Optional[bool] = False,
+						data:Optional[Any] = None) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 
 			Args:
@@ -548,13 +550,13 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def newActor(cls,	workerCallback:Callable, 
-						delay:float = 0.0, 
-						at:float = None, 
-						name:str = None, 
-						dispose:bool = True, 
-						finished:Callable = None, 
-						ignoreException:bool = False,
-						data:Any = None) -> BackgroundWorker:
+						delay:Optional[float] = 0.0, 
+						at:Optional[float] = None, 
+						name:Optional[str] = None, 
+						dispose:Optional[bool] = True, 
+						finished:Optional[Callable] = None, 
+						ignoreException:Optional[bool] = False,
+						data:Optional[Any] = None) -> BackgroundWorker:
 		"""	Create a new background worker that runs only once after a *delay*
 			(it may be 0.0s, though), or *at* a specific time (UTC timestamp).
 
@@ -591,7 +593,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def findWorkers(cls, name:str = None, running:bool = None) -> List[BackgroundWorker]:
+	def findWorkers(cls, name:Optional[str] = None, running:Optional[bool] = None) -> List[BackgroundWorker]:
 		"""	Find and return a list of worker(s) that match the search criteria.
 
 			Args:
@@ -606,7 +608,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def stopWorkers(cls, name:str = None) -> List[BackgroundWorker]:
+	def stopWorkers(cls, name:Optional[str] = None) -> List[BackgroundWorker]:
 		"""	Stop the worker(s) that match the optional *name* parameter. 
 
 			Args:
@@ -644,7 +646,7 @@ class BackgroundWorkerPool(object):
 	#
 
 	@classmethod
-	def runJob(cls, task:Callable, name:str = None) -> Job:
+	def runJob(cls, task:Callable, name:Optional[str] = None) -> Job:
 		"""	Run a task as a Thread. Reuse finished threads if possible.
 
 			Args:

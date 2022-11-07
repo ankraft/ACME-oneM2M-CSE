@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+from typing import Optional
 import collections, time
 import requests
 
@@ -15,7 +16,11 @@ Token = collections.namedtuple('Token', 'token expiration')
 _expirationLeeway:float	= 5.0		# 5 seconds leeway for token expiration
 
 
-def getOAuthToken(serverURL:str, clientID:str, clientSecret:str, token:Token=None, kind:str='keycloak') -> Token|None:
+def getOAuthToken(serverURL:str, 
+				  clientID:str, 
+				  clientSecret:str, 
+				  token:Optional[Token] = None, 
+				  kind:Optional[str] = 'keycloak') -> Token|None:
 	"""	Retrieve and return a oauth2 token. If there is a provided token that is still valid, then that token
 		is returned.
 
@@ -23,7 +28,7 @@ def getOAuthToken(serverURL:str, clientID:str, clientSecret:str, token:Token=Non
 		is in epoch seconds.
 	"""
 	if not token:
-		token = Token(token=None, expiration=0.0)
+		token = Token(token = None, expiration=0.0)
 
 	# Return the old token, if it exists and is not expired
 	if token.expiration > time.time() and token.token:
@@ -40,7 +45,7 @@ def getOAuthToken(serverURL:str, clientID:str, clientSecret:str, token:Token=Non
 			'client_id'		: clientID,
 		}
 		try:
-			if (response := requests.post(serverURL, data=formData, headers=headers)).status_code == 200:
+			if (response := requests.post(serverURL, data = formData, headers = headers)).status_code == 200:
 				data = response.json()
 				if not data or 'access_token' not in data or 'expires_in' not in data:
 					return None

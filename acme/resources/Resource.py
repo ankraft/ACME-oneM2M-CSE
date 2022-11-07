@@ -328,14 +328,14 @@ class Resource(object):
 
 
 	def willBeUpdated(self, dct:JSON = None, originator:str = None, subCheck:bool = True) -> Result:
-		""" This method is called before a resource will be updated and before calling the `update()` method.
+		""" This method is called before a resource will be updated and before calling the *update()* method.
 			
 			This method is implemented in some sub-classes.
 
 			Args:
 				originator: The request originator.
-				request: The RETRIEVE request.
 				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
+
 			Return:
 				Result object indicating success or failure.
 		"""
@@ -766,8 +766,9 @@ class Resource(object):
 	
 
 	def _addToInternalAttributes(self, name:str) -> None:
-		"""	Add a `name` to the names of internal attributes. `name` is only added if
-			it is not already present.
+		"""	Add a *name* to the names of internal attributes. 
+		
+			*name* is only added if	it is not already present.
 
 			Args:
 				name: Attribute name to add.

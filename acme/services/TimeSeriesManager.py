@@ -70,8 +70,9 @@ class TimeSeriesManager(object):
 		"""	This method is called when the expectedDgtRange has passed. It checks whether a TSI is missing by
 			looking at the latest arrived dgt.
 
-			`tsRi` - resourceID of the respective <TS> resource. Can be used to retrieve infos from 'runningTimeserieses' dict.
-			`runtime` - The timestamp of the runtime of this function for tsRI 
+			Args:
+				tsRi: resourceID of the respective <TS> resource. 
+					Can be used to retrieve infos from `runningTimeserieses` dict.
 		"""
 		L.isDebug and L.logDebug(f'Running DGT-monitor for TS: {tsRi}')
 

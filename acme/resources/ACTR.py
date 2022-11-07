@@ -57,12 +57,15 @@ class ACTR(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
 		super().__init__(T.ACTR, dct, pi, create = create)
 
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		super().validate(originator=originator, create=create, dct=dct, parentResource=parentResource)
 
 		# check whether all the referenced resources exists: subjectResourceID, objectResourceID

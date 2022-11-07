@@ -31,7 +31,7 @@ def setResourceState(id:str, state:str, timeout:Optional[float] = None) -> None:
 	
 		If *timeout* is provided and a state is already set for the given *id* then the
 		function waits for *timeout* seconds that the state is cleared again. It then sets
-		the *state* for the *id* as usual. If the *timeout* passes a `TimeoutError`
+		the *state* for the *id* as usual. If the *timeout* passes a *TimeoutError*
 		exception is raised. 
 
 		If *timeout* is not provided then the state is set immediately and a possible
@@ -43,7 +43,7 @@ def setResourceState(id:str, state:str, timeout:Optional[float] = None) -> None:
 			timeout: Optional time to wait if a state is already set for *id*.
 		
 		Raises:
-			TimeoutError: Raised if the *timeout* passes and no new `state` can be set for `id`.
+			TimeoutError: Raised if the *timeout* passes and no new *state* can be set for *id*.
 	"""
 	if timeout is not None and id in _resourceStates:
 		if not waitFor(timeout, lambda: getResourceState(id) == None):

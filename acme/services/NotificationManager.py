@@ -154,7 +154,6 @@ class NotificationManager(object):
 			An optional filter can be used 	to return only those subscriptions with a specific enc/net.
 			
 			Args:
-				resource: the parent resource for the subscriptions
 				net: optional filter for enc/net
 				chty: optional single child resource typ
 
@@ -190,11 +189,11 @@ class NotificationManager(object):
 			Args:
 				resource: The resource that received the event resp. request.
 				reason: The `NotificationEventType` to check.
-				childResource: An optional child resource of `resource` that might be updated or created etc.
+				childResource: An optional child resource of *resource* that might be updated or created etc.
 				modifiedAttributes: An optional `JSON` structure that contains updated attributes.
-				ri: Optionally provided resource ID of `Resource`. If it is provided, then `resource` might be *None*.
+				ri: Optionally provided resource ID of `Resource`. If it is provided, then *resource* might be *None*.
 					It will then be used to retrieve the resource.
-				missingData: An optional dictionary of missing data structures in case the `TimeSeries` missing data functionality is handled.
+				missingData: An optional dictionary of missing data structures in case the *TimeSeries* missing data functionality is handled.
 		"""
 		
 		if resource and resource.isVirtual():
@@ -518,7 +517,7 @@ class NotificationManager(object):
 			
 			Args:
 				data: List of unique resource IDs.
-				crsRI: The resource ID of the <crs> resource for the window.
+				crsRi: The resource ID of the <crs> resource for the window.
 				subCount: Maximum number of expected resource IDs in *data*.
 		"""
 		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, expected count: {subCount}')
@@ -748,7 +747,7 @@ class NotificationManager(object):
 			increase the count for sent notifications or received responses.
 
 			Args:
-				subscription: <sub> or <crs> resource.
+				sub: <sub> or <crs> resource.
 				target: URI of the notification target.
 				isResponse: Indicates whether a sent notification or a received response should be counted for.
 				count: Number of notifications to count.
@@ -834,7 +833,7 @@ class NotificationManager(object):
 			A verification request is sent to new URI's. 
 			Notifications to the originator are not sent.
 
-			If `previousNus` is given then only new nus are notified.
+			If *previousNus* is given then only new nus are notified.
 
 			Args:
 				subscription: <sub> or <crs> resource.
@@ -1021,7 +1020,7 @@ class NotificationManager(object):
 				senderFunction: A function that is called to perform the actual notification sending.
 			
 			Return:
-				Returns True, even when nothing was sent, and False when any `senderFunction` returned False.
+				Returns True, even when nothing was sent, and False when any *senderFunction* returned False.
 		"""
 		#	Event when notification is happening, not sent
 		CSE.event.notification() # type: ignore

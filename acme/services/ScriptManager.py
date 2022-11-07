@@ -4,18 +4,18 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Managing scripts and batch job executions
-#
+"""	Managing scripts and batch job executions.
+"""
 
 
 from __future__ import annotations
-from typing import Callable, Dict, Union, Any, Tuple, cast
+
+from typing import Callable, Dict, Union, Any, Tuple, cast, Optional
 from pathlib import Path
 import json, os, fnmatch, re, base64, urllib.parse
 import requests
 
 from ..helpers.KeyHandler import FunctionKey
-
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
 from ..services.Configuration import Configuration
 from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCallable
@@ -48,14 +48,33 @@ _metaPromptlessEvents = [ _metaOnStartup, _metaOnRestart, _metaOnShutdown, _meta
 
 class ACMEPContext(PContext):
 	"""	Child class of the `PContext` context class that adds further commands and details.
+
+		Attributes:
+			poas: A dictionary that maps between CSE-ID's and Point-of-Access. The default is the own CSE.
+			filename: Script filename.
+			fileMtime: The script file's latest modified timestamp.
+			maxRuntime: The maximum runtime (in seconds) for a script.
+			requestParameters: Dictionary with additional request parameters.
+
 	"""
 
 	def __init__(self, 
 				 script:Union[str, list[str]], 
-				 preFunc:PFuncCallable = None,
-				 postFunc:PFuncCallable = None, 
-				 errorFunc:PFuncCallable = None,
-				 filename:str = None) -> None:
+				 preFunc:Optional[PFuncCallable] = None,
+				 postFunc:Optional[PFuncCallable] = None, 
+				 errorFunc:Optional[PFuncCallable] = None,
+				 filename:Optional[str] = None) -> None:
+		"""	Initializer for the context class.
+
+			Args:
+				script: A script contained in a string or a list of strings.
+				preFunc: An optional callback that is called with the `PContext` object just before the script is executed. Returning *None* prevents the script execution.
+				postFunc: An optional callback that is called with the `PContext` object just after the script finished execution.
+				errorFunc: An optional callback that is called with the `PContext` object when encountering an error during script execution.
+				filename: The script's filename.
+
+		"""
+
 		super().__init__(script, 
 
 						# !!! Always use lower case when adding new macros and commands below
@@ -104,15 +123,15 @@ class ACMEPContext(PContext):
 		self.poas:Dict[str, str] = { CSE.cseCsi: None }		# Default: Own CSE
 		self.filename = filename
 		self.fileMtime = os.stat(filename).st_mtime
+
 		self._validate()	# May change the state to indicate an error
 		self.requestParameters:dict[str, Any] = {}
-
 
 
 	def _validate(self) -> None:
 		"""	Validate the script
 
-			If an invalid script is detected then the state is set to `invalid`.
+			If an invalid script is detected then the state is set to *invalid*.
 		"""
 		# Check that @prompt is not used together with conflicting events, and other checks.
 		if _metaPrompt in self.meta:
@@ -138,28 +157,29 @@ class ACMEPContext(PContext):
 		"""	Callback for normal log messages.
 
 			Args:
-				pcontext: Script context.
+				pcontext: Script context. Not used.
 				msg: log message.
 		"""
 		L.isDebug and L.logDebug(msg)
 
 
-	def logError(self, pcontext:PContext, msg:str, exception:Exception = None) -> None:
+	def logError(self, pcontext:PContext, msg:str, exception:Optional[Exception] = None) -> None:
 		"""	Callback for error log messages.
 
 			Args:
-				pcontext: Script context.
-				msg: log message.
+				pcontext: Script context. Not used.
+				msg: The log message.
+				exception: Optional exception to log.
 		"""
 		L.logErr(msg, exc = exception)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
-		"""	Callback for `print` command messages.
+		"""	Callback for *print* command messages.
 
 			Args:
-				pcontext: Script context.
-				msg: log message.
+				pcontext: Script context. Not used.
+				msg: The log message.
 		"""
 		if CSE.isHeadless:
 			return
@@ -179,7 +199,7 @@ class ACMEPContext(PContext):
 
 	@property
 	def filename(self) -> str:
-		"""	Return the script's filename (from the `filename` meta information).
+		"""	Return the script's filename (from the *filename* meta information).
 		
 			Return:
 				String with the full filename.
@@ -189,7 +209,7 @@ class ACMEPContext(PContext):
 
 	@filename.setter
 	def filename(self, filename:str) -> None:
-		"""	Set the script's filename (to the `filename` meta information).
+		"""	Set the script's filename (to the *filename* meta information).
 		
 			Args:
 				filename: The full filename.
@@ -207,11 +227,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				CREATE
+
 			Args:
 				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				arg: remaining argument(s) of the command. Not used.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		if CSE.isHeadless:
 			return pcontext
@@ -224,11 +246,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				CREATE <target> <resource>
+
 			Args:
-				pcontext: PContext object of the running script.
+				pcontext: `PContext` object of the running script.
 				arg: remaining argument(s) of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.CREATE, arg)
 	
@@ -238,11 +262,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				DELETE <target>
+
 			Args:
 				pcontext: PContext object of the running script.
 				arg: remaining argument(s) of the command, only the target.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.DELETE, arg)
 
@@ -254,6 +280,8 @@ class ACMEPContext(PContext):
 		'delete':	requests.delete,
 		'patch':	requests.patch,
 	}
+	"""	Internal mapping between http methods and function callbacks.
+	"""
 
 
 	def doHttp(self, pcontext:PContext, arg:str) -> PContext:
@@ -268,10 +296,10 @@ class ACMEPContext(PContext):
 				endhttp
 
 			Args:
-				pcontext: PContext object of the running script.
+				pcontext: `PContext` object of the running script.
 				arg: remaining argument(s) of the command, only the target.
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		# clear all response variables first
 		for k, _ in pcontext.getVariables('response\\.*'):
@@ -345,16 +373,18 @@ class ACMEPContext(PContext):
 
 
 	def doImportRaw(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Import a raw resource. Not much verification is is done, and a full resource
+		"""	Import a raw resource. Not much verification is done, and a full resource
 			representation, including for example the parent resource ID, must be provided.
 		
 			Example:
 				importRaw <resource>
+
 			Args:
-				pcontext: PContext object of the running script.
+				pcontext: `PContext` object of the running script.
 				arg: remaining argument(s) of the command, only the resource, which may start on a new line.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		#  Get and check primitive content
 		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
@@ -393,11 +423,13 @@ class ACMEPContext(PContext):
 			
 			Example:
 				LOGDIVIDER a message
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 			"""
 		L.logDivider(LogLevel.DEBUG, arg)
 		return pcontext
@@ -408,11 +440,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				NOTIFY <target> <resource>
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+			
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.NOTIFY, arg)
 
@@ -423,29 +457,32 @@ class ACMEPContext(PContext):
 			Example:
 				originator [<name>]
 		
-			Internally, this sets the variable `request.originator`. The difference is that 
-			with this command the originator can be set to an empty value.
+			Internally, this sets the variable *request.originator* in the `PContext` object. The
+			difference is that with this command the originator can be set to an empty value.
 
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		self.setVariable('request.originator', arg if arg else '')
 		return pcontext
 
 
 	def doPoa(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Assign a poa for an identifier.
+		"""	Assign a "poa" for an identifier.
 
 			Example:
 				poa <identifier> <uri>
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		orig, found, url = arg.partition(' ')
 		if found:
@@ -460,10 +497,11 @@ class ACMEPContext(PContext):
 		"""	Print a beautified JSON to the console.
 			
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument of the command, the JSON structure.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument of the command, the JSON structure.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		 """
 		if CSE.isHeadless:
 			return pcontext
@@ -480,10 +518,11 @@ class ACMEPContext(PContext):
 			command is a JSON structure with the attributes.
 			
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument of the command, the JSON structure.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument of the command, the JSON structure.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
 			pcontext.setError(PError.invalid, f'No or invalid content found {pcontext.error.message}')
@@ -497,14 +536,16 @@ class ACMEPContext(PContext):
 
 			Example:
 				RESET
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 
-		orig, found, url = arg.partition(' ')
+		_, found, _ = arg.partition(' ')
 		if found:
 			pcontext.setError(PError.invalid, f'RESET command has no arguments')
 			return None
@@ -518,26 +559,30 @@ class ACMEPContext(PContext):
 		
 			Example:
 				RETRIEVE <target>
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.RETRIEVE, arg)
 	
 
 	def doRun(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Run another script. The 'result' variable will contain the return value
+		"""	Run another script. The *result* variable will contain the return value
 			of the run sript.
 		
 			Example:
 				RUN <script name> [<arguments>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command, name of a script and arguments.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command, name of a script and arguments.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		name, found, arg = arg.partition(' ')
 		if name:
@@ -561,11 +606,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				setConfig <configuration key> <value>
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command, the key and the value
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command, the key and the value.
+
 			Returns:
-				The scripts "PContext" object, or None in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		key, found, value = arg.partition(' ')
 		if found:
@@ -605,14 +652,14 @@ class ACMEPContext(PContext):
 
 
 	def doSetLogging(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Implementation of the `setLoggin` command. Enable/disable the console
-			logging.
+		"""	Implementation of the *setLoggin* command. Enable/disable the console logging.
 
 			Args:
 				pcontext: Current script context.
-				arg: Remaining arguments, key and value
+				arg: Remaining arguments, key and value.
+
 			Return:
-				Current PContext object, or None in case of an error.
+				Current `PContext` object, or *None* in case of an error.
 		"""
 		if arg and (a := arg.lower()) in [ 'on', 'off' ]:
 			L.enableScreenLogging = a == 'on'
@@ -623,13 +670,14 @@ class ACMEPContext(PContext):
 
 	
 	def doStoragePut(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Implementation of the `storagePut` command. Store a value in the persistent storage.
+		"""	Implementation of the *storagePut* command. Store a value in the persistent storage.
 
 			Args:
 				pcontext: Current script context.
-				arg: Remaining arguments, key and value
+				arg: Remaining arguments, key and value.
+
 			Return:
-				Current PContext object, or None in case of an error.
+				Current `PContext` object, or *None* in case of an error.
 		"""
 		key, found, value = arg.partition(' ')
 		if not found:
@@ -640,13 +688,14 @@ class ACMEPContext(PContext):
 
 
 	def doStorageRemove(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Implementation of the `storageRemove` command. Remove a value from the persistent storage.
+		"""	Implementation of the *storageRemove* command. Remove a value from the persistent storage.
 
 			Args:
 				pcontext: Current script context.
 				arg: Remaining arguments, key.
+
 			Return:
-				Current PContext object, or None in case of an error.
+				Current `PContext` object, or *None* in case of an error.
 		"""
 		key, found, value = arg.partition(' ')
 		if found:
@@ -661,11 +710,13 @@ class ACMEPContext(PContext):
 		
 			Example:
 				UPDATE <target> <resource>
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+
 			Returns:
-				The scripts "PContext" object, or "None" in case of an error.
+				The script's `PContext` object, or *None* in case of an error.
 		"""
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.UPDATE, arg)
 	
@@ -680,11 +731,14 @@ class ACMEPContext(PContext):
 		
 			Example:
 				[attribute <key path> <resource>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
-				The value of the resource attribute, or None in case of an error.
+				The value of the resource attribute, or *None* in case of an error.
 		"""
 		# extract key path
 		key, found, res = arg.strip().partition(' ')
@@ -706,9 +760,12 @@ class ACMEPContext(PContext):
 
 			Example:
 				[b64encode <string>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script. Not used.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
 				Base-64 encoded result.
 		"""
@@ -716,15 +773,18 @@ class ACMEPContext(PContext):
 
 
 	def doCseStatus(self, pcontext:PContext, arg:str, line:str) -> str:
-		""" Retrieve the CSE status . 
+		""" Retrieve the CSE status.
 		
 			Example:
 				[cseStatus]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
-				The CSE status as a string, or None in case of an error.
+				The CSE status as a string, or *None* in case of an error.
 		"""
 		return str(CSE.cseStatus)
 
@@ -733,12 +793,15 @@ class ACMEPContext(PContext):
 		""" Check whether an attribute exists for the given its key path . 
 		
 			Example:
-			[hasAttribute <key path> <resource>]
+				[hasAttribute <key path> <resource>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
-				True or False, depending whether the `key path` exists in the `resource`.
+				*True* or *False*, depending whether the *key path* exists in the *resource*.
 		"""
 		# extract key path
 		key, found, res = arg.strip().partition(' ')	
@@ -759,12 +822,15 @@ class ACMEPContext(PContext):
 			such as Jupyter Notebooks.
 		
 			Example:
-			[isIPython]
+				[isIPython]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command. Shall be none.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command. Shall be none.
+				line: The original code line.
+
 			Returns:
-				True or False, depending whether the current environment in IPython.
+				*True* or *False*, depending whether the current environment in IPython.
 		"""
 		if arg:
 			pcontext.setError(PError.invalid, f'Invalid format: isIPython')
@@ -777,9 +843,12 @@ class ACMEPContext(PContext):
 
 			Example:
 				[jsonify <string>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
 				Escaped JSON string.
 		"""
@@ -787,13 +856,15 @@ class ACMEPContext(PContext):
 
 
 	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> str:
-		"""	Implementation of the `storageHas` macro. Test for a key in the persistent storage.
+		"""	Implementation of the *storageHas* macro. Test for a key in the persistent storage.
 
 			Args:
 				pcontext: Current script context.
 				arg: Remaining arguments, key only.
+				line: The original code line.
+
 			Return:
-				Boolean result, or None in case of an error.
+				Boolean result, or *None* in case of an error.
 		"""
 		# extract key
 		key, found, res = arg.strip().partition(' ')	
@@ -806,13 +877,15 @@ class ACMEPContext(PContext):
 
 
 	def doStorageGet(self, pcontext:PContext, arg:str, line:str) -> str:
-		"""	Implementation of the `storageGet` macro. Retrieve a value from the persistent storage.
+		"""	Implementation of the *storageGet* macro. Retrieve a value from the persistent storage.
 
 			Args:
 				pcontext: Current script context.
 				arg: Remaining arguments, key only.
+				line: The original code line.
+
 			Return:
-				The stored value for the key, or None in case of an error.
+				The stored value for the key, or *None* in case of an error.
 		"""
 		# extract key
 		key, found, res = arg.strip().partition(' ')	
@@ -832,9 +905,12 @@ class ACMEPContext(PContext):
 
 			Example:
 				[urlencode <string>]
+
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command.
+				pcontext: `PContext` object of the running script.
+				arg: Remaining argument(s) of the command.
+				line: The original code line.
+
 			Returns:
 				URL-encoded string.
 		"""
@@ -851,10 +927,11 @@ class ACMEPContext(PContext):
 			may span multiple lines.
 
 			Args:
-				pcontext: PContext object for the script.
+				pcontext: `PContext` object for the script.
 				arg: The remaining args
+
 			Returns:
-				A resource as JSON object (dict), or None in case of an error.
+				A resource as JSON object (dict), or *None* in case of an error.
 		"""
 
 		# Get all in one line and resolve macros and variables
@@ -918,15 +995,17 @@ class ACMEPContext(PContext):
 
 	def _handleRequest(self, pcontext:ACMEPContext, operation:Operation, arg:str) -> PContext:
 		"""	Internally handle a request, either via a direct URL or through an originator.
-			Return status and resources in the variables `result.status` and 
-			`result.resource` respectively.
+
+			Return status and resources in the variables *result.status* and 
+			*result.resource* respectively.
 
 			Args:
-				pcontext: PContext object for the script.
+				pcontext: `PContext` object for the script.
 				operation: The operation to perform.
 				arg: The remaining args.
+
 			Returns:
-				The stored value for the key, or None in case of an error.
+				The stored value for the key, or *None* in case of an error.
 		"""
 		target, _, content = arg.partition(' ')
 
@@ -1045,16 +1124,30 @@ class ACMEPContext(PContext):
 #
 
 class ScriptManager(object):
+	"""	This manager entity handles script execution in the CSE.
+
+		Attributes:
+			scripts: Dictionary of scripts and script `ACMEPContext`.
+			storage: Dictionary for internal global variable storage.
+
+			verbose: Verbosity configuration value.
+			scriptMonitorInterval: Interval for monitoring scripts files.
+			scriptDirectories: List of script directories to monitoe.
+			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
+			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
+	"""
 
 	def __init__(self) -> None:
+		"""	Initializer for the ScriptManager class.
+		"""
+
 		self.scripts:Dict[str,ACMEPContext] = {}			# The managed scripts
 		self.storage:Dict[str, str] = {}					# storage for global values
 
-		self.verbose = Configuration.get('cse.scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
-		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
+
+		self._assignConfig()
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
@@ -1070,10 +1163,12 @@ class ScriptManager(object):
 
 
 	def shutdown(self) -> bool:
-		"""	Shutdown the ScriptManager. Run the "shutdown" script(s) if present.
+		"""	Shutdown the ScriptManager. 
+		
+			Run the *shutdown* script(s) if present.
 		
 			Return:
-				Boolean, always True.
+				Boolean, always *True*.
 		"""
 
 		# Look for the shutdown script(s) and run them. 
@@ -1088,21 +1183,29 @@ class ScriptManager(object):
 		L.isInfo and L.log('ScriptManager shut down')
 		return True
 	
+	
+	def _assignConfig(self) -> None:
+		"""	Store relevant configuration values in the manager.
+		"""
+		self.verbose = Configuration.get('cse.scripting.verbose')
+		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
+		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
 
-	def configUpdate(self, key:str = None, value:Any = None) -> None:
-		"""	Callback for the `configUpdate` event.
+
+	def configUpdate(self, key:Optional[str] = None, value:Optional[Any] = None) -> None:
+		"""	Callback for the *configUpdate* event.
 			
 			Args:
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.scripting.verbose', 'cse.scripting.fileMonitoringInterval', 'cse.scripting.scriptDirectories']:
+		if key not in [ 'cse.scripting.verbose', 
+						'cse.scripting.fileMonitoringInterval', 
+						'cse.scripting.scriptDirectories']:
 			return
 
 		# assign new values
-		self.verbose = Configuration.get('cse.scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
-		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
+		self._assignConfig()
 
 		# restart or stop monitor worker
 		if self.scriptUpdatesMonitor:
@@ -1118,9 +1221,9 @@ class ScriptManager(object):
 	#
 
 	def cseStarted(self) -> None:
-		"""	Callback for the `cseStartup` event.
+		"""	Callback for the *cseStartup* event.
 
-			Start a background worker to monitor for scripts.
+			Start a background worker to monitor directories for scripts.
 		"""
 		# Add a worker to monitor changes in the scripts
 		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor')
@@ -1135,7 +1238,7 @@ class ScriptManager(object):
 
 
 	def restart(self) -> None:
-		"""	Callback for the `cseReset` event.
+		"""	Callback for the *cseReset* event.
 		
 			Restart the script manager service, ie. clear the scripts and storage. 
 			They are reloaded during import.
@@ -1146,7 +1249,7 @@ class ScriptManager(object):
 	
 
 	def restartFinished(self) -> None:
-		"""	Callback for the `cseRestarted` event.
+		"""	Callback for the *cseRestarted* event.
 		
 			Run the restart script(s), if any.
 		"""
@@ -1155,12 +1258,12 @@ class ScriptManager(object):
 
 
 	def onKeyboard(self, ch:str) -> None:
-		"""	Callback for the `keyboard` event.
+		"""	Callback for the *keyboard* event.
 		
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				ch: The key pressed.
+				ch: The pressed key.
 		"""
 		# Check for function key names first
 		# Look for the shutdown script(s) and run them. 
@@ -1169,13 +1272,14 @@ class ScriptManager(object):
 
 
 	def onNotification(self, uri:str, originator:str, data:JSON) -> None:
-		"""	Callback for the `notification` event.
+		"""	Callback for the *notification* event.
 
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				uri: The target URI
-				originator: The notification's originator
+				uri: The target URI.
+				originator: The notification's originator.
+				data: The notification's payload.
 		"""
 		try:
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
@@ -1199,7 +1303,7 @@ class ScriptManager(object):
 			scripts. 
 
 			Return:
-				Boolean. Usually true to continue with monitoring.
+				Boolean. Usually *True* to continue with monitoring.
 		"""
 		for eachName, eachScript in list(self.scripts.items()):
 			try:
@@ -1224,12 +1328,13 @@ class ScriptManager(object):
 
 
 	def cronMonitor(self) -> bool:
-		"""	This is the callback for the cron scheduler. It looks for scripts with an @at meta tag
-			and takes the argument as a cron pattern. Scripts that are scheduled to run now will
-			be run, one after the other.
+		"""	This is the callback for the cron scheduler.
+		
+			It looks for scripts with an *@at* meta tag and takes the argument as a cron pattern.
+			Scripts that are scheduled to run now will be run, one after the other.
 			
 			Return:
-				Boolean. Usually true to continue with monitoring.
+				Boolean. Usually *True* to continue with monitoring.
 		"""
 		#L.isDebug and L.logDebug(f'Looking for scheduled scripts')
 		for each in self.findScripts(meta = _metaAt):
@@ -1245,10 +1350,11 @@ class ScriptManager(object):
 
 
 	def loadScriptsFromDirectory(self, directory:str|list[str]) -> int:
-		"""	Load all scripts from a directory.
+		"""	Load all scripts from a (monitored) directory.
 
 			Args:
 				directory: The directory from which to load the scripts.
+
 			Return:
 				Number scripts loaded, or -1 in case of an error.
 		"""
@@ -1259,6 +1365,7 @@ class ScriptManager(object):
 
 				Args:
 					filename: The filename to look for.
+
 				Return:
 					Boolean, indicating whether a script with the filename exists.
 			"""
@@ -1295,22 +1402,24 @@ class ScriptManager(object):
 
 			Args:
 				filename: The filename of the file.
+
 			Return:
-				ACMEPContext object with the script, or None.
+				`ACMEPContext` object with the script, or *None*.
 		"""
 		with open(filename) as file:
 			return CSE.script.loadScript(file.read(), filename)
 
 
 	def loadScript(self, script:str, filename:str) -> ACMEPContext:
-		"""	Load and initialize a script. If no name is set in the script itself, then the filename's stem
-			is set as the name.
+		"""	Load and initialize a script. If no name is set in the script itself, then the 
+			filename's stem is set as the name.
 
 			Args:
 				script: The script as a single string.
 				filename: The filename of the file.
+
 			Return:
-				ACMEPContext object with the script, or None.
+				`ACMEPContext` object with the script, or *None*.
 		"""
 		pcontext = ACMEPContext(script, filename = filename)
 		if pcontext.state != PState.ready:
@@ -1333,15 +1442,17 @@ class ScriptManager(object):
 		self.scripts.clear()
 	
 
-	def findScripts(self, name:str = None, meta:Union[str, list[str]] = None) -> list[PContext]:
-		""" Find scripts by a filter: `name` is the name of the script. `meta` filters the meta data. 
+	def findScripts(self, name:Optional[str] = None, meta:Optional[Union[str, list[str]]] = None) -> list[PContext]:
+		""" Find scripts by a filter.
+		
 			Filters are and-combined.
 
 			Args:
 				name: Filter by script name. The name can be a simple match.
 				meta: Filter by script meta data. This can be a single string or a list of strings.
+
 			Return:
-				List of PContext objects with the script(s), sorted by name, or None in case of an error.
+				List of `PContext` objects with the script(s), sorted by name, or `None` in case of an error.
 		"""
 
 		result:list[PContext] = []
@@ -1366,18 +1477,19 @@ class ScriptManager(object):
 
 
 	def runScript(self, pcontext:PContext, 
-						argument:str = '', 
-						background:bool = False, 
-						finished:Callable = None,
-						environment:dict[str, str] = {}) -> bool:
+						argument:Optional[str] = '', 
+						background:Optional[bool] = False, 
+						finished:Optional[Callable] = None,
+						environment:Optional[dict[str, str]] = {}) -> bool:
 		""" Run a script.
 
 			Args:
 				pcontext: The script to run.
-				argument: An optional argument to the script. This is available to the script via the `argv` macro.
+				argument: An optional argument to the script. This is available to the script via the *argv* macro.
 				background: Boolean to indicate whether to run the script in the backhround (as an Actor).
+
 			Return:
-				Boolean that indicates the successful running of the script. A background script always returns True.
+				Boolean that indicates the successful running of the script. A background script always returns *True*.
 		"""
 		def runCB(pcontext:PContext, argument:str) -> None:
 			pcontext.run(verbose = self.verbose, argument = argument)
@@ -1398,15 +1510,18 @@ class ScriptManager(object):
 		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
 	
 
-	def run(self, scriptName:str, argument:str = '', metaFilter:list[str] = []) -> Tuple[bool, str]:
+	def run(self, scriptName:str, 
+				  argument:Optional[str] = '',
+				  metaFilter:Optional[list[str]] = []) -> Tuple[bool, str]:
 		""" Run a script by its name (only in the foreground).
 
 			Args:
 				scriptName: The name of the script to run..
-				argument: An optional argument to the script. This is available to the script via the `argv` macro.
-				metaFiler: Extra filter to select a script.
+				argument: An optional argument to the script. This is available to the script via the *argv* macro.
+				metaFilter: Extra filter to select a script.
+
 			Return:
-				The result of the script run in a tuple: Boolean indicating success, and an optional result.
+				The result of the script run in a tuple. Boolean indicating success, and an optional result.
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {argument if argument else "None"}, meta: {metaFilter}')
 		if len(scripts := CSE.script.findScripts(name = scriptName, meta = metaFilter)) != 1:
@@ -1434,8 +1549,9 @@ class ScriptManager(object):
 		
 			Args:
 				key: Key for the value to retrieve.
+
 			Return:
-				Previously stored value for the key, or None.
+				Previously stored value for the key, or *None*.
 		"""
 		if key in self.storage:
 			return self.storage[key]
@@ -1447,6 +1563,7 @@ class ScriptManager(object):
 		
 			Args:
 				key: Key to check.
+
 			Return:
 				Boolean result.
 		"""
@@ -1478,9 +1595,13 @@ class ScriptManager(object):
 	#	Misc
 	#
 
-	def runEventScripts(self, event:str, argument:str = None, background:bool = True, environment:dict[str, str] = {}) -> None:
-		"""	Get and run all the scripts for specific events. If the `argument` is given
-			then the event's parameter must match the argument.
+	def runEventScripts(self, event:str, 
+							  argument:Optional[str] = None, 
+							  background:Optional[bool] = True, 
+							  environment:Optional[dict[str, str]] = {}) -> None:
+		"""	Get and run all the scripts for specific events. 
+		
+			If the *argument* is given then the event's parameter must match the argument.
 
 			This method is still called in the same thread as the console (the event is raised not in
 			the background!), because otherwise the prompt input and the getch() function from the
@@ -1490,11 +1611,14 @@ class ScriptManager(object):
 				event: The event for which the script(s) are run.
 				argument: The optional argument that needs to match the event's pararmater in the script.
 				background: Run the script in the background
-				environment: extra variables to set in the script's environment
+				environment: Extra variables to set in the script's environment
 		"""
 
 		def getPrompt(r:str) -> str:
 			"""	Prompt the user for input if the @prompt meta tag is set.
+
+				Return:
+					The user's input.
 			"""
 			if (p := each.meta.get('prompt')) is not None:
 				L.off()

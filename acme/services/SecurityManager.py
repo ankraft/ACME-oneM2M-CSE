@@ -372,8 +372,8 @@ class SecurityManager(object):
 	#
 
 	def getSSLContext(self) -> ssl.SSLContext:
-		"""	Depending on the configuration whether to use TLS, this method creates a new `SSLContext`
-			from the configured certificates and returns it. If TLS is disabled then `None` is returned.
+		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
+			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
 		"""
 		context = None
 		if self.useTLSHttp:

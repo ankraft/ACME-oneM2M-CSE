@@ -8,13 +8,14 @@
 #
 
 from __future__ import annotations
+
 from copy import deepcopy
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Optional
 import isodate
 
 
-from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType as BT, Cardinality as CAR
+from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality as CAR
 from ..etc.Types import RequestOptionality as RO, Announced as AN, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
@@ -66,12 +67,12 @@ class Validator(object):
 
 	def	validateAttributes(self, resource:JSON, 
 								 tpe:str, 
-								 ty:ResourceTypes = ResourceTypes.UNKNOWN, 
-								 attributes:AttributePolicyDict = None, 
-								 create:bool = True , 
-								 isImported:bool = False, 
-								 createdInternally:bool = False, 
-								 isAnnounced:bool = False) -> Result:
+								 ty:Optional[ResourceTypes] = ResourceTypes.UNKNOWN, 
+								 attributes:Optional[AttributePolicyDict] = None, 
+								 create:Optional[bool] = True , 
+								 isImported:Optional[bool] = False, 
+								 createdInternally:Optional[bool] = False, 
+								 isAnnounced:Optional[bool] = False) -> Result:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -195,14 +196,17 @@ class Validator(object):
 
 
 
-	def validateAttribute(self, attribute:str, value:Any, attributeType:BT = None, rtype:ResourceTypes = ResourceTypes.ALL) -> Result:
+	def validateAttribute(self, attribute:str, 
+								value:Any, 
+								attributeType:Optional[BasicType] = None, 
+								rtype:Optional[ResourceTypes] = ResourceTypes.ALL) -> Result:
 		""" Validate a single attribute. 
 		
 			Args:
 				attribute: Name of the attribute to perform the check.
 				value: Value to validate for the attribute.
 				attributeType: If *attributeType* is set then that type is taken to perform the check, otherwise the attribute type is determined.
-				rtype: `ResourceType`. Some attributes depend on the resource type.
+				rtype: Some attributes' validations depend on the resource type.
 			Return:
 				`Result` object. If successful then *data* contains the determined attribute and the converted value in a tuple.
 		"""
@@ -224,25 +228,25 @@ class Validator(object):
 	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
 		# Response
 		'rsp' :	{
-			'rsc' : AttributePolicy(type=BT.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsc'),
-			'rqi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rqi', lname='requestIdentifier', namespace='m2m', tpe='m2m:rqi'),
-			'pc' : AttributePolicy(type=BT.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
-			'to' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
-			'fr' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
-			'ot' : AttributePolicy(type=BT.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ot', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
-			'rset' : AttributePolicy(type=BT.absRelTimestamp, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rset', lname='resultExpirationTimestamp', namespace='m2m', tpe='m2m:rset'),
-			'ec' : AttributePolicy(type=BT.positiveInteger,   cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ec', lname='eventCategory', namespace='m2m', tpe='m2m:ec'),
-			'cnst' : AttributePolicy(type=BT.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnst', lname='contentStatus', namespace='m2m', tpe='m2m:cnst'),
-			'cnot' : AttributePolicy(type=BT.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnot', lname='contentOffset', namespace='m2m', tpe='m2m:cnot'),
-			'ati' : AttributePolicy(type=BT.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ati', lname='assignedTokenIdentifiers', namespace='m2m', tpe='m2m:ati'),
-			'tqf' : AttributePolicy(type=BT.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='tqf', lname='tokenRequestInformation', namespace='m2m', tpe='m2m:tqf'),
-			'asri' : AttributePolicy(type=BT.boolean,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='asri', lname='authorSignReqInfo', namespace='m2m', tpe='m2m:asri'),
-			'rvi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rvi', lname='releaseVersionIndicator', namespace='m2m', tpe='m2m:rvi'),
-			'vsi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='vsi', lname='vendorInformation', namespace='m2m', tpe='m2m:vsi'),
+			'rsc' : AttributePolicy(type=BasicType.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsc'),
+			'rqi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rqi', lname='requestIdentifier', namespace='m2m', tpe='m2m:rqi'),
+			'pc' : AttributePolicy(type=BasicType.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
+			'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
+			'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
+			'ot' : AttributePolicy(type=BasicType.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ot', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
+			'rset' : AttributePolicy(type=BasicType.absRelTimestamp, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rset', lname='resultExpirationTimestamp', namespace='m2m', tpe='m2m:rset'),
+			'ec' : AttributePolicy(type=BasicType.positiveInteger,   cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ec', lname='eventCategory', namespace='m2m', tpe='m2m:ec'),
+			'cnst' : AttributePolicy(type=BasicType.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnst', lname='contentStatus', namespace='m2m', tpe='m2m:cnst'),
+			'cnot' : AttributePolicy(type=BasicType.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnot', lname='contentOffset', namespace='m2m', tpe='m2m:cnot'),
+			'ati' : AttributePolicy(type=BasicType.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ati', lname='assignedTokenIdentifiers', namespace='m2m', tpe='m2m:ati'),
+			'tqf' : AttributePolicy(type=BasicType.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='tqf', lname='tokenRequestInformation', namespace='m2m', tpe='m2m:tqf'),
+			'asri' : AttributePolicy(type=BasicType.boolean,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='asri', lname='authorSignReqInfo', namespace='m2m', tpe='m2m:asri'),
+			'rvi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rvi', lname='releaseVersionIndicator', namespace='m2m', tpe='m2m:rvi'),
+			'vsi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='vsi', lname='vendorInformation', namespace='m2m', tpe='m2m:vsi'),
 		},
 		# 'm2m:sgn' : {
-		# 	'fr' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
-		# 	'to' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
+		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
+		# 	'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
 		# }
 
 	}
@@ -294,7 +298,7 @@ class Validator(object):
 		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
 	def validateCNF(self, value:str) -> Result:
-		"""	Validate the contents of the `contentInfo` attribute. """
+		"""	Validate the contents of the *contentInfo* attribute. """
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
 			return Result.successResult()
 		return Result.errorResult(dbg = f'validation of cnf attribute failed: {value}')
@@ -310,34 +314,6 @@ class Validator(object):
 			return Result.errorResult(dbg = L.logDebug(f"{name} must start with '/': {val}"))
 		return Result.successResult()
 
-
-	# TODO REMOVEME
-	# def validateEvalCriteria(self, dct:JSON) -> Result:
-	# 	"""	Validate the format and content of an evc attribute.
-	# 	"""
-	# 	if (optr := dct.get('optr')) is None:
-	# 		L.logDebug(dbg := f'evc/optr is missing in evalCriteria')
-	# 		return Result.errorResult(dbg = dbg)
-	# 	if not (res := self.validateAttribute('optr', optr)).status:
-	# 		return res
-	# 	if not (EvalCriteriaOperator.equal <= optr <= EvalCriteriaOperator.lessThanEqual):
-	# 		L.logDebug(dbg := f'evc/optr is out of range')
-	# 		return Result.errorResult(dbg = dbg)
-		
-	# 	if (sbjt := dct.get('sbjt')) is None:
-	# 		L.logDebug(dbg := f'evc/sbjt is missing in evalCriteria')
-	# 		return Result.errorResult(dbg = dbg)
-	# 	if not (res := self.validateAttribute('sbjt', sbjt)).status:
-	# 		return res
-
-	# 	if (thld := dct.get('thld')) is None:
-	# 		L.logDebug(dbg := f'evc/thld is missing in evalCriteria')
-	# 		return Result.errorResult(dbg = dbg)
-	# 	if not (res := self.validateAttribute('thld', sbjt)).status:
-	# 		return res
-
-	# 	return Result.successResult()
-	
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
 		"""	Check whether the resource attribute *attr* is neither a universal,
@@ -492,7 +468,10 @@ class Validator(object):
 	#	Internals.
 	#
 
-	def _validateType(self, dataType:BT, value:Any, convert:bool = False, policy:AttributePolicy = None) -> Result:
+	def _validateType(self, dataType:BasicType, 
+							value:Any, 
+							convert:Optional[bool] = False, 
+							policy:Optional[AttributePolicy] = None) -> Result:
 		""" Check a value for its type. 
 					
 			Args:
@@ -513,17 +492,22 @@ class Validator(object):
 
 		# convert some types if necessary
 		if convert:
-			if dataType in [ BT.positiveInteger, BT.nonNegInteger, BT.unsignedInt, BT.unsignedLong, BT.integer, BT.enum ] and isinstance(value, str):
+			if dataType in [ BasicType.positiveInteger, 
+							 BasicType.nonNegInteger, 
+							 BasicType.unsignedInt, 
+							 BasicType.unsignedLong, 
+							 BasicType.integer, 
+							 BasicType.enum ] and isinstance(value, str):
 				try:
 					value = int(value)
 				except Exception as e:
 					return Result.errorResult(dbg = str(e))
-			elif dataType == BT.boolean and isinstance(value, str):	# "true"/"false"
+			elif dataType == BasicType.boolean and isinstance(value, str):	# "true"/"false"
 				try:
 					value = Utils.strToBool(value)
 				except Exception as e:
 					return Result.errorResult(dbg = str(e))
-			elif dataType == BT.float and isinstance(value, str):
+			elif dataType == BasicType.float and isinstance(value, str):
 				try:
 					value = float(value)
 				except Exception as e:
@@ -531,38 +515,38 @@ class Validator(object):
 
 		# Check types and values
 
-		if dataType == BT.positiveInteger:
+		if dataType == BasicType.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
 					return Result(status = True, data = (dataType, value))
 				return Result.errorResult(dbg = 'value must be > 0')
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
 		
-		if dataType == BT.enum:
+		if dataType == BasicType.enum:
 			if isinstance(value, int):
 				if policy is not None and len(policy.evalues) and value not in policy.evalues:
 					return Result.errorResult(dbg = 'undefined enum value')
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
 
-		if dataType == BT.nonNegInteger:
+		if dataType == BasicType.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
 					return Result(status = True, data = (dataType, value))
 				return Result.errorResult(dbg = 'value must be >= 0')
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
-		if dataType in [ BT.unsignedInt, BT.unsignedLong ]:
+		if dataType in [ BasicType.unsignedInt, BasicType.unsignedLong ]:
 			if isinstance(value, int):
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
-		if dataType == BT.timestamp and isinstance(value, str):
+		if dataType == BasicType.timestamp and isinstance(value, str):
 			if DateUtils.fromAbsRelTimestamp(value) == 0.0:
 				return Result.errorResult(dbg = f'format error in timestamp: {value}')
 			return Result(status = True, data = (dataType, value))
 
-		if dataType == BT.absRelTimestamp:
+		if dataType == BasicType.absRelTimestamp:
 			if isinstance(value, str):
 				try:
 					rel = int(value)
@@ -575,11 +559,11 @@ class Validator(object):
 				return Result.errorResult(dbg = f'unsupported data type for absRelTimestamp')
 			return Result(status = True, data = (dataType, value))		# int/long is ok
 
-		if dataType in [ BT.string, BT.anyURI ] and isinstance(value, str):
+		if dataType in [ BasicType.string, BasicType.anyURI ] and isinstance(value, str):
 			return Result(status = True, data = (dataType, value))
 
-		if dataType in [ BT.list, BT.listNE ] and isinstance(value, list):
-			if dataType == BT.listNE and len(value) == 0:
+		if dataType in [ BasicType.list, BasicType.listNE ] and isinstance(value, list):
+			if dataType == BasicType.listNE and len(value) == 0:
 				return Result.errorResult(dbg = 'empty list is not allowed')
 			if policy is not None and policy.ltype is not None:
 				for each in value:
@@ -587,54 +571,54 @@ class Validator(object):
 						return res
 			return Result(status = True, data = (dataType, value))
 
-		if dataType == BT.dict and isinstance(value, dict):
+		if dataType == BasicType.dict and isinstance(value, dict):
 			return Result(status = True, data = (dataType, value))
 		
-		if dataType == BT.boolean:
+		if dataType == BasicType.boolean:
 			if isinstance(value, bool):
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: bool')
 
-		if dataType == BT.float:
+		if dataType == BasicType.float:
 			if isinstance(value, (float, int)):
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: float')
 
-		if dataType == BT.integer:
+		if dataType == BasicType.integer:
 			if isinstance(value, int):
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: integer')
 
-		if dataType == BT.geoCoordinates and isinstance(value, dict):
+		if dataType == BasicType.geoCoordinates and isinstance(value, dict):
 			return Result(status = True, data = (dataType, value))
 		
-		if dataType == BT.duration:
+		if dataType == BasicType.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
 				return Result.errorResult(dbg = f'must be an ISO duration: {str(e)}')
 			return Result(status = True, data = (dataType, value))
 		
-		if dataType == BT.base64:
+		if dataType == BasicType.base64:
 			if not TextTools.isBase64(value):
 				return Result.errorResult(dbg = f'value is not base64-encoded')
 			return Result(status = True, data = (dataType, value))
 		
-		if dataType == BT.schedule:
+		if dataType == BasicType.schedule:
 			if isinstance(value, str) and re.match(self._scheduleRegex, value):
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
 
-		if dataType == BT.any:
+		if dataType == BasicType.any:
 			return Result(status = True, data = (dataType, value))
 		
-		if dataType == BT.complex:
+		if dataType == BasicType.complex:
 			if not policy:
 				L.logErr(f'policy is missing for validation of complex attribute')
 				return Result.errorResult(dbg = f'internal error: policy missing for validation')
 
 			if isinstance(value, dict):
-				typeName = policy.lTypeName if policy.type == BT.list else policy.typeName;
+				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
 				for k, v in value.items():
 					if not (p := self.getAttributePolicy(typeName, k)):
 						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {typeName}')

@@ -11,9 +11,10 @@
 """ This module provides various utility functions. """
 
 from __future__ import annotations
+
+from typing import Any, Callable, Tuple, cast, Optional
 import random, string, sys, re, threading, socket
 import traceback
-from typing import Any, Callable, Tuple, cast, Optional
 from distutils.util import strtobool
 
 
@@ -31,7 +32,7 @@ from ..services import CSE as CSE
 #	Identifier and path related
 #
 
-def uniqueRI(prefix:str = '') -> str:
+def uniqueRI(prefix:Optional[str] = '') -> str:
 	"""	Generate a unique resource ID. Beside a random number it
 		can have a prefix.
 		
@@ -89,7 +90,7 @@ def announcedRN(resource:Resource) -> str:
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI(prefix:str = 'S') -> str:
+def uniqueAEI(prefix:Optional[str] = 'S') -> str:
 	"""	Create a new AE ID. An AE ID must always start with either "S" or "C".
 	
 		Args:
@@ -198,7 +199,7 @@ def localResourceID(ri:str) -> str:
 	return ri
 	
 
-def isValidID(id:str, allowEmpty:bool = False) -> bool:
+def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	""" Test for a valid ID. 
 
 		Args:
@@ -466,7 +467,7 @@ def riFromCSI(csi:str) -> str:
 	return cast(str, res.ri)
 
 
-def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
+def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used).
 
 		Args:
@@ -599,7 +600,7 @@ def isAcmeUrl(url:str) -> bool:
 	return isURL(url) and url.startswith('acme')
 
 
-def normalizeURL(url: str) -> str:
+def normalizeURL(url:str) -> str:
 	""" Remove trailing / from a url. 
 
 		Args:
@@ -649,20 +650,20 @@ def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Any:
 		*default* is returned.
 
 		- It is possible to address a specific element in a list. This is done be
-		specifying the element as "{n}".
+			specifying the element as "{n}".
 
 		Example: 
 			findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
 		- If an element is specified as "{}" then all elements in that list are returned in
-		a list.
+			a list.
 
 		Example: 
 			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
 		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
-		jumped over. This can be used to skip, for example, unknown first elements in a structure. 
-		This is similar but not the same as "{0}" that works on lists.
+			jumped over. This can be used to skip, for example, unknown first elements in a structure. 
+			This is similar but not the same as "{0}" that works on lists.
 
 		Example: 
 			findXPath(resource, '{*}/rn') 
@@ -722,7 +723,11 @@ def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Any:
 
 
 
-def setXPath(dct:JSON, key:str, value:Any = None, overwrite:bool = True, delete:bool = False) -> bool:
+def setXPath(dct:JSON, 
+			 key:str, 
+			 value:Optional[Any] = None, 
+			 overwrite:Optional[bool] = True, 
+			 delete:Optional[bool] = False) -> bool:
 	"""	Set a structured *key* and *value* in the dictionary *dict*.
 
 		Create the attribute if necessary, and observe the *overwrite* option (True overwrites an
@@ -798,7 +803,7 @@ def setXPath(dct:JSON, key:str, value:Any = None, overwrite:bool = True, delete:
 # 		return jsn
 # 	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in jsn.items()) if value is not None or key in allowedNull }
 
-def removeNoneValuesFromDict(jsn:JSON, allowedNull:list[str]=[]) -> JSON:
+def removeNoneValuesFromDict(jsn:JSON, allowedNull:Optional[list[str]] = []) -> JSON:
 	"""	Remove Null/None-values from a dictionary, but ignore the ones specified in *allowedNull*.
 
 		Args:
@@ -813,7 +818,7 @@ def removeNoneValuesFromDict(jsn:JSON, allowedNull:list[str]=[]) -> JSON:
 
 
 
-def resourceDiff(old:JSON, new:JSON, modifiers:JSON=None) -> JSON:
+def resourceDiff(old:JSON, new:JSON, modifiers:Optional[JSON] = None) -> JSON:
 	"""	Compare an old and a new resource. A comparison happens for keywords and values.
 		Attributes which names start and end with "__" (ie internal attributes) are ignored.
 
@@ -844,7 +849,7 @@ def resourceDiff(old:JSON, new:JSON, modifiers:JSON=None) -> JSON:
 	return res
 
 
-def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:JSON=None) -> JSON:
+def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Optional[JSON] = None) -> JSON:
 	"""	Calculate the difference between an original resource and after it has been updated, and then remove the attributes
 		that are part of the update request.
 
@@ -991,7 +996,9 @@ def strToBool(value:str) -> bool:
 #	Threads
 #
 
-def renameThread(name:str = None, thread:threading.Thread = None, prefix:str = None) -> None:
+def renameThread(name:Optional[str] = None,
+				 thread:Optional[threading.Thread] = None,
+				 prefix:Optional[str] = None) -> None:
 	"""	Rename a thread.
 
 		If *name* is provided then the thread is renamed to that name.
@@ -1031,7 +1038,7 @@ def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
 #	Network
 
 
-def getIPAddress(hostname:str = None) -> str:
+def getIPAddress(hostname:Optional[str] = None) -> str:
 	"""	Lookup and return the IP address for a host name.
 	
 		Args:

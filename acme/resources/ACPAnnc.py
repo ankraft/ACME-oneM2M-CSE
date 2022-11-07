@@ -42,10 +42,10 @@ class ACPAnnc(AnnouncedResource):
 			'apri': None,
 			'airi': None
 	}
-	"""	Attributes and `AttributePolicy' for this resource type. """
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:JSON, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
 		super().__init__(T.ACPAnnc, dct, pi = pi, create = create)
 
 

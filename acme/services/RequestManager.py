@@ -568,18 +568,19 @@ class RequestManager(object):
 
 
 	def hasPollingRequest(self, originator:str, requestID:str = None, reqType:RequestType = RequestType.REQUEST) -> bool:
-		"""	Check whether there is a pending request or response pending for the tuple (`originator`, `requestID`).
+		"""	Check whether there is a pending request or response pending for the tuple (*originator*, *requestID*).
 			This method is also used as a callback for periodic check whether a request or response is queued.
-			If `requestID` is not None then the check is for a request with that ID. 
-			Otherwise, *True* will be returned if there is any request for the `originator`.
+			If *requestID* is not *None* then the check is for a request with that ID. 
+			Otherwise, *True* will be returned if there is any request for the *originator*.
 		"""
 		with self._requestLock:
 			return (lst := self._requests.get(originator)) is not None and any(	 (r, t) for r,t in lst if (requestID is None or r.rqi == requestID) and (t == reqType) )
 
 	
 	def queuePollingRequest(self, request:CSERequest, reqType:RequestType=RequestType.REQUEST) -> None:
-		"""	Add a new `request` to the polling request queue. The `reqType` specifies whether this request is 
-			a oneM2M Request or Response.
+		"""	Add a new *request* to the polling request queue. 
+		
+			The *reqType* specifies whether this request is a oneM2M Request or Response.
 		"""
 		L.isDebug and L.logDebug(f'Add request to queue, reqestType: {reqType}')
 
@@ -623,7 +624,7 @@ class RequestManager(object):
 	
 
 	def unqueuePollingRequest(self, originator:str, requestID:str, reqType:RequestType) -> CSERequest:
-		"""	Remove a request for the `originator` and with the `requestID` from the polling request queue. 
+		"""	Remove a request for the *originator* and with the *requestID* from the polling request queue. 
 		"""
 		L.isDebug and L.logDebug(f'Unqueuing polling request, originator: {originator}, requestID: {requestID}')
 		with self._requestLock:
@@ -700,11 +701,11 @@ class RequestManager(object):
 							parameters:CSERequest = None,
 							reqType:RequestType = RequestType.REQUEST,
 							originator:str = None) -> CSERequest:
-		"""	Queue a (incoming) `request` or `content` for a <PCH>. It can be retrieved via the target's <PCU> 
+		"""	Queue a (incoming) *request* or *content* for a <PCH>. It can be retrieved via the target's <PCU> 
 			child resource.
 
-			If a `request` is passed then this object is queued. If no `request` but `data` is given then a new request object is created 
-			for `content`.
+			If a *request* is passed then this object is queued. If no *request* but *data* is given then a new request object is created 
+			for *content*.
 		"""
 
 		# Check required arguments
@@ -1110,7 +1111,7 @@ class RequestManager(object):
 
 
 	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool = False) -> Result:
-		"""	Fill a `cseRequest` object according to its request structure in the *req* attribute.
+		"""	Fill a *cseRequest* object according to its request structure in the *req* attribute.
 		"""
 		# ! Cannot be in RequestUtils bc to prevent circular import of CSE and validator
 

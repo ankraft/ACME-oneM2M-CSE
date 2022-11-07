@@ -61,7 +61,9 @@ class AE(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.AE, dct, pi, create = create)
 
 		self.setAttribute('aei', Utils.uniqueAEI(), overwrite = False)
@@ -87,7 +89,10 @@ class AE(AnnounceableResource):
 		return Result.successResult()
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None,
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		# Inherited
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
@@ -162,7 +167,7 @@ class AE(AnnounceableResource):
 		""" Remove AE from hosting Node. 
 
 			Args:
-				nodeRI: The hosting node's resource ID.
+				nodeRi: The hosting node's resource ID.
 		"""
 		ri = self.ri
 		if node := CSE.dispatcher.retrieveResource(nodeRi).resource:

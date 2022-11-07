@@ -55,9 +55,11 @@ class AEAnnc(AnnouncedResource):
 			'ape': None,
 			'or': None,
 	}
-	"""	Attributes and `AttributePolicy' for this resource type. """
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON=None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.AEAnnc, dct, pi = pi, create = create)
 

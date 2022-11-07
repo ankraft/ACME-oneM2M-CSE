@@ -6,6 +6,7 @@
 #
 #	ResourceType: mgmtObj:areaNwkDeviceInfo
 #
+from __future__ import annotations
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObj import *
@@ -52,7 +53,9 @@ class ANDI(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = T.ANDI, create = create)
 
 		self.setAttribute('dvd', defaultDeviceID, overwrite = False)

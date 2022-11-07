@@ -51,7 +51,7 @@ class Event(list):	# type:ignore[type-arg]
 		manager: The responsible `EventManager` to handle an event.
 	"""
 
-	def __init__(self, runInBackground:bool = True, manager:EventManager = None):
+	def __init__(self, runInBackground:Optional[bool] = True, manager:Optional[EventManager] = None):
 		"""	Event initialization.
 
 			Args:

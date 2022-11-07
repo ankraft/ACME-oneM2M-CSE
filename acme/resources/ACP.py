@@ -48,14 +48,20 @@ class ACP(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON, pi:str = None, rn:str = None, create:bool = False) -> None:
+	def __init__(self, dct:JSON, 
+					   pi:Optional[str] = None, 
+					   rn:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(T.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		# Inherited
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
@@ -114,7 +120,7 @@ class ACP(AnnounceableResource):
 	#	Permission handlings
 
 	def addPermission(self, originators:list[str], permission:Permission) -> None:
-		"""	Add new permissions to the ACP resource.
+		"""	Add new general permissions to the ACP resource.
 		
 			Args:
 				originators: List of originator identifiers.
@@ -138,7 +144,7 @@ class ACP(AnnounceableResource):
 					
 
 	def addSelfPermission(self, originators:List[str], permission:Permission) -> None:
-		"""	Add new **self*-permissions to the ACP resource.
+		"""	Add new **self** - permissions to the ACP resource.
 		
 			Args:
 				originators: List of originator identifiers.

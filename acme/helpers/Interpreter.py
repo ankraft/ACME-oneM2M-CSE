@@ -11,12 +11,13 @@
 """
 
 from __future__ import annotations
+
+from typing import 	Callable, Dict, Tuple, Union, Sequence, Optional
 from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 from decimal import Decimal, InvalidOperation
 import datetime, time, re, copy, random, shlex, operator
-from typing import 	Callable, Dict, Tuple, Union, Sequence
 
 _maxProcStackSize = 64	
 """ Max number of recursive procedures calls. """
@@ -74,7 +75,10 @@ class PScope():
 
 
 class PContext():
-	"""	Process context for a single script. Can be re-used.s
+	"""	Process context for a single script. Can be re-used.
+
+		Attributes:
+			state: The internal state of a script.
 	"""
 
 	def __init__(self, 
@@ -171,7 +175,7 @@ class PContext():
 		self.state = PState.ready
 
 
-	def run(self, verbose:bool = False, argument:str = '') -> PContext:
+	def run(self, verbose:Optional[bool] = False, argument:Optional[str] = '') -> PContext:
 		"""	Run the script.
 
 			Args:
@@ -242,7 +246,7 @@ class PContext():
 		return line
 	
 
-	def nextLinePartition(self, sep:str = ' ') -> Tuple[str, str, str, str]:
+	def nextLinePartition(self, sep:Optional[str] = ' ') -> Tuple[str, str, str, str]:
 		"""	Return the next line in the script, and partition it. Return the partitions as
 			well as the line itself in a tuple: cmd, separator, rest, line.
 
@@ -257,7 +261,9 @@ class PContext():
 		return cmd, found, arg, line
 	
 	
-	def remainingLinesAsString(self, prefix:str = None, upto:str = None, ignoreComments:bool = True) -> str:
+	def remainingLinesAsString(self, prefix:Optional[str] = None, 
+									 upto:Optional[str] = None, 
+									 ignoreComments:Optional[bool] = True) -> str:
 		"""	Return the remaining lines in a script as a single string, including the current one. Lines are still
 			separated with \\n.
 
@@ -303,7 +309,6 @@ class PContext():
 
 	def reset(self) -> None:
 		"""	Reset the context / script. 
-		
 			
 			This methoth may also be implemented in a sub-class, but the must then call this method as well.
 		"""
@@ -315,7 +320,11 @@ class PContext():
 		self.state = PState.ready
 
 
-	def setError(self, error:PError, msg:str, pc:int = -1, state:PState = PState.terminatedWithError, exception:Exception = None) -> None:
+	def setError(self, error:PError, 
+					   msg:str, 
+					   pc:Optional[int] = -1, 
+					   state:Optional[PState] = PState.terminatedWithError, 
+					   exception:Optional[Exception] = None) -> None:
 		"""	Set the internal state and error codes. 
 		
 			These can be retrieved by accessing the state and error	attributes.
@@ -414,7 +423,7 @@ class PContext():
 		self.scope.switchLevel = level
 
 
-	def saveScope(self, pc:int = None, arg:str = None, name:str = None) -> bool:
+	def saveScope(self, pc:Optional[int] = None, arg:Optional[str] = None, name:Optional[str] = None) -> bool:
 		"""	Save the current program counter and other information to the scope stack. 
 			This creates a new scope.
 
@@ -662,7 +671,7 @@ class PContext():
 		self.environment.clear()
 
 
-	def setEnvironment(self, environment:dict[str, str] = {}) -> None:
+	def setEnvironment(self, environment:Optional[dict[str, str]] = {}) -> None:
 		"""	Clear old and assign a new environment.
 			
 			Args:
@@ -746,7 +755,10 @@ PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception
 #	Run a script
 #
 
-def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:str = None) -> PContext:
+def run(pcontext:PContext, 
+		verbose:Optional[bool] = False, 
+		argument:Optional[str] = '', 
+		procedure:Optional[str] = None) -> PContext:
 	"""	Run a script. 
 		
 		An own, extended `PContext` instance can be provided, that supports extra commands and macros.
@@ -1120,7 +1132,7 @@ def _doIf(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
+def _doIncDec(pcontext:PContext, arg:str, isInc:Optional[bool] = True) -> PContext:
 	"""	Increment or decrement a variable by an optional value.
 		The default is 1.
 
@@ -1145,7 +1157,10 @@ def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
 	return pcontext
 
 
-def _doLog(pcontext:PContext, arg:str, isError:bool = False, exception:Exception = None) -> PContext:
+def _doLog(pcontext:PContext,
+		   arg:str, 
+		   isError:Optional[bool] = False, 
+		   exception:Optional[Exception] = None) -> PContext:
 	"""	Print a message to the debug or to the error. Either the internal or a provided log function.
 
 		Args:
@@ -1363,6 +1378,7 @@ def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
 			pcontext: Current PContext for the script.
 			arg: The results of one or many boolean expressions.
 			line: The original code line.
+
 		Return:
 			String with either *false* or *false*, or None in case of an error.
 	"""
@@ -1873,7 +1889,7 @@ def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
 	return pcontext
 
 
-def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext:
+def _skipSwitch(pcontext:PContext, compareTo:str, skip:Optional[bool] = False) -> PContext:
 	"""	Skip to the first matching CASE statement of a a SWITCH block, or to the
 		end of the whole switch block
 
@@ -2066,7 +2082,7 @@ def _boolResult(pcontext:PContext, arg:str) -> bool:
 	return None
 
 
-def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:bool = False) -> str:
+def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:Optional[bool] = False) -> str:
 	"""	Perform an arithmetic calculation.
 
 		This function performs an arithmetic operation on multiple arguments. The same

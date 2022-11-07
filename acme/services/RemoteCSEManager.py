@@ -234,7 +234,7 @@ class RemoteCSEManager(object):
 		""" Event handler for adding a registrar CSE/CSR CSI to the list of registered csi.
 
 			Args:
-			 	registrarCSR: The CSR that just registered (the CSR from the registrar CSE).
+			 	registrarCSE: The CSR that just registered (the CSR from the registrar CSE).
 				ownRegistrarCSR: The own CSR on the the registrar CSE
 		"""
 		self.registrarCSE = registrarCSE
@@ -428,7 +428,7 @@ class RemoteCSEManager(object):
 		"""	Retrieve the local <CSR> resources.
 		
 			Args:
-				withRegistrarCSR: If *True* then include the CSR to the registrar CSE in the result.
+				includeRegistrarCSR: If *True* then include the CSR to the registrar CSE in the result.
 				withRegistreeCSR: if *True* then include the CSR(s) to the registree CSE(s) in the result.
 
 			Return:
@@ -531,7 +531,7 @@ class RemoteCSEManager(object):
 		"""	Update the own <CSR> resource on the registrar CSE.
 
 			Args:
-				localCSE: Optional CSE resource to use for the update. If None, the hosting <CSEBase> resource will be used.
+				hostingCSE: Optional CSE resource to use for the update. If None, the hosting <CSEBase> resource will be used.
 
 			Return:
 				Result object
