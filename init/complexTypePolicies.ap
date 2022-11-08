@@ -839,7 +839,7 @@
 	"om": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:contentRef",
+			"ctype": "m2m:eventNotificationCriteria",
 			"lname": "operationMonitor",
 			"ns": "m2m",
 			"type": "m2m:operationMonitor",
