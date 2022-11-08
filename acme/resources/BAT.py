@@ -7,7 +7,8 @@
 #	ResourceType: mgmtObj:Battery
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from typing import Optional
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import *
 
 
@@ -58,8 +59,10 @@ class BAT(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.BAT, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None,
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.BAT, create = create)
 
 		self.setAttribute('btl', defaultBatteryLevel, overwrite = False)
 		self.setAttribute('bts', defaultBatteryStatus, overwrite = False)

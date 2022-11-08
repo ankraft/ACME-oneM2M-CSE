@@ -9,15 +9,15 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, Result, JSON, AttributePolicyDict
-from ..etc.Types import Announced as AN
+from ..etc.Types import ResourceTypes, Result, JSON, AttributePolicyDict
+from ..etc.Types import Announced
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from .Resource import *
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:T, 
+	def __init__(self, ty:ResourceTypes, 
 					   dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   tpe:Optional[str] = None, 
@@ -88,7 +88,7 @@ class AnnounceableResource(Resource):
 		for attr, policy in self._attributes.items():
 			# Removing non announceable attributes
 			if attr in announceableAttributes:
-				if policy.announcement == AN.NA:  # remove attributes which are not announceable
+				if policy.announcement == Announced.NA:  # remove attributes which are not announceable
 					announceableAttributes.remove(attr)
 					continue
 				if not self.hasAttribute(attr):	# remove attributes that are in aa but not in the resource
@@ -123,7 +123,7 @@ class AnnounceableResource(Resource):
 		"""	Actually create the resource dict.
 		"""
 		# Stub
-		tpe = T(self.ty).announced(self.mgd).tpe()	# Hack, bc management objects do it a bit differently
+		tpe = ResourceTypes(self.ty).announced(self.mgd).tpe()	# Hack, bc management objects do it a bit differently
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)
@@ -162,8 +162,8 @@ class AnnounceableResource(Resource):
 			# copy only the updated attributes
 			for attr in modifiedAttributes:
 				attributePolicy = attributes.get(attr)
-				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == AN.MA):	# either announced or an MA attribute
-				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
+				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == Announced.MA):	# either announced or an MA attribute
+				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == Announced.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
 
 			# if aa was modified check also those attributes even when they are not modified
@@ -228,11 +228,11 @@ class AnnounceableResource(Resource):
 				if not (policy := attributes.get(attr)):
 					continue
 				
-				if policy.announcement == AN.MA:
+				if policy.announcement == Announced.MA:
 					mandatory.append(attr)
-				elif policy.announcement == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
+				elif policy.announcement == Announced.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
 					optional.append(attr)
-				# else: just ignore AN.NA
+				# else: just ignore Announced.NA
 
 		return mandatory + optional
 

@@ -8,14 +8,16 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 class CIN(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ T.SMD ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SMD ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -50,8 +52,10 @@ class CIN(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.CIN, dct, pi, create = create, inheritACP = True, readOnly = True)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.CIN, dct, pi, create = create, inheritACP = True, readOnly = True)
 
 		self.setAttribute('con', '', overwrite = False)
 		self.setAttribute('cs', Utils.getAttributeSize(self.con))
@@ -75,25 +79,29 @@ class CIN(AnnounceableResource):
 
 
 	# Forbid updating
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating CIN is forbidden')
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'updating CIN is forbidden')
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, 
+							  request:Optional[CSERequest] = None, 
+							  subCheck:Optional[bool] = True) -> Result:
 		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		# "cnt" is a raw resource!
 		if (cntRaw := self.retrieveParentResourceRaw()) and cntRaw.get('disr'):	# disr is either None, True or False. False means "not disabled retrieval"
-			L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = dbg)
+			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = L.logDebug(f'Retrieval is disabled for the parent <container>'))
 		
 		# Check deletion Count
 		if (dcnt := self.dcnt) is not None:	# dcnt is an innt
 			L.isDebug and L.logDebug(f'Decreasing dcnt for <cin>, ri: {self.ri}, ({dcnt} -> {dcnt-1})')
 			dcnt -= 1
 			if dcnt > 0:	# still > 0 -> CIN is not deleted
+				# We have to decrement this in the DB first, but increment it again
 				self.setAttribute('dcnt', dcnt)
 				self.dbUpdate()
 				# Since this is handled as a post decrement we need to set-back the value of dcnt.
@@ -106,7 +114,10 @@ class CIN(AnnounceableResource):
 		return Result.successResult()
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 

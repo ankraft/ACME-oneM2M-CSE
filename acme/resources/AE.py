@@ -7,10 +7,10 @@
 """ Application Entity (AE) resource type """
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, ResponseStatusCode as RC, JSON
-from ..etc import Utils as Utils
+from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, ResponseStatusCode, JSON
+from ..etc.Utils import uniqueAEI
 from ..services.Logging import Logging as L
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -18,7 +18,17 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
-	_allowedChildResourceTypes:list[T] = [ T.ACP, T.ACTR, T.CNT, T.CRS, T.FCNT, T.GRP, T.PCH, T.SMD, T.SUB, T.TS, T.TSB ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
+													   ResourceTypes.ACTR,
+													   ResourceTypes.CNT,
+													   ResourceTypes.CRS,
+													   ResourceTypes.FCNT,
+													   ResourceTypes.GRP,
+													   ResourceTypes.PCH,
+													   ResourceTypes.SMD,
+													   ResourceTypes.SUB,
+													   ResourceTypes.TS,
+													   ResourceTypes.TSB ]
 	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
@@ -64,9 +74,9 @@ class AE(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(T.AE, dct, pi, create = create)
+		super().__init__(ResourceTypes.AE, dct, pi, create = create)
 
-		self.setAttribute('aei', Utils.uniqueAEI(), overwrite = False)
+		self.setAttribute('aei', uniqueAEI(), overwrite = False)
 		self.setAttribute('rr', False, overwrite = False)
 
 
@@ -76,15 +86,15 @@ class AE(AnnounceableResource):
 			return res
 
 		# Perform checks for <PCH>	
-		if childResource.ty == T.PCH:
+		if childResource.ty == ResourceTypes.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
 				L.logDebug(dbg := f'Originator must be the parent <AE>')
-				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
 
 			# check that there will only by one PCH as a child
-			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
-				return Result.errorResult(rsc = RC.badRequest, dbg = 'Only one PCH per AE is allowed')
+			if CSE.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
+				return Result.errorResult(dbg = 'Only one PCH per AE is allowed')
 
 		return Result.successResult()
 
@@ -127,7 +137,7 @@ class AE(AnnounceableResource):
 		# check csz attribute
 		if csz := self.csz:
 			for c in csz:
-				if c not in CST.supportedContentSerializations():
+				if c not in ContentSerializationType.supportedContentSerializations():
 					return Result.errorResult(dbg  = 'unsupported content serialization: {c}')
 		
 		# check api attribute

@@ -7,7 +7,7 @@
 #	ANI : Announceable variant
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObjAnnc import *
 
 class ANIAnnc(MgmtObjAnnc):
@@ -43,6 +43,8 @@ class ANIAnnc(MgmtObjAnnc):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = T.ANI, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.ANI, create = create)
 

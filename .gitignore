@@ -142,6 +142,6 @@ dmypy.json
 .vscode/
 .VSCodeCounter
 ACME oneM2M CSE.docset
-apidocs
 ExampleScripts
 tmp
+docs/apidocs

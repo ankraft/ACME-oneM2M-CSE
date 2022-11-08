@@ -77,7 +77,7 @@ class SMD(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
-		super().__init__(T.SMD, dct, pi, tpe = fcntType, create = create)
+		super().__init__(ResourceTypes.SMD, dct, pi, tpe = fcntType, create = create)
 		self._addToInternalAttributes(self._decodedDsp)
 		self.setAttribute(self._decodedDsp, None, overwrite = False)	
 

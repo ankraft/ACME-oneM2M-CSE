@@ -12,12 +12,12 @@
 from __future__ import annotations
 from copy import deepcopy
 
-from ..etc.Utils import toSPRelative, csiFromSPRelative, findXPath, setXPath
+from ..etc.Utils import toSPRelative, findXPath, setXPath
 from ..helpers.ResourceSemaphore import resourceState, getResourceState
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON, TimeWindowType
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType
 from ..resources.Resource import *
 from ..resources import Factory as Factory
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
 
 
@@ -29,7 +29,7 @@ class CRS(Resource):
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -65,7 +65,7 @@ class CRS(Resource):
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.CRS, dct, pi, create = create)
+		super().__init__(ResourceTypes.CRS, dct, pi, create = create)
 
 
 		# add internal attribute to store the references to the created <sub> resources
@@ -204,14 +204,14 @@ class CRS(Resource):
 		# Verification request
 		if (_vrq := findXPath(request.pc, 'm2m:sgn/vrq')) is not None and _vrq == True:
 			L.isDebug and L.logDebug('Received subscription verification request to CRS resource')
-			return Result(status = True, rsc = RC.OK)
+			return Result(status = True, rsc = ResponseStatusCode.OK)
 		
 		# Deletion request
 		if (_sud := findXPath(request.pc, 'm2m:sgn/sud')) is not None and _sud == True:
 			_sur = findXPath(request.pc, 'm2m:sgn/sur')
 			if getResourceState(self.ri) in ['deactivate']:
 				L.isDebug and L.logDebug(f'Received subscription deletion notification from subscription: {_sur}. Already in delete. Ignored.')
-				return Result(status = True, rsc = RC.OK)
+				return Result(status = True, rsc = ResponseStatusCode.OK)
 			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
 			# Store the 'sur' to ignore that subscription resource during deletion
 			self.setAttribute(self._sudRI, _sur)
@@ -219,7 +219,7 @@ class CRS(Resource):
 
 			# Delete self. Use the resource's creator for the creator
 			CSE.dispatcher.deleteLocalResource(self, originator = self.getOriginator(), withDeregistration = True)
-			return Result(status = True, rsc = RC.OK)
+			return Result(status = True, rsc = ResponseStatusCode.OK)
 		
 		# Log any other notification
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
@@ -232,7 +232,7 @@ class CRS(Resource):
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
 
-		return Result(status = True, rsc = RC.OK)
+		return Result(status = True, rsc = ResponseStatusCode.OK)
 
 
 	#########################################################################
@@ -272,12 +272,12 @@ class CRS(Resource):
 
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
-		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, ty = T.SUB, originator = originator)).status:
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat}: {res.dbg}'))
+		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, ty = ResourceTypes.SUB, originator = originator)).status:
+			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat}: {res.dbg}'))
 		
 		# Error? Then rollback: delete all created subscriptions so far and return with an error
-		if not res.status or res.rsc != RC.created:
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for: {rrat}: {res.dbg}'))
+		if not res.status or res.rsc != ResponseStatusCode.created:
+			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for: {rrat}: {res.dbg}'))
 		subRi, subCsi, pID = res.data # type: ignore [misc] # unpack
 
 		# Add the created <sub>'s full RI to the correct position in the rrats list
@@ -302,14 +302,14 @@ class CRS(Resource):
 		# Get subscription
 		L.logDebug(f'Retrieving srat <sub>: {srat}')
 		res = CSE.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator = originator)	# local or remote
-		if not res.status or res.rsc != RC.OK:
+		if not res.status or res.rsc != ResponseStatusCode.OK:
 			self._deleteSubscriptions(originator)
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
+			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
 		
 		resource = res.resource
 		
 		# Check whether the target is a subscription
-		if resource.ty != T.SUB:
+		if resource.ty != ResourceTypes.SUB:
 			self._deleteSubscriptions(originator)
 			return Result.errorResult(dbg = L.logWarn(f'Resource is not a subscription for {srat} uri: {_sratSpRelative}'))
 
@@ -332,9 +332,9 @@ class CRS(Resource):
 		# # Send UPDATE request
 		L.logDebug(f'Updating srat <sub>: {srat}')
 		res = CSE.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator = originator, resource =resource)
-		if not res.status or res.rsc != RC.updated:
+		if not res.status or res.rsc != ResponseStatusCode.updated:
 			self._deleteSubscriptions(originator)
-			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
+			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
 
 		# Add <sub>'s SP-relative ri to internal references
 		_subRIs = self.attribute(self._subSratRIs)
@@ -398,8 +398,8 @@ class CRS(Resource):
 		_subRIs = self.attribute(self._subSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
 			res = CSE.dispatcher.retrieveResource(subRI, originator = originator)
-			if not res.status or res.rsc != RC.OK:
-				return Result.errorResult(rsc = RC.badRequest, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
+			if not res.status or res.rsc != ResponseStatusCode.OK:
+				return Result.errorResult(rsc = ResponseStatusCode.badRequest, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
 			resource = res.resource
 
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
@@ -420,7 +420,7 @@ class CRS(Resource):
 
 			# Send UPDATE request
 			res = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
-			if not res.status or res.rsc != RC.updated:
+			if not res.status or res.rsc != ResponseStatusCode.updated:
 				return Result.errorResult(dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}'))
 
 			del _subRIs[srat]

@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import List
 from ..helpers.TextTools import simpleMatch
 from ..etc import Utils as Utils
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, Permission, JSON
-from ..services import CSE as CSE
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
+from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -20,7 +20,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
 
-	_allowedChildResourceTypes:list[T] = [ T.SUB ] # TODO Transaction to be added
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer.
@@ -52,7 +52,7 @@ class ACP(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(T.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
+		super().__init__(ResourceTypes.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
@@ -66,7 +66,7 @@ class ACP(AnnounceableResource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
-		if dct and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')):
+		if dct and (pvs := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
 				return Result.errorResult(dbg = 'pvs must not be empty')
 		if not self.pvs:
@@ -83,9 +83,9 @@ class ACP(AnnounceableResource):
 							return Result.errorResult(dbg = 'chty is mandatory in acod')
 			return Result.successResult()
 
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pv/acr'))).status:
+		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))).status:
 			return res
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr'))).status:
+		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))).status:
 			return res
 
 		return Result.successResult()
@@ -107,7 +107,7 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
-		if acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr'):
+		if acr := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
 			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
@@ -154,7 +154,7 @@ class ACP(AnnounceableResource):
 			p.append({'acop' : permission, 'acor': list(set(originators))}) 	# list(set()) : Remove duplicates from list of originators
 
 
-	def checkPermission(self, originator:str, requestedPermission:Permission, ty:T) -> bool:
+	def checkPermission(self, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
 		"""	Check whether an *originator* has the requested permissions.
 
 			Args:

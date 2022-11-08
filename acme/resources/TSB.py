@@ -14,6 +14,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
 
 
 # DISCUSS Only one TSB with loss_of_sync, but only one is relevant for a requester. Only one is allowed? Check in update/create

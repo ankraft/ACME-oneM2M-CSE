@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -20,7 +20,7 @@ from ..resources import Factory as Factory
 class ACTR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ T.SUB ] # TODO Dependecy
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Dependecy
 	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -58,7 +58,7 @@ class ACTR(AnnounceableResource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(T.ACTR, dct, pi, create = create)
+		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
 
 
 

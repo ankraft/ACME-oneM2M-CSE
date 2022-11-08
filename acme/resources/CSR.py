@@ -7,7 +7,7 @@
 #	ResourceType: RemoteCSE
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -15,9 +15,29 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class CSR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.AEAnnc, T.CINAnnc, T.CNT, T.CNTAnnc, 
-									T.CRS, T.CSRAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc, 
-									T.MGMTOBJAnnc, T.NODAnnc, T.PCH, T.SMDAnnc, T.SUB, T.TS, T.TSAnnc, T.TSB ]
+	_allowedChildResourceTypes = [	ResourceTypes.ACP, 
+									ResourceTypes.ACPAnnc, 
+									ResourceTypes.ACTR, 
+									ResourceTypes.ACTRAnnc, 
+									ResourceTypes.AEAnnc, 
+									ResourceTypes.CINAnnc,
+									ResourceTypes.CNT,
+									ResourceTypes.CNTAnnc, 
+									ResourceTypes.CRS,
+									ResourceTypes.CSRAnnc,
+									ResourceTypes.FCNT,
+									ResourceTypes.FCNTAnnc,
+									ResourceTypes.FCI,
+									ResourceTypes.GRP, 
+									ResourceTypes.GRPAnnc, 
+									ResourceTypes.MGMTOBJAnnc,
+									ResourceTypes.NODAnnc,
+									ResourceTypes.PCH,
+									ResourceTypes.SMDAnnc,
+									ResourceTypes.SUB,
+									ResourceTypes.TS,
+									ResourceTypes.TSAnnc,
+									ResourceTypes.TSB ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -65,7 +85,7 @@ class CSR(AnnounceableResource):
 	
 
 	def __init__(self, dct:JSON=None, pi:str = None, rn:str = None, create:bool = False) -> None:
-		super().__init__(T.CSR, dct, pi, rn = rn, create=create)
+		super().__init__(ResourceTypes.CSR, dct, pi, rn = rn, create=create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
@@ -79,16 +99,14 @@ class CSR(AnnounceableResource):
 			return res
 
 		# Perform checks for <PCH>	
-		if childResource.ty == T.PCH:
+		if childResource.ty == ResourceTypes.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.csi != originator:
-				L.logDebug(dbg := f'Originator must be the parent <CSR>')
-				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator must be the parent <CSR>'))
 
 			# check that there will only by one PCH as a child
-			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
-				L.logDebug(dbg := 'Only one <PCH> per <CSR> is allowed')
-				return Result.errorResult(dbg = dbg)
+			if CSE.dispatcher.countDirectChildResources(self.ri, ty=ResourceTypes.PCH) > 0:
+				return Result.errorResult(dbg = L.logDebug('Only one <PCH> per <CSR> is allowed'))
 
 		return Result.successResult()
 

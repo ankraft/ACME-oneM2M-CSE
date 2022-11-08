@@ -14,12 +14,13 @@ from ..etc.Utils import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
 from ..etc.Types import NotificationEventType, ResponseStatusCode, JSON
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
 
 
 # TODO notificationForwardingURI
+# TODO work on more NEC attributes
 
 
 class SUB(Resource):
@@ -222,7 +223,7 @@ class SUB(Resource):
 		# Validate missingData
 		if net and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			# missing data must be created only under a <TS> resource
-			if parentResource is not None and parentResource.ty != T.TS:
+			if parentResource is not None and parentResource.ty != ResourceTypes.TS:
 				return Result.errorResult(dbg = L.logDebug(f'parent resource must be a TimeSeries resource when "enc/md" is provided'))
 
 			if (md := self['enc/md']) is not None:
@@ -263,7 +264,7 @@ class SUB(Resource):
 		return Result.successResult()
 
 
-	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
+	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[ResourceTypes]) -> Result:
 		""" Check whether an observed child resource types are actually allowed by the parent. 
 		
 			Args:
@@ -275,7 +276,7 @@ class SUB(Resource):
 		"""
 		for ty in chty:
 			if ty not in parentResource._allowedChildResourceTypes:		
-				return Result.errorResult(dbg = L.logDebug(f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}'))
+				return Result.errorResult(dbg = L.logDebug(f'ChildResourceType {ResourceTypes(ty).name} is not an allowed child resource of {ResourceTypes(parentResource.ty).name}'))
 		return Result.successResult()
 
 

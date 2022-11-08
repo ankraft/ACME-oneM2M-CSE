@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 from ..helpers.TextTools import simpleMatch
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Permission, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
@@ -16,7 +16,7 @@ from ..resources.Resource import *
 class ACPAnnc(AnnouncedResource):
 	""" AccessControlPolicy announced (ACPA) resource type """
 
-	_allowedChildResourceTypes:list[T] = [ T.SUB ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
@@ -46,7 +46,7 @@ class ACPAnnc(AnnouncedResource):
 
 
 	def __init__(self, dct:JSON, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(T.ACPAnnc, dct, pi = pi, create = create)
+		super().__init__(ResourceTypes.ACPAnnc, dct, pi = pi, create = create)
 
 
 	#########################################################################

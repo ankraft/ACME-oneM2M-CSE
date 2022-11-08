@@ -8,10 +8,10 @@
 #
 
 from __future__ import annotations
-from typing import List
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, JSONLIST
+from typing import Optional
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, JSONLIST
 from ..etc import Utils, DateUtils
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import *
@@ -21,7 +21,13 @@ from ..resources import Factory
 
 class CNT(AnnounceableResource):
 
-	_allowedChildResourceTypes =  [ T.ACTR, T.CNT, T.CIN, T.FCNT, T.SMD, T.SUB, T.TS ]
+	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
+									ResourceTypes.CNT, 
+									ResourceTypes.CIN,
+									ResourceTypes.FCNT,
+									ResourceTypes.SMD,
+									ResourceTypes.SUB,
+									ResourceTypes.TS ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -60,8 +66,10 @@ class CNT(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.CNT, dct, pi, create=create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
 
 		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite = False)
@@ -81,19 +89,19 @@ class CNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_LA).resource		# rn is assigned by resource itself
+		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(latestResource)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_OL).resource		# rn is assigned by resource itself
+		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(oldestResource)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
@@ -106,7 +114,7 @@ class CNT(AnnounceableResource):
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
 		#if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
 		if disrOrg and disrNew == False:
-			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
+			CSE.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
 
 		# Update stateTag when modified
 		self.setAttribute('st', self.st + 1)
@@ -119,13 +127,14 @@ class CNT(AnnounceableResource):
 			return res
 		
 		# Check whether the child's rn is "ol" or "la".
+		# TODO check necessary?
 		if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
-		if childResource.ty == T.CIN and self.mbs is not None:
+		if childResource.ty == ResourceTypes.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
+				return Result.errorResult(rsc = ResponseStatusCode.notAcceptable, dbg = 'child content sizes would exceed mbs')
 		return Result.successResult()
 
 
@@ -133,7 +142,7 @@ class CNT(AnnounceableResource):
 	def childAdded(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
-		if childResource.ty == T.CIN:	# Validate if child is CIN
+		if childResource.ty == ResourceTypes.CIN:	# Validate if child is CIN
 
 			# Check for mia handling. This sets the et attribute in the CIN
 			if self.mia is not None:
@@ -154,13 +163,16 @@ class CNT(AnnounceableResource):
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
-		if childResource.ty == T.CIN:	# Validate if child was CIN
+		if childResource.ty == ResourceTypes.CIN:	# Validate if child was CIN
 			self._validateChildren()
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._validateChildren()
@@ -180,7 +192,7 @@ class CNT(AnnounceableResource):
 		self.__validating = True
 
 		# Only get the CINs in raw format. Instantiate them as resources if needed
-		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, T.CIN, raw = True), key = lambda x: x['ct']))
+		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
 			
 		# Check number of instances

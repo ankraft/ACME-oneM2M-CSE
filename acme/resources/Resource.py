@@ -13,11 +13,10 @@ from __future__ import annotations
 from typing import Any, Tuple, cast, Optional
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseStatusCode as RC, CSERequest, JSON
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, ResponseStatusCode, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..etc import DateUtils as DateUtils
 from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from .Resource import *
 
@@ -53,7 +52,7 @@ class Resource(object):
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
-				 ty:T, 
+				 ty:ResourceTypes, 
 				 dct:JSON, 
 				 pi:str = None, 
 				 tpe:str = None,
@@ -88,7 +87,7 @@ class Resource(object):
 		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
 		# For some types the tpe/root is empty and will be set later in this method
-		if ty not in [ T.FCNT, T.FCI ]: 	
+		if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
 			self.tpe = ty.tpe() if not tpe else tpe
 
 		if dct is not None: 
@@ -130,7 +129,7 @@ class Resource(object):
 			self.setAttribute('lt', ts, overwrite = False)
 
 		# Handle resource type
-		if ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
+		if ty not in [ ResourceTypes.CSEBase ] and not self.hasAttribute('et'):
 			self.setAttribute('et', DateUtils.getResourceDate(CSE.request.maxExpirationDelta), overwrite = False) 
 		if ty is not None:
 			self.setAttribute('ty', int(ty))
@@ -200,7 +199,7 @@ class Resource(object):
 		if self.acpi is not None and not self.isAnnounced():
 			# Test wether an empty array is provided				
 			if len(self.acpi) == 0:
-				return Result(status = False, rsc = RC.badRequest, dbg = 'acpi must not be an empty list')
+				return Result.errorResult(dbg = 'acpi must not be an empty list')
 			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
 				return res
 			self.setAttribute('acpi', res.data)
@@ -252,15 +251,15 @@ class Resource(object):
 
 		updatedAttributes = None
 		if dct:
-			if self.tpe not in dct and self.ty not in [T.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+			if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
-				return Result.errorResult(rsc = RC.contentsUnacceptable, dbg = 'resource types mismatch')
+				return Result.errorResult(rsc = ResponseStatusCode.contentsUnacceptable, dbg = 'resource types mismatch')
 
 			# validate the attributes
 			if doValidateAttributes and not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 				return res
 
-			if self.ty not in [T.FCNTAnnc]:
+			if self.ty not in [ResourceTypes.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
 			else:
 				updatedAttributes = Utils.findXPath(dct, '{*}')
@@ -320,8 +319,7 @@ class Resource(object):
 
 		# Notify parent that a child has been updated
 		if not (parent := cast(Resource, self.retrieveParentResource())):
-			L.logErr(dbg := f'cannot retrieve parent resource')
-			return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
+			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
 		parent.childUpdated(self, updatedAttributes, originator)
 
 		return Result.successResult()
@@ -459,14 +457,13 @@ class Resource(object):
 		"""
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if not ( Utils.isValidID(self.ri) and
-				 Utils.isValidID(self.pi, allowEmpty = self.ty == T.CSEBase) and # pi is empty for CSEBase
+				 Utils.isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
 				 Utils.isValidID(self.rn)):
-			L.logDebug(dbg := f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})')
-			return Result.errorResult(rsc = RC.contentsUnacceptable, dbg = dbg)
+			return Result.errorResult(rsc = ResponseStatusCode.contentsUnacceptable, dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
 		# expirationTime handling
 		if et := self.et:
-			if self.ty == T.CSEBase:
+			if self.ty == ResourceTypes.CSEBase:
 				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
 			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
 				return Result.errorResult(dbg = L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
@@ -517,7 +514,7 @@ class Resource(object):
 			Returns:
 				True if the resource is an announced resource type.
 		"""
-		return T(self.ty).isAnnounced()
+		return ResourceTypes(self.ty).isAnnounced()
 
 	
 	def isVirtual(self) -> bool:
@@ -526,7 +523,7 @@ class Resource(object):
 			Return:
 				True when the resource is a virtual resource.
 		"""
-		return T(self.ty).isVirtual()
+		return ResourceTypes(self.ty).isVirtual()
 
 
 	#########################################################################
