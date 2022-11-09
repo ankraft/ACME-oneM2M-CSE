@@ -10,8 +10,9 @@
 """	<crossResourceSubscription> submodule. """
 
 from __future__ import annotations
-from copy import deepcopy
+from typing import Optional
 
+from copy import deepcopy
 from ..etc.Utils import toSPRelative, findXPath, setXPath
 from ..helpers.ResourceSemaphore import resourceState, getResourceState
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType
@@ -64,7 +65,9 @@ class CRS(Resource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.CRS, dct, pi, create = create)
 
 
@@ -111,7 +114,9 @@ class CRS(Resource):
 		return Result.successResult()
 	
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		L.isDebug and L.logDebug(f'Updating crossResourceSubscription: {self.ri}')
 		
 		# We are validating the attributes already here because the actual update of the resource
@@ -171,7 +176,10 @@ class CRS(Resource):
 		return super().deactivate(originator)
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		L.isDebug and L.logDebug(f'Validating crossResourceSubscription: {self.ri}')

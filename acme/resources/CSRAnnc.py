@@ -7,8 +7,10 @@
 #	CSR : Announceable variant
 #
 
+from __future__ import annotations
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
@@ -16,8 +18,26 @@ from ..resources.Resource import *
 class CSRAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.ACTR, T.ACTRAnnc,  T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.ACP, T.ACPAnnc,
-									T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc, T.TSB, T.TSBAnnc ]
+	_allowedChildResourceTypes = [	ResourceTypes.ACTR, 
+									ResourceTypes.ACTRAnnc,  
+									ResourceTypes.CNT, 
+									ResourceTypes.CNTAnnc, 
+									ResourceTypes.CINAnnc, 
+									ResourceTypes.FCNT, 
+									ResourceTypes.FCNTAnnc, 
+									ResourceTypes.GRP, 
+									ResourceTypes.GRPAnnc, 
+									ResourceTypes.ACP, 
+									ResourceTypes.ACPAnnc,
+									ResourceTypes.SUB, 
+									ResourceTypes.TS, 
+									ResourceTypes.TSAnnc, 
+									ResourceTypes.CSRAnnc, 
+									ResourceTypes.MGMTOBJAnnc, 
+									ResourceTypes.NODAnnc, 
+									ResourceTypes.AEAnnc, 
+									ResourceTypes.TSB, 
+									ResourceTypes.TSBAnnc ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -56,7 +76,9 @@ class CSRAnnc(AnnouncedResource):
 	}
 		
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.CSRAnnc, dct, pi = pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.CSRAnnc, dct, pi = pi, create = create)
 
 

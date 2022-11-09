@@ -11,9 +11,8 @@ from __future__ import annotations
 import operator
 import sys
 from copy import deepcopy
-from typing import Any, List, Tuple, cast, Sequence
+from typing import List, Tuple, cast, Sequence
 
-from requests import request
 
 from ..helpers import TextTools as TextTools
 from ..etc.Types import FilterCriteria, FilterUsage as FU, Operation as OP, ResourceTypes

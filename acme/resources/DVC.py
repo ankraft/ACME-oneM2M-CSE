@@ -7,7 +7,10 @@
 #	ResourceType: mgmtObj:DeviceCapability
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc import Utils as Utils
 from ..resources.MgmtObj import *
 
@@ -51,8 +54,10 @@ class DVC(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.DVC, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.DVC, create = create)
 
 		self.setAttribute('can', 'unknown', overwrite = False)
 		self.setAttribute('att', False, overwrite = False)
@@ -66,7 +71,10 @@ class DVC(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		self.setAttribute('ena', True, overwrite = True)	# always set (back) to True
@@ -74,12 +82,14 @@ class DVC(MgmtObj):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		# Check for ena & dis updates 
 		ena = Utils.findXPath(dct, '{*}/ena')
 		dis = Utils.findXPath(dct, '{*}/dis')
 		if ena and dis:
-			return Result(status = False, rsc = RC.badRequest, dbg = 'Both ena and dis updated to True is not allowed')
+			return Result(status = False, rsc = ResponseStatusCode.badRequest, dbg = 'Both ena and dis updated to True is not allowed')
 
 		return super().update(dct, originator)
 

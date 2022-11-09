@@ -7,16 +7,26 @@
 #	CNT : Announceable variant
 #
 
+from __future__ import annotations
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class CSEBaseAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.ACPAnnc, T.ACTRAnnc, T.AEAnnc, T.CNTAnnc, T.FCNTAnnc, T.GRPAnnc,
-									T.NODAnnc, T.SUB, T.TSAnnc, T.TSBAnnc ]
+	_allowedChildResourceTypes = [	ResourceTypes.ACPAnnc, 
+									ResourceTypes.ACTRAnnc, 
+									ResourceTypes.AEAnnc, 
+									ResourceTypes.CNTAnnc, 
+									ResourceTypes.FCNTAnnc, 
+									ResourceTypes.GRPAnnc,
+									ResourceTypes.NODAnnc, 
+									ResourceTypes.SUB, 
+									ResourceTypes.TSAnnc, 
+									ResourceTypes.TSBAnnc ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -44,6 +54,8 @@ class CSEBaseAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.CSEBaseAnnc, dct, pi = pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.CSEBaseAnnc, dct, pi = pi, create = create)
 

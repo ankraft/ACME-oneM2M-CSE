@@ -8,7 +8,9 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, Result, JSON
 from ..etc import Utils
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -20,7 +22,20 @@ from ..services.Logging import Logging as L
 class CSEBase(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.AE, T.CRS, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS, T.TSB, T.CSEBaseAnnc ]
+	_allowedChildResourceTypes = [ ResourceTypes.ACP,
+								   ResourceTypes.ACTR, 
+								   ResourceTypes.AE, 
+								   ResourceTypes.CRS, 
+								   ResourceTypes.CSR, 
+								   ResourceTypes.CNT, 
+								   ResourceTypes.FCNT, 
+								   ResourceTypes.GRP, 
+								   ResourceTypes.NOD, 
+								   ResourceTypes.REQ, 
+								   ResourceTypes.SUB, 
+								   ResourceTypes.TS, 
+								   ResourceTypes.TSB, 
+								   ResourceTypes.CSEBaseAnnc ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -49,16 +64,16 @@ class CSEBase(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON, create:bool = False) -> None:
-		super().__init__(T.CSEBase, dct, '', create = create)
+	def __init__(self, dct:JSON, create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.CSEBase, dct, '', create = create)
 
 		self.setAttribute('ri', 'cseid', overwrite = False)
 		self.setAttribute('rn', 'cse', overwrite = False)
 		self.setAttribute('csi', '/cse', overwrite = False)
 
 		self.setAttribute('rr', False, overwrite = False)
-		self.setAttribute('srt', T.supportedResourceTypes(), overwrite = False)			#  type: ignore
-		self.setAttribute('csz', CST.supportedContentSerializations(), overwrite = False)	# Will be replaced when retrieved
+		self.setAttribute('srt', ResourceTypes.supportedResourceTypes(), overwrite = False)			#  type: ignore
+		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations(), overwrite = False)	# Will be replaced when retrieved
 		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite = False)			# This must be a list
 		self.setAttribute('poa', CSE.csePOA, overwrite = False)	
 		self.setAttribute('cst', CSE.cseType, overwrite = False)
@@ -78,7 +93,10 @@ class CSEBase(AnnounceableResource):
 		return Result.successResult()
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
@@ -103,7 +121,9 @@ class CSEBase(AnnounceableResource):
 		return Result.successResult()
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, 
+							  request:Optional[CSERequest] = None, 
+							  subCheck:Optional[bool] = True) -> Result:
 		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
 			return res
 

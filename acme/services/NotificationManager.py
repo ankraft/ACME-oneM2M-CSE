@@ -218,6 +218,12 @@ class NotificationManager(object):
 
 
 
+		# TODO: Add access control check here. Perhaps then the special subscription
+		#		DB data structure should go away and be replaced by the normal subscriptions
+
+
+
+
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			ri = sub['ri']

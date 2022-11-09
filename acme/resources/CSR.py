@@ -7,6 +7,9 @@
 #	ResourceType: RemoteCSE
 #
 
+from __future__ import annotations
+from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -84,7 +87,10 @@ class CSR(AnnounceableResource):
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
 
-	def __init__(self, dct:JSON=None, pi:str = None, rn:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   rn:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.CSR, dct, pi, rn = rn, create=create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
@@ -111,7 +117,10 @@ class CSR(AnnounceableResource):
 		return Result.successResult()
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._normalizeURIAttribute('poa')
