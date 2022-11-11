@@ -7,108 +7,12 @@
 ;                                                                            ;
 ; PLEASE DON'T MAKE CHANGES TO THIS FILE.                                    ;
 ;                                                                            ;
-; COPY IT TO A NEW FILE NAMED "acme.ini", WHICH IS THE DEFAULT NAME FOR THE  ;
-; CSE'S CONFIGURATION FILE.                                                  ;
+; THE CSE STARTS A DIALOG WHEN RUN FOR THE FIRST TIME OR WITH A NON-EXISTING ;
+; CONFIGURATION FILE.                                                        ;
+; OTHERWISE COPY THIS FILE TO A NEW FILE NAMED "acme.ini", WHICH IS THE      ;
+; DEFAULT CONFIGURATION FILE.  
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;
-;	Basic Configuration
-;
-;
-;	This part sets the necessary parameters for running the CSE.
-;
-;	Uncomment one of the following sections for either a basic IN (infra-structure node), MN (middle node), or 
-;	ASN (application service node) configuration, and make the necessary changes to the following configuration settings:
-;
-;		cseType          : The CSE type. Allowed values are: IN, MN, ASN .
-;		cseID            : The CSE-ID. This is just the ID, without a leading "/" character.
-;		cseName          : The name of the CSE. This is also the CSEBase's resource name.
-;		adminID          : The name of the admin originator for the CSE.
-;		dataDirectory    : The root directory for the data, init, log and cert directories. The built-in macro "${baseDirectory}" 
-;		                   provides the path to the installation directory of the acme module itself.
-;		networkInterface : The network interface to listen to. Use 0.0.0.0 for all interfaces.
-;       cseHost          : The IP address or hostname under which the CSE is reachable.
-;		httpPort         : The port for the CSE's HTTP server to listen for incoming requests.
-;		logLevel         : The level for log messages. Allowed values are: debug, info, warning, error, off .
-;		databaseInMemory : Specify whether the CSE's database is stored in memory. Be aware that setting this configuration 
-;		                   to "true" means that the database content is removed when the CSE terminates.
-;
-;	The following additional configuration settings are only needed for MN-CSE and ASN-CSE installations, and when the CSE should
-;	register to another CSE. They provide the necessary information about the registrar CSE (ie. the remote CSE that 
-;	the CSE will register to).
-;
-; 		registrarCseHost : The IP address of the registrar CSE
-;		registrarCsePort : The TCP port of the registrar CSE
-;		registrarCseID   : The CSE-ID of the registrar CSE
-;		registrarCseName : The resource name of the registrar CSE's CSEBase
-;
-
-
-;
-; IN Configuration
-;
-
-; [basic.config]
-; cseType=IN
-; cseID=id-in
-; cseName=cse-in
-; adminID=CAdmin
-; dataDirectory=${baseDirectory}
-; networkInterface=0.0.0.0
-; cseHost=127.0.0.1
-; httpPort=8080
-; logLevel=debug
-; databaseInMemory=False
-
-;
-; MN Configuration
-;
-
-; [basic.config]
-; cseType=MN
-; cseID=id-mn
-; cseName=cse-mn
-; adminID=CAdmin
-; dataDirectory=${baseDirectory}
-; networkInterface=0.0.0.0
-; cseHost=127.0.0.1
-; httpPort=8081
-; logLevel=debug
-; databaseInMemory=False
-
-; registrarCseHost=127.0.0.1
-; registrarCsePort=8080
-; registrarCseID=id-in
-; registrarCseName=cse-in
-
-
-;
-; ASN Configuration
-;
-
-; [basic.config]
-; cseType=ASN
-; cseID=id-asn
-; cseName=cse-asn
-; adminID=CAdmin
-; dataDirectory=${baseDirectory}
-; networkInterface=0.0.0.0
-; cseHost=127.0.0.1
-; httpPort=8082
-; logLevel=debug
-; databaseInMemory=False
-
-; registrarCseHost=127.0.0.1
-; registrarCsePort=8081
-; registrarCseID=id-mn
-; registrarCseName=cse-mn
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;	Advanced Configuration
-;
 
 ;
 ;	General CSE settings
