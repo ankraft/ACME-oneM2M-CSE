@@ -7,7 +7,10 @@
 #	NYCFC : Announceable variant
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObjAnnc import *
 
 
@@ -45,6 +48,8 @@ class NYCFCAnnc(MgmtObjAnnc):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.NYCFC, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.NYCFC, create = create)
 

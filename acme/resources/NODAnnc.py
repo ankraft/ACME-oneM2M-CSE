@@ -7,8 +7,10 @@
 #	GRP : Announceable variant
 #
 
+from __future__ import annotations
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
@@ -16,7 +18,10 @@ from ..resources.Resource import *
 class NODAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.MGMTOBJAnnc, T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
+								   ResourceTypes.ACTRAnnc, 
+								   ResourceTypes.MGMTOBJAnnc, 
+								   ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -48,6 +53,8 @@ class NODAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.NODAnnc, dct, pi = pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.NODAnnc, dct, pi = pi, create = create)
 

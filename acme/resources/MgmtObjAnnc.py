@@ -7,8 +7,10 @@
 #	MgmtObj : Announceable variant
 #
 
-from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
@@ -16,10 +18,10 @@ from ..resources.Resource import *
 class MgmtObjAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 
-	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool = False) -> None:
-		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe = mgd.announced().tpe(), create = create)
+	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.MGMTOBJAnnc, dct, pi, tpe = mgd.announced().tpe(), create = create)
 		self.setAttribute('mgd', int(mgd), overwrite = True)
 

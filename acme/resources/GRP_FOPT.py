@@ -8,7 +8,9 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, Operation, CSERequest, JSON
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Operation, CSERequest, JSON
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
 from ..resources.VirtualResource import VirtualResource
@@ -22,7 +24,7 @@ from ..resources.VirtualResource import VirtualResource
 class GRP_FOPT(VirtualResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -30,11 +32,15 @@ class GRP_FOPT(VirtualResource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
 
 
-	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
+	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
+									id:Optional[str] = None, 
+									originator:Optional[str] = None) -> Result:
 		L.isDebug and L.logDebug(f'RETRIEVE resources from fopt. ID: {id}')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 

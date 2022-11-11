@@ -280,8 +280,6 @@ class NotificationManager(object):
 
 		L.isDebug and L.logDebug('Looking for blocking UPDATE')
 
-		# Later: BlockingUpdateDirectChild
-
 		# TODO 2) Prevent or block all other UPDATE request primitives to this target resource.
 
 		# Get blockingUpdate <sub> for this resource , if any, and iterate over them.

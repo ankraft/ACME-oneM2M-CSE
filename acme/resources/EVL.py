@@ -7,7 +7,10 @@
 #	ResourceType: mgmtObj:EventLog
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import *
 
 lgtSystem = 1
@@ -64,8 +67,10 @@ class EVL(MgmtObj):
 	}
 	
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.EVL, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.EVL, create = create)
 
 		self.setAttribute('lgt', defaultLogTypeId, overwrite = False)
 		self.setAttribute('lgd', '', overwrite = False)
@@ -74,7 +79,9 @@ class EVL(MgmtObj):
 		self.setAttribute('lgo', True)
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		# Check for rbo & far updates 
 		if Utils.findXPath(dct, '{*}/lga') and Utils.findXPath(dct, '{*}/lgo'):
 			return Result.errorResult(dbg = 'update both lga and lgo to True at the same time is not allowed')

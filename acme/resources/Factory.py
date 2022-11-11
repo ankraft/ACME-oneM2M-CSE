@@ -10,9 +10,11 @@
 """	This Module provides a resource factory. 
 """
 
+from __future__ import annotations
 from typing import Optional
+
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
-from ..etc.Types import ResponseStatusCode as RC
+from ..etc.Types import ResponseStatusCode
 from ..etc.Types import Result, JSON
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
@@ -163,7 +165,12 @@ addResourceFactoryCallback(ResourceTypes.WIFIC,			WIFIC,			lambda dct, tpe, pi, 
 addResourceFactoryCallback(ResourceTypes.WIFICAnnc,		WIFICAnnc,		lambda dct, tpe, pi, create : WIFICAnnc(dct, pi = pi, create = create)) 
 
 
-_specResources = [ ResourceTypes.FCNT, ResourceTypes.FCNTAnnc, ResourceTypes.FCI, ResourceTypes.MGMTOBJ, ResourceTypes.MGMTOBJAnnc ]
+_specResources = [ ResourceTypes.FCNT, 
+				   ResourceTypes.FCNTAnnc, 
+				   ResourceTypes.FCI, 
+				   ResourceTypes.MGMTOBJ, 
+				   ResourceTypes.MGMTOBJAnnc ]
+"""	Resources with type specifiers."""
 
 
 def resourceFromDict(resDict:Optional[JSON] = {}, 
@@ -223,8 +230,8 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	else:
 		factory = typ.resourceFactory()
 	if factory:
-		return Result(status = True, rsc = RC.OK, resource = factory(resDict, tpe, pi, create))
+		return Result(status = True, rsc = ResponseStatusCode.OK, resource = factory(resDict, tpe, pi, create))
 
-	return Result(status = True, rsc = RC.OK, resource = Unknown(resDict, tpe, pi = pi, create = create))	# Capture-All resource
+	return Result(status = True, rsc = ResponseStatusCode.OK, resource = Unknown(resDict, tpe, pi = pi, create = create))	# Capture-All resource
 
 

@@ -7,10 +7,12 @@
 #	ResourceType: mgmtObj:Node
 #
 
-from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc import Utils as Utils
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -22,7 +24,10 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class NOD(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.MGMTOBJ, T.SMD, T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
+								   ResourceTypes.MGMTOBJ, 
+								   ResourceTypes.SMD, 
+								   ResourceTypes.SUB ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -56,8 +61,10 @@ class NOD(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.NOD, dct, pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.NOD, dct, pi, create = create)
 		self.setAttribute('ni', Utils.uniqueID(), overwrite = False)
 
 

@@ -12,7 +12,8 @@
 
 from __future__ import annotations
 from typing import Optional
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, CSERequest
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
@@ -22,7 +23,7 @@ class FCNT_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <flexContainer> resources.
 	"""
 
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
 
 	_attributes:AttributePolicyDict = {		
@@ -36,7 +37,7 @@ class FCNT_LA(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(T.FCNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
+		super().__init__(ResourceTypes.FCNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
@@ -53,7 +54,7 @@ class FCNT_LA(VirtualResource):
 				The latest <flexContainerInstance> for the parent <flexContainer>, or an error `Result`.
 		"""
 		L.isDebug and L.logDebug('Retrieving latest FCI from FCNT')
-		return self.retrieveLatestOldest(request, originator, T.FCI, oldest = False)
+		return self.retrieveLatestOldest(request, originator, ResourceTypes.FCI, oldest = False)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -67,7 +68,7 @@ class FCNT_LA(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -81,7 +82,7 @@ class FCNT_LA(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -98,6 +99,6 @@ class FCNT_LA(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting latest FCI from FCNT')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI)):
-			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
+		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.FCI)):
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'no instance for <latest>')
 		return CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)

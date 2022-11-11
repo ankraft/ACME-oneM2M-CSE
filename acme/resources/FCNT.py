@@ -8,11 +8,12 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc import Utils, DateUtils
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
 from ..resources import Factory as Factory
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -21,7 +22,13 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class FCNT(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.CNT, T.FCNT, T.SMD, T.SUB, T.TS, T.FCI ]
+	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
+								   ResourceTypes.CNT, 
+								   ResourceTypes.FCNT, 
+								   ResourceTypes.SMD, 
+								   ResourceTypes.SUB, 
+								   ResourceTypes.TS, 
+								   ResourceTypes.FCI ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -61,8 +68,11 @@ class FCNT(AnnounceableResource):
 	_hasFCI	= '__hasFCI__'
 	"""	Internal attribute to indicate whether this FCNT has la/ol installed. """
 
-	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
-		super().__init__(T.FCNT, dct, pi, tpe = fcntType, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   fcntType:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.FCNT, dct, pi, tpe = fcntType, create = create)
 		self._addToInternalAttributes(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
 		self.setAttribute('cs', 0, overwrite = False)
@@ -90,7 +100,9 @@ class FCNT(AnnounceableResource):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		
 		# Increment stateTag before all because it is needed later to name
 		# a FCI, but only when any custom attributes is updated
@@ -128,19 +140,22 @@ class FCNT(AnnounceableResource):
 
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 		return Result.successResult()
 
 
 	# Handle the removal of a FCIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		super().childRemoved(childResource, originator)
-		if childResource.ty == T.FCI:	# Validate if child was FCIN
+		if childResource.ty == ResourceTypes.FCI:	# Validate if child was FCIN
 			self._validateChildren(originator, deletingFCI=True)
 
 
 	# Checking the presence of cnd and calculating the size
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
@@ -155,7 +170,9 @@ class FCNT(AnnounceableResource):
 		return Result.successResult()
 
 
-	def _validateChildren(self, originator:str, deletingFCI:bool = False, dct:JSON = None) -> None:
+	def _validateChildren(self, originator:str, 
+								deletingFCI:Optional[bool] = False, 
+								dct:Optional[JSON] = None) -> None:
 		""" Internal validation and checks. This called more often then just from
 			the validate() method, for example when deleting a FCIN.
 		"""
@@ -231,7 +248,7 @@ class FCNT(AnnounceableResource):
 	def flexContainerInstances(self) -> list[Resource]:
 		"""	Get all flexContainerInstances of a resource and return a sorted (by ct) list
 		""" 
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key = lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCI), key = lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	# Add a new FlexContainerInstance for this flexContainer
@@ -253,7 +270,7 @@ class FCNT(AnnounceableResource):
 			if attr == 'at':
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = T.FCI).resource
+		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = ResourceTypes.FCI).resource
 		CSE.dispatcher.createLocalResource(resource, originator = originator)
 		resource.setAttribute('cs', self.cs)
 		resource.setAttribute('org', originator)
@@ -277,14 +294,14 @@ class FCNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi=self.ri, ty = T.FCNT_LA).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.FCNT_LA).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
 			return res
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.FCNT_OL).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.FCNT_OL).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
@@ -300,10 +317,10 @@ class FCNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
 
 		# remove latest
-		if len(res := CSE.dispatcher.directChildResources(self.ri, T.FCNT_LA)) == 1: # type:ignore[no-any-return]
+		if len(res := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
 			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
 		# remove oldest
-		if len(res := CSE.dispatcher.directChildResources(self.ri, T.FCNT_OL)) == 1: # type:ignore[no-any-return]
+		if len(res := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
 			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
 	
 		self.setAttribute(self._hasFCI, False)
@@ -314,7 +331,7 @@ class FCNT(AnnounceableResource):
 		"""	Remove the FCI childResources.
 		"""
 		L.isDebug and L.logDebug(f'Removing FCI child resources for: {self.ri}')
-		rs = CSE.dispatcher.directChildResources(self.ri, ty = T.FCI)
+		rs = CSE.dispatcher.directChildResources(self.ri, ty = ResourceTypes.FCI)
 		for r in rs:
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
 			if not (res := CSE.dispatcher.deleteLocalResource(r, parentResource = self)).status:

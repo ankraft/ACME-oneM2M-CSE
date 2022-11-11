@@ -8,14 +8,16 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..resources.Resource import *
 
 
 class FCI(Resource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -35,11 +37,16 @@ class FCI(Resource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
-		super().__init__(T.FCI, dct, pi, tpe = fcntType, create = create, inheritACP = True, readOnly = True)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   fcntType:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.FCI, dct, pi, tpe = fcntType, create = create, inheritACP = True, readOnly = True)
 
 
 	# Forbidd updating
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating FCIN is forbidden')
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None,
+					 doValidateAttributes:Optional[bool] = True) -> Result:
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'updating FCIN is forbidden')
 

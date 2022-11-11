@@ -6,7 +6,10 @@
 #
 """ FlexContainerAnnounced resource class """
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
@@ -15,8 +18,18 @@ class FCNTAnnc(AnnouncedResource):
 	""" FlexContainerAnnounced resource class """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.ACTR, T.ACTRAnnc, T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, 
-									T.FCNT, T.FCNTAnnc, T.FCI, T.TS, T.TSAnnc, T.SUB ]
+	_allowedChildResourceTypes = [	ResourceTypes.ACTR, 
+									ResourceTypes.ACTRAnnc, 
+									ResourceTypes.CNT, 
+									ResourceTypes.CNTAnnc, 
+									ResourceTypes.CIN, 
+									ResourceTypes.CINAnnc, 
+									ResourceTypes.FCNT, 
+									ResourceTypes.FCNTAnnc, 
+									ResourceTypes.FCI, 
+									ResourceTypes.TS, 
+									ResourceTypes.TSAnnc, 
+									ResourceTypes.SUB ]
 	"""	List of allowed child resource types """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -48,6 +61,8 @@ class FCNTAnnc(AnnouncedResource):
 	"""	List of universal, common, and resource specific attributes """
 
 
-	def __init__(self, dct:JSON, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.FCNTAnnc, dct, pi = pi, create = create)
+	def __init__(self, dct:JSON, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.FCNTAnnc, dct, pi = pi, create = create)
 
