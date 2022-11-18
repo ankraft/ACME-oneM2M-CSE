@@ -8,14 +8,14 @@
 #
 
 from __future__ import annotations
+from typing import Callable, Any, Tuple, Optional
 
 import ssl, time
 from dataclasses import dataclass
-from typing import Callable, Any, Tuple, Optional
 import logging
 
-from .BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from .TextTools import simpleMatch
+from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from ..helpers.TextTools import simpleMatch
 
 import paho.mqtt.client as mqtt
 

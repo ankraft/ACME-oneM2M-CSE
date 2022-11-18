@@ -8,9 +8,10 @@
 #
 
 from __future__ import annotations
+from typing import Any, Callable, cast, Tuple, Optional
+
 import logging, sys, urllib3
 from copy import deepcopy
-from typing import Any, Callable, cast, Tuple
 
 import flask
 from flask import Flask, Request, request
@@ -21,17 +22,16 @@ from flask_cors import CORS
 import requests
 import isodate
 
-from ..etc.Constants import Constants as C
-from ..etc.Types import ReqResp, RequestType, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..etc.Types import Operation, CSERequest, ContentSerializationType as CST
-from ..etc import Utils as Utils, RequestUtils as RequestUtils
+from ..etc.Constants import Constants
+from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import Operation, CSERequest, ContentSerializationType
+from ..etc import Utils, RequestUtils, DateUtils
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
-from ..services.Logging import Logging as L, LogLevel
+from ..services import CSE
 from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
-from ..helpers.BackgroundWorker import *
-from ..etc import DateUtils
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..services.Logging import Logging as L, LogLevel
 
 
 #
@@ -63,7 +63,7 @@ class HttpServer(object):
 
 		self.backgroundActor:BackgroundWorker = None
 
-		self.serverID			= f'ACME {C.version}' 			# The server's ID for http response headers
+		self.serverID			= f'ACME {Constants.version}' 	# The server's ID for http response headers
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
 		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
@@ -91,7 +91,7 @@ class HttpServer(object):
 						   defaultOriginator = CSE.cseOriginator, 
 						   root = self.webuiRoot,
 						   webuiDirectory = self.webuiDirectory,
-						   version = C.version)
+						   version = Constants.version)
 
 		# Enable the config endpoint
 		if Configuration.get('http.enableStructureEndpoint'):
@@ -168,12 +168,12 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				self.flaskApp.run(host=self.listenIF, 
-								  port=self.port,
-								  threaded=True,
-								  request_handler=ACMERequestHandler,
-								  ssl_context=CSE.security.getSSLContext(),
-								  debug=False)
+				self.flaskApp.run(host = self.listenIF, 
+								  port = self.port,
+								  threaded = True,
+								  request_handler = ACMERequestHandler,
+								  ssl_context = CSE.security.getSSLContext(),
+								  debug = False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
@@ -189,8 +189,12 @@ class HttpServer(object):
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:FlaskHandler=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
+	def addEndpoint(self, endpoint:Optional[str] = None, 
+						  endpoint_name:Optional[str] = None, 
+						  handler:Optional[FlaskHandler] = None, 
+						  methods:Optional[list[str]] = None, 
+						  strictSlashes:Optional[bool] = True) -> None:
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
 
 
 	def _handleRequest(self, path:str, operation:Operation) -> Response:
@@ -205,7 +209,7 @@ class HttpServer(object):
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.originalData:
-			if dissectResult.request.ct == CST.JSON:
+			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.originalData)}')
 			else:
 				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.originalData))}\n=>\n{dissectResult.request.pc}')
@@ -213,7 +217,10 @@ class HttpServer(object):
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
 			# Return an error if the server is stopped
-			return self._prepareResponse(Result(status = False, rsc = RC.internalServerError, request = dissectResult.request, dbg = 'http server not running'))
+			return self._prepareResponse(Result(status = False, 
+												rsc = ResponseStatusCode.internalServerError, 
+												request = dissectResult.request, 
+												dbg = 'http server not running'))
 		if not dissectResult.status:
 			# Something went wrong during dissection
 			return self._prepareResponse(dissectResult)
@@ -225,13 +232,13 @@ class HttpServer(object):
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
-	def handleGET(self, path:str=None) -> Response:
+	def handleGET(self, path:Optional[str] = None) -> Response:
 		Utils.renameThread(prefix = 'HTRE')
 		CSE.event.httpRetrieve() # type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
-	def handlePOST(self, path:str=None) -> Response:
+	def handlePOST(self, path:Optional[str] = None) -> Response:
 		if self._hasContentType():
 			Utils.renameThread(prefix = 'HTCR')
 			CSE.event.httpCreate()		# type: ignore [attr-defined]
@@ -242,19 +249,19 @@ class HttpServer(object):
 			return self._handleRequest(path, Operation.NOTIFY)
 
 
-	def handlePUT(self, path:str=None) -> Response:
+	def handlePUT(self, path:Optional[str] = None) -> Response:
 		Utils.renameThread(prefix = 'HTUP')
 		CSE.event.httpUpdate()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.UPDATE)
 
 
-	def handleDELETE(self, path:str=None) -> Response:
+	def handleDELETE(self, path:Optional[str] = None) -> Response:
 		Utils.renameThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
 
-	def handlePATCH(self, path:str=None) -> Response:
+	def handlePATCH(self, path:Optional[str] = None) -> Response:
 		"""	Support instead of DELETE for http/1.0.
 		"""
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
@@ -268,15 +275,15 @@ class HttpServer(object):
 
 
 	# Handle requests to mapped paths
-	def requestRedirect(self, path:str=None) -> Response:
+	def requestRedirect(self, path:Optional[str] = None) -> Response:
 		if self.isStopped:
-			return Response('Service not available', status=503)
+			return Response('Service not available', status = 503)
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
 			L.isDebug and L.logDebug(f'==> Redirecting to: /{path}')
 			CSE.event.httpRedirect()	# type: ignore
-			return flask.redirect(self.mappings[path], code=307)
-		return Response('', status=404)
+			return flask.redirect(self.mappings[path], code = 307)
+		return Response('', status = 404)
 
 
 	#########################################################################
@@ -289,32 +296,32 @@ class HttpServer(object):
 		"""	Redirect a request to the webroot to the web UI.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status=503)
-		return flask.redirect(self.webuiRoot, code=302)
+			return Response('Service not available', status = 503)
+		return flask.redirect(self.webuiRoot, code = 302)
 
 
-	def handleStructure(self, path:str='puml') -> Response:
+	def handleStructure(self, path:Optional[str] = 'puml') -> Response:
 		"""	Handle a structure request. Return a description of the CSE's current resource
 			and registrar / registree deployment.
 			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status=503)
-		lvl = request.args.get('lvl', default=0, type=int)
+			return Response('Service not available', status = 503)
+		lvl = request.args.get('lvl', default = 0, type = int)
 		if path == 'puml':
-			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
+			return Response(response = CSE.statistics.getStructurePuml(lvl), headers = self._responseHeaders)
 		if path == 'text':
-			return Response(response=CSE.console.getResourceTreeText(lvl), headers=self._responseHeaders)
-		return Response(response='unsupported', status=422, headers=self._responseHeaders)
+			return Response(response = CSE.console.getResourceTreeText(lvl), headers = self._responseHeaders)
+		return Response(response = 'unsupported', status = 422, headers = self._responseHeaders)
 
 
-	def handleUpperTester(self, path:str = None) -> Response:
+	def handleUpperTester(self, path:Optional[str] = None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status=503)
+			return Response('Service not available', status = 503)
 
-		def prepareUTResponse(rcs:RC, result:str) -> Response:
+		def prepareUTResponse(rcs:ResponseStatusCode, result:str) -> Response:
 			"""	Prepare the Upper Tester Response.
 			"""
 			headers = {}
@@ -322,7 +329,7 @@ class HttpServer(object):
 			headers['X-M2M-RSC'] = str(rcs.value)	# Set the ResponseStatusCode accordingly
 			if result:								# Return an optional return value
 				headers['X-M2M-UTRSP'] = result
-			resp = Response(status = 200 if rcs == RC.OK else 400, headers = headers)
+			resp = Response(status = 200 if rcs == ResponseStatusCode.OK else 400, headers = headers)
 			L.isDebug and L.logDebug(f'<== Upper Tester Response:') 
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
 			return resp
@@ -337,11 +344,11 @@ class HttpServer(object):
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
 			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
-				return prepareUTResponse(RC.badRequest, res[1])
-			return prepareUTResponse(RC.OK, res[1])
+				return prepareUTResponse(ResponseStatusCode.badRequest, res[1])
+			return prepareUTResponse(ResponseStatusCode.OK, res[1])
 
 		L.logWarn('UT functionality is not fully supported.')
-		return prepareUTResponse(RC.badRequest, None)
+		return prepareUTResponse(ResponseStatusCode.badRequest, None)
 
 
 	#########################################################################
@@ -358,10 +365,10 @@ class HttpServer(object):
 		Operation.NOTIFY 	: requests.post
 	}
 
-	def _prepContent(self, content:bytes|str|Any, ct:CST) -> str:
+	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
 		if not content:	return ''
 		if isinstance(content, str): return content
-		return content.decode('utf-8') if ct == CST.JSON else TextTools.toHex(content)
+		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
 	def sendHttpRequest(self, 
@@ -369,12 +376,12 @@ class HttpServer(object):
 						url:str, 
 						originator:str,
 						to:str,
-						ty:T = None, 
-						content:JSON = None, 
-						parameters:CSERequest = None, 
-						ct:CST = None, 
-						rvi:str = None,
-						raw:bool = False) -> Result:	 # type: ignore[type-arg]
+						ty:Optional[ResourceTypes] = None, 
+						content:Optional[JSON] = None, 
+						parameters:Optional[CSERequest] = None, 
+						ct:Optional[ContentSerializationType] = None, 
+						rvi:Optional[str] = None,
+						raw:Optional[bool] = False) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -404,41 +411,41 @@ class HttpServer(object):
 
 		if not raw:
 			# Not raw means we need to construct everything from the request
-			hds[C.hfOrigin] = originator
-			hds[C.hfRI] 	= Utils.uniqueRI()
+			hds[Constants.hfOrigin] = originator
+			hds[Constants.hfRI] 	= Utils.uniqueRI()
 			if rvi != '1':
-				hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
-			hds[C.hfOT]		= DateUtils.getResourceDate()
+				hds[Constants.hfRVI]= rvi if rvi is not None else CSE.releaseVersion
+			hds[Constants.hfOT]		= DateUtils.getResourceDate()
 
 			# Add additional headers
 			if parameters:
 				if parameters.ec:	# Event Category
-					hds[C.hfEC] = str(parameters.ec)
+					hds[Constants.hfEC] = str(parameters.ec)
 			
 		else:	
 			# raw	-> "data" contains a whole requests
 
-			hds[C.hfOrigin]	= Utils.toSPRelative(content['fr']) if 'fr' in content else ''
-			hds[C.hfRI]		= content['rqi']
+			hds[Constants.hfOrigin]	= Utils.toSPRelative(content['fr']) if 'fr' in content else ''
+			hds[Constants.hfRI]		= content['rqi']
 			if rvi != '1':
-				hds[C.hfRVI]	= rvi if rvi is not None else content['rvi']
+				hds[Constants.hfRVI]= rvi if rvi is not None else content['rvi']
 			
 			# Add additional headers from the request
 			if 'ec' in content:				# Event Category
-				hds[C.hfEC] = content['ec']
+				hds[Constants.hfEC] = content['ec']
 			if 'rqet' in content:
-				hds[C.hfRET] = content['rqet']
+				hds[Constants.hfRET] = content['rqet']
 				timeout = DateUtils.timeUntilAbsRelTimestamp(content['rqet'])
 			if 'rset' in content:
-				hds[C.hfRST] = content['rset']
+				hds[Constants.hfRST] = content['rset']
 			if 'oet' in content:
-				hds[C.hfOET] = content['oet']
+				hds[Constants.hfOET] = content['oet']
 			if 'rt' in content:
-				hds[C.hfRTU] = content['rt']
+				hds[Constants.hfRTU] = content['rt']
 			if 'vsi' in content:
-				hds[C.hfVSI] = content['vsi']
+				hds[Constants.hfVSI] = content['vsi']
 			if 'ot' in content:
-				hds[C.hfOT] = content['ot']
+				hds[Constants.hfOT] = content['ot']
 
 			# Get filter criteria
 			arguments = []
@@ -478,13 +485,13 @@ class HttpServer(object):
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			data = RequestUtils.serializeData(content, ct)
 		elif content and not raw:
-			return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'Operation: {operation} doesn\'t allow content'))
+			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'Operation: {operation} doesn\'t allow content'))
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			if ct == CST.CBOR:
+			if ct == ContentSerializationType.CBOR:
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n')
@@ -498,27 +505,27 @@ class HttpServer(object):
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)
-			resp.ct = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
-			resp.rsc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
+			resp.ct = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			resp.rsc = ResponseStatusCode(int(r.headers[Constants.hfRSC])) if Constants().hfRSC in r.headers else ResponseStatusCode.internalServerError
 			resp.pc = RequestUtils.deserializeData(r.content, resp.ct)
-			resp.originator = r.headers.get(C.hfOrigin)
+			resp.originator = r.headers.get(Constants.hfOrigin)
 			try:
 				# Add Originating Timestamp if present in request
-				if (ot := r.headers.get(C.hfOT)):
+				if (ot := r.headers.get(Constants().hfOT)):
 					isodate.parse_date(ot)
 					resp.ot = ot
 			except Exception as ee:
 				return Result.errorResult(dbg = L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
-			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
+			if (rqi := r.headers.get(Constants().hfRI)) != hds[Constants().hfRI]:
 				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.rqi}'))
 			resp.rqi = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except requests.Timeout as e:
-			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logWarn(f'http request timeout after {timeout}s'))
+			return Result.errorResult(rsc = ResponseStatusCode.requestTimeout, dbg = L.logWarn(f'http request timeout after {timeout}s'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
-			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
+			return Result.errorResult(rsc = ResponseStatusCode.targetNotReachable, dbg = 'target not reachable')
 		res = Result(status = True, rsc = resp.rsc, data = resp.pc, request = resp)
 		CSE.event.responseReceived(resp)	# type: ignore [attr-defined]
 		return res
@@ -526,7 +533,8 @@ class HttpServer(object):
 
 	#########################################################################
 
-	def _prepareResponse(self, result:Result, originalRequest:CSERequest = None) -> Response:
+	def _prepareResponse(self, result:Result, 
+							   originalRequest:Optional[CSERequest] = None) -> Response:
 		"""	Prepare the response for a request. If `request` is given then
 			set it for the response.
 		"""
@@ -546,7 +554,7 @@ class HttpServer(object):
 			# CSE's default
 			result.request.originator = originalRequest.originator
 			if originalRequest.httpAccept:																# accept / contentType
-				result.request.ct = CST.getType(originalRequest.httpAccept[0])
+				result.request.ct = ContentSerializationType.getType(originalRequest.httpAccept[0])
 			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.originator):
 				result.request.ct = csz[0]
 
@@ -568,14 +576,14 @@ class HttpServer(object):
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
 		if result.rsc:
-			headers[C.hfRSC] = f'{int(result.rsc)}'				# set the response status code
+			headers[Constants().hfRSC] = f'{int(result.rsc)}'				# set the response status code
 		if rqi := Utils.findXPath(cast(JSON, outResult.data), 'rqi'):
-			headers[C.hfRI] = rqi
+			headers[Constants().hfRI] = rqi
 		if rvi := Utils.findXPath(cast(JSON, outResult.data), 'rvi'):
-			headers[C.hfRVI] = rvi
+			headers[Constants().hfRVI] = rvi
 		if vsi := Utils.findXPath(cast(JSON, outResult.data), 'vsi'):
-			headers[C.hfVSI] = vsi
-		headers[C.hfOT] = DateUtils.getResourceDate()
+			headers[Constants().hfVSI] = vsi
+		headers[Constants().hfOT] = DateUtils.getResourceDate()
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
@@ -656,30 +664,30 @@ class HttpServer(object):
 		# # 	req['ot'] = DateUtils.getResourceDate()
 
 		# Copy and parse the original request headers
-		if f := request.headers.get(C.hfOrigin):
+		if f := request.headers.get(Constants.hfOrigin):
 			req['fr'] = f
-		if f := request.headers.get(C.hfRI):
+		if f := request.headers.get(Constants.hfRI):
 			req['rqi'] = f
-		if f := request.headers.get(C.hfRET):
+		if f := request.headers.get(Constants.hfRET):
 			req['rqet'] = f
-		if f := request.headers.get(C.hfRST):
+		if f := request.headers.get(Constants.hfRST):
 			req['rset'] = f
-		if f := request.headers.get(C.hfOET):
+		if f := request.headers.get(Constants.hfOET):
 			req['oet'] = f
-		if f := request.headers.get(C.hfRVI):
+		if f := request.headers.get(Constants.hfRVI):
 			req['rvi'] = f
-		if (rtu := request.headers.get(C.hfRTU)) is not None:	# handle rtu as a list AND it might be an empty list!
+		if (rtu := request.headers.get(Constants.hfRTU)) is not None:	# handle rtu as a list AND it might be an empty list!
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
 			req['rt'] = rt					# req.rt.rtu
-		if f := request.headers.get(C.hfVSI):
+		if f := request.headers.get(Constants.hfVSI):
 			req['vsi'] = f
-		if f := request.headers.get(C.hfOT):
+		if f := request.headers.get(Constants.hfOT):
 			req['ot'] = f
 
 		# parse and extract content-type header
 		if contentType := request.content_type:
-			if not contentType.startswith(tuple(CST.supportedContentSerializations())):
+			if not contentType.startswith(tuple(ContentSerializationType.supportedContentSerializations())):
 				contentType = None
 			else:
 				p  = contentType.partition(';')		# always returns a 3-tuple
@@ -689,7 +697,7 @@ class HttpServer(object):
 					try:
 						req['ty'] = int(t)			# Here we found the type for CREATE requests
 					except:
-						return Result.errorResult(rsc = RC.badRequest, request = cseRequest, dbg = L.logWarn(f'resource type must be an integer: {t}'))
+						return Result.errorResult(rsc = ResponseStatusCode.badRequest, request = cseRequest, dbg = L.logWarn(f'resource type must be an integer: {t}'))
 
 		cseRequest.mediaType = contentType
 

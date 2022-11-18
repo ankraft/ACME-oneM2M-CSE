@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from typing import List, cast, Optional
+
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
 from rich.style import Style
@@ -18,20 +19,17 @@ from rich.tree import Tree
 from rich.live import Live
 from rich.text import Text
 from rich.pretty import Pretty
-import plotext as plt
-
-
+import plotext
 
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
 from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
-from ..helpers import TextTools as TextTools
-from ..etc.Constants import Constants as C
-from ..etc.Types import CSEType, ResourceTypes as T
-from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..etc.Constants import Constants
+from ..etc.Types import CSEType, ResourceTypes
+from ..etc import Utils, DateUtils
 from ..resources.Resource import Resource
-from ..services import CSE as CSE, Statistics as Statistics
+from ..services import CSE, Statistics
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 
@@ -161,8 +159,8 @@ class Console(object):
 	#
 
 	def _about(self, header:str = None) -> None:
-		L.console(f'\n[white]{C.textLogo} ', plain = True, end = '')
-		L.console(f'oneM2M CSE {C.version}', nl = False,)
+		L.console(f'\n[white]{Constants.textLogo} ', plain = True, end = '')
+		L.console(f'oneM2M CSE {Constants.version}', nl = False,)
 		if header:
 			L.console(header, nl = True, isHeader = True)
 	
@@ -205,9 +203,9 @@ class Console(object):
 		]
 
 		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Key', no_wrap=True, justify = 'left')
-		table.add_column('Description', no_wrap=True)
-		table.add_column('Script', no_wrap=True, justify='center')
+		table.add_column('Key', no_wrap = True, justify = 'left')
+		table.add_column('Description', no_wrap = True)
+		table.add_column('Script', no_wrap = True, justify = 'center')
 		for each in commands:
 			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
 
@@ -247,7 +245,6 @@ Available under the BSD 3-Clause License
 █ ▀▀▀ █ ▀█▄▄▀▀▀▄█  ▄█ ▄█ ▀ ██▄▀▀▀
 ▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀
 """), nl=True)
-
 
 
 
@@ -311,8 +308,6 @@ Available under the BSD 3-Clause License
 		table.add_row('Running', str(r))
 		table.add_row('Paused', str(p))
 		L.console(table, nl = True)
-
-
 
 
 	def configuration(self, key:str) -> None:
@@ -623,22 +618,22 @@ Available under the BSD 3-Clause License
 			
 		# plot
 		try:
-			cins = CSE.dispatcher.directChildResources(resource.ri, T.CIN)
+			cins = CSE.dispatcher.directChildResources(resource.ri, ResourceTypes.CIN)
 			x = range(1, (lcins := len(cins)) + 1)
 			y = [ float(each.con) for each in cins ]
-			cols, rows = plt.terminal_size()
+			cols, rows = plotext.terminal_size()
 
-			plt.canvas_color('default')
-			plt.axes_color('default')
-			plt.ticks_color(L.terminalStyleRGBTupple)
-			plt.frame(True)
-			plt.plot_size(None, rows/2)
-			plt.xticks([1, int(lcins/4), int(lcins/4) * 2, int(lcins/4) * 3, lcins])
+			plotext.canvas_color('default')
+			plotext.axes_color('default')
+			plotext.ticks_color(L.terminalStyleRGBTupple)
+			plotext.frame(True)
+			plotext.plot_size(None, rows/2)
+			plotext.xticks([1, int(lcins/4), int(lcins/4) * 2, int(lcins/4) * 3, lcins])
 
-			plt.title(f'{resource.getSrn()} ({resource.ri})')
-			plt.plot(x, y, color = L.terminalStyleRGBTupple)
-			plt.show()
-			plt.clear_figure()
+			plotext.title(f'{resource.getSrn()} ({resource.ri})')
+			plotext.plot(x, y, color = L.terminalStyleRGBTupple)
+			plotext.show()
+			plotext.clear_figure()
 		except Exception as e:
 			L.logErr(str(e), exc = e)
 		
@@ -652,7 +647,7 @@ Available under the BSD 3-Clause License
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
-				if res.resource.ty != T.CNT:
+				if res.resource.ty != ResourceTypes.CNT:
 					L.console('resource must be a <container>', isError = True)
 				self._plotGraph(res.resource)
 		L.on()
@@ -676,7 +671,7 @@ Available under the BSD 3-Clause License
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
-				if res.resource.ty != T.CNT:
+				if res.resource.ty != ResourceTypes.CNT:
 					L.console('resource must be a <container>', isError = True)
 			
 				# Register for chil-added event (which would lead to a re-drawing of the graph)
@@ -856,31 +851,40 @@ Available under the BSD 3-Clause License
 			rightGrid.add_row(Panel(requestsGrid, style = style))
 			rightGrid.add_row(Panel(infoGrid, style = style))
 
+			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
+															ResourceTypes.CNT_OL,
+															ResourceTypes.FCNT_LA,
+															ResourceTypes.FCNT_OL,
+															ResourceTypes.TS_LA,
+															ResourceTypes.TS_OL, 
+															ResourceTypes.GRP_FOPT, 
+															ResourceTypes.PCH_PCU))
+
 			resourceTypes = '[underline]Resource Types[/underline]\n'
 			resourceTypes += '\n'
-			resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
-			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'
-			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(T.ACTR)}\n'
-			resourceTypes += f'CB      : {CSE.dispatcher.countResources(T.CSEBase)}\n'
-			resourceTypes += f'CIN     : {CSE.dispatcher.countResources(T.CIN)}\n'
-			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(T.CNT)}\n'
-			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(T.CRS)}\n'
-			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(T.CSR)}\n'
-			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(T.FCNT)}\n'
-			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(T.FCI)}\n'
-			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(T.GRP)}\n'
-			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
-			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(T.NOD)}\n'
-			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(T.PCH)}\n'
-			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
-			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(T.SMD)}\n'
-			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
-			resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
-			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
-			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
+			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
+			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
+			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
+			resourceTypes += f'CB      : {CSE.dispatcher.countResources(ResourceTypes.CSEBase)}\n'
+			resourceTypes += f'CIN     : {CSE.dispatcher.countResources(ResourceTypes.CIN)}\n'
+			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(ResourceTypes.CNT)}\n'
+			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(ResourceTypes.CRS)}\n'
+			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(ResourceTypes.CSR)}\n'
+			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(ResourceTypes.FCNT)}\n'
+			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(ResourceTypes.FCI)}\n'
+			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(ResourceTypes.GRP)}\n'
+			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ)}\n'
+			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(ResourceTypes.NOD)}\n'
+			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(ResourceTypes.PCH)}\n'
+			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(ResourceTypes.REQ)}\n'
+			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(ResourceTypes.SMD)}\n'
+			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(ResourceTypes.SUB)}\n'
+			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
+			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
+			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
 			resourceTypes += '\n'
 			resourceTypes += '\n'
-			resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU, T.TSB))}\n'	# substract the virtual resources
+			resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n'	# substract the virtual resources
 			
 			result = Table.grid(expand = True)
 			result.add_column(width=15)
@@ -919,17 +923,17 @@ Available under the BSD 3-Clause License
 			if self.treeMode not in [ TreeMode.COMPACT, TreeMode.CONTENTONLY ]: 
 				# if res.ty in [ T.FCNT, T.FCI] :
 				# 	extraInfo = f' (cnd={res.cnd})'
-				if res.ty in [ T.CIN, T.TS ]:
+				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TS ]:
 					extraInfo = f' ({res.cnf})' if res.cnf else ''
-				elif res.ty in [ T.CSEBase, T.CSEBaseAnnc, T.CSR ]:
+				elif res.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSEBaseAnnc, ResourceTypes.CSR ]:
 					extraInfo = f' (csi={res.csi})'
 			
 			# Determine content
 			contentInfo = ''
 			if self.treeMode in [ TreeMode.CONTENT, TreeMode.CONTENTONLY ]:
-				if res.ty in [ T.CIN, T.TSI ]:
+				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TSI ]:
 					contentInfo = f'{res.con}' if res.con else ''
-				elif res.ty in [ T.FCNT, T.FCI ]:	# All the custom attributes
+				elif res.ty in [ ResourceTypes.FCNT, ResourceTypes.FCI ]:	# All the custom attributes
 					contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
 
 			# construct the info
@@ -968,7 +972,7 @@ Available under the BSD 3-Clause License
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
 		
-		def getTree() -> Tree:
+		def getTree() -> Optional[Tree]:
 			if parent:
 				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
 					return None

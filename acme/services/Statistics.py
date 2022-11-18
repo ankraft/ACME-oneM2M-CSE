@@ -8,19 +8,20 @@
 #
 
 from __future__ import annotations
-from typing import Dict, Union, cast
+from typing import Dict, Union, Optional
+
 import datetime
 from urllib.parse import urlparse
 from copy import deepcopy
 from threading import Lock
 
-from ..etc.Types import CSEType, ResourceTypes as T
-from ..etc import Utils as Utils, DateUtils as DateUtils
-from ..services import CSE as CSE
+from ..etc.Types import CSEType, ResourceTypes
+from ..etc import Utils, DateUtils
+from ..services import CSE
 from ..services.Configuration import Configuration
-from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..services.Logging import Logging as L
 
 
 deletedResources	= 'rmRes'
@@ -171,6 +172,7 @@ class Statistics(object):
 			logWarnings 		: 0
 		}
 
+
 	# Return stats
 	def getStats(self) -> StatsT:			
 		s = deepcopy(self.stats)
@@ -244,7 +246,7 @@ class Statistics(object):
 	#
 	#	CSE Structure handling
 
-	def getStructurePuml(self, maxLevel:int=0) -> str:
+	def getStructurePuml(self, maxLevel:Optional[int] = 0) -> str:
 		"""	This function will generate a PlanUML graph of a CSE's structure, including:
 				- The CSE, Type, http, port
 				- The CSE's resource tree
@@ -259,7 +261,7 @@ class Statistics(object):
 				return result
 			chs = CSE.dispatcher.directChildResources(res.ri)
 			for ch in chs:
-				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {T(ch.ty).tpe()} ></color>\n'
+				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).tpe()} ></color>\n'
 				result += getChildren(ch, level+1)
 			return result
 

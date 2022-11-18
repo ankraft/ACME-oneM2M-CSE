@@ -7,10 +7,11 @@
 """ AccessControlPolicy announced (ACP)  resource type """
 
 from __future__ import annotations
+from typing import Optional
+
 from ..helpers.TextTools import simpleMatch
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
-from ..resources.Resource import *
 
 
 class ACPAnnc(AnnouncedResource):

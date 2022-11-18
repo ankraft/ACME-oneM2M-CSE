@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Operation, CSERequest, JSON
 from ..services.Logging import Logging as L
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.VirtualResource import VirtualResource
 
 # TODO - Handle Group Request Target Members parameter

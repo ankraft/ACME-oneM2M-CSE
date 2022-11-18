@@ -301,7 +301,7 @@ class ResourceTypes(ACMEIntEnum):
 
 	@classmethod
 	def isInstanceResource(cls, ty:int) -> bool:
-		"""	Test whether a resource type is an instance data resource type
+		"""	Test whether a resource type is an instance data resource type.
 
 			Args:
 				ty: Type to test.
@@ -335,6 +335,19 @@ class ResourceTypes(ACMEIntEnum):
 		"""
 		return ty in _ResourceTypesIsNotificationEntity
 
+
+	@classmethod
+	def isLatestOldestResource(cls, ty:int) -> bool:
+		"""	Test whether a resource type is a *latest* or *oldest* virtual resource type.
+
+			Args:
+				ty: Type to test.
+
+			Return:
+				*True* if the resource type is a *latest* or *oldest* virtual resource.
+		"""
+		return ty in _ResourceTypesLatestOldest
+		
 
 @dataclass()
 class ResourceDescription():
@@ -480,7 +493,6 @@ _ResourceTypesAnnouncedResourceTypes = [ d.announcedType
 _ResourceTypesAnnouncedResourceTypes.sort()
 
 
-
 _ResourceTypesSupportedResourceTypes = [ t
 										 for t, d in _ResourceTypeDetails.items()
 										 if not d.isMgmtSpecialization and not d.virtualResourceName and not d.isInternalType and t != ResourceTypes.CSEBaseAnnc]
@@ -527,6 +539,14 @@ _ResourceTypesIsNotificationEntity = [ t
 									   for t, d in _ResourceTypeDetails.items()
 									   if d.isNotificationEntity ]
 """	List of resource types that represent an entity that can be a notification target. """
+
+
+_ResourceTypesLatestOldest = [ t
+							   for t, d in _ResourceTypeDetails.items()
+							   if d.typeName in [ 'm2m:la', 'm2m:ol' ] ]
+"""	List of resource typs that represent latest or oldest virtual resources. """
+
+
 
 class BasicType(ACMEIntEnum):
 	""" Basic resource types.
@@ -636,7 +656,7 @@ class RequestOptionality(ACMEIntEnum):
 
 
 class Announced(ACMEIntEnum):
-	""" Anouncent attribute enum values.
+	""" Anouncement attribute enum values.
 	"""
 	NA				= auto()
 	"""	Not announced. """
@@ -854,8 +874,9 @@ class Operation(ACMEIntEnum):
 		"""
 		return cls.CREATE <= op <= cls.NOTIFY
 	
+
 	@classmethod
-	def toOperation(cls, v:int|None) -> Operation|None:
+	def toOperation(cls, v:Optional[int]) -> Optional[Operation]:
 		"""	Convert an integer or None to an Operation. Returns an Operation or None.
 		"""
 		return Operation(v) if v is not None else None
@@ -1728,13 +1749,13 @@ class AttributePolicy:
 
 	# TODO support annnouncedSyncType
 
-	def select(self, index:int) -> Any:
+	def select(self, index:int) -> Optional[Any]:
 		"""	Return the n-th attributes in the dataclass.
 
 			Args:
 				index: Attribute index
 			Return:
-				n-th attribute from the dataclass
+				n-th attribute from the dataclass, or None in case of an error.
 		"""
 		try:
 			return astuple(self)[index]

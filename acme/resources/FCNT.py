@@ -15,7 +15,7 @@ from ..etc import Utils, DateUtils
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources import Factory as Factory
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

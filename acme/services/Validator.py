@@ -8,28 +8,27 @@
 #
 
 from __future__ import annotations
+from typing import Any, Dict, Tuple, Optional
 
 from copy import deepcopy
 import re
-from typing import Any, Dict, Tuple, Optional
 import isodate
 
-
-from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality as CAR
-from ..etc.Types import RequestOptionality as RO, Announced as AN, AttributePolicy
+from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
+from ..etc.Types import RequestOptionality, Announced, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
-from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..etc import Utils, DateUtils
 from ..helpers import TextTools
-from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
+from ..services.Logging import Logging as L
 
 
 # TODO AE Not defined yet: ExternalGroupID?
 # TODO AE CSE Not defined yet: enableTimeCompensation
 # TODO GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
-attributePolicies:ResourceAttributePolicyDict 			= {}
+attributePolicies:ResourceAttributePolicyDict = {}
 """ General attribute Policies.
 
 	{ ResourceType : AttributePolicy }
@@ -148,25 +147,25 @@ class Validator(object):
 					# MA are not checked bc they are only present if they are present in the original resource
 					continue
 					
-				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
+				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
 					return Result.errorResult(dbg = L.logWarn(f'Cannot find mandatory attribute: {attributeName}'))
 
 				if attributeName in pureResDict:
-					if policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
+					if policy.cardinality == Cardinality.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
 						return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
-					if policyOptional == RO.NP: # present with any value or None/null? Then this is an error for NP
+					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						return Result.errorResult(dbg = L.logWarn(f'Attribute: {attributeName} is NP for operation'))
 
-				if policyOptional in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
+				if policyOptional in [ RequestOptionality.NP, RequestOptionality.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
-					if policyOptional == RO.NP:
+					if policyOptional == RequestOptionality.NP:
 						return Result.errorResult(dbg = L.logWarn(f'Found non-provision attribute: {attributeName}'))
 
 				# check the the announced cases
 				if isAnnounced:
-					if policy.announcement == AN.NA:	# Not okay, attribute is not announced
+					if policy.announcement == Announced.NA:	# Not okay, attribute is not announced
 						return Result.errorResult(dbg = L.logWarn(f'Found non-announced attribute: {attributeName}'))
 					continue
 
@@ -179,12 +178,12 @@ class Validator(object):
 				# Still some further checks are necessary
 
 				# Check list. May be empty or needs to contain at least one member
-				if policy.cardinality == CAR.CAR1LN and len(attributeValue) == 0:
+				if policy.cardinality == Cardinality.CAR1LN and len(attributeValue) == 0:
 					return Result.errorResult(dbg = L.logWarn(f'List attribute must be non-empty: {attributeName}'))
 
 				# Check list. May be empty or needs to contain at least one member
 				# L.isWarn and L.logWarn(f'CAR: {policy.cardinality.name}: {attributeValue}')
-				if policy.cardinality == CAR.CAR01L and attributeValue is not None and len(attributeValue) == 0:
+				if policy.cardinality == Cardinality.CAR01L and attributeValue is not None and len(attributeValue) == 0:
 					return Result.errorResult(dbg = L.logWarn(f'Optional list attribute must be non-empty: {attributeName}'))
 				continue
 		
@@ -228,21 +227,21 @@ class Validator(object):
 	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
 		# Response
 		'rsp' :	{
-			'rsc' : AttributePolicy(type=BasicType.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsc'),
-			'rqi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rqi', lname='requestIdentifier', namespace='m2m', tpe='m2m:rqi'),
-			'pc' : AttributePolicy(type=BasicType.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
-			'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
-			'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
-			'ot' : AttributePolicy(type=BasicType.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ot', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
-			'rset' : AttributePolicy(type=BasicType.absRelTimestamp, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rset', lname='resultExpirationTimestamp', namespace='m2m', tpe='m2m:rset'),
-			'ec' : AttributePolicy(type=BasicType.positiveInteger,   cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ec', lname='eventCategory', namespace='m2m', tpe='m2m:ec'),
-			'cnst' : AttributePolicy(type=BasicType.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnst', lname='contentStatus', namespace='m2m', tpe='m2m:cnst'),
-			'cnot' : AttributePolicy(type=BasicType.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnot', lname='contentOffset', namespace='m2m', tpe='m2m:cnot'),
-			'ati' : AttributePolicy(type=BasicType.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ati', lname='assignedTokenIdentifiers', namespace='m2m', tpe='m2m:ati'),
-			'tqf' : AttributePolicy(type=BasicType.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='tqf', lname='tokenRequestInformation', namespace='m2m', tpe='m2m:tqf'),
-			'asri' : AttributePolicy(type=BasicType.boolean,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='asri', lname='authorSignReqInfo', namespace='m2m', tpe='m2m:asri'),
-			'rvi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rvi', lname='releaseVersionIndicator', namespace='m2m', tpe='m2m:rvi'),
-			'vsi' : AttributePolicy(type=BasicType.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='vsi', lname='vendorInformation', namespace='m2m', tpe='m2m:vsi'),
+			'rsc' : AttributePolicy(type = BasicType.integer,          cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rsp', lname = 'responseStatusCode', namespace = 'm2m', tpe = 'm2m:rsc'),
+			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', tpe = 'm2m:rqi'),
+			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', tpe = 'm2m:pc'),
+			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', tpe = 'm2m:to'),
+			'fr' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', tpe = 'm2m:fr'),
+			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', tpe = 'm2m:or'),
+			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', tpe = 'm2m:rset'),
+			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', tpe = 'm2m:ec'),
+			'cnst' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnst', lname = 'contentStatus', namespace = 'm2m', tpe = 'm2m:cnst'),
+			'cnot' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnot', lname = 'contentOffset', namespace = 'm2m', tpe = 'm2m:cnot'),
+			'ati' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ati', lname = 'assignedTokenIdentifiers', namespace = 'm2m', tpe = 'm2m:ati'),
+			'tqf' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'tqf', lname = 'tokenRequestInformation', namespace = 'm2m', tpe = 'm2m:tqf'),
+			'asri' : AttributePolicy(type = BasicType.boolean,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'asri', lname = 'authorSignReqInfo', namespace = 'm2m', tpe = 'm2m:asri'),
+			'rvi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rvi', lname = 'releaseVersionIndicator', namespace = 'm2m', tpe = 'm2m:rvi'),
+			'vsi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'vsi', lname = 'vendorInformation', namespace = 'm2m', tpe = 'm2m:vsi'),
 		},
 		# 'm2m:sgn' : {
 		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
@@ -266,7 +265,7 @@ class Validator(object):
 		
 		name,obj = list(pc.items())[0]
 		if ap := self.complexAttributePolicies.get(name):
-			return self.validateAttributes(obj, tpe=name, attributes=ap)
+			return self.validateAttributes(obj, tpe = name, attributes=ap)
 		
 		return Result.successResult()
 

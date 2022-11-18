@@ -13,11 +13,11 @@
 """
 
 from __future__ import annotations
+from typing import List, Any, Union, Optional
 
 import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
-from typing import List, Any, Union, Optional
 from logging import LogRecord
 
 
@@ -182,8 +182,9 @@ class Logging:
 		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
 		Logging.terminalStyleRGBTupple = ( Logging.terminalStyle.color.triplet.red, Logging.terminalStyle.color.triplet.green, Logging.terminalStyle.color.triplet.blue )
 
+
 	@staticmethod
-	def configUpdate(key:str = None, value:Any = None) -> None:
+	def configUpdate(key:Optional[str] = None, value:Optional[Any] = None) -> None:
 		"""	Handle configuration update.
 		"""
 		restartNeeded = False
@@ -249,15 +250,6 @@ class Logging:
 				continue
 			Logging._logMessageToLoggerConsole(level, msg, caller, thread)
 
-		# try:
-		# 	while Logging._logWorker.running:
-		# 		level, msg, caller, thread = Logging.queue.get(block = True)
-		# 		if msg is None or (isinstance(msg, str) and not len(msg)):
-		# 			continue
-		# 		Logging._logMessageToLoggerConsole(level, msg, caller, thread)
-		# except Exception as e:
-		# 	# Not much that we can do here
-		# 	pass
 		return True
 
 
@@ -399,7 +391,13 @@ class Logging:
 
 
 	@staticmethod
-	def console(msg:Union[str, Text, Tree, Table, JSON] = '&nbsp;', nl:bool = False, nlb:bool = False, end:str = '\n', plain:bool = False, isError:bool = False, isHeader:bool = False) -> None:
+	def console(msg:Union[str, Text, Tree, Table, JSON] = '&nbsp;', 
+				nl:Optional[bool] = False, 
+				nlb:Optional[bool] = False, 
+				end:Optional[str] = '\n', 
+				plain:Optional[bool] = False, 
+				isError:Optional[bool] = False, 
+				isHeader:Optional[bool] = False) -> None:
 		"""	Print a message or object to the console.
 		"""
 		# if this is a header then call the method again with different parameters
@@ -460,7 +458,9 @@ class Logging:
 	
 
 	@staticmethod
-	def consolePrompt(prompt:str, nl:bool = True, default:str = None) -> str:
+	def consolePrompt(prompt:str, 
+					  nl:Optional[bool] = True, 
+					  default:Optional[str] = None) -> str:
 		"""	Read a line from the console. 
 			Catch EOF (^D) and Keyboard Interrup (^C). In that case None is returned.
 		"""
@@ -495,7 +495,8 @@ class Logging:
 	
 
 	@staticmethod
-	def stacktrace(startFrame:int = -10, skipEndFrames:int = 1) -> None:
+	def stacktrace(startFrame:Optional[int] = -10, 
+				   skipEndFrames:Optional[int] = 1) -> None:
 		"""	Output the current stacktrace to the log.
 		
 			Args:
@@ -580,7 +581,7 @@ class ACMERichLogHandler(RichHandler):
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
 
-		super().__init__(level=level, console = Console(theme = Theme(_styles)))
+		super().__init__(level = level, console = Console(theme = Theme(_styles)))
 
 
 		# Set own highlights 

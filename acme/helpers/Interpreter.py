@@ -210,7 +210,7 @@ class PContext():
 
 
 	@property
-	def nextLine(self) -> str:
+	def nextLine(self) -> Optional[str]:
 		"""	Return the next line in a batch. This depends on the internal program counter (pc).
 			Empty lines and comments are skipped.
 			The program counter is incremented accordingly.
@@ -460,7 +460,7 @@ class PContext():
 
 	
 	@property
-	def scope(self) -> PScope:
+	def scope(self) -> Optional[PScope]:
 		"""	Get the current scope as a property.
 
 			Return:
@@ -513,7 +513,7 @@ class PContext():
 		return 0
 	
 
-	def whileLoopCounter(self) -> int:
+	def whileLoopCounter(self) -> Optional[int]:
 		"""	Return the latest loop counter for a while loop.
 
 			Return:
@@ -534,7 +534,7 @@ class PContext():
 
 
 	@property
-	def whilePc(self) -> int:
+	def whilePc(self) -> Optional[int]:
 		"""	Return the latest saved program counter for a while loop.
 
 			Return:
@@ -628,7 +628,7 @@ class PContext():
 		self.variables[key.lower()] = value
 	
 
-	def delVariable(self, key:str) -> str:
+	def delVariable(self, key:str) -> Optional[str]:
 		"""	Delete a variable for a case insensitive name.
 
 			Args:
@@ -913,7 +913,7 @@ def tokenize(line:str) -> Sequence[str]:
 #	Build-in commands
 #
 
-def _doAssert(pcontext:PContext, arg:str) -> PContext:
+def _doAssert(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Assert the condition. If it fails return None and interrupt the script.
 
 		Args:
@@ -930,7 +930,7 @@ def _doAssert(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doBreak(pcontext:PContext, arg:str) -> PContext:
+def _doBreak(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle a break command operation.
 
 		Args:
@@ -946,7 +946,7 @@ def _doBreak(pcontext:PContext, arg:str) -> PContext:
 	return _skipWhile(pcontext)	# jump out of while
 
 
-def _doCase(pcontext:PContext, arg:str) -> PContext:
+def _doCase(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle a case command operation. This command must occur only in a SWITCH block.
 
 		Args:
@@ -961,7 +961,7 @@ def _doCase(pcontext:PContext, arg:str) -> PContext:
 	return _skipSwitch(pcontext, None, skip = True)	# jump out of switch
 
 
-def _doContinue(pcontext:PContext, arg:str) -> PContext:
+def _doContinue(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle a continue command operation.
 
 		Args:
@@ -993,7 +993,7 @@ def _doPrint(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doElse(pcontext:PContext, arg:str) -> PContext:
+def _doElse(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Regularly, ELSE is only encountered at the end of an IF part of an IF statement.
 		The pcontext's pc already points to the next statement.
 
@@ -1012,7 +1012,7 @@ def _doElse(pcontext:PContext, arg:str) -> PContext:
 	return _skipIfElse(pcontext, isIf = False)
 
 
-def _doEndIf(pcontext:PContext, arg:str) -> PContext:
+def _doEndIf(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Check the conditions that we are at the end of a regular IF or ELSE.
 
 		Args:
@@ -1031,7 +1031,7 @@ def _doEndIf(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doEndProcedure(pcontext:PContext, arg:str) -> PContext:
+def _doEndProcedure(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle an ENDPROCEDURE command operation. Copy the result to the previous scope.
 
 		Args:
@@ -1049,7 +1049,7 @@ def _doEndProcedure(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doEndSwitch(pcontext:PContext, arg:str) -> PContext:
+def _doEndSwitch(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle an ENDSWITCH command. This ends a SWITCH block, and must only occurs as the last
 		command of a SWITCH block.
 
@@ -1069,7 +1069,7 @@ def _doEndSwitch(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 	
-def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
+def _doEndWhile(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle a endwhile command operation. Copy the argument as the result
 		to the scope's result. This is only used when the while loop exits
 		normally, but not via the BREAK command, which may provide an own 
@@ -1090,7 +1090,7 @@ def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doError(pcontext:PContext, arg:str) -> PContext:
+def _doError(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	End script execution with an error. The optional argument will be 
 		assigned as the result of the script (pcontect.result).
 
@@ -1105,7 +1105,7 @@ def _doError(pcontext:PContext, arg:str) -> PContext:
 	return None
 
 
-def _doExpandMacros(pcontext:PContext, arg:str) -> PContext:
+def _doExpandMacros(pcontext:PContext, arg:str) -> Optional[PContext]:
 	arg = arg.lower()
 	if arg not in ['true', 'false', 'on', 'off']:
 		pcontext.setError(PError.invalid, f'invalid argument for command "expandMacros": {arg}')
@@ -1114,7 +1114,7 @@ def _doExpandMacros(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doIf(pcontext:PContext, arg:str) -> PContext:
+def _doIf(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle an if...else...endif command operation.
 
 		Args:
@@ -1132,7 +1132,7 @@ def _doIf(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doIncDec(pcontext:PContext, arg:str, isInc:Optional[bool] = True) -> PContext:
+def _doIncDec(pcontext:PContext, arg:str, isInc:Optional[bool] = True) -> Optional[PContext]:
 	"""	Increment or decrement a variable by an optional value.
 		The default is 1.
 
@@ -1179,7 +1179,7 @@ def _doLog(pcontext:PContext,
 	return pcontext
 
 
-def _doProcedure(pcontext:PContext, arg:str) -> PContext:
+def _doProcedure(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Define a procedure. Actually, jump over all instructions until endprocedure, but report
 		an error if a procedure is defined within a procedure.
 
@@ -1223,7 +1223,7 @@ def _doQuit(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doSet(pcontext:PContext, arg:str) -> PContext:
+def _doSet(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Set a variable. This command behaves differently depending on how it 
 		is used.
 
@@ -1294,7 +1294,7 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doSleep(pcontext:PContext, arg:str) -> PContext:
+def _doSleep(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Sleep for a number of seconds. 
 	
 		This command can be interrupted when the script's state is set to *canceled*.
@@ -1335,7 +1335,7 @@ def _doSwitch(pcontext:PContext, arg:str) -> PContext:
 	return _skipSwitch(pcontext, arg)	# Skip to the correct switch block
 
 
-def _doWhile(pcontext:PContext, arg:str) -> PContext:
+def _doWhile(pcontext:PContext, arg:str) -> Optional[PContext]:
 	"""	Handle a while...endwhile command operation.
 
 		Args:
@@ -1362,7 +1362,7 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 #	Build-in Macros
 #
 
-def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
+def _doAnd(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	With the *and* macro one can evaluate boolean expressions and combine them with a boolean "and".
 
 		The *and* macro will evaluate to *true* (all boolean expressions are true) or *false* 
@@ -1394,7 +1394,7 @@ def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
 	return 'true'
 
 
-def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
+def _doArgv(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	With the *argv* macro one can access the individual arguments of a script.
 
 		Example:
@@ -1446,7 +1446,7 @@ def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 	return '0'
 
 
-def _doIn(pcontext:PContext, arg:str, line:str) -> str:
+def _doIn(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	With the *in* macro one can test whether a string can be found in another string.
 
 		Example:
@@ -1466,7 +1466,7 @@ def _doIn(pcontext:PContext, arg:str, line:str) -> str:
 	return str(args[0] in args[1]).lower()
 
 
-def _doIsDefined(pcontext:PContext, arg:str, line:str) -> str:
+def _doIsDefined(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	Test whether a variable, macro, or environment variable is defined.
 
 		Example:
@@ -1488,7 +1488,7 @@ def _doIsDefined(pcontext:PContext, arg:str, line:str) -> str:
 			   pcontext.getEnvironmentVariable(c) is not None)
 
 
-def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
+def _doMatch(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	This macro returns the result of a match comparison.
 
 		Args:
@@ -1504,7 +1504,7 @@ def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
 	return None
 
 
-def _doNot(pcontext:PContext, arg:str, line:str) -> str:
+def _doNot(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	With the *not* macro one can invert the result of a boolean expressions.
 
 		The *nor* macro will evaluate to *true* if the argument is *false*, and to *false* 
@@ -1532,7 +1532,7 @@ def _doNot(pcontext:PContext, arg:str, line:str) -> str:
 	return 'false' if l == 'true' else 'true'
 
 
-def _doOr(pcontext:PContext, arg:str, line:str) -> str:
+def _doOr(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	With the *or* macro one can evaluate boolean expressions and combine them with a boolean "or".
 
 		The *or* macro will evaluate to *true* (at least one boolean expressions is true) or *false* 
@@ -1563,7 +1563,7 @@ def _doOr(pcontext:PContext, arg:str, line:str) -> str:
 	return 'false'
 
 
-def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
+def _doRandom(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	Generate a random float number in the given range. The default for the
 		range is [0.0, 1.0]. If one argument is given then this indicates a range
 		of [0,0, arg].
@@ -1597,7 +1597,7 @@ def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
 		return None
 
 
-def _doRound(pcontext:PContext, arg:str, line:str) -> str:
+def _doRound(pcontext:PContext, arg:str, line:str) -> Optional[str]:
 	"""	Return a number rounded to optional *ndigits* precision after the decimal point. 
 	
 		If *ndigits*, the second parameter, is omitted, it returns the nearest integer.
@@ -1713,7 +1713,7 @@ _builtinMacros:PMacroDict = {
 #	Internal helpers
 #
 
-def checkMacros(pcontext:PContext, line:str) -> str:
+def checkMacros(pcontext:PContext, line:str) -> Optional[str]:
 	"""	Replace all macros and variables in a line. 
 	
 		Variables have precedence over macros with the same name. Macros and variables are replaced recursively.
@@ -1725,7 +1725,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			String, the line with all variabes, macros etc replaces, or None in case of an error.
 	"""
 
-	def _replaceMacro(macro:str) -> str:
+	def _replaceMacro(macro:str) -> Optional[str]:
 		"""	Replace a single macro or variable. 
 		
 			This is done recursively.
@@ -1846,7 +1846,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 	return result
 
 
-def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
+def _skipIfElse(pcontext:PContext, isIf:bool) -> Optional[PContext]:
 	"""	Skip to else or endif if *isIf* is False(!).
 	
 		Skip over "IF", "ELSE", or "ENDIF" commands that are not part of the scope.
@@ -1889,7 +1889,7 @@ def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
 	return pcontext
 
 
-def _skipSwitch(pcontext:PContext, compareTo:str, skip:Optional[bool] = False) -> PContext:
+def _skipSwitch(pcontext:PContext, compareTo:str, skip:Optional[bool] = False) -> Optional[PContext]:
 	"""	Skip to the first matching CASE statement of a a SWITCH block, or to the
 		end of the whole switch block
 
@@ -1936,7 +1936,7 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:Optional[bool] = False) -
 	return pcontext
 
 
-def _skipWhile(pcontext:PContext) -> PContext:
+def _skipWhile(pcontext:PContext) -> Optional[PContext]:
 	"""	Skip a WHILE block to its ENDWHILE. Skip over other WHILE..ENDWHILE that are 
 		not part of this scope.
 
@@ -2023,7 +2023,7 @@ def _skipWhile(pcontext:PContext) -> PContext:
 # 	return None
 
 
-def _compare(pcontext:PContext, arg:str, line:str, op:Callable) -> str:
+def _compare(pcontext:PContext, arg:str, line:str, op:Callable) -> Optional[str]:
 	"""	Compare two arguments with a comparison operator.
 
 		If both arguments are numbers then a numeric comparison is done, other a string compare is performed.
@@ -2065,7 +2065,7 @@ def _compare(pcontext:PContext, arg:str, line:str, op:Callable) -> str:
 	return str(op(l, r)).lower()
 
 
-def _boolResult(pcontext:PContext, arg:str) -> bool:
+def _boolResult(pcontext:PContext, arg:str) -> Optional[bool]:
 	"""	Test whether an argument is either *true* or *false*.
 
 		Args:
@@ -2082,7 +2082,7 @@ def _boolResult(pcontext:PContext, arg:str) -> bool:
 	return None
 
 
-def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:Optional[bool] = False) -> str:
+def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:Optional[bool] = False) -> Optional[str]:
 	"""	Perform an arithmetic calculation.
 
 		This function performs an arithmetic operation on multiple arguments. The same
@@ -2124,7 +2124,7 @@ def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:Optiona
 	return str(nums[0])	# final result is the only element in the list.
 
 
-def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:
+def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> Optional[PContext]:
 	"""	Execute a PROCEDURE in its own scope. 
 	
 		Variables are still global. If the procedure returns a result then it is

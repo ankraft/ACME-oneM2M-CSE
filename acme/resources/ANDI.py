@@ -7,9 +7,10 @@
 #	ResourceType: mgmtObj:areaNwkDeviceInfo
 #
 from __future__ import annotations
+from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..resources.MgmtObj import *
+from ..resources.MgmtObj import MgmtObj
 
 defaultDeviceID = ''
 

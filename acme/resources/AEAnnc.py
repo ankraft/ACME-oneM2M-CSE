@@ -8,10 +8,10 @@
 """
 
 from __future__ import annotations
+from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
-from ..resources.Resource import *
-
 
 class AEAnnc(AnnouncedResource):
 	""" Application Entity announced (AEA) resource type """

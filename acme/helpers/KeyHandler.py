@@ -10,8 +10,8 @@
 """
 
 from __future__ import annotations
-
 from typing import Callable, Dict, Tuple, Optional
+
 import sys, time, select
 from enum import Enum
 
@@ -156,7 +156,7 @@ except ImportError:
 		raise ImportError('getch not available')
 	else:
 
-		def getch() -> str|FunctionKey:
+		def getch() -> Optional[str|FunctionKey]:
 			try:
 				# ch = msvcrt.getch	# type: ignore
 				return _getKey(lambda : msvcrt.getch()) # type: ignore
@@ -301,7 +301,7 @@ else:
 
 
 	_errorInGetch:bool = False
-	def getch() -> str|FunctionKey:
+	def getch() -> Optional[str|FunctionKey]:
 		"""getch() -> key character
 
 		Read a single keypress from stdin and return the resulting character. 
@@ -484,7 +484,7 @@ def readline(prompt:str='>') -> str:
 		pass
 	return answer
 
-def waitForKeypress(s:float) -> str:
+def waitForKeypress(s:float) -> Optional[str]:
 	for i in range(0, int(s * 1.0 / _timeout)):
 		ch = None
 		try:

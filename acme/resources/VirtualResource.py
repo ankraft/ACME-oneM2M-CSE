@@ -7,7 +7,9 @@
 
 """ This module implements the base class for all oneM2M virtual resource types. """
 
-from ..etc.Types import ResourceTypes, Result, ResponseStatusCode as RC, CSERequest
+from __future__ import annotations
+
+from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, CSERequest
 from ..resources.Resource import Resource
 from ..services import CSE
 
@@ -24,7 +26,7 @@ class VirtualResource(Resource):
 								   oldest:bool) -> Result:
 
 		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
-			return Result.errorResult(rsc = RC.notFound, dbg = f'no instance for <{"oldest" if oldest else "latest"}>')
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = f'no instance for <{"oldest" if oldest else "latest"}>')
 
 		# Take the resource, either a FCIN or self and check whether a blocking RETRIEVE
 		# is necessary
@@ -37,11 +39,11 @@ class VirtualResource(Resource):
 		# Then retrieve the latest instance resource again(!) because it might have changed during the 
 		# blocking RETRIEVE
 		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
-			return Result.errorResult(rsc = RC.notFound, dbg = f'no instance for <{"oldest" if oldest else "latest"}>')
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = f'no instance for <{"oldest" if oldest else "latest"}>')
 		
 		# Do again some checks with the final resource, but no subscription checks! (we did this already)
 		if not (res := resource.willBeRetrieved(originator, request, subCheck = False)).status:
 			return res
 		
-		return Result(status = True, rsc = RC.OK, resource = resource)
+		return Result(status = True, rsc = ResponseStatusCode.OK, resource = resource)
 

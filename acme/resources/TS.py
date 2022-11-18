@@ -8,14 +8,16 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..etc import Utils as Utils, DateUtils as DateUtils
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc import Utils, DateUtils
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory as Factory
+from ..resources import Factory
 
 
 # CSE default:
@@ -24,7 +26,10 @@ from ..resources import Factory as Factory
 class TS(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACTR, T.TSI, T.SMD, T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
+								   ResourceTypes.TSI, 
+								   ResourceTypes.SMD, 
+								   ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -65,8 +70,10 @@ class TS(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.TS, dct, pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.TS, dct, pi, create = create)
 
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
@@ -88,12 +95,12 @@ class TS(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_LA).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.TS_LA).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_OL).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.TS_OL).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
@@ -106,7 +113,9 @@ class TS(AnnounceableResource):
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 
 		# Extra checks if mdd is present in an update
 		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
@@ -168,7 +177,10 @@ class TS(AnnounceableResource):
 		return Result.successResult()
 
  
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
@@ -204,20 +216,20 @@ class TS(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the TSI doesn't exceed the mbs
-		if childResource.ty == T.TSI and self.mbs is not None:					# mbs is an int
+		if childResource.ty == ResourceTypes.TSI and self.mbs is not None:					# mbs is an int
 			if childResource.cs is not None and childResource.cs > self.mbs:	# cs is an int
-				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
+				return Result.errorResult(rsc = ResponseStatusCode.notAcceptable, dbg = 'child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
-		tsis = CSE.storage.searchByFragment({ 	'ty'	: T.TSI,
+		tsis = CSE.storage.searchByFragment({ 	'ty'	: ResourceTypes.TSI,
 												'pi'	: self.ri,
 												'dgt'	: childResource.dgt
 		})
 		if len(tsis) > 0:	# Error if yes
-			return Result.errorResult(rsc = RC.conflict, dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
+			return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
 		return Result.successResult()
 
@@ -226,7 +238,7 @@ class TS(AnnounceableResource):
 	def childAdded(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
-		if childResource.ty == T.TSI:	# Validate if child is TSI
+		if childResource.ty == ResourceTypes.TSI:	# Validate if child is TSI
 
 			# Check for mia handling. This sets the et attribute in the TSI
 			if self.mia is not None:
@@ -245,7 +257,7 @@ class TS(AnnounceableResource):
 			if self.mdd and self.pei is not None and self.mdt is not None:
 				CSE.timeSeries.updateTimeSeries(self, childResource)
 		
-		elif childResource.ty == T.SUB:		# start monitoring
+		elif childResource.ty == ResourceTypes.SUB:		# start monitoring
 			if childResource['enc/md']:
 				CSE.timeSeries.addSubscription(self, childResource)
 
@@ -254,9 +266,9 @@ class TS(AnnounceableResource):
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
-		if childResource.ty == T.TSI:	# Validate if child was TSI
+		if childResource.ty == ResourceTypes.TSI:	# Validate if child was TSI
 			self._validateChildren()
-		elif childResource.ty == T.SUB:
+		elif childResource.ty == ResourceTypes.SUB:
 			if childResource['enc/md']:
 				CSE.timeSeries.removeSubscription(self, childResource)
 
@@ -264,7 +276,7 @@ class TS(AnnounceableResource):
 	# handle eventuel updates of subscriptions
 	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
 		super().childUpdated(childResource, updatedAttributes, originator)
-		if childResource.ty == T.SUB and childResource['enc/md']:
+		if childResource.ty == ResourceTypes.SUB and childResource['enc/md']:
 			CSE.timeSeries.updateSubscription(self, childResource)		
 
 
@@ -316,7 +328,7 @@ class TS(AnnounceableResource):
 		self.__validating = False
 
 
-	def _validateDataDetect(self, updatedAttributes:JSON = None) -> None:
+	def _validateDataDetect(self, updatedAttributes:Optional[JSON] = None) -> None:
 		"""	This method checks and enables or disables certain data detect monitoring attributes.
 		"""
 		L.isDebug and L.logDebug('Validating data detection')
@@ -359,7 +371,7 @@ class TS(AnnounceableResource):
 		self.dbUpdate()
 
 
-	def _clearMdlt(self, overwrite:bool = True) -> None:
+	def _clearMdlt(self, overwrite:Optional[bool] = True) -> None:
 		"""	Clear the missingDataList and missingDataCurrentNr attributes.
 
 			Args:
@@ -372,7 +384,7 @@ class TS(AnnounceableResource):
 	def timeSeriesInstances(self) -> list[Resource]:
 		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
 		""" 
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.TSI), key=lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(CSE.dispatcher.directChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:

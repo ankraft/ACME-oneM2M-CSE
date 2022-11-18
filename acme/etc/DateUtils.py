@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from typing import Callable, Union, Tuple, Optional
+
 import time
 from email.utils import formatdate
 from datetime import datetime, timedelta
@@ -56,7 +57,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 		If the *absRelTimestamp* is a period (relatice) timestamp (e.g. "PT2S"), then this function
 		tries to convert it and return an absolute POSIX timestamp as a float, based on the current UTC time.
 
-		If the *absRelTimestamp* contains a stringified integer then it is treated as a relative offset and
+		If the *absRelTimestamp* contains a stringified integer then it is treated as a relative offset in ms and
 		a UTC-based POSIX timestamp is generated for this offset and returned.
 
 		Args:
@@ -164,7 +165,7 @@ def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
 	return timeUntilTimestamp(ts)
 
 
-def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> float:
+def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> Optional[float]:
 	"""	Calculate the delta between and ISO 8601 date time string and a UTC-based POSIX timestamp.
 		
 		Args:
@@ -218,7 +219,9 @@ def waitFor(timeout:float,
 #	Cron
 #
 
-def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:Optional[datetime] = None) -> bool:
+def cronMatchesTimestamp(cronPattern:Union[str, 
+						 list[str]], 
+						 ts:Optional[datetime] = None) -> bool:
 	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
 
 		The cronPattern must follow the usual crontab pattern of 5 fields:

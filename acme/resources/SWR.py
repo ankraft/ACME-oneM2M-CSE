@@ -7,8 +7,11 @@
 #	ResourceType: mgmtObj:Software
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
-from ..resources.MgmtObj import *
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..resources.MgmtObj import MgmtObj
 
 statusUninitialized = 0
 statusSuccessful = 1
@@ -63,8 +66,10 @@ class SWR(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.SWR, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.SWR, create = create)
 
 		self.setAttribute('vr', defaultVersion, overwrite = False)
 		self.setAttribute('swn', defaultSoftwareName, overwrite = False)

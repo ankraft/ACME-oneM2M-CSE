@@ -8,14 +8,15 @@
 #
 
 
-import configparser, argparse, os, os.path, pathlib, ipaddress, re, sys
-from datetime import datetime
-
+from __future__ import annotations
 from typing import Any, Dict, Tuple, List, cast, Optional
+
+import configparser, argparse, os, os.path, pathlib, ipaddress, re
+from datetime import datetime
+import isodate
 from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
 from InquirerPy import prompt, inquirer
-import isodate
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
@@ -366,7 +367,7 @@ class Configuration(object):
 	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
-		from ..etc import Utils as Utils	# cannot import at the top because of circel import
+		from ..etc import Utils	# cannot import at the top because of circel import
 
 		# CSE type
 		if isinstance(cseType := Configuration._configuration['cse.type'], str):
@@ -592,7 +593,7 @@ class Configuration(object):
 
 
 	@staticmethod
-	def update(key:str, value:Any) -> str:
+	def update(key:str, value:Any) -> Optional[str]:
 		""" Update a configuration value and inform other components via an event.
 
 			Returns:

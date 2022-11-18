@@ -8,15 +8,16 @@
 """
 
 from __future__ import annotations
+from typing import Optional
 
 from copy import deepcopy
-from ..etc.Utils import findXPath
+from ..etc import Utils
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
 from ..etc.Types import NotificationEventType, ResponseStatusCode, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 
 
 # TODO notificationForwardingURI
@@ -77,7 +78,9 @@ class SUB(Resource):
 		'atr', 'net'
 	}
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.SUB, dct, pi, create = create)
 
 		# Set defaults for some attribute
@@ -123,7 +126,9 @@ class SUB(Resource):
 		CSE.notification.removeSubscription(self, originator)
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		previousNus = deepcopy(self.nu)
 
 		# We are validating the attributes here already because this actual update of the resource
@@ -150,7 +155,7 @@ class SUB(Resource):
 			return Result.errorResult(dbg = L.logDebug('Updates with any blocking Notification Event Type if not allowed.'))
 
 		# Handle changes to acrs (send deletion notifications)
-		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
+		if (newAcrs := Utils.findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
 			for crsRI in set(self.acrs) - set(newAcrs):
 				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
 				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
@@ -174,7 +179,10 @@ class SUB(Resource):
 		return CSE.notification.updateSubscription(self, previousNus, originator)
 
  
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 
@@ -278,7 +286,6 @@ class SUB(Resource):
 			if ty not in parentResource._allowedChildResourceTypes:		
 				return Result.errorResult(dbg = L.logDebug(f'ChildResourceType {ResourceTypes(ty).name} is not an allowed child resource of {ResourceTypes(parentResource.ty).name}'))
 		return Result.successResult()
-
 
 
 	def _hasBlockingNET(self, net:list[NotificationEventType]) -> bool:

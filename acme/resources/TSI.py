@@ -8,15 +8,17 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..resources.Resource import *
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc import Utils
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class TSI(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -44,12 +46,16 @@ class TSI(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
 		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
 
 
 	# Forbid updating
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating CIN is forbidden')
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'updating CIN is forbidden')
 

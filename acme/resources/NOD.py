@@ -13,7 +13,6 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc import Utils as Utils
 from ..services import CSE
-from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

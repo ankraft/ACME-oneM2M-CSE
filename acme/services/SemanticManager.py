@@ -9,17 +9,18 @@
 """
 
 from __future__ import annotations
-import sys
-
 from typing import Sequence, cast, Optional, Union
+
+import sys
 from abc import ABC, abstractmethod
-from xml.etree import ElementTree as ET
+from xml.etree import ElementTree
 import base64, binascii
 
 from ..resources.SMD import SMD
 from ..services import CSE
-from ..services.Logging import Logging as L
 from ..etc.Types import Permission, ResourceTypes, ResponseStatusCode, Result, SemanticFormat
+from ..services.Logging import Logging as L
+
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.
@@ -395,7 +396,7 @@ class SemanticManager(object):
 			if not (res := self.executeSPARQLQuery(query, smd, format)).status:
 				return res
 			try:
-				for e in ET.fromstring(cast(str, res.data)):	
+				for e in ElementTree.fromstring(cast(str, res.data)):	
 					if e.tag.endswith('results'):	# ignore namespace
 						if len(e) > 0:				# Found at least 1 result, so add the *parent resource* to the result set
 							pis.append(smd.retrieveParentResource())
@@ -549,9 +550,9 @@ class RdfLibHandler(SemanticHandler):
 			# Pretty print the result to the log
 			# ET.indent is only available in Python 3.9+
 			if L.isDebug and sys.version_info >= (3, 9) and _format == 'xml':
-				element = ET.XML(qres.serialize(format = _format).decode('UTF-8'))
-				ET.indent(element)	# type:ignore
-				L.logDebug(ET.tostring(element, encoding = 'unicode'))
+				element = ElementTree.XML(qres.serialize(format = _format).decode('UTF-8'))
+				ElementTree.indent(element)	# type:ignore
+				L.logDebug(ElementTree.tostring(element, encoding = 'unicode'))
 		except Exception as e:
 			return Result.errorResult(dbg = L.logWarn(f'Query error: {str(e)} for result'))
 
@@ -570,7 +571,7 @@ class RdfLibHandler(SemanticHandler):
 	#	Handler-internal methods
 	#
 
-	def getFormat(self, format:SemanticFormat) -> str|None:
+	def getFormat(self, format:SemanticFormat) -> Optional[str]:
 		"""	Return a representation of a semantic format supported by the graph framework.
 
 			Args:
@@ -581,7 +582,7 @@ class RdfLibHandler(SemanticHandler):
 		return self.supportedFormats.get(format)
 
 
-	def getGraph(self, id:str) -> rdflib.Graph|None:
+	def getGraph(self, id:str) -> Optional[rdflib.Graph]:
 		"""	Find and return the stored graph with the given identifier.
 
 			Args:
@@ -592,7 +593,7 @@ class RdfLibHandler(SemanticHandler):
 		return self.graph.get_graph(URIRef(id))
 
 
-	def getAggregatedGraph(self, ids:Sequence[str]) -> rdflib.Dataset|None:
+	def getAggregatedGraph(self, ids:Sequence[str]) -> Optional[rdflib.Dataset]:
 		"""	Return an aggregated graph with all the triple for the individuel
 			graphs for the list of resources indicated by their resource IDs. 
 

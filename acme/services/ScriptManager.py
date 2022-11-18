@@ -9,8 +9,8 @@
 
 
 from __future__ import annotations
-
 from typing import Callable, Dict, Union, Any, Tuple, cast, Optional
+
 from pathlib import Path
 import json, os, fnmatch, re, base64, urllib.parse
 import requests
@@ -21,10 +21,10 @@ from ..services.Configuration import Configuration
 from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCallable
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers import TextTools
-from ..services.Logging import Logging as L, LogLevel
 from ..services import CSE
 from ..etc import Utils, DateUtils
 from ..resources import Factory
+from ..services.Logging import Logging as L, LogLevel
 
 
 # TODO implement request sdefaults
@@ -257,7 +257,7 @@ class ACMEPContext(PContext):
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.CREATE, arg)
 	
 
-	def doDelete(self, pcontext:PContext, arg:str) -> PContext:
+	def doDelete(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Execute a DELETE request. The originator must be set before this command.
 		
 			Example:
@@ -284,7 +284,7 @@ class ACMEPContext(PContext):
 	"""
 
 
-	def doHttp(self, pcontext:PContext, arg:str) -> PContext:
+	def doHttp(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		""" Making a http(s) request.
 				
 			Example:
@@ -372,7 +372,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doImportRaw(self, pcontext:PContext, arg:str) -> PContext:
+	def doImportRaw(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Import a raw resource. Not much verification is done, and a full resource
 			representation, including for example the parent resource ID, must be provided.
 		
@@ -391,7 +391,7 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'No or invalid content found')
 			return None
 
-		resource = Factory.resourceFromDict(dct, create=True, isImported=True).resource
+		resource = Factory.resourceFromDict(dct, create = True, isImported=True).resource
 
 		# Get the originator for the request
 		if (originator := self.getVariable('request.originator')) is None:
@@ -416,7 +416,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doLogDivider(self, pcontext:PContext, arg:str = '') -> PContext:
+	def doLogDivider(self, pcontext:PContext, arg:Optional[str] = '') -> Optional[PContext]:
 		"""	Print a divider line to the log (on DEBUG level).
 			
 			Optionally add a message that is centered on the line.
@@ -435,7 +435,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doNotify(self, pcontext:PContext, arg:str) -> PContext:
+	def doNotify(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Execute a NOTIFY request. The originator must be set before this command.
 		
 			Example:
@@ -465,13 +465,13 @@ class ACMEPContext(PContext):
 				arg: Remaining argument of the command.
 
 			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+				The script's `PContext` object.
 		"""
 		self.setVariable('request.originator', arg if arg else '')
 		return pcontext
 
 
-	def doPoa(self, pcontext:PContext, arg:str) -> PContext:
+	def doPoa(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Assign a "poa" for an identifier.
 
 			Example:
@@ -493,7 +493,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doPrintJSON(self, pcontext:PContext, arg:str) -> PContext:
+	def doPrintJSON(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Print a beautified JSON to the console.
 			
 			Args:
@@ -513,7 +513,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doRequestAttributes(self, pcontext:PContext, arg:str) -> PContext:
+	def doRequestAttributes(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Add extra request attributes to a request. The argument to this
 			command is a JSON structure with the attributes.
 			
@@ -531,7 +531,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doReset(self, pcontext:PContext, arg:str) -> PContext:
+	def doReset(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Initiate a CSE reset.
 
 			Example:
@@ -554,7 +554,7 @@ class ACMEPContext(PContext):
 		return pcontext
 	
 
-	def doRetrieve(self, pcontext:PContext, arg:str) -> PContext:
+	def doRetrieve(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Execute a RETRIEVE request. The originator must be set before this command.
 		
 			Example:
@@ -570,7 +570,7 @@ class ACMEPContext(PContext):
 		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.RETRIEVE, arg)
 	
 
-	def doRun(self, pcontext:PContext, arg:str) -> PContext:
+	def doRun(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Run another script. The *result* variable will contain the return value
 			of the run sript.
 		
@@ -600,7 +600,7 @@ class ACMEPContext(PContext):
 		return None
 
 
-	def doSetConfig(self, pcontext:PContext, arg:str) -> PContext:
+	def doSetConfig(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Set a CSE configuration. The configuration must be an existing configuration. No
 			new configurations can e created this way.
 		
@@ -651,7 +651,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doSetLogging(self, pcontext:PContext, arg:str) -> PContext:
+	def doSetLogging(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Implementation of the *setLoggin* command. Enable/disable the console logging.
 
 			Args:
@@ -669,7 +669,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 	
-	def doStoragePut(self, pcontext:PContext, arg:str) -> PContext:
+	def doStoragePut(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Implementation of the *storagePut* command. Store a value in the persistent storage.
 
 			Args:
@@ -687,7 +687,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doStorageRemove(self, pcontext:PContext, arg:str) -> PContext:
+	def doStorageRemove(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Implementation of the *storageRemove* command. Remove a value from the persistent storage.
 
 			Args:
@@ -705,7 +705,7 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	def doUpdate(self, pcontext:PContext, arg:str) -> PContext:
+	def doUpdate(self, pcontext:PContext, arg:str) -> Optional[PContext]:
 		"""	Execute an UPDATE request. The originator must be set before this command.
 		
 			Example:
@@ -726,7 +726,7 @@ class ACMEPContext(PContext):
 	#	Macros
 	#
 
-	def doAttribute(self, pcontext:PContext, arg:str, line:str) -> str:
+	def doAttribute(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
 		""" Retrieve an attribute of a resource via its key path. 
 		
 			Example:
@@ -789,7 +789,7 @@ class ACMEPContext(PContext):
 		return str(CSE.cseStatus)
 
 
-	def doHasAttribute(self, pcontext:PContext, arg:str, line:str) -> str:
+	def doHasAttribute(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
 		""" Check whether an attribute exists for the given its key path . 
 		
 			Example:
@@ -817,7 +817,7 @@ class ACMEPContext(PContext):
 		return 'true'
 
 
-	def doIsIPython(self, pcontext:PContext, arg:str, line:str) -> str:
+	def doIsIPython(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
 		"""	Check whether the CSE currently runs in an IPython environment,
 			such as Jupyter Notebooks.
 		
@@ -855,7 +855,7 @@ class ACMEPContext(PContext):
 		return arg.replace('\n', '\\n').replace('"', '\\"')
 
 
-	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> str:
+	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
 		"""	Implementation of the *storageHas* macro. Test for a key in the persistent storage.
 
 			Args:
@@ -876,7 +876,7 @@ class ACMEPContext(PContext):
 		return CSE.script.storageHas(key)
 
 
-	def doStorageGet(self, pcontext:PContext, arg:str, line:str) -> str:
+	def doStorageGet(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
 		"""	Implementation of the *storageGet* macro. Retrieve a value from the persistent storage.
 
 			Args:
@@ -922,7 +922,7 @@ class ACMEPContext(PContext):
 	#	Internals
 	#
 
-	def  _getResourceFromScript(self, pcontext:PContext, arg:str) -> JSON:
+	def  _getResourceFromScript(self, pcontext:PContext, arg:str) -> Optional[JSON]:
 		"""	Return a resource definition (JSON) from a script. The resource definition
 			may span multiple lines.
 
@@ -993,7 +993,7 @@ class ACMEPContext(PContext):
 			return None
 
 
-	def _handleRequest(self, pcontext:ACMEPContext, operation:Operation, arg:str) -> PContext:
+	def _handleRequest(self, pcontext:ACMEPContext, operation:Operation, arg:str) -> Optional[PContext]:
 		"""	Internally handle a request, either via a direct URL or through an originator.
 
 			Return status and resources in the variables *result.status* and 
@@ -1410,7 +1410,7 @@ class ScriptManager(object):
 			return CSE.script.loadScript(file.read(), filename)
 
 
-	def loadScript(self, script:str, filename:str) -> ACMEPContext:
+	def loadScript(self, script:str, filename:str) -> Optional[ACMEPContext]:
 		"""	Load and initialize a script. If no name is set in the script itself, then the 
 			filename's stem is set as the name.
 
@@ -1442,7 +1442,8 @@ class ScriptManager(object):
 		self.scripts.clear()
 	
 
-	def findScripts(self, name:Optional[str] = None, meta:Optional[Union[str, list[str]]] = None) -> list[PContext]:
+	def findScripts(self, name:Optional[str] = None,
+						  meta:Optional[Union[str, list[str]]] = None) -> list[PContext]:
 		""" Find scripts by a filter.
 		
 			Filters are and-combined.
@@ -1544,7 +1545,7 @@ class ScriptManager(object):
 	#	Storage handlers
 	#
 
-	def storageGet(self, key:str) -> str:
+	def storageGet(self, key:str) -> Optional[str]:
 		"""	Retrieve a key/value pair from the persistent storage. 
 		
 			Args:

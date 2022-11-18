@@ -8,13 +8,14 @@
 #
 
 from __future__ import annotations
+from typing import Callable, Optional
+
 import flask, sys, argparse, logging, ssl, collections, time, webbrowser
 from rich.console import Console
 import requests
 from flask import Flask, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
-from typing import Callable
 
 
 FlaskHandler = 	Callable[[str], Response]
@@ -23,7 +24,13 @@ FlaskHandler = 	Callable[[str], Response]
 
 class WebUI(object):
 
-	def __init__(self, app:Flask, defaultRI:str, defaultOriginator:str, root:str='/webui', webuiDirectory:str='.', redirectURL:str=None, version:str=''):
+	def __init__(self, app:Flask, 
+					   defaultRI:str, 
+					   defaultOriginator:str, 
+					   root:Optional[str] = '/webui', 
+					   webuiDirectory:Optional[str] = '.', 
+					   redirectURL:Optional[str] = None, 
+					   version:Optional[str] ='') -> None:
 		# Register the endpoint for the web UI
 		self.flaskApp 			= app
 		self.webuiRoot 			= root
@@ -38,47 +45,51 @@ class WebUI(object):
 		if self.redirectURL is not None and self.redirectURL[-1] != '/':
 			self.redirectURL += '/'
 
-		self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
-		self.addEndpoint(self.webuiRoot + '/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
-		self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
+		self.addEndpoint(self.webuiRoot, handler = self.handleWebUIGET, methods = ['GET'])
+		self.addEndpoint(self.webuiRoot + '/<path:path>', handler = self.handleWebUIGET, methods = ['GET'])
+		self.addEndpoint('/', handler = self.redirectRoot, methods = ['GET'])
 		
-		self.addEndpoint('/__version__', handler=self.getVersion, methods=['GET'])
+		self.addEndpoint('/__version__', handler = self.getVersion, methods = ['GET'])
 
 		if self.redirectURL is not None:
-			self.addEndpoint('/<path:path>', handler=self.proxy, methods=['GET', 'POST', 'PUT', 'DELETE'])
+			self.addEndpoint('/<path:path>', handler = self.proxy, methods = ['GET', 'POST', 'PUT', 'DELETE'])
 		
 		logging.getLogger("requests").setLevel(logging.WARNING)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:FlaskHandler=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
+	def addEndpoint(self, endpoint:Optional[str] = None, 
+						  endpoint_name:Optional[str] = None, 
+						  handler:Optional[FlaskHandler] = None, 
+						  methods:Optional[list[str]] = None, 
+						  strictSlashes:Optional[bool] = True) -> None:
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
 
 
-	def redirectRoot(self, path:str=None) -> Response:
+	def redirectRoot(self, path:str = None) -> Response:
 		"""	Redirect request to / to webui.
 		"""
-		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code=302)
+		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code = 302)
 
 
-	def getVersion(self, path:str=None) -> Response:
+	def getVersion(self, path:str = None) -> Response:
 		return Response(self.version)
 
 
-	def handleWebUIGET(self, path:str=None) -> Response:
+	def handleWebUIGET(self, path:str = None) -> Response:
 		""" Handle a GET request for the web GUI. 
 		"""
 
 		# security check whether the path will under the web root
 
 		if not f'{self.webuiRoot}/{request.path}'.startswith(self.webuiRoot):
-			return Response(status=404)
+			return Response(status = 404)
 
 		# Redirect to index file. Also include base / cse RI
 		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
 		if not path:
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&" + request.query_string.decode() if request.query_string else ""}', code=302)
+			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
 		try:
@@ -142,7 +153,12 @@ console:Console = None
 doLogging:bool = True
 
 
-def runServer(flaskApp:Flask, host:str, port:int, useTLS:bool, certFile:str=None, privateKey:str=None) -> None:
+def runServer(flaskApp:Flask, 
+			  host:str, 
+			  port:int, 
+			  useTLS:bool, 
+			  certFile:Optional[str] = None, 
+			  privateKey:Optional[str] = None) -> None:
 	WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 	# Run the http server. This runs forever.
@@ -198,7 +214,8 @@ _expirationLeeway	= 5.0		# 5 seconds leeway for token expiration
 
 
 
-def getOAuthToken(token:Token=None, kind:str='keycloak') -> Token|None:
+def getOAuthToken(token:Optional[Token] = None, 
+				  kind:Optional[str] = 'keycloak') -> Optional[Token]:
 	"""	Retrieve and return a oauth2 token. If there is a provided token that is still valid, then that token
 		is returned.
 

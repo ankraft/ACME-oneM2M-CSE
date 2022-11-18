@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..resources.MgmtObjAnnc import *
+from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class DVCAnnc(MgmtObjAnnc):

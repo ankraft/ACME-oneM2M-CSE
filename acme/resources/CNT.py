@@ -8,14 +8,15 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, JSONLIST
 from ..etc import Utils, DateUtils
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
-from ..resources.Resource import *
-from .AnnounceableResource import AnnounceableResource
+from ..resources.Resource import Resource
+from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory
 
 

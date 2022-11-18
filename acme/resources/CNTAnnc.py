@@ -7,7 +7,9 @@
 #	CNT : Announceable variant
 #
 
+from __future__ import annotations
 from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 

@@ -7,13 +7,14 @@
 """ AccessControlPolicy (ACP) resource type """
 
 from __future__ import annotations
-from typing import List
+from typing import List, Optional
+
 from ..helpers.TextTools import simpleMatch
-from ..etc import Utils as Utils
+from ..etc import Utils
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

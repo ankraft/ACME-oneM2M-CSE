@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 
 
 class FCI(Resource):

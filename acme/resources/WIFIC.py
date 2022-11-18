@@ -7,8 +7,12 @@
 #	ResourceType: mgmtObj:WifiClient
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..resources.MgmtObj import *
+from __future__ import annotations
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
+from ..resources.MgmtObj import MgmtObj
+from ..resources.Resource import Resource
 
 
 class WIFIC(MgmtObj):
@@ -55,7 +59,9 @@ class WIFIC(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.WIFIC, create = create)
 
 		self.setAttribute('ssi', '', overwrite = False)
@@ -66,7 +72,10 @@ class WIFIC(MgmtObj):
 		self.setAttribute('rdst', False)
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		if self.wcrds:

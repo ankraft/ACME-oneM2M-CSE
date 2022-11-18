@@ -125,7 +125,7 @@ class CriticalResourceSection(object):
 	
 	def __exit__(self,	exctype: Optional[Type[BaseException]],
 			 			excinst: Optional[BaseException],
-						exctb: Optional[TracebackType]) -> bool:
+						exctb: Optional[TracebackType]) -> Optional[bool]:
 		clearResourceState(self.id)
 		return None
 

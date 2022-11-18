@@ -8,11 +8,13 @@
 #
 
 from __future__ import annotations
+from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, Result, JSON
-from ..resources.Resource import *
+from ..etc import DateUtils
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory as Factory
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 
@@ -67,7 +69,9 @@ class TSB(AnnounceableResource):
 # TODO Implement Annc
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.TSB, dct, pi, create = create)
 		# Add to internal attributes to ignore in validation etc
 		self._addToInternalAttributes(self._bcni)	
@@ -86,7 +90,9 @@ class TSB(AnnounceableResource):
 		return CSE.time.addTimeSyncBeacon(self)
 	
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		originalBcnc = self.bcnc
 		if not (res := super().update(dct, originator)).status:
 			return res
@@ -98,8 +104,10 @@ class TSB(AnnounceableResource):
 		CSE.time.removeTimeSyncBeacon(self)
 
 
-
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		L.isDebug and L.logDebug(f'Validating timeSeriesBeacon: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res

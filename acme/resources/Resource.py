@@ -11,14 +11,14 @@
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
 from typing import Any, Tuple, cast, Optional
+
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, ResponseStatusCode, CSERequest, JSON
-from ..etc import Utils as Utils
-from ..etc import DateUtils as DateUtils
+from ..etc import Utils
+from ..etc import DateUtils
 from ..services.Logging import Logging as L
-from ..services import CSE as CSE
-from .Resource import *
+from ..services import CSE
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
@@ -54,12 +54,12 @@ class Resource(object):
 	def __init__(self, 
 				 ty:ResourceTypes, 
 				 dct:JSON, 
-				 pi:str = None, 
-				 tpe:str = None,
-				 create:bool = False,
-				 inheritACP:bool = False, 
-				 readOnly:bool = False, 
-				 rn:str = None) -> None:
+				 pi:Optional[str] = None, 
+				 tpe:Optional[str] = None,
+				 create:Optional[bool] = False,
+				 inheritACP:Optional[bool] = False, 
+				 readOnly:Optional[bool] = False, 
+				 rn:Optional[str] = None) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
@@ -147,7 +147,9 @@ class Resource(object):
 
 
 	# Default encoding implementation. Overwrite in subclasses
-	def asDict(self, embedded:bool = True, update:bool = False, noACP: bool = False) -> JSON:
+	def asDict(self, embedded:Optional[bool] = True, 
+					 update:Optional[bool] = False, 
+					 noACP:Optional[bool] = False) -> JSON:
 		"""	Get the JSON resource representation.
 		
 			Args:
@@ -234,7 +236,9 @@ class Resource(object):
 		# asynchronously in GroupManager, triggered by an event.
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
@@ -325,7 +329,9 @@ class Resource(object):
 		return Result.successResult()
 
 
-	def willBeUpdated(self, dct:JSON = None, originator:str = None, subCheck:bool = True) -> Result:
+	def willBeUpdated(self, dct:Optional[JSON] = None, 
+							originator:Optional[str] = None, 
+							subCheck:Optional[bool] = True) -> Result:
 		""" This method is called before a resource will be updated and before calling the *update()* method.
 			
 			This method is implemented in some sub-classes.
@@ -343,7 +349,8 @@ class Resource(object):
 		return Result.successResult()
 
 
-	def updated(self, dct:JSON = None, originator:str = None) -> None:
+	def updated(self, dct:Optional[JSON] = None, 
+					  originator:Optional[str] = None) -> None:
 		"""	Signal to a resource that is was successfully updated. 
 		
 			This handler can be used to perform	additional actions after the resource was updated, stored etc.
@@ -357,7 +364,9 @@ class Resource(object):
 		pass
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest = None, subCheck:bool = True) -> Result:
+	def willBeRetrieved(self, originator:str, 
+							  request:Optional[CSERequest] = None, 
+							  subCheck:Optional[bool] = True) -> Result:
 		""" This method is called before a resource will be send back in a RETRIEVE response.
 			
 			This method is implemented in some sub-classes.
@@ -440,7 +449,10 @@ class Resource(object):
 		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		""" Validate a resource. 
 		
 			Usually called within activate() or update() methods.
@@ -600,7 +612,9 @@ class Resource(object):
 	#
 
 
-	def setAttribute(self, key:str, value:Any, overwrite:bool = True) -> None:
+	def setAttribute(self, key:str, 
+						   value:Any, 
+						   overwrite:Optional[bool] = True) -> None:
 		"""	Assign a value to a resource attribute.
 
 			If the attribute doesn't exist then it is created.
@@ -613,7 +627,8 @@ class Resource(object):
 		Utils.setXPath(self.dict, key, value, overwrite)
 
 
-	def attribute(self, key:str, default:Any = None) -> Any:
+	def attribute(self, key:str, 
+						default:Optional[Any] = None) -> Any:
 		"""	Return the value of an attribute.
 		
 			Args:
@@ -637,7 +652,8 @@ class Resource(object):
 		return key in self.dict
 
 
-	def delAttribute(self, key:str, setNone:bool = True) -> None:
+	def delAttribute(self, key:str, 
+						   setNone:Optional[bool] = True) -> None:
 		""" Delete the attribute 'key' from the resource. 
 		
 			Args:
@@ -808,7 +824,7 @@ class Resource(object):
 		return CSE.storage.updateResource(self)
 
 
-	def dbCreate(self, overwrite:bool = False) -> Result:
+	def dbCreate(self, overwrite:Optional[bool] = False) -> Result:
 		"""	Add the resource to the database.
 		
 			Args:

@@ -7,11 +7,13 @@
 """ Application Entity (AE) resource type """
 
 from __future__ import annotations
+from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, ResponseStatusCode, JSON
 from ..etc.Utils import uniqueAEI
 from ..services.Logging import Logging as L
 from ..services import CSE
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

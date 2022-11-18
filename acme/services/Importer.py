@@ -11,19 +11,18 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
+from typing import cast, Sequence, Optional
+
 import json, os, fnmatch, re
-from typing import cast, Sequence
 from copy import deepcopy
 
 from ..etc.Utils import findXPath, getCSE
-from ..etc.Types import AttributePolicy
-from ..etc.Types import ResourceTypes as T
-from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
+from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
-from ..services.Logging import Logging as L
-from ..resources import Factory as Factory
+from ..services import CSE
+from ..resources import Factory
 from ..helpers.TextTools import removeCommentsFromJSON
+from ..services.Logging import Logging as L
 
 # TODO Support child specialization in attribute definitionsEv
 
@@ -77,7 +76,7 @@ class Importer(object):
 		CSE.script.removeScripts()
 
 
-	def importScripts(self, path:str = None) -> bool:
+	def importScripts(self, path:Optional[str] = None) -> bool:
 		"""	Import the ACME script from a directory.
 		
 			Args:
@@ -151,7 +150,7 @@ class Importer(object):
 	#	Attribute Policies
 	#
 
-	def importEnumPolicies(self, path:str = None) -> bool:
+	def importEnumPolicies(self, path:Optional[str] = None) -> bool:
 		"""	Import the enumeration types policies.
 
 			Args:
@@ -191,8 +190,7 @@ class Importer(object):
 		return True
 
 
-
-	def importFlexContainerPolicies(self, path:str = None) -> bool:
+	def importFlexContainerPolicies(self, path:Optional[str] = None) -> bool:
 		"""	Import the attribute and hierarchy policies for flexContainer specializations.
 
 			Args:
@@ -268,7 +266,7 @@ class Importer(object):
 		return True
 
 
-	def importAttributePolicies(self, path:str = None) -> bool:
+	def importAttributePolicies(self, path:Optional[str] = None) -> bool:
 		"""	Import the resource attribute policies.
 
 			Args:
@@ -329,22 +327,21 @@ class Importer(object):
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
 		for p in CSE.validator.getAllAttributePolicies().values():
-			if p.type == BT.complex:
+			if p.type == BasicType.complex:
 				for each in CSE.validator.getAllAttributePolicies().values():
 					if p.typeName == each.ctype:	# found a definition
 						break
 				else:
 					L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
 					return False
-			elif p.type == BT.list and p.ltype is not None:
-				if p.ltype == BT.complex:
+			elif p.type == BasicType.list and p.ltype is not None:
+				if p.ltype == BasicType.complex:
 					for each in CSE.validator.getAllAttributePolicies().values():
 						if p.lTypeName == each.ctype:	# found a definition
 							break
 					else:
 						L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
 						return False			
-		
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
 		return True
@@ -360,7 +357,7 @@ class Importer(object):
 		L.isInfo and L.log(f'Assigning attribute policies to resource types')
 
 		noErrors = True
-		for ty in T:
+		for ty in ResourceTypes:
 			if (rc := ty.resourceClass()):											# Get the Python class for each Resource (only real resources)
 				if hasattr(rc, '_attributes'):										# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
@@ -383,7 +380,11 @@ class Importer(object):
 		return noErrors
 
 
-	def _parseAttribute(self, attr:JSON, fn:str, tpe:str = None, sname:str = None, checkListType:bool = True) -> AttributePolicy:
+	def _parseAttribute(self, attr:JSON, 
+							  fn:str, 
+							  tpe:Optional[str] = None, 
+							  sname:Optional[str] = None, 
+							  checkListType:Optional[bool] = True) -> Optional[AttributePolicy]:
 		"""	Parse a single attribute definitions for common as well as for flexContainer attributes.
 
 			Args:
@@ -425,48 +426,48 @@ class Importer(object):
 		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
 			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
-		if not (typ := BT.to(typeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
-			typ = BT.complex
+		if not (typ := BasicType.to(typeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
+			typ = BasicType.complex
 
 		#	Get the optional cardinality
-		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := CAR.to(tmp, insensitive=True)):	# default car01
+		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := Cardinality.to(tmp, insensitive=True)):	# default car01
 			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		# 	Get the create optionality
-		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RO.to(tmp, insensitive=True)):	# default O
+		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RequestOptionality.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Get the update optionality
-		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RO.to(tmp, insensitive=True)):	# default O
+		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RequestOptionality.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Get the delete optionality
-		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RO.to(tmp, insensitive=True)):	# default O
+		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RequestOptionality.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Ge the announcement optionality
-		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := AN.to(tmp, insensitive=True)):	# default OA
+		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := Announced.to(tmp, insensitive=True)):	# default OA
 			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 				
 		#	Check and determine the list type
 		lTypeName:str = None
-		ltype:BT = None
+		ltype:BasicType = None
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
 			if lTypeName := findXPath(attr, 'ltype'):
 				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
 					L.logErr(f'Empty list type name (ltype): {lTypeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 					return None
-				if typ not in [ BT.list, BT.listNE ]:
+				if typ not in [ BasicType.list, BasicType.listNE ]:
 					L.logErr(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 					return None
-				if not (ltype := BT.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
-					ltype = BT.complex
-				if ltype == BT.enum:	# check sub-type enums
+				if not (ltype := BasicType.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
+					ltype = BasicType.complex
+				if ltype == BasicType.enum:	# check sub-type enums
 					evalues:Sequence[int|str]
 					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 						evalues = self._enumValues.get(etype)
@@ -476,12 +477,12 @@ class Importer(object):
 						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
 						return None
 					evalues = self._expandEnumValues(evalues, tpe, fn)
-			if typ == BT.list and lTypeName is None:
+			if typ == BasicType.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
 		#	Check and get enum definitions
 		evalues = None
-		if typ == BT.enum or (typ == BT.list and ltype == BT.enum):
+		if typ == BasicType.enum or (typ == BasicType.list and ltype == BasicType.enum):
 			if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 				evalues = self._enumValues.get(etype)
 			else:
@@ -492,12 +493,11 @@ class Importer(object):
 			evalues = self._expandEnumValues(evalues, tpe, fn)
 
 		#	Check missing complex type definition
-		if typ == BT.dict or ltype == BT.dict:
+		if typ == BasicType.dict or ltype == BasicType.dict:
 			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {tpe} in file: {fn}')
 		# re-type an anonymous dict to a normal dict
-		if typ == BT.adict:
-			typ = BT.dict
-
+		if typ == BasicType.adict:
+			typ = BasicType.dict
 
 
 		#	CHeck whether the mandatory rtypes field is set
@@ -518,7 +518,7 @@ class Importer(object):
 								lname = lname,
 								sname = sname,
 								tpe = tpe,
-								rtypes = T.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
+								rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
 								ctype = ctype,
 								fname = fn,
 								ltype = ltype,
@@ -547,7 +547,7 @@ class Importer(object):
 		return str(value)
 
 
-	def readJSONFromFile(self, filename:str) -> JSON|JSONLIST:		# TODO move to helper
+	def readJSONFromFile(self, filename:str) -> Optional[JSON|JSONLIST]:		# TODO move to helper
 		"""	Read and parse a JSON data structure from a file *filename*. 
 
 			Args:
@@ -583,7 +583,7 @@ class Importer(object):
 		self.isImporting = False
 
 
-	def _expandEnumValues(self, evalues:list[int|str], tpe:str, fn:str) -> list[int]:
+	def _expandEnumValues(self, evalues:list[int|str], tpe:str, fn:str) -> Optional[list[int]]:
 
 		#	Check and get enum definitions
 		_evalues:list[int] = []

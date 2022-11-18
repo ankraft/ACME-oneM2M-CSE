@@ -8,12 +8,14 @@
 #
 
 from __future__ import annotations
+from typing import Optional
+
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, Result, JSON, AttributePolicyDict
 from ..etc.Types import Announced
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
-from .Resource import *
+from .Resource import Resource
 
 class AnnounceableResource(Resource):
 

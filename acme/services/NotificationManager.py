@@ -11,21 +11,21 @@
 """
 
 from __future__ import annotations
-from re import sub
-import sys, copy
 from typing import Callable, Union, Any, cast, Optional
+
+import sys, copy
 from threading import Lock, current_thread
 
 import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
-from ..etc.Types import ResponseStatusCode as RC, EventCategory, JSON, JSONLIST, ResourceTypes as T
+from ..etc.Types import ResponseStatusCode, EventCategory, JSON, JSONLIST, ResourceTypes
 from ..etc import Utils, DateUtils
-from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..services.Logging import Logging as L
 
 # TODO: removal policy (e.g. unsuccessful tries)
 
@@ -55,7 +55,6 @@ class NotificationManager(object):
 			Returns:
 				Boolean that indicates the success of the operation
 		"""
-
 		L.isInfo and L.log('NotificationManager shut down')
 		return True
 
@@ -97,7 +96,8 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
 			return res
-		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
+		return Result.successResult() if CSE.storage.addSubscription(subscription) \
+									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot add subscription to database')
 
 
 	def removeSubscription(self, subscription:SUB|CRS, originator:str) -> Result:
@@ -125,7 +125,8 @@ class NotificationManager(object):
 			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
-		return Result.successResult() if CSE.storage.removeSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot remove subscription from database')
+		return Result.successResult() if CSE.storage.removeSubscription(subscription) \
+									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot remove subscription from database')
 
 
 	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> Result:
@@ -145,10 +146,13 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Updating subscription')
 		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
-		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
+		return Result.successResult() if CSE.storage.updateSubscription(subscription) \
+									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot update subscription in database')
 
 
-	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> JSONLIST:
+	def getSubscriptionsByNetChty(self, ri:str, 
+										net:Optional[list[NotificationEventType]] = None, 
+										chty:Optional[ResourceTypes] = None) -> JSONLIST:
 		"""	Returns a (possible empty) list of subscriptions for a resource. 
 		
 			An optional filter can be used 	to return only those subscriptions with a specific enc/net.
@@ -265,7 +269,10 @@ class NotificationManager(object):
 				self.countNotificationEvents(ri)
 
 
-	def checkPerformBlockingUpdate(self, resource:Resource, originator:str, updatedAttributes:JSON, finished:Callable = None) -> Result:
+	def checkPerformBlockingUpdate(self, resource:Resource, 
+										 originator:str, 
+										 updatedAttributes:JSON, 
+										 finished:Optional[Callable] = None) -> Result:
 		"""	Check for and perform a *blocking update* request for resource updates that have this event type 
 			configured.
 
@@ -277,7 +284,6 @@ class NotificationManager(object):
 			Returns:
 				Result instance indicating success or failure.
 		"""
-
 		L.isDebug and L.logDebug('Looking for blocking UPDATE')
 
 		# TODO 2) Prevent or block all other UPDATE request primitives to this target resource.
@@ -315,20 +321,20 @@ class NotificationManager(object):
 														 originator = CSE.cseCsi,
 														 content = notification)).status:
 				return res	# Something else went wrong
-			if res.rsc == RC.OK:
+			if res.rsc == ResponseStatusCode.OK:
 				if finished:
 					finished()
 				continue
 
 			# Modify the result status code for some failure response status codes
-			if res.rsc == RC.targetNotReachable:
+			if res.rsc == ResponseStatusCode.targetNotReachable:
 				res.dbg = L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}')
-				res.rsc = RC.remoteEntityNotReachable
+				res.rsc = ResponseStatusCode.remoteEntityNotReachable
 				res.status = False
 				return res
-			elif res.rsc == RC.operationNotAllowed:
+			elif res.rsc == ResponseStatusCode.operationNotAllowed:
 				res.dbg = L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}')
-				res.rsc = RC.operationDeniedByRemoteEntity
+				res.rsc = ResponseStatusCode.operationDeniedByRemoteEntity
 				res.status = False
 				return res
 			
@@ -561,7 +567,6 @@ class NotificationManager(object):
 		data.clear()
 
 
-
 	# Time Window Monitor : Periodic
 
 	def _getPeriodicWorkerName(self, ri:str) -> str:
@@ -666,7 +671,12 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, dct:JSON, nus:list[str]|str, originator:str = None, background:bool = False, preFunc:Callable = None, postFunc:Callable = None) -> None:
+	def sendNotificationWithDict(self, dct:JSON, 
+									   nus:list[str]|str, 
+									   originator:Optional[str] = None, 
+									   background:Optional[bool] = False, 
+									   preFunc:Optional[Callable] = None, 
+									   postFunc:Optional[Callable] = None) -> None:
 		"""	Send a notification to a single URI or a list of URIs. 
 		
 			A URI may be a resource ID, then the *poa* of that resource is taken. 
@@ -746,7 +756,10 @@ class NotificationManager(object):
 							})
 
 
-	def countSentReceivedNotification(self, sub:SUB|CRS, target:str, isResponse:bool = False, count:int = 1) -> None:
+	def countSentReceivedNotification(self, sub:SUB|CRS, 
+											target:str, 
+											isResponse:Optional[bool] = False, 
+											count:Optional[int] = 1) -> None:
 		"""	If Notification Stats are enabled for a <sub> or <crs> resource, then
 			increase the count for sent notifications or received responses.
 
@@ -756,7 +769,6 @@ class NotificationManager(object):
 				isResponse: Indicates whether a sent notification or a received response should be counted for.
 				count: Number of notifications to count.
 		"""
-
 		if not sub or not sub.nse:	# Don't count if disabled
 			return
 		
@@ -772,7 +784,8 @@ class NotificationManager(object):
 		sub.dbUpdate()
 
 
-	def countNotificationEvents(self, ri:str, sub:Optional[SUB|CRS] = None) -> None:
+	def countNotificationEvents(self, ri:str, 
+									  sub:Optional[SUB|CRS] = None) -> None:
 		"""	This method count and stores the number of notification events for a subscription.
 			It increments the count for each of the notification targets.
 
@@ -781,7 +794,6 @@ class NotificationManager(object):
 			Args:
 				ri: Resource ID of a \<sub> or \<csr> resource to handle.
 		"""
-
 		if sub is None:
 			if not (res := CSE.dispatcher.retrieveLocalResource(ri)).status:
 				return
@@ -831,7 +843,9 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	def _verifyNusInSubscription(self, subscription:SUB|CRS, previousNus:list[str] = None, originator:str = None) -> Result:
+	def _verifyNusInSubscription(self, subscription:SUB|CRS, 
+									   previousNus:Optional[list[str]] = None, 
+									   originator:Optional[str] = None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 		
 			A verification request is sent to new URI's. 
@@ -858,7 +872,7 @@ class NotificationManager(object):
 					# Send verification notification to target (either direct URL, or an entity)
 					if not self.sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
-						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
+						return Result.errorResult(rsc = ResponseStatusCode	.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 
 		# Add/Update NotificationStatsInfo structure
 		self.validateNotificationStatsInfo(subscription)
@@ -868,7 +882,9 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	def sendVerificationRequest(self, uri:Union[str, list[str]], ri:str, originator:str = None) -> bool:
+	def sendVerificationRequest(self, uri:Union[str, list[str]], 
+									  ri:str, 
+									  originator:Optional[str] = None) -> bool:
 		""""	Define the callback function for verification notifications and send
 				the notification.
 		"""
@@ -896,7 +912,7 @@ class NotificationManager(object):
 														 noAccessIsError = True)).status:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {res.dbg}')
 				return False
-			if res.rsc != RC.OK:
+			if res.rsc != ResponseStatusCode.OK:
 				L.isDebug and L.logDebug(f'Verification notification response if not OK: {res.rsc} for: {uri}: {res.dbg}')
 				return False
 			return True
@@ -935,7 +951,11 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender) if uri else True	# Ignore if the uri is None
 
 
-	def _handleSubscriptionNotification(self, sub:JSON, notificationEventType:NotificationEventType, resource:Resource = None, modifiedAttributes:JSON = None, missingData:MissingData = None) ->  bool:
+	def _handleSubscriptionNotification(self, sub:JSON, 
+											  notificationEventType:NotificationEventType, 
+											  resource:Optional[Resource] = None, 
+											  modifiedAttributes:Optional[JSON] = None, 
+											  missingData:Optional[MissingData] = None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		# TODO doc

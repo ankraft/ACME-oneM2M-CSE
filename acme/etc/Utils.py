@@ -18,8 +18,8 @@ import traceback
 from distutils.util import strtobool
 
 
-from .Constants import Constants as C
-from .Types import ResourceTypes as T, ResponseStatusCode
+from .Constants import Constants
+from .Types import ResourceTypes, ResponseStatusCode
 from .Types import Result, JSON
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -124,7 +124,7 @@ def _randomID() -> str:
 			String with a random ID
 	"""
 	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = C.maxIDLength))
+		result = ''.join(random.choices(_randomIDCharSet, k = Constants.maxIDLength))
 		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
 			return result
 
@@ -179,7 +179,7 @@ def isStructured(uri:str) -> bool:
 	return False
 
 
-def localResourceID(ri:str) -> str:
+def localResourceID(ri:str) -> Optional[str]:
 	""" Test whether an ID is a resource ID of the local CSE.
 	
 		Args:
@@ -238,7 +238,7 @@ def isValidCSI(csi:str) -> bool:
 	return re.fullmatch(_csiRx, csi) is not None
 
 
-def csiFromSPRelative(ri:str) -> str:
+def csiFromSPRelative(ri:str) -> Optional[str]:
 	"""	Return the csi from a SP-relative resource ID. It is assumed that
 		the passed *ri* is in SP-relative format.
 		
@@ -252,7 +252,7 @@ def csiFromSPRelative(ri:str) -> str:
 	return f'/{ids[1]}' if len(ids) > 1 else None
 
 
-def structuredPath(resource:Resource) -> str:
+def structuredPath(resource:Resource) -> Optional[str]:
 	""" Determine the structured path of a resource.
 
 		Args:
@@ -261,7 +261,7 @@ def structuredPath(resource:Resource) -> str:
 			Structured path or None
 	"""
 	rn:str = resource.rn
-	if resource.ty == T.CSEBase: # if CSE
+	if resource.ty == ResourceTypes.CSEBase: # if CSE
 		return rn
 
 	# retrieve identifier record of the parent
@@ -275,13 +275,13 @@ def structuredPath(resource:Resource) -> str:
 	return rn # fallback
 
 
-def structuredPathFromRI(ri:str) -> str:
+def structuredPathFromRI(ri:str) -> Optional[str]:
 	""" Get the structured path of a resource by its ri.
 	
 		Args:
-			ri: Resource ID
+			ri: Resource ID.
 		Return:
-			Structured path
+			Structured path, or None in case of an error.
 	"""
 	try:
 		return CSE.storage.identifier(ri)[0]['srn']
@@ -289,14 +289,14 @@ def structuredPathFromRI(ri:str) -> str:
 		return None
 
 
-def riFromStructuredPath(srn: str) -> str:
+def riFromStructuredPath(srn: str) -> Optional[str]:
 	""" Get the resource ID from a resource by its structured path. 
 		Makes a lookup to a table in the DB.
 
 		Args:
-			srn: structured path
+			srn: structured path.
 		Return:
-			Resource ID
+			Resource ID, or None in case of an error.
 	"""
 	try:
 		return CSE.storage.structuredIdentifier(srn)[0]['ri']
@@ -333,7 +333,7 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	"""
 	if id:
 		ids = id.split('/')
-		if not srn and len(ids) > 1  and T.isVirtualResourceName(ids[-1]): # Hybrid
+		if not srn and len(ids) > 1  and ResourceTypes.isVirtualResourceName(ids[-1]): # Hybrid
 			if (srn := structuredPathFromRI('/'.join(ids[:-1]))):
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
@@ -378,7 +378,7 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		return None, None, None, 'Too many "/" level'
 
 	# Remove virtual resource shortname if it is present
-	if T.isVirtualResourceName(ids[-1]):
+	if ResourceTypes.isVirtualResourceName(ids[-1]):
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 	
@@ -454,13 +454,13 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 	return None, None, None, 'Unsupported ID'
 
 
-def riFromCSI(csi:str) -> str:
+def riFromCSI(csi:str) -> Optional[str]:
 	""" Get the resource ID from any CSEBase or remoteCSE resource by its csi.
 	
 		Args:
-			csi: The CSE-ID to search for
+			csi: The CSE-ID to search for.
 		Return:
-			The resource ID of the resource with the *csi*, or None
+			The resource ID of the resource with the *csi*, or None in case of an error.
 	 """
 	if not (res := resourceFromCSI(csi).resource):
 		return None
@@ -645,7 +645,7 @@ def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 
 
 _decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Any:
+def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Optional[Any]:
 	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
 		*default* is returned.
 
@@ -884,13 +884,13 @@ def resourceFromCSI(csi:str) -> Result:
 	return CSE.storage.retrieveResource(csi = csi)
 
 	
-def fanoutPointResource(id:str) -> Resource:
+def fanoutPointResource(id:str) -> Optional[Resource]:
 	"""	Check whether the target resource contains a fanoutPoint along its path is a fanoutPoint.
 
 		Args:
 			id: the target's resource ID.
 		Return:
-			Return either the virtual fanoutPoint resource or None.
+			Return either the virtual fanoutPoint resource, or None in case of an error.
 	"""
 	# Convert to srn
 	if not isStructured(id):
@@ -910,7 +910,7 @@ def fanoutPointResource(id:str) -> Resource:
 	return None
 
 
-def pollingChannelURIResource(id:str) -> PCH_PCU:
+def pollingChannelURIResource(id:str) -> Optional[PCH_PCU]:
 	"""	Check whether the target is a PollingChannelURI resource and return it.
 
 		Args:
@@ -925,19 +925,19 @@ def pollingChannelURIResource(id:str) -> PCH_PCU:
 		if not isStructured(id):
 			if not (id := structuredPathFromRI(id)):
 				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == T.PCH_PCU:
+		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == ResourceTypes.PCH_PCU:
 			return cast(PCH_PCU, result.resource)
 		# Fallthrough
 	return None
 
 
-def latestOldestResource(id:str) -> Resource:
+def latestOldestResource(id:str) -> Optional[Resource]:
 	"""	Check whether the target is a latest or oldest virtual resource and return it.
 
 		Args:
 			id: Target resource ID
 		Return:
-			Return either the virtual resource or None.
+			Return either the virtual resource, or None in case of an error.
 	"""
 	if not id:
 		return None
@@ -946,7 +946,7 @@ def latestOldestResource(id:str) -> Resource:
 		if not isStructured(id):
 			if not (id := structuredPathFromRI(id)):
 				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty in [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL ]:
+		if (result := CSE.dispatcher.retrieveResource(id)).resource and ResourceTypes.isLatestOldestResource(result.resource.ty):
 			return result.resource
 		# Fallthrough
 	return None

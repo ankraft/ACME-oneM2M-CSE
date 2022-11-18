@@ -10,8 +10,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
-from ..resources.MgmtObjAnnc import *
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class FWRAnnc(MgmtObjAnnc):

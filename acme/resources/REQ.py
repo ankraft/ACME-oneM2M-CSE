@@ -7,18 +7,21 @@
 #	ResourceType: Request
 #
 
-from typing import Dict, Any
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, RequestStatus, CSERequest, JSON
-from ..etc import Utils as Utils, DateUtils as DateUtils
+from __future__ import annotations
+from typing import Optional, Dict, Any
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, RequestStatus, CSERequest, JSON
+from ..etc import Utils, DateUtils
 from ..services.Configuration import Configuration
-from ..resources.Resource import *
-from ..resources import Factory as Factory
+from ..resources.Resource import Resource
+from ..resources import Factory
+from ..services import CSE
 
 
 class REQ(Resource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -48,8 +51,10 @@ class REQ(Resource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.REQ, dct, pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.REQ, dct, pi, create = create)
 
 
 	@staticmethod
@@ -123,6 +128,6 @@ class REQ(Resource):
 		if not (cseres := Utils.getCSE()).resource:
 			return Result.errorResult(dbg = cseres.dbg)
 
-		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = T.REQ)
+		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = ResourceTypes.REQ)
 
 

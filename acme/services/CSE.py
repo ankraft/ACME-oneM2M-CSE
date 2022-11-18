@@ -13,7 +13,8 @@
 """
 
 from __future__ import annotations
-import atexit, argparse, os, sys
+
+import atexit, argparse, sys
 from threading import Lock
 from typing import Dict, Any
 
@@ -27,7 +28,6 @@ from ..services.EventManager import EventManager
 from ..services.GroupManager import GroupManager
 from ..services.HttpServer import HttpServer
 from ..services.Importer import Importer
-from ..services.Logging import Logging as L
 from ..services.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
@@ -41,6 +41,7 @@ from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from .AnnouncementManager import AnnouncementManager
+from ..services.Logging import Logging as L
 
 
 
@@ -164,7 +165,7 @@ _cseResetLock									= Lock()	# lock for resetting the CSE
 ##############################################################################
 
 
-def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
+def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""	Startup of the CSE. Initialization of various global variables, creating and initializing of manager instances etc.
 	
 		Args:

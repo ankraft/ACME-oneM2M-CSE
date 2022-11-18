@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional, cast
 
-from ..etc import Utils as Utils
+from ..etc import Utils
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO: create/delete each resource to count! resourceCreate(ty)

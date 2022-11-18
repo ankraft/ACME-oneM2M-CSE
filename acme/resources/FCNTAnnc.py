@@ -11,7 +11,6 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
-from ..resources.Resource import *
 
 
 class FCNTAnnc(AnnouncedResource):

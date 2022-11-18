@@ -8,14 +8,15 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
-from .Resource import *
+from typing import Optional
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from .AnnouncedResource import AnnouncedResource
 
 class SMDAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -45,6 +46,8 @@ class SMDAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.SMDAnnc, dct, pi = pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(ResourceTypes.SMDAnnc, dct, pi = pi, create = create)
 

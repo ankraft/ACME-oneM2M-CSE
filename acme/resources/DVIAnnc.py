@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..etc import Utils as Utils
-from ..resources.MgmtObjAnnc import *
+from ..etc import Utils
+from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 class DVIAnnc(MgmtObjAnnc):
 

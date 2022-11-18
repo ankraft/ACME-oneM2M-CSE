@@ -10,21 +10,23 @@
 
 
 from __future__ import annotations
-
-import ssl
 from typing import List, cast, Optional
 
-from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode as RC
-from ..etc import Utils as Utils
-from ..services import CSE as CSE
-from ..services.Logging import Logging as L
+import ssl
+
+from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode
+from ..etc import Utils
+from ..helpers import TextTools
+from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
-from ..helpers import TextTools
+from ..services.Logging import Logging as L
 
+
+# TODO move configurations to extra functions and support reconfigure event
 
 class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
@@ -291,7 +293,7 @@ class SecurityManager(object):
 			if not targetResource.acpi:
 				if originator != targetResource.getOriginator():
 					L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
-					return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
 				else:
 					pass	# allowed for creating originator
 			else:
@@ -304,7 +306,7 @@ class SecurityManager(object):
 						break
 				else:
 					L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
-					return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
 
 			return Result(status = True, data = True)	# hack: data=True indicates that this is an ACPI update after all
 

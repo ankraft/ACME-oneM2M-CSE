@@ -14,7 +14,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ConsistencyS
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources import Factory as Factory
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

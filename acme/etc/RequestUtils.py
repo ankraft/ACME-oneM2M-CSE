@@ -16,12 +16,12 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
 from . import DateUtils
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode, Result, ResourceTypes, Operation
-from .Constants import Constants as C
+from .Constants import Constants
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
 
 
-def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
+def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
 	"""	Serialize a dictionary, depending on the serialization type.
 	"""
 	if ct == ContentSerializationType.PLAIN:
@@ -32,7 +32,7 @@ def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
 	return encoder.dumps(data)	# type:ignore[no-any-return]
 
 
-def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
+def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
 		If the len of the data is 0 then an empty dictionary is returned. 
 	"""
@@ -58,7 +58,7 @@ def toHttpUrl(url:str) -> str:
 	return url
 
 
-def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> ContentSerializationType:
+def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> Optional[ContentSerializationType]:
 	"""	Determine the type of serialization for a notification from either the *url*'s *ct* query parameter,
 		or the given list of *csz* (contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
 	"""
@@ -77,7 +77,7 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 
 	# Check scheme first
 	# TODO should this really be in this function?
-	if scheme not in C.supportedSchemes:
+	if scheme not in Constants.supportedSchemes:
 		L.isWarn and L.logWarn(f'URL scheme {scheme} not supported')
 		return None	# Scheme not supported
 

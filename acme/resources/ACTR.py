@@ -8,13 +8,13 @@
 #
 
 from __future__ import annotations
+from typing import Optional
+
 from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON
-from ..etc import Utils as Utils, DateUtils as DateUtils
-from ..services import CSE as CSE
+from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources.Resource import *
+from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory as Factory
 
 
 class ACTR(AnnounceableResource):

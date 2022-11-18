@@ -12,7 +12,6 @@ from typing import Optional
 
 from ..etc.Types import ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
-from ..resources.Resource import *
 
 
 class MgmtObjAnnc(AnnouncedResource):

@@ -11,7 +11,6 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import ResourceTypes, JSON
-from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

@@ -12,7 +12,8 @@
 
 from __future__ import annotations
 from typing import Optional
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, CSERequest
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
@@ -22,7 +23,7 @@ class TS_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <timeSeries> resources.
 	"""
 
-	_allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
 
 	_attributes:AttributePolicyDict = {		
@@ -36,7 +37,7 @@ class TS_OL(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(T.TS_OL, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
+		super().__init__(ResourceTypes.TS_OL, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
 
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
@@ -51,7 +52,7 @@ class TS_OL(VirtualResource):
 				The oldest <timeSeriesInstance> for the parent <timeSeries>, or an error `Result`.
 		"""
 		L.isDebug and L.logDebug('Retrieving oldest TSI from TS')
-		return self.retrieveLatestOldest(request, originator, T.TSI, oldest = True)
+		return self.retrieveLatestOldest(request, originator, ResourceTypes.TSI, oldest = True)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -65,7 +66,7 @@ class TS_OL(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -79,7 +80,7 @@ class TS_OL(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -96,6 +97,6 @@ class TS_OL(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting oldest TSI from TS')
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.TSI, oldest = True)):
-			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI, oldest = True)):
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'no instance for <oldest>')
 		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)

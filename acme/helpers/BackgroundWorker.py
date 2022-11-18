@@ -110,7 +110,7 @@ class BackgroundWorker(object):
 		return self
 	
 
-	def restart(self, interval:Optional[float] = None) -> BackgroundWorker:
+	def restart(self, interval:Optional[float] = None) -> Optional[BackgroundWorker]:
 		"""	Restart the worker. Optionally use new interval, and re-use the previous arguments passed with the `start()` method.
 		
 			Args:
@@ -141,7 +141,7 @@ class BackgroundWorker(object):
 		return self
 
 
-	def unpause(self, immediately:Optional[bool] = False) -> BackgroundWorker:
+	def unpause(self, immediately:Optional[bool] = False) -> Optional[BackgroundWorker]:
 		""" Continue the running of a worker. 
 
 			Args:

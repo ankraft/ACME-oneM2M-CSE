@@ -9,7 +9,10 @@
 
 from typing import Optional
 from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON
-from ..resources.Resource import *
+from ..resources.Resource import Resource
+from ..services import CSE
+from ..services.Logging import Logging as L
+
 
 
 class AnnouncedResource(Resource):

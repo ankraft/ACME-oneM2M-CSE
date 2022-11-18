@@ -13,22 +13,22 @@
 """
 
 from __future__ import annotations
+from typing import Callable, cast, List, Optional
 
 import os, shutil
 from threading import Lock
-from typing import Callable, cast, List, Optional
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from ..etc.Types import ResourceTypes, Result, ResponseStatusCode as RC, JSON
-from ..etc import DateUtils as DateUtils
+from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc import DateUtils
 from ..services.Configuration import Configuration
-from ..services.Logging import Logging as L
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources import Factory
+from ..services.Logging import Logging as L
 
 
 class Storage(object):
@@ -52,7 +52,7 @@ class Storage(object):
 		if not self.inMemory:
 			if self.dbPath:
 				L.isInfo and L.log('Using data directory: ' + self.dbPath)
-				os.makedirs(self.dbPath, exist_ok=True)
+				os.makedirs(self.dbPath, exist_ok = True)
 			else:
 				L.logErr('db.path not set')
 				raise RuntimeError('db.path not set')
@@ -165,11 +165,11 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
+				return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
-		return Result(status = True, rsc = RC.created)
+		return Result(status = True, rsc = ResponseStatusCode.created)
 
 
 	def hasResource(self, ri:Optional[str] = None, srn:Optional[str] = None) -> bool:
@@ -225,9 +225,9 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Factory.resourceFromDict(resources[0])
 		elif l == 0:
-			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'resource not found')
 
-		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
+		return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'database inconsistency')
 
 
 	def retrieveResourceRaw(self, ri:str) -> Result:
@@ -242,8 +242,8 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Result(status = True, resource = resources[0])
 		elif l == 0:
-			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
-		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'resource not found')
+		return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'database inconsistency')
 
 
 	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Document]:
@@ -268,7 +268,7 @@ class Storage(object):
 		"""
 		# ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
-		return Result(status = True, resource = self.db.updateResource(resource), rsc = RC.updated)
+		return Result(status = True, resource = self.db.updateResource(resource), rsc = ResponseStatusCode.updated)
 
 
 	def deleteResource(self, resource:Resource) -> Result:
@@ -282,7 +282,7 @@ class Storage(object):
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
-		return Result(status = True, rsc = RC.deleted)
+		return Result(status = True, rsc = ResponseStatusCode.deleted)
 
 
 	def directChildResources(self, pi:str, 
@@ -380,7 +380,7 @@ class Storage(object):
 	##	Subscriptions
 	##
 
-	def getSubscription(self, ri:str) -> Document:
+	def getSubscription(self, ri:str) -> Optional[Document]:
 		# L.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri = ri)
 		if not subs or len(subs) != 1:
@@ -496,6 +496,18 @@ class TinyDBBinding(object):
 			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
 			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
 			self.dbStatistics 			= TinyDB(self.fileStatistics)
+
+
+			# EXPERIMENTAL Using BetterJSONStorage - improved disk read/write. so far, mixed results. Good with large installations.
+			# from ..helpers.BetterJSONStorage import BetterJSONStorage
+			# from pathlib import Path
+
+			# self.dbResources 			= TinyDB(Path(self.fileResources), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+			# self.dbIdentifiers 			= TinyDB(Path(self.fileIdentifiers), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+			# self.dbSubscriptions 		= TinyDB(Path(self.fileSubscriptions), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+			# self.dbBatchNotifications 	= TinyDB(Path(self.fileBatchNotifications), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+			# self.dbStatistics 			= TinyDB(Path(self.fileStatistics), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+		
 		
 		# Open/Create tables
 		self.tabResources 				= self.dbResources.table('resources', cache_size = self.cacheSize)
@@ -573,12 +585,17 @@ class TinyDBBinding(object):
 			return resource
 
 
-	def deleteResource(self, resource: Resource) -> None:
+	def deleteResource(self, resource:Resource) -> None:
 		with self.lockResources:
 			self.tabResources.remove(self.resourceQuery.ri == resource.ri)	
 	
 
-	def searchResources(self, ri:str = None, csi:str = None, srn:str = None, pi:str = None, ty:int = None, aei:str = None) -> list[Document]:
+	def searchResources(self, ri:Optional[str] = None, 
+							  csi:Optional[str] = None, 
+							  srn:Optional[str] = None, 
+							  pi:Optional[str] = None, 
+							  ty:Optional[int] = None, 
+							  aei:Optional[str] = None) -> list[Document]:
 		if not srn:
 			with self.lockResources:
 				if ri:
@@ -607,7 +624,10 @@ class TinyDBBinding(object):
 			return self.tabResources.search(func)	# type: ignore [arg-type]
 
 
-	def hasResource(self, ri: str = None, csi: str = None, srn: str = None, ty: int = None) -> bool:
+	def hasResource(self, ri:Optional[str] = None, 
+						  csi:Optional[str] = None, 
+						  srn:Optional[str] = None,
+						  ty:Optional[int] = None) -> bool:
 		if not srn:
 			with self.lockResources:
 				if ri:
@@ -655,7 +675,8 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.remove(self.identifierQuery.ri == resource.ri)
 
 
-	def searchIdentifiers(self, ri:str = None, srn:str = None) -> list[Document]:
+	def searchIdentifiers(self, ri:Optional[str] = None, 
+								srn:Optional[str] = None) -> list[Document]:
 		"""	Search for an resource ID OR for a structured name in the identifiers DB.
 
 			Either *ri* or *srn* shall be given. If both are given then *srn*
@@ -680,7 +701,8 @@ class TinyDBBinding(object):
 	#
 
 
-	def searchSubscriptions(self, ri:str=None, pi:str=None) -> list[Document]:
+	def searchSubscriptions(self, ri:Optional[str] = None, 
+								  pi:Optional[str] = None) -> Optional[list[Document]]:
 		with self.lockSubscriptions:
 			if ri:
 				return self.tabSubscriptions.search(self.subscriptionQuery.ri == ri)

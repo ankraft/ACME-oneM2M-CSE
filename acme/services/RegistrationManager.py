@@ -7,18 +7,19 @@
 #	Managing resources and AE, CSE registrations
 #
 
+from __future__ import annotations
+from typing import List, cast, Any, Optional
 
 from copy import deepcopy
-from typing import List, cast, Any
 
-from ..etc.Types import Permission, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, CSEType
-from ..etc import Utils as Utils, DateUtils as DateUtils
-from ..services.Logging import Logging as L
+from ..etc.Types import Permission, ResourceTypes, Result, ResponseStatusCode, JSON, CSEType
+from ..etc import Utils, DateUtils
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources.ACP import ACP
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..services.Logging import Logging as L
 
 
 class RegistrationManager(object):
@@ -52,7 +53,8 @@ class RegistrationManager(object):
 		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
 
 
-	def configUpdate(self, key:str = None, value:Any = None) -> None:
+	def configUpdate(self, key:Optional[str] = None, 
+						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
 		if key not in [ 'cse.checkExpirationsInterval', 
@@ -72,34 +74,36 @@ class RegistrationManager(object):
 		L.isDebug and L.logDebug('RegistrationManager restarted')
 
 
-
 	#########################################################################
 
 	#
 	#	Handle new resources in general
 	#
 
-	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource = None) -> Result:
+	def checkResourceCreation(self, resource:Resource, 
+									originator:str, 
+									parentResource:Optional[Resource] = None) -> Result:
 		# Some Resources are not allowed to be created in a request, return immediately
 		ty = resource.ty
 
-		if ty == T.AE:
+		if ty == ResourceTypes.AE:
 			if not (res := self.handleAERegistration(resource, originator, parentResource)).status:
 				return res
 			originator = cast(str, res.data)	# assigns new originator
-		if ty == T.REQ:
+		elif ty == ResourceTypes.REQ:
 			if not self.handleREQRegistration(resource, originator):
 				return Result.errorResult(dbg = 'cannot register REQ')
-		if ty == T.CSR:
+		elif ty == ResourceTypes.CSR:
 			if CSE.cseType == CSEType.ASN:
-				return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'cannot register to ASN CSE')
+				return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'cannot register to ASN CSE')
 			if not (res := self.handleCSRRegistration(resource, originator)).status:
 				res.dbg = f'cannot register CSR: {res.dbg}'
 				return res
-		if ty == T.CSEBaseAnnc:
+		elif ty == ResourceTypes.CSEBaseAnnc:
 			if not (res := self.handleCSEBaseAnncRegistration(resource, originator)).status:
 				res.dbg = f'cannot register CSEBaseAnnc: {res.dbg}'
 				return res
+		# fall-through
 
 		# Test and set creator attribute.
 		if not (res := self.handleCreator(resource, originator)).status:
@@ -123,7 +127,7 @@ class RegistrationManager(object):
 
 
 	def checkResourceUpdate(self, resource:Resource, updateDict:JSON) -> Result:
-		if resource.ty == T.CSR:
+		if resource.ty == ResourceTypes.CSR:
 			if not self.handleCSRUpdate(resource, updateDict):
 				return Result.errorResult(dbg = 'cannot update CSR')
 		return Result.successResult()
@@ -131,17 +135,17 @@ class RegistrationManager(object):
 
 	def checkResourceDeletion(self, resource:Resource) -> Result:
 		ty = resource.ty
-		if ty == T.AE:
+		if ty == ResourceTypes.AE:
 			if not self.handleAEDeRegistration(resource):
 				return Result.errorResult(dbg = 'cannot deregister AE')
-		if ty == T.REQ:
+		elif ty == ResourceTypes.REQ:
 			if not self.handleREQDeRegistration(resource):
 				return Result.errorResult(dbg = 'cannot deregister REQ')
-		if ty == T.CSR:
+		elif ty == ResourceTypes.CSR:
 			if not self.handleRegistreeCSRDeRegistration(resource):
 				return Result.errorResult(dbg = 'cannot deregister CSR')
+		# fall-through
 		return Result.successResult()
-
 
 
 	#########################################################################
@@ -160,7 +164,7 @@ class RegistrationManager(object):
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
 		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
-			return Result.errorResult(rsc = RC.appRuleValidationFailed, dbg = L.logDebug('Originator not allowed'))
+			return Result.errorResult(rsc = ResponseStatusCode.appRuleValidationFailed, dbg = L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
 		if originator == 'C':
@@ -174,7 +178,7 @@ class RegistrationManager(object):
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):
-			return Result.errorResult(rsc = RC.originatorHasAlreadyRegistered, dbg = L.logWarn(f'Originator has already registered: {originator}'))
+			return Result.errorResult(rsc = ResponseStatusCode.originatorHasAlreadyRegistered, dbg = L.logWarn(f'Originator has already registered: {originator}'))
 		
 		# Make some adjustments to set the originator in the <AE> resource
 		L.isDebug and L.logDebug(f'Registering AE. aei: {originator}')
@@ -182,8 +186,8 @@ class RegistrationManager(object):
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
-		if not parentResource or parentResource.ty != T.CSEBase:
-			return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = 'Parent must be the CSE')
+		if not parentResource or parentResource.ty != ResourceTypes.CSEBase:
+			return Result.errorResult(rsc = ResponseStatusCode.invalidChildResourceType, dbg = 'Parent must be the CSE')
 
 		return Result(status = True, data = originator)
 
@@ -220,7 +224,7 @@ class RegistrationManager(object):
 		# Check whether an AE with the same originator has already registered
 
 		if originator != CSE.cseOriginator and self.hasRegisteredAE(originator):
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = L.logWarn(f'Originator has already registered an AE: {originator}'))
+			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = L.logWarn(f'Originator has already registered an AE: {originator}'))
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
@@ -281,7 +285,7 @@ class RegistrationManager(object):
 		# Check whether the same CSEBase has already registered (-> only once)
 		if (lnk := cbA.lnk):
 			if len(list := CSE.storage.searchByFragment({'lnk': lnk})) > 0:
-				return Result.errorResult(rsc = RC.conflict, dbg = L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
+				return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
 		cbA.setResourceName(Utils.uniqueRN(f'{cbA.tpe}_{Utils.getIdFromOriginator(originator)}'))
@@ -356,18 +360,23 @@ class RegistrationManager(object):
 		return True
 
 
-
 	#########################################################################
 
 
-	def _createACP(self, parentResource:Resource = None, rn:str = None, createdByResource:str = None, originators:List[str] = None, permission:Permission = None, selfOriginators:List[str] = None, selfPermission:Permission = None) -> Result:
+	def _createACP(self, parentResource:Optional[Resource] = None, 
+						 rn:Optional[str] = None, 
+						 createdByResource:Optional[str] = None, 
+						 originators:Optional[List[str]] = None, 
+						 permission:Optional[Permission] = None, 
+						 selfOriginators:Optional[List[str]] = None, 
+						 selfPermission:Optional[Permission] = None) -> Result:
 		""" Create an ACP with some given defaults. """
 		if not parentResource or not rn or not originators or permission is None:	# permission is an int
 			return Result.errorResult(dbg = 'missing attribute(s)')
 
 		# Remove existing ACP with that name first
 		acpSrn = f'{CSE.cseRn}/{rn}'
-		if (acpRes := CSE.dispatcher.retrieveResource(id = acpSrn)).rsc == RC.OK:
+		if (acpRes := CSE.dispatcher.retrieveResource(id = acpSrn)).rsc == ResponseStatusCode.OK:
 			CSE.dispatcher.deleteLocalResource(acpRes.resource)	# ignore errors
 
 		# Create the ACP
@@ -399,5 +408,5 @@ class RegistrationManager(object):
 			# only delete the ACP when it was created in the course of AE registration internally
 			if  (createdWithRi := acpRes.resource.createdInternally()) and resource.ri == createdWithRi:
 				return CSE.dispatcher.deleteLocalResource(acpRes.resource)
-		return Result(status = True, rsc = RC.deleted)
+		return Result(status = True, rsc = ResponseStatusCode.deleted)
 

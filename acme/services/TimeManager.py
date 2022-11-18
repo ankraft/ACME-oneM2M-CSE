@@ -8,13 +8,14 @@
 #
 
 from __future__ import annotations
-from typing import cast, List, Tuple
-from ..services.Logging import Logging as L
+from typing import cast, List, Tuple, Optional
+
 from ..resources.TSB import TSB
 from ..services import CSE
-from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes, ResponseStatusCode as RC
+from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes
 from ..etc import DateUtils
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..services.Logging import Logging as L
 
 # TODO add check to http request handling
 # TODO add check to http response handling
@@ -177,7 +178,7 @@ class TimeManager(object):
 			del self.losTimeSyncBeacons[bcnr]
 
 
-	def isLossOfSynchronization(self, req:CSERequest) -> str:
+	def isLossOfSynchronization(self, req:CSERequest) -> Optional[str]:
 		if (tup := self.losTimeSyncBeacons.get(req.originator)) and (ot := req.ot):
 			tsd = abs(DateUtils.isodateDelta(ot))
 			L.logWarn(tsd)

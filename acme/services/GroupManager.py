@@ -8,17 +8,19 @@
 #
 
 """	This module implements the group service manager functionality. """
-
+from __future__ import annotations
 from typing import cast, List
-from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
-from ..etc import Utils as Utils
+
+from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
+from ..etc.Types import ResponseStatusCode, CSERequest, JSON
+from ..etc import Utils
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
-from ..resources import Factory as Factory
+from ..resources import Factory
+from ..services import CSE
 from ..services.Logging import Logging as L
-from ..services import CSE as CSE
 
 
 class GroupManager(object):
@@ -67,11 +69,9 @@ class GroupManager(object):
 		if group.hasAttribute('mnm'):		# only if mnm attribute is set
 			try: 							# mnm may not be a number
 				if len(group.mid) > int(group.mnm):
-					L.logDebug(dbg := 'max number of members exceeded')
-					return Result.errorResult(rsc = RC.maxNumberOfMemberExceeded, dbg = dbg)
+					return Result.errorResult(rsc = ResponseStatusCode.maxNumberOfMemberExceeded, dbg = L.logDebug('max number of members exceeded'))
 			except ValueError:
-				L.logWarn(dbg := f'invalid argument or type: {group.mnm}')
-				return Result.errorResult(rsc = RC.invalidArguments, dbg = dbg)
+				return Result.errorResult(rsc = ResponseStatusCode.invalidArguments, dbg = L.logWarn(f'invalid argument or type: {group.mnm}'))
 
 
 		group.dbUpdate()
@@ -104,7 +104,7 @@ class GroupManager(object):
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
 					if not (url := CSE.request._getForwardURL(mid)):
-						return Result.errorResult(rsc = RC.notFound, dbg = f'forwarding URL not found for group member: {mid}')
+						return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = f'forwarding URL not found for group member: {mid}')
 					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
@@ -114,14 +114,14 @@ class GroupManager(object):
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
 				if not (res := CSE.dispatcher.retrieveResource(id)).resource:
-					return Result.errorResult(rsc = RC.notFound, dbg = res.dbg)
+					return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = res.dbg)
 				resource = res.resource
 			else:
 				if not remoteResult.data or len(remoteResult.data) == 0:
-					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
-						return Result.errorResult(rsc = RC.receiverHasNoPrivileges, dbg = 'insufficient privileges for CSE to retrieve remote resource')
+					if remoteResult.rsc == ResponseStatusCode.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
+						return Result.errorResult(rsc = ResponseStatusCode.receiverHasNoPrivileges, dbg = 'insufficient privileges for CSE to retrieve remote resource')
 					else:  # Member not found
-						return Result.errorResult(rsc = RC.notFound, dbg = f'remote resource not found: {mid}')
+						return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = f'remote resource not found: {mid}')
 				else:
 					resource = Factory.resourceFromDict(cast(JSON, remoteResult.data)).resource
 
@@ -136,7 +136,7 @@ class GroupManager(object):
 			# check privileges
 			if isLocalResource:
 				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE):
-					return Result.errorResult(rsc = RC.receiverHasNoPrivileges, dbg = f'insufficient privileges for originator to retrieve local resource: {mid}')
+					return Result.errorResult(rsc = ResponseStatusCode.receiverHasNoPrivileges, dbg = f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == ResourceTypes.GRP and hasFopt:
@@ -149,10 +149,10 @@ class GroupManager(object):
 			if (spty := group.spty):
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj) and ty != spty:
-						return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
+						return Result.errorResult(rsc = ResponseStatusCode.groupMemberTypeInconsistent, dbg = f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT) and resource.cnd != spty:
-						return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
+						return Result.errorResult(rsc = ResponseStatusCode.groupMemberTypeInconsistent, dbg = f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group
 			mt = group.mt
@@ -164,7 +164,7 @@ class GroupManager(object):
 					mt = ResourceTypes.MIXED
 					group['mt'] = ResourceTypes.MIXED
 				else:												# abandon group
-					return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
+					return Result.errorResult(rsc = ResponseStatusCode.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
 
 			# member seems to be ok, so add ri to the list
 			if isLocalResource:
@@ -182,7 +182,11 @@ class GroupManager(object):
 		return Result.successResult()
 
 
-	def foptRequest(self, operation:Operation, fopt:GRP_FOPT, request:CSERequest, id:str, originator:str) -> Result:
+	def foptRequest(self, operation:Operation, 
+						  fopt:GRP_FOPT, 
+						  request:CSERequest, 
+						  id:str, 
+						  originator:str) -> Result:
 		"""	Handle requests to a <`GRP`>'s  <`GRP_FOPT`> fanOutPoint. This method might be called recursivly,
 			in case there are groups in groups.
 		
@@ -198,14 +202,14 @@ class GroupManager(object):
 
 		# get parent / group and check permissions
 		if not (group := fopt.retrieveParentResource()):
-			return Result.errorResult(rsc = RC.notFound, dbg = 'group resource not found')
+			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'group resource not found')
 
 		# get the permission flags for the request operation
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.ty) == False:
-			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
+			return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
 
 		# check whether there is something after the /fopt ...
 
@@ -247,7 +251,7 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		return Result(status = True, rsc = RC.OK, resource = agr) # Response Status Code is OK regardless of the requested fanout operation
+		return Result(status = True, rsc = ResponseStatusCode.OK, resource = agr) # Response Status Code is OK regardless of the requested fanout operation
 
 
 	#########################################################################

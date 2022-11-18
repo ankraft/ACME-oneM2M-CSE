@@ -8,13 +8,13 @@
 #
 
 from __future__ import annotations
-from typing import Any
-from ..etc.Types import AttributePolicyDict, ContentSerializationType, Operation, RequestType, ResourceTypes as T, Result, JSON, Parameters
-from ..etc import RequestUtils as RU
-from ..resources.Resource import *
-from ..resources import Factory as Factory
-from ..resources import PCH_PCU as PCH_PCU
-from ..services import CSE as CSE
+from typing import Optional, cast
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..resources.Resource import Resource
+from ..resources import Factory
+from ..resources import PCH_PCU
+from ..services import CSE
 from ..services.Logging import Logging as L
 
 
@@ -26,7 +26,7 @@ class PCH(Resource):
 	_pcuRI = '__pcuRI__'
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.PCH_PCU ]
+	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -46,9 +46,11 @@ class PCH(Resource):
 	}
 
 
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
 		# PCH inherits from its parent, the <AE>
-		super().__init__(T.PCH, dct, pi, create = create, inheritACP = True)
+		super().__init__(ResourceTypes.PCH, dct, pi, create = create, inheritACP = True)
 
 		# Add to internal attributes to ignore in validation etc
 		self._addToInternalAttributes(self._parentOriginator)	
@@ -67,7 +69,7 @@ class PCH(Resource):
 				'rn' : 'pcu'
 			}
 		}
-		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = T.PCH_PCU).resource	# rn is assigned by resource itself
+		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(pcu, originator = originator)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		self.setAttribute(PCH._pcuRI, res.resource.ri)	# store own PCU ri
@@ -77,18 +79,20 @@ class PCH(Resource):
 			return res
 
 		# Store the parent's orginator/AE-ID/CSE-ID
-		if parentResource.ty in [ T.CSEBase, T.AE]:
+		if parentResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.AE]:
 			self.setAttribute(PCH._parentOriginator, parentResource.getOriginator())
 		else:
-			L.logWarn(dbg := f'PCH must be registered under CSE or AE, not {str(T(parentResource.ty))}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
 
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
 		
 		return Result.successResult()
 
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 

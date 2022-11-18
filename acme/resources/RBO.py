@@ -7,9 +7,13 @@
 #	ResourceType: mgmtObj:Reboot
 #
 
-from ..resources.MgmtObj import *
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON
-from ..etc import Utils as Utils
+from __future__ import annotations
+from typing import Optional
+
+from ..resources.MgmtObj import MgmtObj
+from ..resources.Resource import Resource
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc import Utils
 
 # TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2
 
@@ -48,8 +52,10 @@ class RBO(MgmtObj):
 	}
 	
 	
-	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(dct, pi, mgd = T.RBO, create = create)
+	def __init__(self, dct:Optional[JSON] = None, 
+					   pi:Optional[str] = None, 
+					   create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.RBO, create = create)
 
 		self.setAttribute('rbo', False, overwrite = True)	# always False
 		self.setAttribute('far', False, overwrite = True)	# always False
@@ -60,7 +66,10 @@ class RBO(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+	def validate(self, originator:Optional[str] = None, 
+					   create:Optional[bool] = False, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		self.setAttribute('rbo', False, overwrite = True)	# always set (back) to False
@@ -68,7 +77,9 @@ class RBO(MgmtObj):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> Result:
 		# Check for rbo & far updates 
 		rbo = Utils.findXPath(dct, '{*}/rbo')
 		far = Utils.findXPath(dct, '{*}/far')

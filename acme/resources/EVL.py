@@ -10,8 +10,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..resources.MgmtObj import *
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
+from ..resources.MgmtObj import MgmtObj
+from ..etc import Utils
 
 lgtSystem = 1
 lgtSecurity	= 2

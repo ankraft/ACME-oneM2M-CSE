@@ -20,7 +20,7 @@ def getOAuthToken(serverURL:str,
 				  clientID:str, 
 				  clientSecret:str, 
 				  token:Optional[Token] = None, 
-				  kind:Optional[str] = 'keycloak') -> Token|None:
+				  kind:Optional[str] = 'keycloak') -> Optional[Token]:
 	"""	Retrieve and return a oauth2 token. If there is a provided token that is still valid, then that token
 		is returned.
 
