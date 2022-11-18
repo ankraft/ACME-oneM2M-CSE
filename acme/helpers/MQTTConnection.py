@@ -147,7 +147,9 @@ class MQTTConnection(object):
 		# Enable SSL see: https://pypi.org/project/paho-mqtt/
 		if self.useTLS:
 			self.mqttClient.tls_set(ca_certs=self.caFile, certfile=self.mqttsCertfile, keyfile=self.mqttsKeyfile, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS, ciphers=None)
-
+			# If tls_insecure_set is set to True, it is impossible to guarantee that the host you are connecting to is not impersonating your server. This can be useful in initial server testing, but makes it possible for a malicious third party to impersonate your server through DNS spoofing, for example.
+			self.mqttClient.tls_insecure_set(True)
+			
 		# Set username/password
 		if self.username and self.password:
 			self.mqttClient.username_pw_set(self.username, self.password)

@@ -286,7 +286,7 @@ if __name__ == '__main__':
 	# MQTT arguments
 	parser.add_argument('--mqtt', action='store_true', dest='mqtt', default=False, help='enable MQTT for notifications')
 	parser.add_argument('--mqtt-address', action='store', dest='mqttAddress', default='localhost', required='--mqtt' in sys.argv, metavar='<host>', help='MQTT broker address (default: localhost)')
-	parser.add_argument('--mqtt-port', action='store', dest='mqttPort', default=1883, metavar='<port>',  help='MQTT broker port (default: 1883)')
+	parser.add_argument('--mqtt-port', action='store', dest='mqttPort', default=1883, metavar='<port>', type=int, help='MQTT broker port (default: 1883)')
 	parser.add_argument('--mqtt-topic', action='store', dest='mqttTopic', default=mqttNotificationTopic, metavar='<topic>', nargs='+', help=f'MQTT topic list (default: {mqttNotificationTopic})')
 	parser.add_argument('--mqtt-username', action='store', dest='mqttUsername', default=None, metavar='<username>',  help='MQTT username (default: None)')
 	parser.add_argument('--mqtt-password', action='store', dest='mqttPassword', default=None, required='--mqttUsername' in sys.argv, metavar='<password>',  help='MQTT password (default: None)')
