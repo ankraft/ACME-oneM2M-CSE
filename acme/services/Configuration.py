@@ -136,6 +136,7 @@ class Configuration(object):
 				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
 				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',								fallback = '3'),
 				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',							fallback = 'json'),
+				'cse.asyncSubscriptionNotifications'	: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
 
 				#
 				#	CSE Security

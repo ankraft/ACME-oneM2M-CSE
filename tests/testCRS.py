@@ -788,8 +788,8 @@ class TestCRS(unittest.TestCase):
 		testSleep(crsTimeWindowSize * 0.2)
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, r)	
-		testSleep(crsTimeWindowSize * 0.8)
 
+		testSleep(crsTimeWindowSize * 0.8)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
@@ -970,7 +970,7 @@ class TestCRS(unittest.TestCase):
 		clearLastNotification()
 		r, rsc = DELETE(crsURL, TestCRS.originator)
 		self.assertEqual(rsc, RC.deleted, r)
-		notification = getLastNotification()
+		notification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(notification, 'm2m:sgn/sud'))
 
 

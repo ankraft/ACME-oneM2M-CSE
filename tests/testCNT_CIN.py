@@ -412,7 +412,7 @@ class TestCNT_CIN(unittest.TestCase):
 			_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 		
-		self.assertIsNone(getLastNotification())	# No notifications
+		self.assertIsNone(getLastNotification(wait = notificationDelay))	# No notifications
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

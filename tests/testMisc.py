@@ -197,7 +197,7 @@ class TestMisc(unittest.TestCase):
 
 		r, rsc = NOTIFY(aeURL, 'Crvi', data = dct)
 		self.assertEqual(rsc, RC.OK, r)
-		self.assertIsNotNone(getLastNotification(), r)
+		self.assertIsNotNone(getLastNotification(wait = notificationDelay), r)
 		self.assertIsNotNone(getLastNotificationHeaders(), r)
 		self.assertIsNotNone(rvi := getLastNotificationHeaders().get('X-M2M-RVI'), r)
 		self.assertEqual(rvi, '2', r)

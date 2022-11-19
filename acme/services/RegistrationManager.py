@@ -25,7 +25,9 @@ from ..services.Logging import Logging as L
 class RegistrationManager(object):
 
 	def __init__(self) -> None:
-		self._getConfig()
+
+		# Get the configuration settings
+		self._assignConfig()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -46,7 +48,7 @@ class RegistrationManager(object):
 		return True
 
 
-	def _getConfig(self) -> None:
+	def _assignConfig(self) -> None:
 		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
 		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
 		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
@@ -62,14 +64,14 @@ class RegistrationManager(object):
 						'cse.registration.allowedAEOriginators',
 						'cse.enableResourceExpiration']:
 			return
-		self.checkExpirationsInterval = value
+		self._assignConfig()
 		self.restartExpirationMonitor()
 
 
 	def restart(self) -> None:
 		"""	Restart the registration services.
 		"""
-		self._getConfig()
+		self._assignConfig()
 		self.restartExpirationMonitor()
 		L.isDebug and L.logDebug('RegistrationManager restarted')
 

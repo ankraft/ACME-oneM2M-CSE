@@ -394,7 +394,7 @@ class TestREQ(unittest.TestCase):
 
 		# Wait and then check notification
 		testSleep(requestCheckDelay)
-		lastNotification = getLastNotification()
+		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)

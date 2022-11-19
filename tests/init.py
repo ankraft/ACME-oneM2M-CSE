@@ -38,6 +38,9 @@ oauthToken					= None	# current OAuth Token
 # This is not really important, but for discoveries and others
 timeDelta 					= 0 # seconds
 
+# Notifications
+notificationDelay 			= NOTIFICATIONDELAY
+
 # Expirations
 expirationCheckDelay 		= 2	# seconds
 expirationSleep				= expirationCheckDelay * 3
@@ -769,7 +772,8 @@ def setLastNotification(notification:JSON) -> None:
 	lastNotification = notification
 
 
-def getLastNotification(clear:bool=False) -> JSON:
+def getLastNotification(clear:bool = False, wait:float = 0.0) -> JSON:
+	testSleep(wait)
 	r = lastNotification
 	if clear:
 		clearLastNotification()

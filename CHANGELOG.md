@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] *rvi* and *vsi* are removed from forwarded requests when forwarding to a Release 1 target.
 - [CSE] Added support for "Content-Location" http header for CREATE operations when RCN = 2 or 3.
 - [CSE] Added support for oneM2M spec change that allows for AE.api to start with a lower-case "r" if the release version is "2a" or "3".
+- [CSE] Added [cse].asyncSubscriptionNotifications configuration setting.
 - [HTTP] Added support for *requestExpirationTimestamp* request attribute and default timeouts for http requests.
 - [HTTP] Added support for CORS (Cross-Origin Resource Sharing - support for request from web browsers across domains).
 - [CONSOLE] Added command to add a separator line to the screen and log (at the current log level).
@@ -44,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] The CSE is allowed to send a NOTIFY to a hosted resource directly.
 - [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
 - [CSE] Enable to target announcements to the hosting CSE itself. This behavior can be configured.
+- [CSE] Normal subscription notifications are now, depending on the notification event type, sent asynchronously.
 - [TESTS] Split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 - [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
 - [SCRIPTS] *requestAttributes* now supports sub-structures for request attributes, e.g. to set filterCriteria attributes.

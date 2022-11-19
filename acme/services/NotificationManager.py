@@ -21,6 +21,7 @@ from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, Notifica
 from ..etc.Types import ResponseStatusCode, EventCategory, JSON, JSONLIST, ResourceTypes
 from ..etc import Utils, DateUtils
 from ..services import CSE
+from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
@@ -44,6 +45,13 @@ class NotificationManager(object):
 	def __init__(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
 		"""
+
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('NotificationManager initialized')
@@ -74,6 +82,18 @@ class NotificationManager(object):
 
 		L.isDebug and L.logDebug('NotificationManager restarted')
 
+
+	def _assignConfig(self) -> None:
+		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
+
+
+	def configUpdate(self, key:Optional[str] = None, 
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key not in [ 'cse.asyncSubscriptionNotifications' ]:
+			return
+		self._assignConfig()
 
 
 	###########################################################################
@@ -226,8 +246,6 @@ class NotificationManager(object):
 		#		DB data structure should go away and be replaced by the normal subscriptions
 
 
-
-
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			ri = sub['ri']
@@ -241,7 +259,11 @@ class NotificationManager(object):
 				chty = sub['chty']
 				if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
 					continue
-				self._handleSubscriptionNotification(sub, reason, resource = childResource, modifiedAttributes = modifiedAttributes)
+				self._handleSubscriptionNotification(sub, 
+													 reason, 
+													 resource = childResource, 
+													 modifiedAttributes = modifiedAttributes, 
+													 asynchronous = self.asyncSubscriptionNotifications)
 				self.countNotificationEvents(ri)
 			
 			# Check Update and enc/atr vs the modified attributes 
@@ -251,7 +273,11 @@ class NotificationManager(object):
 					if k in modifiedAttributes:
 						found = True
 				if found:
-					self._handleSubscriptionNotification(sub, reason, resource = resource, modifiedAttributes = modifiedAttributes)
+					self._handleSubscriptionNotification(sub, 
+														 reason, 
+														 resource = resource, 
+														 modifiedAttributes = modifiedAttributes,
+														 asynchronous = self.asyncSubscriptionNotifications)
 					self.countNotificationEvents(ri)
 				else:
 					L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
@@ -260,12 +286,27 @@ class NotificationManager(object):
 			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData:
 				md = missingData[sub['ri']]
 				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
-					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData = copy.deepcopy(md))
+					self._handleSubscriptionNotification(sub, 
+														 NotificationEventType.reportOnGeneratedMissingDataPoints, 
+														 missingData = copy.deepcopy(md),
+														 asynchronous = self.asyncSubscriptionNotifications)
 					self.countNotificationEvents(ri)
 					md.clearMissingDataList()
 
+			elif reason in [NotificationEventType.blockingUpdate, NotificationEventType.blockingRetrieve, NotificationEventType.blockingRetrieveDirectChild]:
+				self._handleSubscriptionNotification(sub, 
+													 reason, 
+													 resource, 
+													 modifiedAttributes = modifiedAttributes,
+													 asynchronous = False)	# blocking NET always synchronous!
+				self.countNotificationEvents(ri)
+
 			else: # all other reasons that target the resource
-				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
+				self._handleSubscriptionNotification(sub, 
+													 reason, 
+													 resource, 
+													 modifiedAttributes = modifiedAttributes,
+													 asynchronous = self.asyncSubscriptionNotifications)
 				self.countNotificationEvents(ri)
 
 
@@ -777,6 +818,7 @@ class NotificationManager(object):
 		activeField  = 'rsr' if isResponse else 'rqs'
 		
 		# Search and add to existing target
+		sub.dbReloadDict()	# get a fresh copy of the subscription
 		for each in sub.nsi:
 			if each['tg'] == target:
 				each[activeField] += count
@@ -804,6 +846,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Incrementing notification event stat for: {sub.ri}')
 		
 		# Search and add to existing target
+		sub.dbReloadDict()	# get a fresh copy of the subscription
 		for each in sub.nsi:
 			each['noec'] += 1
 		sub.dbUpdate()
@@ -955,16 +998,28 @@ class NotificationManager(object):
 											  notificationEventType:NotificationEventType, 
 											  resource:Optional[Resource] = None, 
 											  modifiedAttributes:Optional[JSON] = None, 
-											  missingData:Optional[MissingData] = None) ->  bool:
+											  missingData:Optional[MissingData] = None,
+											  asynchronous:bool = False) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		# TODO doc
 		L.isDebug and L.logDebug(f'Handling notification for notificationEventType: {notificationEventType}')
 
+
+		def _sendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
+			if not CSE.request.sendNotifyRequest(uri, 
+												originator = CSE.cseCsi,
+												content = notificationRequest).status:
+				L.isDebug and L.logDebug(f'Notification failed for: {uri}')
+				return False
+			self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
+			return True
+
+
 		def sender(uri:str) -> bool:
 			"""	Sender callback function for a single normal subscription notifications
 			"""
-			L.isDebug and L.logDebug(f'Sending notification to: {uri}, reason: {notificationEventType}	')
+			L.isDebug and L.logDebug(f'Sending notification to: {uri}, reason: {notificationEventType}, asynchronous: {asynchronous}')
 			notificationRequest:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
@@ -1006,13 +1061,20 @@ class NotificationManager(object):
 					self.countSentReceivedNotification(subscription, uri)	# count sent notification
 				
 				# Send the notification
-				if not CSE.request.sendNotifyRequest(uri, 
-													 originator = CSE.cseCsi,
-													 content = notificationRequest).status:
-					L.isDebug and L.logDebug(f'Notification failed for: {uri}')
-					return False
+				if asynchronous:
+					BackgroundWorkerPool.runJob(lambda: _sendNotification(uri, subscription, notificationRequest), 
+																		  name = f'NOT_{sub["ri"]}')
+					return True
+				else:
+					return _sendNotification(uri, subscription, notificationRequest)
+
+				# if not CSE.request.sendNotifyRequest(uri, 
+				# 									 originator = CSE.cseCsi,
+				# 									 content = notificationRequest).status:
+				# 	L.isDebug and L.logDebug(f'Notification failed for: {uri}')
+				# 	return False
 				
-				self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
+				# self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
 
 				return True
 
@@ -1044,7 +1106,7 @@ class NotificationManager(object):
 				senderFunction: A function that is called to perform the actual notification sending.
 			
 			Return:
-				Returns True, even when nothing was sent, and False when any *senderFunction* returned False.
+				Returns *True*, even when nothing was sent, and *False* when any *senderFunction* returned False. 
 		"""
 		#	Event when notification is happening, not sent
 		CSE.event.notification() # type: ignore
@@ -1055,7 +1117,8 @@ class NotificationManager(object):
 			for uri in uris:
 				if not senderFunction(uri):
 					return False
-		return True
+			return True
+
 
 
 	##########################################################################

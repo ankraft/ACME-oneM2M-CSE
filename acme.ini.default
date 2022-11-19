@@ -19,32 +19,44 @@
 ;
 
 [cse]
-; CSE type. Allowed values: IN, MN, ASN. Default: IN
+; CSE type. Allowed values: IN, MN, ASN. 
+; Default: IN
 type=${basic.config:cseType}
-; The CSE's service provider ID. Default: acme.example.com
+; The CSE's service provider ID. 
+; Default: acme.example.com
 serviceProviderID=acme.example.com
-; The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
+; The CSE ID. Can be overwritten in imported CSE definition. 
+; Default: /id-in
 cseID=/${basic.config:cseID}
-; The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
+; The CSE's resource ID. Can be overwritten in imported CSE definition. 
+; Default: id-in
 resourceID=${basic.config:cseID}
-; The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. Default: cse-in
+; The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. 
+; Default: cse-in
 resourceName=${basic.config:cseName}
-; Directory of default resources to import. Default: ./init
+; Directory of default resources to import. 
+; Default: ./init
 resourcesPath=${basic.config:dataDirectory}/init
 ; Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.
 ; Default: true
 enableResourceExpiration=true
-; Maximum expirationTime allowed for resources in seconds. Default: 60*60*24*365*5 = 157680000 seconds = 5 years
+; Maximum expirationTime allowed for resources in seconds.
+; Default: 60*60*24*365*5 = 157680000 seconds = 5 years
 maxExpirationDelta=157680000
-; Expiration time for requests sent by the CSE in seconds Default: 10.0 seconds
+; Expiration time for requests sent by the CSE in seconds.
+; Default: 10.0 seconds
 requestExpirationDelta=10.0
-; Admin originator for the CSE. Default: CAdmin
+; Admin originator for the CSE. 
+; Default: CAdmin
 originator=${basic.config:adminID}
-; Enable remote CSE registration and checking. Default: True
+; Enable remote CSE registration and checking. 
+; Default: True
 enableRemoteCSE=true
-; Enable alphabetical sorting of discovery results. Default: True
+; Enable alphabetical sorting of discovery results.
+; Default: True
 sortDiscoveredResources=true
-; Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
+; Interval to check for expired resources. 0 means "no checking". 
+; Default: 60 seconds
 checkExpirationsInterval=60
 ; Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".
 ; Default: blocking
@@ -52,11 +64,15 @@ flexBlockingPreference=blocking
 ; A comma-separated list of supported release versions. This list can contain a single or multiple values.
 ; Default: 2a,3,4
 supportedReleaseVersions=2a,3,4
-; The release version indicator for requests. Allowed values: 2a,3,4. Default: 4
+; The release version indicator for requests. Allowed values: 2a,3,4.
+; Default: 4
 releaseVersion=4
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
+; Enable or disable asynchronous notification for normal runtime subscription notifications.
+; 
+asyncSubscriptionNotifications=true
 
 
 ;
@@ -64,7 +80,8 @@ defaultSerialization=json
 ;
 
 [cse.security]
-; Enable access control checks. Default: True
+; Enable access control checks. 
+; Default: True
 enableACPChecks=true
 ; Always grant the admin originator full access (bypass access checks). 
 ; Default: True
