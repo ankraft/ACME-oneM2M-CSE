@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.11.0-dev
+Version 0.11.0
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
@@ -15,7 +15,7 @@ Version 0.11.0-dev
 This CSE implements a subset of the oneM2M standard specializations (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintain CSE for educational purposes. Also see the discussion on [Limitations](docs/Supported.md#limitations).
 
 
-![](docs/images/webui.png)
+![](docs/images/title.png)
 
 ## Documentation
 Please consult the following pages for further instructions.
@@ -44,23 +44,20 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 
-### Important: Changed CSE bootstrapping
-Before this release the initial resources to bootstrap the CSE were JSON scripts that were imported at the CSE's startup phase.
-With this release this is changed to running the script *startup.as* that [imports the initial resources](docs/Importing.md#resources).
-
-
 ### Highlights in this release
 
-- &lt;timeSyncBeacon> resource type support
-- Guided setup process to create the initial configuration file
-- Adapted announcements and time-series procedures to latest R4 changes
-- Support for the Upper Tester interface defined in oneM2M's TS-0019
-- Adding scripting support to the CSE that can be used through the console, the Upper Tester, CSE events and notifications, and other
-- Improved the CSE console (e.g. drawing graph diagrams from &lt;contentInstance> resources, dark & light theme)
-- Added support for BLOCKING UPDATE notification event type
-- Improved announced resources (e.g. bi-directional update)
-- Improved validation of complex attributes
-- And, as usual, many improvements, bug fixes, and performance improvements
+- &lt;crossResourceSubscription> and &lt;semanticDescriptor> resource types support.
+- Support for semantic queries and semantic discovers.
+- [wifilient] and [dataCollect] management object specializations support.
+- Support for *blocking UPDATE* notification event type.
+- Various improvements: Support for *expirationCounter* and notification statistics (&lt;subscription> and &lt;crossResourceSubscription>).
+- Added CORS (Cross-Origin Resource Sharing) support for http binding.
+- Various new commands and macros for scripting interpreter and the console.
+- Improved definition of enumeration values for validation.
+- Changed subscription notification handling to asynchronous.
+- Improved request timeouts, especially for the http binding.
+- Improved internal handling of requests sent by the CSE itself.
+- And, as usual, many improvements, bug fixes, and performance improvements.
 
 ## Acknowledgements
 

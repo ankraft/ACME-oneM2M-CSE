@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
 - [WEB] Improved handling of SP-relative resource IDs.
-- [SCRIPTS] Improved handling of spaces in\[ command or Variable ] command substitutions.
+- [SCRIPTS] Improved handling of spaces in \[ command or Variable ] command substitutions.
 
 
 ## [0.10.2] - 2022-07-20
