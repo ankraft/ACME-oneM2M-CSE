@@ -105,9 +105,14 @@ class CRS(Resource):
 					self._deleteSubscriptions(originator)
 					return res
 	
-
+		# Start periodic window immediately if necessary
 		if self.twt == TimeWindowType.PERIODICWINDOW:
 			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions())
+
+		# nsi is at least an empty list if nse is present, otherwise it must not be present
+		if self.nse is not None:
+			self.setAttribute('nsi', [], overwrite = False)
+
 
 		self.dbUpdate()
 		return Result.successResult()
