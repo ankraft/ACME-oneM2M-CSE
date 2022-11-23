@@ -170,6 +170,7 @@ const shortNames = {
   "rid"   : { "ln" : "requestID", "type" : "" },
   "rms"   : { "ln" : "roamingStatus", "type": "" },
   "rn"    : { "ln" : "resourceName", "type": "universal" },
+  "rqag"  : { "ln" : "requestAggregation", "type": "" },
   "rr"    : { "ln" : "requestReachability", "type": "" },
   "rs"    : { "ln" : "requestStatus", "type" : "" },
   "rsrp"  : { "ln" : "rsrp", "type": "custom" },

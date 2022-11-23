@@ -67,6 +67,7 @@ const shortTypes = {
      5 : "CSE",
      9 : "GRP",
     14 : "NOD",
+    15 : "PCH",
     16 : "CSR",
     17 : "REQ",
     23 : "SUB",
