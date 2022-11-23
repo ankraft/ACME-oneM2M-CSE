@@ -71,7 +71,7 @@ releaseVersion=4
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
 ; Enable or disable asynchronous notification for normal runtime subscription notifications.
-; 
+; Default: true
 asyncSubscriptionNotifications=true
 
 
