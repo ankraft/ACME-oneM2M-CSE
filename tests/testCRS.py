@@ -274,6 +274,34 @@ class TestCRS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithSingleRrat(self) -> None:
+		"""	CREATE <CRS> with a single rrat, one encs, periodic window"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+
+		# check subscriptions
+		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+		self.assertEqual(len(rrats), 1)
+		self.assertEqual(rrats[0], self._testSubscriptionForCnt(cntRN1), TestCRS.crs)
+		self._testSubscriptionForCnt(cntRN3, False)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCRSwithRratSlidingStatsEnabled(self) -> None:
 		"""	CREATE <CRS> with rrat, one encs, sliding window, stats enabled"""
 		dct = 	{ 'm2m:crs' : { 
@@ -1022,6 +1050,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 	suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
+
+	suite.addTest(TestCRS('test_createCRSwithSingleRrat'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+
 
 	# Test srat
 	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))

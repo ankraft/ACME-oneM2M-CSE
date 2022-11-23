@@ -1332,6 +1332,21 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdateDisallowedNCTvaluel(self) -> None:
+		""" CREATE <SUB> for blocking Update with disallowed "nct" value -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ f'{CSERN}/{aeRN}POA' ],
+			        'enc': {
+			            'net':  [ NET.blockingUpdate ],
+					},
+					'nct': NotificationContentType.all,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSubBlockingUpdate(self) -> None:
 		""" CREATE <SUB> for blocking Update"""
 		dct = 	{ 'm2m:sub' : { 
@@ -1339,8 +1354,9 @@ class TestSUB(unittest.TestCase):
 					'nu': [ f'{CSERN}/{aeRN}POA' ],
 			        'enc': {
 			            'net': [ NET.blockingUpdate ],
-						'atr': [ 'lbl' ]
+						'atr': [ 'lbl' ],
 					},
+					'nct': NotificationContentType.modifiedAttributes,
 				}}
 		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)	
 		self.assertEqual(rsc, RC.created, r)
@@ -1666,6 +1682,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
 	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedAttributeFail'))
 	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedENCAttributeFail'))
+	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedNCTvaluel'))
 	suite.addTest(TestSUB('test_createSubBlockingUpdate'))
 	suite.addTest(TestSUB('test_updateSubBlockingUpdateFail'))
 	suite.addTest(TestSUB('test_doBlockingUpdate'))
