@@ -1177,11 +1177,18 @@ class NotificationEventType(ACMEIntEnum):
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
 		if nct == NotificationContentType.all:
-			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+			return self.value in [ NotificationEventType.resourceUpdate, 
+								   NotificationEventType.resourceDelete, 
+								   NotificationEventType.createDirectChild, 
+								   NotificationEventType.deleteDirectChild ]
 		elif nct == NotificationContentType.modifiedAttributes:
-			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.blockingUpdate ]
+			return self.value in [ NotificationEventType.resourceUpdate, 
+								   NotificationEventType.blockingUpdate ]
 		elif nct == NotificationContentType.ri:
-			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+			return self.value in [ NotificationEventType.resourceUpdate, 
+								   NotificationEventType.resourceDelete, 
+								   NotificationEventType.createDirectChild, 
+								   NotificationEventType.deleteDirectChild ]
 		elif nct == NotificationContentType.triggerPayload:
 			return self.value in [ NotificationEventType.triggerReceivedForAE ]
 		elif nct == NotificationContentType.timeSeriesNotification:

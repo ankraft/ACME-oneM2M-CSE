@@ -68,7 +68,7 @@ class SUB(Resource):
 	}
 
 	_disallowedBlockingAttributes = [
-		'exc', 'gpi', 'nfu', 'bn', 'rl', 'psn',	'pn', 'nsp', 'ln', 'nct',
+		'exc', 'gpi', 'nfu', 'bn', 'rl', 'psn',	'pn', 'nsp', 'ln',
 		'nec', 'acrs',
 	]
 	"""	These attributes are not allowed in blocking-* subscription.
