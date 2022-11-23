@@ -273,6 +273,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 
 	# Start the MQTT client
 	if not mqttClient.run():				# This does return
+		L.logErr('Terminating')
 		cseStatus = CSEStatus.STOPPED
 		return False 					
 

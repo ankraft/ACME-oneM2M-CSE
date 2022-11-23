@@ -148,11 +148,11 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = mqtt.Client(client_id=self.clientID, clean_session=False if self.clientID else True)	# clean_session=False is defined by TS-0010
+		self.mqttClient = mqtt.Client(client_id = self.clientID, clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
 		# Enable SSL
 		if self.useTLS:
-			self.mqttClient.tls_set(ca_certs=self.caFile, cert_reqs=ssl.CERT_REQUIRED if self.verifyCertificate else ssl.CERT_NONE)
+			self.mqttClient.tls_set(ca_certs = self.caFile, cert_reqs = ssl.CERT_REQUIRED if self.verifyCertificate else ssl.CERT_NONE)
 
 		# Set username/password
 		if self.username and self.password:
@@ -167,11 +167,12 @@ class MQTTConnection(object):
 
 		try:
 			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive: {self.keepalive}, bind: {self.bindIF}')
-			self.mqttClient.connect(host=self.address, port=self.port, keepalive=self.keepalive, bind_address=self.bindIF)
+			self.mqttClient.connect(host = self.address, port = self.port, keepalive = self.keepalive, bind_address = self.bindIF)
 		except Exception as e:
 			if self.messageHandler:
 				self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot connect to broker: {e}')
 				self.messageHandler.onError(self, -1)
+				return
 
 		# Actually start the actor to run the MQTT client as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._mqttActor, name='MQTTClient').start()
