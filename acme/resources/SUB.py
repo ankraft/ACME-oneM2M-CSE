@@ -117,6 +117,7 @@ class SUB(Resource):
 		# nsi is at least an empty list if nse is present, otherwise it must not be present
 		if self.nse is not None:
 			self.setAttribute('nsi', [], overwrite = False)
+			CSE.notification.validateAndConstructNotificationStatsInfo(self)
 
 		return CSE.notification.addSubscription(self, originator)
 

@@ -762,7 +762,7 @@ class NotificationManager(object):
 	#	Notification Statistics
 	#
 
-	def validateNotificationStatsInfo(self, sub:SUB|CRS) -> None:
+	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS) -> None:
 		"""	Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
 
 			This method adds, if necessary, the necessarry stat info structures for each notification
@@ -880,11 +880,11 @@ class NotificationManager(object):
 					pass # Stop collecting, but keep notificationStatsInfo
 				else: # Both are True
 					sub.setAttribute('nsi', [])
-					self.validateNotificationStatsInfo(sub)	# nsi is filled here again
+					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
 			else:	# self.nse == False
 				if newNse == True:
 					sub.setAttribute('nsi', [])
-					self.validateNotificationStatsInfo(sub)	# nsi is filled here again
+					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
 		else:
 			# nse is removed (present in resource, but None, and neither True or False)
 			sub.delAttribute('nsi')
@@ -925,7 +925,7 @@ class NotificationManager(object):
 						return Result.errorResult(rsc = ResponseStatusCode	.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 
 		# Add/Update NotificationStatsInfo structure
-		self.validateNotificationStatsInfo(subscription)
+		self.validateAndConstructNotificationStatsInfo(subscription)
 		return Result.successResult()
 
 

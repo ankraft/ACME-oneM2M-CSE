@@ -333,7 +333,9 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rrats[1], self._testSubscriptionForCnt(cntRN2))
 		self._testSubscriptionForCnt(cntRN3, False)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
+		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
+		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/tg'), TestCRS.originator)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -841,7 +843,9 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
+		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
+		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/tg'), TestCRS.originator)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1045,73 +1049,77 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	clearSleepTimeCount()
 
 	# General test cases
-	suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
-	suite.addTest(TestCRS('test_createCRSmissingNuFail'))
-	suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
-	suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
-	suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
-	suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
-	suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
-	suite.addTest(TestCRS('test_createCRSwithRratsFail'))
+	# suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
+	# suite.addTest(TestCRS('test_createCRSmissingNuFail'))
+	# suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
+	# suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
+	# suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
+	# suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
+	# suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
+	# suite.addTest(TestCRS('test_createCRSwithRratsFail'))
 
-	# Test rrat
-	suite.addTest(TestCRS('test_createCRSwithRrat'))
-	suite.addTest(TestCRS('test_updateCRSwithNewRratFail'))
-	suite.addTest(TestCRS('test_updateCRSwithrratsFail'))
-	suite.addTest(TestCRS('test_updateCRSwithNecFail'))
-	suite.addTest(TestCRS('test_updateCRSwithEncsFail'))
-	suite.addTest(TestCRS('test_updateCRSwithDeletedEncsFail'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-	suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-	suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
+	# # Test rrat
+	# suite.addTest(TestCRS('test_createCRSwithRrat'))
+	# suite.addTest(TestCRS('test_updateCRSwithNewRratFail'))
+	# suite.addTest(TestCRS('test_updateCRSwithrratsFail'))
+	# suite.addTest(TestCRS('test_updateCRSwithNecFail'))
+	# suite.addTest(TestCRS('test_updateCRSwithEncsFail'))
+	# suite.addTest(TestCRS('test_updateCRSwithDeletedEncsFail'))
+	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	# suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
+	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	# suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
 
-	suite.addTest(TestCRS('test_createCRSwithSingleRratAndNSI'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-
-
-	# Test srat
-	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
-	suite.addTest(TestCRS('test_createSubscriptions'))
-	suite.addTest(TestCRS('test_createCRSwithSrat'))
-	suite.addTest(TestCRS('test_updateCRSwithNewSratFail'))
-	suite.addTest(TestCRS('test_deleteCRSwithSrat'))
-	suite.addTest(TestCRS('test_deleteSubscriptions'))
+	# suite.addTest(TestCRS('test_createCRSwithSingleRratAndNSI'))
+	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 
 
-	# Test Delete and Update via Subscription
-	suite.addTest(TestCRS('test_createCRSwithRrat'))
-	suite.addTest(TestCRS('test_deleteRratSubscription'))
+	# # Test srat
+	# suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
+	# suite.addTest(TestCRS('test_createSubscriptions'))
+	# suite.addTest(TestCRS('test_createCRSwithSrat'))
+	# suite.addTest(TestCRS('test_updateCRSwithNewSratFail'))
+	# suite.addTest(TestCRS('test_deleteCRSwithSrat'))
+	# suite.addTest(TestCRS('test_deleteSubscriptions'))
 
-	suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
-	suite.addTest(TestCRS('test_createSrat2Subscriptions'))
-	suite.addTest(TestCRS('test_deleteSratSubscription'))
-	suite.addTest(TestCRS('test_deleteSubscriptions'))
 
-	suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
-	suite.addTest(TestCRS('test_createSrat2Subscriptions'))		# create crs again
-	suite.addTest(TestCRS('test_updateSubAcrs'))
-	suite.addTest(TestCRS('test_deleteSubscriptions'))
+	# # Test Delete and Update via Subscription
+	# suite.addTest(TestCRS('test_createCRSwithRrat'))
+	# suite.addTest(TestCRS('test_deleteRratSubscription'))
 
-	# Test Periodic Window
-	suite.addTest(TestCRS('test_createCRSwithRrat'))
-	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
-	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_updateCRSPeriodicWindowSize'))
+	# suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
+	# suite.addTest(TestCRS('test_createSrat2Subscriptions'))
+	# suite.addTest(TestCRS('test_deleteSratSubscription'))
+	# suite.addTest(TestCRS('test_deleteSubscriptions'))
 
-	# Test Sliding Window
-	suite.addTest(TestCRS('test_enableSlidingWindow'))
-	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
-	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_updateCRSSlidingWindowSize'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	# suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
+	# suite.addTest(TestCRS('test_createSrat2Subscriptions'))		# create crs again
+	# suite.addTest(TestCRS('test_updateSubAcrs'))
+	# suite.addTest(TestCRS('test_deleteSubscriptions'))
+
+	# # Test Periodic Window
+	# suite.addTest(TestCRS('test_createCRSwithRrat'))
+	# suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
+	# suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	# suite.addTest(TestCRS('test_updateCRSPeriodicWindowSize'))
+
+	# # Test Sliding Window
+	# suite.addTest(TestCRS('test_enableSlidingWindow'))
+	# suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
+	# suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	# suite.addTest(TestCRS('test_updateCRSSlidingWindowSize'))
+	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 
 	# Test Notification Stats
 	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
 	suite.addTest(TestCRS('test_retrieveCRSwithNSE'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+
+	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
 	suite.addTest(TestCRS('test_updateCRSwithDeletedNse'))
 	suite.addTest(TestCRS('test_updateCRSwithDeletedNsi'))
 	suite.addTest(TestCRS('test_updateCRSwithEnableNSE'))
