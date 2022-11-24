@@ -52,7 +52,9 @@ class NotificationManager(object):
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
-		self.lockBatchNotification = Lock()	# Lock for batchNotifications
+		self.lockBatchNotification = Lock()			# Lock for batchNotifications
+		self.lockNotificationEventStats = Lock()	# Lock for notificationEventStats
+
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('NotificationManager initialized')
 
@@ -818,12 +820,14 @@ class NotificationManager(object):
 		activeField  = 'rsr' if isResponse else 'rqs'
 		
 		# Search and add to existing target
-		sub.dbReloadDict()	# get a fresh copy of the subscription
-		for each in sub.nsi:
-			if each['tg'] == target:
-				each[activeField] += count
-				break
-		sub.dbUpdate()
+		# We have to lock this to prevent race conditions in some cases with CRS handling
+		with self.lockNotificationEventStats:
+			sub.dbReloadDict()	# get a fresh copy of the subscription
+			for each in sub.nsi:
+				if each['tg'] == target:
+					each[activeField] += count
+					break
+			sub.dbUpdate()
 
 
 	def countNotificationEvents(self, ri:str, 
@@ -846,10 +850,12 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Incrementing notification event stat for: {sub.ri}')
 		
 		# Search and add to existing target
-		sub.dbReloadDict()	# get a fresh copy of the subscription
-		for each in sub.nsi:
-			each['noec'] += 1
-		sub.dbUpdate()
+		# We have to lock this to prevent race conditions in some cases with CRS handling
+		with self.lockNotificationEventStats:
+			sub.dbReloadDict()	# get a fresh copy of the subscription
+			for each in sub.nsi:
+				each['noec'] += 1
+			sub.dbUpdate()
 
 
 	def updateOfNSEAttribute(self, sub:CRS|SUB, newNse:bool) -> None:

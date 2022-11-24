@@ -274,8 +274,8 @@ class TestCRS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCRSwithSingleRrat(self) -> None:
-		"""	CREATE <CRS> with a single rrat, one encs, periodic window"""
+	def test_createCRSwithSingleRratAndNSI(self) -> None:
+		"""	CREATE <CRS> with a single rrat, one encs, periodic window, NSI enabled"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'nu' : [ '/id-in/'+TestCRS.originator ],
@@ -288,7 +288,8 @@ class TestCRS(unittest.TestCase):
 								'net': [ NET.createDirectChild ],
 							}
 							]
-						}
+						},
+					'nse' : True
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
@@ -1065,7 +1066,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 	suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
 
-	suite.addTest(TestCRS('test_createCRSwithSingleRrat'))
+	suite.addTest(TestCRS('test_createCRSwithSingleRratAndNSI'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 
 
