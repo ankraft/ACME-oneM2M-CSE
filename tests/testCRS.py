@@ -326,10 +326,13 @@ class TestCRS(unittest.TestCase):
 
 		# check subscriptions
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+
 		self.assertEqual(len(rrats), 2)
 		self.assertEqual(rrats[0], self._testSubscriptionForCnt(cntRN1), TestCRS.crs)
 		self.assertEqual(rrats[1], self._testSubscriptionForCnt(cntRN2))
 		self._testSubscriptionForCnt(cntRN3, False)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -829,6 +832,17 @@ class TestCRS(unittest.TestCase):
 	#
 
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCRSwithNSE(self) -> None:
+		"""	RETRIEVE <CRS>"""
+		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, TestCRS.crs)
+
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCRSwithDeletedNse(self) -> None:
 		"""	UPDATE <CRS> with deleted NSE"""
@@ -1095,6 +1109,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# Test Notification Stats
 	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
+	suite.addTest(TestCRS('test_retrieveCRSwithNSE'))
 	suite.addTest(TestCRS('test_updateCRSwithDeletedNse'))
 	suite.addTest(TestCRS('test_updateCRSwithDeletedNsi'))
 	suite.addTest(TestCRS('test_updateCRSwithEnableNSE'))

@@ -778,14 +778,14 @@ class NotificationManager(object):
 		nus = sub.nu
 
 		# Remove from nsi when not in nu (anymore)
-		for each in list(nsi):
-			if each['tg'] not in nus:
-				nsi.remove(each)
+		for nsiEntry in list(nsi):
+			if nsiEntry['tg'] not in nus:
+				nsi.remove(nsiEntry)
 		
 		# Add new nsi structure for new targets in nu 
-		for nu in sub.nu:
-			for each in nsi:
-				if each['tg'] == nu:
+		for nu in nus:
+			for nsiEntry in nsi:
+				if nsiEntry['tg'] == nu:
 					break
 
 			# target not found in nsi, add it
@@ -857,7 +857,7 @@ class NotificationManager(object):
 			resource. 
 
 			Note:
-				This empties the *notificationStatsEnable* attribute, which must be filled later again, 
+				This removes the *notificationStatsEnable* attribute, which must be added and filled later again, 
 				e.g. when validating the *notificationURIs* attribute. 
 				For this the *notificationURIs* attribute must be fully validated first.
 
@@ -874,10 +874,11 @@ class NotificationManager(object):
 					pass # Stop collecting, but keep notificationStatsInfo
 				else: # Both are True
 					sub.setAttribute('nsi', [])
+					self.validateNotificationStatsInfo(sub)	# nsi is filled here again
 			else:	# self.nse == False
 				if newNse == True:
 					sub.setAttribute('nsi', [])
-			self.validateNotificationStatsInfo(sub)
+					self.validateNotificationStatsInfo(sub)	# nsi is filled here again
 		else:
 			# nse is removed (present in resource, but None, and neither True or False)
 			sub.delAttribute('nsi')
