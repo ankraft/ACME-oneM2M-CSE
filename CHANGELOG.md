@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added *b64encode* macro to encode a string as base64.
 - [SCRIPTS] Added *urlencode* macro to encode a string for us in URL parameters.
 - [SCRIPTS] Added limited support for multi-line strings.
+- [WEB] Added button for switching between short and long names. Thanks to [Tyler Sengia](https://github.com/ExpandingDev).
 - [TESTS] Added option to run test cases multiple times.
 
 ### Changed
@@ -46,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Much simplified internal handling of requests. Try to apply the requests internally instead of sending them to self.
 - [CSE] Enable to target announcements to the hosting CSE itself. This behavior can be configured.
 - [CSE] Normal subscription notifications are now, depending on the notification event type, sent asynchronously.
+- [MQTT] Improved TLS and certificates support for MQTT connections. Thanks to [JiriD85](https://github.com/JiriD85).
+
 - [TESTS] Split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 - [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
 - [SCRIPTS] *requestAttributes* now supports sub-structures for request attributes, e.g. to set filterCriteria attributes.
@@ -55,7 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Adding default value when removing &lt;subscription>'s *enc* attribute in an UPDATE.
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
-- [WEB] Improved handling of SP-relative resource IDs.
+- [WEB] Improved handling of SP-relative resource IDs. Thanks to [Tyler Sengia](https://github.com/ExpandingDev).
+
 - [SCRIPTS] Improved handling of spaces in \[ command or Variable ] command substitutions.
 
 

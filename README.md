@@ -38,6 +38,7 @@ Please consult the following pages for further instructions.
 - [Roadmap](docs/Roadmap.md)
 - [Development](docs/Development.md)
 - [Contributing](docs/Contributing.md)
+	- [Acknowledgements](docs/Contributing.md#acknowledgements)
 - [FAQ](docs/FAQ.md)
 
 ## Changes
@@ -61,12 +62,7 @@ Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 
 ## Acknowledgements
 
-Thank you for contributed code, patches, testing, bug fixes, time, and more!
-
-![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)  
-![BobFIV](https://github.com/BobFIV.png?size=24) [BobFIV](https://github.com/BobFIV)  
-![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
-<img src="https://github.com/massimov.png" width="24"> [Massimo Vanetti](https://github.com/massimov)  
+Please see [Acknowledgements](docs/Contributing.md#acknowledgements).
 
 
 ## License

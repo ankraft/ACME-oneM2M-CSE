@@ -243,6 +243,10 @@ class MQTTClient(object):
 											 interface			= '0.0.0.0',
 											 username 			= args.mqttUsername,
 											 password			= args.mqttPassword,
+											 useTLS				= args.mqtts,
+											 caFile				= args.caFile,
+											 certfile			= args.mqttCert,
+											 keyfile			= args.mqttKey,
 											 messageHandler 	= MQTTClientHandler	(args.mqttTopic, args.mqttLogging))
 	
 
@@ -298,11 +302,15 @@ if __name__ == '__main__':
 	# MQTT arguments
 	parser.add_argument('--mqtt', action='store_true', dest='mqtt', default=False, help='enable MQTT for notifications')
 	parser.add_argument('--mqtt-address', action='store', dest='mqttAddress', default='localhost', required='--mqtt' in sys.argv, metavar='<host>', help='MQTT broker address (default: localhost)')
-	parser.add_argument('--mqtt-port', action='store', dest='mqttPort', default=1883, metavar='<port>',  help='MQTT broker port (default: 1883)')
+	parser.add_argument('--mqtt-port', action='store', dest='mqttPort', default=1883, metavar='<port>', type=int, help='MQTT broker port (default: 1883)')
 	parser.add_argument('--mqtt-topic', action='store', dest='mqttTopic', default=mqttNotificationTopic, metavar='<topic>', nargs='+', help=f'MQTT topic list (default: {mqttNotificationTopic})')
 	parser.add_argument('--mqtt-username', action='store', dest='mqttUsername', default=None, metavar='<username>',  help='MQTT username (default: None)')
 	parser.add_argument('--mqtt-password', action='store', dest='mqttPassword', default=None, required='--mqttUsername' in sys.argv, metavar='<password>',  help='MQTT password (default: None)')
 	parser.add_argument('--mqtt-logging', action='store_true', dest='mqttLogging', default=False, help='MQTT enable logging (default: disabled)')
+	parser.add_argument('--mqtt-useTLS', action='store_true', dest='mqtts', default=False, help='Enable MQTTS (default: disabled)')
+	parser.add_argument('--mqtt-caFile', action='store', metavar='<cafile>', dest='caFile', default=None, help='CA Certficiate ca.crt file (default: None)')
+	parser.add_argument('--mqtt-certfile', action='store', metavar='<certfile>', dest='mqttCert', default=None, help='Certificate file *.crt for MQTTS (default: None)')
+	parser.add_argument('--mqtt-keyfile', action='store', metavar='<keyfile>', dest='mqttKey', default=None, help='Key file *.key for MQTTS (default: None)')
 
 	# Generic
 	parser.add_argument('--fail-verification', action='store_true', dest='failVerification', default=False, help='Fail verification requests (default: false)')

@@ -88,20 +88,22 @@ class MQTTConnection(object):
 	#
 
 	def __init__(self, address:str, 
-					   port:Optional[int] = None, 
-					   keepalive:Optional[int] = 60, 
-					   interface:Optional[str] = '0.0.0.0', 
-					   clientID:Optional[str] = None, 
-					   username:Optional[str] = None, 
-					   password:Optional[str] = None,
-					   useTLS:Optional[bool] = False, 
-					   caFile:Optional[str] = None, 
-					   verifyCertificate:Optional[bool] = False,
-					   lowLevelLogging:Optional[bool] = True,
-					   messageHandler:Optional[MQTTHandler] = None
+					   port:int = None,
+					   keepalive:int = 60,
+					   interface:str = '0.0.0.0', 
+					   clientID:str = None,
+					   username:str = None,
+					   password:str = None,
+					   useTLS:bool = False, 
+					   caFile:str = None, 
+					   verifyCertificate:bool = False,
+					   certfile:str = None, 
+					   keyfile: str = None,
+					   lowLevelLogging:bool = True,
+					   messageHandler:MQTTHandler = None
 				) -> None:
 		self.address								= address
-		self.port									= port if port else 4883 if useTLS else 1883
+		self.port									= port if port else 8883 if useTLS else 1883
 		self.keepalive								= keepalive
 		self.bindIF									= interface
 		self.username:str							= username
@@ -109,6 +111,8 @@ class MQTTConnection(object):
 		self.useTLS:bool							= useTLS
 		self.verifyCertificate						= verifyCertificate
 		self.caFile									= caFile
+		self.mqttsCertfile 							= certfile
+		self.mqttsKeyfile 							= keyfile
 		self.clientID								= clientID
 		self.lowLevelLogging						= lowLevelLogging
 
@@ -148,12 +152,20 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = mqtt.Client(client_id = self.clientID, clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
+		self.mqttClient = mqtt.Client(client_id = self.clientID, 
+									  clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
-		# Enable SSL
+		# Enable SSL see: https://pypi.org/project/paho-mqtt/
 		if self.useTLS:
-			self.mqttClient.tls_set(ca_certs = self.caFile, cert_reqs = ssl.CERT_REQUIRED if self.verifyCertificate else ssl.CERT_NONE)
-
+			self.mqttClient.tls_set(ca_certs = self.caFile, 
+									certfile = self.mqttsCertfile, 
+									keyfile = self.mqttsKeyfile, 
+									cert_reqs = ssl.CERT_REQUIRED, 
+									tls_version = ssl.PROTOCOL_TLS, 
+									ciphers = None)
+			# If tls_insecure_set is set to True, it is impossible to guarantee that the host you are connecting to is not impersonating your server. This can be useful in initial server testing, but makes it possible for a malicious third party to impersonate your server through DNS spoofing, for example.
+			self.mqttClient.tls_insecure_set(True)
+			
 		# Set username/password
 		if self.username and self.password:
 			self.mqttClient.username_pw_set(self.username, self.password)
