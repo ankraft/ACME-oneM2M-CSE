@@ -7,6 +7,9 @@
 #	Managing entity for resource announcements
 #
 
+"""	This module defines the manager for handling announcements.
+"""
+
 from __future__ import annotations
 from typing import Optional, Tuple, List, cast, Any
 
@@ -26,10 +29,20 @@ from .Logging import Logging as L
 # TODO Remove marked code below after 0.10.0, also remove checkInterval configuration setting
 
 waitBeforeAnnouncement = 3	# seconds # TODO configurable
+"""	Number of seconds to wait before performing announcements when a new CSE has registered. """
 
 class AnnouncementManager(object):
+	"""	This class implements announcement functionalities.
+
+		Attributes:
+			checkInterval: Number of seconds to wait between tries to announce resources to remote CSEs (configurable).
+			allowAnnouncementsToHostingCSE: Allow or disallow resources to announce to the own hosting CSE (configurable).
+
+	"""
 
 	def __init__(self) -> None:
+		"""	Initialization of the announcement manager.
+		"""
 		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRegistrarCSE, self.handleDeRegisteredFromRegistrarCSE)	# type: ignore
 		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSEHasRegistered)			# type: ignore
@@ -46,6 +59,11 @@ class AnnouncementManager(object):
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the announcement manager.
+		
+			Return:
+				Always True.
+		"""
 		# self.stop()	# TODO remove after 0.10.0
 		if CSE.remote:
 			for csr in CSE.remote.getAllLocalCSRs():
@@ -56,14 +74,14 @@ class AnnouncementManager(object):
 
 
 	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
+		"""	Store relevant configuration values in the announcement manager.
 		"""
 		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
 		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
 
 
 	def configUpdate(self, key:Optional[str] = None, value:Optional[Any] = None) -> None:
-		"""	Callback for the `configUpdate` event.
+		"""	Callback for the *configUpdate* event.
 			
 			Args:
 				key: Name of the updated configuration setting.
@@ -113,14 +131,22 @@ class AnnouncementManager(object):
 	#
 
 	def handleRegisteredToRegistrarCSE(self, remoteCSE:Resource, remoteCSR:Resource) -> None:
-		"""	Handle registrations to a remote CSE (Registrar CSE).
+		"""	Handle registrations to a registrar CSE.
+
+			Args:
+				remoteCSE: The remote `CSEBase` resource.
+				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
 		time.sleep(waitBeforeAnnouncement)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
 	def handleDeRegisteredFromRegistrarCSE(self, remoteCSR:Resource) -> None:
-		"""	Handle de-registrations from a remote CSE (registrar CSE).
+		"""	Handle de-registrations from a registrar CSE.
+
+			Args:
+				remoteCSR: The own CSE's remote `CSR` resource.
+
 		"""
 		# self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this > 0.11.0 for new Announcement behaviour
 		pass
@@ -128,6 +154,9 @@ class AnnouncementManager(object):
 
 	def handleRegistreeCSEHasRegistered(self, remoteCSR:Resource) -> None:
 		"""	Handle registrations when a registree CSE has registered.
+
+			Args:
+				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
 		time.sleep(waitBeforeAnnouncement) 	# Give some time until remote CSE is fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
@@ -135,6 +164,9 @@ class AnnouncementManager(object):
 
 	def handleRegistreeCSEHasDeregistered(self, remoteCSR:Resource) -> None:
 		""" Handle de-registrations when a registree CSE has de-registered.
+
+			Args:
+				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
 		#self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this > 0.11.0 for new Announcement behaviour+
 		pass
@@ -151,7 +183,17 @@ class AnnouncementManager(object):
 	#
 
 	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> Result:
-		"""	Check all resources and announce them if necessary.
+		"""	Check all resources in the resource tree and announce them if necessary.
+
+			Args:
+				remoteCSR: The registree or registrar CSE's `CSR` resource.
+			
+			Return:
+				Result object indicating the success of the operation.
+			
+			See Also:
+				- `announceResource`
+				- `searchAnnounceableResourcesForCSI`
 		"""
 		if not remoteCSR:
 			return Result(status = True)
@@ -166,7 +208,16 @@ class AnnouncementManager(object):
 
 
 	def announceResource(self, resource:AnnounceableResource) -> Result:
-		"""	Announce a single resource to its announcement targets.
+		"""	Announce a single resource to its announcement target(s).
+
+			Args:
+				resource: The resource to announce.
+			
+			Return:
+				Result object indicating the success of the operation.
+			
+			See Also:
+				- `announceResourceToCSI`
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for at in resource.at:
@@ -179,11 +230,29 @@ class AnnouncementManager(object):
 
 
 	def announceResourceToCSI(self, resource:AnnounceableResource, csi:str) -> Result:
-		"""	Announce a resource to a specific CSR.
+		"""	Announce a resource to a specific registered remote CSE.
+
+			Args:
+				resource: The resource to announce.
+				csi: CSE-ID of the remote CSE.
+			
+			Return:
+				Result object indicating the success of the operation.
+			
+			TODO:
+				- Support announcement to direct URL
 		"""
 		# TODO direct URL
 
 		def checkCSEBaseAnnouncement(cseBase:AnnounceableResource) -> Result:
+			"""	Check and perform the announcement of a CSE.
+			
+				Args:
+					cseBase: The announceable version of a `CSEBase` (`CSEBaseAnnc`).
+
+			Return:
+				Result object indicating the success of the operation.
+			"""
 			L.isDebug and L.logDebug(f'Check CSEBase announcement')
 			if t := self._announcedInfos(cseBase, csi):
 				# CSEBase has "old" announcement infos
@@ -297,8 +366,14 @@ class AnnouncementManager(object):
 	#
 
 	def checkResourcesForUnAnnouncement(self, remoteCSR:Resource) -> None:
-		"""	Check whether resources need announcements and initiate announcement
-			if they are.
+		"""	Check whether resources need announcements, and initiate announcement
+			if they do.
+
+			Args:
+				remoteCSR: The `CSR` remote resource.
+			
+			See also:
+				- searchAnnounceableResourcesForCSI
 		"""
 		csi = remoteCSR.csi
 		L.isDebug and L.logDebug(f'Checking resources for Unannouncement to: {csi}')
@@ -312,7 +387,13 @@ class AnnouncementManager(object):
 
 
 	def deAnnounceResource(self, resource:AnnounceableResource) -> None:
-		"""	De-announce a single resource from its announcement targets.
+		"""	De-announce a single resource from its announcement target(s).
+
+			Args:
+				resource: The announceable resource to de-announce.
+			
+			See also:
+				- deAnnounceResourceFromCSI
 		"""
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
@@ -321,7 +402,12 @@ class AnnouncementManager(object):
 
 
 	def deAnnounceResourceFromCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
-		"""	De-Announce a resource from a specific CSR.
+		"""	De-Announce a resource from a specific `CSR`.
+
+			Args:
+				resource: The announceable resource to de-announce.
+				csi: The CSE-ID of the CSE from which the resource is to be de-announced.
+				remoteRI: The resource ID of the remote announced resource.
 		"""
 
 		# Delete the announed resource from the remote CSE
@@ -343,6 +429,12 @@ class AnnouncementManager(object):
 
 
 	def announceUpdatedResource(self, resource:AnnounceableResource, originator:str) -> None:
+		"""	(Newly) announce an updated resource to a remote CSE.
+
+			Args:
+				resource: The announceable resource that has been updated.
+				originator: The original UPDATE request's originator.
+		"""
 		L.isDebug and L.logDebug(f'Updating announced resource: {resource.ri}')
 
 		# Check for removed AT
@@ -362,7 +454,6 @@ class AnnouncementManager(object):
 		# Update the annoucned remote resources 
 		announcedCSIs = []
 		remoteRIs = []
-		ot = f'{originator}/'
 		for (csi, remoteRI) in resource.getAnnouncedTo():
 			if csi == originator:	# Skip the announced resource at the originator !!
 				continue
@@ -377,7 +468,12 @@ class AnnouncementManager(object):
 
 
 	def updateResourceOnCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
-		"""	Update an announced resource to a specific CSR.
+		"""	Update an announced resource on a specific remote CSE.
+
+			Args:
+				resource: The announceable resource to update.
+				csi: The CSE-ID of the CSE where the announced resource is hosted.
+				remoteRI: The resource ID of the remote announced resource.
 		"""
 		# TODO doc
 		dct = resource.createAnnouncedResourceDict(isCreate = False)
@@ -392,9 +488,14 @@ class AnnouncementManager(object):
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
-		"""	Remove announcement details from a resource (internal attribute).
-			Modify the internal as well the at attributes to remove the reference
-			to the remote CSE.
+		"""	Remove announcement details from a resource.
+
+			Modify the internal *_announcedTo* attribute as well the *at* attribute
+			to remove the reference to the remote CSE from announced resource.
+
+			Args:
+				resource: The announceable resource to remove.
+				csi: The CSE-ID of the CSE where the announced resource is hosted.
 		"""
 		ats = resource.getAnnouncedTo()
 		remoteRI:str = None
@@ -415,8 +516,17 @@ class AnnouncementManager(object):
 
 
 	def _isResourceAnnouncedTo(self, resource:Resource, csi:str) -> bool:
-		"""	Check whether a resource is announced. This is done by looking at the entries in the
-			internal "__announcedTo__" attribute, ie. whether they will contain the *csi*.
+		"""	Check whether a resource is announced to a specific remote CSE.
+		
+			This is done by looking at the entries in the internal *_announcedTo* 
+			attribute, ie. whether they will contain the *csi* of the remote CSE.
+
+			Args:
+				resource: The announceable resource to check.
+				csi: The CSE-ID of the CSE where the announced resource is supposed to be hosted.
+			
+			Return:
+				Boolean indicating the announced status.
 		"""
 		return (at := resource.getAnnouncedTo()) is not None and any(csi == _csi for (_csi, _) in at)
 	
@@ -424,6 +534,10 @@ class AnnouncementManager(object):
 	def _announcedInfos(self, resource:Resource, csi:str) -> Optional[Tuple[str, str]]:
 		"""	Return the matching tuple for the given *csi* of a resource announcement,
 			or *None* if none is set.
+
+			Args:
+				resource: The announceable resource to check.
+				csi: The CSE-ID of the CSE where the announced resource is supposed to be hosted.
 		"""
 		if at := resource.getAnnouncedTo():
 			for _at in at:
@@ -432,8 +546,18 @@ class AnnouncementManager(object):
 		return None
 
 
-	def announceResourceViaDirectURL(self, resource: Resource, at: str) -> bool:
+	def announceResourceViaDirectURL(self, resource:Resource, at:str) -> bool:
 		"""	Announce a resource via a direct URL, nit via a csi.
+
+			Attention:
+				Not supported yet.
+
+			Args:
+				resource: The announceable resource to announce.
+				at: The direct URL of the remote CSE to where to announce the resource.
+			
+			Return:
+				Boolean indicating the result.
 		"""
 		L.logErr('TODO Direct Announcement')
 		return False
@@ -446,11 +570,30 @@ class AnnouncementManager(object):
 
 	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> list[AnnounceableResource]:
 		""" Search and retrieve all resources that have the provided CSI in their 
-			'at' attribute. Also, distinguish between announced and not announced resources in the filter.
+			*at* attribute.
+			
+			Also distinguish between announced and not announced resources in the filter.
+
+			Args:
+				csi: The CSE-ID of the CSE for which the announced resource are searched.
+				isAnnounced: Boolean indicating whether announced or non-announced resources are searched for.
+			
+			Return:
+				List of `AnnounceableResource` resources that have been found.
+
 		"""
 
 		mcsi = f'{csi}/'
+
 		def _announcedFilter(r:JSON) -> bool:
+			"""	Internal filter function for announced resources.
+			
+				Args:
+					r: Resource to check.
+				
+				Return:
+					Boolean indicating the search filter result.
+			"""
 			if (at := r.get('at')) and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
 				if ato := r.get(Resource._announcedTo):
 					for i in ato:

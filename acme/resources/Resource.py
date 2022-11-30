@@ -28,20 +28,45 @@ from ..services import CSE
 
 
 class Resource(object):
-	""" Base class for all oneM2M resource types """
+	""" Base class for all oneM2M resource types,
+	
+		Attributes:
+
+	"""
 
 	# Contstants for internal attributes
 	_rtype 				= '__rtype__'
+	"""	Constant: Name of the internal *__rtype__* attribute. This attribute holds the resource type name, e.g. "m2m:cnt". """
+
 	_srn				= '__srn__'
+	"""	Constant: Name of the internal *__srn__* attribute. This attribute holds the resource's structured resource name. """
+
 	_node				= '__node__'
+	"""	Constant: Name of the internal __node__ attribute. This attribute is used in some resource types to hold a reference to the hosting <node> resource. """
+
 	_createdInternally	= '__createdInternally__'	# TODO better name. This is actually an RI
+	""" Constant: Name of the *__createdInternally__* attribute. This attribute indicates whether a resource was created internally or by an external request. """
+
 	_imported			= '__imported__'
+	""" Constant: Name of the *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
+
 	_announcedTo 		= '__announcedTo__'			# List
+	""" Constant: Name of the *__announcedTo__* attribute. This attribute holds internal announcement information. """
+
 	_isInstantiated		= '__isInstantiated__'
+	""" Constant: Name of the *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
+
 	_originator			= '__originator__'			# Or creator
+	""" Constant: Name of the *__originator__* attribute. This attribute holds the original creator of a resource."""
+
 	_modified			= '__modified__'
+	""" Constant: Name of the *__modified__* attribute. This attribute holds the resource's precise modification timestamp. """
+
 	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
+	""" Constant: Name of the *__remoteID__* attribute. This attribute holds a list of the resource's announced variants. """
+
 	_rvi				= '__rvi__'					# Request version indicator when created
+	""" Constant: Name of the *__remoteID__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
 
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	"""	Resource attributes that are excluded when updating the resource """
@@ -156,6 +181,9 @@ class Resource(object):
 				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
 				update: Optional indicator whether only the updated attributes shall be included in the result.
 				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
+			
+			Return:
+				A `JSON` object with the resource representation.
 		"""
 		# remove (from a copy) all internal attributes before printing
 		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
@@ -248,6 +276,8 @@ class Resource(object):
 			Args:
 				dct: An optional JSON dictionary with the attributes to be updated.
 				originator: The optional requests originator that let to the update of the resource.
+				doValidateAttributes: If *True* optionally call the resource's `validate()` method.
+
 			Return:
 				Result object indicating success or failure.
 		"""
@@ -332,11 +362,12 @@ class Resource(object):
 	def willBeUpdated(self, dct:Optional[JSON] = None, 
 							originator:Optional[str] = None, 
 							subCheck:Optional[bool] = True) -> Result:
-		""" This method is called before a resource will be updated and before calling the *update()* method.
+		""" This method is called before a resource will be updated and before calling the `update()` method.
 			
 			This method is implemented in some sub-classes.
 
 			Args:
+				dct: `JSON` dictionary with the attributes that will be updated.
 				originator: The request originator.
 				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
 
@@ -455,7 +486,7 @@ class Resource(object):
 					   parentResource:Optional[Resource] = None) -> Result:
 		""" Validate a resource. 
 		
-			Usually called within activate() or update() methods.
+			Usually called within `activate()` or `update()` methods.
 
 			This method is implemented in some sub-classes.
 

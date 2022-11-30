@@ -241,7 +241,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                   | cse.registrar.csi                  |
 | resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                           | cse.registrar.rn                   |
 | serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json       | cse.registrar.serialization        |
-| checkInterval        | Wait n seconds between tries to to connect to the reRegistrarmote CSE and to check validity of Registrar CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval        |
+| checkInterval        | Wait n seconds between tries to to connect to the registrar CSE and to check validity of Registrar CSE connections in seconds.<br/>Default: 30       | cse.registrar.checkInterval        |
 | excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                                          | cse.registrar.excludeCSRAttributes |
 
 
@@ -250,7 +250,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 | Keyword                        | Description                                                                                      | Configuration Name                               |
 |:-------------------------------|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------|
-| checkInterval                  | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval                  |
+| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10    | cse.announcements.checkInterval                  |
 | allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                          | cse.announcements.allowAnnouncementsToHostingCSE |
 
 

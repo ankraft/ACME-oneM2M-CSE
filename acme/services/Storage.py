@@ -41,7 +41,7 @@ class Storage(object):
 	"""
 
 	def __init__(self) -> None:
-		"""	Initialization of the storage module.
+		"""	Initialization of the storage manager.
 		"""
 
 		# create data directory
@@ -77,7 +77,7 @@ class Storage(object):
 
 
 	def shutdown(self) -> bool:
-		"""	Shutdown the storage module.
+		"""	Shutdown the storage manager.
 		
 			Return:
 				Always True.
