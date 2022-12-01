@@ -368,6 +368,21 @@ class TestMgmtObj(unittest.TestCase):
 	#	BAT
 	#
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createBATWrong(self) -> None:
+		""" CREATE [battery] w/ wrong batteryStatus -> Fail"""
+		dct =  { 'm2m:bat' : {
+					'mgd' : T.BAT,
+					'rn'  : batRN,
+					'dc'  : 'aBat',
+					'btl' : 23,
+					'bts' : 99
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createBAT(self) -> None:
 		""" CREATE [battery] """
@@ -1285,6 +1300,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestMgmtObj('test_attributesANDI'))
 	suite.addTest(TestMgmtObj('test_deleteANDI'))
 	
+	suite.addTest(TestMgmtObj('test_createBATWrong'))
 	suite.addTest(TestMgmtObj('test_createBAT'))
 	suite.addTest(TestMgmtObj('test_retrieveBAT'))
 	suite.addTest(TestMgmtObj('test_attributesBAT'))

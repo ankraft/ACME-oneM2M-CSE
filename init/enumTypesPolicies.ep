@@ -6,6 +6,9 @@
 // The enumTypesPolicies.ep file contains a dictionary of enumeration data types and their allowed values
 
 {
+	"m2m:batteryStatus" : {
+		"evalues": [ "1..7" ]
+	},
 	"m2m:contentStatus" : {
 		"evalues": [ 1, 2 ]
 	},

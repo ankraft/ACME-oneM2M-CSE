@@ -603,7 +603,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "batteryLevel",
 			"ns": "m2m",
-			"type": "positiveInteger",	// non-enum
+			"type": "enum",
+			"etype": "m2m:batteryStatus",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",

@@ -6,25 +6,21 @@
 #
 #	ResourceType: mgmtObj:Battery
 #
-
+""" [Battery] (BAT) management object specialization """
 from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
 
-btsNORMAL			 = 1
-btsCHARGING			 = 2
-btsCHARGING_COMPLETE = 3
-btsDAMAGED			 = 4
-btsLOW_BATTERY		 = 5
-btsNOT_INSTALLED	 = 6
-btsUNKNOWN			 = 7
-
-
 defaultBatteryLevel  = 100
-defaultBatteryStatus = btsUNKNOWN
+"""	Constant - Default battery level """
+
+defaultBatteryStatus = 7 # unknown
+"""	Constant - Default battery status (UNKNOWN) """
+
 
 class BAT(MgmtObj):
+	""" [battery] (bat) management object specialization """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -57,6 +53,7 @@ class BAT(MgmtObj):
 			'btl': None,
 			'bts': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
