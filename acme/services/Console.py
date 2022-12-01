@@ -6,9 +6,11 @@
 #
 #	Console functions for ACME CSE
 #
+"""	This module defines console functions for the CSE.
+"""
 
 from __future__ import annotations
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Any
 
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
@@ -41,16 +43,34 @@ from ..services.Logging import Logging as L
 class TreeMode(IntEnum):
 	""" Available modes do display the resource tree
 	"""
+
 	NORMAL				= auto()
+	"""	Mode - Normal """
+
 	CONTENT				= auto()
+	""" Mode - Show content """
+
 	COMPACT				= auto()
+	""" Mode - Compact """
+
 	CONTENTONLY			= auto()
+	"""	Mode - Content only """
+
 
 	def __str__(self) -> str:
+		"""	String representation of the TreeMode.
+
+			Return:
+				String representation.
+		"""
 		return self.name
 
+
 	def succ(self) -> TreeMode:
-		"""	Return the next enum value, and cycle at the end.
+		"""	Return the next enum value, and cycle to the beginning when reaching the end.
+
+			Return:
+				TreeMode value.
 		"""
 		members:list[TreeMode] = list(self.__class__)
 		index = members.index(self) + 1
@@ -60,6 +80,12 @@ class TreeMode(IntEnum):
 	@classmethod
 	def to(cls, t:str) -> TreeMode:
 		"""	Return the enum from a string.
+
+			Args:
+				t: String representation of an enum value.
+
+			Return:
+				Enum value or *None*.
 		"""
 		return dict(cls.__members__.items()).get(t.upper())
 
@@ -67,6 +93,9 @@ class TreeMode(IntEnum):
 	@classmethod
 	def names(cls) -> list[str]:
 		"""	Return all the enum names.
+
+			Return:
+				List of enum value.
 		"""
 		return list(cls.__members__.keys())
 
@@ -74,20 +103,54 @@ class TreeMode(IntEnum):
 
 
 class Console(object):
+	"""	Console Manager class.
+	
+		Attributes:
+			refreshInterval: Configuration setting. Refresh interval for various continuous display functions.
+			hideResources: Configuration setting. List of resources to hide from tree view.
+			treeMode: Configuration setting. Default tree mode.
+			treeIncludeVirtualResources: Configuration setting. Indicates whether the tree view will include or exclude virtual resources.
+			confirmQuit: Configuration setting. Terminating and quitting the CSE must be confirmed.
+
+			interruptContinous: Indication whether any continuous display function should terminate.
+			previousTreeRi: Resource ID of the previous sub-tree display.
+			previousInspectRi: Resource ID of the previous resource inspection.
+			previosInspectChildrenRi: Resource ID of the previous resource + child resource inspection.
+			previousScript: Name of the previous script run.
+			previousArgument: Previous script arguments.
+			previousGraphRi: Resource ID of the previous graph display.
+	"""
 
 	def __init__(self) -> None:
-		self.refreshInterval 			 = Configuration.get('cse.console.refreshInterval')
-		self.hideResources  			 = Configuration.get('cse.console.hideResources')
-		self.treeMode	     			 = Configuration.get('cse.console.treeMode')
-		self.treeIncludeVirtualResources = Configuration.get('cse.console.treeIncludeVirtualResources')
-		self.confirmQuit     			 = Configuration.get('cse.console.confirmQuit')
-		self.interruptContinous			 = False
-		self.endmessage:str 			 = None
+		"""	Initialization of a *Console* instance.
+		"""
+
+		# Get the configuration settings
+		self._assignConfig()
+
+		self.interruptContinous = False
+		self.previousTreeRi = ''
+		self.previousInspectRi = ''
+		self.previosInspectChildrenRi = ''
+		self.previousScript = ''
+		self.previousArgument = ''
+		self.previousGraphRi = ''
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
+		# Add handler for restart event
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
+
 		L.isInfo and L.log('Console initialized')
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the *Console* instance.
+			
+			Return:
+				Always returns *True*.
+		"""
 		L.isInfo and L.log('Console shut down')
 		return True
 
@@ -99,8 +162,36 @@ class Console(object):
 		L.isDebug and L.logDebug('Console restarted')
 
 
+	def _assignConfig(self) -> None:
+		"""	Assign configuration settings.
+		"""
+		self.refreshInterval:float = Configuration.get('cse.console.refreshInterval')
+		self.hideResources:list[str] = Configuration.get('cse.console.hideResources')
+		self.treeMode:TreeMode = Configuration.get('cse.console.treeMode')
+		self.treeIncludeVirtualResources:bool = Configuration.get('cse.console.treeIncludeVirtualResources')
+		self.confirmQuit:bool = Configuration.get('cse.console.confirmQuit')
+
+
+	def configUpdate(self, key:Optional[str] = None, 
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+
+			Args:
+				key: The key for the configuration setting that is updated.
+				value: The new configuration setting.
+		"""
+		if key not in [ 'cse.console.refreshInterval',
+						'cse.console.hideResources',
+						'cse.console.treeMode',
+						'cse.console.treeIncludeVirtualResources',
+						'cse.console.confirmQuit']:
+			return
+		self._assignConfig()
+
 
 	def run(self) -> None:
+		"""	Run the console.
+		"""
 		#
 		#	Enter an endless loop.
 		#	Execute keyboard commands in the keyboardHandler's loop() function.
@@ -151,6 +242,8 @@ class Console(object):
 
 
 	def stop(self) -> None:
+		"""	Stop the console.
+		"""
 		stopLoop()
 
 	##############################################################################
@@ -159,6 +252,11 @@ class Console(object):
 	#
 
 	def _about(self, header:str = None) -> None:
+		"""	Print a headline for a command.
+
+			Args:
+				header: Optional header to print.
+		"""
 		L.console(f'\n[white]{Constants.textLogo} ', plain = True, end = '')
 		L.console(f'oneM2M CSE {Constants.version}', nl = False,)
 		if header:
@@ -169,7 +267,7 @@ class Console(object):
 		"""	Print help for keyboard commands.
 
 			Args:
-				key: Not used
+				key: Input key. Ignored.
 		"""
 		self._about('Console Commands')
 
@@ -218,6 +316,10 @@ class Console(object):
 
 	def about(self, key:str) -> None:
 		"""	Print QR-code for keyboard commands.
+
+
+		Args:
+			key: Input key. Ignored.
 		"""
 		self._about()
 		L.console(Text("""An open source CSE Middleware for Education
@@ -250,6 +352,9 @@ Available under the BSD 3-Clause License
 
 	def shutdownCSE(self, key:str) -> None:
 		"""	Shutdown the CSE. Confirm shutdown before actually doing that.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		if not CSE.isHeadless:
 			if self.confirmQuit:
@@ -266,6 +371,9 @@ Available under the BSD 3-Clause License
 
 	def toggleScreenLogging(self, key:str) -> None:
 		"""	Toggle screen logging.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.enableScreenLogging = not L.enableScreenLogging
 		L.console(f'Screen logging enabled -> **{L.enableScreenLogging}**')
@@ -273,6 +381,9 @@ Available under the BSD 3-Clause License
 
 	def toggleLogging(self, key:str) -> None:
 		"""	Toggle through the log levels.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.setLogLevel(L.logLevel.next())
 		L.console(f'New log level -> **{str(L.logLevel)}**')
@@ -280,12 +391,18 @@ Available under the BSD 3-Clause License
 
 	def printLine(self, key:str) -> None:
 		"""	Print a separator Line to the log.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.logDivider()
 
 
 	def workers(self, key:str) -> None:
-		"""	Print the worker and actor ts.
+		"""	Print the worker and actor threads.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Worker & Actor Threads', isHeader=True)
 		table = Table(row_styles = [ '', L.tableRowStyle])
@@ -312,6 +429,9 @@ Available under the BSD 3-Clause License
 
 	def configuration(self, key:str) -> None:
 		"""	Print the configuration.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Configuration', isHeader = True)
 		conf = Configuration.print().split('\n')
@@ -329,23 +449,31 @@ Available under the BSD 3-Clause License
 		L.console(table, nl = True)
 
 
-	def clearScreen(self, _:str) -> None:
+	def clearScreen(self, key:str) -> None:
 		"""	Clear the console screen.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.consoleClear()
 
 
-	def resourceTree(self, _:str) -> None:
+	def resourceTree(self, key:str) -> None:
 		"""	Render the CSE's resource tree.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Resource Tree', isHeader = True)
 		L.console(self.getResourceTreeRich())
 		L.console()
 
 
-	previousTreeRi = ''
-	def childResourceTree(self, _:str) -> None:
+	def childResourceTree(self, key:str) -> None:
 		"""	Render the CSE's resource tree, beginning with a child resource.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Child Resource Tree', isHeader = True)
 		L.off()
@@ -363,6 +491,12 @@ Available under the BSD 3-Clause License
 
 
 	def continuousTree(self, key:str) -> None:
+		"""	Render a continuous CSE resource tree view.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+
 		L.off()
 		self.interruptContinous = False
 		self.clearScreen(key)
@@ -392,8 +526,11 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def cseRegistrations(self, _:str) -> None:
+	def cseRegistrations(self, key:str) -> None:
 		"""	Render CSE registrations.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('CSE Registrations', isHeader = True)
 		poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
@@ -401,8 +538,11 @@ Available under the BSD 3-Clause License
 		L.console()
 
 
-	def statistics(self, _:str) -> None:
+	def statistics(self, key:str) -> None:
 		""" Render various statistics & counts.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Statistics', isHeader = True)
 		L.console(self.getStatisticsRich())
@@ -410,6 +550,11 @@ Available under the BSD 3-Clause License
 
 
 	def continuousStatistics(self, key:str) -> None:
+		"""	Render a continous statistics view.
+		
+			Args:
+				key: Input key. Ignored.
+		"""
 		L.off()
 		self.interruptContinous = False
 		self.clearScreen(key)
@@ -424,8 +569,11 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def deleteResource(self, _:str) -> None:
+	def deleteResource(self, key:str) -> None:
 		"""	Delete a resource from the CSE.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Delete Resource', isHeader=True)
 		L.off()
@@ -440,9 +588,11 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	previousInspectRi = ''
-	def inspectResource(self, _:str) -> None:
+	def inspectResource(self, key:str) -> None:
 		"""	Show a resource.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Inspect Resource', isHeader = True)
 		L.off()
@@ -456,9 +606,11 @@ Available under the BSD 3-Clause License
 		L.on()		
 
 
-	previosInspectChildrenRi = ''
-	def inspectResourceChildren(self, _:str) -> None:
+	def inspectResourceChildren(self, key:str) -> None:
 		"""	Show a resource and its children.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Inspect Resource and Children', isHeader = True)
 		L.off()		
@@ -476,7 +628,11 @@ Available under the BSD 3-Clause License
 
 
 	def continuousInspectResource(self, key:str) -> None:
-		"""	Show a resource continuously.
+		"""	Render a resource continuously.
+
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		L.console('Inspect Resource Continuously', isHeader = True)
 		L.off()		
@@ -488,14 +644,14 @@ Available under the BSD 3-Clause License
 				self.clearScreen(key)
 				self._about(f'Inspect Resource: {ri}')
 				self.interruptContinous = False
-				self.endMessage:str = None
+				endMessage:str = None
 				with Live(Pretty(res.resource.asDict()), console = L._console, auto_refresh = False) as live:
 
 					def _updateResource(r:Resource = None) -> None:
 						"""	Callback to update the on-screen resource on an event.
 						"""
 						if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
-							self.endMessage = f'Resource is not available anymore: {ri}'
+							endMessage = f'Resource is not available anymore: {ri}'
 							self.interruptContinous = True
 							return
 						live.update(Pretty(res.resource.asDict()), refresh = True)
@@ -503,7 +659,7 @@ Available under the BSD 3-Clause License
 					# Register events for which the resource is refreshed
 					CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateResource)		# type:ignore[attr-defined]
 
-					while waitForKeypress(self.refreshInterval) in [None, '\x14']:
+					while waitForKeypress(self.refreshInterval) in [None, '\x09']:
 						if self.interruptContinous:
 							break
 
@@ -512,15 +668,18 @@ Available under the BSD 3-Clause License
 
 				# Reset the screen and show error message if there is one
 				self.clearScreen(key)
-				if self.endMessage:
-					L.console(self.endMessage, isError = True)
+				if endMessage:
+					L.console(endMessage, isError = True)
 
 		# re-enable logging
 		L.on()
 
 
-	def katalogScripts(self, _:str) -> None:
-		"""	List the loaded scripts.
+	def katalogScripts(self, key:str) -> None:
+		"""	List a catalog of the loaded scripts.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		from rich.style import Style
 		L.console('Script Catalog', isHeader = True)
@@ -547,7 +706,15 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def exportResources(self, _:str) -> None:
+	def exportResources(self, key:str) -> None:
+		"""	Export resources to the initialization directory.
+
+			Only resources that have **not** been imported are exported.
+			The result is a script that can be used to re-build a previous resource tree.
+
+			Args:
+				key: Input key. Ignored.
+		"""
 		L.console('Export Resources', isHeader = True)
 		L.off()
 		try:
@@ -580,9 +747,12 @@ Available under the BSD 3-Clause License
 		L.on()
 	
 
-	previousScript = ''
-	previousArgument = ''
-	def runScript(self, _:str) -> None:
+	def runScript(self, key:str) -> None:
+		"""	Run a script from one of the script directories.
+
+			Args:
+				key: Input key. Ignored.		
+		"""
 
 		def finished(pcontext:PContext, argument:str) -> None:
 			if (error := pcontext.error)[0] == PError.noError:
@@ -608,13 +778,21 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def openWebUI(self, _:str) -> None:
+	def openWebUI(self, key:str) -> None:
 		"""	Open the web UI in the default web browser.
+
+			Args:
+				key: Input key. Ignored.
 		"""
 		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
 
 
 	def _plotGraph(self, resource:Resource) -> None:
+		"""	Plot a single graph from the child-resources of a container-like resource.
+
+			Args:
+				resource: The parent resource for the data instance resources.
+		"""
 			
 		# plot
 		try:
@@ -638,8 +816,16 @@ Available under the BSD 3-Clause License
 			L.logErr(str(e), exc = e)
 		
 
-	previousGraphRi = ''
-	def plotGraph(self, _:str) -> None:
+	def plotGraph(self, key:str) -> None:
+		"""	Plot a graph from the instance data of a container.
+
+			Attention:
+				Only `CNT` and `CIN` resources are currently supported.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+		# TODO doc
 		L.console('Plot Graph', isHeader = True)
 		L.off()		
 		if (ri := L.consolePrompt('Container ri', default = Console.previousGraphRi)):
@@ -654,6 +840,14 @@ Available under the BSD 3-Clause License
 
 
 	def continuesPlotGraph(self, key:str) -> None:
+		"""	Continuous plot a graph from the instance data of a container.
+		
+			See also:
+				- `plotGraph()`
+
+			Args:
+				key: Input key. Ignored.
+		"""
 
 		pri:str = None
 
@@ -703,8 +897,11 @@ Available under the BSD 3-Clause License
 	#
 
 	def getCSERegistrationsRich(self) -> str:
-		"""	Return an overview in Rich format about the registrar, registrees, and
+		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
+
+			Return:
+				Rich formatted string.
 		"""
 
 		result = ''
@@ -745,7 +942,8 @@ Available under the BSD 3-Clause License
 			Args:
 				style: Rich style.
 				withProgress: Display with progress indicator.
-			Result:
+			
+			Return:
 				Rich Table object.
 		"""
 
@@ -917,6 +1115,13 @@ Available under the BSD 3-Clause License
 		"""
 
 		def info(res:Resource) -> str:
+			"""	Retrieve further information about the current resource.
+			
+				This depends on the current `treeMode` mode.
+				
+				Args:
+					res: The resource to handle.
+			"""
 
 			# Determine extra infos
 			extraInfo = ''
@@ -958,7 +1163,13 @@ Available under the BSD 3-Clause License
 
 
 		def getChildren(res:Resource, tree:Tree, level:int) -> None:
-			""" Find and print the children in the tree structure. """
+			""" Recursively find and print the children in the tree structure. 
+
+				Args:
+					res: Current resource to handle.
+					tree: The current Rich Tree node.
+					level: The current resource tree level.
+			"""
 			if maxLevel > 0 and level == maxLevel:
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
@@ -972,7 +1183,13 @@ Available under the BSD 3-Clause License
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
 		
+
 		def getTree() -> Optional[Tree]:
+			"""	Build and return the resource tree.
+
+				Return:
+					A Rich Tree object, or *None*.
+			"""
 			if parent:
 				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
 					return None
@@ -995,6 +1212,15 @@ Available under the BSD 3-Clause License
 
 	def getResourceTreeText(self, maxLevel:int = 0) -> str:
 		"""	This function will generate a Text tree of a CSE's resource structure.
+
+			Args: 
+				maxLevel: Maximum tree level to render. Currently not supported.
+			
+			Return:
+				Pure text rendering of the resource tree.
+
+			Todo:
+				Support the *maxLevel* parameter.
 		"""
 		from rich.console import Console as RichConsole
 

@@ -6,6 +6,7 @@
 #
 #	BAT : Announceable variant
 #
+""" [BatteryAnnc] (BATA) management object specialization """
 
 from __future__ import annotations
 from typing import Optional
@@ -15,6 +16,8 @@ from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class BATAnnc(MgmtObjAnnc):
+	""" [BatteryAnnc] (BATA) management object specialization """
+
 	
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
