@@ -735,6 +735,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
 	ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
 	ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+	ResponseStatusCode.acceptedNonBlockingRequestAsynch 		: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
 	ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
 	ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
 	ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
