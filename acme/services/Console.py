@@ -478,8 +478,8 @@ Available under the BSD 3-Clause License
 		L.console('Child Resource Tree', isHeader = True)
 		L.off()
 		
-		if not (ri := L.consolePrompt('ri', default = Console.previousTreeRi)):
-			Console.previousTreeRi = ri
+		if not (ri := L.consolePrompt('ri', default = self.previousTreeRi)):
+			self.previousTreeRi = ri
 			L.console()
 		elif len(ri) > 0:
 			if tree := self.getResourceTreeRich(parent = ri, withProgress = False):
@@ -597,8 +597,8 @@ Available under the BSD 3-Clause License
 		L.console('Inspect Resource', isHeader = True)
 		L.off()
 
-		if (ri := L.consolePrompt('ri', default = Console.previousInspectRi)):
-			Console.previousInspectRi = ri
+		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
+			self.previousInspectRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
@@ -614,8 +614,8 @@ Available under the BSD 3-Clause License
 		"""
 		L.console('Inspect Resource and Children', isHeader = True)
 		L.off()		
-		if (ri := L.consolePrompt('ri', default = Console.previosInspectChildrenRi)):
-			Console.previosInspectChildrenRi = ri
+		if (ri := L.consolePrompt('ri', default = self.previosInspectChildrenRi)):
+			self.previosInspectChildrenRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else: 
@@ -636,8 +636,8 @@ Available under the BSD 3-Clause License
 		"""
 		L.console('Inspect Resource Continuously', isHeader = True)
 		L.off()		
-		if (ri := L.consolePrompt('ri', default = Console.previousInspectRi)):
-			Console.previousInspectRi = ri
+		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
+			self.previousInspectRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
 				L.console(res.dbg, isError = True)
 			else: 
@@ -763,14 +763,14 @@ Available under the BSD 3-Clause License
 
 		L.console('Run ACMEScript', isHeader = True)
 		L.off()		
-		if (name := L.consolePrompt('Script name', nl = False, default = Console.previousScript)):
-			Console.previousScript = name
+		if (name := L.consolePrompt('Script name', nl = False, default = self.previousScript)):
+			self.previousScript = name
 			if len(scripts := CSE.script.findScripts(name = name)) != 1:
 				L.console(f'Script {name} not found', isError = True, nlb = True)
 				L.on()
 				return
-			argument = L.consolePrompt('Arguments', default = Console.previousArgument)
-			Console.previousArgument = argument
+			argument = L.consolePrompt('Arguments', default = self.previousArgument)
+			self.previousArgument = argument
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			CSE.script.runScript(pcontext, argument = argument, background = True, finished = finished)
@@ -828,8 +828,8 @@ Available under the BSD 3-Clause License
 		# TODO doc
 		L.console('Plot Graph', isHeader = True)
 		L.off()		
-		if (ri := L.consolePrompt('Container ri', default = Console.previousGraphRi)):
-			Console.previousGraphRi = ri
+		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
+			self.previousGraphRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
@@ -860,8 +860,8 @@ Available under the BSD 3-Clause License
 			return True
 
 		L.off()
-		if (ri := L.consolePrompt('Container ri', default = Console.previousGraphRi)):
-			Console.previousGraphRi = ri
+		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
+			self.previousGraphRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
