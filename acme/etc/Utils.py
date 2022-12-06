@@ -395,30 +395,31 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 	# SP-Relative (first element is  /)
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
-		if idsLen < 1:
-			return None, None, None, 'ID too short'
+		if idsLen < 2:
+			return None, None, None, 'ID too short. Must be /<cseid>/<structured|unstructured>.'
 		csi = ids[0]							# extract the csi
 		if csi != CSE.cseCsiSlashLess:			# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
 			return id, csi, srn, None					# Early return. ri is the (un)structured path
-		if idsLen == 1:
-			ri = ids[0]
-		elif idsLen > 1:
-			if ids[1] == '-':						# replace placeholder "-"
-				ids[1] = CSE.cseRn
-			if ids[1] == CSE.cseRn:					# structured
-				srn = '/'.join(ids[1:])				# remove the csi part
-			elif idsLen == 2:						# unstructured
-				ri = ids[1]
-			else:
-				return None, None, None, 'Too many "/" level'
+		# if idsLen == 1:
+		# 	# ri = ids[0]
+		# 	return None, None, None, 'ID too short'
+		#elif idsLen > 1:
+		if ids[1] == '-':						# replace placeholder "-"
+			ids[1] = CSE.cseRn
+		if ids[1] == CSE.cseRn:					# structured
+			srn = '/'.join(ids[1:])				# remove the csi part
+		elif idsLen == 2:						# unstructured
+			ri = ids[1]
+		else:
+			return None, None, None, 'Too many "/" level'
 
 	# Absolute (2 first elements are /)
 	elif lvl == 2: 								
 		# L.logDebug("Absolute")
-		if idsLen < 2:
-			return None, None, None, 'ID too short'
+		if idsLen < 3:
+			return None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
 		spi = ids[0]
 		csi = ids[1]
 		if spi != CSE.cseSpid:					# Check for SP-ID
@@ -427,17 +428,17 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
 			return id, csi, srn, None	# Not for this CSE? retargeting
-		if idsLen == 2:
-			ri = ids[1]
-		elif idsLen > 2:
-			if ids[2] == '-':						# replace placeholder "-"
-				ids[2] = CSE.cseRn
-			if ids[2] == CSE.cseRn:					# structured
-				srn = '/'.join(ids[2:])
-			elif idsLen == 3:						# unstructured
-				ri = ids[2]
-			else:
-				return None, None, None, 'Too many "/" level'
+		# if idsLen == 2:
+		# 	ri = ids[1]
+		# elif idsLen > 2:
+		if ids[2] == '-':						# replace placeholder "-"
+			ids[2] = CSE.cseRn
+		if ids[2] == CSE.cseRn:					# structured
+			srn = '/'.join(ids[2:])
+		elif idsLen == 3:						# unstructured
+			ri = ids[2]
+		else:
+			return None, None, None, 'Too many "/" level'
 
 	# Now either csi, ri or structured srn is set
 	if ri:

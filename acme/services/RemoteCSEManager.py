@@ -418,7 +418,10 @@ class RemoteCSEManager(object):
 		"""
 		for eachCsr in cast(List[Resource], self._retrieveLocalCSRResources(withRegistreeCSR = True).data):
 			L.isDebug and L.logDebug(f'Checking connection to registree CSE: {eachCsr.csi}')
-			if CSE.request.sendRetrieveRequest(eachCsr.csi, originator = CSE.cseCsi).rsc != ResponseStatusCode.OK:
+			if (to := self.getRemoteCSEBaseAddress(eachCsr.csi)) is None:
+				self._deleteRegistreeCSR(eachCsr)
+				continue
+			if CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi).rsc != ResponseStatusCode.OK:
 				L.isWarn and L.logWarn(f'Registree CSE unreachable. Removing CSR: {eachCsr.rn if eachCsr else ""}')
 				self._deleteRegistreeCSR(eachCsr)
 
@@ -671,7 +674,11 @@ class RemoteCSEManager(object):
 
 			If no direct CSR could be found then that CSR is returned where the addressed csi is a descendant.
 
-			Returns a tuple (csr resource, list of path elements), or (None, None) in case of an error).
+			Args:
+				id: CSE-ID to search for
+
+			Return:
+				A tuple (csr resource, list of path elements), or (None, None) in case of an error).
 		"""
 
 		# L.logWarn(f'getCSRFromPath id: {id} ')
@@ -705,6 +712,15 @@ class RemoteCSEManager(object):
 			registreeCSR = res.resource
 		# L.logWarn(csr)
 		return registreeCSR, ids
+
+
+	def getRemoteCSEBaseAddress(self, csi:str) -> Optional[str]:
+		# TODO doc
+		if csi == CSE.cseCsi:
+			return f'{CSE.cseCsi}/{CSE.cseRi}'
+		if (csr := CSE.remote.getCSRFromPath(csi))[0] is None:
+			return None
+		return csr[0].cb
 
 
 	#########################################################################
