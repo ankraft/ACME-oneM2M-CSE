@@ -29,7 +29,7 @@ class TestCNT_CIN(unittest.TestCase):
 		testCaseStart('Setup TestCNT_CIN')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}

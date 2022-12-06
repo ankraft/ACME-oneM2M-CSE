@@ -44,6 +44,7 @@ if __name__ == '__main__':
 	parser.add_argument('--all', action='store_true', dest='runAll', default=False, help='run all tests')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped tests in summary')
 	parser.add_argument('--verbosity', action='store', dest='verbosity', type=int, choices=[0,1,2], default=2, help='set verbosity (default: 2)')
+	parser.add_argument('--verbose-requests', action='store_true', dest='verboseRequests', default=False, help='enable verbose requests and response output')
 	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test module n times (default: 1)')
 
 	groupFail = parser.add_mutually_exclusive_group()
@@ -60,6 +61,8 @@ if __name__ == '__main__':
 	# Get all filenames with tests and load them as modules
 	filenames = fnmatch.filter(os.listdir('.'), 'test*.py')
 	filenames.sort()
+	init.verboseRequests = args.verboseRequests 
+
 	for name in filenames:
 		modules.append(importlib.import_module(name[:-3]))
 
@@ -68,6 +71,7 @@ if __name__ == '__main__':
 	totalProcessTimeStart = time.process_time()
 	totalSleepTime		  = 0.0
 	init.requestCount	  = 0
+
 	
 	for module in modules:
 		if hasattr(module, 'run'):
@@ -81,7 +85,8 @@ if __name__ == '__main__':
 					startProcessTime = time.process_time()
 					startPerfTime = time.perf_counter()
 					startRequestCount = init.requestCount
-					testExecuted, errors, skipped, sleepTimeCount = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
+					testExecuted, errors, skipped, sleepTimeCount = module.run(testVerbosity = args.verbosity, 
+																			   testFailFast = args.failFast)	# type: ignore
 					init.stopNotificationServer()
 
 					durationProcess = time.process_time() - startProcessTime

@@ -27,7 +27,7 @@ class TestRequests(unittest.TestCase):
 		testCaseStart('Setup TestRequests')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}

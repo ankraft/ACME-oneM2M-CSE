@@ -171,7 +171,7 @@ class TestACP(unittest.TestCase):
 		self.assertIsNotNone(TestACP.acp)
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ],
 				 	'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
@@ -555,7 +555,7 @@ class TestACP(unittest.TestCase):
 		# Create AE1
 		dct = 	{ 'm2m:ae' : {
 					'rn': ae1RN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ],
 				}}
@@ -565,7 +565,7 @@ class TestACP(unittest.TestCase):
 		# Create AE2
 		dct = 	{ 'm2m:ae' : {
 					'rn': ae2RN, 
-					'api': 'NMyApp2Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ],
 				}}

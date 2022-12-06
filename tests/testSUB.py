@@ -47,7 +47,7 @@ class TestSUB(unittest.TestCase):
 		# create other resources
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ],
 				}}
@@ -57,7 +57,7 @@ class TestSUB(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : f'{aeRN}NoPOA', 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 					'rr'  : True,
 					'srv' : [ '3' ]
 				}}
@@ -66,7 +66,7 @@ class TestSUB(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : f'{aeRN}POA', 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ],
 					'poa' : [ NOTIFICATIONSERVER ],
@@ -727,7 +727,7 @@ class TestSUB(unittest.TestCase):
 		# create a second AE
 		dct = 	{ 'm2m:ae' : {
 			'rn'  : aeRN+'2', 
-			'api' : 'NMyApp1Id',
+			'api' : APPID,
 			'rr'  : True,
 			'srv' : [ '3' ],
 			'poa' : [ NOTIFICATIONSERVER ]
@@ -758,7 +758,7 @@ class TestSUB(unittest.TestCase):
 		# create a second AE
 		dct = 	{ 'm2m:ae' : {
 			'rn'  : aeRN+'2', 
-			'api' : 'NMyApp1Id',
+			'api' : APPID,
 			'rr'  : False,
 			'srv' : [ '3' ],
 			'poa' : [ NOTIFICATIONSERVER ]
@@ -852,7 +852,7 @@ class TestSUB(unittest.TestCase):
 		# create a second AE
 		dct = 	{ 'm2m:ae' : {
 			'rn'  : aeRN+'2', 
-			'api' : 'NMyApp1Id',
+			'api' : APPID,
 			'rr'  : True,
 			'srv' : [ '3' ]
 		}}

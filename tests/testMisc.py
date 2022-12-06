@@ -178,7 +178,7 @@ class TestMisc(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': True,
 				 	'srv': [ '2' ],
 					'poa': [ NOTIFICATIONSERVER ]
@@ -212,7 +212,7 @@ class TestMisc(unittest.TestCase):
 		"""	Check that list types are validated -> Fail"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': True,
 				 	'srv': [ '2' ],
 					'lbl': [ 'aLabel', 23 ]

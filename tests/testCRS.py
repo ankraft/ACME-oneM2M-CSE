@@ -52,7 +52,7 @@ class TestCRS(unittest.TestCase):
 		# create AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ],
 					'poa' : [ NOTIFICATIONSERVER ],

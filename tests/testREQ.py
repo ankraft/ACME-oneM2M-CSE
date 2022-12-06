@@ -46,7 +46,7 @@ class TestREQ(unittest.TestCase):
 		# create other resources
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 			 		'rr'  : True,
 			 		'srv' : [ '3' ],
 			 		'poa' : [ NOTIFICATIONSERVER ]

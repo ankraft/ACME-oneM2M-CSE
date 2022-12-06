@@ -29,7 +29,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		testCaseStart('Setup TestFCNT_FCI')
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 					'rr': False,
 					'srv': [ '3' ]
 				}}

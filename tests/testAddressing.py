@@ -29,7 +29,7 @@ class TestAddressing(unittest.TestCase):
 		testCaseStart('Setup TestAddressing')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}
@@ -109,6 +109,14 @@ class TestAddressing(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_spRelativeCSEIDFail(self) -> None:
+		""" Test SP-relative /cse-id -> Fail" """
+		url = f'{URL}{CSEID}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteStructured(self) -> None:
 		""" Test absolute structured """
 		url = f'{URL}//{SPID}{CSEID}/{CSERN}/{aeRN}/{cntRN}'
@@ -146,6 +154,13 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_absoluteCSEIDFail(self) -> None:
+		""" Test absolute /cse-id -> Fail" """
+		url = f'{URL}//{SPID}{CSEID}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.badRequest, r)
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
@@ -157,10 +172,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestAddressing('test_cseRelativeUnstructured'))
 	suite.addTest(TestAddressing('test_spRelativeStructured'))
 	suite.addTest(TestAddressing('test_spRelativeUnstructured'))
+	suite.addTest(TestAddressing('test_spRelativeCSEIDFail'))
 	suite.addTest(TestAddressing('test_absoluteStructuredWrongSPIDFail'))
 	suite.addTest(TestAddressing('test_absoluteUnstructuredWrongSPIDFail'))
 	suite.addTest(TestAddressing('test_absoluteStructured'))
 	suite.addTest(TestAddressing('test_absoluteUnstructured'))
+	suite.addTest(TestAddressing('test_absoluteCSEIDFail'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

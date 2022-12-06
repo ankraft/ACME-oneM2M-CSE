@@ -47,8 +47,22 @@ CSERN				= 'cse-in'
 CSERI				= 'id-in'
 CSEID				= '/id-in'
 SPID 				= 'acme.example.com'
+APPID				= 'NMyApp1Id'
 ORIGINATOR			= 'CAdmin'
+ORIGINATORSelfReg	= 'C'
 ORIGINATORResp		= 'CTester'
+
+
+# SERVER				= f'{PROTOCOL}://10.10.202.29:8080'	# Remember: no trailing '/' 
+# CONFIGSERVER		= f'{CONFIGPROTOCOL}://localhost:8080'
+# ROOTPATH			= '/'
+# CSERN				= 'IN-CSE'
+# CSERI				= 'R0'
+# CSEID				= '/CSE001'
+# SPID 				= 'acme.example.com'
+# APPID				= 'NMyApp1Id'
+# ORIGINATOR			= 'CAdmin'
+# ORIGINATORResp		= 'CTester'
 
 
 #
@@ -89,6 +103,7 @@ REMOTECSERN			= 'cse-mn'
 REMOTECSERI			= 'id-mn'
 REMOTECSEID			= '/id-mn'
 REMOTESPID 			= 'sp-mn'
+REMOTEAPPID			= 'NMNApp1Id'
 REMOTEORIGINATOR	= 'CAdmin'
 
 
@@ -106,6 +121,7 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 #	Upper Tester
 #
 
-UTURL = f'{CONFIGSERVER}{ROOTPATH}__ut__'
-UTCMD = 'X-M2M-UTCMD'
-UTRSP = 'X-M2M-UTRSP'
+UTURL		= f'{CONFIGSERVER}{ROOTPATH}__ut__'
+UTCMD		= 'X-M2M-UTCMD'
+UTRSP		= 'X-M2M-UTRSP'
+UTENABLED	= True

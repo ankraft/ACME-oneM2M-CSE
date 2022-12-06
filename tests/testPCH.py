@@ -32,7 +32,7 @@ class TestPCH(unittest.TestCase):
 		testCaseStart('Setup TestPCH')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}
@@ -44,7 +44,7 @@ class TestPCH(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN2, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}

@@ -82,7 +82,7 @@ class TestLoad(unittest.TestCase):
 		for _ in range(count):
 			dct = 	{ 'm2m:ae' : {
 						'rn': uniqueRN(),	# Sometimes needs a set rn
-						'api': 'NMyApp1Id',
+						'api': APPID,
 						'rr': False,
 						'srv': [ '3' ]
 					}}

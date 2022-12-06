@@ -77,7 +77,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Create and announce <AE> (AT, no AA) """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
-					'api': 	'NMyApp1Id',
+					'api': 	APPID,
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'at': 	[ REMOTECSEID ]
@@ -154,7 +154,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Create and announce <AE> (AT, AA) """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
-					'api': 	'NMyApp1Id',
+					'api': 	APPID,
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'lbl':	[ 'aLabel'],
@@ -228,7 +228,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Create <AE> with AA with NA attributes. AA shall be empty, but present in result """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
-					'api': 	'NMyApp1Id',
+					'api': 	APPID,
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'at': 	[ REMOTECSEID ],
@@ -259,7 +259,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Create <AE> with AA with unknown resource attributes -> Fail"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
-					'api': 	'NMyApp1Id',
+					'api': 	APPID,
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'at': 	[ REMOTECSEID ],
@@ -760,7 +760,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:cnt/at'), list)
 		TestRemote_Annc.remoteCntRI = findXPath(r, 'm2m:cnt/at')[0]
 		self.assertTrue(TestRemote_Annc.remoteCntRI.startswith(CSEID))
-		self.assertGreater(len(TestRemote_Annc.remoteCntRI), len(CSEID))	# must be longer if succeeded
+		self.assertGreater(len(TestRemote_Annc.remoteCntRI), len(CSEID), r)	# must be longer if succeeded
 
 		# Retrieve locally announced resource
 		r, rsc = RETRIEVE(f'{URL}~{TestRemote_Annc.remoteCntRI}', CSEID)

@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
+from typing import Tuple, Optional
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -58,11 +58,12 @@ class TestAE(unittest.TestCase):
 		""" Create/register an <AE> """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created, r)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
@@ -73,12 +74,12 @@ class TestAE(unittest.TestCase):
 	def test_createAEUnderAE(self) -> None:
 		""" Create/register an <AE> under an <AE> -> Fail """
 		dct = 	{ 'm2m:ae' : {
-					'rn': f'{aeRN}', 
-					'api': 'NMyApp2Id',
+					'rn': f'{aeRN}1', 
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(aeURL, 'C', T.AE, dct)
+		r, rsc = CREATE(aeURL, ORIGINATORSelfReg, T.AE, dct)
 		self.assertEqual(rsc, RC.invalidChildResourceType, r)
 
 
@@ -87,11 +88,12 @@ class TestAE(unittest.TestCase):
 		""" Create/register an <AE> with same rn again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.conflict)
 
 
@@ -99,7 +101,7 @@ class TestAE(unittest.TestCase):
 	def test_createAEWithExistingOriginator(self) -> None:
 		""" Create/register an <AE> with same originator again -> Fail """
 		dct = 	{ 'm2m:ae' : {
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
@@ -118,7 +120,7 @@ class TestAE(unittest.TestCase):
 	def test_retrieveAEWithWrongOriginator(self) -> None:
 		""" Retrieve <AE> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertIn(rsc, [RC.originatorHasNoPrivilege, RC.serviceSubscriptionNotEstablished])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -211,12 +213,13 @@ class TestAE(unittest.TestCase):
 		""" Create <AE> with wrong csz content -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ],
 					'csz': [ 'wrong' ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.badRequest)
 
 
@@ -225,12 +228,13 @@ class TestAE(unittest.TestCase):
 		""" Create <AE> with correct csz value"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ],
 					'csz': [ 'application/cbor', 'application/json' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
 
@@ -250,7 +254,8 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertNotEqual(rsc, RC.created)
 
 
@@ -263,7 +268,8 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertNotEqual(rsc, RC.created)
 
 
@@ -276,7 +282,8 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -292,7 +299,8 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -310,7 +318,8 @@ class TestAE(unittest.TestCase):
 				}}
 		headers={ C.hfRVI: '3'
 		}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -328,7 +337,8 @@ class TestAE(unittest.TestCase):
 				}}
 		headers={ C.hfRVI: '4'
 		}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
+
 		self.assertEqual(rsc, RC.badRequest, ae)
 
 
@@ -378,7 +388,7 @@ class TestAE(unittest.TestCase):
 
 # TODO register multiple AEs
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testVerbosity:int, testFailFast:bool, requestVerbosity:Optional[bool] = False) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
 	# Clear counters

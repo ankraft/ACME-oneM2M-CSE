@@ -52,7 +52,7 @@ class TestPCH_PCU(unittest.TestCase):
 		# Add first AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : False,		# Explicitly not request reachable
 				 	'srv' : [ '3' ]
 				}}
@@ -64,7 +64,7 @@ class TestPCH_PCU(unittest.TestCase):
 		# Add second AE that will receive notifications
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN2, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : False,		# Explicitly not request reachable
 				 	'srv' : [ '3' ]
 				}}

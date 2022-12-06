@@ -35,7 +35,7 @@ class TestRemote_GRP(unittest.TestCase):
 		assert rsc == RC.OK, f'Cannot retrieve remote CSEBase: {REMOTEcseURL}'
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}

@@ -36,7 +36,7 @@ class TestGRP(unittest.TestCase):
 		testCaseStart('Setup TestGRP')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}

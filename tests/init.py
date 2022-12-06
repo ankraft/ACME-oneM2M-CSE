@@ -33,6 +33,7 @@ from config import *
 
 verifyCertificate			= False	# verify the certificate when using https?
 oauthToken					= None	# current OAuth Token
+verboseRequests				= False	# Print requests and responses
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -370,8 +371,13 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		oauthToken = token
 		hds['Authorization'] = f'Bearer {oauthToken.token}'
 
-	# print(url)
-	# print(hds)
+	# Verbose output
+	if verboseRequests:
+		console.print('\n[b u]Request')
+		console.print(f'[dim]{method.__name__.upper()}[/dim] {URL}')
+		console.print(hds)
+		console.print(data)
+
 	setLastRequestID(rid)
 	try:
 		sendData:str = None
@@ -390,10 +396,17 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	# save last header for later
 	setLastHeaders(r.headers)
 
+	# Verbose output
+	if verboseRequests:
+		console.print('\n[b u]Response')
+		console.print(r.status_code)
+		console.print(r.headers)
+		console.print(r.content)
+
 	# return plain text
 	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
 		return r.content, rc
-	elif ct.startswith(('application/json', 'application/vnd.onem2m-res+json')):
+	elif ct is not None and ct.startswith(('application/json', 'application/vnd.onem2m-res+json')):
 		return r.json() if len(r.content) > 0 else None, rc
 	# just return what's in there
 	return r.content, rc

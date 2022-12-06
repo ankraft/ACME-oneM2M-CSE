@@ -132,7 +132,7 @@ class TestNOD(unittest.TestCase):
 		""" Create <AE> for <NOD> & test link """
 		dct = 	{ 'm2m:ae' : {
 			'rn'	: aeRN, 
-			'api'	: 'NMyApp1Id',
+			'api'	: APPID,
 		 	'rr'	: False,
 		 	'srv'	: [ '3' ],
 		 	'nl' 	: TestNOD.nodeRI

@@ -26,7 +26,7 @@ class TestCNT(unittest.TestCase):
 		testCaseStart('Setup testCNT')
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
