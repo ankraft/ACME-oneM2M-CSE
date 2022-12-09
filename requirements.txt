@@ -6,7 +6,7 @@
 #
 cbor2==5.4.3
     # via ACME-oneM2M-CSE (setup.py)
-certifi==2022.6.15
+certifi==2022.12.7
     # via requests
 charset-normalizer==2.1.1
     # via requests
