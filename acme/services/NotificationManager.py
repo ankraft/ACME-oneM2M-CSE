@@ -224,6 +224,9 @@ class NotificationManager(object):
 		
 		if resource and resource.isVirtual():
 			return 
+		if childResource and childResource.isVirtual():
+			return
+			
 		ri = resource.ri if not ri else ri
 		L.isDebug and L.logDebug(f'Checking subscriptions ({reason.name}) ri: {ri}')
 
