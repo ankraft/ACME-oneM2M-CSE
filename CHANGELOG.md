@@ -11,11 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [TEST] Added verbose request, response and notification outputs.
+- [TEST] Added listing and specifying test cases that should be executed individually.
+- [TEST] Improved configuration of test cases. Added more configuration settings.
+- [TEST] Added support to prevent or exclusively run the test suites' tear down functions.
 
 ### Changed
+- [TEST] Removed superfluous *--verbose* command line argument.
 
 ### Fixed
-- Correcting addressing (no more addressing via only the "/cse-id").
+- [CSE] Corrected addressing (no more addressing via directly the */&lt;cse-id>*).
+- [CSE] Corrected wrong Return Status Code for invalid RI or RN to BAD REQUEST.
+- [CSE] Prevent deletion notifications when removing virtual resources.
 
 
 ## [0.11.0] - 2022-12-02
