@@ -8,13 +8,11 @@
 #	skipped if there is no remote CSE.
 #
 
-import grp
-from re import M
+
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import AnnounceSyncType, ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -37,7 +35,7 @@ class TestRemote_GRP(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -47,6 +45,8 @@ class TestRemote_GRP(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestRemote_Requests')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestRemote_Requests')
@@ -97,16 +97,12 @@ class TestRemote_GRP(unittest.TestCase):
 		self.assertIn(findXPath(r, 'm2m:agr/m2m:rsp/{1}/pc/m2m:cb/csi'), [ CSEID, REMOTECSEID ] )
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-	
-	# Clear counters
-	clearSleepTimeCount()
-	
+		
 	# create a group with the CSE and the remote CSE as members
-	suite.addTest(TestRemote_GRP('test_createGrp'))
-	suite.addTest(TestRemote_GRP('test_retrieveFOPT'))
-
+	addTest(suite, TestRemote_GRP('test_createGrp'))
+	addTest(suite, TestRemote_GRP('test_retrieveFOPT'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
@@ -114,5 +110,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

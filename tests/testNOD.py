@@ -40,6 +40,8 @@ class TestNOD(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestNOD')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
@@ -134,7 +136,7 @@ class TestNOD(unittest.TestCase):
 			'rn'	: aeRN, 
 			'api'	: APPID,
 		 	'rr'	: False,
-		 	'srv'	: [ '3' ],
+		 	'srv'	: [ RELEASEVERSION ],
 		 	'nl' 	: TestNOD.nodeRI
 		}}
 		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
@@ -234,29 +236,27 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
+			
+	addTest(suite, TestNOD('test_createNOD'))
+	addTest(suite, TestNOD('test_retrieveNOD'))
+	addTest(suite, TestNOD('test_retrieveNODWithWrongOriginator'))
+	addTest(suite, TestNOD('test_attributesNOD'))
+	addTest(suite, TestNOD('test_updateNODLbl'))
+	addTest(suite, TestNOD('test_updateNODUnknownAttribute'))
+	addTest(suite, TestNOD('test_createAEForNOD'))
+	addTest(suite, TestNOD('test_deleteAEForNOD'))
+	addTest(suite, TestNOD('test_moveAEToNOD2'))
+	addTest(suite, TestNOD('test_deleteNOD2'))
+	addTest(suite, TestNOD('test_deleteNOD'))
+	addTest(suite, TestNOD('test_createNODEmptyHael'))
 	
-	suite.addTest(TestNOD('test_createNOD'))
-	suite.addTest(TestNOD('test_retrieveNOD'))
-	suite.addTest(TestNOD('test_retrieveNODWithWrongOriginator'))
-	suite.addTest(TestNOD('test_attributesNOD'))
-	suite.addTest(TestNOD('test_updateNODLbl'))
-	suite.addTest(TestNOD('test_updateNODUnknownAttribute'))
-	suite.addTest(TestNOD('test_createAEForNOD'))
-	suite.addTest(TestNOD('test_deleteAEForNOD'))
-	suite.addTest(TestNOD('test_moveAEToNOD2'))
-	suite.addTest(TestNOD('test_deleteNOD2'))
-	suite.addTest(TestNOD('test_deleteNOD'))
-	suite.addTest(TestNOD('test_createNODEmptyHael'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

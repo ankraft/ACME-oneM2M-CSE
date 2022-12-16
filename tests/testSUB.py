@@ -49,7 +49,7 @@ class TestSUB(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ],
+				 	'srv' : [ RELEASEVERSION ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -59,7 +59,7 @@ class TestSUB(unittest.TestCase):
 					'rn'  : f'{aeRN}NoPOA', 
 					'api' : APPID,
 					'rr'  : True,
-					'srv' : [ '3' ]
+					'srv' : [ RELEASEVERSION ]
 				}}
 		cls.aeNoPoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create AE without poa'
@@ -68,7 +68,7 @@ class TestSUB(unittest.TestCase):
 					'rn'  : f'{aeRN}POA', 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ],
+				 	'srv' : [ RELEASEVERSION ],
 					'poa' : [ NOTIFICATIONSERVER ],
 				}}
 		cls.aePoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -92,11 +92,14 @@ class TestSUB(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestSub')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPOA AE and everything below it. Ignore whether it exists or not
-		DELETE(cls.aePOAURL, ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
-		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}POA', ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}2', ORIGINATOR)		# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestSub')
 		stopNotificationServer()
 
@@ -184,7 +187,6 @@ class TestSUB(unittest.TestCase):
         			'nu': [ NOTIFICATIONSERVERW ]
 				}}
 		_, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
-		self.assertNotEqual(rsc, RC.created)
 		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed)
 		
 		# Try to retrieve subscription - Should fail
@@ -729,7 +731,7 @@ class TestSUB(unittest.TestCase):
 			'rn'  : aeRN+'2', 
 			'api' : APPID,
 			'rr'  : True,
-			'srv' : [ '3' ],
+			'srv' : [ RELEASEVERSION ],
 			'poa' : [ NOTIFICATIONSERVER ]
 		}}
 		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
@@ -760,7 +762,7 @@ class TestSUB(unittest.TestCase):
 			'rn'  : aeRN+'2', 
 			'api' : APPID,
 			'rr'  : False,
-			'srv' : [ '3' ],
+			'srv' : [ RELEASEVERSION ],
 			'poa' : [ NOTIFICATIONSERVER ]
 		}}
 		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
@@ -854,7 +856,7 @@ class TestSUB(unittest.TestCase):
 			'rn'  : aeRN+'2', 
 			'api' : APPID,
 			'rr'  : True,
-			'srv' : [ '3' ]
+			'srv' : [ RELEASEVERSION ]
 		}}
 		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
@@ -1581,125 +1583,122 @@ class TestSUB(unittest.TestCase):
 
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
+	addTest(suite, TestSUB('test_createSUB'))
+	addTest(suite, TestSUB('test_retrieveSUB'))
+	addTest(suite, TestSUB('test_retrieveSUBWithWrongOriginator'))
+	addTest(suite, TestSUB('test_attributesSUB'))
 
-	suite.addTest(TestSUB('test_createSUB'))
-	suite.addTest(TestSUB('test_retrieveSUB'))
-	suite.addTest(TestSUB('test_retrieveSUBWithWrongOriginator'))
-	suite.addTest(TestSUB('test_attributesSUB'))
+	addTest(suite, TestSUB('test_createSUBWrong'))
+	addTest(suite, TestSUB('test_updateSUB'))
+	addTest(suite, TestSUB('test_updateSUBwithNu'))
+	addTest(suite, TestSUB('test_updateCNT'))
+	addTest(suite, TestSUB('test_addCIN2CNT'))
+	addTest(suite, TestSUB('test_removeCNT'))
+	addTest(suite, TestSUB('test_addCNTAgain'))
 
-	suite.addTest(TestSUB('test_createSUBWrong'))
-	suite.addTest(TestSUB('test_updateSUB'))
-	suite.addTest(TestSUB('test_updateSUBwithNu'))
-	suite.addTest(TestSUB('test_updateCNT'))
-	suite.addTest(TestSUB('test_addCIN2CNT'))
-	suite.addTest(TestSUB('test_removeCNT'))
-	suite.addTest(TestSUB('test_addCNTAgain'))
+	addTest(suite, TestSUB('test_createSUB'))
+	addTest(suite, TestSUB('test_deleteSUBByUnknownOriginator'))
+	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
 
-	suite.addTest(TestSUB('test_createSUB'))
-	suite.addTest(TestSUB('test_deleteSUBByUnknownOriginator'))
-	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+	addTest(suite, TestSUB('test_createSUBModifedAttributesWrong'))
+	addTest(suite, TestSUB('test_createSUBModifedAttributes'))
+	addTest(suite, TestSUB('test_updateCNTModifiedAttributes'))
+	addTest(suite, TestSUB('test_updateCNTSameModifiedAttributes'))
+	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
 
-	suite.addTest(TestSUB('test_createSUBModifedAttributesWrong'))
-	suite.addTest(TestSUB('test_createSUBModifedAttributes'))
-	suite.addTest(TestSUB('test_updateCNTModifiedAttributes'))
-	suite.addTest(TestSUB('test_updateCNTSameModifiedAttributes'))
-	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
-
-	suite.addTest(TestSUB('test_createSUBRI'))
-	suite.addTest(TestSUB('test_updateCNTRI'))
-	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+	addTest(suite, TestSUB('test_createSUBRI'))
+	addTest(suite, TestSUB('test_updateCNTRI'))
+	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
 
 	# Batch Notify
-	suite.addTest(TestSUB('test_createSUBForBatchNotificationNumber'))
-	suite.addTest(TestSUB('test_updateCNTBatch'))
-	suite.addTest(TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
+	addTest(suite, TestSUB('test_createSUBForBatchNotificationNumber'))
+	addTest(suite, TestSUB('test_updateCNTBatch'))
+	addTest(suite, TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
 
-	suite.addTest(TestSUB('test_createSUBForBatchNotificationDuration'))
-	suite.addTest(TestSUB('test_updateCNTBatchDuration'))
-	suite.addTest(TestSUB('test_deleteSUBForBatchNotificationDuration'))
+	addTest(suite, TestSUB('test_createSUBForBatchNotificationDuration'))
+	addTest(suite, TestSUB('test_updateCNTBatchDuration'))
+	addTest(suite, TestSUB('test_deleteSUBForBatchNotificationDuration'))
 
 
-	suite.addTest(TestSUB('test_createSUBWithEncAtr'))	# attribute
-	suite.addTest(TestSUB('test_updateCNTWithEncAtrLbl'))
-	suite.addTest(TestSUB('test_updateCNTWithEncAtrLblWrong'))
-	suite.addTest(TestSUB('test_updateSUBWithEncRemoved'))	# Check default enc in UPDATE
-	suite.addTest(TestSUB('test_deleteSUBWithEncAtr'))
+	addTest(suite, TestSUB('test_createSUBWithEncAtr'))	# attribute
+	addTest(suite, TestSUB('test_updateCNTWithEncAtrLbl'))
+	addTest(suite, TestSUB('test_updateCNTWithEncAtrLblWrong'))
+	addTest(suite, TestSUB('test_updateSUBWithEncRemoved'))	# Check default enc in UPDATE
+	addTest(suite, TestSUB('test_deleteSUBWithEncAtr'))
 
-	suite.addTest(TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
-	suite.addTest(TestSUB('test_updateCNTBatchWithLn'))
-	suite.addTest(TestSUB('test_deleteSUBBatchNotificationNumberWithLn'))
+	addTest(suite, TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
+	addTest(suite, TestSUB('test_updateCNTBatchWithLn'))
+	addTest(suite, TestSUB('test_deleteSUBBatchNotificationNumberWithLn'))
 
-	suite.addTest(TestSUB('test_createSUBWithEncChty'))	# child resource type
-	suite.addTest(TestSUB('test_createCINWithEncChty'))
-	suite.addTest(TestSUB('test_createCNTWithEncChty'))
-	suite.addTest(TestSUB('test_deleteSUBWithEncChty'))
+	addTest(suite, TestSUB('test_createSUBWithEncChty'))	# child resource type
+	addTest(suite, TestSUB('test_createCINWithEncChty'))
+	addTest(suite, TestSUB('test_createCNTWithEncChty'))
+	addTest(suite, TestSUB('test_deleteSUBWithEncChty'))
 
-	suite.addTest(TestSUB('test_createAESUBwithOriginatorPOA'))
-	suite.addTest(TestSUB('test_createCNTwithOriginatorPOA'))
-	suite.addTest(TestSUB('test_updateAECSZwithOriginatorPOA'))
-	suite.addTest(TestSUB('test_createCNTwithOriginatorPOACBOR'))
-	suite.addTest(TestSUB('test_deleteAEwithOriginatorPOA'))
+	addTest(suite, TestSUB('test_createAESUBwithOriginatorPOA'))
+	addTest(suite, TestSUB('test_createCNTwithOriginatorPOA'))
+	addTest(suite, TestSUB('test_updateAECSZwithOriginatorPOA'))
+	addTest(suite, TestSUB('test_createCNTwithOriginatorPOACBOR'))
+	addTest(suite, TestSUB('test_deleteAEwithOriginatorPOA'))
 
 	# With non-reqzest reachable 
-	suite.addTest(TestSUB('test_createAESUBwithOriginatorPOANotReachable'))
-	suite.addTest(TestSUB('test_deleteAEwithOriginatorPOA'))
+	addTest(suite, TestSUB('test_createAESUBwithOriginatorPOANotReachable'))
+	addTest(suite, TestSUB('test_deleteAEwithOriginatorPOA'))
 
-	suite.addTest(TestSUB('test_createAESUBwithURIctCBOR'))
-	suite.addTest(TestSUB('test_createCNTwithURIctCBOR'))
-	suite.addTest(TestSUB('test_deleteAEwithURIctCBOR'))
+	addTest(suite, TestSUB('test_createAESUBwithURIctCBOR'))
+	addTest(suite, TestSUB('test_createCNTwithURIctCBOR'))
+	addTest(suite, TestSUB('test_deleteAEwithURIctCBOR'))
 
 	# ExpirationCounter
-	suite.addTest(TestSUB('test_createSUBwithEXC'))
-	suite.addTest(TestSUB('test_createCNTforEXC'))
+	addTest(suite, TestSUB('test_createSUBwithEXC'))
+	addTest(suite, TestSUB('test_createCNTforEXC'))
 
-	suite.addTest(TestSUB('test_createSUBwithUnknownPoa'))
-	suite.addTest(TestSUB('test_createSUBWithCreatorWrong'))
-	suite.addTest(TestSUB('test_createSUBWithCreatorNull'))
-	suite.addTest(TestSUB('test_notifySUBWithCreatorNull'))
+	addTest(suite, TestSUB('test_createSUBwithUnknownPoa'))
+	addTest(suite, TestSUB('test_createSUBWithCreatorWrong'))
+	addTest(suite, TestSUB('test_createSUBWithCreatorNull'))
+	addTest(suite, TestSUB('test_notifySUBWithCreatorNull'))
 
 	# Missing Data
-	suite.addTest(TestSUB('test_createSUBForMissingDataFail'))
-	suite.addTest(TestSUB('test_createSUBForMissingDataFail2'))
-	suite.addTest(TestSUB('test_createSUBForMissingData'))
-	suite.addTest(TestSUB('test_updateSUBForMissingData'))
-	suite.addTest(TestSUB('test_deleteSUBForMissingData'))
-	suite.addTest(TestSUB('test_createSUBForMissingDataWrongDataFail'))
+	addTest(suite, TestSUB('test_createSUBForMissingDataFail'))
+	addTest(suite, TestSUB('test_createSUBForMissingDataFail2'))
+	addTest(suite, TestSUB('test_createSUBForMissingData'))
+	addTest(suite, TestSUB('test_updateSUBForMissingData'))
+	addTest(suite, TestSUB('test_deleteSUBForMissingData'))
+	addTest(suite, TestSUB('test_createSUBForMissingDataWrongDataFail'))
 
 	# Wrong CHTY
-	suite.addTest(TestSUB('test_createSUBWithWrongCHTYFail'))
-	suite.addTest(TestSUB('test_updateSUBWithWrongCHTYFail'))
+	addTest(suite, TestSUB('test_createSUBWithWrongCHTYFail'))
+	addTest(suite, TestSUB('test_updateSUBWithWrongCHTYFail'))
 
 	# Structured NU
-	suite.addTest(TestSUB('test_createSUBWithStructuredNu'))
+	addTest(suite, TestSUB('test_createSUBWithStructuredNu'))
 
 	# blocking update tests
-	suite.addTest(TestSUB('test_createSubBlockingUpdateWrongNUFail'))
-	suite.addTest(TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
-	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedAttributeFail'))
-	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedENCAttributeFail'))
-	suite.addTest(TestSUB('test_createSubBlockingUpdateDisallowedNCTvaluel'))
-	suite.addTest(TestSUB('test_createSubBlockingUpdate'))
-	suite.addTest(TestSUB('test_updateSubBlockingUpdateFail'))
-	suite.addTest(TestSUB('test_doBlockingUpdate'))
-	suite.addTest(TestSUB('test_doBlockingUpdateAttributeCondition'))
-	suite.addTest(TestSUB('test_doBlockingUpdateNegativeNotificationResponse'))
-	suite.addTest(TestSUB('test_deleteSubBlockingUpdate'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdateWrongNUFail'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedAttributeFail'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedENCAttributeFail'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedNCTvaluel'))
+	addTest(suite, TestSUB('test_createSubBlockingUpdate'))
+	addTest(suite, TestSUB('test_updateSubBlockingUpdateFail'))
+	addTest(suite, TestSUB('test_doBlockingUpdate'))
+	addTest(suite, TestSUB('test_doBlockingUpdateAttributeCondition'))
+	addTest(suite, TestSUB('test_doBlockingUpdateNegativeNotificationResponse'))
+	addTest(suite, TestSUB('test_deleteSubBlockingUpdate'))
 
 	# TODO blocking RETRIEVE tests when official
 
 	# # NotificationStats tests
-	suite.addTest(TestSUB('test_createSUBForNotificationStats'))
-	suite.addTest(TestSUB('test_updateAECheckStats'))
-	suite.addTest(TestSUB('test_updateSUBNSEFalse'))
-	suite.addTest(TestSUB('test_updateSUBNSETrue'))
-	suite.addTest(TestSUB('test_updateSUBNSETrueAgain'))
-	suite.addTest(TestSUB('test_updateSUBcountBatchNotifications'))
-	suite.addTest(TestSUB('test_updateSUBDeleteNSE'))
+	addTest(suite, TestSUB('test_createSUBForNotificationStats'))
+	addTest(suite, TestSUB('test_updateAECheckStats'))
+	addTest(suite, TestSUB('test_updateSUBNSEFalse'))
+	addTest(suite, TestSUB('test_updateSUBNSETrue'))
+	addTest(suite, TestSUB('test_updateSUBNSETrueAgain'))
+	addTest(suite, TestSUB('test_updateSUBcountBatchNotifications'))
+	addTest(suite, TestSUB('test_updateSUBDeleteNSE'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
@@ -1707,5 +1706,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

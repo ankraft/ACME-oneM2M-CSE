@@ -40,6 +40,8 @@ class TestLoad(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestLoad')
 		for ae in cls.aes:
 			DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
@@ -84,7 +86,7 @@ class TestLoad(unittest.TestCase):
 						'rn': uniqueRN(),	# Sometimes needs a set rn
 						'api': APPID,
 						'rr': False,
-						'srv': [ '3' ]
+						'srv': [ RELEASEVERSION ]
 					}}
 			r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 			self.assertEqual(rsc, RC.created, r)
@@ -272,45 +274,56 @@ class TestLoad(unittest.TestCase):
 # TODO CNT + CIN
 # TODO CNT + CIN + SUB
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 	
-	# Clear counters
-	clearSleepTimeCount()
+	# Create, retrieve and delete 10 <AE> one by one
+	addTest(suite, TestLoad('test_createAEs', 10))
+	addTest(suite, TestLoad('test_retrieveAEs', 10))
+	addTest(suite, TestLoad('test_deleteAEs', 10))
 
-	suite.addTest(TestLoad('test_createAEs', 10))
-	suite.addTest(TestLoad('test_retrieveAEs', 10))
-	suite.addTest(TestLoad('test_deleteAEs', 10))
+	# Create, retrieve and delete 100 <AE> one by one
+	addTest(suite, TestLoad('test_createAEs', 100))
+	addTest(suite, TestLoad('test_retrieveAEs', 100))
+	addTest(suite, TestLoad('test_deleteAEs', 100))
 
-	suite.addTest(TestLoad('test_createAEs', 100))
-	suite.addTest(TestLoad('test_retrieveAEs', 100))
-	suite.addTest(TestLoad('test_deleteAEs', 100))
+	# Create, retrieve and delete 1000 <AE> one by one
+	addTest(suite, TestLoad('test_createAEs', 1000))
+	addTest(suite, TestLoad('test_retrieveAEs', 1000))
+	addTest(suite, TestLoad('test_deleteAEs', 1000))
 
-	suite.addTest(TestLoad('test_createAEs', 1000))
-	suite.addTest(TestLoad('test_retrieveAEs', 1000))
-	suite.addTest(TestLoad('test_deleteAEs', 1000))
+	# Create and delete 10 <AE> in 10 threads in parallel
+	addTest(suite, TestLoad('test_createAEsParallel', 10, 10))
+	addTest(suite, TestLoad('test_deleteAEsParallel', 10, 10))
+	
+	# Create and delete 100 <AE> in 10 threads in parallel
+	addTest(suite, TestLoad('test_createAEsParallel', 100, 10))
+	addTest(suite, TestLoad('test_deleteAEsParallel', 100, 10))
+	
+	# Create and delete 10 <AE> in 100 threads in parallel
+	addTest(suite, TestLoad('test_createAEsParallel', 10, 100))
+	addTest(suite, TestLoad('test_deleteAEsParallel', 10, 100))
 
-	suite.addTest(TestLoad('test_createAEsParallel', 10, 10))
-	suite.addTest(TestLoad('test_deleteAEsParallel', 10, 10))
-	suite.addTest(TestLoad('test_createAEsParallel', 100, 10))
-	suite.addTest(TestLoad('test_deleteAEsParallel', 100, 10))
-	suite.addTest(TestLoad('test_createAEsParallel', 10, 100))
-	suite.addTest(TestLoad('test_deleteAEsParallel', 10, 100))
+	# Create and delete 1 AE + 10 CNTs * 20 CINs one by one
+	addTest(suite, TestLoad('test_createCNTCINs', 10))
+	addTest(suite, TestLoad('test_deleteCNTCINs', 10))
 
-	suite.addTest(TestLoad('test_createCNTCINs', 10))
-	suite.addTest(TestLoad('test_deleteCNTCINs', 10))
-	suite.addTest(TestLoad('test_createCNTCINs', 100))
-	suite.addTest(TestLoad('test_deleteCNTCINs', 100))
+	# Create and delete 1 AE + 100 CNTs * 20 CINs one by one
+	addTest(suite, TestLoad('test_createCNTCINs', 100))
+	addTest(suite, TestLoad('test_deleteCNTCINs', 100))
 
-	suite.addTest(TestLoad('test_createCNTCINsParallel', 10))
-	suite.addTest(TestLoad('test_deleteCNTCINs', 10))
-	suite.addTest(TestLoad('test_createCNTCINsParallel', 100))
-	suite.addTest(TestLoad('test_deleteCNTCINs', 100))
+	# Create and delete 1 AE + 100 CNTs * 20 CINs in 10 threads in parallel
+	addTest(suite, TestLoad('test_createCNTCINsParallel', 10))
+	addTest(suite, TestLoad('test_deleteCNTCINs', 10))
+
+	# Create and delete 1 AE + 100 CNTs * 20 CINs in 100 threads in parallel
+	addTest(suite, TestLoad('test_createCNTCINsParallel', 100))
+	addTest(suite, TestLoad('test_deleteCNTCINs', 100))
 	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

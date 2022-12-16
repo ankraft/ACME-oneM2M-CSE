@@ -34,7 +34,7 @@ class TestACTR(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -52,6 +52,8 @@ class TestACTR(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestACTR')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestACTR')
@@ -133,16 +135,13 @@ class TestACTR(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-	
-	# Clear counters
-	clearSleepTimeCount()
-	
+		
 	# basic tests
-	suite.addTest(TestACTR('test_createACTR'))
-	suite.addTest(TestACTR('test_createACTRWrongORCFail'))
-	suite.addTest(TestACTR('test_createACTRWrongEVCAttributeFail'))
+	addTest(suite, TestACTR('test_createACTR'))
+	addTest(suite, TestACTR('test_createACTRWrongORCFail'))
+	addTest(suite, TestACTR('test_createACTRWrongEVCAttributeFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
@@ -150,5 +149,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

@@ -33,6 +33,8 @@ class TestMisc(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestMisc')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		# Stop notification server
@@ -57,7 +59,7 @@ class TestMisc(unittest.TestCase):
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIn(C.hfRVI, lastHeaders())
-		self.assertEqual(lastHeaders()[C.hfRVI], RVI)
+		self.assertEqual(lastHeaders()[C.hfRVI], RELEASEVERSION)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -229,7 +231,7 @@ class TestMisc(unittest.TestCase):
 		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.created, cnt)
 		rn = findXPath(cnt, 'm2m:cnt/rn')
-		url = f'{URL}{CSERN}/{rn}'
+		url = f'{CSEURL}{CSERN}/{rn}'
 		cnt2, rsc = RETRIEVE(url, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK, cnt2)
 		r, rsc = DELETE(url, ORIGINATOR)
@@ -246,7 +248,7 @@ class TestMisc(unittest.TestCase):
 		sub, rsc = CREATE(cseURL, ORIGINATOR, T.SUB, dct)
 		self.assertEqual(rsc, RC.created, sub)
 		rn = findXPath(sub, 'm2m:sub/rn')
-		url = f'{URL}{CSERN}/{rn}'
+		url = f'{CSEURL}{CSERN}/{rn}'
 		sub2, rsc = RETRIEVE(url, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK, sub2)
 		r, rsc = DELETE(url, ORIGINATOR)
@@ -257,35 +259,32 @@ class TestMisc(unittest.TestCase):
 # TODO test json with comments
 # TODO test for ISO8601 format validation
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestMisc('test_checkHTTPRVI'))
-	suite.addTest(TestMisc('test_checkHTTPRET'))
-	suite.addTest(TestMisc('test_checkHTTPVSI'))
-	suite.addTest(TestMisc('test_checkHTTPRETRelative'))
-	suite.addTest(TestMisc('test_checkHTTPRETWrong'))
-	suite.addTest(TestMisc('test_checkHTTPRETRelativeWrong'))
-	suite.addTest(TestMisc('test_checkHTTPRVIWrongInRequest'))
-	suite.addTest(TestMisc('test_createUnknownResourceType'))
-	suite.addTest(TestMisc('test_createEmpty'))
-	suite.addTest(TestMisc('test_updateEmpty'))
-	suite.addTest(TestMisc('test_createAlphaResourceType'))
-	suite.addTest(TestMisc('test_createWithWrongResourceType'))
-	suite.addTest(TestMisc('test_checkHTTPmissingOriginator'))
-	suite.addTest(TestMisc('test_checkResponseOT'))
-	suite.addTest(TestMisc('test_checkTargetRVI'))
-	suite.addTest(TestMisc('test_validateListFail'))
-	suite.addTest(TestMisc('test_resourceWithoutRN'))
-	suite.addTest(TestMisc('test_subWithoutRN'))
+	addTest(suite, TestMisc('test_checkHTTPRVI'))
+	addTest(suite, TestMisc('test_checkHTTPRET'))
+	addTest(suite, TestMisc('test_checkHTTPVSI'))
+	addTest(suite, TestMisc('test_checkHTTPRETRelative'))
+	addTest(suite, TestMisc('test_checkHTTPRETWrong'))
+	addTest(suite, TestMisc('test_checkHTTPRETRelativeWrong'))
+	addTest(suite, TestMisc('test_checkHTTPRVIWrongInRequest'))
+	addTest(suite, TestMisc('test_createUnknownResourceType'))
+	addTest(suite, TestMisc('test_createEmpty'))
+	addTest(suite, TestMisc('test_updateEmpty'))
+	addTest(suite, TestMisc('test_createAlphaResourceType'))
+	addTest(suite, TestMisc('test_createWithWrongResourceType'))
+	addTest(suite, TestMisc('test_checkHTTPmissingOriginator'))
+	addTest(suite, TestMisc('test_checkResponseOT'))
+	addTest(suite, TestMisc('test_checkTargetRVI'))
+	addTest(suite, TestMisc('test_validateListFail'))
+	addTest(suite, TestMisc('test_resourceWithoutRN'))
+	addTest(suite, TestMisc('test_subWithoutRN'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

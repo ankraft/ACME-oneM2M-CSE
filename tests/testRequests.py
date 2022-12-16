@@ -29,7 +29,7 @@ class TestRequests(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -40,6 +40,9 @@ class TestRequests(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestRequests')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
@@ -147,24 +150,22 @@ class TestRequests(unittest.TestCase):
 		self.assertEqual(rsc, RC.requestTimeout, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
+	addTest(suite, TestRequests('test_OETnow'))
+	addTest(suite, TestRequests('test_OETpast'))
+	addTest(suite, TestRequests('test_OETfuture'))
+	addTest(suite, TestRequests('test_OETfuturePeriod'))
+	addTest(suite, TestRequests('test_OETfutureSeconds'))
+	addTest(suite, TestRequests('test_RETnow'))
+	addTest(suite, TestRequests('test_RETpast'))
+	addTest(suite, TestRequests('test_RETfuture'))
+	addTest(suite, TestRequests('test_RETpastSeconds'))
+	addTest(suite, TestRequests('test_RETfutureSeconds'))
+	addTest(suite, TestRequests('test_OETRETfutureSeconds'))
+	addTest(suite, TestRequests('test_OETRETfutureSecondsWrong'))
 	
-	suite.addTest(TestRequests('test_OETnow'))
-	suite.addTest(TestRequests('test_OETpast'))
-	suite.addTest(TestRequests('test_OETfuture'))
-	suite.addTest(TestRequests('test_OETfuturePeriod'))
-	suite.addTest(TestRequests('test_OETfutureSeconds'))
-	suite.addTest(TestRequests('test_RETnow'))
-	suite.addTest(TestRequests('test_RETpast'))
-	suite.addTest(TestRequests('test_RETfuture'))
-	suite.addTest(TestRequests('test_RETpastSeconds'))
-	suite.addTest(TestRequests('test_RETfutureSeconds'))
-	suite.addTest(TestRequests('test_OETRETfutureSeconds'))
-	suite.addTest(TestRequests('test_OETRETfutureSecondsWrong'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	
 	printResult(result)
@@ -172,5 +173,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

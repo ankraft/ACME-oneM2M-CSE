@@ -33,7 +33,7 @@ class TestTSB(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 			 		'rr'  : True,
-			 		'srv' : [ '3' ],
+			 		'srv' : [ RELEASEVERSION ],
 			 		#'poa' : [ NOTIFICATIONSERVER ]
 			 		'poa' : [ ]
 				}}
@@ -51,6 +51,9 @@ class TestTSB(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestTSB')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
@@ -215,26 +218,22 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-	
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestTSB('test_createTSB'))
-	suite.addTest(TestTSB('test_createTSBEmptyNuFail'))
-	suite.addTest(TestTSB('test_createTSBBcniFail'))
-	suite.addTest(TestTSB('test_createTSBLOSNoBcnrFail'))
-	suite.addTest(TestTSB('test_createTSBBcniDefault'))
-	suite.addTest(TestTSB('test_createTSBBcntDefault'))
-	suite.addTest(TestTSB('test_createTSBPeriodic'))
-	
+
+	addTest(suite, TestTSB('test_createTSB'))
+	addTest(suite, TestTSB('test_createTSBEmptyNuFail'))
+	addTest(suite, TestTSB('test_createTSBBcniFail'))
+	addTest(suite, TestTSB('test_createTSBLOSNoBcnrFail'))
+	addTest(suite, TestTSB('test_createTSBBcniDefault'))
+	addTest(suite, TestTSB('test_createTSBBcntDefault'))
+	addTest(suite, TestTSB('test_createTSBPeriodic'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

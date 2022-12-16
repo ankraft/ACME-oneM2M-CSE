@@ -30,6 +30,8 @@ class TestCSE(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestCSE')
 		...
 		testCaseEnd('TearDown TestCSE')
@@ -132,25 +134,22 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestCSE('test_retrieveCSE'))
-	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
-	suite.addTest(TestCSE('test_attributesCSE'))
-	suite.addTest(TestCSE('test_attributeCSEctm'))
-	suite.addTest(TestCSE('test_CSESupportedResourceTypes'))
-	suite.addTest(TestCSE('test_deleteCSEFail'))
-	suite.addTest(TestCSE('test_updateCSEFail'))
-	suite.addTest(TestCSE('test_CSEreleaseVersion'))
+
+	addTest(suite, TestCSE('test_retrieveCSE'))
+	addTest(suite, TestCSE('test_retrieveCSEWithWrongOriginator'))
+	addTest(suite, TestCSE('test_attributesCSE'))
+	addTest(suite, TestCSE('test_attributeCSEctm'))
+	addTest(suite, TestCSE('test_CSESupportedResourceTypes'))
+	addTest(suite, TestCSE('test_deleteCSEFail'))
+	addTest(suite, TestCSE('test_updateCSEFail'))
+	addTest(suite, TestCSE('test_CSEreleaseVersion'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

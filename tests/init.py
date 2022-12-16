@@ -34,6 +34,10 @@ from config import *
 verifyCertificate			= False	# verify the certificate when using https?
 oauthToken					= None	# current OAuth Token
 verboseRequests				= False	# Print requests and responses
+testCaseNames:list[str]		= []	# List of test cases to run
+enableTearDown:bool			= True  # Run or don't run TearDownClass test case methods
+
+initialRequestTimeout		= 10.0	# Timeout in s for the initial connectivity test.
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -61,10 +65,12 @@ tsbPeriodicInterval			= 1.0
 # crossResourceSubscription Time Window Size (s)
 crsTimeWindowSize			= 4.0
 
-# ReleaseVersionIndicator
-RVI							='3'
+# Test Suite Verbosity (0-2)
+testVerbosity				= 2
 
-from dataclasses import dataclass, field
+
+
+from dataclasses import dataclass
 
 @dataclass
 class MQTTTopics:
@@ -74,8 +80,11 @@ class MQTTTopics:
 
 
 # TODO move utility functions somewhere else?
+# TODO make use of upper tester configurable
+# TODO Better fine-grain excluding of expiration tests when
 
-# TODO think about to move this?
+# TODO think about to move mqtt and http bindings to separate source files
+
 class MQTTClientHandler(MQTTHandler):
 	"""	Class for handling receiced MQTT requests.
 	"""
@@ -123,7 +132,7 @@ class MQTTClientHandler(MQTTHandler):
 	# 	pass
 	
 	def _callback(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
-		#print(f'<== {topic} / {data}')
+		# print(f'<== {topic} / {data}')
 		resp = RequestUtils.deserializeData(data, ContentSerializationType.JSON)
 		if 'rqi' in resp:
 			self.responses[resp['rqi']] = (topic, resp)
@@ -132,6 +141,7 @@ class MQTTClientHandler(MQTTHandler):
 
 
 	def publish(self, topic:str, data:bytes) -> None:
+		 #print(f'==> {topic} / {data}')
 		self.connection.publish(topic, data)
 
 	
@@ -216,9 +226,8 @@ memRN	= 'testMEM'
 wificRN	= 'testWIFIC'
 
 
-URL		= f'{SERVER}{ROOTPATH}'
-cseURL 	= f'{URL}{CSERN}'
-csiURL 	= f'{URL}{CSEID}'
+cseURL 	= f'{CSEURL}{CSERN}'
+csiURL 	= f'{CSEURL}{CSEID}'
 aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
@@ -240,8 +249,7 @@ batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
 
 
-REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
-REMOTEcseURL 	= f'{REMOTEURL}{REMOTECSERN}'
+REMOTEcseURL 	= f'{REMOTECSEURL}{REMOTECSERN}'
 localCsrURL 	= f'{cseURL}{REMOTECSEID}'
 remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
@@ -347,7 +355,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		'Content-Type' 		: f'{ct}{tys}',
 		'Accept'			: ct,
 		C.hfRI 				: (rid := uniqueID()),
-		C.hfRVI				: RVI,
+		C.hfRVI				: RELEASEVERSION,
 	}
 	if originator is not None:		# Set originator if it is not None
 		hds[C.hfOrigin] = originator
@@ -374,9 +382,11 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	# Verbose output
 	if verboseRequests:
 		console.print('\n[b u]Request')
-		console.print(f'[dim]{method.__name__.upper()}[/dim] {URL}')
-		console.print(hds)
-		console.print(data)
+		console.print(f'[dark_orange]{method.__name__.upper()}[/dark_orange] {url}')
+		console.print('\n'.join([f'{h}: {v}' for h,v in hds.items()]))
+		console.print()
+		if isinstance(data, dict):
+			console.print_json(data=data)
 
 	setLastRequestID(rid)
 	try:
@@ -398,10 +408,11 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 
 	# Verbose output
 	if verboseRequests:
-		console.print('\n[b u]Response')
-		console.print(r.status_code)
-		console.print(r.headers)
-		console.print(r.content)
+		console.print(f'\n[b u]Response - {r.status_code}')
+		console.print('\n'.join([f'{h}: {v}' for h,v in r.headers.items()]))
+		if r.content:
+			console.print()
+			console.print(r.json())
 
 	# return plain text
 	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
@@ -424,7 +435,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
 	req['op'] 	= operation.value
 	req['rqi'] 	= (rqi := uniqueID())
-	req['rvi'] 	= RVI
+	req['rvi'] 	= RELEASEVERSION
 
 	# Various request parameters
 	if ty:	
@@ -499,6 +510,12 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		
 	# print(f'==> {reqTopic} / {req}')
 
+	# Verbose output
+	if verboseRequests:
+		console.print('\n[b u]Request')
+		console.print(f'[dark_orange]{reqTopic}[/dark_orange]')
+		console.print(req)
+
 	# send the data
 	mqttHandler.publish(reqTopic, cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))  # TODO support cbor
 
@@ -511,6 +528,13 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			message = mqttHandler.responses.pop(rqi)
 		except:
 			return None, 5103
+
+		# Verbose output
+		if verboseRequests:
+			console.print('\n[b u]Response')
+			console.print(f'[dark_orange]{message[0]}[/dark_orange]')
+			console.print(message[1])
+
 
 		if message[0] == respTopic:
 			resp = message[1]
@@ -557,7 +581,7 @@ def connectionPossible(url:str) -> bool:
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
-		return RETRIEVE(url, ORIGINATOR, timeout=1.0)[0] is not None
+		return RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)[0] is not None
 	except Exception as e:
 		print(e)
 		return False
@@ -589,6 +613,9 @@ _orgRequestExpirationDelta = -1.0
 def enableShortResourceExpirations() -> None:
 	"""	Enable the short resource expiration in the CSE.
 	"""
+	if not RECONFIGURATIONENABLED:
+		return
+
 	global _orgExpCheck, _maxExpiration, _tooLargeResourceExpirationDelta
 
 	# Send UT request
@@ -606,6 +633,9 @@ def enableShortResourceExpirations() -> None:
 def disableShortResourceExpirations() -> None:
 	"""	Disable the short resource expiration in the CSE.
 	"""
+	if not RECONFIGURATIONENABLED:
+		return
+
 	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
 		# Send UT request
@@ -673,7 +703,13 @@ def testCaseStart(name:str) -> None:
 		Args:
 			name: Name of the test case.
 	"""
-	requests.post(UTURL, headers = { UTCMD: f'testCaseStart {name}'})
+	if UPPERTESTERENABLED:
+		requests.post(UTURL, headers = { UTCMD: f'testCaseStart {name}'})
+	if verboseRequests:
+		console.print('')
+		ln  = '=' * int((console.width - 11 - len(name)) / 2)
+		console.print(f'[dim]{ln}[ Start {name} ]{ln}')
+
 
 
 def testCaseEnd(name:str) -> None:
@@ -682,7 +718,12 @@ def testCaseEnd(name:str) -> None:
 		Args:
 			name: Name of the test case.
 	"""
-	requests.post(UTURL, headers = { UTCMD: f'testCaseEnd {name}'})
+	if UPPERTESTERENABLED:
+		requests.post(UTURL, headers = { UTCMD: f'testCaseEnd {name}'})
+	if verboseRequests:
+		console.print('')
+		ln  = '=' * int((console.width - 9 - len(name)) / 2)
+		console.print(f'[dim]{ln}[ End {name} ]{ln}')
 
 
 ###############################################################################
@@ -707,37 +748,48 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.send_response(nextNotificationResult.httpStatusCode())
 		self.send_header(C.hfRSC, str(int(nextNotificationResult)))
 		self.send_header(C.hfOT, DateUtils.getResourceDate())
-		self.send_header(C.hfOrigin, ORIGINATORResp)
+		self.send_header(C.hfOrigin, ORIGINATORNotifResp)
 		if C.hfRI in self.headers:
 			self.send_header(C.hfRI, self.headers[C.hfRI])
-		self.end_headers()
 		nextNotificationResult = ResponseStatusCode.OK
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
 		post_data = self.rfile.read(length)
+		decoded_data = ''
 		if len(post_data) > 0:
 			contentType = ''
 			if (val := self.headers.get('Content-Type')) is not None:
 				contentType = val.lower()
 			if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
-				setLastNotification(json.loads(post_data.decode('utf-8')))
+				setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
 			elif contentType in [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ]:
-				setLastNotification(cbor2.loads(post_data))
+				setLastNotification(decoded_data := cbor2.loads(post_data))
 			# else:
 			# 	setLastNotification(post_data.decode('utf-8'))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
 
+		# Verbose output
+		if verboseRequests and self.headers.get(C.hfOrigin):
+			console.print('\n[b u]Received Notification Request')
+			console.print('\n'.join([f'{h}: {v}' for h,v in self.headers.items()]))
+			if post_data:
+				console.print()
+				# console.print(json.loads(post_data))
+				console.print(decoded_data)
+			console.print('\n[b u]Sent Notification Response')
+			console.print(b''.join(self._headers_buffer).decode('UTF-8'))	# type: ignore[attr-defined]
+		self.end_headers()
 
 	def log_message(self, format:str, *args:int) -> None:
 		pass
 
 
-keepNotificationServerRunning = False
+notificationServerIsRunning = False
 
 def runNotificationServer() -> None:
-	global keepNotificationServerRunning
+	global notificationServerIsRunning
 	httpd = HTTPServer(('', NOTIFICATIONPORT), SimpleHTTPRequestHandler)
 	if PROTOCOL == 'https':
 		# init ssl socket
@@ -745,8 +797,8 @@ def runNotificationServer() -> None:
 		context.load_cert_chain(certfile='../certs/acme_cert.pem', keyfile='../certs/acme_key.pem')	# Load the certificate and private key
 		httpd.socket = context.wrap_socket(httpd.socket, server_side=True)	# wrap the original http server socket as an SSL/TLS socket
 
-	keepNotificationServerRunning = True
-	while keepNotificationServerRunning:
+	notificationServerIsRunning = True
+	while notificationServerIsRunning:
 		httpd.handle_request()
 
 
@@ -757,10 +809,10 @@ def startNotificationServer() -> None:
 
 
 def stopNotificationServer() -> None:
-	global keepNotificationServerRunning
+	global notificationServerIsRunning
 
-	if keepNotificationServerRunning:
-		keepNotificationServerRunning = False
+	if notificationServerIsRunning:
+		notificationServerIsRunning = False
 		try:
 			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
 		except Exception:
@@ -885,6 +937,15 @@ def isSPRelative(uri:str) -> bool:
 	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
+def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
+	if not testCaseNames or case._testMethodName in testCaseNames:
+		suite.addTest(case)
+
+
+def isTearDownEnabled() -> bool:
+	return enableTearDown
+
+
 decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
@@ -973,12 +1034,13 @@ if PROTOCOL == 'mqtt':
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 
-try:
-	if requests.post(UTURL, headers = { UTCMD: f'status'}).status_code == 501:
-		console.print('[red]Upper Tester Interface not enabeled in CSE')
-		console.print('Enable with configuration setting: "\[server.http]:enableUpperTesterEndpoint=True"')
+if UPPERTESTERENABLED:
+	try:
+		if requests.post(UTURL, headers = { UTCMD: f'status'}).status_code == 501:
+			console.print('[red]Upper Tester Interface not enabeled in CSE')
+			console.print('Enable with configuration setting: "\[server.http]:enableUpperTesterEndpoint=True"')
+			quit(-1)
+	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
 		quit(-1)
-except (ConnectionRefusedError, requests.exceptions.ConnectionError):
-	console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
-	quit(-1)
 

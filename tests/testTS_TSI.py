@@ -45,7 +45,7 @@ class TestTS_TSI(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -63,6 +63,9 @@ class TestTS_TSI(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestTS_TSI')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
@@ -699,47 +702,44 @@ class TestTS_TSI(unittest.TestCase):
 # TODO: instead of mdt:9999 set the mdn to None etc.
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
 	
-	suite.addTest(TestTS_TSI('test_addTSI'))
-	suite.addTest(TestTS_TSI('test_addMoreTSI'))
-	suite.addTest(TestTS_TSI('test_retrieveTSLa'))
-	suite.addTest(TestTS_TSI('test_retrieveTSOl'))
-	suite.addTest(TestTS_TSI('test_changeTSMni'))
-	suite.addTest(TestTS_TSI('test_deleteTS'))
+	addTest(suite, TestTS_TSI('test_addTSI'))
+	addTest(suite, TestTS_TSI('test_addMoreTSI'))
+	addTest(suite, TestTS_TSI('test_retrieveTSLa'))
+	addTest(suite, TestTS_TSI('test_retrieveTSOl'))
+	addTest(suite, TestTS_TSI('test_changeTSMni'))
+	addTest(suite, TestTS_TSI('test_deleteTS'))
 	
-	suite.addTest(TestTS_TSI('test_createTSwithMBS'))
-	suite.addTest(TestTS_TSI('test_createTSIexactSize'))
-	suite.addTest(TestTS_TSI('test_createTSItooLarge'))
-	suite.addTest(TestTS_TSI('test_createTSIsForTSwithSize'))
-	suite.addTest(TestTS_TSI('test_createTSIwithoutDGT'))
-	suite.addTest(TestTS_TSI('test_createTSIwithSameDGT'))
-	suite.addTest(TestTS_TSI('test_createTSIwithSNR'))
-	suite.addTest(TestTS_TSI('test_deleteTS'))
+	addTest(suite, TestTS_TSI('test_createTSwithMBS'))
+	addTest(suite, TestTS_TSI('test_createTSIexactSize'))
+	addTest(suite, TestTS_TSI('test_createTSItooLarge'))
+	addTest(suite, TestTS_TSI('test_createTSIsForTSwithSize'))
+	addTest(suite, TestTS_TSI('test_createTSIwithoutDGT'))
+	addTest(suite, TestTS_TSI('test_createTSIwithSameDGT'))
+	addTest(suite, TestTS_TSI('test_createTSIwithSNR'))
+	addTest(suite, TestTS_TSI('test_deleteTS'))
 
-	suite.addTest(TestTS_TSI('test_setMddToFalseAfterAWhile'))
-	suite.addTest(TestTS_TSI('test_deleteTS'))
+	addTest(suite, TestTS_TSI('test_setMddToFalseAfterAWhile'))
+	addTest(suite, TestTS_TSI('test_deleteTS'))
 
-	suite.addTest(TestTS_TSI('test_createTSwithMonitoring'))
-	suite.addTest(TestTS_TSI('test_createTSIinPeriod'))					# Start monitoring
-	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))				# Start monitoring
-	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooEarly'))		# dgt too early
-	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooLate'))		# dgt too late
-	suite.addTest(TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
-	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtWayTooEarly'))	# dgt way to early
+	addTest(suite, TestTS_TSI('test_createTSwithMonitoring'))
+	addTest(suite, TestTS_TSI('test_createTSIinPeriod'))					# Start monitoring
+	addTest(suite, TestTS_TSI('test_createTSInotInPeriod'))				# Start monitoring
+	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtTooEarly'))		# dgt too early
+	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtTooLate'))		# dgt too late
+	addTest(suite, TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
+	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtWayTooEarly'))	# dgt way to early
 
-	suite.addTest(TestTS_TSI('test_updateTSMddEnable'))
+	addTest(suite, TestTS_TSI('test_updateTSMddEnable'))
 
 	# Test MissingData subscriptions
-	suite.addTest(TestTS_TSI('test_deleteTS'))
-	suite.addTest(TestTS_TSI('test_createTSwithMonitoring'))
-	suite.addTest(TestTS_TSI('test_createMissingDataSubUnderTS'))
-	suite.addTest(TestTS_TSI('test_createMissingDataForSub'))
-	suite.addTest(TestTS_TSI('test_deleteMissingDataSubUnderTS'))
+	addTest(suite, TestTS_TSI('test_deleteTS'))
+	addTest(suite, TestTS_TSI('test_createTSwithMonitoring'))
+	addTest(suite, TestTS_TSI('test_createMissingDataSubUnderTS'))
+	addTest(suite, TestTS_TSI('test_createMissingDataForSub'))
+	addTest(suite, TestTS_TSI('test_deleteMissingDataSubUnderTS'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	
@@ -748,5 +748,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

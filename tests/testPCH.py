@@ -34,7 +34,7 @@ class TestPCH(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -46,7 +46,7 @@ class TestPCH(unittest.TestCase):
 					'rn'  : aeRN2, 
 					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -85,6 +85,8 @@ class TestPCH(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestPCH')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
@@ -221,30 +223,27 @@ class TestPCH(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-
 	# basic tests
-	suite.addTest(TestPCH('test_createPCHwithWrongOriginatorFail'))
-	suite.addTest(TestPCH('test_createPCH'))
-	suite.addTest(TestPCH('test_createSecondPCHFail'))
-	suite.addTest(TestPCH('test_createPCHunderCSEBaseFail'))
-	suite.addTest(TestPCH('test_retrievePCH'))
-	suite.addTest(TestPCH('test_retrievePCHwithWrongOriginatorFail'))
-	suite.addTest(TestPCH('test_retrievePCHWithAE2Fail'))
-	suite.addTest(TestPCH('test_attributesPCH'))
+	addTest(suite, TestPCH('test_createPCHwithWrongOriginatorFail'))
+	addTest(suite, TestPCH('test_createPCH'))
+	addTest(suite, TestPCH('test_createSecondPCHFail'))
+	addTest(suite, TestPCH('test_createPCHunderCSEBaseFail'))
+	addTest(suite, TestPCH('test_retrievePCH'))
+	addTest(suite, TestPCH('test_retrievePCHwithWrongOriginatorFail'))
+	addTest(suite, TestPCH('test_retrievePCHWithAE2Fail'))
+	addTest(suite, TestPCH('test_attributesPCH'))
 
-	suite.addTest(TestPCH('test_setAggreagstionState'))
-	suite.addTest(TestPCH('test_getAggreagstionState'))
+	addTest(suite, TestPCH('test_setAggreagstionState'))
+	addTest(suite, TestPCH('test_getAggreagstionState'))
 
 	# delete tests
-	suite.addTest(TestPCH('test_deletePCHwrongOriginatorFail'))
-	suite.addTest(TestPCH('test_deletePCH'))
+	addTest(suite, TestPCH('test_deletePCHwrongOriginatorFail'))
+	addTest(suite, TestPCH('test_deletePCH'))
 
-	suite.addTest(TestPCH('test_retrievePCUAfterDeleteFail'))
+	addTest(suite, TestPCH('test_retrievePCUAfterDeleteFail'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
@@ -252,6 +251,6 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

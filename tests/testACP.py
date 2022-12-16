@@ -49,6 +49,8 @@ class TestACP(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestACP')
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
@@ -173,7 +175,7 @@ class TestACP(unittest.TestCase):
 					'rn': aeRN, 
 					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ],
+				 	'srv': [ RELEASEVERSION ],
 				 	'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
 		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
@@ -557,7 +559,7 @@ class TestACP(unittest.TestCase):
 					'rn': ae1RN, 
 					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ],
+				 	'srv': [ RELEASEVERSION ],
 				}}
 		ae1, rsc = CREATE(cseURL, 'Cae1', T.AE, dct)
 		self.assertEqual(rsc, RC.created, ae1)
@@ -567,7 +569,7 @@ class TestACP(unittest.TestCase):
 					'rn': ae2RN, 
 					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ],
+				 	'srv': [ RELEASEVERSION ],
 				}}
 		ae2, rsc = CREATE(cseURL, 'Cae2', T.AE, dct)
 		self.assertEqual(rsc, RC.created, ae2)
@@ -670,72 +672,67 @@ class TestACP(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 
-		# Clear counters
-	clearSleepTimeCount()
-
-	suite.addTest(TestACP('test_createACP'))
-	suite.addTest(TestACP('test_retrieveACP'))
-	suite.addTest(TestACP('test_retrieveACPwrongOriginator'))
-	suite.addTest(TestACP('test_attributesACP'))
-	suite.addTest(TestACP('test_updateACP'))
-	suite.addTest(TestACP('test_updateACPwrongOriginator'))
-	suite.addTest(TestACP('test_updateACPEmptyPVSFail'))
-	suite.addTest(TestACP('test_updateACPNoPVSFail'))
-	suite.addTest(TestACP('test_addACPtoAE'))
-	suite.addTest(TestACP('test_updateAEACPIWrong'))
-	suite.addTest(TestACP('test_updateAEACPIWrong2'))
-	suite.addTest(TestACP('test_updateAEACPIWrongOriginator'))
-	suite.addTest(TestACP('test_updateAEACPIOtherOriginator'))
+	addTest(suite, TestACP('test_createACP'))
+	addTest(suite, TestACP('test_retrieveACP'))
+	addTest(suite, TestACP('test_retrieveACPwrongOriginator'))
+	addTest(suite, TestACP('test_attributesACP'))
+	addTest(suite, TestACP('test_updateACP'))
+	addTest(suite, TestACP('test_updateACPwrongOriginator'))
+	addTest(suite, TestACP('test_updateACPEmptyPVSFail'))
+	addTest(suite, TestACP('test_updateACPNoPVSFail'))
+	addTest(suite, TestACP('test_addACPtoAE'))
+	addTest(suite, TestACP('test_updateAEACPIWrong'))
+	addTest(suite, TestACP('test_updateAEACPIWrong2'))
+	addTest(suite, TestACP('test_updateAEACPIWrongOriginator'))
+	addTest(suite, TestACP('test_updateAEACPIOtherOriginator'))
 
 	# wildcard tests
-	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator'))
-	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator2'))
-	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator3WrongFail'))
+	addTest(suite, TestACP('test_updateAElblWithWildCardOriginator'))
+	addTest(suite, TestACP('test_updateAElblWithWildCardOriginator2'))
+	addTest(suite, TestACP('test_updateAElblWithWildCardOriginator3WrongFail'))
 
-	suite.addTest(TestACP('test_createACPNoPVSFail'))
-	suite.addTest(TestACP('test_createACPEmptyPVSFail'))
+	addTest(suite, TestACP('test_createACPNoPVSFail'))
+	addTest(suite, TestACP('test_createACPEmptyPVSFail'))
 
-	suite.addTest(TestACP('test_createCNTwithNoACPI'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPI'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIWrongOriginator'))
-	suite.addTest(TestACP('test_deleteCNTwithNoACPI'))
+	addTest(suite, TestACP('test_createCNTwithNoACPI'))
+	addTest(suite, TestACP('test_retrieveCNTwithNoACPI'))
+	addTest(suite, TestACP('test_retrieveCNTwithNoACPIWrongOriginator'))
+	addTest(suite, TestACP('test_deleteCNTwithNoACPI'))
 
-	suite.addTest(TestACP('test_createCNTwithNoACPIAndCustodian'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodian'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodianAEOriginator'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodianWrongOriginator'))
-	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndCustodian'))
+	addTest(suite, TestACP('test_createCNTwithNoACPIAndCustodian'))
+	addTest(suite, TestACP('test_retrieveCNTwithNoACPIAndCustodian'))
+	addTest(suite, TestACP('test_retrieveCNTwithNoACPIAndCustodianAEOriginator'))
+	addTest(suite, TestACP('test_retrieveCNTwithNoACPIAndCustodianWrongOriginator'))
+	addTest(suite, TestACP('test_deleteCNTwithNoACPIAndCustodian'))
 
-	suite.addTest(TestACP('test_removeACPfromAEWrong'))
-	suite.addTest(TestACP('test_removeACPfromAEWrong2'))
-	suite.addTest(TestACP('test_removeACPfromAE'))
-	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
-	suite.addTest(TestACP('test_deleteACP'))
+	addTest(suite, TestACP('test_removeACPfromAEWrong'))
+	addTest(suite, TestACP('test_removeACPfromAEWrong2'))
+	addTest(suite, TestACP('test_removeACPfromAE'))
+	addTest(suite, TestACP('test_deleteACPwrongOriginator'))
+	addTest(suite, TestACP('test_deleteACP'))
 
-	suite.addTest(TestACP('test_createACPUnderCSEBaseWithOriginator'))
-	suite.addTest(TestACP('test_deleteACPUnderCSEBaseWithOriginator'))
+	addTest(suite, TestACP('test_createACPUnderCSEBaseWithOriginator'))
+	addTest(suite, TestACP('test_deleteACPUnderCSEBaseWithOriginator'))
 
-	suite.addTest(TestACP('test_createACPUnderAEWithChty'))
-	suite.addTest(TestACP('test_updateAEACPIForChty'))
-	suite.addTest(TestACP('test_testACPChty'))
-	suite.addTest(TestACP('test_deleteACPUnderAEWithChty'))
+	addTest(suite, TestACP('test_createACPUnderAEWithChty'))
+	addTest(suite, TestACP('test_updateAEACPIForChty'))
+	addTest(suite, TestACP('test_testACPChty'))
+	addTest(suite, TestACP('test_deleteACPUnderAEWithChty'))
 
-	suite.addTest(TestACP('test_accessCINwithDifferentAENoAcpi'))
-	suite.addTest(TestACP('test_accessCINwithDifferentAEWithAcpi'))
-	suite.addTest(TestACP('test_discoverCINwithDifferentAEWithAcpi'))
+	addTest(suite, TestACP('test_accessCINwithDifferentAENoAcpi'))
+	addTest(suite, TestACP('test_accessCINwithDifferentAEWithAcpi'))
+	addTest(suite, TestACP('test_discoverCINwithDifferentAEWithAcpi'))
 
-	suite.addTest(TestACP('test_retrieveACPwithoutRETRIEVEAccessFail'))
+	addTest(suite, TestACP('test_retrieveACPwithoutRETRIEVEAccessFail'))
 
-
-	#suite.addTest(TestACP('test_handleAE'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

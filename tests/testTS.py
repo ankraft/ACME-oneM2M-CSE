@@ -29,7 +29,7 @@ class TestTS(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : APPID,
 			 		'rr'  : True,
-			 		'srv' : [ '3' ],
+			 		'srv' : [ RELEASEVERSION ],
 			 		'poa' : [ NOTIFICATIONSERVER ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -41,6 +41,8 @@ class TestTS(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestTS')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestTS')
@@ -487,51 +489,48 @@ class TestTS(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 	
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestTS('test_createTS'))
-	suite.addTest(TestTS('test_attributesTS'))
-	suite.addTest(TestTS('test_createTSunderTS'))
-	suite.addTest(TestTS('test_updateTSmni'))
-	suite.addTest(TestTS('test_updateTSmbs'))
-	suite.addTest(TestTS('test_updateTSpei'))
-	suite.addTest(TestTS('test_updateTSpeid'))
+	addTest(suite, TestTS('test_createTS'))
+	addTest(suite, TestTS('test_attributesTS'))
+	addTest(suite, TestTS('test_createTSunderTS'))
+	addTest(suite, TestTS('test_updateTSmni'))
+	addTest(suite, TestTS('test_updateTSmbs'))
+	addTest(suite, TestTS('test_updateTSpei'))
+	addTest(suite, TestTS('test_updateTSpeid'))
 
-	suite.addTest(TestTS('test_updateTSmddTrue'))
-	suite.addTest(TestTS('test_updateTSmddTrueAndMdtFail'))
-	suite.addTest(TestTS('test_updateTSmddTrueAndMdnFail'))
-	suite.addTest(TestTS('test_updateTSmddTrueAndMdnNoneFail'))
-	suite.addTest(TestTS('test_updateTSmddTrueAndPeiFail'))
-	suite.addTest(TestTS('test_updateTSmddTrueAndPeidFail'))
+	addTest(suite, TestTS('test_updateTSmddTrue'))
+	addTest(suite, TestTS('test_updateTSmddTrueAndMdtFail'))
+	addTest(suite, TestTS('test_updateTSmddTrueAndMdnFail'))
+	addTest(suite, TestTS('test_updateTSmddTrueAndMdnNoneFail'))
+	addTest(suite, TestTS('test_updateTSmddTrueAndPeiFail'))
+	addTest(suite, TestTS('test_updateTSmddTrueAndPeidFail'))
 	
-	suite.addTest(TestTS('test_updateTSmddFalse'))
-	suite.addTest(TestTS('test_updateTSmddWithMdtFail'))
-	suite.addTest(TestTS('test_updateTSmddWithMdnFail'))
-	suite.addTest(TestTS('test_updateTSmddWithPeiFail'))
-	suite.addTest(TestTS('test_updateTSmddWithPeidFail'))
-	suite.addTest(TestTS('test_updateTSmddWithWrongPeiPeidFail'))
+	addTest(suite, TestTS('test_updateTSmddFalse'))
+	addTest(suite, TestTS('test_updateTSmddWithMdtFail'))
+	addTest(suite, TestTS('test_updateTSmddWithMdnFail'))
+	addTest(suite, TestTS('test_updateTSmddWithPeiFail'))
+	addTest(suite, TestTS('test_updateTSmddWithPeidFail'))
+	addTest(suite, TestTS('test_updateTSmddWithWrongPeiPeidFail'))
 
 	
-	suite.addTest(TestTS('test_updateTSmdn'))
-	suite.addTest(TestTS('test_updateTSmdc'))
-	suite.addTest(TestTS('test_updateTSmdlt'))
-	suite.addTest(TestTS('test_updateTSremoveMdn'))
-	suite.addTest(TestTS('test_updateTScnf'))
-	suite.addTest(TestTS('test_deleteTS'))
-	suite.addTest(TestTS('test_createTSnoMdd'))
-	suite.addTest(TestTS('test_updateTSMddwrong'))
-	suite.addTest(TestTS('test_createTSwithPeid'))
-	suite.addTest(TestTS('test_createTSwithPeidWrong'))
-	suite.addTest(TestTS('test_createTSwithCnfWrong'))
+	addTest(suite, TestTS('test_updateTSmdn'))
+	addTest(suite, TestTS('test_updateTSmdc'))
+	addTest(suite, TestTS('test_updateTSmdlt'))
+	addTest(suite, TestTS('test_updateTSremoveMdn'))
+	addTest(suite, TestTS('test_updateTScnf'))
+	addTest(suite, TestTS('test_deleteTS'))
+	addTest(suite, TestTS('test_createTSnoMdd'))
+	addTest(suite, TestTS('test_updateTSMddwrong'))
+	addTest(suite, TestTS('test_createTSwithPeid'))
+	addTest(suite, TestTS('test_createTSwithPeidWrong'))
+	addTest(suite, TestTS('test_createTSwithCnfWrong'))
 
-	suite.addTest(TestTS('test_createTSwithMissingMdtFail'))
+	addTest(suite, TestTS('test_createTSwithMissingMdtFail'))
 
-	suite.addTest(TestTS('test_deleteTS'))
-	suite.addTest(TestTS('test_MddMdltMdcHandling'))
+	addTest(suite, TestTS('test_deleteTS'))
+	addTest(suite, TestTS('test_MddMdltMdcHandling'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
@@ -539,6 +538,6 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

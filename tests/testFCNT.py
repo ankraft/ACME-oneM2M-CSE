@@ -34,7 +34,7 @@ class TestFCNT(unittest.TestCase):
 					'rn': aeRN, 
 					'api': APPID,
 					'rr': False,
-					'srv': [ '3' ]
+					'srv': [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -45,6 +45,8 @@ class TestFCNT(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestFCNT')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestFCNT')
@@ -344,41 +346,39 @@ class TestFCNT(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestFCNT('test_createFCNTWrongCND'))
-	suite.addTest(TestFCNT('test_createFCNTWrongTPE'))
-	suite.addTest(TestFCNT('test_createFCNT'))
-	suite.addTest(TestFCNT('test_retrieveFCNT'))
-	suite.addTest(TestFCNT('test_retrieveFCNTWithWrongOriginator'))
-	suite.addTest(TestFCNT('test_attributesFCNT'))
-	suite.addTest(TestFCNT('test_updateFCNT'))
-	suite.addTest(TestFCNT('test_updateFCNTwithCnd'))
-	suite.addTest(TestFCNT('test_updateFCNTwithWrongType'))
-	suite.addTest(TestFCNT('test_updateFCNTwithUnkownAttribute'))
-	suite.addTest(TestFCNT('test_createFCNTUnknown'))
-	suite.addTest(TestFCNT('test_createCNTUnderFCNT'))
-	suite.addTest(TestFCNT('test_deleteCNTUnderFCNT'))
-	suite.addTest(TestFCNT('test_createFCNTUnderFCNT'))
-	suite.addTest(TestFCNT('test_deleteFCNTUnderFCNT'))
-	suite.addTest(TestFCNT('test_deleteFCNT'))
-	suite.addTest(TestFCNT('test_createGenericInterworking'))
-	suite.addTest(TestFCNT('test_createGenericInterworkingWrong'))
-	suite.addTest(TestFCNT('test_createGenericInterworkingWrong2'))
-	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance'))
-	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance2'))
-	suite.addTest(TestFCNT('test_deleteGenericInterworking'))
-	suite.addTest(TestFCNT('test_createFCNTWithCreatorWrong'))
-	suite.addTest(TestFCNT('test_createFCNTWithCreator'))
+	addTest(suite, TestFCNT('test_createFCNTWrongCND'))
+	addTest(suite, TestFCNT('test_createFCNTWrongTPE'))
+	addTest(suite, TestFCNT('test_createFCNT'))
+	addTest(suite, TestFCNT('test_retrieveFCNT'))
+	addTest(suite, TestFCNT('test_retrieveFCNTWithWrongOriginator'))
+	addTest(suite, TestFCNT('test_attributesFCNT'))
+	addTest(suite, TestFCNT('test_updateFCNT'))
+	addTest(suite, TestFCNT('test_updateFCNTwithCnd'))
+	addTest(suite, TestFCNT('test_updateFCNTwithWrongType'))
+	addTest(suite, TestFCNT('test_updateFCNTwithUnkownAttribute'))
+	addTest(suite, TestFCNT('test_createFCNTUnknown'))
+	addTest(suite, TestFCNT('test_createCNTUnderFCNT'))
+	addTest(suite, TestFCNT('test_deleteCNTUnderFCNT'))
+	addTest(suite, TestFCNT('test_createFCNTUnderFCNT'))
+	addTest(suite, TestFCNT('test_deleteFCNTUnderFCNT'))
+	addTest(suite, TestFCNT('test_deleteFCNT'))
+	addTest(suite, TestFCNT('test_createGenericInterworking'))
+	addTest(suite, TestFCNT('test_createGenericInterworkingWrong'))
+	addTest(suite, TestFCNT('test_createGenericInterworkingWrong2'))
+	addTest(suite, TestFCNT('test_createGenericInterworkingOperationInstance'))
+	addTest(suite, TestFCNT('test_createGenericInterworkingOperationInstance2'))
+	addTest(suite, TestFCNT('test_deleteGenericInterworking'))
+	addTest(suite, TestFCNT('test_createFCNTWithCreatorWrong'))
+	addTest(suite, TestFCNT('test_createFCNTWithCreator'))
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 
