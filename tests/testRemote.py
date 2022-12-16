@@ -34,6 +34,8 @@ class TestRemote(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestRemote')
 		DELETE(csrURL, ORIGINATOR)
 		DELETE(aeURL, ORIGINATOR)
@@ -102,7 +104,7 @@ class TestRemote(unittest.TestCase):
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
-			'poa': [ URL ], 
+			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
@@ -122,7 +124,7 @@ class TestRemote(unittest.TestCase):
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
-			'poa': [ URL ], 
+			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
@@ -142,7 +144,7 @@ class TestRemote(unittest.TestCase):
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
-			'poa': [ URL ], 
+			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
@@ -163,7 +165,7 @@ class TestRemote(unittest.TestCase):
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
-			'poa': [ URL ], 
+			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
@@ -185,7 +187,7 @@ class TestRemote(unittest.TestCase):
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, 'Ctest', T.AE, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -196,7 +198,7 @@ class TestRemote(unittest.TestCase):
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
-			'poa': [ URL ], 
+			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
@@ -212,24 +214,22 @@ class TestRemote(unittest.TestCase):
 
 # TODO Transfer requests
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
+			
+	addTest(suite, TestRemote('test_retrieveLocalCSR'))
+	addTest(suite, TestRemote('test_retrieveRemoteCSR'))
+	addTest(suite, TestRemote('test_createCSRmissingCSI'))
+	addTest(suite, TestRemote('test_createCSRmissingCB'))
+	addTest(suite, TestRemote('test_createCSRwrongCSI'))
+	addTest(suite, TestRemote('test_createCSRnoCsi'))
+	addTest(suite, TestRemote('test_createCSRsameAsAE'))
 	
-	suite.addTest(TestRemote('test_retrieveLocalCSR'))
-	suite.addTest(TestRemote('test_retrieveRemoteCSR'))
-	suite.addTest(TestRemote('test_createCSRmissingCSI'))
-	suite.addTest(TestRemote('test_createCSRmissingCB'))
-	suite.addTest(TestRemote('test_createCSRwrongCSI'))
-	suite.addTest(TestRemote('test_createCSRnoCsi'))
-	suite.addTest(TestRemote('test_createCSRsameAsAE'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

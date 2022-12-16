@@ -29,9 +29,9 @@ class TestFCNT_FCI(unittest.TestCase):
 		testCaseStart('Setup TestFCNT_FCI')
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 					'rr': False,
-					'srv': [ '3' ]
+					'srv': [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -42,6 +42,8 @@ class TestFCNT_FCI(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestFCNT_FCI')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestFCNT_FCI')
@@ -262,29 +264,27 @@ class TestFCNT_FCI(unittest.TestCase):
 # TODO other FCNT controlling attributes
 # TODO Add similar tests from testCNT_CIN for mni, etc
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
+			
+	addTest(suite, TestFCNT_FCI('test_createFCNT'))
+	addTest(suite, TestFCNT_FCI('test_attributesFCNT'))
+	addTest(suite, TestFCNT_FCI('test_updateFCNT'))
+	addTest(suite, TestFCNT_FCI('test_retrieveFCNTLaOl'))
+	addTest(suite, TestFCNT_FCI('test_updateFCNTMni'))
+	addTest(suite, TestFCNT_FCI('test_updateLBL'))
+	addTest(suite, TestFCNT_FCI('test_updateMNInoFCICreated'))
+	addTest(suite, TestFCNT_FCI('test_createFCIFail'))
+	addTest(suite, TestFCNT_FCI('test_updateFCIFail'))
+	addTest(suite, TestFCNT_FCI('test_updateFCNTMniNull'))
+	addTest(suite, TestFCNT_FCI('test_deleteFCNT'))
 	
-	suite.addTest(TestFCNT_FCI('test_createFCNT'))
-	suite.addTest(TestFCNT_FCI('test_attributesFCNT'))
-	suite.addTest(TestFCNT_FCI('test_updateFCNT'))
-	suite.addTest(TestFCNT_FCI('test_retrieveFCNTLaOl'))
-	suite.addTest(TestFCNT_FCI('test_updateFCNTMni'))
-	suite.addTest(TestFCNT_FCI('test_updateLBL'))
-	suite.addTest(TestFCNT_FCI('test_updateMNInoFCICreated'))
-	suite.addTest(TestFCNT_FCI('test_createFCIFail'))
-	suite.addTest(TestFCNT_FCI('test_updateFCIFail'))
-	suite.addTest(TestFCNT_FCI('test_updateFCNTMniNull'))
-	suite.addTest(TestFCNT_FCI('test_deleteFCNT'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

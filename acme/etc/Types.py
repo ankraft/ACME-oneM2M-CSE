@@ -697,6 +697,7 @@ class ResponseStatusCode(ACMEIntEnum):
 	originatorHasAlreadyRegistered				= 4117
 	appRuleValidationFailed						= 4126
 	operationDeniedByRemoteEntity				= 4127
+	serviceSubscriptionNotEstablished			= 4128
 	invalidSPARQLQuery 							= 4143
 	internalServerError							= 5000
 	notImplemented								= 5001
@@ -734,7 +735,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
 	ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
 	ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-	ResponseStatusCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+	ResponseStatusCode.acceptedNonBlockingRequestAsynch 		: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
 	ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
 	ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
 	ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
@@ -742,6 +743,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
 	ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
 	ResponseStatusCode.invalidSPARQLQuery						: HTTPStatus.BAD_REQUEST,				# INVALID SPARQL QUERY
+	ResponseStatusCode.serviceSubscriptionNotEstablished		: HTTPStatus.FORBIDDEN,					# SERVICE SUBSCRIPTION NOT ESTABLISHED
 	ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
 	ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
 	ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS

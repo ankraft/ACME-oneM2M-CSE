@@ -7,49 +7,56 @@
 #	Configurations for unit tests
 #
 
-BINDING						= 'http'
+BINDING						= 'mqtt'	# possible values: http, https, mqtt
 
 if BINDING == 'mqtt':
-
-	PROTOCOL				= 'mqtt'	# possible values: http, https, mqtt
-	CONFIGPROTOCOL			= 'http'	# possible values: http, https, mqtt
-	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
-	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+	PROTOCOL				= 'mqtt'	
+	CONFIGPROTOCOL			= 'http'
+	NOTIFICATIONPROTOCOL	= 'http'
+	REMOTEPROTOCOL			= 'http'
 
 elif BINDING == 'http':
-
-	PROTOCOL				= 'http'	# possible values: http, https, mqtt
-	CONFIGPROTOCOL			= 'http'	# possible values: http, https, mqtt
-	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
-	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+	PROTOCOL				= 'http'
+	CONFIGPROTOCOL			= 'http'
+	NOTIFICATIONPROTOCOL	= 'http'
+	REMOTEPROTOCOL			= 'http'
 
 elif BINDING == 'https':
-
-	PROTOCOL				= 'https'	# possible values: http, https, mqtt
-	CONFIGPROTOCOL			= 'https'	# possible values: http, https, mqtt
-	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
-	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+	PROTOCOL				= 'https'
+	CONFIGPROTOCOL			= 'https'
+	NOTIFICATIONPROTOCOL	= 'http'
+	REMOTEPROTOCOL			= 'http'
 
 else:
 	assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
 
 # TODO ENCODING 			= 
 
+#
+#	General Configurations
+#
+
+SPID 					= 'acme.example.com'# Service Provide ID
+APPID					= 'NMyApp1Id'		# Application ID
+ORIGINATOR				= 'CAdmin'			# Admin originator
+ORIGINATORSelfReg		= 'C'				# Originator for self registration
+ORIGINATOREmpty			= ''				# Originator for empty originator/self registration 
+ORIGINATORNotifResp		= 'CTester'			# Originator for Notification responses
+RECONFIGURATIONENABLED	= True				# The CSE allowes for reconfigurations via Upper Tester
+UPPERTESTERENABLED		= True				# Enable or Disable Upper Tester extensions
+RELEASEVERSION			= '4'				# Supported Release Version for requests & registrations
+
 
 #
 #	CSE SuT
 #
 
-SERVER				= f'{PROTOCOL}://localhost:8080'	# Remember: no trailing '/' 
-CONFIGSERVER		= f'{CONFIGPROTOCOL}://localhost:8080'
-ROOTPATH			= '/'
-CSERN				= 'cse-in'
-CSERI				= 'id-in'
-CSEID				= '/id-in'
-SPID 				= 'acme.example.com'
-ORIGINATOR			= 'CAdmin'
-ORIGINATORResp		= 'CTester'
+CSEURL					= f'{PROTOCOL}://localhost:8080/'	# CSE Server address.
+CSERN					= 'cse-in'			# CSEBase Resource Name
+CSERI					= 'id-in'			# CSEBase Resource ID
+CSEID					= '/id-in'			# CSE-ID
 
+##############################################################################
 
 #
 #	MQTT (if configured)
@@ -71,6 +78,7 @@ MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 
 #
 #	OAuth2 authentication
+#	When using OAuth to access a CSE
 #
 
 doOAuth 			= False
@@ -81,14 +89,15 @@ oauthClientSecret 	= ''
 
 #
 #	Remote CSE
+#	For testing remote CSE registrations
 #
 
-REMOTESERVER		= f'{REMOTEPROTOCOL}://localhost:8081'
-REMOTEROOTPATH		= '/'
+REMOTECSEURL		= f'{REMOTEPROTOCOL}://localhost:8081/'
 REMOTECSERN			= 'cse-mn'
 REMOTECSERI			= 'id-mn'
 REMOTECSEID			= '/id-mn'
 REMOTESPID 			= 'sp-mn'
+REMOTEAPPID			= 'NMNApp1Id'
 REMOTEORIGINATOR	= 'CAdmin'
 
 
@@ -105,7 +114,6 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 #
 #	Upper Tester
 #
-
-UTURL = f'{CONFIGSERVER}{ROOTPATH}__ut__'
-UTCMD = 'X-M2M-UTCMD'
-UTRSP = 'X-M2M-UTRSP'
+UTURL	= f'{CONFIGPROTOCOL}://localhost:8080/__ut__'	# CSE's Upper Tester URL
+UTCMD	= 'X-M2M-UTCMD'
+UTRSP	= 'X-M2M-UTRSP'

@@ -52,9 +52,9 @@ class TestPCH_PCU(unittest.TestCase):
 		# Add first AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : False,		# Explicitly not request reachable
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -64,9 +64,9 @@ class TestPCH_PCU(unittest.TestCase):
 		# Add second AE that will receive notifications
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN2, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 				 	'rr'  : False,		# Explicitly not request reachable
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -118,6 +118,8 @@ class TestPCH_PCU(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestPCH_PCU')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
@@ -175,7 +177,7 @@ class TestPCH_PCU(unittest.TestCase):
 				'm2m:rsp' : {
 					'fr'  : originator,	# TODO Configurable
 					'rqi' : rqi,
-					'rvi' : RVI,
+					'rvi' : RELEASEVERSION,
 					'rsc' : int(RC.OK)
 				}
 			}
@@ -186,7 +188,7 @@ class TestPCH_PCU(unittest.TestCase):
 					'm2m:rqp' : {
 						'fr'  : originator,
 						'rqi' : rqi,
-						'rvi' : RVI,
+						'rvi' : RELEASEVERSION,
 						'rsc' : int(RC.OK)
 					}
 				}
@@ -419,11 +421,10 @@ class TestPCH_PCU(unittest.TestCase):
 
 		# get and answer aggregated polling request
 		self._pollForRequest(TestPCH_PCU.originator2, RC.OK, aggregated = True)
-			
 
 
 
-
+# TODO continue the following
 
 	def test_createNotificationDoPolling(self) -> None:
 		""" Create a <CIN> to create a notification and poll <PCU> """
@@ -447,7 +448,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	enableShortRequestExpirations()
 	if not isShortRequestExpirations():
 		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
@@ -456,25 +457,21 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	
 	suite = unittest.TestSuite()
 	
-	# Clear counters
-	clearSleepTimeCount()
-
 	# basic tests
-	suite.addTest(TestPCH_PCU('test_createSUBunderCNTFail'))
-	suite.addTest(TestPCH_PCU('test_createPCHunderAE2'))
-	suite.addTest(TestPCH_PCU('test_accessPCUwithshortExpiration'))
-	suite.addTest(TestPCH_PCU('test_retrievePCUunderAE2Fail'))
-	suite.addTest(TestPCH_PCU('test_createSUBunderCNT'))
-	suite.addTest(TestPCH_PCU('test_DeleteSUBunderCNT'))
-	suite.addTest(TestPCH_PCU('test_accesPCUwithWrongOriginator'))
-	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTargetFail'))
-	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithEmptyAnswerFail'))
-	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongAnswerFail'))
+	addTest(suite, TestPCH_PCU('test_createSUBunderCNTFail'))
+	addTest(suite, TestPCH_PCU('test_createPCHunderAE2'))
+	addTest(suite, TestPCH_PCU('test_accessPCUwithshortExpiration'))
+	addTest(suite, TestPCH_PCU('test_retrievePCUunderAE2Fail'))
+	addTest(suite, TestPCH_PCU('test_createSUBunderCNT'))
+	addTest(suite, TestPCH_PCU('test_DeleteSUBunderCNT'))
+	addTest(suite, TestPCH_PCU('test_accesPCUwithWrongOriginator'))
+	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTargetFail'))
+	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithEmptyAnswerFail'))
+	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongAnswerFail'))
 
-	suite.addTest(TestPCH_PCU('test_aggregation'))
+	addTest(suite, TestPCH_PCU('test_aggregation'))
 
-
-	# TODO suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
+	#TODO addTest(suite, TestPCH_PCU('test_createNotificationDoPolling'))
 
 
 
@@ -484,6 +481,6 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

@@ -84,12 +84,12 @@ class TestSMD(unittest.TestCase):
 		# create AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ],
+				 	'srv' : [ RELEASEVERSION ],
 					'poa' : [ NOTIFICATIONSERVER ],
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -99,6 +99,8 @@ class TestSMD(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestCRS')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestCRS')
@@ -155,8 +157,8 @@ class TestSMD(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
 		self.assertEqual(rsc, RC.created, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
-		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+		# TODO optional self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
+		# TODO optuional self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -223,6 +225,7 @@ class TestSMD(unittest.TestCase):
 		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+		self.assertIsInstance(findXPath(r, 'm2m:smd/vlde'), bool)
 		self.assertTrue(findXPath(r, 'm2m:smd/vlde'))
 
 
@@ -235,6 +238,7 @@ class TestSMD(unittest.TestCase):
 		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
+		self.assertIsInstance(findXPath(r, 'm2m:smd/vlde'), bool)
 		self.assertFalse(findXPath(r, 'm2m:smd/vlde'))
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
 		self.assertFalse(findXPath(r, 'm2m:smd/svd'))
@@ -254,7 +258,7 @@ class TestSMD(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryOnlySQIFail(self) -> None:
 		"""	Semantic query with only SQI -> Fail"""
-		r, rsc = RETRIEVE(f'{aeURL}?sqi=1', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?sqi=true', TestSMD.originator)
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
@@ -266,16 +270,17 @@ class TestSMD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_semanticQueryAsDiscovery(self) -> None:
+	def test_semanticQueryAsDiscoveryFail(self) -> None:
 		"""	Semantic query as Discovery -> Fail"""
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=1&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=true&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQuery(self) -> None:
 		"""	Semantic query as Discovery"""
-		r, rsc = RETRIEVE(f'{aeURL}?sqi=1&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?sqi=true&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
+		# r, rsc = RETRIEVE(f'{aeURL}?sqi=true&rcn={int(RCN.semanticContent)}&smf={query_discovery_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(qres := findXPath(r, 'm2m:qres'))
 		self.assertTrue(qres.startswith('<?xml'), qres)
@@ -287,41 +292,39 @@ class TestSMD(unittest.TestCase):
 
 # TODO Update of smd
 # TODO Delete of smd
+# TODO non-failing semantic discovery
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 	
-	# Clear counters
-	clearSleepTimeCount()
-
 	# General attribute test cases
-	suite.addTest(TestSMD('test_createSMDdcrpIRIFail'))
-	suite.addTest(TestSMD('test_createSMDdspNotBase64Fail'))
+	addTest(suite, TestSMD('test_createSMDdcrpIRIFail'))
+	addTest(suite, TestSMD('test_createSMDdspNotBase64Fail'))
 
 	# Create tests
-	suite.addTest(TestSMD('test_createSMDdspBase64'))
-	suite.addTest(TestSMD('test_deleteSMD'))
-	suite.addTest(TestSMD('test_createSMDunderACPFail'))
+	addTest(suite, TestSMD('test_createSMDdspBase64'))
+	addTest(suite, TestSMD('test_deleteSMD'))
+	addTest(suite, TestSMD('test_createSMDunderACPFail'))
 
 	# Update tests
-	suite.addTest(TestSMD('test_createSMDdspBase64'))
-	suite.addTest(TestSMD('test_updateSMDwithSOEandDSPFail'))
-	suite.addTest(TestSMD('test_updateSMDwithVLDEtrue'))
-	suite.addTest(TestSMD('test_updateSMDwithVLDEfalse'))
+	addTest(suite, TestSMD('test_createSMDdspBase64'))
+	addTest(suite, TestSMD('test_updateSMDwithSOEandDSPFail'))
+	addTest(suite, TestSMD('test_updateSMDwithVLDEtrue'))
+	addTest(suite, TestSMD('test_updateSMDwithVLDEfalse'))
 
 	# Semantic query tests
-	suite.addTest(TestSMD('test_semanticQueryOnlyRCNFail'))
-	suite.addTest(TestSMD('test_semanticQueryOnlySQIFail'))
-	suite.addTest(TestSMD('test_semanticQueryOnlySMFFail'))
-	suite.addTest(TestSMD('test_semanticQueryAsDiscovery'))
-	suite.addTest(TestSMD('test_semanticQuery'))
+	addTest(suite, TestSMD('test_semanticQueryOnlyRCNFail'))
+	addTest(suite, TestSMD('test_semanticQueryOnlySQIFail'))
+	addTest(suite, TestSMD('test_semanticQueryOnlySMFFail'))
+	addTest(suite, TestSMD('test_semanticQueryAsDiscoveryFail'))
+	addTest(suite, TestSMD('test_semanticQuery'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

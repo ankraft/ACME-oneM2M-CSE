@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
+from typing import Tuple, Optional
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -37,6 +37,8 @@ class TestAE(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestAE')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		testCaseEnd('TearDown TestAE')
@@ -58,11 +60,12 @@ class TestAE(unittest.TestCase):
 		""" Create/register an <AE> """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created, r)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
@@ -73,12 +76,12 @@ class TestAE(unittest.TestCase):
 	def test_createAEUnderAE(self) -> None:
 		""" Create/register an <AE> under an <AE> -> Fail """
 		dct = 	{ 'm2m:ae' : {
-					'rn': f'{aeRN}', 
-					'api': 'NMyApp2Id',
+					'rn': f'{aeRN}1', 
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		r, rsc = CREATE(aeURL, 'C', T.AE, dct)
+		r, rsc = CREATE(aeURL, ORIGINATORSelfReg, T.AE, dct)
 		self.assertEqual(rsc, RC.invalidChildResourceType, r)
 
 
@@ -87,11 +90,12 @@ class TestAE(unittest.TestCase):
 		""" Create/register an <AE> with same rn again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.conflict)
 
 
@@ -99,9 +103,9 @@ class TestAE(unittest.TestCase):
 	def test_createAEWithExistingOriginator(self) -> None:
 		""" Create/register an <AE> with same originator again -> Fail """
 		dct = 	{ 'm2m:ae' : {
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct)
 		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered)
@@ -118,7 +122,7 @@ class TestAE(unittest.TestCase):
 	def test_retrieveAEWithWrongOriginator(self) -> None:
 		""" Retrieve <AE> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertIn(rsc, [RC.originatorHasNoPrivilege, RC.serviceSubscriptionNotEstablished])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -137,7 +141,7 @@ class TestAE(unittest.TestCase):
 		self.assertLess(findXPath(r, 'm2m:ae/ct'), findXPath(r, 'm2m:ae/et'))
 		self.assertEqual(findXPath(r, 'm2m:ae/rr'), False)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/srv'))
-		self.assertEqual(findXPath(r, 'm2m:ae/srv'), [ '3' ])
+		self.assertEqual(findXPath(r, 'm2m:ae/srv'), [ RELEASEVERSION ])
 		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
 		self.assertEqual(findXPath(r, 'm2m:ae/pi'), findXPath(TestAE.cse,'m2m:cb/ri'))
 		#self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
@@ -211,12 +215,13 @@ class TestAE(unittest.TestCase):
 		""" Create <AE> with wrong csz content -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ],
+				 	'srv': [ RELEASEVERSION ],
 					'csz': [ 'wrong' ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.badRequest)
 
 
@@ -225,12 +230,13 @@ class TestAE(unittest.TestCase):
 		""" Create <AE> with correct csz value"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ],
+				 	'srv': [ RELEASEVERSION ],
 					'csz': [ 'application/cbor', 'application/json' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
 
@@ -248,9 +254,10 @@ class TestAE(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertNotEqual(rsc, RC.created)
 
 
@@ -261,9 +268,10 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN, 
 					'api': 'Xwrong',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertNotEqual(rsc, RC.created)
 
 
@@ -274,9 +282,10 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'Rabc.com.example.acme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -290,9 +299,10 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'Nacme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -306,11 +316,12 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'racme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		headers={ C.hfRVI: '3'
+		headers={ C.hfRVI: '3'	# explicit 3
 		}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
+
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -324,11 +335,12 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'racme',
 				 	'rr': False,
-				 	'srv': [ '4' ]
+				 	'srv': [ '4' ]	# explicit 4
 				}}
-		headers={ C.hfRVI: '4'
+		headers={ C.hfRVI: '4'	# explicit 4
 		}
-		ae, rsc = CREATE(cseURL, 'C', T.AE, dct, headers = headers)
+		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
+
 		self.assertEqual(rsc, RC.badRequest, ae)
 
 
@@ -339,7 +351,7 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'Nacme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
 		ae, rsc = CREATE(cseURL, None, T.AE, dct)
 		self.assertEqual(rsc, RC.created, ae)
@@ -355,9 +367,9 @@ class TestAE(unittest.TestCase):
 					'rn': aeRN,
 					'api': 'Nacme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		ae, rsc = CREATE(cseURL, '', T.AE, dct)
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
@@ -367,53 +379,65 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEInvalidRNFail(self) -> None:
 		""" Create <AE> with an invalid rn -> Fail"""
+		
+		# With unallowed character
 		dct = 	{ 'm2m:ae' : {
 					'rn': 'test?',	# not from unreserved character
 					'api': 'Nacme',
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
-		ae, rsc = CREATE(cseURL, '', T.AE, dct)
-		self.assertEqual(rsc, RC.contentsUnacceptable)
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+		# With space
+		dct = 	{ 'm2m:ae' : {
+					'rn': 'test wrong',	# not from unreserved character
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
 
 # TODO register multiple AEs
+# TODO register with S
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestAE('test_createAE'))
-	suite.addTest(TestAE('test_createAEUnderAE'))
-	suite.addTest(TestAE('test_createAEAgain'))
-	suite.addTest(TestAE('test_createAEWithExistingOriginator'))
-	suite.addTest(TestAE('test_retrieveAE'))
-	suite.addTest(TestAE('test_retrieveAEWithWrongOriginator'))
-	suite.addTest(TestAE('test_attributesAE'))
-	suite.addTest(TestAE('test_updateAELbl'))
-	suite.addTest(TestAE('test_updateAETy'))
-	suite.addTest(TestAE('test_updateAEPi'))
-	suite.addTest(TestAE('test_updateAEUnknownAttribute'))
-	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
-	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
-	suite.addTest(TestAE('test_createAEWrongCSZ'))
-	suite.addTest(TestAE('test_createAECSZ'))	
-	suite.addTest(TestAE('test_deleteAECSZ'))	
-	suite.addTest(TestAE('test_createAENoAPI'))	
-	suite.addTest(TestAE('test_createAEAPIWrongPrefix'))	
-	suite.addTest(TestAE('test_createAEAPICorrectR'))	
-	suite.addTest(TestAE('test_createAEAPICorrectN'))	
-	suite.addTest(TestAE('test_createAEAPIRVI3LowerCaseR'))	
-	suite.addTest(TestAE('test_createAEAPIRVI4LowerCaseRFail'))
-	suite.addTest(TestAE('test_createAENoOriginator'))	
-	suite.addTest(TestAE('test_createAEEmptyOriginator'))	
-	suite.addTest(TestAE('test_createAEInvalidRNFail'))	
+
+	addTest(suite, TestAE('test_createAE'))
+	addTest(suite, TestAE('test_createAEUnderAE'))
+	addTest(suite, TestAE('test_createAEAgain'))
+	addTest(suite, TestAE('test_createAEWithExistingOriginator'))
+	addTest(suite, TestAE('test_retrieveAE'))
+	addTest(suite, TestAE('test_retrieveAEWithWrongOriginator'))
+	addTest(suite, TestAE('test_attributesAE'))
+	addTest(suite, TestAE('test_updateAELbl'))
+	addTest(suite, TestAE('test_updateAETy'))
+	addTest(suite, TestAE('test_updateAEPi'))
+	addTest(suite, TestAE('test_updateAEUnknownAttribute'))
+	addTest(suite, TestAE('test_deleteAEByUnknownOriginator'))
+	addTest(suite, TestAE('test_deleteAEByAssignedOriginator'))
+	addTest(suite, TestAE('test_createAEWrongCSZ'))
+	addTest(suite, TestAE('test_createAECSZ'))	
+	addTest(suite, TestAE('test_deleteAECSZ'))	
+	addTest(suite, TestAE('test_createAENoAPI'))	
+	addTest(suite, TestAE('test_createAEAPIWrongPrefix'))	
+	addTest(suite, TestAE('test_createAEAPICorrectR'))	
+	addTest(suite, TestAE('test_createAEAPICorrectN'))	
+	addTest(suite, TestAE('test_createAEAPIRVI3LowerCaseR'))	
+	addTest(suite, TestAE('test_createAEAPIRVI4LowerCaseRFail'))
+	addTest(suite, TestAE('test_createAENoOriginator'))	
+	addTest(suite, TestAE('test_createAEEmptyOriginator'))	
+	addTest(suite, TestAE('test_createAEInvalidRNFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

@@ -4,7 +4,7 @@
 [The Messy Details](#messy_details)  
 [Resource Class Hierarchy](#classes)  
 [Integration Into Other Applications](#integration)  
-[Running Test Cases](#test_cases)  
+[Unit Tests](#unit_tests)  
 [MyPy Static Type Checker](#mypy)  
 [Debug Mode](#debug-mode)  
 
@@ -42,25 +42,33 @@ Please note that in case you provide the arguments directly the first argument n
 
 The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
 
+<a name="unit_tests"></a>
 
-<a name="test_cases"></a>
-## Running Test Cases
+## Unit Tests
 
-Various aspects of the ACME implementation are covered by unit tests based on the Python [unittest](https://docs.python.org/3/library/unittest.html) framework. The files for test cases and the runner application reside in the [tests](../tests) directory.
+Various aspects of the ACME implementation are covered by unit tests based on the Python [unittest](https://docs.python.org/3/library/unittest.html) framework. The files for the individual test suites and the runner application reside in the [tests](../tests) directory.
 
 
-### Configuration & Running
-Each test suite imports the file [init.py](../tests/init.py) that contains various helper functions used by the test suites. 
+### Configuration
+The actual configuration of the test suite is done in the file [config.py](../tests/config.py). You may change these for your individual set-up. At the top of the configuartion there is  a configuration setting for the request protocol that should be used. Currently, *http*, *https*, and *mqtt* are supported. Please note, that all CSE's involved in the tests must use the same protocol type.
 
-The actual configuration of the test suite is done in the file [config.py](../tests/config.py). You may change these for your individual set-up. In this file there is also a configuration setting for the request protocol that should be used. Currently, *http*, *https*, and *mqtt* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
+Further configuration settings include the originatores for admin access, self-registration, and remote CSE settings when running tests for CSE-2-CSE communications, 
 
 One can also provide OAuth2 settings in case the CSE under test is behind an OAuth2 gateway.
 
-#### Enable Remote Configuration
+#### Enable Remote Configuration (Upper Tester)
 
 The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
 
-### Test Suites
+> **Note**
+>
+> This ability to remotly re-configure the CSE during runtime is a particular function of the  *ACME* CSE and might not be available with other CSE implementations.
+
+#### Internal Settings
+
+Each test suite imports the file [init.py](../tests/init.py) that contains various helper functions. Also some low-level configurations, such as time-outs etc, that are used by the test suites can be adjusted here. 
+
+### Unit Tests
 
 For each aspect of the CSE there is one test suite file that can be run independently or in the course of an overall test. For example, running the test suite for AE tests would look like this:
 
@@ -83,12 +91,53 @@ For each aspect of the CSE there is one test suite file that can be run independ
 
 ### Test Runner
 
-The Python script [runTests.py](../tests/runTests.py) can be used to run all test suites. It looks for all Python scripts starting with *test..." and runs them in alphabetical order. At the end of a full test run it also provides a nice summary of the test results:
+#### Overview
+
+The ```--help``` command line argument provides a usage overview for the ```runTest.py``` script.
+
+```
+$ python runTests.py -h
+
+usage: runTests.py [-h] [--all] [--load-only] [--verbose-requests] [--disable-teardown] [--run-teardown]
+                   [--run-count NUMBEROFRUNS] [--run-tests TESTCASENAME [TESTCASENAME ...]] [--show-skipped]
+                   [--no-failfast] [--list-tests | --list-tests-sorted]
+                   [TESTSUITE ...]
+
+positional arguments:
+  TESTSUITE             specific test suites to run. Run all test suites if empty
+
+options:
+  -h, --help            show this help message and exit
+  --all                 run all test suites (including load tests)
+  --load-only           run only load test suites
+  --verbose-requests, -v
+                        show verbose requests, responses and notifications output
+  --disable-teardown, -notd
+                        disable the tear-down / cleanup procedure at the end of a test suite
+  --run-teardown, -runtd
+                        run the specified test cases' tear-down functions and exit
+  --run-count NUMBEROFRUNS
+                        run each test suite n times (default: 1)
+  --run-tests TESTCASENAME [TESTCASENAME ...], -run TESTCASENAME [TESTCASENAME ...]
+                        run only the specified test cases from the set of test suites
+  --show-skipped        show skipped test cases in summary
+  --no-failfast         continue running test cases after a failure
+  --list-tests, -ls     list the test cases of the specified test suites in the order they are defined and
+                        exit
+  --list-tests-sorted, -lss
+                        alphabetical sorted list the test cases of the specified test suites and exit
+```
+
+#### Running the Tests
+
+The Python script [runTests.py](../tests/runTests.py) can be used to run all test suites. It looks for all Python scripts starting with *test..." and runs them in alphabetical order. At the end of a full test run it also provides a  summary of the test results, including time spend for requests, as a process etc.
+
+Usually, the test suites are run only once, but one can specify the *--run-count* option to execute tests multiple times.
 
 	$ python3 runTests.py
-
+	
 	...
-
+	
 														[ACME] - Test Results
 	┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
 	┃                     ┃       ┃         ┃        ┃            Times             ┃   Exec Time per   ┃   Proc Time per   ┃          ┃
@@ -129,21 +178,49 @@ The Python script [runTests.py](../tests/runTests.py) can be used to run all tes
 	│ Totals              │   725 │       0 │      0 │ 365.0405 | 320.21 |   4.8910 │  0.5035 |  0.2906 │  0.0067 |  0.0039 │     1256 │
 	└─────────────────────┴───────┴─────────┴────────┴──────────────────────────────┴───────────────────┴───────────────────┴──────────┘
 
-The ```runTest.py``` script by default will run all test cases, except scripts that runs load tests. To include those one need to specify the ```--load-include``` command line argument.
+With `--verbose-requests` the each request and response is printed as well. This can be helpful to debug individual problems.
 
-One can also specify which test cases to run like this:
+#### Running Individual Test Suites
+
+One can  specify which test suites to run like this:
 
 	$ python3 runTests.py testACP testCin
 
-The ```--help``` command line argument provides a usage overview for the ```runTest.py``` script.
+The ```runTest.py``` script by default will run all test suites, **except** scripts that runs load tests. To include those one need to specify the ```--load-include``` command line argument.
+
+#### Running Individual Test Cases
+
+It is also possible  to run individual test cases from test suites. This is done by optionally specify the test suites and then with the `--run-tests` option a list of test case names to run:
+
+```
+$ python runTests.py testSUB --run-tests test_createCNTforEXC
+```
+
+> **Note**
+>
+> Most test cases in a test suite depend on each other (created resources, subscriptions, etc). Just running a single test case will most likely fail. 
+>
+> The most useful use of this function is to run a whole test suite together with the `--disable-teardown` option up to the point of a failure, and then run the failed test case again:
+>
+>```
+>$ python runTests.py testSUB --disable-teardown
+>...
+>$ python runTests.py testSUB --disable-teardown --run-tests >test_createCNTforEXC
+>```
+
+To list the available test cases one can use the `--list-tests` (list in the order the test cases have been defined in the test suite) and the `--list-tests-sorted` (list alphabetically) options.
+
+#### Tear-down and Clean-up
+
+Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of a test run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE), or by running the test suit with the `--run-teardown` option. The later runs only the tear-down  functions for the specified test suites and then exits.
+
+However, sometimes it would be useful to keep the resources created by the tests for further investigations. In this case specifyng the `--disable-teardown` option can help. It disables the execution of the tear-down functions after successful or unsuccessful execution.
 
 
 ### Dependencies
-Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of the test suite's run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE).
+Some test cases in each test suite build on each other (such as adding a resource that is updated by further test cases). This means that the order of the test cases in each test suite is important. Individual test suites, however, can work independent from each other.
 
-Some test cases in each test suite build on each other (such as adding a resource that is updated by further test cases). This means that the order of the test cases in each test suite is important. The test suites, however, can work independent from each other.
-
-Some test suites (for example *testRemote*) need in addition to a running IN- or MN-CSE another MN-CSE that registers to the "main" CSE in order to run registration and announcement tests.
+Some test suites (for example *testRemote*) need in addition to a running IN- or MN-CSE another MN-CSE that registers to the "main" CSE (the system-under-test) in order to run registration and announcement tests.
 
 
 <a name="mypy"></a>

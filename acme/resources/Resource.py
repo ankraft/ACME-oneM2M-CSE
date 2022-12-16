@@ -257,8 +257,8 @@ class Resource(object):
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
 		
-		# Remove directChildResources
-		CSE.dispatcher.deleteChildResources(self, originator)
+		# Remove directChildResources. Don't do checks (e.g. subscriptions) for the sub-resources
+		CSE.dispatcher.deleteChildResources(self, originator, doDeleteCheck = False)
 		
 		# Removal of a deleted resource from group(s) is done 
 		# asynchronously in GroupManager, triggered by an event.
@@ -502,7 +502,7 @@ class Resource(object):
 		if not ( Utils.isValidID(self.ri) and
 				 Utils.isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
 				 Utils.isValidID(self.rn)):
-			return Result.errorResult(rsc = ResponseStatusCode.contentsUnacceptable, dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
+			return Result.errorResult(rsc = ResponseStatusCode.badRequest, dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
 		# expirationTime handling
 		if et := self.et:

@@ -45,9 +45,9 @@ class TestDiscovery(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -126,6 +126,8 @@ class TestDiscovery(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestDiscovery')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
@@ -794,66 +796,63 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:rce/uri'))
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestDiscovery('test_retrieveUnknownResource'))
-	suite.addTest(TestDiscovery('test_discoverUnknownResource'))
-	suite.addTest(TestDiscovery('test_discoverUnknownAttribute'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithWrongSZB'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAERCN6'))
-	suite.addTest(TestDiscovery('test_discoveryCNTunderAERCN11'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAEWrongRCN1'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAEWrongRCN4'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAEWrongRCN5'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAEWrongRCN8'))
-	suite.addTest(TestDiscovery('test_discoverCNTunderAEWrongRCN9'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAERCN6'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAERCN1'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAERCN4'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAERCN5'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAERCN8'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAEWrongRCN9'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAEWrongRCN11'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderCSE'))
-	suite.addTest(TestDiscovery('test_retrieveCINunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCINbyLBLunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNTbyCNIunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty'))
-	suite.addTest(TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty2'))
-	suite.addTest(TestDiscovery('test_retrieveCNTorCINunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNTorCINunderAE2'))
-	suite.addTest(TestDiscovery('test_retrieveCINandLBLunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCINandLBLunderAE2'))
-	suite.addTest(TestDiscovery('test_retrieveCNTorLBLunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveWithCRBunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveWithCRAunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithCTYunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithSZBunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithSZAunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithMSunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithUSunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithEXBunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNIwithEXAunderAE'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAEStructured'))
-	suite.addTest(TestDiscovery('test_retrieveCNTunderAEUnstructured'))
-	suite.addTest(TestDiscovery('test_rcn4WithDifferentFUs'))
-	suite.addTest(TestDiscovery('test_appendArp'))
-	suite.addTest(TestDiscovery('test_createCNTwithRCN9'))
-	suite.addTest(TestDiscovery('test_updateCNTwithRCN9'))
-	suite.addTest(TestDiscovery('test_createCNTwithRCN0'))
-	suite.addTest(TestDiscovery('test_updateCNTwithWrongRCN2'))
-	suite.addTest(TestDiscovery('test_retrieveWithWrongArgument'))
-	suite.addTest(TestDiscovery('test_retrieveWithWrongFU'))
-	suite.addTest(TestDiscovery('test_retrieveWithWrongDRT'))
-	suite.addTest(TestDiscovery('test_retrieveWithWrongFO'))
-	suite.addTest(TestDiscovery('test_retrieveMgmtObjsRCN8'))
-	suite.addTest(TestDiscovery('test_retrieveCINmatchLabel'))
-	suite.addTest(TestDiscovery('test_createCNTwithRCN2'))
-	suite.addTest(TestDiscovery('test_createCNTwithRCN3'))
+	addTest(suite, TestDiscovery('test_retrieveUnknownResource'))
+	addTest(suite, TestDiscovery('test_discoverUnknownResource'))
+	addTest(suite, TestDiscovery('test_discoverUnknownAttribute'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithWrongSZB'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAERCN6'))
+	addTest(suite, TestDiscovery('test_discoveryCNTunderAERCN11'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN1'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN4'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN5'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN8'))
+	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN9'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN6'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN1'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN4'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN5'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN8'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAEWrongRCN9'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAEWrongRCN11'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderCSE'))
+	addTest(suite, TestDiscovery('test_retrieveCINunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCINbyLBLunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty'))
+	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty2'))
+	addTest(suite, TestDiscovery('test_retrieveCNTorCINunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNTorCINunderAE2'))
+	addTest(suite, TestDiscovery('test_retrieveCINandLBLunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCINandLBLunderAE2'))
+	addTest(suite, TestDiscovery('test_retrieveCNTorLBLunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveWithCRBunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveWithCRAunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithCTYunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithSZBunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithSZAunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithMSunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithUSunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithEXBunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNIwithEXAunderAE'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAEStructured'))
+	addTest(suite, TestDiscovery('test_retrieveCNTunderAEUnstructured'))
+	addTest(suite, TestDiscovery('test_rcn4WithDifferentFUs'))
+	addTest(suite, TestDiscovery('test_appendArp'))
+	addTest(suite, TestDiscovery('test_createCNTwithRCN9'))
+	addTest(suite, TestDiscovery('test_updateCNTwithRCN9'))
+	addTest(suite, TestDiscovery('test_createCNTwithRCN0'))
+	addTest(suite, TestDiscovery('test_updateCNTwithWrongRCN2'))
+	addTest(suite, TestDiscovery('test_retrieveWithWrongArgument'))
+	addTest(suite, TestDiscovery('test_retrieveWithWrongFU'))
+	addTest(suite, TestDiscovery('test_retrieveWithWrongDRT'))
+	addTest(suite, TestDiscovery('test_retrieveWithWrongFO'))
+	addTest(suite, TestDiscovery('test_retrieveMgmtObjsRCN8'))
+	addTest(suite, TestDiscovery('test_retrieveCINmatchLabel'))
+	addTest(suite, TestDiscovery('test_createCNTwithRCN2'))
+	addTest(suite, TestDiscovery('test_createCNTwithRCN3'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
@@ -861,5 +860,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

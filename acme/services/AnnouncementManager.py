@@ -268,15 +268,21 @@ class AnnouncementManager(object):
 
 				# No internal announcement infos, try to discover it on the remote CSE.
 				# This is done by discovering a CSEBaseAnnc resource with a link to our CSE.
-				dct = RequestUtils.createRawRequest(to = csi,
+
+				# Get the remote CSE's resource ID
+				if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
+					return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
+
+				dct = RequestUtils.createRawRequest(to = to,
 													rcn = ResultContentType.childResourceReferences.value,
 													drt = DesiredIdentifierResultType.unstructured.value,
 													fc = {	'ty' : ResourceTypes.CSEBaseAnnc.value,
 															'lnk' : f'{cseBase.csi}/{cseBase.ri}'
 														})
 
-				if not (res := CSE.request.sendRetrieveRequest(csi, originator = CSE.cseCsi, content = dct, raw = True)).status:
+				if not (res := CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi, content = dct, raw = True)).status:
 					return res
+
 				if res.rsc == ResponseStatusCode.OK and res.data:	# Found a remote CSEBaseAnnc
 					# Assign to the local CSEBase
 					if (remoteRi := Utils.findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
@@ -348,8 +354,10 @@ class AnnouncementManager(object):
 		if targetID:
 			csrID = targetID if Utils.isSPRelative(targetID) else f'{csi}/{targetID}'
 		else:
-			csrID = csi
-		L.isDebug and L.logDebug(f'Creating announced resource at: {csrID}')	
+			if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
+				return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
+			csrID = to
+		L.isDebug and L.logDebug(f'Creating announced resource at: {csrID}')
 		res = CSE.request.sendCreateRequest(csrID, CSE.cseCsi, ty = tyAnnc, content = dct)
 		if res.rsc not in [ ResponseStatusCode.created, ResponseStatusCode.OK ]:
 			if res.rsc != ResponseStatusCode.conflict:	# assume that it is ok if the remote resource already exists 

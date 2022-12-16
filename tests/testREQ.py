@@ -46,9 +46,9 @@ class TestREQ(unittest.TestCase):
 		# create other resources
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyAppId',
+					'api' : APPID,
 			 		'rr'  : True,
-			 		'srv' : [ '3' ],
+			 		'srv' : [ RELEASEVERSION],
 			 		'poa' : [ NOTIFICATIONSERVER ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -60,6 +60,9 @@ class TestREQ(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			disableShortResourceExpirations()
+			return
 		testCaseStart('TearDown TestREQ')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		disableShortResourceExpirations()
@@ -582,59 +585,55 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Reconfigure the server to check faster for expirations.
-	enableShortResourceExpirations()
+	enableShortResourceExpirations()	# switched off in tear-down
 	if not isTestResourceExpirations():
 		print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1,0.0
 
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
 
-	suite.addTest(TestREQ('test_createREQFail'))
+	addTest(suite, TestREQ('test_createREQFail'))
 
 	# nonBlockingSync
-	suite.addTest(TestREQ('test_retrieveCSENBSynch'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchValidateREQ'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchMissingRP'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchWrongRT'))
-	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchExpireRequest'))
-	suite.addTest(TestREQ('test_testResultPersistence'))
-	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))					# flex
-	suite.addTest(TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
-	suite.addTest(TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
-	suite.addTest(TestREQ('test_createCNTNBSynch'))
-	suite.addTest(TestREQ('test_updateCNTNBSynch'))
-	suite.addTest(TestREQ('test_deleteCNTNBSynch'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRET'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRETshort'))
-	suite.addTest(TestREQ('test_retrieveCSENBSynchWithVSI'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynch'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchValidateREQ'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchMissingRP'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchWrongRT'))
+	addTest(suite, TestREQ('test_retrieveUnknownNBSynch'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchExpireRequest'))
+	addTest(suite, TestREQ('test_testResultPersistence'))
+	addTest(suite, TestREQ('test_retrieveCNTNBFlex'))					# flex
+	addTest(suite, TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
+	addTest(suite, TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
+	addTest(suite, TestREQ('test_createCNTNBSynch'))
+	addTest(suite, TestREQ('test_updateCNTNBSynch'))
+	addTest(suite, TestREQ('test_deleteCNTNBSynch'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchWithRET'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchWithRETshort'))
+	addTest(suite, TestREQ('test_retrieveCSENBSynchWithVSI'))
 
 	# nonBlockingAsync
-	suite.addTest(TestREQ('test_retrieveCSENBAsynch'))
-	suite.addTest(TestREQ('test_retrieveCSENBAsynch2'))
-	suite.addTest(TestREQ('test_retrieveCSENBAsynchEmptyRTU'))
-	suite.addTest(TestREQ('test_retrieveCSENBAsynchNoRTU'))
-	suite.addTest(TestREQ('test_retrieveUnknownNBAsynch'))
-	suite.addTest(TestREQ('test_createCNTNBAsynch'))
-	suite.addTest(TestREQ('test_updateCNTNBAsynch'))
-	suite.addTest(TestREQ('test_deleteCNTNBASynch'))
+	addTest(suite, TestREQ('test_retrieveCSENBAsynch'))
+	addTest(suite, TestREQ('test_retrieveCSENBAsynch2'))
+	addTest(suite, TestREQ('test_retrieveCSENBAsynchEmptyRTU'))
+	addTest(suite, TestREQ('test_retrieveCSENBAsynchNoRTU'))
+	addTest(suite, TestREQ('test_retrieveUnknownNBAsynch'))
+	addTest(suite, TestREQ('test_createCNTNBAsynch'))
+	addTest(suite, TestREQ('test_updateCNTNBAsynch'))
+	addTest(suite, TestREQ('test_deleteCNTNBASynch'))
 
 	try:
 		result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 		printResult(result)
-		#disableShortResourceExpirations()
 	finally:
 		stopNotificationServer()
-		testSleep(expirationSleep)	# give the server a moment to expire the resource
+		testSleep(expirationSleep)	# give the CSE a moment to expire the resource
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
 

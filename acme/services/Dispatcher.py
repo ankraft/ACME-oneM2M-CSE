@@ -1244,7 +1244,8 @@ class Dispatcher(object):
 
 	def deleteChildResources(self, parentResource:Resource, 
 								   originator:str, 
-								   ty:Optional[ResourceTypes] = None) -> None:
+								   ty:Optional[ResourceTypes] = None,
+								   doDeleteCheck:Optional[bool] = True) -> None:
 		"""	Remove all child resources of a parent recursively. 
 
 			If *ty* is set only the resources of this type are removed.
@@ -1253,8 +1254,8 @@ class Dispatcher(object):
 		rs = self.directChildResources(parentResource.ri)
 		for r in rs:
 			if ty is None or r.ty == ty:	# ty is an int
-				parentResource.childRemoved(r, originator)	# recursion here
-				self.deleteLocalResource(r, originator, parentResource=parentResource)
+				#parentResource.childRemoved(r, originator)	# recursion here
+				self.deleteLocalResource(r, originator, parentResource = parentResource, doDeleteCheck = doDeleteCheck)
 
 	#########################################################################
 	#

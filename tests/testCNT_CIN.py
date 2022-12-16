@@ -29,9 +29,9 @@ class TestCNT_CIN(unittest.TestCase):
 		testCaseStart('Setup TestCNT_CIN')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -54,6 +54,9 @@ class TestCNT_CIN(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestCNT_CIN')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
@@ -472,47 +475,44 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
 	
-	suite.addTest(TestCNT_CIN('test_addCIN'))
-	suite.addTest(TestCNT_CIN('test_addMoreCIN'))
-	suite.addTest(TestCNT_CIN('test_retrieveCNTLa'))
-	suite.addTest(TestCNT_CIN('test_retrieveCNTOl'))
-	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
-	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_addCIN'))
+	addTest(suite, TestCNT_CIN('test_addMoreCIN'))
+	addTest(suite, TestCNT_CIN('test_retrieveCNTLa'))
+	addTest(suite, TestCNT_CIN('test_retrieveCNTOl'))
+	addTest(suite, TestCNT_CIN('test_changeCNTMni'))
+	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
-	suite.addTest(TestCNT_CIN('test_createCNTwithMBS'))
-	suite.addTest(TestCNT_CIN('test_createCINexactSize'))
-	suite.addTest(TestCNT_CIN('test_createCINtooBig'))
-	suite.addTest(TestCNT_CIN('test_createCINsForCNTwithSize'))
-	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_createCNTwithMBS'))
+	addTest(suite, TestCNT_CIN('test_createCINexactSize'))
+	addTest(suite, TestCNT_CIN('test_createCINtooBig'))
+	addTest(suite, TestCNT_CIN('test_createCINsForCNTwithSize'))
+	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
-	suite.addTest(TestCNT_CIN('test_createCNTwithDISR'))
-	suite.addTest(TestCNT_CIN('test_retrieveCINwithDISR'))
-	suite.addTest(TestCNT_CIN('test_retrieveLAwithDISR'))
-	suite.addTest(TestCNT_CIN('test_retrieveOLwithDISR'))
-	suite.addTest(TestCNT_CIN('test_discoverCINwithDISR'))
-	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRFalse'))
-	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
-	suite.addTest(TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
-	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_createCNTwithDISR'))
+	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISR'))
+	addTest(suite, TestCNT_CIN('test_retrieveLAwithDISR'))
+	addTest(suite, TestCNT_CIN('test_retrieveOLwithDISR'))
+	addTest(suite, TestCNT_CIN('test_discoverCINwithDISR'))
+	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRFalse'))
+	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
+	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
+	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
-	suite.addTest(TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
-	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
+	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
-	suite.addTest(TestCNT_CIN('test_createCNT5CIN'))
-	suite.addTest(TestCNT_CIN('test_deleteCNTOl'))
-	suite.addTest(TestCNT_CIN('test_deleteCNTLA'))
-	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_createCNT5CIN'))
+	addTest(suite, TestCNT_CIN('test_deleteCNTOl'))
+	addTest(suite, TestCNT_CIN('test_deleteCNTLA'))
+	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

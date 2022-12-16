@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [unreleased] - xxxx-xx-xx
+
+### Added
+- [TEST] Added verbose request, response and notification outputs.
+- [TEST] Added listing and specifying test cases that should be executed individually.
+- [TEST] Improved configuration of test cases. Added more configuration settings.
+- [TEST] Added support to prevent or exclusively run the test suites' tear down functions.
+
+### Changed
+- [TEST] Removed superfluous *--verbose* command line argument.
+
+### Fixed
+- [CSE] Corrected addressing (no more addressing via directly the */&lt;cse-id>*).
+- [CSE] Corrected wrong Return Status Code for invalid RI or RN to BAD REQUEST.
+- [CSE] Prevent deletion notifications when removing virtual resources.
+
+
 ## [0.11.0] - 2022-12-02
 
 ### Added
@@ -48,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Enable to target announcements to the hosting CSE itself. This behavior can be configured.
 - [CSE] Normal subscription notifications are now, depending on the notification event type, sent asynchronously.
 - [MQTT] Improved TLS and certificates support for MQTT connections. Thanks to [JiriD85](https://github.com/JiriD85).
-
 - [TESTS] Split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 - [SCRIPTS] Made the CSE admin originator the default for the "originator" command and for requests
 - [SCRIPTS] *requestAttributes* now supports sub-structures for request attributes, e.g. to set filterCriteria attributes.
@@ -59,7 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Corrected test cases.
 - [MQTT] Corrected wrong *Request Identifier* in final responses to forwarded NOTIFY requests.
 - [WEB] Improved handling of SP-relative resource IDs. Thanks to [Tyler Sengia](https://github.com/ExpandingDev).
-
 - [SCRIPTS] Improved handling of spaces in \[ command or Variable ] command substitutions.
 
 

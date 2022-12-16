@@ -36,9 +36,9 @@ class TestGRP(unittest.TestCase):
 		testCaseStart('Setup TestGRP')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -50,6 +50,8 @@ class TestGRP(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestGRP')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestGRP')
@@ -206,7 +208,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'pc/m2m:cin/ri')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{CSEURL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
@@ -239,7 +241,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'pc/m2m:cin/ri')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{CSEURL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
@@ -264,7 +266,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cnt'))
 			to = findXPath(c, 'pc/m2m:cnt/ri')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{CSEURL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertTrue('aTag' in findXPath(r, 'm2m:cnt/lbl'))
 
@@ -491,45 +493,42 @@ class TestGRP(unittest.TestCase):
 #TODO check GRP itself: members
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestGRP('test_createGRP'))
-	suite.addTest(TestGRP('test_retrieveGRP'))
-	suite.addTest(TestGRP('test_retrieveGRPWithWrongOriginator'))
-	suite.addTest(TestGRP('test_attributesGRP'))
-	suite.addTest(TestGRP('test_updateGRP'))
-	suite.addTest(TestGRP('test_updateGRPwithCNT'))
-	suite.addTest(TestGRP('test_addCNTtoGRP'))
-	suite.addTest(TestGRP('test_addCINviaFOPT'))
-	suite.addTest(TestGRP('test_retrieveLAviaFOPT'))
-	suite.addTest(TestGRP('test_updateCNTviaFOPT'))
-	suite.addTest(TestGRP('test_addExistingCNTtoGRP'))
-	suite.addTest(TestGRP('test_deleteCNTviaFOPT'))
-	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
-	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+	addTest(suite, TestGRP('test_createGRP'))
+	addTest(suite, TestGRP('test_retrieveGRP'))
+	addTest(suite, TestGRP('test_retrieveGRPWithWrongOriginator'))
+	addTest(suite, TestGRP('test_attributesGRP'))
+	addTest(suite, TestGRP('test_updateGRP'))
+	addTest(suite, TestGRP('test_updateGRPwithCNT'))
+	addTest(suite, TestGRP('test_addCNTtoGRP'))
+	addTest(suite, TestGRP('test_addCINviaFOPT'))
+	addTest(suite, TestGRP('test_retrieveLAviaFOPT'))
+	addTest(suite, TestGRP('test_updateCNTviaFOPT'))
+	addTest(suite, TestGRP('test_addExistingCNTtoGRP'))
+	addTest(suite, TestGRP('test_deleteCNTviaFOPT'))
+	addTest(suite, TestGRP('test_deleteGRPByUnknownOriginator'))
+	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
 
-	suite.addTest(TestGRP('test_createGRP2'))	# create <GRP> again
-	suite.addTest(TestGRP('test_addTooManyCNTToGRP2'))
-	suite.addTest(TestGRP('test_attributesGRP2'))
+	addTest(suite, TestGRP('test_createGRP2'))	# create <GRP> again
+	addTest(suite, TestGRP('test_addTooManyCNTToGRP2'))
+	addTest(suite, TestGRP('test_attributesGRP2'))
 
-	suite.addTest(TestGRP('test_createGRPWithCreatorWrong'))
-	suite.addTest(TestGRP('test_createGRPWithCreator'))
-	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+	addTest(suite, TestGRP('test_createGRPWithCreatorWrong'))
+	addTest(suite, TestGRP('test_createGRPWithCreator'))
+	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
 
-	suite.addTest(TestGRP('test_createGRP'))	# create <GRP> again
-	suite.addTest(TestGRP('test_addDeleteContainerCheckMID'))	
-	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+	addTest(suite, TestGRP('test_createGRP'))	# create <GRP> again
+	addTest(suite, TestGRP('test_addDeleteContainerCheckMID'))	
+	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
 
 	# Test fopt
-	suite.addTest(TestGRP('test_createGRP'))	# create <GRP> again
-	suite.addTest(TestGRP('test_createCNTviaFopt'))
-	suite.addTest(TestGRP('test_retrieveCNTviaFopt'))
-	suite.addTest(TestGRP('test_createCNTCNTviaFopt'))
-	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+	addTest(suite, TestGRP('test_createGRP'))	# create <GRP> again
+	addTest(suite, TestGRP('test_createCNTviaFopt'))
+	addTest(suite, TestGRP('test_retrieveCNTviaFopt'))
+	addTest(suite, TestGRP('test_createCNTCNTviaFopt'))
+	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
 
 
 
@@ -538,5 +537,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

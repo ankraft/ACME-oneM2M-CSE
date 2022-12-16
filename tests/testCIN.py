@@ -28,9 +28,9 @@ class TestCIN(unittest.TestCase):
 		testCaseStart('Setup TestCIN')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -46,6 +46,8 @@ class TestCIN(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestCIN')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestCIN')
@@ -290,34 +292,31 @@ class TestCIN(unittest.TestCase):
 
 # More tests of la, ol etc in testCNT_CNI.py
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
 	
-	suite.addTest(TestCIN('test_createCIN'))
-	suite.addTest(TestCIN('test_retrieveCIN'))
-	suite.addTest(TestCIN('test_attributesCIN'))
-	suite.addTest(TestCIN('test_updateCINFail'))
-	suite.addTest(TestCIN('test_createCINUnderAE'))
-	suite.addTest(TestCIN('test_createCINwithNoneString'))
-	suite.addTest(TestCIN('test_deleteCIN'))
-	suite.addTest(TestCIN('test_createCINWithCreatorWrong'))
-	suite.addTest(TestCIN('test_createCINWithCnfWrong1'))
-	suite.addTest(TestCIN('test_createCINWithCnfWrong2'))
-	suite.addTest(TestCIN('test_createCINWithCnfWrong3'))
-	suite.addTest(TestCIN('test_createCINWithCnfWrong4'))
-	suite.addTest(TestCIN('test_createCINWithCnfWrong5'))
-	suite.addTest(TestCIN('test_createCINWithCreator'))
-	suite.addTest(TestCIN('test_createRetrieveCINWithDcnt'))
-	suite.addTest(TestCIN('test_createCINwithAcpi'))
-	suite.addTest(TestCIN('test_createCINwithDgt'))
+	addTest(suite, TestCIN('test_createCIN'))
+	addTest(suite, TestCIN('test_retrieveCIN'))
+	addTest(suite, TestCIN('test_attributesCIN'))
+	addTest(suite, TestCIN('test_updateCINFail'))
+	addTest(suite, TestCIN('test_createCINUnderAE'))
+	addTest(suite, TestCIN('test_createCINwithNoneString'))
+	addTest(suite, TestCIN('test_deleteCIN'))
+	addTest(suite, TestCIN('test_createCINWithCreatorWrong'))
+	addTest(suite, TestCIN('test_createCINWithCnfWrong1'))
+	addTest(suite, TestCIN('test_createCINWithCnfWrong2'))
+	addTest(suite, TestCIN('test_createCINWithCnfWrong3'))
+	addTest(suite, TestCIN('test_createCINWithCnfWrong4'))
+	addTest(suite, TestCIN('test_createCINWithCnfWrong5'))
+	addTest(suite, TestCIN('test_createCINWithCreator'))
+	addTest(suite, TestCIN('test_createRetrieveCINWithDcnt'))
+	addTest(suite, TestCIN('test_createCINwithAcpi'))
+	addTest(suite, TestCIN('test_createCINwithDgt'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

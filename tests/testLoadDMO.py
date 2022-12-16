@@ -39,6 +39,8 @@ class TestLoad(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		for ae in cls.aes:
 			DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
 
@@ -68,9 +70,9 @@ class TestLoad(unittest.TestCase):
 		for _ in range(count):
 			dct = 	{ 'm2m:ae' : {
 						'rn': uniqueRN(),	# Sometimes needs a set rn
-						'api': 'NMyApp1Id',
+						'api': APPID,
 						'rr': False,
-						'srv': [ '3' ]
+						'srv': [ RELEASEVERSION ]
 					}}
 			r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 			self.assertEqual(rsc, RC.created, r)
@@ -255,7 +257,7 @@ class TestLoad(unittest.TestCase):
 # TODO CNT + CIN
 # TODO CNT + CIN + SUB
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 
@@ -293,5 +295,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	_, errors, _ = run(True)
 	sys.exit(errors)

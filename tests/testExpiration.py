@@ -33,9 +33,9 @@ class TestExpiration(unittest.TestCase):
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -46,6 +46,8 @@ class TestExpiration(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown TestExpiration')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestExpiration')
@@ -263,7 +265,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()
 	if not isTestResourceExpirations():
@@ -272,18 +274,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 		return 0,0,1,0.0	
 
 	suite = unittest.TestSuite()
-		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestExpiration('test_expireCNT'))
-	suite.addTest(TestExpiration('test_expireCNTAndCIN'))
-	suite.addTest(TestExpiration('test_createCNTWithToLargeET'))
-	suite.addTest(TestExpiration('test_createCNTExpirationInThePast'))
-	suite.addTest(TestExpiration('test_updateCNTWithEtNull'))
-	suite.addTest(TestExpiration('test_expireCNTViaMIA'))
-	suite.addTest(TestExpiration('test_expireCNTViaMIALarge'))
-	suite.addTest(TestExpiration('test_expireFCNTViaMIA'))
+			
+	addTest(suite, TestExpiration('test_expireCNT'))
+	addTest(suite, TestExpiration('test_expireCNTAndCIN'))
+	addTest(suite, TestExpiration('test_createCNTWithToLargeET'))
+	addTest(suite, TestExpiration('test_createCNTExpirationInThePast'))
+	addTest(suite, TestExpiration('test_updateCNTWithEtNull'))
+	addTest(suite, TestExpiration('test_expireCNTViaMIA'))
+	addTest(suite, TestExpiration('test_expireCNTViaMIALarge'))
+	addTest(suite, TestExpiration('test_expireFCNTViaMIA'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortResourceExpirations()
@@ -291,5 +290,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

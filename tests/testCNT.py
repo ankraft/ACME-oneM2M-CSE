@@ -26,9 +26,9 @@ class TestCNT(unittest.TestCase):
 		testCaseStart('Setup testCNT')
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
-					'api': 'NMyApp1Id',
+					'api': APPID,
 				 	'rr': False,
-				 	'srv': [ '3' ]
+				 	'srv': [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -39,23 +39,11 @@ class TestCNT(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			return
 		testCaseStart('TearDown testCNT')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
-		testCaseEnd('TearDown testCNT')
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNT(self) -> None:
-		"""	Create <CNT> """
-		testCaseStart('TearDown testCNT')
-		self.assertIsNotNone(TestCNT)
-		self.assertIsNotNone(TestCNT.ae)
-		dct = 	{ 'm2m:cnt' : { 
-					'rn' : cntRN
-				}}
-		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
 		testCaseEnd('TearDown testCNT')
 
 
@@ -68,6 +56,18 @@ class TestCNT(unittest.TestCase):
 
 
 	#########################################################################
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNT(self) -> None:
+		"""	Create <CNT> """
+		self.assertIsNotNone(TestCNT)
+		self.assertIsNotNone(TestCNT.ae)
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -287,41 +287,38 @@ class TestCNT(unittest.TestCase):
 		self.assertNotEqual(rsc, RC.created)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
-	# Clear counters
-	clearSleepTimeCount()
-	
-	suite.addTest(TestCNT('test_createCNT'))
-	suite.addTest(TestCNT('test_retrieveCNT'))
-	suite.addTest(TestCNT('test_retrieveCNTWithWrongOriginator'))
-	suite.addTest(TestCNT('test_attributesCNT'))
-	suite.addTest(TestCNT('test_updateCNT'))
-	suite.addTest(TestCNT('test_updateCNTTy'))
-	suite.addTest(TestCNT('test_updateCNTempty'))
-	suite.addTest(TestCNT('test_updateCNTPi'))
-	suite.addTest(TestCNT('test_updateCNTUnknownAttribute'))
-	suite.addTest(TestCNT('test_updateCNTWrongMNI'))
-	suite.addTest(TestCNT('test_createCNTUnderCNT'))
-	suite.addTest(TestCNT('test_retrieveCNTUnderCNT'))
-	suite.addTest(TestCNT('test_deleteCNTUnderCNT'))
-	suite.addTest(TestCNT('test_createCNTWithCreatorWrong'))
-	suite.addTest(TestCNT('test_createCNTWithCreator'))
+	addTest(suite, TestCNT('test_createCNT'))
+	addTest(suite, TestCNT('test_retrieveCNT'))
+	addTest(suite, TestCNT('test_retrieveCNTWithWrongOriginator'))
+	addTest(suite, TestCNT('test_attributesCNT'))
+	addTest(suite, TestCNT('test_updateCNT'))
+	addTest(suite, TestCNT('test_updateCNTTy'))
+	addTest(suite, TestCNT('test_updateCNTempty'))
+	addTest(suite, TestCNT('test_updateCNTPi'))
+	addTest(suite, TestCNT('test_updateCNTUnknownAttribute'))
+	addTest(suite, TestCNT('test_updateCNTWrongMNI'))
+	addTest(suite, TestCNT('test_createCNTUnderCNT'))
+	addTest(suite, TestCNT('test_retrieveCNTUnderCNT'))
+	addTest(suite, TestCNT('test_deleteCNTUnderCNT'))
+	addTest(suite, TestCNT('test_createCNTWithCreatorWrong'))
+	addTest(suite, TestCNT('test_createCNTWithCreator'))
 
-	suite.addTest(TestCNT('test_deleteCNTByUnknownOriginator'))
-	suite.addTest(TestCNT('test_deleteCNTByAssignedOriginator'))
-	suite.addTest(TestCNT('test_createCNTUnderCSE'))
-	suite.addTest(TestCNT('test_retrieveCNTUnderCSE'))
-	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
+	addTest(suite, TestCNT('test_deleteCNTByUnknownOriginator'))
+	addTest(suite, TestCNT('test_deleteCNTByAssignedOriginator'))
+	addTest(suite, TestCNT('test_createCNTUnderCSE'))
+	addTest(suite, TestCNT('test_retrieveCNTUnderCSE'))
+	addTest(suite, TestCNT('test_deleteCNTUnderCSE'))
 
-	suite.addTest(TestCNT('test_createCNTWithoutOriginator'))
-	suite.addTest(TestCNT('test_createCNTwithWrongTPE'))
+	addTest(suite, TestCNT('test_createCNTWithoutOriginator'))
+	addTest(suite, TestCNT('test_createCNTwithWrongTPE'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)

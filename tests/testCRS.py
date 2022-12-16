@@ -52,9 +52,9 @@ class TestCRS(unittest.TestCase):
 		# create AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
-					'api' : 'NMyApp1Id',
+					'api' : APPID,
 				 	'rr'  : True,
-				 	'srv' : [ '3' ],
+				 	'srv' : [ RELEASEVERSION ],
 					'poa' : [ NOTIFICATIONSERVER ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -87,10 +87,13 @@ class TestCRS(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		if not isTearDownEnabled():
+			stopNotificationServer()
+			return
 		testCaseStart('TearDown TestCRS')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		testCaseEnd('TearDown TestCRS')
 		stopNotificationServer()
+		testCaseEnd('TearDown TestCRS')
 
 
 	def setUp(self) -> None:
@@ -425,10 +428,10 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
 
 		# check both subscriptions' et
-		r, rsc = RETRIEVE(f'{URL}/{rrats[0][1:]}', TestCRS.originator)
+		r, rsc = RETRIEVE(f'{CSEURL}/{rrats[0][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertEqual(findXPath(r, 'm2m:sub/et'), et)
-		r, rsc = RETRIEVE(f'{URL}/{rrats[1][1:]}', TestCRS.originator)
+		r, rsc = RETRIEVE(f'{CSEURL}/{rrats[1][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertEqual(findXPath(r, 'm2m:sub/et'), et)
 
@@ -589,11 +592,11 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
 		self.assertEqual(len(rrats), 2)
 
-		r, rsc = DELETE(f'{URL}/{rrats[0][1:]}', TestCRS.originator)
+		r, rsc = DELETE(f'{CSEURL}/{rrats[0][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.deleted, r)
 
 		# Look for the other subscription and crs
-		r, rsc = RETRIEVE(f'{URL}/{rrats[1][1:]}', TestCRS.originator)
+		r, rsc = RETRIEVE(f'{CSEURL}/{rrats[1][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.notFound, r)
 		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
 		self.assertEqual(rsc, RC.notFound, r)
@@ -1042,104 +1045,101 @@ class TestCRS(unittest.TestCase):
 	#########################################################################
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 	
-	# Clear counters
-	clearSleepTimeCount()
-
 	# General test cases
-	# suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingNuFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
-	# suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
-	# suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
-	# suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
-	# suite.addTest(TestCRS('test_createCRSwithRratsFail'))
+	addTest(suite, TestCRS('test_createCRSmissingRratSratFail'))
+	addTest(suite, TestCRS('test_createCRSmissingNuFail'))
+	addTest(suite, TestCRS('test_createCRSmissingTwtFail'))
+	addTest(suite, TestCRS('test_createCRSwrongTwtFail'))
+	addTest(suite, TestCRS('test_createCRSmissingTwsFail'))
+	addTest(suite, TestCRS('test_createCRSemptyEncsFail'))
+	addTest(suite, TestCRS('test_createCRSWrongNumberEncsFail'))
+	addTest(suite, TestCRS('test_createCRSwithRratsFail'))
 
-	# # Test rrat
-	# suite.addTest(TestCRS('test_createCRSwithRrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithNewRratFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithrratsFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithNecFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithEncsFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithDeletedEncsFail'))
-	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-	# suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
-	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-	# suite.addTest(TestCRS('test_createCRSwithRratWrongTarget'))
+	# Test rrat
+	addTest(suite, TestCRS('test_createCRSwithRrat'))
+	addTest(suite, TestCRS('test_updateCRSwithNewRratFail'))
+	addTest(suite, TestCRS('test_updateCRSwithrratsFail'))
+	addTest(suite, TestCRS('test_updateCRSwithNecFail'))
+	addTest(suite, TestCRS('test_updateCRSwithEncsFail'))
+	addTest(suite, TestCRS('test_updateCRSwithDeletedEncsFail'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
+	addTest(suite, TestCRS('test_createCRSwithRratAndEt'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
+	addTest(suite, TestCRS('test_createCRSwithRratWrongTarget'))
 
-	# suite.addTest(TestCRS('test_createCRSwithSingleRratAndNSI'))
-	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
-
-
-	# # Test srat
-	# suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
-	# suite.addTest(TestCRS('test_createSubscriptions'))
-	# suite.addTest(TestCRS('test_createCRSwithSrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithNewSratFail'))
-	# suite.addTest(TestCRS('test_deleteCRSwithSrat'))
-	# suite.addTest(TestCRS('test_deleteSubscriptions'))
+	addTest(suite, TestCRS('test_createCRSwithSingleRratAndNSI'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
 
 
-	# # Test Delete and Update via Subscription
-	# suite.addTest(TestCRS('test_createCRSwithRrat'))
-	# suite.addTest(TestCRS('test_deleteRratSubscription'))
+	# Test srat
+	addTest(suite, TestCRS('test_createCRSwithSratNonSubFail'))
+	addTest(suite, TestCRS('test_createSubscriptions'))
+	addTest(suite, TestCRS('test_createCRSwithSrat'))
+	addTest(suite, TestCRS('test_updateCRSwithNewSratFail'))
+	addTest(suite, TestCRS('test_deleteCRSwithSrat'))
+	addTest(suite, TestCRS('test_deleteSubscriptions'))
 
-	# suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
-	# suite.addTest(TestCRS('test_createSrat2Subscriptions'))
-	# suite.addTest(TestCRS('test_deleteSratSubscription'))
-	# suite.addTest(TestCRS('test_deleteSubscriptions'))
 
-	# suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
-	# suite.addTest(TestCRS('test_createSrat2Subscriptions'))		# create crs again
-	# suite.addTest(TestCRS('test_updateSubAcrs'))
-	# suite.addTest(TestCRS('test_deleteSubscriptions'))
+	# Test Delete and Update via Subscription
+	addTest(suite, TestCRS('test_createCRSwithRrat'))
+	addTest(suite, TestCRS('test_deleteRratSubscription'))
 
-	# # Test Periodic Window
-	# suite.addTest(TestCRS('test_createCRSwithRrat'))
-	# suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
-	# suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	# suite.addTest(TestCRS('test_updateCRSPeriodicWindowSize'))
+	addTest(suite, TestCRS('test_createSubscriptions'))			# create subs again
+	addTest(suite, TestCRS('test_createSrat2Subscriptions'))
+	addTest(suite, TestCRS('test_deleteSratSubscription'))
+	addTest(suite, TestCRS('test_deleteSubscriptions'))
 
-	# # Test Sliding Window
-	# suite.addTest(TestCRS('test_enableSlidingWindow'))
-	# suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
-	# suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	# suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	# suite.addTest(TestCRS('test_updateCRSSlidingWindowSize'))
-	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	addTest(suite, TestCRS('test_createSubscriptions'))			# create subs again
+	addTest(suite, TestCRS('test_createSrat2Subscriptions'))		# create crs again
+	addTest(suite, TestCRS('test_updateSubAcrs'))
+	addTest(suite, TestCRS('test_deleteSubscriptions'))
+
+	# Test Periodic Window
+	addTest(suite, TestCRS('test_createCRSwithRrat'))
+	addTest(suite, TestCRS('test_createSingleNotificationNoNotification'))
+	addTest(suite, TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_updateCRSPeriodicWindowSize'))
+
+	# Test Sliding Window
+	addTest(suite, TestCRS('test_enableSlidingWindow'))
+	addTest(suite, TestCRS('test_createSingleNotificationNoNotification'))
+	addTest(suite, TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_updateCRSSlidingWindowSize'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
 
 	# Test Notification Stats
-	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
-	suite.addTest(TestCRS('test_retrieveCRSwithNSE'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	addTest(suite, TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
+	addTest(suite, TestCRS('test_retrieveCRSwithNSE'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
 
-	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
-	suite.addTest(TestCRS('test_updateCRSwithDeletedNse'))
-	suite.addTest(TestCRS('test_updateCRSwithDeletedNsi'))
-	suite.addTest(TestCRS('test_updateCRSwithEnableNSE'))
-	suite.addTest(TestCRS('test_testEmptyNsi'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_testNonEmptyNsi'))
-	suite.addTest(TestCRS('test_updateCRSwithNseFalse'))
-	suite.addTest(TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
-	suite.addTest(TestCRS('test_testEmptyNsi'))
-	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
-	suite.addTest(TestCRS('test_testNonEmptyNsi'))
-	suite.addTest(TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
-	suite.addTest(TestCRS('test_testEmptyNsi'))
-	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	addTest(suite, TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
+	addTest(suite, TestCRS('test_updateCRSwithDeletedNse'))
+	addTest(suite, TestCRS('test_updateCRSwithDeletedNsi'))
+	addTest(suite, TestCRS('test_updateCRSwithEnableNSE'))
+	addTest(suite, TestCRS('test_testEmptyNsi'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_testNonEmptyNsi'))
+	addTest(suite, TestCRS('test_updateCRSwithNseFalse'))
+	addTest(suite, TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
+	addTest(suite, TestCRS('test_testEmptyNsi'))
+	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
+	addTest(suite, TestCRS('test_testNonEmptyNsi'))
+	addTest(suite, TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
+	addTest(suite, TestCRS('test_testEmptyNsi'))
+	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
 
 	# Test Expiration
-	suite.addTest(TestCRS('test_createCRSwithExpiration'))
+	addTest(suite, TestCRS('test_createCRSwithExpiration'))
 
 	# Test Deletion Notification
-	suite.addTest(TestCRS('test_testCRSwithSu'))
+	addTest(suite, TestCRS('test_testCRSwithSu'))
 
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
@@ -1147,5 +1147,5 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	r, errors, s, t = run(True)
 	sys.exit(errors)
