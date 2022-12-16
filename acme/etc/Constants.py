@@ -10,7 +10,7 @@
 class Constants(object):
 	""" Various CSE and oneM2M constants """
 
-	version	= '0.12.0-dev'
+	version	= '0.11.1'
 	"""	ACME's release version """
 
 	textLogo = '[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim]'
