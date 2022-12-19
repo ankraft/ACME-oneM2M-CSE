@@ -70,7 +70,7 @@ class PCH(Resource):
 			}
 		}
 		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(pcu, originator = originator)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(pcu, self, originator = originator)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		self.setAttribute(PCH._pcuRI, res.resource.ri)	# store own PCU ri
 

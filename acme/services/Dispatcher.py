@@ -639,7 +639,7 @@ class Dispatcher(object):
 				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has no CREATE access to: {res.resource.ri}'))
 
 			# Create it locally
-			if not (res := self.createLocalResource(res.resource, parentResource = parentResource, originator = originator)).status:
+			if not (res := self.createLocalResource(res.resource, parentResource, originator = originator)).status:
 				return res
 
 			resRi = res.resource.ri
@@ -670,7 +670,7 @@ class Dispatcher(object):
 
 	def createLocalResource(self,
 							resource:Resource,
-							parentResource:Optional[Resource] = None,
+							parentResource:Resource = None,
 							originator:Optional[str] = None,
 							request:Optional[CSERequest] = None) -> Result:
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')

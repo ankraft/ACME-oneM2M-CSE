@@ -409,7 +409,7 @@ class ACMEPContext(PContext):
 			parentResource = pres.resource
 
 		# Create the resource
-		if not (res := CSE.dispatcher.createLocalResource(resource, parentResource = parentResource, originator = originator)).resource:
+		if not (res := CSE.dispatcher.createLocalResource(resource, parentResource, originator = originator)).resource:
 			L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
 			return None
 			

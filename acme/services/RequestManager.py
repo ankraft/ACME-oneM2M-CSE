@@ -1113,7 +1113,7 @@ class RequestManager(object):
 
 
 	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool = False) -> Result:
-		"""	Fill a *cseRequest* object according to its request structure in the *req* attribute.
+		"""	Fill a *cseRequest* object according to its request structure in the *Result.request* attribute.
 		"""
 		# ! Cannot be in RequestUtils bc to prevent circular import of CSE and validator
 

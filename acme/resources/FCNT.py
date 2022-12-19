@@ -28,7 +28,9 @@ class FCNT(AnnounceableResource):
 								   ResourceTypes.SMD, 
 								   ResourceTypes.SUB, 
 								   ResourceTypes.TS, 
-								   ResourceTypes.FCI ]
+								   ResourceTypes.FCI,
+								   ResourceTypes.FCNT_LA,
+								   ResourceTypes.FCNT_OL ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -271,7 +273,7 @@ class FCNT(AnnounceableResource):
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
 		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = ResourceTypes.FCI).resource
-		CSE.dispatcher.createLocalResource(resource, originator = originator)
+		CSE.dispatcher.createLocalResource(resource, self, originator = originator)
 		resource.setAttribute('cs', self.cs)
 		resource.setAttribute('org', originator)
 
@@ -294,17 +296,21 @@ class FCNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.FCNT_LA).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({ 'et': self.et }, 
+											pi = self.ri, 
+											ty = ResourceTypes.FCNT_LA).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
+		if not (res := CSE.dispatcher.createLocalResource(resource, self)).status:
 			return res
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.FCNT_OL).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({ 'et': self.et }, 
+											pi = self.ri, 
+											ty = ResourceTypes.FCNT_OL).resource	# rn is assigned by resource itself
 		# if not (res := CSE.dispatcher.createResource(resource)).resource:
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createLocalResource(resource)).status:
+		if not (res := CSE.dispatcher.createLocalResource(resource, self)).status:
 			return res
 		
 		self.setAttribute(self._hasFCI, True)

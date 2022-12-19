@@ -29,7 +29,9 @@ class TS(AnnounceableResource):
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.TSI, 
 								   ResourceTypes.SMD, 
-								   ResourceTypes.SUB ]
+								   ResourceTypes.SUB,
+								   ResourceTypes.TS_LA,
+								   ResourceTypes.TS_OL ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -95,13 +97,17 @@ class TS(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.TS_LA).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
+		resource = Factory.resourceFromDict({ 'et': self.et }, 
+											pi = self.ri, 
+											ty = ResourceTypes.TS_LA).resource	# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createLocalResource(resource, self)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.TS_OL).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(resource)).resource:
+		resource = Factory.resourceFromDict({ 'et': self.et }, 
+											pi = self.ri, 
+											ty = ResourceTypes.TS_OL).resource	# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createLocalResource(resource, self)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
 		self._validateDataDetect()

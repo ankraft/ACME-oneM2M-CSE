@@ -265,6 +265,31 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_expirationLaterThanParents(self) -> None:
+		""" Create CNT with et later than the parent's et """
+		self.assertIsNotNone(TestExpiration.ae)
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'et' : (parentET := getResourceDate(60)) # 1 minute in the future
+				}}
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'et' : getResourceDate(120) # 2 minutes in the future
+				}}
+		r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+
+		self.assertIsNotNone((childET := findXPath(r, 'm2m:cnt/et')))
+		self.assertEqual(parentET, childET)
+
+		r, rsc = DELETE(cntURL, TestExpiration.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()
@@ -283,6 +308,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestExpiration('test_expireCNTViaMIA'))
 	addTest(suite, TestExpiration('test_expireCNTViaMIALarge'))
 	addTest(suite, TestExpiration('test_expireFCNTViaMIA'))
+	addTest(suite, TestExpiration('test_expirationLaterThanParents'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortResourceExpirations()

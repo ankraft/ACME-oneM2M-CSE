@@ -28,7 +28,9 @@ class CNT(AnnounceableResource):
 									ResourceTypes.FCNT,
 									ResourceTypes.SMD,
 									ResourceTypes.SUB,
-									ResourceTypes.TS ]
+									ResourceTypes.TS,
+									ResourceTypes.CNT_LA,
+									ResourceTypes.CNT_OL ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -90,13 +92,17 @@ class CNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(latestResource)).resource:
+		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
+												  pi = self.ri, 
+												  ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createLocalResource(latestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(oldestResource)).resource:
+		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
+												  pi = self.ri, 
+												  ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createLocalResource(oldestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		return Result.successResult()

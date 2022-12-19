@@ -8,6 +8,7 @@
 #
 
 """	This module implements the group service manager functionality. """
+
 from __future__ import annotations
 from typing import cast, List
 

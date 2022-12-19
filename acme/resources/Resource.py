@@ -153,9 +153,10 @@ class Resource(object):
 			self.setAttribute('ct', ts, overwrite = False)
 			self.setAttribute('lt', ts, overwrite = False)
 
-		# Handle resource type
+		# Add expirationTime if not set
 		if ty not in [ ResourceTypes.CSEBase ] and not self.hasAttribute('et'):
 			self.setAttribute('et', DateUtils.getResourceDate(CSE.request.maxExpirationDelta), overwrite = False) 
+		# Handle resource type
 		if ty is not None:
 			self.setAttribute('ty', int(ty))
 
@@ -220,7 +221,7 @@ class Resource(object):
 				return res
 
 		# validate the resource logic
-		if not (res := self.validate(originator, create = True, parentResource = parentResource)).status:
+		if not (res := self.validate(originator, True, parentResource = parentResource)).status:
 			return res
 		self.dbUpdate()
 		
@@ -337,8 +338,12 @@ class Resource(object):
 		#				procedure in the Storage component that removes nulled attributes as well.
 		#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 
+		# Retrieve the parent resource for validation
+		if not (parentResource := cast(Resource, self.retrieveParentResource())):
+			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator, dct = dct)).status:
+		if not (res := self.validate(originator, dct = dct, parentResource = parentResource)).status:
 			return res
 
 		# store last modified attributes
@@ -352,9 +357,7 @@ class Resource(object):
 		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[self._modified])
 
 		# Notify parent that a child has been updated
-		if not (parent := cast(Resource, self.retrieveParentResource())):
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
-		parent.childUpdated(self, updatedAttributes, originator)
+		parentResource.childUpdated(self, updatedAttributes, originator)
 
 		return Result.successResult()
 
@@ -502,16 +505,25 @@ class Resource(object):
 		if not ( Utils.isValidID(self.ri) and
 				 Utils.isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
 				 Utils.isValidID(self.rn)):
-			return Result.errorResult(rsc = ResponseStatusCode.badRequest, dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
+			return Result.errorResult(dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
 		# expirationTime handling
 		if et := self.et:
 			if self.ty == ResourceTypes.CSEBase:
 				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
+			
+			# In the past?
 			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
 				return Result.errorResult(dbg = L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
+
+			# Check if the et is later than the parent's et
+			if parentResource and parentResource.ty != ResourceTypes.CSEBase and et > parentResource.et:
+				L.isWarn and L.logWarn(f'et is later than the parent\'s et. Correcting. {parentResource}')
+				self.setAttribute('et', parentResource.et)
+
+			# Maximum Expiration time
 			if et > (etMax := DateUtils.getResourceDate(CSE.request.maxExpirationDelta)):
-				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
+				L.isWarn and L.logWarn(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result.successResult()
 

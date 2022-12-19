@@ -399,7 +399,7 @@ class RegistrationManager(object):
 		if not (res := self.checkResourceCreation(acp, CSE.cseOriginator, parentResource)).status:
 			# return res.errorResultCopy()
 			return res
-		return CSE.dispatcher.createLocalResource(acp, parentResource = parentResource, originator = CSE.cseOriginator)
+		return CSE.dispatcher.createLocalResource(acp, parentResource, originator = CSE.cseOriginator)
 
 
 	def _removeACP(self, srn:str, resource:Resource) -> Result:
