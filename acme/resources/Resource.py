@@ -518,7 +518,7 @@ class Resource(object):
 
 			# Check if the et is later than the parent's et
 			if parentResource and parentResource.ty != ResourceTypes.CSEBase and et > parentResource.et:
-				L.isWarn and L.logWarn(f'et is later than the parent\'s et. Correcting. {parentResource}')
+				L.isWarn and L.logWarn(f'et is later than the parent\'s et. Correcting.')
 				self.setAttribute('et', parentResource.et)
 
 			# Maximum Expiration time
