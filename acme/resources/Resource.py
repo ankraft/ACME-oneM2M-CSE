@@ -153,9 +153,6 @@ class Resource(object):
 			self.setAttribute('ct', ts, overwrite = False)
 			self.setAttribute('lt', ts, overwrite = False)
 
-		# Add expirationTime if not set
-		if ty not in [ ResourceTypes.CSEBase ] and not self.hasAttribute('et'):
-			self.setAttribute('et', DateUtils.getResourceDate(CSE.request.maxExpirationDelta), overwrite = False) 
 		# Handle resource type
 		if ty is not None:
 			self.setAttribute('ty', int(ty))
@@ -284,7 +281,7 @@ class Resource(object):
 		"""
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
-		updatedAttributes = None
+		updatedAttributes:dict[str, Any] = None
 		if dct:
 			if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
@@ -300,11 +297,14 @@ class Resource(object):
 				updatedAttributes = Utils.findXPath(dct, '{*}')
 
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
-																						# Removing acpi by setting it to None is handled in the else:
-																						# acpi can be None! Therefore the complicated test
+			if 'acpi' in updatedAttributes and (ua := updatedAttributes['acpi']) is not None:	
+				
+				# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
+				# Removing acpi by setting it to None is handled in the else:
+				# acpi can be None! Therefore the complicated test
+
 				# Test wether an empty array is provided				
-				if len(ua := updatedAttributes['acpi']) == 0:
+				if len(ua) == 0:
 					return Result.errorResult(dbg = 'acpi must not be an empty list')
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
 				if not (res := self._checkAndFixACPIreferences(ua)).status:
@@ -315,17 +315,13 @@ class Resource(object):
 			else:
 
 				# Update other  attributes
-				for key in updatedAttributes:
+				for key, value in updatedAttributes.items():
 					# Leave out some attributes
 					if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 						continue
-					value = updatedAttributes[key]
-
-					# Special handling for et when deleted/set to Null: set a new et
-					if key == 'et' and not value:
-						self['et'] = DateUtils.getResourceDate(CSE.request.maxExpirationDelta)
-						continue
-					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
+					# copy new value or add new attributes.
+					# Also setting it to Null/None would later remove it
+					self.setAttribute(key, value, overwrite = True) 
 			
 
 		# Update lt for those resources that have these attributes
@@ -507,7 +503,7 @@ class Resource(object):
 				 Utils.isValidID(self.rn)):
 			return Result.errorResult(dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
-		# expirationTime handling
+		# expirationTimestamp handling
 		if et := self.et:
 			if self.ty == ResourceTypes.CSEBase:
 				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
@@ -518,13 +514,21 @@ class Resource(object):
 
 			# Check if the et is later than the parent's et
 			if parentResource and parentResource.ty != ResourceTypes.CSEBase and et > parentResource.et:
-				L.isWarn and L.logWarn(f'et is later than the parent\'s et. Correcting.')
+				L.isDebug and L.logDebug(f'et is later than the parent\'s et. Correcting.')
 				self.setAttribute('et', parentResource.et)
 
 			# Maximum Expiration time
 			if et > (etMax := DateUtils.getResourceDate(CSE.request.maxExpirationDelta)):
 				L.isWarn and L.logWarn(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
-				self['et'] = etMax
+				self.setAttribute('et', etMax)
+
+		else:	# set et to the parents et if not in the resource yet
+			if self.ty != ResourceTypes.CSEBase:	# Only when not CSEBase
+				if not (et := parentResource.et):
+					et = DateUtils.getResourceDate(CSE.request.maxExpirationDelta)
+				self.setAttribute('et', et)
+
+
 		return Result.successResult()
 
 
