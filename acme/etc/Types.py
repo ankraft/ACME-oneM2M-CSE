@@ -621,6 +621,18 @@ class Cardinality(ACMEIntEnum):
 		"""
 		return cls.has(f'CAR{name}')
 	
+
+	@classmethod
+	def isMandatory(cls, car:Cardinality) -> bool:
+		"""	Check whether a Cardinality is mandatory.
+		
+			Args:
+				car: Cardinality to check.
+			Return:
+				*True* if the Cardinality is of mandatory kind.
+		"""
+		return car in [ Cardinality.CAR1, Cardinality.CAR1L, Cardinality.CAR1LN, Cardinality.CAR1N ]
+
 	
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> Cardinality:

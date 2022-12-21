@@ -5,6 +5,7 @@
 //
 //	Definitions for oneM2M complex type attributes.
 
+//	TODO m2m:primitive content -> all supported resources. Finally replace the attributes in the resource classes.
 {
 
 	//
@@ -192,6 +193,35 @@
 			"car": "01"
 		}
 	],
+	"fr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "from",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "from",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "from",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "M",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"ms": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -254,6 +284,58 @@
 			"car": "1"
 		}
 	],
+	"oet": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "operationExecutionTime",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "operationExecutionTime",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "REQ", "REQRESP" ],
+			"lname": "operationExecutionTime",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"op": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "operation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:operation",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "REQ", "REQRESP" ],
+			"lname": "operation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:operation",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"ops": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -261,7 +343,7 @@
 			"lname": "accessControlOperations",
 			"ns": "m2m",
 			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
-			"car": "1"
+			"car": "01"
 		},
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -288,6 +370,133 @@
 			"ns": "m2m",
 			"type": "timestamp",
 			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"pc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "adict",		//	m2m:primitiveContent
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "adict",		//	m2m:primitiveContent
+			"car": "01"
+		},
+		{
+			"rtypes": [ "REQ" ],
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "adict",		// m2m:primitiveContent
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"rids": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "roleIDs",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string",	// TODO:  m2m:roleIDs validation
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "roleIDs",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string",	// TODO:  m2m:roleIDs validation
+			"car": "01"
+		}
+	],
+	"rqet": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "requestExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},	
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "requestExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},	
+		{
+			"rtypes": [ "REQ", "REQRESP" ],
+			"lname": "requestExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+
+	"rqi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",	// m2m:requestID
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",	// m2m:requestID
+			"car": "1"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",	// m2m:requestID
+			"car": "01",
+			"oc": "M",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"rset": [
@@ -307,6 +516,25 @@
 			"type": "absRelTimestamp",
 			"car": "01"
 		}
+	],
+	"rt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "responseType",
+			"ns": "m2m",
+			"type": "m2m:responseTypeInfo",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "responseType",
+			"ns": "m2m",
+			"type": "m2m:responseTypeInfo",
+			"car": "01"
+		}
+
 	],
 	"stb": [
 		{
@@ -380,6 +608,35 @@
 			"car": "01"
 		}
 	],
+	"to": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "to",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "to",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "to",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"ty": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -401,6 +658,15 @@
 		},
 		{
 			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:filterCriteria",
 			"lname": "resourceType",
 			"ns": "m2m",
@@ -408,7 +674,19 @@
 			"ltype": "enum",
 			"etype": "m2m:resourceType",
 			"car": "01l"
-		}
+		},
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}	
 	],
 	"typ": [
 
@@ -468,6 +746,7 @@
 		}
 	],
 
+	/////////////////////////////////////////////////////////////////////////////////////
 	//
 	//	accessControlContexts (embedded complex type)
 	//
@@ -1204,37 +1483,8 @@
 	//
 	//	m2m:metaInformation
 	//
-	// see ty, ot, rset, ec above
-	"rqet": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:metaInformation",
-			"lname": "requestExpirationTimestamp",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01"
-		}
-	],
-	"oet": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:metaInformation",
-			"lname": "operationExecutionTime",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01"
-		}
-	],
-	"rt": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:metaInformation",
-			"lname": "responseType",
-			"ns": "m2m",
-			"type": "m2m:responseTypeInfo",
-			"car": "01"
-		}
-	],
+	// see ty, ot, rset, ec, rids, rqet, oet, rt above
+
 	"rp": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -1294,17 +1544,6 @@
 			"ns": "m2m",
 			"type": "enum",
 			"etype": "m2m:desIdResType",
-			"car": "01"
-		}
-	],
-	"rids": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:metaInformation",
-			"lname": "roleIDs",
-			"ns": "m2m",
-			"type": "list",	
-			"ltype": "string",	// TODO:  m2m:roleIDs validation
 			"car": "01"
 		}
 	],
@@ -1487,6 +1726,8 @@
 	//
 	//	m2m:operationResult
 	//
+	// see pc, ot, rset, ec, fr above 
+
 	"rsc": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -1498,48 +1739,6 @@
 			"car": "1"
 		}
 	],
-	"rqi": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:operationResult",
-			"lname": "requestIdentifier",
-			"ns": "m2m",
-			"type": "string",
-			"car": "1"
-		}
-	],
-	"pc": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:operationResult",
-			"lname": "primitiveContent",
-			"ns": "m2m",
-			"type": "adict",		//	m2m:primitiveContent
-			"car": "01"
-		}
-	],
-	"to": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:operationResult",
-			"lname": "to",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "01"
-		}
-	],
-	"fr": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:operationResult",
-			"lname": "from",
-			"ns": "m2m",
-			"type": "string",
-			"car": "01"
-		}
-	],
-	// see ot, rset, ec above 
-
 	"cnst": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -1587,6 +1786,12 @@
 		}
 	],
 	
+
+	//
+	//	m2m:requestPrimitive
+	//
+
+
 
 	//
 	//	m2m:responseTypeInfo

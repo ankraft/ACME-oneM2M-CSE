@@ -47,6 +47,9 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 	{ tpe : cnd }
 """
 
+complexTypeAttributes:dict[str, list[str]] = {}
+# TODO doc
+
 class Validator(object):
 
 	_scheduleRegex = re.compile('(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
@@ -437,6 +440,13 @@ class Validator(object):
 			L.logErr(f'Policy {(rtype, attr)} is already registered')
 		attributePolicies[(rtype, attr)] = attrPolicy
 
+		# Collect a list of attributes for complex types
+		if attrPolicy.ctype:
+			if (attrs := complexTypeAttributes.get(attrPolicy.ctype)):
+				attrs.append(attr)
+			else:
+				complexTypeAttributes[attrPolicy.ctype] = [ attr ]
+
 
 	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
@@ -452,6 +462,13 @@ class Validator(object):
 		# TODO look for other types, requests, filter...
 		return None
 	
+
+	def getComplexTypeAttributePolicies(self, ctype:str) -> Optional[list[AttributePolicy]]:
+		if (attrs := complexTypeAttributes.get(ctype)):
+			return [ self.getAttributePolicy(ctype, attr) for attr in attrs ]
+		L.logWarn(f'no policies found for complex type: {ctype}')
+		return []
+
 
 	def getAllAttributePolicies(self) -> ResourceAttributePolicyDict:
 		return attributePolicies
@@ -623,6 +640,12 @@ class Validator(object):
 						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {typeName}')
 					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
 						return res
+
+				# Check that all mandatory attributes are present
+				attributeNames = value.keys()
+				for ap in self.getComplexTypeAttributePolicies(typeName):
+					if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
+						return Result.errorResult(dbg = f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
 				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'Expected complex type, found: {value}')
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [CSE] Improved validation of complex types and mandatory attributes.
 
 ### Changed
 

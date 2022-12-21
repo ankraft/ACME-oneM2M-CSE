@@ -51,7 +51,10 @@
 		"evalues" : [ 1, 2 ]
 	},
 	"m2m:notificationEventType" : {
-		"evalues": [ "1..8", 9, 10 ]	// 9, 10 experimental		
+		"evalues": [ "1..8", 9, 10 ]	// EXPERIMENTAL 9, 10 experimental		
+	},
+	"m2m:operation" : {
+		"evalues": [ "1..5" ]	
 	},
 	"m2m:responseType" : {
 		"evalues" : [ "1..5" ]

@@ -4,6 +4,9 @@
 //	License: BSD 3-Clause License. See the LICENSE file for further details.
 //
 //	Definitions for oneM2M attributes.
+//
+//	Also see complexTypePolicies.ap for more attributes
+//
 
 {
 
@@ -11,20 +14,8 @@
 	// Common and Universal attributes
 	//
 
-	"ty": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "resourceType",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:resourceType",
-			"car": "1",
-			"oc": "NP",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
+	// ty : see complexTypePolicies.ap
+
 	"ri": [
 		{
 			"rtypes": [ "ALL" ],
@@ -459,7 +450,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionPrimitive",
 			"ns": "m2m",
-			"type": "adict",	// m2m:requestPrimitive TODO
+			"type": "m2m:requestPrimitive",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1234,7 +1225,7 @@
 	],
 	"evc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
 			"type": "m2m:evalCriteria",
@@ -1293,19 +1284,6 @@
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"fr": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "from",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "01",
-			"oc": "M",
-			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -2217,19 +2195,6 @@
 			"annc": "OA"
 		}
 	],
-	"op": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "operation",
-			"ns": "m2m",
-			"type": "nonNegInteger",
-			"car": "1",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"or": [
 		{
 			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", 
@@ -2292,32 +2257,6 @@
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
-			"od": "O",
-			"annc": "OA"
-		}
-	],
-	"ot": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "originatingTimestamp",
-			"ns": "m2m",
-			"type": "timestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "OA"
-		}
-	],
-	"pc": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "primitiveContent",
-			"ns": "m2m",
-			"type": "adict",	// m2m:primitiveContent
-			"car": "01",
-			"oc": "O",
-			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
 		}
@@ -2571,19 +2510,6 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
-		}
-	],
-	"rqi": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "requestIdentifier",
-			"ns": "m2m",
-			"type": "string",
-			"car": "01",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "OA"
 		}
 	],
 	"rr": [
@@ -3011,19 +2937,6 @@
 			"ns": "m2m",
 			"type": "anyURI",
 			"car": "1",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"to": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "to",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "01",
 			"oc": "M",
 			"ou": "NP",
 			"od": "O",
@@ -3524,32 +3437,6 @@
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "resultPersistence",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"rqet": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "requestExpirationTimestamp",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"oet": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "operationExecutionTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
 			"car": "01",
