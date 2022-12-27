@@ -72,6 +72,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
 [\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: Access Control Policies](#resource_acp)  
+[\[cse.resource.actr\] - Resource defaults: Action](#resource_actr)  
 [\[cse.resource.cnt\] - Resource Defaults: Container](#resource_cnt)  
 [\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
 [\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
@@ -270,6 +271,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 |:---------------|:----------------------------------------------------------------------|:-------------------|
 | permission     | Default permission when creating an ACP resource.<br />Default: 63    | cse.acp.pv.acop    |
 | selfPermission | Default selfPermission when creating an ACP resource.<br/>Default: 51 | cse.acp.pvs.acop   |
+
+
+<a name="resource_actr"></a>
+###	[cse.resource.actr] - Resource Defaults: Action
+
+| Keyword       | Description                                                                                                                              | Configuration Name      |
+|:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:------------------------|
+| ecpContinuous | Default for the *evalControlParam* attribute, when the *evalMode* is "continuous". The unit is number.<br />Default: 1000                | cse.actr.ecp.continuous |
+| ecpPeriodic   | Default for the *evalControlParam* attribute, when the *evalMode* is "periodic". The unit is milliseconds.<br />Default: 10000 ms = 10 s | cse.actr.ecp.periodic   |
 
 
 <a name="resource_cnt"></a>

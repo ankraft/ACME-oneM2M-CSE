@@ -346,10 +346,27 @@ writeInterval=60
 ;
 
 [cse.resource.acp]
-; Default permission when creating an ACP resource. Default: 63
+; Default permission when creating an ACP resource.
+; Default: 63
 permission=63
-; Default selfPermission when creating an ACP resource. Default: 51
+; Default selfPermission when creating an ACP resource.
+; Default: 51
 selfPermission=51
+
+
+;
+;	Resource defaults: Action
+;
+
+[cse.resource.actr]
+; Default for the evalControlParam attribute, when the evalMode is "continuous".
+; The unit is number.
+; Default: 1000
+ecpContinuous=1000
+; Default for the evalControlParam attribute, when the evalMode is "periodic".
+; The unit is milliseconds.
+; Default: 10000 ms = 10 s
+ecpPeriodic=10000
 
 
 ;

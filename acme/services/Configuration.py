@@ -275,6 +275,14 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for Actions
+				#
+
+				'cse.actr.ecp.periodic'					: config.getint('cse.resource.actr', 'ecpPeriodic', 				fallback = 10000),
+				'cse.actr.ecp.continuous'				: config.getint('cse.resource.actr', 'ecpContinuous', 				fallback = 1000),
+
+
+				#
 				#	Defaults for Container Resources
 				#
 
