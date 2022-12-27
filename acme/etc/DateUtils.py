@@ -128,13 +128,16 @@ def rfc1123Date(timeval:Optional[float] = None) -> str:
 	return formatdate(timeval = timeval, localtime = False, usegmt = True)
 
 
-def utcTime() -> float:
+def utcTime(delta:float = 0) -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 
+		Args:
+			delta: If given, this time delta in seconds is added to the current UTC-based timestamp.
+
 		Returns:
-			Float with current UTC-based POSIX time.
+			Float with current UTC-based POSIX time, with added optional *delta*.
 	"""
-	return datetime.utcnow().timestamp()
+	return datetime.utcnow().timestamp() + delta
 
 
 def timeUntilTimestamp(ts:float) -> float:
