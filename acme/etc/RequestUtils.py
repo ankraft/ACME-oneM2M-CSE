@@ -118,7 +118,7 @@ def requestFromResult(inResult:Result,
 	if originator:
 		req['fr'] = CSE.cseCsi if isResponse else originator
 		req['to'] = inResult.request.id if inResult.request.id else originator
-	elif inResult.request.originator:
+	elif inResult.request and inResult.request.originator:
 		req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
 		req['to'] = inResult.request.originator if isResponse else inResult.request.id
 	else:
@@ -137,10 +137,11 @@ def requestFromResult(inResult:Result,
 		req['rsc'] = int(inResult.rsc)
 	
 	# Operation
-	if op:
-		req['op'] = int(op)
-	elif inResult.request.op:
-		req['op'] = int(inResult.request.op)
+	if not isResponse:
+		if op:
+			req['op'] = int(op)
+		elif inResult.request.op:
+			req['op'] = int(inResult.request.op)
 
 	# Type
 	if ty:
@@ -189,6 +190,11 @@ def requestFromResult(inResult:Result,
 			req['pc'] = pc
 	
 	return Result(status = True, data = req, resource = inResult.resource, request = inResult.request, embeddedRequest = inResult.embeddedRequest, rsc = inResult.rsc)
+
+
+def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Result:
+	# TODO doc
+	return requestFromResult(inResult, originator, isResponse = True)
 
 
 def createRawRequest(**kwargs:Any) -> JSON:
