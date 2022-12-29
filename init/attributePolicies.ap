@@ -353,7 +353,7 @@
 	],
 	"air": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionResult",
 			"ns": "m2m",
 			"type": "adict",		// m2m:responsePrimitive, anonymous TODO
@@ -447,7 +447,7 @@
 	],
 	"apv": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionPrimitive",
 			"ns": "m2m",
 			"type": "m2m:requestPrimitive",
@@ -460,7 +460,7 @@
 	],
 	"apy": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionPriority",
 			"ns": "m2m",
 			"type": "positiveInteger",	// non-enum
@@ -992,7 +992,7 @@
 	],
 	"dep": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "dependencies",
 			"ns": "m2m",
 			"type": "list",
@@ -1147,7 +1147,7 @@
 	],
 	"ecp": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": ["ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "evalControlParam",
 			"ns": "m2m",
 			"type": "positiveInteger",		// non-enum
@@ -1225,7 +1225,7 @@
 	],
 	"evc": [
 		{
-			"rtypes": [ "ACTR" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
 			"type": "m2m:evalCriteria",
@@ -1238,10 +1238,11 @@
 	],
 	"evm": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "evalMode",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",
+			"etype": "m2m:evalMode",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1422,7 +1423,7 @@
 	],
 	"ipu": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "input",
 			"ns": "m2m",
 			"type": "m2m:actionInput",
@@ -2211,7 +2212,7 @@
 	],
 	"orc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "objectResourceID",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2753,7 +2754,7 @@
 	],
 	"sri": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "subjectResourceID",
 			"ns": "m2m",
 			"type": "anyURI",

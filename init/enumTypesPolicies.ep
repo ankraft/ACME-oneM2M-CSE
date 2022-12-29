@@ -15,6 +15,9 @@
 	"m2m:evalCriteriaOperator" : {
 		"evalues": [ "1..6" ]
 	},
+	"m2m:evalMode" : {
+		"evalues": [ "0..3" ]
+	},
 	"m2m:eventCat" : {
 		// m2m:stdEventCat + user defined range
 		"evalues" : [ "2..4", "100..999"]

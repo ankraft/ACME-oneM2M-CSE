@@ -49,17 +49,22 @@ class Event(list):	# type:ignore[type-arg]
 	Attributes:
 		runInBackground: Indicator whether an event should be handled in a separate thread.
 		manager: The responsible `EventManager` to handle an event.
+		name: The event name.
 	"""
 
-	def __init__(self, runInBackground:Optional[bool] = True, manager:Optional[EventManager] = None):
+	def __init__(self,  runInBackground:Optional[bool] = True, 
+						manager:Optional[EventManager] = None,
+						name:Optional[str] = None):
 		"""	Event initialization.
 
 			Args:
 				runInBackground: Indicator whether an event should be handled in a separate thread.
 				manager: The responsible `EventManager` to handle an event.
+				name: The event name.
 		"""
 		self.runInBackground = runInBackground
 		self.manager = manager
+		self.name = name
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
@@ -88,7 +93,7 @@ class Event(list):	# type:ignore[type-arg]
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(*args, **kwargs))
+			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(*args, **kwargs), name = f'ev_{self.name}')
 		else:
 			_runner(*args, **kwargs)
 
@@ -148,7 +153,7 @@ class EventManager(object):
 				The created `Event`.
 		"""
 		if not hasattr(self, name):
-			setattr(self, name, Event(runInBackground = runInBackground, manager = self))
+			setattr(self, name, Event(runInBackground = runInBackground, manager = self, name = name))
 		return cast(Event, getattr(self, name))
 
 

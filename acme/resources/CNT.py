@@ -112,7 +112,7 @@ class CNT(AnnounceableResource):
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
-		disrNew = Utils.findXPath(dct, '{*}/disr')
+		disrNew = Utils.findXPath(dct, 'm2m:cnt/disr')
 
 		# Generic update
 		if not (res := super().update(dct, originator)).status:

@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional
+from typing import Callable, cast, List, Optional, Sequence
 
 import os, shutil
 from threading import Lock
@@ -27,6 +27,7 @@ from ..etc import DateUtils
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
+from ..resources.ACTR import ACTR
 from ..resources import Factory
 from ..services.Logging import Logging as L
 
@@ -121,6 +122,9 @@ class Storage(object):
 			self.countBatchNotifications('_', '_')
 			dbFile = 'statistics'
 			self.getStatistics()
+			dbFile = 'actions'
+			self.getActions()
+
 		except Exception as e:
 			L.logErr(f'Error validating data files. Error in {dbFile} database.', exc = e)
 			return False
@@ -453,6 +457,36 @@ class Storage(object):
 		self.db.purgeStatistics()
 
 
+
+	#########################################################################
+	##
+	##	Actions
+	##
+
+	def getActions(self) -> JSON:
+		"""	Retrieve the actions data from the DB.
+		"""
+		return self.db.searchActionReprs()
+
+	
+	def searchActionsForSubject(self, ri:str) -> Sequence[JSON]:
+		return self.db.searchActionsDeprsForSubject(ri)
+
+
+	def updateAction(self, action:ACTR, period:float, count:int) -> bool:
+		return self.db.upsertActionRepr(action, period, count)
+
+
+	def updateActionRepr(self, actionRepr:JSON) -> bool:
+		return self.db.updateActionRepr(actionRepr)
+
+
+	def removeAction(self, ri:str) -> bool:
+		return self.db.removeActionRepr(ri)
+
+
+
+
 #########################################################################
 #
 #	DB class that implements the TinyDB binding
@@ -473,6 +507,7 @@ class TinyDBBinding(object):
 		self.lockSubscriptions			= Lock()
 		self.lockBatchNotifications		= Lock()
 		self.lockStatistics 			= Lock()
+		self.lockActions 				= Lock()
 
 		# file names
 		self.fileResources				= f'{self.path}/resources{postfix}.json'
@@ -480,6 +515,7 @@ class TinyDBBinding(object):
 		self.fileSubscriptions			= f'{self.path}/subscriptions{postfix}.json'
 		self.fileBatchNotifications		= f'{self.path}/batchNotifications{postfix}.json'
 		self.fileStatistics				= f'{self.path}/statistics{postfix}.json'
+		self.fileActions				= f'{self.path}/actions{postfix}.json'
 
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
@@ -489,6 +525,7 @@ class TinyDBBinding(object):
 			self.dbSubscriptions 		= TinyDB(storage = MemoryStorage)
 			self.dbBatchNotifications	= TinyDB(storage = MemoryStorage)
 			self.dbStatistics			= TinyDB(storage = MemoryStorage)
+			self.dbActions				= TinyDB(storage = MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
 			self.dbResources 			= TinyDB(self.fileResources)
@@ -496,6 +533,7 @@ class TinyDBBinding(object):
 			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
 			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
 			self.dbStatistics 			= TinyDB(self.fileStatistics)
+			self.dbActions	 			= TinyDB(self.fileActions)
 
 
 			# EXPERIMENTAL Using BetterJSONStorage - improved disk read/write. so far, mixed results. Good with large installations.
@@ -507,6 +545,7 @@ class TinyDBBinding(object):
 			# self.dbSubscriptions 		= TinyDB(Path(self.fileSubscriptions), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
 			# self.dbBatchNotifications 	= TinyDB(Path(self.fileBatchNotifications), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
 			# self.dbStatistics 			= TinyDB(Path(self.fileStatistics), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
+			# self.dbActions 				= TinyDB(Path(self.fileActions), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
 		
 		
 		# Open/Create tables
@@ -515,12 +554,14 @@ class TinyDBBinding(object):
 		self.tabSubscriptions 			= self.dbSubscriptions.table('subsriptions', cache_size = self.cacheSize)
 		self.tabBatchNotifications 		= self.dbBatchNotifications.table('batchNotifications', cache_size = self.cacheSize)
 		self.tabStatistics 				= self.dbStatistics.table('statistics', cache_size = self.cacheSize)
+		self.tabActions 				= self.dbActions.table('actions', cache_size = self.cacheSize)
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
 		self.identifierQuery 			= Query()
 		self.subscriptionQuery			= Query()
 		self.batchNotificationQuery 	= Query()
+		self.actionsQuery				= Query()
 
 
 	def closeDB(self) -> None:
@@ -535,6 +576,8 @@ class TinyDBBinding(object):
 			self.dbBatchNotifications.close()
 		with self.lockStatistics:
 			self.dbStatistics.close()
+		with self.lockActions:
+			self.dbActions.close()
 
 
 	def purgeDB(self) -> None:
@@ -544,6 +587,7 @@ class TinyDBBinding(object):
 		self.tabSubscriptions.truncate()
 		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
+		self.tabActions.truncate()
 	
 
 	def backupDB(self, dir:str) -> bool:
@@ -552,6 +596,7 @@ class TinyDBBinding(object):
 		shutil.copy2(self.fileSubscriptions, dir)
 		shutil.copy2(self.fileBatchNotifications, dir)
 		shutil.copy2(self.fileStatistics, dir)
+		shutil.copy2(self.fileActions, dir)
 		return True
 
 
@@ -569,25 +614,27 @@ class TinyDBBinding(object):
 		#L.logDebug(resource)
 		with self.lockResources:
 			# Update existing or insert new when overwriting
-			self.tabResources.upsert(resource.dict, self.resourceQuery.ri == resource.ri)
+			_ri = resource.ri
+			self.tabResources.upsert(resource.dict, self.resourceQuery.ri == _ri)
 	
 
 	def updateResource(self, resource: Resource) -> Resource:
 		#L.logDebug(resource)
 		with self.lockResources:
-			ri = resource.ri
-			self.tabResources.update(resource.dict, self.resourceQuery.ri == ri)
+			_ri = resource.ri
+			self.tabResources.update(resource.dict, self.resourceQuery.ri == _ri)
 			# remove nullified fields from db and resource
 			for k in list(resource.dict):
 				if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
-					self.tabResources.update(delete(k), self.resourceQuery.ri == ri)	# type: ignore [no-untyped-call]
+					self.tabResources.update(delete(k), self.resourceQuery.ri == _ri)	# type: ignore [no-untyped-call]
 					del resource.dict[k]
 			return resource
 
 
 	def deleteResource(self, resource:Resource) -> None:
 		with self.lockResources:
-			self.tabResources.remove(self.resourceQuery.ri == resource.ri)	
+			_ri = resource.ri
+			self.tabResources.remove(self.resourceQuery.ri == _ri)	
 	
 
 	def searchResources(self, ri:Optional[str] = None, 
@@ -613,8 +660,8 @@ class TinyDBBinding(object):
 		
 		else:
 			# for SRN find the ri first and then try again recursively (outside the lock!!)
-			if len((identifiers := self.searchIdentifiers(srn=srn))) == 1:
-				return self.searchResources(ri=identifiers[0]['ri'])
+			if len((identifiers := self.searchIdentifiers(srn = srn))) == 1:
+				return self.searchResources(ri = identifiers[0]['ri'])
 
 		return []
 
@@ -638,7 +685,7 @@ class TinyDBBinding(object):
 					return self.tabResources.contains(self.resourceQuery.ty == ty)
 		else:
 			# find the ri first and then try again recursively
-			if len((identifiers := self.searchIdentifiers(srn=srn))) == 1:
+			if len((identifiers := self.searchIdentifiers(srn = srn))) == 1:
 				return self.hasResource(ri = identifiers[0]['ri'])
 		return False
 
@@ -735,7 +782,8 @@ class TinyDBBinding(object):
 
 	def removeSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
-			return len(self.tabSubscriptions.remove(self.subscriptionQuery.ri == subscription.ri)) > 0
+			_ri = subscription.ri
+			return len(self.tabSubscriptions.remove(self.subscriptionQuery.ri == _ri)) > 0
 
 
 	#
@@ -791,4 +839,47 @@ class TinyDBBinding(object):
 		"""
 		with self.lockStatistics:
 			self.tabStatistics.truncate()
+
+
+	#
+	#	Actions
+	#
+
+	def searchActionReprs(self) -> JSON:
+		with self.lockActions:
+			actions = self.tabActions.get(doc_id = 1)
+			return actions if actions else None
+
+	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
+		with self.lockActions:
+			return self.tabActions.search(self.actionsQuery.subject == ri)
+	
+
+	# TODO add only?
+	def upsertActionRepr(self, action:ACTR, periodTS:float, count:int) -> bool:
+		with self.lockActions:
+			_ri = action.ri
+			_sri = action.sri
+			return self.tabActions.upsert(
+					{	'ri':		_ri,
+						'subject':	_sri if _sri else action.pi,
+						'apy':		action.apy,
+						'evm':		action.evm,
+						'evc':		action.evc,	
+						'ecp':		action.ecp,
+						'periodTS': periodTS,
+						'count':	count,
+					}, 
+					self.actionsQuery.ri == _ri) is not None
+
+
+	def updateActionRepr(self, actionRepr:JSON) -> bool:
+		with self.lockActions:
+			_ri = actionRepr['ri']
+			return self.tabActions.update(actionRepr, self.actionsQuery.ri == _ri) is not None
+
+
+	def removeActionRepr(self, ri:str) -> bool:
+		with self.lockActions:
+			return len(self.tabActions.remove(self.actionsQuery.ri == ri)) > 0
 

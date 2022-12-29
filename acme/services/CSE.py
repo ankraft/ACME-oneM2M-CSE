@@ -20,6 +20,7 @@ from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
+from ..services.ActionManager import ActionManager
 from ..services.Configuration import Configuration
 from ..services.Console import Console
 from ..services.Dispatcher import Dispatcher
@@ -47,6 +48,8 @@ from ..services.Logging import Logging as L
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
+action:ActionManager							= None
+"""	Runtime instance of the `ActionManager`. """
 announce:AnnouncementManager					= None
 """	Runtime instance of the `AnnouncementManager`. """
 
@@ -174,7 +177,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
+	global action, announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
@@ -259,6 +262,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	semantic = SemanticManager()			# Initialize the semantic manager
 	time = TimeManager()					# Initialize the time mamanger
 	script = ScriptManager()				# Initialize the script manager
+	action = ActionManager()				# Initialize the action manager
 
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 	# Import extra attribute policies for specializations first

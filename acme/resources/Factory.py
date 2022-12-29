@@ -22,7 +22,8 @@ from ..services.Logging import Logging as L
 
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
-from ..resources.ACTR import ACTR				# TODO ANNC
+from ..resources.ACTR import ACTR
+from ..resources.ACTRAnnc import ACTRAnnc
 from ..resources.AE import AE
 from ..resources.AEAnnc import AEAnnc
 from ..resources.CIN import CIN
@@ -97,7 +98,7 @@ from ..resources.Resource import Resource
 addResourceFactoryCallback(ResourceTypes.ACP, 			ACP,			lambda dct, tpe, pi, create : ACP(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.ACPAnnc,		ACPAnnc,		lambda dct, tpe, pi, create : ACPAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.ACTR, 			ACTR,			lambda dct, tpe, pi, create : ACTR(dct, pi = pi, create = create)) 
-# TODO ACTRAnnc
+addResourceFactoryCallback(ResourceTypes.ACTRAnnc, 		ACTRAnnc,		lambda dct, tpe, pi, create : ACTRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.AE, 			AE,				lambda dct, tpe, pi, create : AE(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.AEAnnc,		AEAnnc,			lambda dct, tpe, pi, create : AEAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.CIN, 			CIN,			lambda dct, tpe, pi, create : CIN(dct, pi = pi, create = create)) 

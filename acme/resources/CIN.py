@@ -73,7 +73,7 @@ class CIN(AnnounceableResource):
 		parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
 		st = parentResource.st + 1
 		parentResource.setAttribute('st',st)
-		if not (res := parentResource.dbUpdate()).resource:
+		if not (res := parentResource.dbUpdate(False)).resource:
 			return res
 
 		# Set stateTag attribute in self as well

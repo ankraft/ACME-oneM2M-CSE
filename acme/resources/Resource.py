@@ -220,7 +220,7 @@ class Resource(object):
 		# validate the resource logic
 		if not (res := self.validate(originator, True, parentResource = parentResource)).status:
 			return res
-		self.dbUpdate()
+		self.dbUpdate(False)
 		
 		# Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
@@ -270,6 +270,9 @@ class Resource(object):
 			A subscription check for update is performed.
 
 			This method is implemented in sub-classes as well.
+
+			Note:
+				This method updates the resource in the database. It should be called only after all other checks where performed.
 
 			Args:
 				dct: An optional JSON dictionary with the attributes to be updated.
@@ -347,7 +350,7 @@ class Resource(object):
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[self._modified])
-		self.dbUpdate()
+		self.dbUpdate(False)
 
 		# Check Attribute Trigger
 		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[self._modified])
@@ -862,13 +865,21 @@ class Resource(object):
 		return CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self) -> Result:
-		""" Update the resource in the database. 
+	def dbUpdate(self, finalize:bool = True) -> Result:
+		""" Update the resource in the database.
+
+			This also raises a CSE internal *updateResource* event.
+
+			Args:
+				finalize: Treat this database write as a final update to the resource. Only then an event is raised.
 
 			Return:
 				Result object indicating success or failure.
 		"""
-		return CSE.storage.updateResource(self)
+		if (res := CSE.storage.updateResource(self)).status:
+			if finalize:
+				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
+		return res
 
 
 	def dbCreate(self, overwrite:Optional[bool] = False) -> Result:

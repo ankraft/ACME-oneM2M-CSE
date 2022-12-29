@@ -708,7 +708,7 @@ class Dispatcher(object):
 			return res
 
 		# send a create event
-		CSE.event.createResource(resource)	# type: ignore
+		CSE.event.createResource(resource)	# type: ignore [attr-defined]
 
 
 		if parentResource:
@@ -849,8 +849,9 @@ class Dispatcher(object):
 		resource.updated(dct, originator)
 
 		# send a create event
+		res = resource.dbUpdate()
 		CSE.event.updateResource(resource)		# type: ignore
-		return resource.dbUpdate()
+		return res
 
 
 	def updateResourceFromDict(self, dct:JSON, 

@@ -788,7 +788,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 
 ##############################################################################
 #
-#	Gweneric Enums
+#	Evaluation Enums
 #
 
 class EvalCriteriaOperator(ACMEIntEnum):
@@ -811,6 +811,29 @@ class EvalCriteriaOperator(ACMEIntEnum):
 
 	lessThanEqual		= 6
 	""" Less than or equal. """
+
+	def isAllowedType(self, typ:BasicType) -> bool:
+		# Ordered types are allowed for all operators
+		if typ in [ BasicType.positiveInteger,
+					BasicType.nonNegInteger,
+					BasicType.unsignedInt,
+					BasicType.unsignedLong,
+					BasicType.timestamp,
+					BasicType.absRelTimestamp,
+					BasicType.float,
+					BasicType.integer,
+					BasicType.duration,
+					BasicType.enum,
+					BasicType.time,
+					BasicType.date ]:
+			return True
+		# Equal and unequal are the only operators allowed for all other types
+		if self.value in [ EvalCriteriaOperator.equal,
+						   EvalCriteriaOperator.notEqual ]:
+			return True
+		# Not allowed
+		return False
+
 
 
 class EvalMode(ACMEIntEnum):

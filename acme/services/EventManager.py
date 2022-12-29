@@ -37,6 +37,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
 		self.addEvent('expireResource')
+		self.addEvent('changeResource')	# whenever a resource is updated or changed in any way
 		self.addEvent('createChildResource')
 		self.addEvent('mqttRetrieve')
 		self.addEvent('mqttCreate')

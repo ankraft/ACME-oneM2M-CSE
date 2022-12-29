@@ -65,8 +65,12 @@ tsbPeriodicInterval			= 1.0
 # crossResourceSubscription Time Window Size (s)
 crsTimeWindowSize			= 4.0
 
+# actionPeriod
+actionPeriod				= 1 * 1000 # seconds
+
 # Test Suite Verbosity (0-2)
 testVerbosity				= 2
+
 
 
 
