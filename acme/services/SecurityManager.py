@@ -323,6 +323,10 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
+		# Always allow for the hosting CSE
+		if originator == CSE.cseCsi:
+			return True
+
 		for ao in allowedOriginators:
 			if TextTools.simpleMatch(_originator, ao):
 				return True
