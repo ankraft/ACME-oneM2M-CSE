@@ -23,12 +23,13 @@ from tinydb.table import Document
 from tinydb.operations import delete 
 
 from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc import DateUtils
+from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
+from ..etc.DateUtils import utcTime
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
-from ..resources import Factory
+from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
 
 
@@ -40,6 +41,13 @@ class Storage(object):
 			dbPath: In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk.
 			dbReset: Indicator that the database should be reset or cleared during start-up.
 	"""
+
+	__slots__ = (
+		'inMemory',
+		'dbPath',
+		'dbReset',
+		'db',
+	)
 
 	def __init__(self) -> None:
 		"""	Initialization of the storage manager.
@@ -224,10 +232,8 @@ class Storage(object):
 		elif aei:	# get an AE by its AE-ID
 			resources = self.db.searchResources(aei = aei)
 
-		# L.logDebug(resources)
-		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			return Factory.resourceFromDict(resources[0])
+			return resourceFromDict(resources[0])
 		elif l == 0:
 			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'resource not found')
 
@@ -302,12 +308,8 @@ class Storage(object):
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
 		docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
-		return docs if raw else cast(List[Resource], list(map(lambda x: Factory.resourceFromDict(x).resource, docs)))
+		return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x).resource, docs)))
 		
-		# return 	[ res	for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
-		# 				if (res := Factory.resourceFromDict(each).resource)
-		# 		]
-
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
 		"""	Count the number of direct child resources.
@@ -362,7 +364,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
-						if (not filter or filter(each)) and (res := Factory.resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
+						if (not filter or filter(each)) and (res := resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
 				] 
 
 
@@ -375,7 +377,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
-						if (res := Factory.resourceFromDict(each).resource)
+						if (res := resourceFromDict(each).resource)
 				]
 
 
@@ -496,9 +498,49 @@ class Storage(object):
 
 class TinyDBBinding(object):
 
+	__slots__ = (
+		'path',
+		'cacheSize',
+		'writeDelay',
+		
+		'lockResources',
+		'lockIdentifiers',
+		'lockSubscriptions',
+		'lockBatchNotifications',
+		'lockStatistics',
+		'lockActions',
+
+		'fileResources',
+		'fileIdentifiers',
+		'fileSubscriptions',
+		'fileBatchNotifications',
+		'fileStatistics',
+		'fileActions',
+		'dbResources',
+		'dbIdentifiers', 		
+		'dbSubscriptions', 	
+		'dbBatchNotifications',
+		'dbStatistics',
+		'dbActions',	
+
+		'tabResources',
+		'tabIdentifiers',
+		'tabSubscriptions',
+		'tabBatchNotifications',
+		'tabStatistics',
+		'tabActions',
+
+		'resourceQuery',
+		'identifierQuery',
+		'subscriptionQuery',
+		'batchNotificationQuery',
+		'actionsQuery',
+	)
+
 	def __init__(self, path:str = None, postfix:str = '') -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
+		self.writeDelay = Configuration.get('db.writeDelay')
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
@@ -528,25 +570,21 @@ class TinyDBBinding(object):
 			self.dbActions				= TinyDB(storage = MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
-			self.dbResources 			= TinyDB(self.fileResources)
-			self.dbIdentifiers 			= TinyDB(self.fileIdentifiers)
-			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
-			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
-			self.dbStatistics 			= TinyDB(self.fileStatistics)
-			self.dbActions	 			= TinyDB(self.fileActions)
+			# self.dbResources 			= TinyDB(self.fileResources)
+			# self.dbIdentifiers 			= TinyDB(self.fileIdentifiers)
+			# self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
+			# self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
+			# self.dbStatistics 			= TinyDB(self.fileStatistics)
+			# self.dbActions	 			= TinyDB(self.fileActions)
 
+			# EXPERIMENTAL Using TinyDBBufferedStorage - Buffers read and writes to disk
+			self.dbResources 			= TinyDB(self.fileResources, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbIdentifiers 			= TinyDB(self.fileIdentifiers, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbStatistics 			= TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbActions	 			= TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 
-			# EXPERIMENTAL Using BetterJSONStorage - improved disk read/write. so far, mixed results. Good with large installations.
-			# from ..helpers.BetterJSONStorage import BetterJSONStorage
-			# from pathlib import Path
-
-			# self.dbResources 			= TinyDB(Path(self.fileResources), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-			# self.dbIdentifiers 			= TinyDB(Path(self.fileIdentifiers), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-			# self.dbSubscriptions 		= TinyDB(Path(self.fileSubscriptions), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-			# self.dbBatchNotifications 	= TinyDB(Path(self.fileBatchNotifications), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-			# self.dbStatistics 			= TinyDB(Path(self.fileStatistics), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-			# self.dbActions 				= TinyDB(Path(self.fileActions), access_mode="r+", storage = BetterJSONStorage, write_delay = 1.0)
-		
 		
 		# Open/Create tables
 		self.tabResources 				= self.dbResources.table('resources', cache_size = self.cacheSize)
@@ -795,7 +833,7 @@ class TinyDBBinding(object):
 			return self.tabBatchNotifications.insert(
 					{	'ri' 		: ri,
 						'nu' 		: nu,
-						'tstamp'	: DateUtils.utcTime(),
+						'tstamp'	: utcTime(),
 						'request'	: notificationRequest
 					}) is not None
 

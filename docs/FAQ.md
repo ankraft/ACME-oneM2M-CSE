@@ -79,14 +79,22 @@
 	[cse.registration]
 	allowedCSROriginators=id-in
 	```
-
   
 
 ## Performance
 
 1. **How to increase the performance of ACME CSE?**  
    The log output provides useful information to analyze the flows of requests inside the CSE. However, it reduces the performance of the CSE a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file, or by pressing *L* on the console to change the logging level to the desired value.  
-   Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means that all  data will be lost when the CSE terminates!
+   Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means that all data will be lost when the CSE terminates!
+
+1. **Increase database performance with *disk* mode**  
+   When running the CSE with the database mode set to *disk* (ie. store the database on disk rather then in memory) one can improve the performance by increasing the time before data is actually written to disk. The default is 1 second, but it can be increased as necessary.  
+   Be aware, though, that the risk of losing data increases with higher delays in case of a crash or when the CSE shutdown is interrupted.
+
+	```ini
+	[database]
+	writeDelay=10
+	```
 
 ## Web UI
 

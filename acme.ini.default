@@ -73,6 +73,9 @@ defaultSerialization=json
 ; Enable or disable asynchronous notification for normal runtime subscription notifications.
 ; Default: true
 asyncSubscriptionNotifications=true
+; Indicate whether the optional "to" and "from" parameters shall be sent in responses.
+; Default: true
+sendToFromInResponses=true
 
 
 ;
@@ -229,8 +232,6 @@ caCertificateFile=${basic.config:dataDirectory}/certs/m2mqtt_ca.crt
 allowedCredentialIDs=
 
 
-
-
 ;
 ;	Database settings
 ;
@@ -246,7 +247,10 @@ cacheSize=0
 ; Reset the databases on startup. See also command line argument --db-reset
 ; Default: False
 resetOnStartup=false
-
+; Delay in seconds before new data is written to disk to avoid trashing.
+; Must be full seconds.
+; Default: 1 seconds
+writeDelay=1
 
 ;
 ;	Settings for self-registrations of some resources

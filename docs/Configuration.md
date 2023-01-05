@@ -110,6 +110,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | releaseVersion                 | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                  | cse.releaseVersion                 |
 | defaultSerialization           | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json | cse.defaultSerialization           |
 | asyncSubscriptionNotifications | Enable or disable asynchronous notification for normal runtime subscription notifications.<br/>Default: true                                           | cse.asyncSubscriptionNotifications |
+| sendToFromInResponses          | Indicate whether the optional "to" and "from" parameters shall be sent in responses.br/>Default: true                                                  | cse.sendToFromInResponses          |
 
 
 <a name="security"></a>
@@ -204,6 +205,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | db.inMemory        |
 | cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | db.cacheSize       |
 | resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup  |
+| writeDelay     | Delay in seconds before new data is written to disk to avoid trashing. Must be full seconds-<br/>Default: 1 second                                                   | db.writeDelay      |
 
 
 <a name="logging"></a>
