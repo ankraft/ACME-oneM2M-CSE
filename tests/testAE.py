@@ -73,7 +73,7 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEUnderAE(self) -> None:
+	def test_createAEUnderAEFail(self) -> None:
 		""" Create/register an <AE> under an <AE> -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': f'{aeRN}1', 
@@ -86,7 +86,7 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEAgain(self) -> None:
+	def test_createAEAgainFail(self) -> None:
 		""" Create/register an <AE> with same rn again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -100,7 +100,7 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEWithExistingOriginator(self) -> None:
+	def test_createAEWithExistingOriginatorFail(self) -> None:
 		""" Create/register an <AE> with same originator again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'api': APPID,
@@ -109,6 +109,18 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct)
 		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAECSIoriginatorFail(self) -> None:
+		""" Create/register an <AE> with the CSI originator -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'api': APPID,
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		r, rsc = CREATE(cseURL, CSEID[1:], T.AE, dct)
+		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -409,9 +421,10 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 
 	addTest(suite, TestAE('test_createAE'))
-	addTest(suite, TestAE('test_createAEUnderAE'))
-	addTest(suite, TestAE('test_createAEAgain'))
-	addTest(suite, TestAE('test_createAEWithExistingOriginator'))
+	addTest(suite, TestAE('test_createAEUnderAEFail'))
+	addTest(suite, TestAE('test_createAEAgainFail'))
+	addTest(suite, TestAE('test_createAEWithExistingOriginatorFail'))
+	addTest(suite, TestAE('test_createAECSIoriginatorFail'))
 	addTest(suite, TestAE('test_retrieveAE'))
 	addTest(suite, TestAE('test_retrieveAEWithWrongOriginator'))
 	addTest(suite, TestAE('test_attributesAE'))

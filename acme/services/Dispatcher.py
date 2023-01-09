@@ -1098,7 +1098,7 @@ class Dispatcher(object):
 
 		if ResourceTypes.isNotificationEntity(targetResource.ty):
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = L.logDebug('fOriginator has no NOTIFY privilege for: {id}'))
+				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
 			#  A Notification to one of these resources will always be a Received Notify Request
 			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
 		
