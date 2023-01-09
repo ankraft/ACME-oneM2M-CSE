@@ -11,6 +11,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, ResponseStatusCode, JSON
 from ..etc.Utils import uniqueAEI
+from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -123,7 +124,7 @@ class AE(AnnounceableResource):
 				# Remove from old node first
 				if _nl_:
 					self._removeAEfromNOD(_nl_)
-				self[Resource._node] = nl
+				self[Constants.attrNode] = nl
 
 				# Add to new node
 				if node := CSE.dispatcher.retrieveResource(nl).resource:	# new node
@@ -134,7 +135,7 @@ class AE(AnnounceableResource):
 							hael.append(ri)
 							node['hael'] = hael
 					node.dbUpdate()
-			self[Resource._node] = nl
+			self[Constants.attrNode] = nl
 		
 		# check csz attribute
 		if csz := self.csz:

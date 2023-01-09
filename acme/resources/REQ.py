@@ -11,10 +11,11 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, RequestStatus, CSERequest, JSON
-from ..etc import Utils, DateUtils
+from ..etc.Utils import getCSE, setXPath
+from ..etc.DateUtils import getResourceDate
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
-from ..resources import Factory
+from ..resources import Factory	# attn: circular import
 from ..services import CSE
 
 
@@ -72,9 +73,9 @@ class REQ(Resource):
 		
 		# otherwise calculate request et
 		else:	
-			et = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
-			# minEt = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
-			# maxEt = DateUtils.getResourceDate(Configuration.get('cse.req.maxet'))
+			et = getResourceDate(Configuration.get('cse.req.minet'))
+			# minEt = getResourceDate(Configuration.get('cse.req.minet'))
+			# maxEt = getResourceDate(Configuration.get('cse.req.maxet'))
 			# if request.args.rpts:
 			# 	et = request.args.rpts if request.args.rpts < maxEt else maxEt
 			# else:
@@ -91,7 +92,7 @@ class REQ(Resource):
 				'rid'	: request.rqi,
 				'mi'	: {
 					'ty'	: request.ty,
-					'ot'	: DateUtils.getResourceDate(),
+					'ot'	: getResourceDate(),
 					'rqet'	: request.rqet,
 					'rset'	: request.rset,
 					'rt'	: { 
@@ -115,17 +116,17 @@ class REQ(Resource):
 
 		# add handlings, conditions and attributes from filter
 		for k,v in { **request.fc.criteriaAttributes(), **request.fc.attributes}.items():
-			Utils.setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
+			setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content
 		if request.pc and len(request.pc) > 0:
-			Utils.setXPath(dct, 'm2m:req/pc', request.pc, True)
+			setXPath(dct, 'm2m:req/pc', request.pc, True)
 
 		# calculate and assign rtu for rt
 		if (rtu := request.rtu) and len(rtu) > 0:
-			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
+			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		if not (cseres := Utils.getCSE()).resource:
+		if not (cseres := getCSE()).resource:
 			return Result.errorResult(dbg = cseres.dbg)
 
 		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = ResourceTypes.REQ)

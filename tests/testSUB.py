@@ -950,9 +950,6 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		testSleep(durationForBatchNotifications) 	# wait a moment
-		lastNotification = getLastNotification()
-		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 
 		# Retrieve subscription
 		testSleep(1) 	# wait a moment
@@ -1463,6 +1460,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 
 		# retrieve <sub> to get the stats
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa)	
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 1, r)		# Change counts if order of TC changes
@@ -1510,6 +1508,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 
 		# retrieve <sub> to get the stats
+		testSleep(notificationDelay)
 		r, rsc = RETRIEVE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa)	
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)

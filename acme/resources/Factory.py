@@ -16,7 +16,8 @@ from typing import Optional
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.Types import ResponseStatusCode
 from ..etc.Types import Result, JSON
-from ..etc import Utils
+from ..etc.Utils import pureResource
+from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 
 
@@ -90,8 +91,6 @@ from ..resources.SWR import SWR
 from ..resources.SWRAnnc import SWRAnnc
 from ..resources.WIFIC import WIFIC
 from ..resources.WIFICAnnc import WIFICAnnc
-
-from ..resources.Resource import Resource
 
 
 # Adding factory callbacks to regular resource type details
@@ -194,7 +193,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			`Result` object with the *resource* attribute set to the created resource object.
 
 	"""
-	resDict, tpe, _attr = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+	resDict, tpe, _attr = pureResource(resDict)	# remove optional "m2m:xxx" level
 	
 	# Check resouce type name (tpe), especially in FCT resources
 	if tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
@@ -217,7 +216,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 
 	# store the import status in the original resDict
 	if isImported:
-		resDict[Resource._imported] = True	# Indicate that this is an imported resource
+		resDict[Constants.attrImported] = True	# Indicate that this is an imported resource
 
 	# Determine a factory and call it
 	factory:FactoryCallableT = None

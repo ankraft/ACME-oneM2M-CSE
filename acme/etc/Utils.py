@@ -22,10 +22,11 @@ from .Constants import Constants
 from .Types import ResourceTypes, ResponseStatusCode
 from .Types import Result, JSON
 from ..services.Logging import Logging as L
-from ..resources.Resource import Resource
-from ..resources.PCH_PCU import PCH_PCU
 from ..services import CSE as CSE
 
+# Optimize access (fewer look-up)
+_maxIDLength = Constants.maxIDLength
+_attrType = Constants.attrRtype
 
 ##############################################################################
 #
@@ -78,17 +79,6 @@ def uniqueRN(prefix:str) -> str:
 	return f'{noNamespace(prefix)}_{_randomID()}'
 
 
-def announcedRN(resource:Resource) -> str:
-	""" Create the announced resource name for a resource.
-
-		Args:
-			resource: The Resource for which to generate the announced resource name
-		Return:
-			String with the announced resource name
-	"""
-	return f'{resource.rn}_Annc'
-
-
 # create a unique aei, M2M-SP type
 def uniqueAEI(prefix:Optional[str] = 'S') -> str:
 	"""	Create a new AE ID. An AE ID must always start with either "S" or "C".
@@ -124,7 +114,7 @@ def _randomID() -> str:
 			String with a random ID
 	"""
 	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = Constants.maxIDLength))
+		result = ''.join(random.choices(_randomIDCharSet, k = _maxIDLength))
 		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
 			return result
 
@@ -188,6 +178,8 @@ def localResourceID(ri:str) -> Optional[str]:
 			If the ID targets a local resource then the CSE-relative form of the resource ID
 			is returned, or None otherwise.
 	"""
+	if ri == CSE.cseCsi:
+		return CSE.cseRn
 	if isAbsolute(ri):
 		if ri.startswith(CSE.cseAbsoluteSlash):
 			return ri[len(CSE.cseAbsoluteSlash):]
@@ -238,6 +230,18 @@ def isValidCSI(csi:str) -> bool:
 	return re.fullmatch(_csiRx, csi) is not None
 
 
+_aeRx = re.compile('^[^/\s]+') # Must not start with a / and must not contain a further / or white space
+def isValidAEI(aei:str) -> bool:
+	"""	Test for valid AE-ID format.
+
+		Args:
+			aei: The AE-ID to check
+		Return:
+			Boolean
+	"""
+	return re.fullmatch(_aeRx, aei) is not None
+
+
 def csiFromSPRelative(ri:str) -> Optional[str]:
 	"""	Return the csi from a SP-relative resource ID. It is assumed that
 		the passed *ri* is in SP-relative format.
@@ -250,29 +254,6 @@ def csiFromSPRelative(ri:str) -> Optional[str]:
 	ids = ri.split('/')
 	# return f'/{ids[0]}' if len(ids) > 0 else None
 	return f'/{ids[1]}' if len(ids) > 1 else None
-
-
-def structuredPath(resource:Resource) -> Optional[str]:
-	""" Determine the structured path of a resource.
-
-		Args:
-			resource: The resource for which to get the structured path
-		Return:
-			Structured path or None
-	"""
-	rn:str = resource.rn
-	if resource.ty == ResourceTypes.CSEBase: # if CSE
-		return rn
-
-	# retrieve identifier record of the parent
-	if not (pi := resource.pi):
-		# L.logErr('PI is None')
-		return rn
-	if len(rpi := CSE.storage.identifier(pi)) == 1:
-		return cast(str, f'{rpi[0]["srn"]}/{rn}')
-	# L.logErr(traceback.format_stack())
-	L.logErr(f'Parent {pi} not found in DB')
-	return rn # fallback
 
 
 def structuredPathFromRI(ri:str) -> Optional[str]:
@@ -396,7 +377,7 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
 		if idsLen < 2:
-			return None, None, None, 'ID too short. Must be /<cseid>/<structured|unstructured>.'
+			return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
 		csi = ids[0]							# extract the csi
 		if csi != CSE.cseCsiSlashLess:			# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
@@ -638,10 +619,7 @@ def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 	if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
 		return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
-	root = None
-	if Resource._rtype in dct:
-		root = dct[Resource._rtype]
-	return dct, root, rootKeys[0] if lrk > 0 else None
+	return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
 
 
 
@@ -686,10 +664,7 @@ def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Optional[Any]:
 	paths = key.split("/")
 	data:Any = dct
 	for i in range(0,len(paths)):
-		if not data:
-			return default
-		pathElement = paths[i]
-		if len(pathElement) == 0:	# return if there is an empty path element
+		if not data or not (pathElement := paths[i]) : # if empty of key not in dict
 			return default
 		elif (m := _decimalMatch.search(pathElement)) is not None:	# Match array index {i}
 			idx = int(m.group(1))
@@ -716,6 +691,7 @@ def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Optional[Any]:
 			else:
 				return default
 
+		# Only now test whether this is an unknown path element
 		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
@@ -884,73 +860,6 @@ def resourceFromCSI(csi:str) -> Result:
 	"""
 	return CSE.storage.retrieveResource(csi = csi)
 
-	
-def fanoutPointResource(id:str) -> Optional[Resource]:
-	"""	Check whether the target resource contains a fanoutPoint along its path is a fanoutPoint.
-
-		Args:
-			id: the target's resource ID.
-		Return:
-			Return either the virtual fanoutPoint resource, or None in case of an error.
-	"""
-	# Convert to srn
-	if not isStructured(id):
-		if not (id := structuredPathFromRI(id)):
-			return None
-	# from here on id is a srn
-	nid = None
-	if id.endswith('/fopt'):
-		nid = id
-	else:
-		(head, found, _) = id.partition('/fopt/')
-		if found:
-			nid = head + '/fopt'
-
-	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
-		return cast(Resource, result.resource)
-	return None
-
-
-def pollingChannelURIResource(id:str) -> Optional[PCH_PCU]:
-	"""	Check whether the target is a PollingChannelURI resource and return it.
-
-		Args:
-			id: Target resource ID
-		Return:
-			Return either the virtual PollingChannelURI resource or None.
-	"""
-	if not id:
-		return None
-	if id.endswith('pcu'):
-		# Convert to srn
-		if not isStructured(id):
-			if not (id := structuredPathFromRI(id)):
-				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == ResourceTypes.PCH_PCU:
-			return cast(PCH_PCU, result.resource)
-		# Fallthrough
-	return None
-
-
-def latestOldestResource(id:str) -> Optional[Resource]:
-	"""	Check whether the target is a latest or oldest virtual resource and return it.
-
-		Args:
-			id: Target resource ID
-		Return:
-			Return either the virtual resource, or None in case of an error.
-	"""
-	if not id:
-		return None
-	if id.endswith(('la', 'ol')):
-		# Convert to srn
-		if not isStructured(id):
-			if not (id := structuredPathFromRI(id)):
-				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and ResourceTypes.isLatestOldestResource(result.resource.ty):
-			return result.resource
-		# Fallthrough
-	return None
 
 
 def getAttributeSize(attribute:Any) -> int:
@@ -997,9 +906,9 @@ def strToBool(value:str) -> bool:
 #	Threads
 #
 
-def renameThread(name:Optional[str] = None,
-				 thread:Optional[threading.Thread] = None,
-				 prefix:Optional[str] = None) -> None:
+def renameThread(prefix:Optional[str] = None,
+				 name:Optional[str] = None,
+				 thread:Optional[threading.Thread] = None) -> None:
 	"""	Rename a thread.
 
 		If *name* is provided then the thread is renamed to that name.

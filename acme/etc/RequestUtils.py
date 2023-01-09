@@ -14,7 +14,7 @@ import cbor2, json
 from typing import Any, cast, Optional
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
-from . import DateUtils
+from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode, Result, ResourceTypes, Operation
 from .Constants import Constants
 from ..services.Logging import Logging as L
@@ -115,22 +115,22 @@ def requestFromResult(inResult:Result,
 	req:JSON = {}
 
 	# Assign the From and to of the request. An assigned originator has priority for this
-	if originator:
-		req['fr'] = CSE.cseCsi if isResponse else originator
-		req['to'] = inResult.request.id if inResult.request.id else originator
-	elif inResult.request and inResult.request.originator:
-		req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
-		req['to'] = inResult.request.originator if isResponse else inResult.request.id
-	else:
-		req['fr'] = CSE.cseCsi
-		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
+	# TO and FROM are optional in a response. So, don't put them in by default.
+	if not isResponse or (isResponse and CSE.request.sendToFromInResponses):
+		if originator:
+			req['fr'] = CSE.cseCsi if isResponse else originator
+			req['to'] = inResult.request.id if inResult.request.id else originator
+		elif inResult.request and inResult.request.originator:
+			req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
+			req['to'] = inResult.request.originator if isResponse else inResult.request.id
+		else:
+			req['fr'] = CSE.cseCsi
+			req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
 
 
 	# Originating Timestamp
 	if inResult.request.ot:
-		req['ot'] = DateUtils.getResourceDate()
-	# else:
-	# 	req['ot'] = DateUtils.getResourceDate()
+		req['ot'] = getResourceDate()
 	
 	# Response Status Code
 	if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
@@ -207,10 +207,10 @@ def createRawRequest(**kwargs:Any) -> JSON:
 			JSON dictionary with the request.
 	"""
 	from ..services import CSE 
-	from ..etc import Utils
+	from ..etc.Utils import uniqueRI	# Leave it here to avoid circular init
 
 	r = {	'fr': CSE.cseCsi,
-			'rqi': Utils.uniqueRI(),
+			'rqi': uniqueRI(),
 			'rvi': CSE.releaseVersion,
 		}
 	r.update(kwargs)

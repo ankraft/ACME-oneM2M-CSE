@@ -131,6 +131,11 @@ class SemanticManager(object):
 			defaultFormat: Serialization format to use as a default
 	"""
 
+	__slots__ = (
+		'semanticHandler',
+		'defaultFormat',
+	)
+
 	# TODO: configurable store
 	# TODO Update graph
 	def __init__(self) -> None:
@@ -457,6 +462,11 @@ class RdfLibHandler(SemanticHandler):
 			store: The store that stores the graphs.
 			graph: The root graph for the CSE.
 	"""
+
+	__slots__ = (
+		'store',
+		'graph',
+	)
 
 	supportedFormats =	{ SemanticFormat.FF_RdfXml		: 'xml',
 						  SemanticFormat.FF_JsonLD		: 'json-ld',

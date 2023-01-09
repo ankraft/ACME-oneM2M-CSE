@@ -31,6 +31,15 @@ class Importer(object):
 	
 		It is mainly run before the CSE is actually started or restarted."""
 
+	__slots__ = (
+		'resourcePath',
+		'macroMatch',
+		'isImporting',
+
+		'_oldacp',
+	)
+
+
 	# List of "priority" resources that must be imported first for correct CSE operation
 	_firstImporters = [ 'csebase.json']
 	_enumValues:dict[str, list[int]] = {}

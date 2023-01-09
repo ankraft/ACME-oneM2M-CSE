@@ -15,6 +15,7 @@ import sys
 from copy import deepcopy
 
 from ..helpers import TextTools
+from ..etc.Constants import Constants
 from ..etc.Types import FilterCriteria, FilterUsage, Operation, ResourceTypes
 from ..etc.Types import FilterOperation
 from ..etc.Types import Permission
@@ -24,23 +25,41 @@ from ..etc.Types import ResponseStatusCode
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
 from ..etc.Types import JSON
-from ..etc import Utils
-from ..etc import DateUtils
+from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes
+from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, findXPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
+from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..services import CSE
 from ..services.Configuration import Configuration
-from ..resources import Factory as Factory
+from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
+from ..resources.PCH_PCU import PCH_PCU
 from ..resources.SMD import SMD
 from ..services.Logging import Logging as L
 
 
 # TODO NOTIFY optimize local resource notifications
-
+# TODO handle config update
 class Dispatcher(object):
+
+	__slots__ = (
+		'csiSlashLen',
+		'sortDiscoveryResources',
+
+		'_eventCreateResource',
+		'_eventCreateChildResource',
+		'_eventUpdateResource',
+		'_eventDeleteResource',
+	)
 
 	def __init__(self) -> None:
 		self.csiSlashLen 				= len(CSE.cseCsiSlash)
 		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
+
+		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
+		self._eventCreateChildResource = CSE.event.createChildResource	# type: ignore [attr-defined]
+		self._eventUpdateResource = CSE.event.updateResource			# type: ignore [attr-defined]
+		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
+
 		L.isInfo and L.log('Dispatcher initialized')
 
 
@@ -81,7 +100,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests first
-		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
 			return CSE.request.handleTransitRetrieveRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -92,21 +111,21 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
+		if (fanoutPointResource := self._getFanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleRetrieveRequest(request, srn, request.originator)
 
 		# Handle PollingChannelURI RETRIEVE
-		if (pollingChannelURIResource := Utils.pollingChannelURIResource(srn)):		# We need to check the srn here
-			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
+		if (pollingChannelURIRsrc := self._getPollingChannelURIResource(srn)):		# We need to check the srn here
+			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIRsrc):
 				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
-			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.getSrn()}')
-			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
+			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIRsrc.getSrn()}')
+			return pollingChannelURIRsrc.handleRetrieveRequest(request, id, originator)
 
 
 		# EXPERIMENTAL
 		# Handle latest and oldest RETRIEVE
-		if (laOlResource := Utils.latestOldestResource(srn)):		# We need to check the srn here
+		if (laOlResource := self._latestOldestResource(srn)):		# We need to check the srn here
 			# Check for virtual resource
 			if laOlResource.isVirtual(): 
 				if not (res := laOlResource.handleRetrieveRequest(request = request, originator = originator)).status:
@@ -125,6 +144,7 @@ class Dispatcher(object):
 		# 	 Retrieve the target resource, because it is needed for some rcn (and the default)
 		#
 
+		rcn = request.rcn
 		# Check semantic discovery (sqi present and False)
 		if request.sqi is not None and not request.sqi:
 			# Get all accessible semanticDescriptors
@@ -138,18 +158,18 @@ class Dispatcher(object):
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(cast(List[Resource], res.data), request.drt))
 
 		else:
-			if request.rcn in [ ResultContentType.attributes, 
-								ResultContentType.attributesAndChildResources, 
-								ResultContentType.childResources, 
-								ResultContentType.attributesAndChildResourceReferences, 
-								ResultContentType.originalResource ]:
+			if rcn in [ ResultContentType.attributes, 
+						ResultContentType.attributesAndChildResources, 
+						ResultContentType.childResources, 
+						ResultContentType.attributesAndChildResourceReferences, 
+						ResultContentType.originalResource ]:
 				if not (res := self.retrieveResource(id, originator, request)).status:
 					return res # error
 				if not CSE.security.hasAccess(originator, res.resource, permission):
 					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
 
 				# if rcn == attributes then we can return here, whatever the result is
-				if request.rcn == ResultContentType.attributes:
+				if rcn == ResultContentType.attributes:
 					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 						return resCheck
 					return res
@@ -157,7 +177,7 @@ class Dispatcher(object):
 				resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
 
 				# if rcn == original-resource we retrieve the linked resource
-				if request.rcn == ResultContentType.originalResource:
+				if rcn == ResultContentType.originalResource:
 					# Some checks for resource validity
 					if not resource.isAnnounced():
 						return Result.errorResult(dbg = L.logDebug(f'Resource {resource.ri} is not an announced resource'))
@@ -175,7 +195,7 @@ class Dispatcher(object):
 			#	Semantic query request
 			#	This is indicated by rcn = semantic content
 			#
-			if request.rcn == ResultContentType.semanticContent:
+			if rcn == ResultContentType.semanticContent:
 				L.isDebug and L.logDebug('Performing semantic discovery / query')
 				# Validate SPARQL in semanticFilter
 				if not (res := CSE.semantic.validateSPARQL(request.fc.smf)).status:
@@ -211,27 +231,27 @@ class Dispatcher(object):
 		#	Handle more sophisticated RCN
 		#
 
-		if request.rcn == ResultContentType.attributesAndChildResources:
+		if rcn == ResultContentType.attributesAndChildResources:
 			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = resource)
 
-		elif request.rcn == ResultContentType.attributesAndChildResourceReferences:
+		elif rcn == ResultContentType.attributesAndChildResourceReferences:
 			self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = resource)
 
-		elif request.rcn == ResultContentType.childResourceReferences: 
+		elif rcn == ResultContentType.childResourceReferences: 
 			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.drt, 'm2m:rrl')
 			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
 			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = childResourcesRef)
 
-		elif request.rcn == ResultContentType.childResources:
+		elif rcn == ResultContentType.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = childResources)
 
-		elif request.rcn == ResultContentType.discoveryResultReferences: # URIList
+		elif rcn == ResultContentType.discoveryResultReferences: # URIList
 			return Result(status = True, rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
 
 		else:
@@ -259,11 +279,11 @@ class Dispatcher(object):
 				id = id[self.csiSlashLen:]
 			else:
 				# Retrieve from remote
-				if Utils.isSPRelative(id):
+				if isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
 
 		# Retrieve locally
-		if Utils.isStructured(id):
+		if isStructured(id):
 			res = self.retrieveLocalResource(srn = id, originator = originator, request = request) 
 		else:
 			res = self.retrieveLocalResource(ri = id, originator = originator, request = request)
@@ -519,7 +539,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests first
-		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
 			return CSE.request.handleTransitCreateRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -534,9 +554,9 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
-			return fanoutPointResource.handleCreateRequest(request, srn, request.originator)
+		if (fanoutPointRsrc := self._getFanoutPointResource(srn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
+			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
 
 		if (ty := request.ty) is None:	# Check for type parameter in request, integer
 			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
@@ -562,7 +582,7 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
-		if not (nres := Factory.resourceFromDict(deepcopy(request.pc), pi = parentResource.ri, ty = ty)).status:	# something wrong, perhaps wrong type
+		if not (nres := resourceFromDict(deepcopy(request.pc), pi = parentResource.ri, ty = ty)).status:	# something wrong, perhaps wrong type
 			return nres
 		newResource = nres.resource
 
@@ -595,17 +615,18 @@ class Dispatcher(object):
 		#
 
 		tpe = res.resource.tpe
-		if request.rcn is None or request.rcn == ResultContentType.attributes:	# Just the resource & attributes, integer
+		rcn = request.rcn
+		if rcn is None or rcn == ResultContentType.attributes:	# Just the resource & attributes, integer
 			return res
-		elif request.rcn == ResultContentType.modifiedAttributes:
+		elif rcn == ResultContentType.modifiedAttributes:
 			dictOrg = request.pc[tpe]
 			dictNew = res.resource.asDict()[tpe]
-			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc = res.rsc, dbg = res.dbg)
-		elif request.rcn == ResultContentType.hierarchicalAddress:
-			return Result(status = res.status, resource = { 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc = res.rsc, dbg = res.dbg)
-		elif request.rcn == ResultContentType.hierarchicalAddressAttributes:
-			return Result(status = res.status, resource = { 'm2m:rce' : { Utils.noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc = res.rsc, dbg = res.dbg)
-		elif request.rcn == ResultContentType.nothing:
+			return Result(status = res.status, resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc = res.rsc, dbg = res.dbg)
+		elif rcn == ResultContentType.hierarchicalAddress:
+			return Result(status = res.status, resource = { 'm2m:uri' : res.resource.structuredPath() }, rsc = res.rsc, dbg = res.dbg)
+		elif rcn == ResultContentType.hierarchicalAddressAttributes:
+			return Result(status = res.status, resource = { 'm2m:rce' : { noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : res.resource.structuredPath() }}, rsc = res.rsc, dbg = res.dbg)
+		elif rcn == ResultContentType.nothing:
 			return Result(status = res.status, rsc = res.rsc, dbg = res.dbg)
 		else:
 			return Result.errorResult(dbg = 'wrong rcn for CREATE')
@@ -618,11 +639,11 @@ class Dispatcher(object):
 									 originator:str) -> Result:
 		# TODO doc
 		# Create locally
-		if (pID := Utils.localResourceID(parentID)) is not None:
+		if (pID := localResourceID(parentID)) is not None:
 			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
 
 			# Get the unstructured resource ID if necessary
-			pID = Utils.riFromStructuredPath(pID) if Utils.isStructured(pID) else pID
+			pID = riFromStructuredPath(pID) if isStructured(pID) else pID
 
 			# Retrieve the parent resource
 			if not (res := self.retrieveLocalResource(ri = pID, originator = originator)).status:
@@ -631,7 +652,7 @@ class Dispatcher(object):
 			parentResource = res.resource
 
 			# Build a resource instance
-			if not (res := Factory.resourceFromDict(dct, ty = ty, pi = pID)).status:
+			if not (res := resourceFromDict(dct, ty = ty, pi = pID)).status:
 				return res
 
 			# Check Permission
@@ -648,7 +669,7 @@ class Dispatcher(object):
 		# Create remotely
 		else:
 			L.isDebug and L.logDebug(f'Creating remote resource with ID: {pID} originator: {originator}')
-			if not (res := CSE.request.sendCreateRequest((pri := Utils.toSPRelative(parentID)), 
+			if not (res := CSE.request.sendCreateRequest((pri := toSPRelative(parentID)), 
 														 originator = originator,
 														 ty = ty,
 														 content = dct)).status:
@@ -661,8 +682,8 @@ class Dispatcher(object):
 				res.dbg = res.request.pc.get('dbg')
 				return res
 
-			resRi = Utils.findXPath(res.request.pc, '{*}/ri')
-			resCsi = Utils.csiFromSPRelative(pri)
+			resRi = findXPath(res.request.pc, '{*}/ri')
+			resCsi = csiFromSPRelative(pri)
 		
 		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)
 		return Result(status = True, rsc = ResponseStatusCode.created, data = (resRi, resCsi, pID))
@@ -685,7 +706,7 @@ class Dispatcher(object):
 
 		# if not already set: determine and add the srn
 		if not resource.getSrn():
-			resource.setSrn(Utils.structuredPath(resource))
+			resource.setSrn(resource.structuredPath())
 
 		# add the resource to storage
 		if not (res := resource.dbCreate(overwrite = False)).status:
@@ -708,7 +729,7 @@ class Dispatcher(object):
 			return res
 
 		# send a create event
-		CSE.event.createResource(resource)	# type: ignore [attr-defined]
+		self._eventCreateResource(resource)
 
 
 		if parentResource:
@@ -719,7 +740,7 @@ class Dispatcher(object):
 			parentResource.childAdded(resource, originator)			# notify the parent resource
 
 			# Send event for parent resource
-			CSE.event.createChildResource(parentResource)	# type: ignore
+			self._eventCreateChildResource(parentResource)
 
 		return Result(status = True, resource = resource, rsc = ResponseStatusCode.created) 	# everything is fine. resource created.
 
@@ -744,7 +765,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process UPDATE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests first
-		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
 			return CSE.request.handleTransitUpdateRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -759,7 +780,7 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
+		if (fanoutPointResource := self._getFanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
@@ -813,7 +834,7 @@ class Dispatcher(object):
 			# return only the modified attributes. This does only include those attributes that are updated differently, or are
 			# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
 			#  are in the resource's __modified__ variable.
-			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Resource._modified]) }, rsc = res.rsc)
+			return Result(status = res.status, resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) }, rsc = res.rsc)
 		elif request.rcn == ResultContentType.nothing:
 			return Result(status = res.status, rsc = res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 
@@ -850,7 +871,7 @@ class Dispatcher(object):
 
 		# send a create event
 		res = resource.dbUpdate()
-		CSE.event.updateResource(resource)		# type: ignore
+		self._eventUpdateResource(resource)
 		return res
 
 
@@ -861,7 +882,7 @@ class Dispatcher(object):
 		# TODO doc
 
 		# Update locally
-		if (rID := Utils.localResourceID(id)) is not None:
+		if (rID := localResourceID(id)) is not None:
 			L.isDebug and L.logDebug(f'Updating local resource with ID: {id} originator: {originator}')
 
 			# Retrieve the resource if not given
@@ -916,7 +937,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process DELETE request for id: {request.id}|{request.srn}')
 
 		# handle transit requests
-		if Utils.localResourceID(request.id) is None and Utils.localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
 			return CSE.request.handleTransitDeleteRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -931,9 +952,9 @@ class Dispatcher(object):
 			return res
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
-			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
-			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.originator)
+		if (fanoutPointRsrc := self._getFanoutPointResource(fopsrn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
+			return fanoutPointRsrc.handleDeleteRequest(request, fopsrn, request.originator)
 
 		# get resource to be removed and check permissions
 		if not (res := self.retrieveResource(id)).resource:
@@ -1008,7 +1029,7 @@ class Dispatcher(object):
 		res = resource.dbDelete()
 
 		# send a delete event
-		CSE.event.deleteResource(resource) 	# type: ignore
+		self._eventDeleteResource(resource)
 
 		# Now notify the parent resource
 		if doDeleteCheck and parentResource:
@@ -1024,7 +1045,7 @@ class Dispatcher(object):
 
 		
 		# Update locally
-		if (rID := Utils.localResourceID(id)) is not None:
+		if (rID := localResourceID(id)) is not None:
 			L.isDebug and L.logDebug(f'Deleting local resource with ID: {id} originator: {originator}')
 
 			# Retrieve the resource
@@ -1070,7 +1091,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process NOTIFY request for id: {request.id}|{request.srn}')
 
 		# handle transit requests
-		if Utils.localResourceID(request.id) is None:
+		if localResourceID(request.id) is None:
 			return CSE.request.handleTransitNotifyRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
@@ -1126,8 +1147,8 @@ class Dispatcher(object):
 		request = CSERequest(id = ri,
 							op = Operation.NOTIFY,
 							originator = originator,
-							ot = DateUtils.getResourceDate(),
-							rqi = Utils.uniqueRI(),
+							ot = getResourceDate(),
+							rqi = uniqueRI(),
 							rvi = CSE.releaseVersion,
 							pc = content)
 		return res.resource.handleNotification(request, originator)
@@ -1189,7 +1210,7 @@ class Dispatcher(object):
 		if not hit:
 			return None
 		# Instantiate and return resource
-		return Factory.resourceFromDict(hit[0]).resource
+		return resourceFromDict(hit[0]).resource
 
 
 	def discoverChildren(self, id:str, 
@@ -1239,7 +1260,7 @@ class Dispatcher(object):
 		result = []
 		rss = CSE.storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
-			result.append(Factory.resourceFromDict(rs).resource)
+			result.append(resourceFromDict(rs).resource)
 		return result
 	
 
@@ -1272,10 +1293,10 @@ class Dispatcher(object):
 		"""
 		if request.oet:
 			# Calculate the dealy
-			delay = DateUtils.timeUntilAbsRelTimestamp(request.oet)
+			delay = timeUntilAbsRelTimestamp(request.oet)
 			L.isDebug and L.logDebug(f'Waiting: {delay:.4f} seconds until delayed execution')
 			# Just wait some time
-			DateUtils.waitFor(delay)	
+			waitFor(delay)	
 
 
 	def _checkRequestExpiration(self, request:CSERequest) -> Result:
@@ -1286,7 +1307,7 @@ class Dispatcher(object):
 			Return:
 				 A negative Result status when the timeout timestamp has been reached or passed.
 		"""
-		if request._rqetUTCts is not None and DateUtils.timeUntilTimestamp(request._rqetUTCts) <= 0.0:
+		if request._rqetUTCts is not None and timeUntilTimestamp(request._rqetUTCts) <= 0.0:
 			return Result.errorResult(rsc = ResponseStatusCode.requestTimeout, dbg = L.logDebug('Request timed out'))
 		return Result.successResult()
 
@@ -1303,7 +1324,7 @@ class Dispatcher(object):
 		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
-			lst.append(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
+			lst.append(r.structuredPath() if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
 		return { 'm2m:uril' : lst }
 
 
@@ -1368,7 +1389,7 @@ class Dispatcher(object):
 				continue
 			ref = { 'nm' : r['rn'], 
 					'typ' : r['ty'], 
-					'val' : Utils.toSPRelative(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else r.ri)
+					'val' : toSPRelative(r.structuredPath() if drt == DesiredIdentifierResultType.structured else r.ri)
 			}
 			if r.ty == ResourceTypes.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
@@ -1408,8 +1429,76 @@ class Dispatcher(object):
 				Tuple of *srn* and *id*
 		"""
 		if id:
-			srn = id if Utils.isStructured(id) else None # Overwrite srn if id is strcutured. This is a bit mixed up sometimes
-			return Utils.srnFromHybrid(srn, id) # Hybrid
-			# return Utils.srnFromHybrid(None, id) # Hybrid
-		return Utils.srnFromHybrid(request.srn, request.id) # Hybrid
+			srn = id if isStructured(id) else None # Overwrite srn if id is strcutured. This is a bit mixed up sometimes
+			return srnFromHybrid(srn, id) # Hybrid
+			# return srnFromHybrid(None, id) # Hybrid
+		return srnFromHybrid(request.srn, request.id) # Hybrid
 
+
+
+	def _getPollingChannelURIResource(self, id:str) -> Optional[PCH_PCU]:
+		"""	Check whether the target is a PollingChannelURI resource and return it.
+
+			Args:
+				id: Target resource ID
+			Return:
+				Return either the virtual PollingChannelURI resource or None.
+		"""
+		if not id:
+			return None
+		if id.endswith('pcu'):
+			# Convert to srn
+			if not isStructured(id):
+				if not (id := structuredPathFromRI(id)):
+					return None
+			if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == ResourceTypes.PCH_PCU:
+				return cast(PCH_PCU, result.resource)
+			# Fallthrough
+		return None
+
+	
+	def _getFanoutPointResource(self, id:str) -> Optional[Resource]:
+		"""	Check whether the target resource contains a fanoutPoint along its path is a fanoutPoint.
+
+			Args:
+				id: the target's resource ID.
+			Return:
+				Return either the virtual fanoutPoint resource, or None in case of an error.
+		"""
+		# Convert to srn
+		if not isStructured(id):
+			if not (id := structuredPathFromRI(id)):
+				return None
+		# from here on id is a srn
+		nid = None
+		if id.endswith('/fopt'):
+			nid = id
+		else:
+			(head, found, _) = id.partition('/fopt/')
+			if found:
+				nid = head + '/fopt'
+
+		if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
+			return cast(Resource, result.resource)
+		return None
+
+
+	def _latestOldestResource(self, id:str) -> Optional[Resource]:
+		"""	Check whether the target is a latest or oldest virtual resource and return it.
+
+			Args:
+				id: Target resource ID
+			Return:
+				Return either the virtual resource, or None in case of an error.
+		"""
+		if not id:
+			return None
+		if id.endswith(('la', 'ol')):
+			# Convert to srn
+			if not isStructured(id):
+				if not (id := structuredPathFromRI(id)):
+					return None
+			if (result := CSE.dispatcher.retrieveResource(id)).resource and ResourceTypes.isLatestOldestResource(result.resource.ty):
+				return result.resource
+			# Fallthrough
+		return None

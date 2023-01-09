@@ -11,7 +11,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, Result, JSON
-from ..etc import Utils
+from ..etc.Utils import isValidCSI
+from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services import CSE
@@ -86,7 +87,7 @@ class CSEBase(AnnounceableResource):
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
-		if not Utils.isValidCSI(self.csi):
+		if not isValidCSI(self.csi):
 			L.logWarn(dbg := f'Wrong format for CSEBase.csi: {self.csi}')
 			return Result.errorResult(dbg = dbg)
 
@@ -112,11 +113,11 @@ class CSEBase(AnnounceableResource):
 					if nresource := CSE.dispatcher.retrieveResource(_nl_).resource:
 						nresource['hcl'] = None # remove old link
 						CSE.dispatcher.updateLocalResource(nresource)
-				self[Resource._node] = nl
+				self[Constants.attrNode] = nl
 				if nresource := CSE.dispatcher.retrieveResource(nl).resource:
 					nresource['hcl'] = self['ri']
 					CSE.dispatcher.updateLocalResource(nresource)
-			self[Resource._node] = nl
+			self[Constants.attrNode] = nl
 
 		return Result.successResult()
 

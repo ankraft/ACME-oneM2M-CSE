@@ -22,8 +22,9 @@ from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCa
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers import TextTools
 from ..services import CSE
-from ..etc import Utils, DateUtils
-from ..resources import Factory
+from ..etc.Utils import findXPath, runsInIPython, uniqueRI, isURL, setXPath, uniqueID
+from ..etc.DateUtils import cronMatchesTimestamp
+from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L, LogLevel
 
 
@@ -57,6 +58,11 @@ class ACMEPContext(PContext):
 			requestParameters: Dictionary with additional request parameters.
 
 	"""
+
+	__slots__ = (
+		'poas',
+		'fileMtime',
+	)
 
 	def __init__(self, 
 				 script:Union[str, list[str]], 
@@ -391,7 +397,7 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'No or invalid content found')
 			return None
 
-		resource = Factory.resourceFromDict(dct, create = True, isImported=True).resource
+		resource = resourceFromDict(dct, create = True, isImported=True).resource
 
 		# Get the originator for the request
 		if (originator := self.getVariable('request.originator')) is None:
@@ -746,7 +752,7 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Invalid format: attribute <key> <resource>')
 			return None
 		try:
-			if (value := Utils.findXPath(json.loads(res), key)) is None:
+			if (value := findXPath(json.loads(res), key)) is None:
 				pcontext.setError(PError.undefined, f'Key "{key}" not found in resource')
 				return None
 		except Exception as e:
@@ -809,7 +815,7 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Invalid format: hasAttribute <key> <resource>')
 			return None
 		try:
-			if Utils.findXPath(json.loads(res), key) is None:
+			if findXPath(json.loads(res), key) is None:
 				return 'false'
 		except Exception as e:
 			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
@@ -835,7 +841,7 @@ class ACMEPContext(PContext):
 		if arg:
 			pcontext.setError(PError.invalid, f'Invalid format: isIPython')
 			return None
-		return str(Utils.runsInIPython()).lower()
+		return str(runsInIPython()).lower()
 
 
 	def doJsonify(self, pcontext:PContext, arg:str, line:str) -> str:
@@ -1020,7 +1026,7 @@ class ACMEPContext(PContext):
 				'fr': originator,
 				'to': target, 
 				'rvi': CSE.releaseVersion,
-				'rqi': Utils.uniqueRI(), 
+				'rqi': uniqueRI(), 
 			}
 		
 		# Transform the extra request attributes set by the script
@@ -1031,7 +1037,7 @@ class ACMEPContext(PContext):
 				req['rqi'] = rqi
 			# add remaining attributes to the filterCriteria of a request
 			for key in list(rp.keys()):
-				Utils.setXPath(req, key, rp.pop(key))
+				setXPath(req, key, rp.pop(key))
 			pcontext.requestParameters = None
 
 		# Get the resource for some operations
@@ -1078,7 +1084,7 @@ class ACMEPContext(PContext):
 		L.isDebug and L.logDebug(f'Sending request from script: {res.request.originalRequest}')
 		
 		# Send request
-		if Utils.isURL(target):
+		if isURL(target):
 			if operation == Operation.RETRIEVE:
 				res = CSE.request.sendRetrieveRequest(target, originator)
 			if operation == Operation.DELETE:
@@ -1136,6 +1142,17 @@ class ScriptManager(object):
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
 			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
 	"""
+
+	__slots__ = (
+		'scripts',
+		'storage',
+		'scriptUpdatesMonitor',
+		'scriptCronWorker',
+
+		'verbose',
+		'scriptMonitorInterval',
+		'scriptDirectories',
+	)
 
 	def __init__(self) -> None:
 		"""	Initializer for the ScriptManager class.
@@ -1339,7 +1356,7 @@ class ScriptManager(object):
 		#L.isDebug and L.logDebug(f'Looking for scheduled scripts')
 		for each in self.findScripts(meta = _metaAt):
 			try:
-				if DateUtils.cronMatchesTimestamp(at := each.meta.get(_metaAt)):
+				if cronMatchesTimestamp(at := each.meta.get(_metaAt)):
 					L.isDebug and L.logDebug(f'Running script: {each.scriptName} at: {at}')
 					self.runScript(each)
 			except ValueError as e:
@@ -1506,7 +1523,7 @@ class ScriptManager(object):
 
 		# Run in background or direct
 		if background:
-			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{Utils.uniqueID()}', finished = finished).start(pcontext = pcontext, argument = argument)
+			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{uniqueID()}', finished = finished).start(pcontext = pcontext, argument = argument)
 			return True	# Always return True when running in Background
 		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
 	

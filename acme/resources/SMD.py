@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
-from ..etc import Utils
+from ..etc.Utils import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources import Factory as Factory
@@ -101,10 +101,10 @@ class SMD(AnnounceableResource):
 					 doValidateAttributes:Optional[bool] = True) -> Result:
 
 		# Some checks before the general validation that are necessary only in an UPDATE
-		soeNew = Utils.findXPath(dct, '{*}/soe')
-		dspNew = Utils.findXPath(dct, '{*}/dsp')
+		soeNew = findXPath(dct, '{*}/soe')
+		dspNew = findXPath(dct, '{*}/dsp')
 		vldeOrg = self.vlde # store for later
-		vldeNew = Utils.findXPath(dct, '{*}/vlde')
+		vldeNew = findXPath(dct, '{*}/vlde')
 
 		# soe and dsp cannot updated together
 		if soeNew and dspNew:
@@ -152,7 +152,7 @@ class SMD(AnnounceableResource):
 			return res
 		
 		# Perform Semantic validation process and add descriptor
-		if Utils.findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
+		if findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
 			if not (res := CSE.semantic.addDescriptor(self)).status:
 				return res
 		self.setAttribute('svd', True)

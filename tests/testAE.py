@@ -120,7 +120,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, CSEID[1:], T.AE, dct)
-		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered, r)
+		self.assertEqual(rsc, RC.securityAssociationRequired, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

@@ -137,6 +137,7 @@ class Configuration(object):
 				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',								fallback = '3'),
 				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',							fallback = 'json'),
 				'cse.asyncSubscriptionNotifications'	: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
+				'cse.sendToFromInResponses'				: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
 
 				#
 				#	CSE Security
@@ -214,6 +215,7 @@ class Configuration(object):
 				'db.inMemory'							: config.getboolean('database', 'inMemory', 						fallback = False),
 				'db.cacheSize'							: config.getint('database', 'cacheSize', 							fallback = 0),		# Default: no caching
 				'db.resetOnStartup' 					: config.getboolean('database', 'resetOnStartup',					fallback = False),
+				'db.writeDelay'							: config.getint('database', 'writeDelay', 							fallback = 1),		# Default: 1 second
 
 				#
 				#	Logging
@@ -376,7 +378,7 @@ class Configuration(object):
 	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
-		from ..etc import Utils	# cannot import at the top because of circel import
+		from ..etc.Utils import normalizeURL, isValidCSI	# cannot import at the top because of circel import
 
 		# CSE type
 		if isinstance(cseType := Configuration._configuration['cse.type'], str):
@@ -436,10 +438,10 @@ class Configuration(object):
 			Configuration._configuration['logging.enableScreenLogging'] = False
 
 		# Correct urls
-		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
-		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
-		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
-		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
+		Configuration._configuration['cse.registrar.address'] = normalizeURL(Configuration._configuration['cse.registrar.address'])
+		Configuration._configuration['http.address'] = normalizeURL(Configuration._configuration['http.address'])
+		Configuration._configuration['http.root'] = normalizeURL(Configuration._configuration['http.root'])
+		Configuration._configuration['cse.registrar.root'] = normalizeURL(Configuration._configuration['cse.registrar.root'])
 
 		# Just in case: check the URL's
 		if Configuration._configuration['http.security.useTLS']:
@@ -508,11 +510,11 @@ class Configuration(object):
 		
 
 		# check the csi format
-		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
+		if not isValidCSI(val:=Configuration._configuration['cse.csi']):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
 
 		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
-			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
+			if not isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
 				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
 				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
@@ -684,7 +686,7 @@ class Configuration(object):
 
 	@staticmethod
 	def _buildUserConfigFile(configFile:str) -> bool:
-		from ..etc import Utils
+		from ..etc.Utils import isValidID
 
 		cseType = 'IN'
 		cseEnvironment = 'Development'
@@ -722,7 +724,7 @@ class Configuration(object):
 						'message': 'CSE-ID:',
 						'long_instruction': 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
 						'default': Configuration.iniValues[cseType]['cseID'],
-						'validate': lambda result: Utils.isValidID(result),
+						'validate': lambda result: isValidID(result),
 						'name': 'cseID',
 						'amark': '✓',
 					},
@@ -730,7 +732,7 @@ class Configuration(object):
 						'message': 'Name of the CSE:',
 						'long_instruction': 'This is the resource name of the CSEBase.',
 						'default': Configuration.iniValues[cseType]['cseName'],
-						'validate': lambda result: Utils.isValidID(result),
+						'validate': lambda result: isValidID(result),
 						'name': 'cseName',
 						'amark': '✓',
 					},
@@ -738,7 +740,7 @@ class Configuration(object):
 						'message': 'Admin Originator:',
 						'long_instruction': 'The originator who has admin access rights to the CSE and the CSE\'s resources.',
 						'default': Configuration.iniValues[cseType]['adminID'],
-						'validate': lambda result: Utils.isValidID(result),
+						'validate': lambda result: isValidID(result),
 						'name': 'adminID',
 						'amark': '✓',
 					},
@@ -802,7 +804,7 @@ class Configuration(object):
 						'message': 'Registrar CSE-ID:',
 						'long_instruction': 'The CSE-ID of the remote (registrar) CSE.',
 						'default': Configuration.iniValues[cseType]['registrarCseID'],
-						'validate': lambda result: Utils.isValidID(result),
+						'validate': lambda result: isValidID(result),
 						'name': 'registrarCseID',
 						'amark': '✓',
 					},
@@ -810,7 +812,7 @@ class Configuration(object):
 						'message': 'Name of the Registrar CSE:',
 						'long_instruction': 'The resource name of the remote (registrar) CSE.',
 						'default': Configuration.iniValues[cseType]['registrarCseName'],
-						'validate': lambda result: Utils.isValidID(result),
+						'validate': lambda result: isValidID(result),
 						'name': 'registrarCseName',
 						'amark': '✓',
 					},

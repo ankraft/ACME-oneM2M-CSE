@@ -13,6 +13,7 @@ from typing import Optional
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, Result, JSON, AttributePolicyDict
 from ..etc.Types import Announced
+from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
 from .Resource import Resource
@@ -154,7 +155,7 @@ class AnnounceableResource(Resource):
 
 		else: # update. Works a bit different
 
-			if not (modifiedAttributes := self[self._modified]):
+			if not (modifiedAttributes := self[Constants.attrModified]):
 				return None
 
 			dct = { tpe : { } } # with the announced variant of the tpe
@@ -196,7 +197,7 @@ class AnnounceableResource(Resource):
 		# Set the internal __announcedTo__ attribute
 		ats = self.getAnnouncedTo()
 		ats.append((csi, remoteRI))
-		self.setAttribute(Resource._announcedTo, ats)	# TODO replacement as below?
+		self.setAttribute(Constants.attrAnnouncedTo, ats)	# TODO replacement as below?
 
 		# Modify the at attribute, if applicable
 		if 'at' in self._attributes:

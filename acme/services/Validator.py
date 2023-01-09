@@ -18,7 +18,8 @@ from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributeP
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.Utils import pureResource, findXPath, strToBool
+from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
@@ -106,7 +107,7 @@ class Validator(object):
 			optionalIndex = 5	# index to announced
 
 		# Get the pure resource and the resource's tpe
-		pureResDict, _tpe, _ = Utils.pureResource(resource)
+		pureResDict, _tpe, _ = pureResource(resource)
 
 		tpe = _tpe if _tpe and _tpe != tpe else tpe 				# determine the real tpe
 
@@ -284,7 +285,7 @@ class Validator(object):
 			return Result.errorResult(dbg = L.logWarn('Attribute pvs must not be an empty list'))
 		elif l > 1:
 			return Result.errorResult(dbg = L.logWarn('Attribute pvs must contain only one item'))
-		if not (acr := Utils.findXPath(dct, 'pvs/acr')):
+		if not (acr := findXPath(dct, 'pvs/acr')):
 			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr not found'))
 		if not isinstance(acr, list):
 			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr must be a list'))
@@ -520,7 +521,7 @@ class Validator(object):
 					return Result.errorResult(dbg = str(e))
 			elif dataType == BasicType.boolean and isinstance(value, str):	# "true"/"false"
 				try:
-					value = Utils.strToBool(value)
+					value = strToBool(value)
 				except Exception as e:
 					return Result.errorResult(dbg = str(e))
 			elif dataType == BasicType.float and isinstance(value, str):
@@ -558,7 +559,7 @@ class Validator(object):
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if dataType == BasicType.timestamp and isinstance(value, str):
-			if DateUtils.fromAbsRelTimestamp(value) == 0.0:
+			if fromAbsRelTimestamp(value) == 0.0:
 				return Result.errorResult(dbg = f'format error in timestamp: {value}')
 			return Result(status = True, data = (dataType, value))
 
@@ -568,7 +569,7 @@ class Validator(object):
 					rel = int(value)
 					# fallthrough
 				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
-					if DateUtils.fromAbsRelTimestamp(value) == 0.0:
+					if fromAbsRelTimestamp(value) == 0.0:
 						return Result.errorResult(dbg = f'format error in absRelTimestamp: {value}')
 				# fallthrough
 			elif not isinstance(value, int):

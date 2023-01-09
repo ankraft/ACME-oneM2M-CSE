@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
-from ..etc import Utils
+from ..etc.Utils import pureResource, findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
 from ..etc.Types import NotificationEventType, ResponseStatusCode, JSON
 from ..services.Configuration import Configuration
@@ -147,16 +147,16 @@ class SUB(Resource):
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
 		# This is important bc it can be set to True, False, or Null.
-		pure = Utils.pureResource(dct)[0]
+		pure = pureResource(dct)[0]
 		if 'nse' in pure:
-			CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:sub/nse'))
+			CSE.notification.updateOfNSEAttribute(self, findXPath(dct, 'm2m:sub/nse'))
 
 		# Reject updates with blocking *
-		if (net := Utils.findXPath(pure, 'enc/net')) and self._hasBlockingNET(net):
+		if (net := findXPath(pure, 'enc/net')) and self._hasBlockingNET(net):
 			return Result.errorResult(dbg = L.logDebug('Updates with any blocking Notification Event Type if not allowed.'))
 
 		# Handle changes to acrs (send deletion notifications)
-		if (newAcrs := Utils.findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
+		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
 			for crsRI in set(self.acrs) - set(newAcrs):
 				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
 				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
@@ -188,11 +188,11 @@ class SUB(Resource):
 			return res
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
-		attrs = self.dict if create else Utils.pureResource(dct)[0]
+		attrs = self.dict if create else pureResource(dct)[0]
 		enc = attrs.get('enc')
 
 		# Check NotificationEventType
-		if (net := Utils.findXPath(attrs, 'enc/net')) is not None:
+		if (net := findXPath(attrs, 'enc/net')) is not None:
 			if not NotificationEventType.has(net):
 				return Result.errorResult(dbg = L.logDebug(f'enc/net={str(net)} is not an allowed or supported NotificationEventType'))
 
@@ -225,7 +225,7 @@ class SUB(Resource):
 			# TODO Where is it specified that the nu must target the parent's originator? -> Remove if not necessary
 			# parentOriginator = parentResource.getOriginator()
 			# if net[0] != NotificationEventType.blockingUpdate:
-			# 	if not Utils.compareIDs(self.nu[0], parentOriginator):
+			# 	if not compareIDs(self.nu[0], parentOriginator):
 			# 		return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator for blocking notifications'))
 		
 

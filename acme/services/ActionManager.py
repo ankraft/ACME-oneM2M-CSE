@@ -14,7 +14,9 @@ from typing import Optional, Any, cast
 import sys, copy
 
 from ..etc.Types import Result, EvalMode, EvalCriteriaOperator, JSON, CSERequest, ResponseStatusCode
-from ..etc import Utils, DateUtils, RequestUtils
+from ..etc.Utils import setXPath
+from ..etc.DateUtils import utcTime
+from ..etc.RequestUtils import responseFromResult
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
@@ -30,6 +32,11 @@ class ActionManager(object):
 
 		Attributes:
 	"""
+
+	__slots__ = (
+		'ecpPeriodicDefault',
+		'ecpContinuousDefault'
+	)
 	
 	# Imported here because of circular import
 	from ..resources.Resource import Resource
@@ -88,7 +95,7 @@ class ActionManager(object):
 
 	def evaluateActions(self, resource:Resource) -> None:
 		_ri = resource.ri
-		_now = DateUtils.utcTime()
+		_now = utcTime()
 		L.isDebug and L.logDebug(f'Looking for resource actions for: {_ri}')
 
 		# Get actions. Remember, these are NOT <action> resources
@@ -110,7 +117,7 @@ class ActionManager(object):
 
 				# Assign a new to (ie. the objectRecourceID)
 				apv = copy.deepcopy(actr.apv)
-				Utils.setXPath(apv, 'to', actr.orc)
+				setXPath(apv, 'to', actr.orc)
 
 				# build request
 				if not (req := CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))).status:
@@ -125,7 +132,7 @@ class ActionManager(object):
 
 				# Store response in the <actr>
 				res.request = request
-				actr.setAttribute('air', RequestUtils.responseFromResult(res).data)	# type: ignore[attr-defined]
+				actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
 				if not (res := actr.dbUpdate(False)).status:
 					L.logWarn(f'Error updating <actr>: {res.dbg}')
 					continue
@@ -196,7 +203,7 @@ class ActionManager(object):
 		if evm == EvalMode.periodic:
 			ecp = action.ecp if action.ecp else self.ecpPeriodicDefault
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
-			CSE.storage.updateAction(action, DateUtils.utcTime(), 0)
+			CSE.storage.updateAction(action, utcTime(), 0)
 			return Result.successResult()
 		if evm == EvalMode.continous:
 			ecp = action.ecp if action.ecp else self.ecpContinuousDefault

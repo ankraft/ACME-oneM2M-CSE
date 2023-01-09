@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc import Utils
+from ..etc.Utils import findXPath
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
@@ -89,8 +89,8 @@ class DVC(MgmtObj):
 					 originator:Optional[str] = None, 
 					 doValidateAttributes:Optional[bool] = True) -> Result:
 		# Check for ena & dis updates 
-		ena = Utils.findXPath(dct, '{*}/ena')
-		dis = Utils.findXPath(dct, '{*}/dis')
+		ena = findXPath(dct, '{*}/ena')
+		dis = findXPath(dct, '{*}/dis')
 		if ena and dis:
 			return Result(status = False, rsc = ResponseStatusCode.badRequest, dbg = 'Both ena and dis updated to True is not allowed')
 

@@ -11,13 +11,14 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc import Utils, DateUtils
+from ..etc.Utils import findXPath
+from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory
+from ..resources import Factory		# attn: circular import
 
 
 # CSE default:
@@ -98,15 +99,15 @@ class TS(AnnounceableResource):
 
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
-											pi = self.ri, 
-											ty = ResourceTypes.TS_LA).resource	# rn is assigned by resource itself
+										    pi = self.ri, 
+										    ty = ResourceTypes.TS_LA).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(resource, self)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
-											pi = self.ri, 
-											ty = ResourceTypes.TS_OL).resource	# rn is assigned by resource itself
+										    pi = self.ri, 
+										    ty = ResourceTypes.TS_OL).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(resource, self)).resource:
 			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
@@ -124,7 +125,7 @@ class TS(AnnounceableResource):
 					 doValidateAttributes:Optional[bool] = True) -> Result:
 
 		# Extra checks if mdd is present in an update
-		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
+		updatedAttributes = findXPath(dct, 'm2m:ts')
 		
 		if (mddNew := updatedAttributes.get('mdd')) is not None:	# boolean
 			# Check that mdd is updated alone
@@ -249,9 +250,9 @@ class TS(AnnounceableResource):
 			# Check for mia handling. This sets the et attribute in the TSI
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = DateUtils.getResourceDate(self.mia 
-												  if self.mia <= CSE.request.maxExpirationDelta 
-												  else CSE.request.maxExpirationDelta)
+				maxEt = getResourceDate(self.mia 
+										if self.mia <= CSE.request.maxExpirationDelta 
+										else CSE.request.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)
@@ -397,7 +398,7 @@ class TS(AnnounceableResource):
 		"""	Add a dataGenerationTime *dgtToAdd* to the mdlt of this resource.
 		"""
 		self._clearMdlt(False)												# Add to mdlt, just in case it hasn't created before
-		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))					# Add missing dgt to TS.mdlt
+		self.mdlt.append(toISO8601Date(dgtToAdd))							# Add missing dgt to TS.mdlt
 		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
 				self.setAttribute('mdlt', self.mdlt[1:], overwrite = True)	# Shorten the mdlt

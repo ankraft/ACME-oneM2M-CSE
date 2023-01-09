@@ -11,13 +11,14 @@ from __future__ import annotations
 from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, JSONLIST
-from ..etc import Utils, DateUtils
+from ..etc.DateUtils import getResourceDate
+from ..etc.Utils import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory
+from ..resources import Factory	# attn: circular import
 
 
 class CNT(AnnounceableResource):
@@ -74,6 +75,7 @@ class CNT(AnnounceableResource):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
 
+		# TODO optimize this
 		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite = False)
 			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite = False)
@@ -93,15 +95,15 @@ class CNT(AnnounceableResource):
 
 		# add latest
 		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
-												  pi = self.ri, 
-												  ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
+													pi = self.ri, 
+													ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(latestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
-												  pi = self.ri, 
-												  ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
+													pi = self.ri, 
+													ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(oldestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
@@ -112,7 +114,7 @@ class CNT(AnnounceableResource):
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
-		disrNew = Utils.findXPath(dct, 'm2m:cnt/disr')
+		disrNew = findXPath(dct, 'm2m:cnt/disr')
 
 		# Generic update
 		if not (res := super().update(dct, originator)).status:
@@ -155,9 +157,9 @@ class CNT(AnnounceableResource):
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller. 
 				# Don't change if maxExpirationDelta is 0.
-				maxEt = DateUtils.getResourceDate(self.mia 
-												  if self.mia <= CSE.request.maxExpirationDelta 
-												  else CSE.request.maxExpirationDelta)
+				maxEt = getResourceDate(self.mia 
+									    if self.mia <= CSE.request.maxExpirationDelta 
+									    else CSE.request.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)

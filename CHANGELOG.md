@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved validation of complex types and mandatory attributes.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 
-
 ### Changed
+- [CSE] Lots of small runtime optimizations.
 
 ### Fixed
 - [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.

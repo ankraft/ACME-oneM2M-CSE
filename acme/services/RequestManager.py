@@ -19,7 +19,10 @@ from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, Req
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result
 from ..etc.Types import CSERequest, ContentSerializationType
-from ..etc import Utils, DateUtils, RequestUtils
+from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date
+from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
+from ..etc.Utils import getCSE, setXPath, isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
+from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.REQ import REQ
@@ -30,12 +33,13 @@ from ..services.Logging import Logging as L
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
 					Tuple[str, 				# Real target URL,incl protocol			
-						List[str],			# allowed content serializations
-						str, 				# Target's supported release version
-						PCH, 				# PollingChannel resource, if this is to be used 
-						str, 				# Originator with adapted scope
-						str, 				# Targets ID (to)
-						ResourceTypes ] ]	# Target's resource type
+						  List[str],		# allowed content serializations
+						  str, 				# Target's supported release version
+						  PCH, 				# PollingChannel resource, if this is to be used 
+						  str, 				# Originator with adapted scope
+						  str, 				# Targets ID (to)
+						  ResourceTypes		# Target's resource type
+				] ]	
 
 
 		
@@ -44,6 +48,33 @@ TargetDetails = List[ 						#type: ignore[misc]
 expirationCheckFactor = 2.0
 
 class RequestManager(object):
+
+	__slots__ = (
+		'_requestLock',
+		'_requests',
+		'_rqiOriginator',
+		'_pcWorker',
+
+		'requestHandlers',
+		'flexBlockingBlocking',
+		'requestExpirationDelta',
+		'maxExpirationDelta',
+		'sendToFromInResponses',
+
+		'_eventRequestReceived',
+		'_eventRequestReceived',
+		'_eventHttpSendRetrieve',
+		'_eventHttpSendCreate',
+		'_eventHttpSendUpdate',
+		'_eventHttpSendDelete',
+		'_eventHttpSendNotify',
+		'_eventMqttSendRetrieve',
+		'_eventMqttSendCreate',
+		'_eventMqttSendUpdate',
+		'_eventMqttSendDelete',
+		'_eventMqttSendNotify',
+		'_eventAcmeSendNotify',
+	)
 
 	def __init__(self) -> None:
 
@@ -63,7 +94,7 @@ class RequestManager(object):
 		#	Structures for pollingChannel requests
 		#
 		self._requestLock = Lock()													# Lock to access the following two dictionaries
-		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeusts. Used for handling polling requests.
+		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeests. Used for handling polling requests.
 		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
 		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * expirationCheckFactor, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
 
@@ -72,6 +103,21 @@ class RequestManager(object):
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
+
+		# Optimized access to events
+		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
+		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
+		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
+		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
+		self._eventHttpSendDelete = CSE.event.httpSendDelete		# type: ignore [attr-defined]
+		self._eventHttpSendNotify = CSE.event.httpSendNotify		# type: ignore [attr-defined]
+		self._eventMqttSendRetrieve = CSE.event.mqttSendRetrieve	# type: ignore [attr-defined]
+		self._eventMqttSendCreate = CSE.event.mqttSendCreate		# type: ignore [attr-defined]
+		self._eventMqttSendUpdate = CSE.event.httpSendUpdate		# type: ignore [attr-defined]
+		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
+		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
+		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
+
 
 		L.isInfo and L.log('RequestManager initialized')
 
@@ -104,6 +150,8 @@ class RequestManager(object):
 		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
 		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
 		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
+		self.sendToFromInResponses	= Configuration.get('cse.sendToFromInResponses')
+
 
 	def configUpdate(self, key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
@@ -140,7 +188,7 @@ class RequestManager(object):
 			Return:
 				Request result.
 		"""
-		CSE.event.requestReceived(request)	# type:ignore [attr-defined]
+		self._eventRequestReceived(request)
 		return self.requestHandlers[request.op].ownRequest(request)
 
 
@@ -315,7 +363,7 @@ class RequestManager(object):
 			return Result.errorResult(dbg = nres.dbg)
 
 		# Register <request>
-		if not (cseres := Utils.getCSE()).resource:
+		if not (cseres := getCSE()).resource:
 			return Result.errorResult(dbg = cseres.dbg)
 		if not (rres := CSE.registration.checkResourceCreation(nres.resource, request.originator, cseres.resource)).status:
 			return rres.errorResultCopy()
@@ -554,9 +602,9 @@ class RequestManager(object):
 		
 			See TS-0004, 7.3.2.6, Forwarding
 		"""
-		if Utils.isCSERelative(request.originator):
-			request.originator = Utils.toSPRelative(request.originator)
-			Utils.setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
+		if isCSERelative(request.originator):
+			request.originator = toSPRelative(request.originator)
+			setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
 			# Attn: not changed in originatData !
 
 
@@ -589,10 +637,10 @@ class RequestManager(object):
 		# Some checks
 		if not request.rqet:		
 			# Adding a default expiration if none is set in the request
-			ret = DateUtils.getResourceDate(self.requestExpirationDelta)
+			ret = getResourceDate(self.requestExpirationDelta)
 			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
 			request.rqet = ret
-			request._rqetUTCts = DateUtils.fromAbsRelTimestamp(ret)
+			request._rqetUTCts = fromAbsRelTimestamp(ret)
 		if not request.rqi:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
@@ -621,7 +669,7 @@ class RequestManager(object):
 		
 		# Start an actor to remove the request after the timeout		
 		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.rqi, reqType), 
-										delay = request._rqetUTCts - DateUtils.utcTime() + 1.0,	# +1 second delay 
+										delay = request._rqetUTCts - utcTime() + 1.0,	# +1 second delay 
 										name = f'unqueuePolling_{request.rqi}-{reqType}').start()
 	
 
@@ -672,7 +720,7 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 
-		if DateUtils.waitFor(timeout, lambda:self.hasPollingRequest(originator, requestID, reqType)):	# Wait until timeout, or the request of the correct type was found
+		if waitFor(timeout, lambda:self.hasPollingRequest(originator, requestID, reqType)):	# Wait until timeout, or the request of the correct type was found
 			L.isDebug and L.logDebug(f'Received {reqType} request for originator: {originator}, requestID: {requestID}, aggregate: {aggregate}')
 
 			if aggregate:
@@ -683,7 +731,7 @@ class RequestManager(object):
 						continue
 					# if fall through then there is no further request available.
 					# build the aggregated request
-					agrp = { 'm2m:agrp' : [ RequestUtils.requestFromResult(Result(request = each)).data for each in lst ] }
+					agrp = { 'm2m:agrp' : [ requestFromResult(Result(request = each)).data for each in lst ] }
 					return Result(status = True, resource = agrp, rsc = ResponseStatusCode.OK)
 				
 			else:
@@ -723,8 +771,8 @@ class RequestManager(object):
 				 				 op = operation,
 				 				 originator = originator,
 				 				 ty = ty, 
-				 				 ot = DateUtils.getResourceDate(),
-				 				 rqi = Utils.uniqueRI(),
+				 				 ot = getResourceDate(),
+				 				 rqi = uniqueRI(),
 				 				 rvi = rvi if rvi is not None else CSE.releaseVersion,
 				 				 pc = content)
 
@@ -753,8 +801,10 @@ class RequestManager(object):
 
 		if (response := self.waitForPollingRequest(request.originator, request.rqi, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
 			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.rqi} rsc: {response.request.rsc}')
-			if (o1 := Utils.toSPRelative(response.request.originator)) != (o2 := Utils.toSPRelative(request.id)):
-				return Result.errorResult(dbg = L.logWarn(f'Received originator: {o1} is different from original target originator: {o2}'))
+			if not compareIDs(response.request.originator, request.id):
+				return Result.errorResult(dbg = L.logWarn(f'Received originator: {response.request.originator} is different from original target originator: {request.id}'))
+			# if (o1 := toSPRelative(response.request.originator)) != (o2 := toSPRelative(request.id)):
+			# 	return Result.errorResult(dbg = L.logWarn(f'Received originator: {o1} is different from original target originator: {o2}'))
 			return Result(status = True, rsc = response.request.rsc, request = response.request)
 		
 		return Result.errorResult(rsc = ResponseStatusCode.requestTimeout, dbg = response.dbg)
@@ -764,7 +814,7 @@ class RequestManager(object):
 		with self._requestLock:
 			# Search all entries in the queue and remove those that have expired in the past
 			# Remove those requests also from 
-			now = DateUtils.utcTime()
+			now = utcTime()
 			for originator, requests in list(self._requests.items()):
 				nList = []
 				for tup in list(requests):				# Test all requests for expiration
@@ -812,11 +862,11 @@ class RequestManager(object):
 																		 rvi = rvi))
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 
-			if Utils.isHttpUrl(url):
-				CSE.event.httpSendRetrieve() # type: ignore [attr-defined]
+			if isHttpUrl(url):
+				self._eventHttpSendRetrieve()
 				return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, 
 													  url,
 													  originator = requestOriginator,
@@ -825,8 +875,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isMQTTUrl(url):
-				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
+			elif isMQTTUrl(url):
+				self._eventMqttSendRetrieve()
 				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
 													  url,
 													  originator = requestOriginator,
@@ -869,12 +919,12 @@ class RequestManager(object):
 																		 rvi = rvi))
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
 				continue
 
-			if Utils.isHttpUrl(url):
-				CSE.event.httpSendCreate() # type: ignore [attr-defined]
+			if isHttpUrl(url):
+				self._eventHttpSendCreate()
 				return CSE.httpServer.sendHttpRequest(Operation.CREATE,
 													  url,
 													  originator = requestOriginator,
@@ -884,8 +934,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isMQTTUrl(url):
-				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
+			elif isMQTTUrl(url):
+				self._eventMqttSendCreate()
 				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
 													  url,
 													  originator = requestOriginator,
@@ -927,11 +977,11 @@ class RequestManager(object):
 																		 rvi = rvi))
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 			
-			if Utils.isHttpUrl(url):
-				CSE.event.httpSendUpdate() # type: ignore [attr-defined]
+			if isHttpUrl(url):
+				self._eventHttpSendUpdate()
 				return CSE.httpServer.sendHttpRequest(Operation.UPDATE,
 													  url,
 													  originator = requestOriginator,
@@ -940,8 +990,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isMQTTUrl(url):
-				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
+			elif isMQTTUrl(url):
+				self._eventMqttSendUpdate
 				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
 													  url,
 													  originator = requestOriginator,
@@ -981,11 +1031,11 @@ class RequestManager(object):
 																		 rvi = rvi))
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 
-			if Utils.isHttpUrl(url):
-				CSE.event.httpSendDelete() # type: ignore [attr-defined]
+			if isHttpUrl(url):
+				self._eventHttpSendUpdate()
 				return CSE.httpServer.sendHttpRequest(Operation.DELETE,
 													  url,
 													  originator = requestOriginator,
@@ -994,8 +1044,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isMQTTUrl(url):
-				CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
+			elif isMQTTUrl(url):
+				self._eventMqttSendUpdate()
 				return CSE.mqttClient.sendMqttRequest(Operation.DELETE,
 													  url,
 													  originator = requestOriginator,
@@ -1044,20 +1094,20 @@ class RequestManager(object):
 
 
 			# Small optimization: if the target is a local resource and is NOT a notification receiving resource, then handle the request directly
-			# if (_id := Utils.localResourceID(to)) is not None and ty not in [ResourceTypes.AE, ResourceTypes.CSEBase, ResourceTypes.CSR]:
-			if (_id := Utils.localResourceID(to)) is not None and not ResourceTypes.isNotificationEntity(ty) and ty != ResourceTypes.UNKNOWN:
+			# if (_id := localResourceID(to)) is not None and ty not in [ResourceTypes.AE, ResourceTypes.CSEBase, ResourceTypes.CSR]:
+			if (_id := localResourceID(to)) is not None and not ResourceTypes.isNotificationEntity(ty) and ty != ResourceTypes.UNKNOWN:
 				return CSE.dispatcher.notifyLocalResource(_id, originator, content)
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 		
 			# Get the content if data is a CSERequest
 			if isinstance(content, CSERequest):
 				content = content.pc
 
-			if Utils.isHttpUrl(url):
-				CSE.event.httpSendNotify() # type: ignore [attr-defined]
+			if isHttpUrl(url):
+				self._eventHttpSendNotify()
 				return CSE.httpServer.sendHttpRequest(Operation.NOTIFY,
 													  url,
 													  originator = requestOriginator,
@@ -1067,8 +1117,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isMQTTUrl(url):
-				CSE.event.mqttSendNotify()	# type: ignore [attr-defined]
+			elif isMQTTUrl(url):
+				self._eventMqttSendNotify()
 				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY,
 													  url,
 													  originator = requestOriginator,
@@ -1078,8 +1128,8 @@ class RequestManager(object):
 													  ct = ct,
 													  rvi = rvi,
 													  raw = raw)
-			elif Utils.isAcmeUrl(url):
-				CSE.event.acmeNotification(url, requestOriginator, content)	# type: ignore [attr-defined]
+			elif isAcmeUrl(url):
+				self._eventAcmeSendNotify(url, requestOriginator, content)
 				return Result.successResult()
 
 			return Result.errorResult(dbg = L.logWarn(f'unsupported url scheme: {url}'))
@@ -1102,7 +1152,7 @@ class RequestManager(object):
 		ct = ContentSerializationType.getType(mediaType, default = CSE.defaultSerialization)
 		if data:
 			try:
-				if (dct := RequestUtils.deserializeData(data, ct)) is None:
+				if (dct := deserializeData(data, ct)) is None:
 					return Result(status = False, rsc = ResponseStatusCode.unsupportedMediaType, dbg = f'Unsupported media type for content-type: {ct.name}', data = (None, ct))
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
@@ -1196,9 +1246,19 @@ class RequestManager(object):
 			else:
 				cseRequest.to = to
 				if to:
-					cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = Utils.retrieveIDFromPath(to)
-					if dbg:
-						return Result.errorResult(request = cseRequest, dbg = dbg)
+					# A response doesn't need to have a 'to' parameter.
+					# But if it has then it must only be an originator, ie. an AE-ID or a CSE-ID
+					if isResponse:
+						if isValidCSI(to) or isValidAEI(to):
+							cseRequest.id = to
+							cseRequest.csi = to
+							cseRequest.srn = None
+						else:
+							return Result.errorResult(request = cseRequest, dbg = L.logWarn(f'Invalid CSE-ID or AE-ID for "to" parameter in response: {to}. '))
+					else:
+						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = retrieveIDFromPath(to)
+						if dbg:
+							return Result.errorResult(request = cseRequest, dbg = dbg)
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
@@ -1206,38 +1266,38 @@ class RequestManager(object):
 
 			# OT - originating timestamp
 			if ot := gget(cseRequest.originalRequest, 'ot', greedy = False):
-				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
+				if (_ts := fromAbsRelTimestamp(ot)) == 0.0:
 					return Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Originating Timestamp'))
 				else:
 					cseRequest.ot = ot
 
 			# RQET - requestExpirationTimestamp
 			if rqet := gget(cseRequest.originalRequest, 'rqet', greedy=False):
-				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
+				if (_ts := fromAbsRelTimestamp(rqet)) == 0.0:
 					return Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Request Expiration Timestamp'))
 				else:
-					if _ts < DateUtils.utcTime():
+					if _ts < utcTime():
 						return Result.errorResult(request = cseRequest, rsc = ResponseStatusCode.requestTimeout, dbg = L.logDebug('Request timeout'))
 					else:
 						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
-						cseRequest.rqet = DateUtils.toISO8601Date(_ts)
+						cseRequest.rqet = toISO8601Date(_ts)
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.originalRequest, 'rset', greedy=False)):
-				if (_ts := DateUtils.fromAbsRelTimestamp(rset)) == 0.0:
+				if (_ts := fromAbsRelTimestamp(rset)) == 0.0:
 					return Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Result Expiration Timestamp'))
 				else:
-					if _ts < DateUtils.utcTime():
+					if _ts < utcTime():
 						return Result.errorResult(request = cseRequest, rsc = ResponseStatusCode.requestTimeout, dbg = L.logDebug('Result timeout'))
 					else:
-						cseRequest.rset = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+						cseRequest.rset = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
-				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
+				if (_ts := fromAbsRelTimestamp(oet)) == 0.0:
 					return Result.errorResult(request = cseRequest, dbg = L.logDebug('Error in provided Operation Execution Time'))
 				else:
-					cseRequest.oet = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+					cseRequest.oet = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
@@ -1317,7 +1377,7 @@ class RequestManager(object):
 			# RP - resultPersistence (also as timestamp)
 			if (rp := gget(cseRequest.originalRequest, 'rp', greedy=False)): 
 				cseRequest.rp = rp
-				if (rpts := DateUtils.toISO8601Date(DateUtils.fromAbsRelTimestamp(rp))) == 0.0:
+				if (rpts := toISO8601Date(fromAbsRelTimestamp(rp))) == 0.0:
 					return Result.errorResult(request = cseRequest, dbg = L.logDebug(f'"{rp}" is not a valid value for rp'))
 				else:
 					cseRequest._rpts = rpts
@@ -1403,7 +1463,7 @@ class RequestManager(object):
 		try:
 			if not (res := self.fillAndValidateCSERequest(cseRequest, isResponse)).status:
 				#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
-				return res
+				return res			
 		except Exception as e:
 			import traceback
 			traceback.print_exc()
@@ -1437,7 +1497,7 @@ class RequestManager(object):
 				return []
 			csz = aes[0].csz
 		# Else try whether there is a CSE or CSR
-		elif (l := len(cses := CSE.storage.searchByFragment({ 'csi' : Utils.getIdFromOriginator(originator) }))) > 0:
+		elif (l := len(cses := CSE.storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one CSE with the same csi: {originator}')
 				return []
@@ -1515,7 +1575,7 @@ class RequestManager(object):
 				
 		# TODO check whether noAccessIsError is needed anymore
 
-		if Utils.isURL(uri):	# The uri is a direct URL
+		if isURL(uri):	# The uri is a direct URL
 			L.isDebug and L.logDebug(f'Direct URL: {uri}')
 			return [ (uri, None, None, None, originator, None, ResourceTypes.UNKNOWN) ]
 
@@ -1525,8 +1585,8 @@ class RequestManager(object):
 		targetResource = None
 		targetResourceType:ResourceTypes = ResourceTypes.UNKNOWN
 
-		if Utils.isSPRelative(uri) or Utils.isAbsolute(uri):
-			if (ri := Utils.localResourceID(uri)) is not None:	# If this the local CSE
+		if isSPRelative(uri) or isAbsolute(uri):
+			if (ri := localResourceID(uri)) is not None:	# If this the local CSE
 				if not (res := CSE.dispatcher.retrieveResource(ri)).status:
 					L.logWarn(f'Cannot retrieve local resource: {ri}: {res.dbg}')
 					return []
@@ -1534,7 +1594,7 @@ class RequestManager(object):
 				if ResourceTypes.isNotificationEntity(res.resource.ty):	# has a poa
 					targetResource = res.resource
 				else:
-					targetResource = Utils.getCSE().resource	# for all other resources without a poa is the CSE responsible
+					targetResource = getCSE().resource	# for all other resources without a poa is the CSE responsible
 			elif (t := CSE.remote.getCSRFromPath(uri)): # target is a registering CSE
 				targetResource, _ = t
 			elif CSE.remote.registrarCSE:	# just send it up to the registrar CSE, if any
@@ -1582,13 +1642,13 @@ class RequestManager(object):
 		resultList:List[Tuple[str, List[str], str, PCH, str, str, ResourceTypes]] = []
 		
 		for p in targetResource.poa:
-			if Utils.isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
+			if isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
 				p += '/'
 			resultList.append((f'{p}', 
 							   targetResource.csz, 
 							   getTargetReleaseVersion(targetResource.srv), 
 							   None,
-							   Utils.toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != CSE.cseCsi else originator,
+							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != CSE.cseCsi else originator,
 							   uri,
 							   targetResourceType))
 		# L.logWarn(resultList)

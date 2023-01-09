@@ -14,12 +14,12 @@ from typing import cast, List
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ..etc.Types import ResponseStatusCode, CSERequest, JSON
-from ..etc import Utils
+from ..etc.Utils import isSPRelative, csiFromSPRelative, structuredPathFromRI
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
-from ..resources import Factory
+from ..resources.Factory import resourceFromDict
 from ..services import CSE
 from ..services.Logging import Logging as L
 
@@ -100,8 +100,8 @@ class GroupManager(object):
 		for mid in group.mid:
 			isLocalResource = True
 			#Check whether it is a local resource or not
-			if Utils.isSPRelative(mid):
-				if Utils.csiFromSPRelative(mid) != CSE.cseCsi:
+			if isSPRelative(mid):
+				if csiFromSPRelative(mid) != CSE.cseCsi:
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
 					if not (url := CSE.request._getForwardURL(mid)):
@@ -124,7 +124,7 @@ class GroupManager(object):
 					else:  # Member not found
 						return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = f'remote resource not found: {mid}')
 				else:
-					resource = Factory.resourceFromDict(cast(JSON, remoteResult.data)).resource
+					resource = resourceFromDict(cast(JSON, remoteResult.data)).resource
 
 			# skip if ri is already in the list
 			if isLocalResource:
@@ -225,7 +225,7 @@ class GroupManager(object):
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		for mid in group.mid.copy():	# copy mi because it is changed in the loop
 			# Try to get the SRN and add the tail
-			if srn := Utils.structuredPathFromRI(mid):
+			if srn := structuredPathFromRI(mid):
 				mid = srn + tail
 			else:
 				mid = mid + tail

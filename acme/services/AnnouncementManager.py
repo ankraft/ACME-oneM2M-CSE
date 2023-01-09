@@ -14,9 +14,10 @@ from __future__ import annotations
 from typing import Optional, Tuple, List, cast, Any
 
 import time
-from ..etc import Utils
-from ..etc import RequestUtils
+from ..etc.Utils import isSPRelative, findXPath, getCSE
+from ..etc.RequestUtils import createRawRequest
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, ResponseStatusCode, JSON, Result, ResultContentType
+from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from . import CSE
@@ -39,6 +40,12 @@ class AnnouncementManager(object):
 			allowAnnouncementsToHostingCSE: Allow or disallow resources to announce to the own hosting CSE (configurable).
 
 	"""
+
+	__slots__ = (
+		'checkInterval',
+		'allowAnnouncementsToHostingCSE',
+	)
+
 
 	def __init__(self) -> None:
 		"""	Initialization of the announcement manager.
@@ -256,7 +263,7 @@ class AnnouncementManager(object):
 			L.isDebug and L.logDebug(f'Check CSEBase announcement')
 			if t := self._announcedInfos(cseBase, csi):
 				# CSEBase has "old" announcement infos
-				remoteRi = t[1] if Utils.isSPRelative(t[1]) else f'{csi}/{t[1]}'
+				remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
 				if CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi).rsc != ResponseStatusCode.OK:	# Not a local resource
 					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
@@ -273,20 +280,20 @@ class AnnouncementManager(object):
 				if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
 					return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
 
-				dct = RequestUtils.createRawRequest(to = to,
-													rcn = ResultContentType.childResourceReferences.value,
-													drt = DesiredIdentifierResultType.unstructured.value,
-													fc = {	'ty' : ResourceTypes.CSEBaseAnnc.value,
-															'lnk' : f'{cseBase.csi}/{cseBase.ri}'
-														})
+				dct = createRawRequest( to = to,
+										rcn = ResultContentType.childResourceReferences.value,
+										drt = DesiredIdentifierResultType.unstructured.value,
+										fc = {	'ty' : ResourceTypes.CSEBaseAnnc.value,
+										'lnk' : f'{cseBase.csi}/{cseBase.ri}'
+										})
 
 				if not (res := CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi, content = dct, raw = True)).status:
 					return res
 
 				if res.rsc == ResponseStatusCode.OK and res.data:	# Found a remote CSEBaseAnnc
 					# Assign to the local CSEBase
-					if (remoteRi := Utils.findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
-						atri = remoteRi if Utils.isSPRelative(remoteRi) else f'{csi}/{remoteRi}'
+					if (remoteRi := findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
+						atri = remoteRi if isSPRelative(remoteRi) else f'{csi}/{remoteRi}'
 						L.isDebug and L.logDebug(f'CSEBase already announced: {atri}. Updating CSEBase announcement')
 						cseBase.addAnnouncementToResource(csi, remoteRi)
 						cseBase.dbUpdate()
@@ -339,9 +346,9 @@ class AnnouncementManager(object):
 						return Result(status = False, rsc = ResponseStatusCode.operationNotAllowed, dbg = L.logDebug('Announcing instances without their parents is not allowed'))
 
 					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
-					if not (res := checkCSEBaseAnnouncement(Utils.getCSE().resource)).status:
+					# and set the announced CSEBase as new parent
+					if not (res := checkCSEBaseAnnouncement(parentResource := getCSE().resource)).status:
 						return res
-					parentResource = Utils.getCSE().resource	# set the announced CSEBase as new parent
 					
 					# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
 				
@@ -352,7 +359,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		if targetID:
-			csrID = targetID if Utils.isSPRelative(targetID) else f'{csi}/{targetID}'
+			csrID = targetID if isSPRelative(targetID) else f'{csi}/{targetID}'
 		else:
 			if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
 				return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
@@ -363,7 +370,7 @@ class AnnouncementManager(object):
 			if res.rsc != ResponseStatusCode.conflict:	# assume that it is ok if the remote resource already exists 
 				return Result(status = False, rsc = res.rsc, dbg = L.logDebug(f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})'))
 		else:
-			resource.addAnnouncementToResource(csi, Utils.findXPath(cast(JSON, res.data), '{*}/ri'))
+			resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
 		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 		resource.dbUpdate()
 		return Result(status = True)
@@ -498,7 +505,7 @@ class AnnouncementManager(object):
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
 		"""	Remove announcement details from a resource.
 
-			Modify the internal *_announcedTo* attribute as well the *at* attribute
+			Modify the internal *__announcedTo__* attribute as well the *at* attribute
 			to remove the reference to the remote CSE from announced resource.
 
 			Args:
@@ -513,7 +520,7 @@ class AnnouncementManager(object):
 			if x[0] == csi:
 				remoteRI = x[1]
 				ats.remove(x)
-				resource.setAttribute(Resource._announcedTo, ats)
+				resource.setAttribute(Constants.attrAnnouncedTo, ats)
 
 		# # Modify the at attribute
 		if remoteRI:
@@ -526,7 +533,7 @@ class AnnouncementManager(object):
 	def _isResourceAnnouncedTo(self, resource:Resource, csi:str) -> bool:
 		"""	Check whether a resource is announced to a specific remote CSE.
 		
-			This is done by looking at the entries in the internal *_announcedTo* 
+			This is done by looking at the entries in the internal *__announcedTo__* 
 			attribute, ie. whether they will contain the *csi* of the remote CSE.
 
 			Args:
@@ -603,7 +610,7 @@ class AnnouncementManager(object):
 					Boolean indicating the search filter result.
 			"""
 			if (at := r.get('at')) and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
-				if ato := r.get(Resource._announcedTo):
+				if ato := r.get(Constants.attrAnnouncedTo):
 					for i in ato:
 						if csi == i[0]:	# 0=remote csi,
 							return isAnnounced

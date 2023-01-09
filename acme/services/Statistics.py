@@ -16,7 +16,8 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Types import CSEType, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.Utils import getCSE
+from ..etc.DateUtils import utcTime, toISO8601Date
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -61,6 +62,11 @@ StatsT = Dict[str, Union[str, int, float]]
 
 class Statistics(object):
 
+	__slots__ = (
+		'statisticsEnabled',
+		'statLock',
+		'stats',
+	)
 	def __init__(self) -> None:
 		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
@@ -179,8 +185,8 @@ class Statistics(object):
 
 		# Calculate some stats
 		# s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(DateUtils.utcTime() - int(s[cseStartUpTime]))))
-		s[cseStartUpTime] = DateUtils.toISO8601Date(float(s[cseStartUpTime]))
+		s[cseUpTime] = str(datetime.timedelta(seconds=int(utcTime() - int(s[cseStartUpTime]))))
+		s[cseStartUpTime] = toISO8601Date(float(s[cseStartUpTime]))
 		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
 
@@ -208,7 +214,7 @@ class Statistics(object):
 		"""
 		with self.statLock:
 			# self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
-			self.stats[cseStartUpTime] = DateUtils.utcTime()
+			self.stats[cseStartUpTime] = utcTime()
 
 
 	#########################################################################
@@ -294,7 +300,7 @@ skinparam rectangle {
 		# Build Resource Tree
 		result += 'note right of CSE\n'
 		result += '**Resource Tree**\n\n'
-		cse = Utils.getCSE().resource
+		cse = getCSE().resource
 		result += f'{cse.rn}\n'
 		result += getChildren(cse, 0)
 		result += 'end note\n'

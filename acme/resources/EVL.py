@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
 from ..resources.MgmtObj import MgmtObj
-from ..etc import Utils
+from ..etc.Utils import findXPath
 
 lgtSystem = 1
 lgtSecurity	= 2
@@ -84,7 +84,7 @@ class EVL(MgmtObj):
 					 originator:Optional[str] = None, 
 					 doValidateAttributes:Optional[bool] = True) -> Result:
 		# Check for rbo & far updates 
-		if Utils.findXPath(dct, '{*}/lga') and Utils.findXPath(dct, '{*}/lgo'):
+		if findXPath(dct, '{*}/lga') and findXPath(dct, '{*}/lgo'):
 			return Result.errorResult(dbg = 'update both lga and lgo to True at the same time is not allowed')
 
 		self.setAttribute('lga', True)

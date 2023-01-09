@@ -13,7 +13,7 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ConsistencyStrategy, JSON
 from ..services.Logging import Logging as L
 from ..services import CSE
-from ..resources import Factory as Factory
+from ..resources import Factory as Factory	# attn: circular import
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 

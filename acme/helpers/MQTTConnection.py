@@ -83,6 +83,30 @@ class MQTTHandler(object):
 
 class MQTTConnection(object):
 
+
+	__slots__ = (
+		'address',
+		'port',
+		'keepalive',
+		'bindIF',
+		'username',
+		'password',
+		'useTLS',
+		'verifyCertificate',
+		'caFile',
+		'mqttsCertfile',
+		'mqttsKeyfile',
+		'clientID',
+		'lowLevelLogging',
+		'isStopped',
+		'isConnected',
+		'subscribedCount',
+		'mqttClient',
+		'messageHandler',
+		'actor',
+		'subscribedTopics',
+	)
+
 	#
 	#	Runtime methods
 	#

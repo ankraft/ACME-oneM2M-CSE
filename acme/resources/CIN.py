@@ -13,7 +13,7 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
 from ..resources.Resource import Resource
 from ..services import CSE
-from ..etc import Utils
+from ..etc.Utils import getAttributeSize, findXPath
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services.Logging import Logging as L
 
@@ -62,7 +62,7 @@ class CIN(AnnounceableResource):
 		super().__init__(ResourceTypes.CIN, dct, pi, create = create, inheritACP = True, readOnly = True)
 
 		self.setAttribute('con', '', overwrite = False)
-		self.setAttribute('cs', Utils.getAttributeSize(self.con))
+		self.setAttribute('cs', getAttributeSize(self.con))
 		self.setAttribute('st', 0, overwrite = False)
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:

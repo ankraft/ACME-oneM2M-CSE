@@ -10,12 +10,12 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Any
 
 import ssl
 
 from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode
-from ..etc import Utils
+from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator, findXPath
 from ..helpers import TextTools
 from ..services import CSE
 from ..services.Configuration import Configuration
@@ -32,16 +32,50 @@ class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
 
+	__slots__ = (
+		'enableACPChecks',
+		'fullAccessAdmin',
+		'useTLSHttp',
+		'verifyCertificateHttp',
+		'tlsVersionHttp',
+		'caCertificateFileHttp',
+		'caPrivateKeyFileHttp',
+		'useTlsMqtt',
+		'verifyCertificateMqtt',
+		'caCertificateFileMqtt',
+		'usernameMqtt',
+		'passwordMqtt',
+		'allowedCredentialIDsMqtt',
+	)
+
+
 	def __init__(self) -> None:
-		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
-		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
+
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if self.enableACPChecks:
 			L.isInfo and L.log('ACP checking ENABLED')
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
-		
+
+
+	def shutdown(self) -> bool:
+		L.isInfo and L.log('SecurityManager shut down')
+		return True
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign configurations.
+		"""
+
+		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
+		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
+
 		# TLS configurations (http)
 		self.useTLSHttp 				= Configuration.get('http.security.useTLS')
 		self.verifyCertificateHttp		= Configuration.get('http.security.verifyCertificate')
@@ -56,12 +90,30 @@ class SecurityManager(object):
 		self.usernameMqtt				= Configuration.get('mqtt.security.username')
 		self.passwordMqtt				= Configuration.get('mqtt.security.password')
 		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
-		
 
 
-	def shutdown(self) -> bool:
-		L.isInfo and L.log('SecurityManager shut down')
-		return True
+	def configUpdate(self, key:Optional[str] = None, value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key not in [ 'cse.security.enableACPChecks', 
+						'cse.security.fullAccessAdmin',
+						'http.security.useTLS',
+						'http.security.verifyCertificate',
+						'http.security.tlsVersion',
+						'http.security.caCertificateFile',
+						'http.security.caPrivateKeyFile',
+						'mqtt.security.useTLS',
+						'mqtt.security.verifyCertificate',
+						'mqtt.security.caCertificateFile',
+						'mqtt.security.username',
+						'mqtt.security.password',
+						'mqtt.security.allowedCredentialIDs',
+					  ]:
+			return
+		self._assignConfig()
+		return
+
+	###############################################################################################
 
 
 	def hasAccess(self, originator:str, 
@@ -92,9 +144,9 @@ class SecurityManager(object):
 			return True
 		
 		# Remove CSE-ID if this is the same CSE
-		if Utils.isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
+		if isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
 			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting to CSE-Relative format.')
-			originator = Utils.toCSERelative(originator)
+			originator = toCSERelative(originator)
 			L.isDebug and L.logDebug(f'Converted originator: {originator}')
 	
 		if ty is not None:	# ty is an int
@@ -115,7 +167,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
 				else:
-					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{Utils.getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
+					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
 					return False
 
 			if ty.isAnnounced():
@@ -281,7 +333,7 @@ class SecurityManager(object):
 	def hasAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> Result:
 		"""	Check whether this is actually a correct update of the acpi attribute, and whether this is actually allowed.
 		"""
-		updatedAttributes = Utils.findXPath(request.pc, '{*}')
+		updatedAttributes = findXPath(request.pc, '{*}')
 
 		# Check that acpi, if present, is the only attribute
 		if 'acpi' in updatedAttributes:
@@ -316,15 +368,17 @@ class SecurityManager(object):
 	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
 		""" Check whether an Originator is in the provided list of allowed 
 			originators. This list may contain regex.
+			The hosting CSE is always allowed.
 		"""
-		_originator = Utils.getIdFromOriginator(originator)
-		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
 
 		if not originator or not allowedOriginators:
 			return False
 
+		_originator = getIdFromOriginator(originator)
+		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
+		
 		# Always allow for the hosting CSE
-		if originator == CSE.cseCsi:
+		if originator in [CSE.cseCsi, CSE.cseSPRelative] :
 			return True
 
 		for ao in allowedOriginators:
@@ -360,7 +414,7 @@ class SecurityManager(object):
 		origs = [ originator, 'all' ]
 
 		def filter(doc:JSON) -> bool:
-			if (acr := Utils.findXPath(doc, 'pv/acr')):
+			if (acr := findXPath(doc, 'pv/acr')):
 				for each in acr:
 					if (acop := each.get('acop')) is None or acop & permission == 0:
 						continue

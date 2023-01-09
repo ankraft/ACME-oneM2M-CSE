@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON
-from ..etc import Utils
+from ..etc.Utils import getIdFromOriginator
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services.Logging import Logging as L
@@ -99,7 +99,7 @@ class CSR(AnnounceableResource):
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
 			# self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
-			self.setAttribute('ri', Utils.getIdFromOriginator(self.csi))	# overwrite ri (only after /'s')
+			self.setAttribute('ri', getIdFromOriginator(self.csi))	# overwrite ri (only after /'s')
 		self.setAttribute('rr', False, overwrite=False)
 
 

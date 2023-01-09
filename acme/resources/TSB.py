@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, Result, JSON
-from ..etc import DateUtils
+from ..etc.DateUtils import fromDuration
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services import CSE
@@ -123,7 +123,7 @@ class TSB(AnnounceableResource):
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
 			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
 		if self.hasAttribute('bcni'):
-			self.setAttribute(self._bcni, DateUtils.fromDuration(self.bcni))
+			self.setAttribute(self._bcni, fromDuration(self.bcni))
 		
 		# Check beaconThreshold
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
@@ -131,7 +131,7 @@ class TSB(AnnounceableResource):
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
 			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
-			self.setAttribute(self._bcnt, DateUtils.fromDuration(self.bcnt))
+			self.setAttribute(self._bcnt, fromDuration(self.bcnt))
 		
 		# Check beaconRequester
 		if self.hasAttribute('bcnr'):

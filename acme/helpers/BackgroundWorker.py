@@ -31,9 +31,31 @@ class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
 	"""
 
+	__slots__ = (
+		'interval',
+		'runOnTime',
+		'runPastEvents',
+		'nextRunTime',
+		'callback',
+		'running',
+		'executing',
+		'name',
+		'startWithDelay',
+		'maxCount',
+		'numberOfRuns',
+		'dispose',
+		'finished',
+		'ignoreException',
+		'id',
+		'data',
+		'args',
+	)
+
 	# Holds a reference to an specific logging function.
 	# This must have the same signature as the `logging.log` method.
 	_logger:Callable[[int, str], None] = logging.log
+
+
 
 
 	def __init__(self,
@@ -258,6 +280,13 @@ class Job(Thread):
 		only destroyed when the pressure on the pool was low for a certain time.
 	"""
 
+	__slots__ = (
+		'pauseFlag',
+		'activeFlag',
+		'Callable',
+		'finished',
+	)
+
 	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
 
 	# Paused and running job lists
@@ -431,9 +460,16 @@ class Job(Thread):
 
 
 class WorkerEntry(object):
-	timestamp:float = 0.0
-	workerID:int = None
-	workerName:str = None
+
+	__slots__ = (
+		'timestamp',
+		'workerID',
+		'workerName',
+	)
+
+	# timestamp:float = 0.0
+	# workerID:int = None
+	# workerName:str = None
 
 	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
 		self.timestamp = timestamp

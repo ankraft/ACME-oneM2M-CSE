@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from ..helpers.TextTools import simpleMatch
-from ..etc import Utils
+from ..etc.Utils import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -67,7 +67,7 @@ class ACP(AnnounceableResource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
-		if dct and (pvs := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
+		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
 				return Result.errorResult(dbg = 'pvs must not be empty')
 		if not self.pvs:
@@ -84,9 +84,9 @@ class ACP(AnnounceableResource):
 							return Result.errorResult(dbg = 'chty is mandatory in acod')
 			return Result.successResult()
 
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))).status:
+		if not (res := _checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))).status:
 			return res
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))).status:
+		if not (res := _checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))).status:
 			return res
 
 		return Result.successResult()
@@ -108,7 +108,7 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
-		if acr := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
+		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
 			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 

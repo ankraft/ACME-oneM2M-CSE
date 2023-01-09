@@ -13,7 +13,8 @@ from typing import List, cast, Any, Optional
 from copy import deepcopy
 
 from ..etc.Types import Permission, ResourceTypes, Result, ResponseStatusCode, JSON, CSEType
-from ..etc import Utils, DateUtils
+from ..etc.Utils import uniqueAEI, getIdFromOriginator, uniqueRN
+from ..etc.DateUtils import getResourceDate
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -23,6 +24,20 @@ from ..services.Logging import Logging as L
 
 
 class RegistrationManager(object):
+
+	__slots__ = (
+		'expWorker',
+
+		'allowedCSROriginators',
+		'allowedAEOriginators',
+		'checkExpirationsInterval',
+		'enableResourceExpiration',
+
+		'_eventRegistreeCSEHasRegistered',
+		'_eventRegistreeCSEHasDeregistered',
+		'_eventRegistreeCSEUpdate',
+		'_eventExpireResource',
+	)
 
 	def __init__(self) -> None:
 
@@ -38,6 +53,12 @@ class RegistrationManager(object):
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
+
+		# Optimized event handling
+		self._eventRegistreeCSEHasRegistered = CSE.event.registreeCSEHasRegistered			# type: ignore
+		self._eventRegistreeCSEHasDeregistered = CSE.event.registreeCSEHasDeregistered		# type: ignore
+		self._eventRegistreeCSEUpdate = CSE.event.registreeCSEUpdate						# type: ignore
+		self._eventExpireResource = CSE.event.expireResource								# type: ignore
 
 		L.isInfo and L.log('RegistrationManager initialized')
 
@@ -170,13 +191,13 @@ class RegistrationManager(object):
 
 		# Assign originator for the AE
 		if originator == 'C':
-			originator = Utils.uniqueAEI('C')
+			originator = uniqueAEI('C')
 		elif originator == 'S':
-			originator = Utils.uniqueAEI('S')
+			originator = uniqueAEI('S')
 		elif originator is not None:	# Allow empty originators
-			originator = Utils.getIdFromOriginator(originator)
+			originator = getIdFromOriginator(originator)
 		# elif originator is None or len(originator) == 0:
-		# 	originator = Utils.uniqueAEI('S')
+		# 	originator = uniqueAEI('S')
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):
@@ -185,7 +206,7 @@ class RegistrationManager(object):
 		# Make some adjustments to set the originator in the <AE> resource
 		L.isDebug and L.logDebug(f'Registering AE. aei: {originator}')
 		ae['aei'] = originator												# set the aei to the originator
-		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
+		ae['ri'] = getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
 		if not parentResource or parentResource.ty != ResourceTypes.CSEBase:
@@ -231,7 +252,7 @@ class RegistrationManager(object):
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
 			csr['csi'] = originator
-			csr['ri']  = Utils.getIdFromOriginator(originator)
+			csr['ri']  = getIdFromOriginator(originator)
 
 		# Validate csi in csr
 		if not (res := CSE.validator.validateCSICB(csr.csi, 'csi')).status:
@@ -241,7 +262,7 @@ class RegistrationManager(object):
 			return res
 
 		# send event
-		CSE.event.registreeCSEHasRegistered(csr)	# type: ignore
+		self._eventRegistreeCSEHasRegistered(csr)
 		return Result.successResult()
 
 
@@ -260,7 +281,7 @@ class RegistrationManager(object):
 		"""
 		L.isDebug and L.logDebug(f'De-registering registree CSR. csi: {registreeCSR.csi}')
 		# send event
-		CSE.event.registreeCSEHasDeregistered(registreeCSR)	# type: ignore
+		self._eventRegistreeCSEHasDeregistered(registreeCSR)
 		return True
 
 
@@ -271,7 +292,7 @@ class RegistrationManager(object):
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
 		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
-		CSE.event.registreeCSEUpdate(csr, updateDict)	# type: ignore
+		self._eventRegistreeCSEUpdate(csr, updateDict)
 		return True
 
 
@@ -290,7 +311,7 @@ class RegistrationManager(object):
 				return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
-		cbA.setResourceName(Utils.uniqueRN(f'{cbA.tpe}_{Utils.getIdFromOriginator(originator)}'))
+		cbA.setResourceName(uniqueRN(f'{cbA.tpe}_{getIdFromOriginator(originator)}'))
 		return Result.successResult()
 
 
@@ -348,7 +369,7 @@ class RegistrationManager(object):
 
 	def expirationDBMonitor(self) -> bool:
 		# L.isDebug and L.logDebug('Looking for expired resources')
-		now = DateUtils.getResourceDate()
+		now = getResourceDate()
 		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
@@ -357,7 +378,7 @@ class RegistrationManager(object):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
 			CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)	# ignore result
-			CSE.event.expireResource(resource) # type: ignore
+			self._eventExpireResource(resource) 
 				
 		return True
 

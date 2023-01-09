@@ -516,6 +516,7 @@ class TinyDBBinding(object):
 		'fileBatchNotifications',
 		'fileStatistics',
 		'fileActions',
+		
 		'dbResources',
 		'dbIdentifiers', 		
 		'dbSubscriptions', 	

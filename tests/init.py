@@ -23,9 +23,9 @@ import cbor2
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
+from acme.etc import RequestUtils, DateUtils
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.helpers.OAuth as OAuth
-from acme.etc import RequestUtils, DateUtils
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
 from config import *
@@ -185,6 +185,10 @@ class MQTTClientHandler(MQTTHandler):
 mqttClient:MQTTConnection = None
 mqttHandler:MQTTClientHandler = None
 
+
+# HTTP Session
+httpSession:requests.Session = None
+
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
 # already as year 10000 (and this hits the limit of the isodate module implementation)
@@ -311,19 +315,33 @@ def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]
 def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	"""	Send a request. Call the appropriate framework, depending on the protocol.
 	"""
-	global requestCount
+	global requestCount, httpSession
 	requestCount += 1
 	if url.startswith(('http', 'https')):
+		if not httpSession:
+			httpSession = requests.Session()
+
+
+		# if operation == Operation.CREATE:
+		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.RETRIEVE:
+		# 	return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.UPDATE:
+		# 	return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.DELETE:
+		# 	return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.NOTIFY:
+		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		if operation == Operation.CREATE:
-			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.RETRIEVE:
-			return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.UPDATE:
-			return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.DELETE:
-			return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.NOTIFY:
-			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 	elif url.startswith('mqtt'):
 		if operation == Operation.CREATE:
 			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
@@ -341,7 +359,7 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 
 
 def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
-	global oauthToken
+	global oauthToken, httpSession
 
 	# correct url
 	url = RequestUtils.toHttpUrl(url)

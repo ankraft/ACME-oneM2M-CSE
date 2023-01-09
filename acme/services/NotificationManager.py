@@ -19,7 +19,8 @@ from threading import Lock, current_thread
 import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
 from ..etc.Types import ResponseStatusCode, EventCategory, JSON, JSONLIST, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.DateUtils import fromDuration, getResourceDate
+from ..etc.Utils import toSPRelative, pureResource, setXPath, findXPath, isAcmeUrl, compareIDs
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -41,6 +42,14 @@ class NotificationManager(object):
 			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
 	"""
 
+	__slots__ = (
+		'lockBatchNotification',
+		'lockNotificationEventStats',
+		'asyncSubscriptionNotifications',
+
+		'_eventNotification',
+	)
+
 
 	def __init__(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
@@ -52,10 +61,14 @@ class NotificationManager(object):
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
-		self.lockBatchNotification = Lock()			# Lock for batchNotifications
-		self.lockNotificationEventStats = Lock()	# Lock for notificationEventStats
+		self.lockBatchNotification = Lock()					# Lock for batchNotifications
+		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
 
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
+		
+		# Optimize event handling
+		self._eventNotification = CSE.event.notification	# type: ignore
+
 		L.isInfo and L.log('NotificationManager initialized')
 
 
@@ -345,13 +358,13 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : NotificationEventType.blockingUpdate.value
 					},
-					'sur' : Utils.toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])
 				}
 			}
 
 			# Check attributes in enc
 			if atr := eachSub['atr']:
-				jsn, _, _ = Utils.pureResource(updatedAttributes)
+				jsn, _, _ = pureResource(updatedAttributes)
 				if len(set(jsn.keys()).intersection(atr)) == 0:	# if the intersection between updatedAttributes and the enc/atr contains is empty, then continue
 					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')
 					continue
@@ -359,7 +372,7 @@ class NotificationManager(object):
 			# Don't include virtual resources
 			if not resource.isVirtual():
 				# Add representation
-				Utils.setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
+				setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
 				
 
 			# Send notification and handle possible negative response status codes
@@ -436,7 +449,7 @@ class NotificationManager(object):
 			# Check for maxAge attribute provided in the request
 			if (maxAgeS := request.fc.attributes.get('ma')) is not None:	# TODO attribute name
 				try:
-					maxAgeRequest = DateUtils.fromDuration(maxAgeS)
+					maxAgeRequest = fromDuration(maxAgeS)
 				except Exception as e:
 					L.logWarn(dbg := f'error when parsing maxAge in request: {str(e)}')
 					return Result.errorResult(dbg = dbg)
@@ -444,7 +457,7 @@ class NotificationManager(object):
 			# Check for maxAge attribute provided in the subscription
 			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL blocking retrieve
 				try:
-					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
+					maxAgeSubscription = fromDuration(maxAgeS)
 				except Exception as e:
 					L.logWarn(dbg := f'error when parsing maxAge in subscription: {str(e)}')
 					return Result.errorResult(dbg = dbg)
@@ -460,7 +473,7 @@ class NotificationManager(object):
 			maxAgeSubscription = maxAgeSubscription if maxAgeSubscription is not None else sys.float_info.max
 			maxAgeRequest = maxAgeRequest if maxAgeRequest is not None else sys.float_info.max
 
-			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
+			if resource.lt > getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
 				# To early for this subscription
 				continue
 			L.isDebug and L.logDebug(f'blocking RETRIEVE notification necessary')
@@ -470,15 +483,15 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : eachSub['net'][0],	# Add the first and hopefully only NET to the notification
 					},
-					'sur' : Utils.toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])
 				}
 			}
 			# Add creator of the subscription!
-			(subOriginator := eachSub['originator']) is not None and Utils.setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
+			(subOriginator := eachSub['originator']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
 
 			# Add representation, but don't include virtual resources
 			if not resource.isVirtual():
-				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
+				setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			countNotifications += 1
 			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
@@ -588,7 +601,7 @@ class NotificationManager(object):
 			# Send the notification directly. Handle the counting of sent notifications and received responses
 			# in pre and post functions for the notifications of each target
 			dct:JSON = { 'm2m:sgn' : {
-					'sur' : Utils.toSPRelative(crs.ri)
+					'sur' : toSPRelative(crs.ri)
 				}
 			}
 			self.sendNotificationWithDict(dct, 
@@ -629,7 +642,7 @@ class NotificationManager(object):
 
 	def startCRSPeriodicWindow(self, crsRi:str, tws:str, expectedCount:int) -> None:
 
-		crsTws = DateUtils.fromDuration(tws)
+		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
 
 		# Start a background worker. "data", which will contain the RI's later is empty
@@ -666,7 +679,7 @@ class NotificationManager(object):
 
 
 	def startCRSSlidingWindow(self, crsRi:str, tws:str, sur:str, subCount:int) -> BackgroundWorker:
-		crsTws = DateUtils.fromDuration(tws)
+		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
@@ -919,7 +932,7 @@ class NotificationManager(object):
 			for nu in nus:
 				if not previousNus or (nu not in previousNus):	# send only to new entries in nu
 					# Skip notifications to originator
-					if nu == originator or Utils.compareIDs(nu, originator):
+					if nu == originator or compareIDs(nu, originator):
 						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
@@ -945,7 +958,7 @@ class NotificationManager(object):
 
 		def sender(uri:str) -> bool:
 			# Skip verification requests to acme: receivers
-			if Utils.isAcmeUrl(uri):
+			if isAcmeUrl(uri):
 				L.isDebug and L.logDebug(f'Skip verification request to internal target: {uri}')
 				return True
 
@@ -953,11 +966,11 @@ class NotificationManager(object):
 			verificationRequest:JSON = {
 				'm2m:sgn' : {
 					'vrq' : True,
-					'sur' : Utils.toSPRelative(ri)
+					'sur' : toSPRelative(ri)
 				}
 			}
 			# Set the creator attribute if there is an originator for the subscription
-			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
+			originator and setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			if not (res := CSE.request.sendNotifyRequest(uri, 
 														 originator = CSE.cseCsi,
@@ -989,7 +1002,7 @@ class NotificationManager(object):
 			deletionNotification:JSON = {
 				'm2m:sgn' : {
 					'sud' : True,
-					'sur' : Utils.toSPRelative(ri)
+					'sur' : toSPRelative(ri)
 				}
 			}
 
@@ -1036,7 +1049,7 @@ class NotificationManager(object):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
-					'sur' : Utils.toSPRelative(sub['ri'])
+					'sur' : toSPRelative(sub['ri'])
 				}
 			}
 
@@ -1053,9 +1066,9 @@ class NotificationManager(object):
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some values to the notification
-			notificationEventType is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
-			data is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
-			creator is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
+			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
+			data is not None and setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
+			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
 			# Check for batch notifications
 			if sub['bn']:
@@ -1119,7 +1132,7 @@ class NotificationManager(object):
 				Returns *True*, even when nothing was sent, and *False* when any *senderFunction* returned False. 
 		"""
 		#	Event when notification is happening, not sent
-		CSE.event.notification() # type: ignore
+		self._eventNotification()
 
 		if isinstance(uris, str):
 			return senderFunction(uris)
@@ -1169,7 +1182,7 @@ class NotificationManager(object):
 
 		#  Check for actions
 		ln = sub['ln'] if 'ln' in sub else False
-		if (num := Utils.findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+		if (num := findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
@@ -1178,7 +1191,7 @@ class NotificationManager(object):
 		# Check / start Timer worker to guard the batch notification duration
 		else:
 			try:
-				dur = isodate.parse_duration(Utils.findXPath(sub, 'bn/dur')).total_seconds()
+				dur = isodate.parse_duration(findXPath(sub, 'bn/dur')).total_seconds()
 			except Exception:
 				return False
 			self._startNewBatchNotificationWorker(ri, nu, ln, sub, dur)
@@ -1206,7 +1219,7 @@ class NotificationManager(object):
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
-				if n := Utils.findXPath(notification['request'], 'sgn'):
+				if n := findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
 			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False

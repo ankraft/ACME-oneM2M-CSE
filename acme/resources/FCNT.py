@@ -11,10 +11,11 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc import Utils, DateUtils
+from ..etc.Utils import getAttributeSize
+from ..etc.DateUtils import getResourceDate
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..resources import Factory as Factory
+from ..resources import Factory				# attn: circular import
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -184,7 +185,7 @@ class FCNT(AnnounceableResource):
 		self.__validating = True
 
 		# Calculate contentSize. Only the custom attribute
-		self['cs'] = sum([Utils.getAttributeSize(self[attr]) for attr in self.dict if attr not in self.ignoreAttributes])
+		self.setAttribute('cs', sum([getAttributeSize(self[attr]) for attr in self.dict if attr not in self.ignoreAttributes]))
 
 		#
 		#	Handle flexContainerInstances
@@ -280,9 +281,9 @@ class FCNT(AnnounceableResource):
 		# Check for mia handling
 		if self.mia is not None:	# mia is an int
 			# Take either mia or the maxExpirationDelta, whatever is smaller
-			maxEt = DateUtils.getResourceDate(self.mia 
-											  if self.mia <= CSE.request.maxExpirationDelta 
-											  else CSE.request.maxExpirationDelta)
+			maxEt = getResourceDate(self.mia 
+									if self.mia <= CSE.request.maxExpirationDelta 
+									else CSE.request.maxExpirationDelta)
 			# Only replace the childresource's et if it is greater than the calculated maxEt
 			if resource.et > maxEt:
 				resource.setAttribute('et', maxEt)

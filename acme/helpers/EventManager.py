@@ -52,6 +52,12 @@ class Event(list):	# type:ignore[type-arg]
 		name: The event name.
 	"""
 
+	__slots__ = (
+		'runInBackground',
+		'manager',
+		'name',
+	)
+
 	def __init__(self,  runInBackground:Optional[bool] = True, 
 						manager:Optional[EventManager] = None,
 						name:Optional[str] = None):
@@ -125,6 +131,11 @@ class EventManager(object):
 		Attributes:
 			_running: Internal Running indicator for the manager instance.
 	"""
+
+	__slots__ = (
+		'_running',
+	)
+
 
 	def __init__(self) -> None:
 		"""	EventManager initialization.

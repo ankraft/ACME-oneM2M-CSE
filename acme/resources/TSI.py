@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc import Utils
+from ..etc.Utils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
@@ -50,7 +50,7 @@ class TSI(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
-		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
+		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
 
 
 	# Forbid updating

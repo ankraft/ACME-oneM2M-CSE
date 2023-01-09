@@ -14,7 +14,7 @@ from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTyp
 from ..resources.VirtualResource import VirtualResource
 from ..services.Logging import Logging as L
 from ..services import CSE
-from ..etc import DateUtils, Utils
+from ..etc.DateUtils import timeUntilTimestamp
 
 
 class PCH_PCU(VirtualResource):
@@ -67,7 +67,7 @@ class PCH_PCU(VirtualResource):
 
 		# Determine the request's timeout
 		if request.rqet:
-			ret = DateUtils.timeUntilTimestamp(request._rqetUTCts)
+			ret = timeUntilTimestamp(request._rqetUTCts)
 			L.isDebug and L.logDebug(f'Polling timeout: {ret} seconds')
 		else:
 			ret = CSE.request.requestExpirationDelta
@@ -98,7 +98,7 @@ class PCH_PCU(VirtualResource):
 			L.isDebug and L.logDebug(r.dbg)
 			return r
 
-		if (innerPC := cast(JSON, Utils.findXPath(request.pc, 'm2m:rsp'))) is None:
+		if (innerPC := cast(JSON, request.pc.get('m2m:rsp'))) is None:
 			return Result.errorResult(dbg = L.logDebug(f'Noification to PCU must contain a Response (m2m:rsp)'))
 		
 		if not innerPC.get('fr'):

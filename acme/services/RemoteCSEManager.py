@@ -15,11 +15,12 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
 from ..etc.Types import CSEStatus, ResourceTypes, Result, CSEType, ResponseStatusCode, JSON
-from ..etc import Utils
+from ..etc.Utils import findXPath, setXPath, getCSE, pureResource, csiFromRelativeAbsoluteUnstructured
+from ..etc.Constants import Constants
 from ..resources.CSR import CSR
 from ..resources.CSEBase import CSEBase
 from ..resources.Resource import Resource
-from ..resources import Factory
+from ..resources.Factory import resourceFromDict
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -47,6 +48,30 @@ class RemoteCSEManager(object):
 			registrarCSEURI: The registrar CSE's CSE-ID and resource name.
 			csrOnRegistrarURI: The SP-relative ID of the CSR resource on the registrar CSE.
 	"""
+
+	__slots__ = (
+		'ownCSRonRegistrarCSE',
+		'registrarCSE',
+		'connectionMonitor',
+		'descendantCSR',
+
+		'registrarAddress',
+		'registrarRoot',
+		'checkInterval',
+		'registrarSerialization',
+		'checkLiveliness',
+		'registrarCSI',
+		'registrarCseRN',
+		'excludeCSRAttributes',
+		'enableRemoteCSE',
+		'registrarCSEURL',
+		'registrarCSEURI',
+		'csrOnRegistrarURI',
+
+		'_eventRegisteredToRegistrarCSE',
+		'_eventDeregisteredFromRegistrarCSE',
+	)
+
 
 	def __init__(self) -> None:
 		"""	Class constructor.
@@ -78,6 +103,11 @@ class RemoteCSEManager(object):
 		# Add a handler when the CSE is started
 		CSE.event.addHandler(CSE.event.cseStartup, self.start)	# type: ignore
 		L.isInfo and L.log('RemoteCSEManager initialized')
+
+		# Optimize event handling
+		self._eventRegisteredToRegistrarCSE = CSE.event.registeredToRegistrarCSE			# type: ignore [attr-defined]
+		self._eventDeregisteredFromRegistrarCSE = CSE.event.deregisteredFromRegistrarCSE	# type: ignore [attr-defined]
+
 
 
 	def shutdown(self) -> bool:
@@ -332,7 +362,7 @@ class RemoteCSEManager(object):
 					del self.descendantCSR[eachDcse]
 
 		# add new/updated values from remoteCSR
-		if dcse := Utils.findXPath(updateDict, 'm2m:csr/dcse'):
+		if dcse := findXPath(updateDict, 'm2m:csr/dcse'):
 			for eachDcse in dcse:
 				if eachDcse in self.descendantCSR:	# don't overwrite existing ones. Can this actually happen?
 					continue
@@ -372,7 +402,7 @@ class RemoteCSEManager(object):
 						L.isDebug and L.logDebug('Local CSR updated')
 
 				# Check whether the own CSE has been changed. If yes, then update it on the registrar CSE
-				localCSE = Utils.getCSE().resource
+				localCSE = getCSE().resource
 				if localCSE.isModifiedAfter(self.ownCSRonRegistrarCSE):	# local CSE modified
 					self._updateCSRonRegistrarCSE(localCSE)
 					L.isDebug and L.logDebug('Remote CSR updated')
@@ -391,10 +421,10 @@ class RemoteCSEManager(object):
 					if result.rsc == ResponseStatusCode.OK:
 						self._createLocalCSR(self.registrarCSE)		# ignore result
 						L.isInfo and L.log(f'registered to registrar CSE: {self.registrarCSI}')
-						CSE.event.registeredToRegistrarCSE(self.registrarCSE, self.ownCSRonRegistrarCSE)	# type: ignore
+						self._eventRegisteredToRegistrarCSE(self.registrarCSE, self.ownCSRonRegistrarCSE)
 				else:
 					L.isInfo and L.log('Disconnected from registrar CSE')
-					CSE.event.deregisteredFromRegistrarCSE(self.ownCSRonRegistrarCSE)	# type: ignore
+					self._eventDeregisteredFromRegistrarCSE(self.ownCSRonRegistrarCSE)
 					self.registrarCSE = None
 		
 		else:
@@ -408,7 +438,8 @@ class RemoteCSEManager(object):
 					if result.rsc == ResponseStatusCode.OK:
 						self._createLocalCSR(self.registrarCSE) 	# create local CSR including ACPs to local CSR and local CSE. Ignore result
 						L.isInfo and L.log(f'Registered to registrar CSE: {self.registrarCSI}')
-						CSE.event.registeredToRegistrarCSE(self.registrarCSE, self.ownCSRonRegistrarCSE)	# type: ignore
+						self._eventRegisteredToRegistrarCSE(self.registrarCSE, self.ownCSRonRegistrarCSE)
+
 						
 
 	def _checkRegistreeLiveliness(self) -> None:
@@ -456,7 +487,7 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Creating local CSR for CSE: {remoteCSE.ri}')
 
 		# copy local CSE attributes into a new CSR
-		localCSE = Utils.getCSE().resource
+		localCSE = getCSE().resource
 		csrResource = CSR(pi = localCSE.ri, rn = remoteCSE.csi[1:])	# remoteCSE.csi as name!
 		self._copyCSE2CSR(csrResource, remoteCSE)
 		csrResource['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri
@@ -504,14 +535,14 @@ class RemoteCSEManager(object):
 			result.status = False	# The request returns OK, but for the procedure it is false
 			return result
 		# <CSR> found, return it in the result
-		return Result(status = True, resource = Factory.resourceFromDict(cast(JSON, result.data), pi='').resource, rsc = ResponseStatusCode.OK)
+		return Result(status = True, resource = resourceFromDict(cast(JSON, result.data), pi='').resource, rsc = ResponseStatusCode.OK)
 
 
 	def _createCSRonRegistrarCSE(self) -> Result:
 		L.isDebug and L.logDebug(f'Creating CSR at registrar CSE: {self.registrarCSI} uri: {self.registrarCSEURI}')	
 		
 		# get local CSEBase and copy relevant attributes
-		localCSE = Utils.getCSE().resource
+		localCSE = getCSE().resource
 		csrResource = CSR(rn = localCSE.ri) # ri as name!
 		self._copyCSE2CSR(csrResource, localCSE)
 		for _ in ['ty','ri', 'ct', 'lt']: csrResource.delAttribute(_, setNone = False)	# remove a couple of attributes
@@ -531,7 +562,7 @@ class RemoteCSEManager(object):
 			L.isWarn and L.logWarn(f'Error creating CSR on registrar CSE: {int(res.rsc)} dbg: {res.dbg}')
 		else:
 			L.isDebug and L.logDebug(f'Created CSR on registrar CSE: {self.registrarCSI}')
-		return Result(status = True, resource = Factory.resourceFromDict(cast(JSON, res.data), pi = '').resource, rsc = ResponseStatusCode.created)
+		return Result(status = True, resource = resourceFromDict(cast(JSON, res.data), pi = '').resource, rsc = ResponseStatusCode.created)
 
 
 	def _updateCSRonRegistrarCSE(self, hostingCSE:Optional[Resource] = None) -> Result:
@@ -545,7 +576,7 @@ class RemoteCSEManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Updating own <CSR> on registrarCSE: {self.registrarCSI} URI: {self.csrOnRegistrarURI}')
 		if not hostingCSE:
-			hostingCSE = Utils.getCSE().resource
+			hostingCSE = getCSE().resource
 		
 		# create a new CSR resource and fill it with the current attributes
 		csr = CSR()
@@ -561,7 +592,7 @@ class RemoteCSEManager(object):
 				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
 			return Result.errorResult(rsc = res.rsc, dbg = 'cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
-		return Result(status = True, resource = Factory.resourceFromDict(cast(JSON, res.data), pi = ''), rsc = ResponseStatusCode.updated)
+		return Result(status = True, resource = resourceFromDict(cast(JSON, res.data), pi = ''), rsc = ResponseStatusCode.updated)
 
 
 	def _deleteOwnCSRonRegistrarCSE(self) -> Result:
@@ -604,13 +635,13 @@ class RemoteCSEManager(object):
 
 		if res.rsc not in [ ResponseStatusCode.OK ]:
 			return res.errorResultCopy()	# Don't return the original result
-		if (registrarCSI := Utils.findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
+		if (registrarCSI := findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
 			return Result.errorResult(dbg = L.logErr('csi not found in remote CSE resource', showStackTrace = False))
 		
 		# Correcting the registrar CSI
 		if not registrarCSI.startswith('/'):
 			L.isWarn and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')	# TODO Decide whether correcting this is actually correct. Also in validator.validateCSICB()
-			Utils.setXPath(cast(JSON, res.data), 'm2m:cb/csi', f'/{registrarCSI}')
+			setXPath(cast(JSON, res.data), 'm2m:cb/csi', f'/{registrarCSI}')
 
 		return Result(status = True, resource = CSEBase(cast(JSON, res.data)), rsc = ResponseStatusCode.OK) # Don't use the Factory here
 
@@ -661,12 +692,11 @@ class RemoteCSEManager(object):
 			return res.errorResultCopy()
 		
 		# assign the remote ID to the resource's dictionary
-		_, tpe, _ = Utils.pureResource(cast(JSON, res.data))
-		Utils.setXPath(cast(JSON, res.data), f'{tpe}/{Resource._remoteID}', id)
+		_, tpe, _ = pureResource(cast(JSON, res.data))
+		setXPath(cast(JSON, res.data), f'{tpe}/{Constants.attrRemoteID}', id)
 
 		# Instantiate
-		# return Factory.resourceFromDict(res.dict, isRemote=True) if not raw else Result(resource=res.dict)
-		return Factory.resourceFromDict(cast(JSON, res.data))
+		return resourceFromDict(cast(JSON, res.data))
 
 
 	def getCSRFromPath(self, id:str) -> Optional[Tuple[Resource, List[str]]]:
@@ -702,7 +732,7 @@ class RemoteCSEManager(object):
 
 		if not id:
 			return None, None
-		csi, ids = Utils.csiFromRelativeAbsoluteUnstructured(id)
+		csi, ids = csiFromRelativeAbsoluteUnstructured(id)
 
 		# Search for a <CSR> that either has the csi attribute set, or that has the looked-for
 		# registree CSE as a descendant CSE.

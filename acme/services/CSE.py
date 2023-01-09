@@ -125,11 +125,14 @@ cseCsi:str										= None
 cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
 
-cseCsiSlashLess:str  								= None
+cseCsiSlashLess:str  							= None
 """ The CSE-ID without the leading /. """
 
 cseSpid:str										= None
 """ The Service Provider ID. """
+
+cseSPRelative:str								= None
+"""	The SP-Relative CSE-ID. """
 
 cseAbsolute:str									= None
 """ The CSE's Absolute prefix (SP-ID/CSE-ID). """
@@ -181,7 +184,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
-	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
+	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -212,11 +215,12 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseCsiSlashLess			 = cseCsi[1:]
 	cseSpid					 = Configuration.get('cse.spid')
-	cseAbsolute				 = f'//{cseSpid}/{cseCsi}'
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')
 	cseOriginator			 = Configuration.get('cse.originator')
+	cseSPRelative			 = f'{cseCsi}/{cseRn}'
+	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 	releaseVersion 			 = Configuration.get('cse.releaseVersion')

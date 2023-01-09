@@ -8,13 +8,15 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, cast, Dict, Optional
+from typing import Tuple, cast, Dict, Optional, Any
 
 from urllib.parse import urlparse
 from threading import Lock
 
 from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
-from ..etc import Utils as Utils, DateUtils, RequestUtils
+from ..etc.RequestUtils import requestFromResult, serializeData
+from ..etc.DateUtils import getResourceDate, waitFor
+from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..services.Configuration import Configuration
@@ -31,11 +33,39 @@ class MQTTClientHandler(MQTTHandler):
 			topicPrefixCont: Count of elements in the prefix.
 	"""
 
+	__slots__ = (
+		'mqttClient',
+		'topicPrefix',
+		'topicPrefixCount',
+		'operationEvents',
+
+		'_eventMqttCreate',
+		'_eventMqttRetrieve',
+		'_eventMqttUpdate',
+		'_eventMqttDelete',
+		'_eventMqttNotify',
+	)
+
 	def __init__(self, mqttClient:MQTTClient) -> None:
 		super().__init__()
 		self.mqttClient  = mqttClient
 		self.topicPrefix = mqttClient.topicPrefix
 		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
+
+		# Optimize event handling
+		self._eventMqttCreate =  CSE.event.mqttCreate				# type: ignore [attr-defined]
+		self._eventMqttRetrieve =  CSE.event.mqttRetrieve			# type: ignore [attr-defined]
+		self._eventMqttUpdate =  CSE.event.mqttUpdate				# type: ignore [attr-defined]
+		self._eventMqttDelete =  CSE.event.mqttDelete				# type: ignore [attr-defined]
+		self._eventMqttNotify =  CSE.event.mqttNotify				# type: ignore [attr-defined]
+
+		self.operationEvents = {
+			Operation.CREATE:	[self._eventMqttCreate, 'MQCR'],
+			Operation.RETRIEVE: [self._eventMqttRetrieve, 'MQRE'],
+			Operation.UPDATE:	[self._eventMqttUpdate, 'MQUP'],
+			Operation.DELETE:	[self._eventMqttDelete, 'MQDE'],
+			Operation.NOTIFY:	[self._eventMqttNotify, 'MQNO'],
+		}
 
 
 	def onConnect(self, connection:MQTTConnection) -> bool:
@@ -122,6 +152,7 @@ class MQTTClientHandler(MQTTHandler):
 		# Dissect Body
 		contentType:str = ts[-1]
 		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType, isResponse=True)).status:
+			L.isWarn and L.logWarn(f'Error receiving MQTT response: {dissectResult.dbg}')
 			return
 		
 		# Add it to a response queue in the manager
@@ -220,23 +251,19 @@ class MQTTClientHandler(MQTTHandler):
 		if self.mqttClient.isStopped:
 			_sendResponse(Result.errorResult(rsc = ResponseStatusCode.internalServerError, request = dissectResult.request, dbg = 'mqtt server not running'))
 			return
-		
+
+
 		# send events for the MQTT operations
-		# TODO rename current thread similar to http requests
-		if request.op == Operation.CREATE:
-			CSE.event.mqttCreate()		# type: ignore [attr-defined]
-		elif request.op == Operation.RETRIEVE:
-			CSE.event.mqttRetrieve()	# type: ignore [attr-defined]
-		elif request.op == Operation.UPDATE:
-			CSE.event.mqttUpdate()		# type: ignore [attr-defined]
-		elif request.op == Operation.DELETE:
-			CSE.event.mqttDelete()		# type: ignore [attr-defined]
-		elif request.op == Operation.NOTIFY:
-			CSE.event.mqttNotify()		# type: ignore [attr-defined]
+		_t = self.operationEvents[request.op]
+		_t[0]()
+		
+		# rename threads
+		renameThread(_t[1])
+
 		try:
 			responseResult = CSE.request.handleRequest(request)
 		except Exception as e:
-			responseResult = Utils.exceptionToResult(e)
+			responseResult = exceptionToResult(e)
 		# Send response
 
 		# TODO Also change in http
@@ -246,7 +273,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# Add Originating Timestamp if present in request
 		if request.ot:
-			responseResult.request.ot = DateUtils.getResourceDate()
+			responseResult.request.ot = getResourceDate()
 		
 		#	Transform request to oneM2M request
 		_sendResponse(responseResult)
@@ -258,13 +285,31 @@ class MQTTClientHandler(MQTTHandler):
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
 	"""
+	# TODO doc
+
+	__slots__ = (
+		'mqttConnection',
+		'isStopped',
+		'topicsCount',
+		'mqttConnections',
+		'receivedResponses',
+		'receivedResponsesLock',
+
+		'enable',
+		'topicPrefix',
+		'requestTimeout',
+	)
+
 	# TODO move config handling to event handler
 
 	def __init__(self) -> None:
-		self.enable													= Configuration.get('mqtt.enable')
-		self.topicPrefix 											= Configuration.get('mqtt.topicPrefix')
-		self.requestTimeout 										= Configuration.get('mqtt.timeout')
-		self.mqttConnection											= None
+
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add a handler for configuration changes
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
+
 		self.isStopped												= False
 		self.topicsCount											= 0
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
@@ -286,6 +331,7 @@ class MQTTClient(object):
 		if not self.enable or not self.mqttConnection:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return True
+		L.isInfo and L.log('Start MQTT client')
 		self.mqttConnection.run()
 		if not self.isFullySubscribed():	# This waits until the MQTT Client connects and fully subscribes (until a timeout)
 			return False
@@ -295,12 +341,43 @@ class MQTTClient(object):
 	def shutdown(self) -> bool:
 		"""	Shutdown the MQTTClient.
 		"""
+		L.isInfo and L.log('Shutdown MQTT client')
 		self.isStopped = True
 		for id in list(self.mqttConnections):
 			self.disconnectFromMqttBroker(id[0], id[1])	# 0 = address, 1 = port
 		self.mqttConnection = None
 		return True
 	
+
+	def _assignConfig(self) -> None:
+		"""	Store relevant configuration values in the manager.
+		"""
+		self.enable = Configuration.get('mqtt.enable')
+		self.topicPrefix = Configuration.get('mqtt.topicPrefix')
+		self.requestTimeout = Configuration.get('mqtt.timeout')
+
+
+	def configUpdate(self, key:Optional[str] = None, 
+						   value:Optional[Any] = None) -> None:
+		"""	Callback for the `configUpdate` event.
+			
+			Args:
+				key: Name of the updated configuration setting.
+				value: New value for the config setting.
+		"""
+		if key not in [ 'mqtt.enable', 
+						'mqtt.topicPrefix',
+						'mqtt.timeout', 
+					  ]:
+			return
+
+		# assign new values
+		self._assignConfig()
+
+		# possibly restart MQTT client
+		self.shutdown()
+		self.run()
+		
 
 	def pause(self) -> None:
 		"""	Stop handling requests.
@@ -323,14 +400,14 @@ class MQTTClient(object):
 	def isFullySubscribed(self) -> bool:
 		"""	Check whether this mqttConnection is fully subscribed.
 		"""
-		return DateUtils.waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected and self.mqttConnection.subscribedCount == 3)	# currently 3 topics
+		return waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected and self.mqttConnection.subscribedCount == 3)	# currently 3 topics
 
 
 	def isConnected(self) -> bool:
 		"""	Check whether the MQTT client is connected to a broker. Wait for a moment
 			to take startup connection into account.
 		"""
-		return DateUtils.waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected)
+		return waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected)
 
 
 	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:str, password:str) -> Optional[MQTTConnection]:
@@ -413,10 +490,10 @@ class MQTTClient(object):
 		req.request.op			= operation
 		req.resource			= content
 		req.request.originator	= originator
-		req.request.rqi			= Utils.uniqueRI()
+		req.request.rqi			= uniqueRI()
 		if rvi != '1':
 			req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
-		req.request.ot			= DateUtils.getResourceDate()
+		req.request.ot			= getResourceDate()
 		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct			= ct if ct else CSE.defaultSerialization 	# get the serialization
 
@@ -433,7 +510,7 @@ class MQTTClient(object):
 
 		# Build the topic
 		if not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(originator))}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
@@ -453,7 +530,7 @@ class MQTTClient(object):
 													  password = mqttPassword)
 
 			# Wait a moment until we are connected.
-			DateUtils.waitFor(self.requestTimeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
+			waitFor(self.requestTimeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
 
 		# We are not connected, so -> fail
 		if not mqttConnection or not mqttConnection.isConnected:
@@ -486,12 +563,14 @@ class MQTTClient(object):
 		def _receivedResponse() -> bool:
 			nonlocal resp, topic
 			with self.receivedResponsesLock:
+				if not self.receivedResponses:
+					return False
 				if rqi in self.receivedResponses:
 					resp, topic = self.receivedResponses.pop(rqi)	# return the response (in a Result object), and remove it from the dict.
 					return True
 			return False
 			
-		if not DateUtils.waitFor(timeOut, _receivedResponse):
+		if not waitFor(timeOut, _receivedResponse):
 			return Result.errorResult(rsc = ResponseStatusCode.targetNotReachable, dbg = 'Target not reachable or timeout'), None
 		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
 		return resp, topic
@@ -510,7 +589,7 @@ def prepareMqttRequest(inResult:Result,
 	
 		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
-	result = RequestUtils.requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
+	result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
 
 	# When raw: Replace the data with its own primitive content, and a couple of headers
 	if raw and (pc := cast(JSON, result.data).get('pc')):
@@ -522,9 +601,9 @@ def prepareMqttRequest(inResult:Result,
 	
 	# Always add the original timestamp in a response
 	if not result.request.ot:
-		result.request.ot = DateUtils.getResourceDate()
+		result.request.ot = getResourceDate()
 
-	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
+	result.data = (result.data, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
 
@@ -564,4 +643,4 @@ def logRequest(reqResult:Result,
 
 			body = f'\nBody: {bodyPrint}' 
 
-	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')
+	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}', stackOffset = 1)

@@ -29,7 +29,8 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..etc.Constants import Constants
 from ..etc.Types import CSEType, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.Utils import getIPAddress, getCSE
+from ..etc.DateUtils import fromAbsRelTimestamp
 from ..resources.Resource import Resource
 from ..services import CSE, Statistics
 from ..services.Configuration import Configuration
@@ -121,6 +122,26 @@ class Console(object):
 			previousGraphRi: Resource ID of the previous graph display.
 	"""
 
+	__slots__ = (
+		'interruptContinous',
+		'previousTreeRi',
+		'previousInspectRi',
+		'previosInspectChildrenRi',
+		'previousScript',
+		'previousArgument',
+		'previousGraphRi',
+		
+		'refreshInterval',
+		'hideResources',
+		'treeMode',
+		'treeIncludeVirtualResources',
+		'confirmQuit',
+
+		'_eventKeyboard',
+
+		
+	)
+
 	def __init__(self) -> None:
 		"""	Initialization of a *Console* instance.
 		"""
@@ -141,6 +162,8 @@ class Console(object):
 
 		# Add handler for restart event
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
+
+		self._eventKeyboard = CSE.event.keyboard			# type: ignore [attr-defined]
 
 		L.isInfo and L.log('Console initialized')
 
@@ -1004,14 +1027,14 @@ Available under the BSD 3-Clause License
 
 			misc  = '[underline]Misc[/underline]\n'
 			misc += '\n'
-			misc += f'StartTime         : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			misc += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 			misc += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
 			misc += f'Hostname          : {socket.gethostname()}\n'
 			misc += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
 
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
-				misc += f'IP-Address        : {Utils.getIPAddress()}\n'
+				misc += f'IP-Address        : {getIPAddress()}\n'
 			except Exception as e:
 				print(e)
 			misc += f'PoA               : {CSE.csePOA[0]}\n'
@@ -1194,7 +1217,7 @@ Available under the BSD 3-Clause License
 				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
 					return None
 			else:
-				res = Utils.getCSE().resource
+				res = getCSE().resource
 			if not res:
 				return None
 			tree = Tree(info(res), style = style, guide_style = style)

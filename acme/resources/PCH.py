@@ -12,7 +12,7 @@ from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..resources.Resource import Resource
-from ..resources import Factory
+from ..resources import Factory		# attn: circular import
 from ..resources import PCH_PCU
 from ..services import CSE
 from ..services.Logging import Logging as L
