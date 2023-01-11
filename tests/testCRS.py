@@ -766,7 +766,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)	
 
 		# wait and check notification at around half the time
-		testSleep(crsTimeWindowSize + 0.8)
+		testSleep(crsTimeWindowSize * 1.2)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait second half
