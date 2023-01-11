@@ -840,6 +840,12 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
 
 
+def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
+	return { k: v 
+			 for k, v in dct.items() 
+			 if k in attributesToInclude }
+			 
+
 def getCSE() -> Result:
 	"""	Return the <CSEBase> resource.
 

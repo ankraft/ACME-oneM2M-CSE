@@ -183,7 +183,7 @@ class Validator(object):
 
 				# Check list. May be empty or needs to contain at least one member
 				if policy.cardinality == Cardinality.CAR1LN and len(attributeValue) == 0:
-					return Result.errorResult(dbg = L.logWarn(f'List attribute must be non-empty: {attributeName}'))
+					return Result.errorResult(dbg = L.logWarn(f'Mandatory list attribute must be non-empty: {attributeName}'))
 
 				# Check list. May be empty or needs to contain at least one member
 				# L.isWarn and L.logWarn(f'CAR: {policy.cardinality.name}: {attributeValue}')
@@ -500,7 +500,6 @@ class Validator(object):
 			Return:
 				Result. If the check is positive (Result.status = =True) then Result.data is set to a tuple (the determined data type, the converted value).
 		"""
-
 
 		# Ignore None values
 		if value is None:

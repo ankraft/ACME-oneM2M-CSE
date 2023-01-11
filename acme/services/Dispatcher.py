@@ -25,7 +25,7 @@ from ..etc.Types import ResponseStatusCode
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
 from ..etc.Types import JSON
-from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes
+from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes
 from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, findXPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..services import CSE
@@ -105,6 +105,17 @@ class Dispatcher(object):
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+
+		# Check attributeList in Content
+		attributeList:JSON = None
+		if request.pc is not None:
+			L.isDebug and L.logDebug(f'Found Content for RETRIEVE: {request.pc}')
+			if (attributeList := request.pc.get('m2m:atrl')) is None:
+				return Result.errorResult(dbg = L.logWarn(f'Only "m2m:atrl" is allowed in Content for RETRIEVE.'))
+			if not (res := CSE.validator.validateAttribute('atrl', attributeList)).status:
+				return res
+			
+		
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)
 		if not (res := self._checkRequestExpiration(request)).status:
@@ -172,7 +183,9 @@ class Dispatcher(object):
 				if rcn == ResultContentType.attributes:
 					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 						return resCheck
-					return res
+					
+					# partial retrieve?
+					return self._partialFromResult(res, attributeList)
 
 				resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
 
@@ -189,7 +202,9 @@ class Dispatcher(object):
 					if (res := self.retrieveResource(lnk, originator, request)).resource:
 						if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 							return resCheck
-					return res
+
+					# partial retrieve?
+					return self._partialFromResult(res, attributeList)
 			
 			#
 			#	Semantic query request
@@ -1502,3 +1517,10 @@ class Dispatcher(object):
 				return result.resource
 			# Fallthrough
 		return None
+
+
+	def _partialFromResult(self, result:Result, attributeList:JSON) -> Result:
+		if attributeList:
+			tpe = result.resource.tpe
+			result = Result(status = result.status, resource = { tpe : filterAttributes(result.resource.asDict()[tpe], attributeList) }, rsc = result.rsc, dbg = result.dbg)
+		return result

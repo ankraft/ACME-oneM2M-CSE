@@ -471,6 +471,20 @@
 			"annc": "OA"
 		}
 	],
+	"atrl": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "attributeList",
+			"ns": "m2m",
+			"type": "listne", 	// m2m:attributeList
+			"ltype": "string",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"att": [
 		{
 			"rtypes": [ "ALL" ],
