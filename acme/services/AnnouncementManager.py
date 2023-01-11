@@ -27,10 +27,6 @@ from .Logging import Logging as L
 # TODO for anounceable resource:
 # - update: update resource here
 
-# TODO Remove marked code below after 0.10.0, also remove checkInterval configuration setting
-
-waitBeforeAnnouncement = 3	# seconds # TODO configurable
-"""	Number of seconds to wait before performing announcements when a new CSE has registered. """
 
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
@@ -38,12 +34,13 @@ class AnnouncementManager(object):
 		Attributes:
 			checkInterval: Number of seconds to wait between tries to announce resources to remote CSEs (configurable).
 			allowAnnouncementsToHostingCSE: Allow or disallow resources to announce to the own hosting CSE (configurable).
-
+			delayAfterRegistration: Number of seconds to wait before performing announcements when a new CSE has registered (configurable).
 	"""
 
 	__slots__ = (
 		'checkInterval',
 		'allowAnnouncementsToHostingCSE',
+		'delayAfterRegistration',
 	)
 
 
@@ -51,9 +48,7 @@ class AnnouncementManager(object):
 		"""	Initialization of the announcement manager.
 		"""
 		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
-		CSE.event.addHandler(CSE.event.deregisteredFromRegistrarCSE, self.handleDeRegisteredFromRegistrarCSE)	# type: ignore
 		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSEHasRegistered)			# type: ignore
-		CSE.event.addHandler(CSE.event.registreeCSEHasDeregistered, self.handleRegistreeCSEHasDeregistered)		# type: ignore
 		
 		# Configuration values
 		self._assignConfig()
@@ -61,7 +56,6 @@ class AnnouncementManager(object):
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
-		# self.start()	# TODO remove after 0.10.0
 		L.isInfo and L.log('AnnouncementManager initialized')
 
 
@@ -71,7 +65,6 @@ class AnnouncementManager(object):
 			Return:
 				Always True.
 		"""
-		# self.stop()	# TODO remove after 0.10.0
 		if CSE.remote:
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr:
@@ -83,8 +76,9 @@ class AnnouncementManager(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the announcement manager.
 		"""
-		self.checkInterval					= Configuration.get('cse.announcements.checkInterval')
+		self.checkInterval = Configuration.get('cse.announcements.checkInterval')
 		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
+		self.delayAfterRegistration	= Configuration.get('cse.announcements.delayAfterRegistration')
 
 
 	def configUpdate(self, key:Optional[str] = None, value:Optional[Any] = None) -> None:
@@ -94,42 +88,14 @@ class AnnouncementManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.announcements.checkInterval', 'cse.announcements.allowAnnouncementsToHostingCSE' ]:
+		if key not in [ 'cse.announcements.checkInterval', 
+						'cse.announcements.allowAnnouncementsToHostingCSE',
+						'cse.announcements.delayAfterRegistration',
+					  ]:
 			return
 
 		# assign new values
 		self._assignConfig()
-
-
-	# TODO Test this for a while. And remove it if this fully works as expected.
-	# A regular check might be overkill. Just using the events should be enough.
-
-
-	# #
-	# #	Announcement Monitor
-	# #
-
-	# # Start the monitor in a thread. 
-	# def start(self) -> None:
-	# 	L.isInfo and L.log('Starting Announcements monitor')
-	# 	BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
-
-
-	# # Stop the monitor
-	# def stop(self) -> None:
-	# 	L.isInfo and L.log('Stopping Announcements monitor')
-	# 	# Stop the worker
-	# 	BackgroundWorkerPool.stopWorkers('anncMonitor')
-
-
-	# def announcementMonitorWorker(self) -> bool:
-	# 	L.isDebug and L.logDebug('Checking announcements to remote CSEs')
-
-	# 	# check all CSR
-	# 	for csr in CSE.remote.getAllLocalCSRs():
-	# 		self.checkResourcesForAnnouncement(csr)
-	# 	return True
-
 
 
 	#########################################################################
@@ -144,19 +110,8 @@ class AnnouncementManager(object):
 				remoteCSE: The remote `CSEBase` resource.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
-		time.sleep(waitBeforeAnnouncement)	# Give some time until remote CSE fully connected
+		time.sleep(self.delayAfterRegistration)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
-
-
-	def handleDeRegisteredFromRegistrarCSE(self, remoteCSR:Resource) -> None:
-		"""	Handle de-registrations from a registrar CSE.
-
-			Args:
-				remoteCSR: The own CSE's remote `CSR` resource.
-
-		"""
-		# self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this > 0.11.0 for new Announcement behaviour
-		pass
 
 
 	def handleRegistreeCSEHasRegistered(self, remoteCSR:Resource) -> None:
@@ -165,18 +120,8 @@ class AnnouncementManager(object):
 			Args:
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
-		time.sleep(waitBeforeAnnouncement) 	# Give some time until remote CSE is fully connected
+		time.sleep(self.delayAfterRegistration) 	# Give some time until remote CSE is fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
-
-
-	def handleRegistreeCSEHasDeregistered(self, remoteCSR:Resource) -> None:
-		""" Handle de-registrations when a registree CSE has de-registered.
-
-			Args:
-				remoteCSR: The own CSE's remote `CSR` resource.
-		"""
-		#self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this > 0.11.0 for new Announcement behaviour+
-		pass
 
 
 
@@ -451,12 +396,6 @@ class AnnouncementManager(object):
 				originator: The original UPDATE request's originator.
 		"""
 		L.isDebug and L.logDebug(f'Updating announced resource: {resource.ri}')
-
-		# Check for removed AT
-		# Logging.logErr(set(self._origAT))
-		# Logging.logErr(set(self.at))
-		# Logging.logErr(set(self.at) == set(self._origAT))
-
 
 		# get all resources for this specific CSI that are announced to it yet
 		CSIsFromAnnounceTo = []

@@ -251,10 +251,11 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="announcements"></a>
 ### [cse.announcements] - Settings for Resource Announcements 
 
-| Keyword                        | Description                                                                                      | Configuration Name                               |
-|:-------------------------------|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------|
-| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10    | cse.announcements.checkInterval                  |
-| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                          | cse.announcements.allowAnnouncementsToHostingCSE |
+| Keyword                        | Description                                                                                                                        | Configuration Name                               |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------|
+| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10                                      | cse.announcements.checkInterval                  |
+| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                            | cse.announcements.allowAnnouncementsToHostingCSE |
+| delayAfterRegistration         | Specify a short delay in seconds before start announcing resources after a CSE has registered at the CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
 
 
 <a name="statistics"></a>
