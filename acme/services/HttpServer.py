@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Tuple, Optional
 
-import logging, sys, urllib3
+import logging, sys, urllib3, re
 from copy import deepcopy
 
 import flask
@@ -788,8 +788,9 @@ class HttpServer(object):
 		return Result(status = True, request = cseRequest)
 
 
+	_hdrArgument = re.compile(r'^\s*ty\s*=\s*', re.IGNORECASE)
 	def _hasContentType(self) -> bool:
-		return (ct := request.content_type) is not None and any(s.startswith('ty=') for s in ct.split(';'))
+		return (ct := request.content_type) is not None and any(re.match(self._hdrArgument, s) is not None for s in ct.split(';'))
 
 
 ##########################################################################

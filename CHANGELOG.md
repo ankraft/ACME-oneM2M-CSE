@@ -12,12 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Improved validation of complex types and mandatory attributes.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
+- [TESTS] Added http keep-alive to tests.
 
 ### Changed
 - [CSE] Lots of small runtime optimizations.
 
 ### Fixed
 - [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.
+- [HTTP] Fixed a bug when sending a CREATE request and the *Content-Type* header contains spaces before the *ty* argument. Thanks to KyeongHo!  
 
 
 
