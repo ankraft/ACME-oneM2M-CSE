@@ -78,6 +78,7 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(lastHeaders()[C.hfVSI], vsi)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRETRelative(self) -> None:
 		"""	Check Request Expiration Timeout in request (relative)"""
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : '10000'}) # request expiration in 10 seconds
@@ -253,6 +254,26 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, sub2)
 		r, rsc = DELETE(url, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
+	def test_createAEContentTypeWithSpacesHeader(self) -> None:
+		""" Create <AE> with a content header with spaces (http only)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		# Space in Content-Type header field
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Content-Type' : 'application/json;       ty=2'})
+		self.assertEqual(rsc, RC.created)
+
+		# delete it again
+		r, rsc = DELETE(f'{CSEURL}{CSERN}/{aeRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted, r)
+
 		
 
 # TODO test for creating a resource with missing type parameter
@@ -280,6 +301,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestMisc('test_validateListFail'))
 	addTest(suite, TestMisc('test_resourceWithoutRN'))
 	addTest(suite, TestMisc('test_subWithoutRN'))
+	addTest(suite, TestMisc('test_createAEContentTypeWithSpacesHeader'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
