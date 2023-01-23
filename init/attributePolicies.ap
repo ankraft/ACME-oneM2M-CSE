@@ -1239,7 +1239,8 @@
 	],
 	"evc": [
 		{
-			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
+			// TODO "rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "DEPRAnnc", "REQRESP" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "REQRESP" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
 			"type": "m2m:evalCriteria",
@@ -2568,6 +2569,20 @@
 			"annc": "NA"
 		}
 	],
+	"rri": [
+		{
+			//TODO "rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
+			"rtypes": [ "DEPR",  "REQRESP" ],
+			"lname": "referencedResourceID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "MA"
+		}
+	],
 	"rs": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -2630,6 +2645,20 @@
 			"ltype": "string",	// m2m:sessionCapabilities
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"sfc": [
+		{
+			//"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
+			"rtypes": [ "DEPR", "REQRESP" ],
+			"lname": "sufficient",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "1",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"

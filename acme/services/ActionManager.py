@@ -35,7 +35,7 @@ class ActionManager(object):
 
 	__slots__ = (
 		'ecpPeriodicDefault',
-		'ecpContinuousDefault'
+		'ecpContinuousDefault',
 	)
 	
 	# Imported here because of circular import
@@ -100,6 +100,7 @@ class ActionManager(object):
 
 		# Get actions. Remember, these are NOT <action> resources
 		actions = CSE.storage.searchActionsForSubject(_ri)		
+		L.logWarn(actions)
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
 

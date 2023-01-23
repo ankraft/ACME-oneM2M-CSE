@@ -12,7 +12,7 @@ from typing import Optional, Tuple, Any, cast
 
 from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
 from ..etc.Types import BasicType
-from ..etc.Utils import findXPath
+from ..etc.Utils import findXPath, riFromID
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -22,7 +22,9 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class ACTR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Dependecy
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
+													   ResourceTypes.SUB
+													 ]
 	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -72,6 +74,8 @@ class ACTR(AnnounceableResource):
 			return res
 		sriResource = cast(Resource, cast(Tuple, res.data)[0])
 		orcResource = cast(Resource, cast(Tuple, res.data)[1])
+		self.sri = riFromID(self.sri)
+		self.orc = riFromID(self.orc)
 
 		#	Check that the from parameter of the actionPrimitive is the originator
 		if not (res := self._checkApvFrom(originator)).status:
@@ -108,8 +112,8 @@ class ACTR(AnnounceableResource):
 	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
 		
 		# Check referenced resources
-		sri = findXPath(dct, 'm2m:actr/sri')
-		orc = findXPath(dct, 'm2m:actr/orc')
+		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))
+		orc = riFromID(findXPath(dct, 'm2m:actr/orc'))
 		if not (res := self._checkReferencedResources(originator, sri, orc)).status:
 			return res
 
@@ -210,16 +214,17 @@ class ACTR(AnnounceableResource):
 		resSri = None
 		resOrc = None
 		if sri is not None: # sri is optional
-			if not (resSri := CSE.dispatcher.retrieveResource(sri, originator)).status:
-				return Result.errorResult(dbg = L.logDebug(f'sri - referenced resource not found: {resSri.dbg})'))
+			
+			if not (resSri := CSE.dispatcher.retrieveResource(riFromID(sri), originator)).status:
+				return Result.errorResult(dbg = L.logDebug(f'sri - referenced resource: {sri} not found: {resSri.dbg})'))
 			if not CSE.security.hasAccess(originator, resSri.resource, Permission.RETRIEVE):
-				return Result.errorResult(dbg = L.logDebug(f'sri - originator has no access to the referenced resource'))
+				return Result.errorResult(dbg = L.logDebug(f'sri - originator has no access to the referenced resource: {sri}'))
 
 		if orc is not None:
-			if not (resOrc := CSE.dispatcher.retrieveLocalResource(orc, originator = originator)).status:
-				return Result.errorResult(dbg = L.logDebug(f'orc - referenced resource not found: {resOrc.dbg})'))
+			if not (resOrc := CSE.dispatcher.retrieveLocalResource(riFromID(orc), originator = originator)).status:
+				return Result.errorResult(dbg = L.logDebug(f'orc - referenced resource: {orc} not found: {resOrc.dbg})'))
 			if not CSE.security.hasAccess(originator, resOrc.resource, Permission.RETRIEVE):
-				return Result.errorResult(dbg = L.logDebug(f'orc - originator has no access to the referenced resource'))
+				return Result.errorResult(dbg = L.logDebug(f'orc - originator has no access to the referenced resource: {orc}'))
 			
 		return Result(status = True, 
 					  data = (resSri.resource if resSri else None, 

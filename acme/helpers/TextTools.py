@@ -10,11 +10,11 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional
+from typing import Optional, Any
 
 import base64, binascii, re
 
-_commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)',
+_commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
 """	Compiled regex expression of recognize comments. """
 
@@ -26,6 +26,7 @@ def removeCommentsFromJSON(data:str) -> str:
 		- \/\* multi-line comments \*\/
 		- \// single-line comments
 		- \# single-line comments
+		- ;; single-line comments
 		
 		It will **NOT** remove:
 		
@@ -46,6 +47,25 @@ def removeCommentsFromJSON(data:str) -> str:
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
 	return _commentRegex.sub(_replacer, data)
+
+
+
+def isNumber(string:Any) -> bool:
+	"""	Check whether a string contains a convertible number. This could be an integer or a float.
+	
+		Args:
+			string: The string or object to check.
+			
+		Return:
+			Boolean indicating the result of the test.
+	"""
+	if isinstance(string, bool):
+		return False
+	try:
+		float(string)
+	except:
+		return False
+	return True
 
 
 def toHex(bts:bytes, toBinary:Optional[bool] = False, withLength:Optional[bool] = False) -> str:

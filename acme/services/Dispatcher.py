@@ -297,6 +297,9 @@ class Dispatcher(object):
 				if isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
 
+		# TODO use Utils.riFromID()
+
+		
 		# Retrieve locally
 		if isStructured(id):
 			res = self.retrieveLocalResource(srn = id, originator = originator, request = request) 

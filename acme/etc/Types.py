@@ -121,6 +121,7 @@ class ResourceTypes(ACMEIntEnum):
 	FCI 			= 58
 	TSB				= 60
 	ACTR			= 63
+	DEPR			= 66
 
 
 	# Virtual resources (some are proprietary resource types)
@@ -169,6 +170,7 @@ class ResourceTypes(ACMEIntEnum):
 	TSIAnnc			= 10030
 	TSBAnnc			= 10060
 	ACTRAnnc		= 10063
+	# TODO DEPRAnnc		= 10066
 
 	FWRAnnc			= -30001
 	SWRAnnc			= -30002
@@ -248,7 +250,7 @@ class ResourceTypes(ACMEIntEnum):
 
 			Return:
 				The FactoryCallableT for the ResourceType.
-		"""		
+		"""	
 		return _ResourceTypeDetails.get(self).factory
 
 
@@ -383,6 +385,9 @@ _ResourceTypeDetails = {
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True),
 	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True),
 	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True),
+	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', ),
+	#ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', announcedType = ResourceTypes.DEPRAnnc),
+	# TODO DEPRAnnc
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False),					# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True),				# not an official type name

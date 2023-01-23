@@ -516,9 +516,22 @@ def compareIDs(id1:str, id2:str) -> bool:
 			ri2 = toSPRelative(id2)
 		return ri1 == ri2
 
-	ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
-	ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
-	return ri1 == ri2
+	return riFromID(ri1) == riFromID(ri2)
+	# ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
+	# ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
+	# return ri1 == ri2
+
+
+def riFromID(id:str) -> str:
+	"""	Return the unstructured resource ID from either an unstructured or structured resource ID.
+
+		Args:
+			id: Structured or unstructured Resource ID.
+		Return:
+			Unstructured resource ID.
+	"""
+	return riFromStructuredPath(id) if isStructured(id) else id
+
 
 
 

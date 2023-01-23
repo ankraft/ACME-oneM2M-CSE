@@ -460,7 +460,7 @@ class MQTTClient(object):
 	def sendMqttRequest(self,
 						operation:Operation,
 						url:str, originator:str,
-						to:str = None, # TODO
+						to:str = None,
 						ty:ResourceTypes = None, 
 						content:JSON = None,
 						parameters:CSERequest = None, 
@@ -486,7 +486,7 @@ class MQTTClient(object):
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
 		req 					= Result(request = CSERequest())
-		req.request.id			= u.path[1:]
+		req.request.id			= u.path[1:] if u.path[1:] else to
 		req.request.op			= operation
 		req.resource			= content
 		req.request.originator	= originator
@@ -510,7 +510,8 @@ class MQTTClient(object):
 
 		# Build the topic
 		if not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(to if to else originator))}/{ct.name.lower()}'
+			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
