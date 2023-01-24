@@ -189,6 +189,22 @@ class RequestManager(object):
 				Request result.
 		"""
 		self._eventRequestReceived(request)
+
+		# Validate partial RETRIEVE first
+		# partial RETRIEVE: convert single fragment ID
+		if '#' in request.to:
+			to, _, attr = request.to.partition('#')
+			request.id = to
+			request.to = to
+			request.pc = { 'm2m:atrl': [ attr ] }
+
+		# Check that the operation is actually allowed
+		if request.pc and 'm2m:atrl' in request.pc:
+			if request.op != Operation.RETRIEVE:
+				return Result.errorResult(dbg = L.logWarn(f'Partial retrieve is only valid for RETRIEVE (was: {request.op})'))
+			if request.rcn not in [ ResultContentType.attributes, ResultContentType.originalResource ]:
+				return Result.errorResult(dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
+
 		return self.requestHandlers[request.op].ownRequest(request)
 
 

@@ -1524,6 +1524,13 @@ class Dispatcher(object):
 
 	def _partialFromResult(self, result:Result, attributeList:JSON) -> Result:
 		if attributeList:
-			tpe = result.resource.tpe
-			result = Result(status = result.status, resource = { tpe : filterAttributes(result.resource.asDict()[tpe], attributeList) }, rsc = result.rsc, dbg = result.dbg)
+			_resource = cast(Resource, result.resource)
+			# Validate that the attribute(s) are actual resouce attributes
+			for a in attributeList:
+				if not _resource.hasAttributeDefined(a):
+					return Result.errorResult(dbg = L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {_resource.ty}'))
+			
+			# Filter the attribute(s)
+			tpe = _resource.tpe
+			result = Result(status = result.status, resource = { tpe : filterAttributes(_resource.asDict()[tpe], attributeList) }, rsc = result.rsc, dbg = result.dbg)
 		return result

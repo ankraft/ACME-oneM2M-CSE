@@ -274,7 +274,51 @@ class TestMisc(unittest.TestCase):
 		r, rsc = DELETE(f'{CSEURL}{CSERN}/{aeRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted, r)
 
+
+	#
+	#	Partial RETRIEVE
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSEBaseSingle(self) -> None:
+		""" Partial RETRIEVE of CSEBase with single attribute in atrl argument"""
+		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
 		
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSEBaseMultiple(self) -> None:
+		""" Partial RETRIEVE of CSEBase with multiple attributes in atrl argument"""
+		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn+ty', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
+		self.assertEqual(findXPath(r, 'm2m:cb/ty'), ResourceTypes.CSEBase, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialDeleteCSEBaseFail(self) -> None:
+		""" Partial DELETE of CSEBase with single attribute in atrl argument -> Fail"""
+		r, rsc = DELETE(f'{cseURL}?atrl=rn', ORIGINATOR)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSEBaseWrongRcnFail(self) -> None:
+		""" Partial RETRIEVE of CSEBase with single attribute in atrl argument and wrong RCN -> Fail"""
+		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn&rcn=2', ORIGINATOR)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSEBaseWrongAttributeFail(self) -> None:
+		""" Partial RETRIEVE of CSEBase with single unsupported attribute in atrl argument (http only) -> Fail"""
+		r, rsc = RETRIEVE(f'{cseURL}?atrl=mni', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+
+
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
@@ -302,6 +346,13 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestMisc('test_resourceWithoutRN'))
 	addTest(suite, TestMisc('test_subWithoutRN'))
 	addTest(suite, TestMisc('test_createAEContentTypeWithSpacesHeader'))
+
+	# Partial retrieve
+	addTest(suite, TestMisc('test_partialRetrieveCSEBaseSingle'))
+	addTest(suite, TestMisc('test_partialRetrieveCSEBaseMultiple'))
+	addTest(suite, TestMisc('test_partialDeleteCSEBaseFail'))
+	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongRcnFail'))
+	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongAttributeFail'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

@@ -449,7 +449,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 
 	urlComponents:ParseResult = urlparse(url)
 	urlquery = parse_qs(urlComponents.query)
-	# print(urlquery)
+	#print(urlquery)
 
 	req:dict	= dict()
 	fc:dict		= dict()
@@ -474,9 +474,12 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		req['rp'] = rp[0]	# only first rp
 		del urlquery['rp']
 	if (rp := urlquery.get('drt')):
-		req['drt'] = int(rp[0])	# only first rp
+		req['drt'] = int(rp[0])	# only first drt
 		del urlquery['drt']
-	
+	if (sqi := urlquery.get('sqi')):
+		req['sqi'] = sqi[0]	# only first sqi
+		del urlquery['sqi']
+
 	# FilterCriteria
 	if (fu := urlquery.get('fu')):
 		fc['fu'] = int(fu[0])
@@ -490,6 +493,15 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	if (cty := urlquery.get('cty')):
 		fc['cty'] = [ tt for t in cty for tt in t.split(' ') ]	# s.a.
 		del urlquery['cty']
+
+	# add some attributes to CONTENT
+	if (atrl := urlquery.get('atrl')):
+		if data is not None:
+			return ('data must be not set when using "atrl"', 5000)
+		data = dict()
+		data['m2m:atrl'] =  [ tt for t in atrl for tt in t.split(' ') ]
+		# Add CONTENT
+		del urlquery['atrl']
 
 	# add remaining arguments as attributes to filterCriteria
 	for k in urlquery.keys():	

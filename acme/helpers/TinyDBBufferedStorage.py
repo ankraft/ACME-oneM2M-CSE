@@ -41,7 +41,7 @@ class TinyDBBufferedStorage(JSONStorage):
 	def __init__(self, path:str, create_dirs:bool = False, encoding:str = None, access_mode:str = 'r+', write_delay:int = 1, **kwargs:Any) -> None:
 		"""	Initialization of the storage driver.
 
-			This initializer adds a new parameter *write_delay* to the initialization of the `JSONStorage` base class.
+			This initializer adds a new parameter *write_delay* to the initialization of TinyDB's *JSONStorage* base class.
 
 			Args:
 				path: Where to store the JSON data.

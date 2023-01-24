@@ -91,100 +91,179 @@ class ACMEIntEnum(IntEnum):
 #
 
 class ResourceTypes(ACMEIntEnum):
+	"""	oneM2M Resource types.
+
+		This includes Announced resouces, ManagementObject specifalizations, and CSE-internal resource types.
+	"""
 
 	UNKNOWN			= -1
+	""" Indicate an unknown type (internal). """
 	ALL 			= -2	# used to indicate that something applies to all resources
+	""" Indicate all supported resource types (internal). """
 	REQRESP			= -3
+	"""	Type for request / response structures (internal). """
 	COMPLEX			= -4
+	"""	Indicate a comples data structure (internal). """
 
 	# Resource Types
 	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
 
 	MIXED			=  0
+	"""	oneM2M *mixed* resource type (e.g. for groups). """
 	ACP 			=  1
+	"""	Access Control Policy resource type. """
 	AE				=  2
+	"""	Application Entity resource type. """
 	CNT				=  3
+	"""	Container resource type. """
 	CIN 			=  4
+	"""	ContentInstance resource type. """
 	CSEBase 		=  5
+	"""	CSEBase resource type. """
 	GRP 			=  9
+	"""	Group resouce type. """
 	MGMTOBJ			= 13
+	"""	ManagementObject resource type. """
 	NOD				= 14
+	"""	Node resource type. """
 	PCH 			= 15
+	"""	PollingChannel resource type. """
 	CSR				= 16
+	"""	Remote CSE resource type. """
 	REQ 			= 17
+	"""	Request resource type. """
 	SUB				= 23
+	"""	Subscription resource type. """
 	SMD				= 24
+	""" SemanticDescriptor resouce type. """
 	FCNT	 		= 28
+	"""	FlexContainer resource type. """
 	TS				= 29
+	"""	TimeSeries resource type. """
 	TSI   			= 30
+	"""	TimeSeriesInstance resource type. """
 	CRS				= 48
+	"""	CrossResourceSubscription resource type. """
 	FCI 			= 58
+	""" FlexContainerInstance resource type. """
 	TSB				= 60
+	"""	TimeSyncBeacon resource type. """
 	ACTR			= 63
+	""" Action resource type. """
 	DEPR			= 66
+
 
 
 	# Virtual resources (some are proprietary resource types)
 
 	CNT_OL			=  20001	# actually a memberType
+	"""	Latest virtual resource type for Container. """
 	CNT_LA			=  20002	# actually a memberType
-
+	"""	Oldest virtual resource type for Container. """
 	GRP_FOPT		=  -20003
+	"""	Group FanOutPoint virtual resource type. """
 	FCNT_OL			=  -20004
+	"""	Latest virtual resource type for FlexContainer. """
 	FCNT_LA			=  -20005
+	"""	Oldest virtual resource type for FlexContainer. """
 	PCH_PCU			=  -20006
+	"""	PollingChannelURI virtual resource type. """
 	TS_OL			=  -20007
+	"""	Latest virtual resource type for TimeSeries. """
 	TS_LA			=  -20008
+	"""	Oldest virtual resource type for TimeSeries. """
+
 
 	# <mgmtObj> Specializations
 	# NOTE Always apply changes also to the m2m:mgmtDefinition in attributePolicies.ap etc
 
 	FWR				= 1001
+	"""	Firmware ManagementObject specialization. """
 	SWR				= 1002
+	"""	Software ManagementObject specialization. """
 	MEM				= 1003
+	"""	Memory ManagementObject specialization. """
 	ANI				= 1004
+	"""	AreaNetworkInfo ManagementObject specialization. """
 	ANDI			= 1005
+	"""	AreaNwkDeviceInfo ManagementObject specialization. """
 	BAT				= 1006
+	"""	Battery ManagementObject specialization. """
 	DVI 			= 1007
+	"""	DeviceInfo ManagementObject specialization. """
 	DVC 			= 1008
+	"""	DeviceCapability ManagementObject specialization. """
 	RBO 			= 1009
+	"""	Reboot ManagementObject specialization. """
 	EVL 			= 1010
+	"""	EventLog ManagementObject specialization. """
 	DATC			= 1021	# dataCollection
+	"""	DataCollection ManagementObject specialization. """
 	NYCFC			= 1023	# myCertFileCred
+	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
+	"""	WifiClient ManagementObject specialization. """
 
 	# Announced Resources
 
 	ACPAnnc 		= 10001
+	"""	Announced Access Control Policy resource type. """
 	AEAnnc 			= 10002	
+	"""	Announced Application Entity resource type. """
 	CNTAnnc 		= 10003
+	"""	Announced Container resource type. """
 	CINAnnc 		= 10004
+	"""	Announced ContentInstance resource type. """
 	CSEBaseAnnc 	= 10005
+	"""	Announced CSEBase resource type. """
 	GRPAnnc 		= 10009
+	"""	Announced Group resouce type. """
 	MGMTOBJAnnc 	= 10013
+	"""	Announced ManagementObject resource type. """
 	NODAnnc 		= 10014
+	"""	Announced Node resource type. """
 	CSRAnnc 		= 10016
+	"""	Announced Remote CSE resource type. """
 	SMDAnnc			= 10024
+	"""	Announced SemanticDescriptor resouce type. """
 	FCNTAnnc 		= 10028
+	"""	Announced FlexContainer resource type. """
 	TSAnnc			= 10029
+	"""	Announced TimeSeries resource type. """
 	TSIAnnc			= 10030
+	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
+	"""	Announced TimeSyncBeacon resource type. """
 	ACTRAnnc		= 10063
+	"""	Announced Action resource type. """
 	# TODO DEPRAnnc		= 10066
 
 	FWRAnnc			= -30001
+	"""	Announced Firmware ManagementObject specialization. """
 	SWRAnnc			= -30002
+	"""	Announced Softwware ManagementObject specialization. """
 	MEMAnnc			= -30003
+	"""	Announced Memory ManagementObject specialization. """
 	ANIAnnc			= -30004
+	"""	Announced AreaNetworkInfo ManagementObject specialization. """
 	ANDIAnnc		= -30005
+	"""	Announced AreaNwkDeviceInfo ManagementObject specialization. """
 	BATAnnc			= -30006
+	"""	Announced Battery ManagementObject specialization. """
 	DVIAnnc			= -30007
+	"""	Announced DeviceInfo ManagementObject specialization. """
 	DVCAnnc			= -30008
+	"""	Announced DeviceCapability ManagementObject specialization. """
 	RBOAnnc			= -30009
+	"""	Announced Reboot ManagementObject specialization. """
 	EVLAnnc			= -30010
+	"""	Announced EventLog ManagementObject specialization. """
 	DATCAnnc		= -30021
+	"""	Announced DataCollection ManagementObject specialization. """
 	NYCFCAnnc		= -30023
+	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
+	"""	Announced WifiClient ManagementObject specialization. """
 
 
 	def tpe(self) -> str:
@@ -598,19 +677,21 @@ class BasicType(ACMEIntEnum):
 
 class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities.
+		
+		Attributes:
+			CAR1: Mandatory.
+			CAR1L: Mandatory list.
+			CAR1LN: Mandatory list that shall not be empty.
+			CAR01: Optional.
+			CAR01L: Optional list.
+			CAR1N: Mandatory but may be Null/None.
 	"""
 	CAR1			= auto()
-	"""	Mandatory."""
 	CAR1L			= auto()
-	"""	Mandatory list. """
 	CAR1LN			= auto()
-	"""	Mandatory list that shall not be empty. """
 	CAR01			= auto()
-	""" Optional. """
 	CAR01L			= auto()
-	""" Optional list."""
 	CAR1N			= auto()
-	""" Mandatory but may be Null/None. """
 
 	@classmethod
 	def hasCar(cls, name:str) -> bool:
@@ -663,24 +744,28 @@ class Cardinality(ACMEIntEnum):
 
 class RequestOptionality(ACMEIntEnum):
 	""" Request optionality enum values.
+
+		Attributes:
+			NP: Not provided.
+			O: Optional.
+			M: Mandatory.
 	"""
 	NP				= auto()
-	""" Not provided. """
 	O 				= auto()
-	""" Optional. """
 	M 				= auto()
-	""" Mandatory. """
 
 
 class Announced(ACMEIntEnum):
 	""" Anouncement attribute enum values.
+
+		Attributes:
+			NA:	Not announced.
+			OA: Optionally announced.
+			MA: Mandatory announced.
 	"""
 	NA				= auto()
-	"""	Not announced. """
 	OA				= auto()
-	""" Optionally announced. """
 	MA				= auto()
-	"""	Mandatory announced. """
 
 
 ##############################################################################

@@ -516,7 +516,7 @@ def compareIDs(id1:str, id2:str) -> bool:
 			ri2 = toSPRelative(id2)
 		return ri1 == ri2
 
-	return riFromID(ri1) == riFromID(ri2)
+	return riFromID(id1) == riFromID(id2)
 	# ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
 	# ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
 	# return ri1 == ri2

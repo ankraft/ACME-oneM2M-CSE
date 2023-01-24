@@ -7,10 +7,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
 - [CSE] Improved validation of complex types and mandatory attributes.
+- [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [TESTS] Added http keep-alive to tests.
 

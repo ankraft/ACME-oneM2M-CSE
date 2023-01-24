@@ -500,6 +500,10 @@ class HttpServer(object):
 			# Add further non-filterCriteria arguments
 			if 'sqi' in content:
 				arguments.append(f'sqi={content["sqi"]}')
+			
+			# Add attributeList
+			if (atrl := findXPath(content, 'pc/m2m:atrl')) is not None:
+				arguments.append(f'atrl={"+".join(atrl)}')
 
 
 			# Add to to URL
@@ -678,17 +682,18 @@ class HttpServer(object):
 				args[argName] = lst
 
 
-		# resolve http's /~ and /_ special prefixs
-		if path[0] == '~':
-			path = path[1:]			# ~/xxx -> /xxx
-		elif path[0] == '_':
-			path = f'/{path[1:]}'	# _/xxx -> //xxx
 
 		cseRequest 					= CSERequest()
 		req:ReqResp 				= {}
 		cseRequest.originalData 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
 		cseRequest.op 				= operation
 		req['op']   				= operation.value		# Needed later for validation
+
+		# resolve http's /~ and /_ special prefixs
+		if path[0] == '~':
+			path = path[1:]			# ~/xxx -> /xxx
+		elif path[0] == '_':
+			path = f'/{path[1:]}'	# _/xxx -> //xxx
 		req['to'] 		 			= path
 
 
@@ -759,22 +764,39 @@ class HttpServer(object):
 			del _args['rt']
 
 
+		# Handle attributeList
+		attributeList:list[str] = []
+		extractMultipleArgs(_args, 'atrl')
+		if atrl := _args.get('atrl'):
+			if len(atrl) == 1:
+				req['to'] = f'{req["to"]}#{atrl[0]}'
+			else:
+				attributeList = [ a for a in atrl ]
+			del _args['atrl']
+		
 		# Extract further request arguments from the http request
 		# add all the args to the filterCriteria
 		filterCriteria:ReqResp = { k:v for k,v in _args.items() }
 		if len(filterCriteria) > 0:
 			req['fc'] = filterCriteria
 
-		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
-			return Result.errorResult(rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
-		
-		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
-		req = removeNoneValuesFromDict(req)
+		if attributeList:
+			req['pc'] = { 'm2m:atrl': attributeList }
+			cseRequest.ct = CSE.defaultSerialization
 
-		# Add the primitive content and 
-		req['pc'] 	 				= cast(Tuple, contentResult.data)[0]	# The actual content
-		cseRequest.ct				= cast(Tuple, contentResult.data)[1]	# The conten serialization type
+		else:
+
+			# De-Serialize the content
+			if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
+				return Result.errorResult(rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
+			
+			# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
+			req = removeNoneValuesFromDict(req)
+
+			# Add the primitive content and 
+			req['pc'] 	 				= cast(Tuple, contentResult.data)[0]	# The actual content
+			cseRequest.ct				= cast(Tuple, contentResult.data)[1]	# The conten serialization type
+
 		cseRequest.originalRequest	= req									# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request

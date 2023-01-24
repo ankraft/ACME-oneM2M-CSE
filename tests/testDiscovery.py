@@ -778,8 +778,9 @@ class TestDiscovery(unittest.TestCase):
 		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.hierarchicalAddress)}', TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
-		self.assertIn('Content-Location', lastHeaders())
-		self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:uri'))
+		if BINDING in ['http', 'https']:
+			self.assertIn('Content-Location', lastHeaders())
+			self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:uri'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -792,8 +793,9 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:rce'))
 		self.assertIsNotNone(findXPath(r, 'm2m:rce/uri'))
-		self.assertIn('Content-Location', lastHeaders())
-		self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:rce/uri'))
+		if BINDING in ['http', 'https']:
+			self.assertIn('Content-Location', lastHeaders())
+			self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:rce/uri'))
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

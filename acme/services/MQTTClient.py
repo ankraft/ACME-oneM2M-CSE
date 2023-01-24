@@ -60,11 +60,12 @@ class MQTTClientHandler(MQTTHandler):
 		self._eventMqttNotify =  CSE.event.mqttNotify				# type: ignore [attr-defined]
 
 		self.operationEvents = {
-			Operation.CREATE:	[self._eventMqttCreate, 'MQCR'],
-			Operation.RETRIEVE: [self._eventMqttRetrieve, 'MQRE'],
-			Operation.UPDATE:	[self._eventMqttUpdate, 'MQUP'],
-			Operation.DELETE:	[self._eventMqttDelete, 'MQDE'],
-			Operation.NOTIFY:	[self._eventMqttNotify, 'MQNO'],
+			Operation.CREATE:		[self._eventMqttCreate, 'MQCR'],
+			Operation.RETRIEVE: 	[self._eventMqttRetrieve, 'MQRE'],
+			Operation.UPDATE:		[self._eventMqttUpdate, 'MQUP'],
+			Operation.DELETE:		[self._eventMqttDelete, 'MQDE'],
+			Operation.NOTIFY:		[self._eventMqttNotify, 'MQNO'],
+			Operation.DISCOVERY:	[self._eventMqttRetrieve, 'MQDI'],
 		}
 
 
@@ -184,7 +185,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _logRequest(result:Result) -> None:
 			"""	Log request.
 			"""
-			L.isDebug and L.logDebug(f'Operation: {result.request.op.name}')
+			L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
 			if contentType == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
@@ -212,7 +213,7 @@ class MQTTClientHandler(MQTTHandler):
 			# sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
 			return
 
-		# dissect and validate request
+		# dissect and validate request (calls: fillAndValidateCSERequest())
 		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType)).status:
 			# something went wrong during dissection
 			_logRequest(dissectResult)
@@ -230,7 +231,7 @@ class MQTTClientHandler(MQTTHandler):
 					_sendResponse(Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, request = request, dbg = f'Invalid credential ID: {requestOriginator}'))
 					return
 			
-			if dissectResult.request.op != Operation.CREATE:
+			if request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
 				_logRequest(dissectResult)
 				_sendResponse(Result.errorResult(request = request, dbg = L.logWarn(f'Invalid operation for registration: {request.op.name}')))
