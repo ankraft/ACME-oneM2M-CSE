@@ -17,6 +17,7 @@ from typing import Callable, cast, List, Optional, Sequence
 
 import os, shutil
 from threading import Lock
+from pathlib import Path
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
@@ -630,12 +631,18 @@ class TinyDBBinding(object):
 	
 
 	def backupDB(self, dir:str) -> bool:
-		shutil.copy2(self.fileResources, dir)
-		shutil.copy2(self.fileIdentifiers, dir)
-		shutil.copy2(self.fileSubscriptions, dir)
-		shutil.copy2(self.fileBatchNotifications, dir)
-		shutil.copy2(self.fileStatistics, dir)
-		shutil.copy2(self.fileActions, dir)
+		if Path(self.fileResources).is_file():
+			shutil.copy2(self.fileResources, dir)
+		if Path(self.fileIdentifiers).is_file():
+			shutil.copy2(self.fileIdentifiers, dir)
+		if Path(self.fileSubscriptions).is_file():
+			shutil.copy2(self.fileSubscriptions, dir)
+		if Path(self.fileBatchNotifications).is_file():
+			shutil.copy2(self.fileBatchNotifications, dir)
+		if Path(self.fileStatistics).is_file():
+			shutil.copy2(self.fileStatistics, dir)
+		if Path(self.fileActions).is_file():
+			shutil.copy2(self.fileActions, dir)
 		return True
 
 
