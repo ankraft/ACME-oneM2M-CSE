@@ -631,18 +631,14 @@ class TinyDBBinding(object):
 	
 
 	def backupDB(self, dir:str) -> bool:
-		if Path(self.fileResources).is_file():
-			shutil.copy2(self.fileResources, dir)
-		if Path(self.fileIdentifiers).is_file():
-			shutil.copy2(self.fileIdentifiers, dir)
-		if Path(self.fileSubscriptions).is_file():
-			shutil.copy2(self.fileSubscriptions, dir)
-		if Path(self.fileBatchNotifications).is_file():
-			shutil.copy2(self.fileBatchNotifications, dir)
-		if Path(self.fileStatistics).is_file():
-			shutil.copy2(self.fileStatistics, dir)
-		if Path(self.fileActions).is_file():
-			shutil.copy2(self.fileActions, dir)
+		for fn in [	self.fileResources,
+					self.fileIdentifiers,
+					self.fileSubscriptions,
+					self.fileBatchNotifications,
+					self.fileStatistics,
+					self.fileActions]:
+			if Path(fn).is_file():
+				shutil.copy2(fn, dir)
 		return True
 
 
