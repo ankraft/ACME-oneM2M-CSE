@@ -25,7 +25,8 @@ import isodate
 from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType
-from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict, findXPath
+from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict
+from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
 from ..services.Configuration import Configuration
@@ -384,8 +385,8 @@ class HttpServer(object):
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
 			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
-				return prepareUTResponse(ResponseStatusCode.badRequest, res[1])
-			return prepareUTResponse(ResponseStatusCode.OK, res[1])
+				return prepareUTResponse(ResponseStatusCode.badRequest, str(res[1]))
+			return prepareUTResponse(ResponseStatusCode.OK, str(res[1]))
 
 		L.logWarn('UT functionality is not fully supported.')
 		return prepareUTResponse(ResponseStatusCode.badRequest, None)
@@ -762,7 +763,10 @@ class HttpServer(object):
 			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
 			req['rt'] = rt
 			del _args['rt']
-
+		
+		# Maxage
+		if (ma := _args.get('ma')):
+			cseRequest.ma = ma
 
 		# Handle attributeList
 		attributeList:list[str] = []

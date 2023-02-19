@@ -24,9 +24,9 @@ from rich.pretty import Pretty
 import plotext
 
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
-from ..helpers import TextTools
+from ..helpers.TextTools import findXPath, setXPath, simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..helpers.Interpreter import PContext, PError
+from ..helpers.Interpreter2 import PContext, PError
 from ..etc.Constants import Constants
 from ..etc.Types import CSEType, ResourceTypes
 from ..etc.Utils import getIPAddress, getCSE
@@ -331,9 +331,9 @@ class Console(object):
 			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
 
 		# Add Scripts that have a key binding
-		for eachScript in (scripts :=  sorted(CSE.script.findScripts(meta = 'onkey'), key = lambda x: x.getMeta('onkey'))):
+		for eachScript in (scripts :=  sorted(CSE.script.findScripts(meta = 'onKey'), key = lambda x: x.getMeta('onKey'))):
 			# table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '✔︎')
-			table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '+')
+			table.add_row(eachScript.meta.get('onKey'), eachScript.meta.get('description'), '+')
 		L.console(table, nl=True)
 
 
@@ -718,7 +718,7 @@ Available under the BSD 3-Clause License
 				desc = f'{n.getMeta("description")}\n[dim]{n.getMeta("usage")}'
 				ut = n.meta.get('uppertester') is not None
 				at = n.getMeta('at')
-				key = n.getMeta('onkey')
+				key = n.getMeta('onKey')
 				table.add_row(n.scriptName, 
 							  desc, 
 							  # '✔︎' if ut else '',
@@ -796,7 +796,10 @@ Available under the BSD 3-Clause License
 			self.previousArgument = argument
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
-			CSE.script.runScript(pcontext, argument = argument, background = True, finished = finished)
+			try:
+				CSE.script.runScript(pcontext, arguments = argument, background = True, finished = finished)
+			except Exception as e:
+				L.logErr(f'Exception during script execution: {str(e)}', exc = e)
 
 		L.on()
 
@@ -1201,7 +1204,7 @@ Available under the BSD 3-Clause License
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri
-				if len([ p for p in self.hideResources if TextTools.simpleMatch(p, ri) ]) > 0:
+				if len([ p for p in self.hideResources if simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)

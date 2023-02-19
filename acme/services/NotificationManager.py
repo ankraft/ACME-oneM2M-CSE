@@ -20,7 +20,8 @@ import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
 from ..etc.Types import ResponseStatusCode, EventCategory, JSON, JSONLIST, ResourceTypes
 from ..etc.DateUtils import fromDuration, getResourceDate
-from ..etc.Utils import toSPRelative, pureResource, setXPath, findXPath, isAcmeUrl, compareIDs
+from ..etc.Utils import toSPRelative, pureResource, isAcmeUrl, compareIDs
+from ..helpers.TextTools import setXPath, findXPath
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -432,6 +433,7 @@ class NotificationManager(object):
 		# TODO prevent second notification to same 
 		# EXPERIMENTAL
 		
+		L.inspect(request)
 		L.isDebug and L.logDebug('Looking for blocking RETRIEVE')
 
 		# Get blockingRetrieve <sub> for this resource , if any
@@ -447,20 +449,10 @@ class NotificationManager(object):
 			maxAgeSubscription:float = None
 
 			# Check for maxAge attribute provided in the request
-			if (maxAgeS := request.fc.attributes.get('ma')) is not None:	# TODO attribute name
-				try:
-					maxAgeRequest = fromDuration(maxAgeS)
-				except Exception as e:
-					L.logWarn(dbg := f'error when parsing maxAge in request: {str(e)}')
-					return Result.errorResult(dbg = dbg)
+			maxAgeRequest = request._ma
 
 			# Check for maxAge attribute provided in the subscription
-			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL blocking retrieve
-				try:
-					maxAgeSubscription = fromDuration(maxAgeS)
-				except Exception as e:
-					L.logWarn(dbg := f'error when parsing maxAge in subscription: {str(e)}')
-					return Result.errorResult(dbg = dbg)
+			maxAgeSubscription = eachSub['ma']	# EXPERIMENTAL blocking retrieve
 				
 			# Return if neither the request nor the subscription have a maxAge set
 			if maxAgeRequest is None and maxAgeSubscription is None:

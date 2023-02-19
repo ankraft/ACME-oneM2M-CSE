@@ -10,10 +10,7 @@
 from __future__ import annotations
 from typing import Optional, Tuple, Any, cast
 
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
-from ..etc.Types import BasicType
-from ..etc.Utils import findXPath
-from ..services import CSE
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource

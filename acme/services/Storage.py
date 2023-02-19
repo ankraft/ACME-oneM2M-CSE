@@ -25,7 +25,7 @@ from tinydb.operations import delete
 
 from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
 from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
-from ..etc.DateUtils import utcTime
+from ..etc.DateUtils import utcTime, fromDuration
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -816,7 +816,7 @@ class TinyDBBinding(object):
 						'bn'  		: subscription.bn,
 						'cr'  		: subscription.cr,
 						'originator': subscription.getOriginator(),
-						'ma' 		: subscription.ma, # EXPERIMENTAL ma = maxAge
+						'ma' 		: fromDuration(subscription.ma), # EXPERIMENTAL ma = maxAge
 						'nse' 		: subscription.nse
 					}, 
 					self.subscriptionQuery.ri == ri) is not None

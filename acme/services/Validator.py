@@ -18,7 +18,8 @@ from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributeP
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
-from ..etc.Utils import pureResource, findXPath, strToBool
+from ..etc.Utils import pureResource, strToBool
+from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource

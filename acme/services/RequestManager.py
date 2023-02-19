@@ -19,10 +19,11 @@ from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, Req
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result
 from ..etc.Types import CSERequest, ContentSerializationType
-from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date
+from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
-from ..etc.Utils import getCSE, setXPath, isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
+from ..etc.Utils import getCSE, isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
 from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
+from ..helpers.TextTools import setXPath
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.REQ import REQ
@@ -1452,6 +1453,14 @@ class RequestManager(object):
 			# if cseRequest.sqi and not (cseRequest.fc.smf and cseRequest.rcn == ResultContentType.semanticContent):
 			# 	return Result.errorResult(request = cseRequest, dbg = L.logDebug('sqi must not be specifed without smf and rcn=smantic-content'))
 
+			# ma - maxAge
+			if (ma := gget(cseRequest.originalRequest, 'ma', greedy = False)): 
+				try:
+					cseRequest.ma = ma
+					cseRequest._ma = fromDuration(ma)
+				except Exception as e:
+					return Result.errorResult(request = cseRequest, dbg = L.logDebug('Wrong format for ma'))
+				
 		# end of try..except
 		except ValueError as e:
 			return Result.errorResult(request = cseRequest, dbg = L.logDebug(f'Error getting or validating attribute/parameter: {str(e)}'))

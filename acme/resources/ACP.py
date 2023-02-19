@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from ..helpers.TextTools import simpleMatch
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
 from ..services import CSE
 from ..services.Logging import Logging as L

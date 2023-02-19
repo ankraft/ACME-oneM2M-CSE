@@ -103,6 +103,11 @@ class Constants(object):
 	attrRvi = '__rvi__'					# Request version indicator when created
 	""" Constant: Name of the `Resource` internal *__rvi__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
 
+	attrLaRi = '__lari__'
+	""" Constant: Name of the 'Resource internal *__lari__* attribute. This attribute holds the resourceID's of the *latest* child-resource for some resource types. """
+
+	attrOlRi = '__olri__'
+	""" Constant: Name of the 'Resource internal *__olri__* attribute. This attribute holds the resourceID's of the *oldest* child-resource for some resource types. """
 
 	#
 	#	Supported URL schemes

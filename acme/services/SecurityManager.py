@@ -15,8 +15,8 @@ from typing import List, cast, Optional, Any
 import ssl
 
 from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode
-from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator, findXPath
-from ..helpers import TextTools
+from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..helpers.TextTools import findXPath, simpleMatch
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -382,7 +382,7 @@ class SecurityManager(object):
 			return True
 
 		for ao in allowedOriginators:
-			if TextTools.simpleMatch(_originator, ao):
+			if simpleMatch(_originator, ao):
 				return True
 		return False
 

@@ -10,7 +10,7 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import base64, binascii, re
 
@@ -48,6 +48,146 @@ def removeCommentsFromJSON(data:str) -> str:
 			return match.group(1) # captured quoted-string
 	return _commentRegex.sub(_replacer, data)
 
+
+_decimalMatch = re.compile(r'{(\d+)}')
+def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Optional[Any]:
+	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
+		*default* is returned.
+
+		- It is possible to address a specific element in a list. This is done be
+			specifying the element as "{n}".
+
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+
+		- If an element is specified as "{}" then all elements in that list are returned in
+			a list.
+
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
+		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
+			jumped over. This can be used to skip, for example, unknown first elements in a structure. 
+			This is similar but not the same as "{0}" that works on lists.
+
+		Example: 
+			findXPath(resource, '{*}/rn') 
+		
+		Args:
+			dct: Dictionary to search.
+			key: Key with path to an attribute.
+			default: Optional return value if *key* is not found in *dct*
+		
+		Return:
+			Any found value for the key path, or *None* resp. the provided *default* value.
+	"""
+
+	if not key or not dct:
+		return default
+	if key in dct:
+		return dct[key]
+
+	paths = key.split("/")
+	data:Any = dct
+	for i in range(0,len(paths)):
+		if not data or not (pathElement := paths[i]) : # if empty of key not in dict
+			return default
+		elif (m := _decimalMatch.search(pathElement)) is not None:	# Match array index {i}
+			idx = int(m.group(1))
+			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
+				return default
+			if isinstance(data, dict):
+				data = data[list(data)[i]]
+			else:
+				data = data[idx]
+
+		elif pathElement == '{}':	# Match an array in general
+			if not isinstance(data, (list,dict)):	# not a list, return the default
+				return default
+			if i == len(paths)-1:	# if this is the last element and it is a list then return the data
+				return data
+			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
+
+		elif pathElement == '{*}':
+			if isinstance(data, dict):
+				if keys := list(data.keys()):
+					data = data[keys[0]]
+				else:
+					return default
+			else:
+				return default
+
+		# Only now test whether this is an unknown path element
+		elif pathElement not in data:	# if key not in dict
+			return default
+		else:
+			data = data[pathElement]	# found data for the next level down
+	return data
+
+
+
+def setXPath(dct:Dict[str, Any], 
+			 key:str, 
+			 value:Optional[Any] = None, 
+			 overwrite:Optional[bool] = True, 
+			 delete:Optional[bool] = False) -> bool:
+	"""	Set a structured *key* and *value* in the dictionary *dict*.
+
+		Create the attribute if necessary, and observe the *overwrite* option (True overwrites an
+		existing key/value).
+
+		When the *delete* argument is set to *True* then the *key* attribute is deleted from the dictionary.
+
+		Examples:
+			setXPath(aDict, 'a/b/c', 'aValue)
+
+			setXPath(aDict, 'a/{2}/c', 'aValue)
+
+		Args:
+			dct: A dictionary in which to set or add the *key* and *value*.
+			key: The attribute's name to set in *dct*. This could by a path in *dct*, where the separator is a slash character (/). To address an element in a list, one can use the *{n}* operator in the path.
+			value: The value to set for the attribute. Could be left out when deleting an attribute or value.
+			overwrite: If True that overwrite an already existing value, otherwise skip.
+			delete: If True then remove the atribute or list attribute *key* from the dictionary.
+		
+		Retun:
+			Boolean indicating the success of the operation.
+	"""
+
+	paths = key.split("/")
+	ln1 = len(paths)-1
+	data = dct
+	if ln1 > 0:	# Small optimization. don't check if there is no extended path
+		for i in range(0, ln1):
+			_p = paths[i]
+			if isinstance(data, list):
+				if (m := _decimalMatch.search(_p)) is not None:
+					data = data[int(m.group(1))]
+			else:
+				if _p not in data:
+					data[_p] = {}
+				data = data[_p]
+	if isinstance(data, list):
+		if (m := _decimalMatch.search(paths[ln1])) is not None:
+			idx = int(m.group(1))
+			if not overwrite and idx < len(data): # test overwrite first, it's faster
+				return True # don't overwrite
+			if delete :
+				if idx < len(data):
+					del data[idx]
+				return True
+			else:
+				data[idx] = value
+			return True
+		return False
+	else:
+		if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
+			return True # don't overwrite
+		if delete:
+			del data[paths[ln1]]
+			return True
+		data[paths[ln1]] = value
+	return True
 
 
 def isNumber(string:Any) -> bool:

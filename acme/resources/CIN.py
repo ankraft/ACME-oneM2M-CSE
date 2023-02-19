@@ -13,7 +13,7 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
 from ..resources.Resource import Resource
 from ..services import CSE
-from ..etc.Utils import getAttributeSize, findXPath
+from ..etc.Utils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services.Logging import Logging as L
 
