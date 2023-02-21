@@ -184,7 +184,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _logRequest(result:Result) -> None:
 			"""	Log request.
 			"""
-			L.isDebug and L.logDebug(f'Operation: {result.request.op.name}')
+			L.isDebug and L.logDebug(f'Operation: {result.request.op.name if result.request.op else "(unknown)"}')
 			if contentType == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
