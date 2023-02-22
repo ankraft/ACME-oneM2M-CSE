@@ -816,7 +816,7 @@ class TinyDBBinding(object):
 						'bn'  		: subscription.bn,
 						'cr'  		: subscription.cr,
 						'originator': subscription.getOriginator(),
-						'ma' 		: fromDuration(subscription.ma), # EXPERIMENTAL ma = maxAge
+						'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
 						'nse' 		: subscription.nse
 					}, 
 					self.subscriptionQuery.ri == ri) is not None
