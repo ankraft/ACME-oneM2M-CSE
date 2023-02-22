@@ -432,8 +432,6 @@ class NotificationManager(object):
 		# TODO check notify permission for originator
 		# TODO prevent second notification to same 
 		# EXPERIMENTAL
-		
-		L.inspect(request)
 		L.isDebug and L.logDebug('Looking for blocking RETRIEVE')
 
 		# Get blockingRetrieve <sub> for this resource , if any
