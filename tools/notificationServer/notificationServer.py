@@ -99,6 +99,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 							 theme='monokai',
 							 line_numbers=False))		
 
+		# Print plain text formats
+		elif contentType in ['text/plain']:
+			console.print(post_data.decode(), highlight = False)
+			console.print()
+
 		# Print other binary content
 		else:
 			console.print(toHex(post_data), highlight=False)
@@ -110,7 +115,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 	def log_message(self, format:str, *args:int) -> None:
-		if (msg := format%args).startswith('"GET'):	return	# ignore GET log messages
+		if (msg := format%args).startswith(('"GET', '"POST')):	return	# ignore GET log messages
 		console.print(f'[{messageColor} reverse]{msg}', highlight = False)
 
 
