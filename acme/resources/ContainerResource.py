@@ -15,6 +15,8 @@ from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
 from .AnnounceableResource import AnnounceableResource
 from ..services import CSE
+from ..services.Logging import Logging as L
+
 
 
 class ContainerResource(AnnounceableResource):
@@ -28,8 +30,8 @@ class ContainerResource(AnnounceableResource):
 					   tpe:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create)
-		self._addToInternalAttributes(self._subSratRIs)
-		self._addToInternalAttributes(self._sudRI)
+		self._addToInternalAttributes(self._lari)
+		self._addToInternalAttributes(self._olri)
 
 
 	def getOldestRI(self) -> str:
