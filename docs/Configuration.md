@@ -222,6 +222,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | stackTraceOnError     | Print a stack trace when logging an 'error' level message.<br />Default: True                                                                               | logging.stackTraceOnError     |
 | enableBindingsLogging | Enable logging of low-level HTTP & MQTT client events.<br />Default: False                                                                                  | logging.enableBindingsLogging |
 | queueSize             | Number of log entries that can be added to the asynchronous queue before blocking. A queue size of 0 means disabling the queue.<br />Default: F5000 entries | logging.queueSize             |
+| filter           		| List of component names to exclude from logging.<br />Default: werkzeug,markdown_it                                                                         | logging.filter                |
 
 
 <a name="cse_registration"></a>

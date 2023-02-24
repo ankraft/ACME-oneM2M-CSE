@@ -319,6 +319,8 @@ enableBindingsLogging=False
 ; A queue size of 0 means disabling the queue.
 ; Default: 5000 entries
 queueSize=5000
+; List of component names to exclude from logging
+filter=werkzeug,markdown_it
 
 
 ;
@@ -406,7 +408,7 @@ mdn=10
 
 
 ;
-;	Resurce defaults: TimeSyncBeacon
+;	Resource defaults: TimeSyncBeacon
 ;
 
 [cse.resource.tsb]

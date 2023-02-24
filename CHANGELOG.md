@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [TESTS] Added http keep-alive to tests.
+- [LOGGING] Allow to exclude log messages from external libraries and components.
 
 ### Changed
 - [CSE] Lots of small runtime optimizations.

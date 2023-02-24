@@ -102,6 +102,7 @@ class Logging:
 	queue:Queue						= None
 	enableQueue						= False		# Can be used to enable/disable the logging queue 
 	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
+	filterSources:tuple[str, ...]	= ()		# List of log sources that will be removed while processing the log messages
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
@@ -131,6 +132,7 @@ class Logging:
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
 		Logging.queueSize				= Configuration.get('logging.queueSize')
+		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
 
 		Logging._configureColors(Configuration.get('cse.console.theme'))
 
@@ -654,7 +656,7 @@ class ACMERichLogHandler(RichHandler):
 		# if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
 		if not Logging.enableScreenLogging:
 			return
-		if record.name == 'werkzeug':	# filter out werkzeug's loggings
+		if record.name.startswith(Logging.filterSources): # filter out unwanted debug messages's loggings
 			return
 		#path = Path(record.pathname).name
 		
