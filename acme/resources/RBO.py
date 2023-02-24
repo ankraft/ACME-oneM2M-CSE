@@ -13,7 +13,7 @@ from typing import Optional
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 
 # TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2
 

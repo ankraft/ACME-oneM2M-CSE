@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
 from ..resources.MgmtObj import MgmtObj
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 
 lgtSystem = 1
 lgtSecurity	= 2

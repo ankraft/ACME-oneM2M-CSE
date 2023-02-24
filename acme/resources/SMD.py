@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources import Factory as Factory

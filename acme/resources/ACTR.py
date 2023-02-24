@@ -12,7 +12,8 @@ from typing import Optional, Tuple, Any, cast
 
 from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
 from ..etc.Types import BasicType
-from ..etc.Utils import findXPath, riFromID
+from ..etc.Utils import riFromID
+from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -62,6 +63,9 @@ class ACTR(AnnounceableResource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
+		# the following two lines are needed bc mypy cannot determine the type otherwise
+		self.sri:str
+		self.orc:str
 		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
 
 

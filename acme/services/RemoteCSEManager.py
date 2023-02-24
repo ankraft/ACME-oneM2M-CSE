@@ -15,8 +15,9 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
 from ..etc.Types import CSEStatus, ResourceTypes, Result, CSEType, ResponseStatusCode, JSON
-from ..etc.Utils import findXPath, setXPath, getCSE, pureResource, csiFromRelativeAbsoluteUnstructured
+from ..etc.Utils import getCSE, pureResource, csiFromRelativeAbsoluteUnstructured
 from ..etc.Constants import Constants
+from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR
 from ..resources.CSEBase import CSEBase
 from ..resources.Resource import Resource

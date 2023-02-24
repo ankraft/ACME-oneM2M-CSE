@@ -1824,6 +1824,12 @@ class CSERequest:
 	sqi:bool = None
 	""" Semantic Query Indicator """
 
+	ma:str = None
+	"""	maxAge """
+
+	_ma:float = None
+	""" maxAge duration converted """
+
 	pc:JSON = None
 	""" The request's primitive content as a dictionary. """
 	

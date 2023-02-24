@@ -33,7 +33,7 @@ from ..services.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
-from ..services.ScriptManager import ScriptManager
+from ..services.ScriptManager2 import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
 from ..services.Statistics import Statistics

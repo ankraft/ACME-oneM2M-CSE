@@ -26,7 +26,8 @@ from ..etc.Types import Result
 from ..etc.Types import CSERequest
 from ..etc.Types import JSON
 from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes
-from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, findXPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
+from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
+from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..services import CSE
 from ..services.Configuration import Configuration
@@ -139,6 +140,22 @@ class Dispatcher(object):
 		if (laOlResource := self._latestOldestResource(srn)):		# We need to check the srn here
 			# Check for virtual resource
 			if laOlResource.isVirtual(): 
+				
+				#TODO checks & tests
+				# TODO Add special "getLT" function. necessary for firtual resources!!!!! then used in blocking retrieve check
+				laOlResource.willBeRetrieved(originator, request) 
+
+
+				# TODO directchildren & virtual: only la and ol are monitored.
+				# after adding instance: update lt of ol and al resources.
+
+				# add oldestRi and latestRi internal attributes con con, ts, fc
+
+
+
+
+
+
 				if not (res := laOlResource.handleRetrieveRequest(request = request, originator = originator)).status:
 					return res
 				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE):

@@ -16,7 +16,8 @@ from typing import cast, Sequence, Optional
 import json, os, fnmatch, re
 from copy import deepcopy
 
-from ..etc.Utils import findXPath, getCSE
+from ..etc.Utils import getCSE
+from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
 from ..services.Configuration import Configuration
 from ..services import CSE

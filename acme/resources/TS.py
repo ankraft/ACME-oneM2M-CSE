@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..services.Configuration import Configuration
 from ..services import CSE

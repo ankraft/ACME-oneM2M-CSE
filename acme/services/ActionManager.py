@@ -14,7 +14,7 @@ from typing import Optional, Any, cast
 import sys, copy
 
 from ..etc.Types import Result, EvalMode, EvalCriteriaOperator, JSON, CSERequest, ResponseStatusCode
-from ..etc.Utils import setXPath
+from ..helpers.TextTools import setXPath
 from ..etc.DateUtils import utcTime
 from ..etc.RequestUtils import responseFromResult
 from ..services import CSE

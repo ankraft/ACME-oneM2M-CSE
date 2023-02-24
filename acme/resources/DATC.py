@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L

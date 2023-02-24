@@ -15,7 +15,8 @@ from typing import Any, Tuple, cast, Optional
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, ResponseStatusCode, CSERequest, JSON
-from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, findXPath, setXPath, resourceDiff, normalizeURL
+from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL
+from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
 from ..services.Logging import Logging as L
 from ..services import CSE
@@ -62,7 +63,7 @@ class Resource(object):
 
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, 
-							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi ]
+							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 

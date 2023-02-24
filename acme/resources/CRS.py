@@ -13,7 +13,8 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
-from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, findXPath, setXPath, compareIDs
+from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
+from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import resourceState, getResourceState
 from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, TimeWindowType, CSERequest
 from ..resources.Resource import Resource
@@ -25,6 +26,7 @@ from ..services.Logging import Logging as L
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
+	# TODO move to Constants
 	_subSratRIs = '__subSratRIs__'	# dict of really modified <sub> resources
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 

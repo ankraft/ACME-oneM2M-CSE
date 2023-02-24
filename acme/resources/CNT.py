@@ -12,16 +12,16 @@ from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, JSONLIST
 from ..etc.DateUtils import getResourceDate
-from ..etc.Utils import findXPath
+from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
-from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.ContainerResource import ContainerResource
 from ..resources import Factory	# attn: circular import
 
 
-class CNT(AnnounceableResource):
+class CNT(ContainerResource):
 
 	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
 									ResourceTypes.CNT, 
@@ -99,6 +99,7 @@ class CNT(AnnounceableResource):
 													ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(latestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		self.setLatestRI(res.resource.ri)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
@@ -106,6 +107,7 @@ class CNT(AnnounceableResource):
 													ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createLocalResource(oldestResource, self)).resource:
 			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		self.setOldestRI(res.resource.ri)
 
 		return Result.successResult()
 
@@ -165,6 +167,7 @@ class CNT(AnnounceableResource):
 					childResource.setAttribute('et', maxEt)
 					childResource.dbUpdate()
 
+			self.updateLaOlLatestTimestamp()	# EXPERIMENTAL TODO Also do in FCNT and TS
 			self.validate(originator)
 
 
