@@ -6,10 +6,7 @@ An open source CSE Middleware for Education.
 Version 0.12.0-dev
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
-
-
-
+[![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)
 ## Introduction
 
 This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintainable CSE for educational purposes.
@@ -18,7 +15,6 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 ![](docs/images/title.png)
 
 ## Documentation
-Please consult the following pages for further instructions.
 
 - [Installation](docs/Installation.md)
 - [Configuration](docs/Configuration.md)
@@ -59,6 +55,10 @@ Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 - Improved request timeouts, especially for the http binding.
 - Improved internal handling of requests sent by the CSE itself.
 - And, as usual, many improvements, bug fixes, and performance improvements.
+
+## What to expect in the next release
+
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/110) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 
