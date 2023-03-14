@@ -14,7 +14,10 @@ from typing import Optional, Any, Dict
 
 import base64, binascii, re
 
-_commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
+# _commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
+# 						   re.MULTILINE|re.DOTALL)
+# TODO The ' interferes with lisp quotes. Maybe, switch between the regex?
+_commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
 """	Compiled regex expression of recognize comments. """
 
@@ -67,7 +70,7 @@ def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Opti
 			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
 		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
-			jumped over. This can be used to skip, for example, unknown first elements in a structure. 
+			skipped in the path. This can be used to skip, for example, unknown first elements in a structure. 
 			This is similar but not the same as "{0}" that works on lists.
 
 		Example: 
