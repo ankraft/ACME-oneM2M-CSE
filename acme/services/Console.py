@@ -26,7 +26,7 @@ import plotext
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
 from ..helpers.TextTools import findXPath, setXPath, simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..helpers.Interpreter2 import PContext, PError
+from ..helpers.Interpreter import PContext, PError
 from ..etc.Constants import Constants
 from ..etc.Types import CSEType, ResourceTypes
 from ..etc.Utils import getIPAddress, getCSE

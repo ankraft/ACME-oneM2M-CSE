@@ -1,29 +1,19 @@
-#
-#	testDisableShortResourceExpiration.as
-#
-#	This script is supposed to be called by the test system via the upper tester interface
-#
+;;
+;;	testDisableShortResourceExpiration.as
+;;
+;;	This script is supposed to be called by the test system via the upper tester interface
+;;
 
 @name disableShortResourceExpiration
 @description (Tests) Disable shorter resource expirations
 @usage disableShortResourceExpiration
 @uppertester
 
-if [> [argc] 0]
-	logError Wrong number of arguments: disableShortResourceExpiration
-	quitWithError
-endif
+(if (> argc 1)
+	(	(log-error "Wrong number of arguments: disableShortResourceExpiration")
+		(quit-with-error)))
 
-##################################################################
+(include-script "functions")
 
-# Restore the CSE's expiration check expirationInterval
-if [storageHas cse.checkExpirationsInterval]
-	setConfig cse.checkExpirationsInterval [storageGet cse.checkExpirationsInterval]
-	storageRemove cse.checkExpirationsInterval
-endif
-
-# Restore the CSE's minimum ET value for <request> resources
-if [storageHas cse.req.minet]
-	setConfig cse.req.minet [storageGet cse.req.minet]
-	storageRemove cse.req.minet
-endif
+(restore-config-value "cse.checkExpirationsInterval")
+(restore-config-value "cse.req.minet")

@@ -7,51 +7,73 @@
 """	Managing scripts and batch job executions.
 """
 
-
 from __future__ import annotations
 from typing import Callable, Dict, Union, Any, Tuple, cast, Optional
 
 from pathlib import Path
-import json, os, fnmatch, re, base64, urllib.parse
+import json, os, fnmatch
 import requests
+from decimal import Decimal
 
 from ..helpers.KeyHandler import FunctionKey
-from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
-from ..services.Configuration import Configuration
-from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCallable
+from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
+from .Configuration import Configuration
+from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType
+from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..helpers import TextTools
-from ..services import CSE
-from ..etc.Utils import findXPath, runsInIPython, uniqueRI, isURL, setXPath, uniqueID
+from ..helpers.TextTools import setXPath, simpleMatch
+from . import CSE
+from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID
 from ..etc.DateUtils import cronMatchesTimestamp
 from ..resources.Factory import resourceFromDict
-from ..services.Logging import Logging as L, LogLevel
-
-
-# TODO implement request sdefaults
-
+from .Logging import Logging as L, LogLevel
 
 #
 #	Meta Tags
 #
 
-_metaOnStartup = 'onstartup'
-_metaOnRestart = 'onrestart'
-_metaOnShutdown = 'onshutdown'
+_metaInit = 'init'
+"""	Name of the meta tag "init". """
+_metaOnStartup = 'onStartup'
+"""	Name of the meta tag "onStartup". """
+_metaOnRestart = 'onRestart'
+"""	Name of the meta tag "onRestart". """
+_metaOnShutdown = 'onShutdown'
+"""	Name of the meta tag "onShutdown". """
 _metaPrompt = 'prompt'
+""" Name of the meta tag "prompt". """
 _metaTimeout = 'timeout'
+""" Name of the meta tag "timeout". """
 _metaFilename = 'filename'
+""" Name of the meta tag "filename". """
 _metaAt = 'at'
-_metaOnNotification = 'onnotification'
-_metaOnKey = 'onkey'
-_metaPromptlessEvents = [ _metaOnStartup, _metaOnRestart, _metaOnShutdown, _metaAt, _metaOnNotification ]
+"""	Name of the meta tag "at". """
+_metaOnNotification = 'onNotification'
+""" Name of the meta tag "onNotification". """
+_metaOnKey = 'onKey'
+""" Name of the meta tag "onKey". """
+_metaPromptlessEvents = [ _metaInit, _metaOnStartup, _metaOnRestart, _metaOnShutdown, _metaAt, _metaOnNotification ]
+""" Events for which the "prompt" meta tag is to be ignored. """
+
+_storageTypes = (SType.tString, SType.tNumber, SType.tBool, SType.tJson, SType.tLambda, SType.tList,
+				 SType.tListQuote, SType.tNIL, SType.tSymbol, SType.tSymbolQuote)
+""" Allowed types to put into storage. """
+
+_httpMethods = {
+	'get':		requests.get,
+	'post':		requests.post,
+	'put':		requests.put,
+	'delete':	requests.delete,
+	'patch':	requests.patch,
+}
+"""	Internal mapping between http methods and function callbacks. """
+
 
 
 class ACMEPContext(PContext):
-	"""	Child class of the `PContext` context class that adds further commands and details.
+	"""	Child class of the `PContext` context class that adds further functions and details.
 
 		Attributes:
-			poas: A dictionary that maps between CSE-ID's and Point-of-Access. The default is the own CSE.
 			filename: Script filename.
 			fileMtime: The script file's latest modified timestamp.
 			maxRuntime: The maximum runtime (in seconds) for a script.
@@ -60,12 +82,14 @@ class ACMEPContext(PContext):
 	"""
 
 	__slots__ = (
-		'poas',
+		'scriptFilename',
 		'fileMtime',
 	)
+	""" Slots of class attributes. """
+
 
 	def __init__(self, 
-				 script:Union[str, list[str]], 
+				 script:str, 
 				 preFunc:Optional[PFuncCallable] = None,
 				 postFunc:Optional[PFuncCallable] = None, 
 				 errorFunc:Optional[PFuncCallable] = None,
@@ -78,60 +102,46 @@ class ACMEPContext(PContext):
 				postFunc: An optional callback that is called with the `PContext` object just after the script finished execution.
 				errorFunc: An optional callback that is called with the `PContext` object when encountering an error during script execution.
 				filename: The script's filename.
-
 		"""
-
 		super().__init__(script, 
 
 						# !!! Always use lower case when adding new macros and commands below
-						 commands = {	
-							 			'clear':				self.doClear,
-							 			'create':				self.doCreate,
-							 			'delete':				self.doDelete,
+						 symbols = {	
+							 			'clear-console':		self.doClearConsole,
+							 			'create-resource':		self.doCreateResource,
+										'cse-status':			self.doCseStatus,
+							 			'delete-resource':		self.doDeleteResource,
+										'get-config':			self.doGetConfiguration,
+										'get-storage':			self.doGetStorage,
+										'has-config':			self.doHasConfiguration,
+										'has-storage':			self.doHasStorage,
 										'http':					self.doHttp,
-										'importraw':			self.doImportRaw,
-										'logdivider':			self.doLogDivider,
-							 			'notify':				self.doNotify,
-						 				'originator':			self.doOriginator,
-										'printjson':			self.doPrintJSON,
-						 				'poa':					self.doPoa,
-										'reset':				self.doReset,
-							 			'retrieve':				self.doRetrieve,
-										'requestattributes':	self.doRequestAttributes,
-										'run':					self.doRun,
-										'setconfig':			self.doSetConfig,
-										'setlogging':			self.doSetLogging,
-										'storageput':			self.doStoragePut,
-						 				'storageremove':		self.doStorageRemove,
-							 			'update':				self.doUpdate,
-									}, 
-						 macros = 	{ 	# !!! macro names must be lower case
-
-							 			'attribute':			self.doAttribute,
-										'b64encode':			self.doB64Encode,
-										'csestatus':			self.doCseStatus,
-							 			'hasattribute':			self.doHasAttribute,
-										'isipython':			self.doIsIPython,
-										'jsonify':				self.doJsonify,
-										'storagehas':			self.doStorageHas,
-										'storageget':			self.doStorageGet,
-										'urlencode':			self.doURLEncode,
-						 				'__default__':			lambda c, a, l: Configuration.get(a),
+										'import-raw':			self.doImportRaw,
+										'include-script':		lambda p, a: self.doRunScript(p, a, isInclude = True),
+										'is-ipython':			self.doIsIPython,
+										'log-divider':			self.doLogDivider,
+										'print-json':			self.doPrintJSON,
+										'put-storage':			self.doPutStorage,
+						 				'remove-storage':		self.doRemoveStorage,
+										'reset-cse':			self.doReset,
+							 			'retrieve-resource':	self.doRetrieveResource,
+										'run-script':			self.doRunScript,
+							 			'send-notification':	self.doNotify,
+										'set-config':			self.doSetConfig,
+										'set-console-logging':	self.doSetLogging,
+							 			'update-resource':		self.doUpdateResource,
 						  			},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
 						 printFunc = self.prnt,
 						 preFunc = preFunc, 
 						 postFunc = postFunc, 
-						 matchFunc = lambda p, l, r : TextTools.simpleMatch(l, r),
+						 matchFunc = lambda p, l, r : simpleMatch(l, r),
 						 errorFunc = errorFunc)
 
-		self.poas:Dict[str, str] = { CSE.cseCsi: None }		# Default: Own CSE
-		self.filename = filename
+		self.scriptFilename = filename
 		self.fileMtime = os.stat(filename).st_mtime
-
 		self._validate()	# May change the state to indicate an error
-		self.requestParameters:dict[str, Any] = {}
 
 
 	def _validate(self) -> None:
@@ -143,21 +153,13 @@ class ACMEPContext(PContext):
 		if _metaPrompt in self.meta:
 			if any(key in _metaPromptlessEvents for key in self.meta.keys()):
 				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {_metaPromptlessEvents}')
-				self.state = PState.terminatedWithError
 		if _metaTimeout in self.meta:
 			t = self.meta[_metaTimeout]
 			try:
 				self.maxRuntime = float(t)
 			except ValueError as e:
 				self.setError(PError.invalid, f'"@timeout" has an invalid value; it must be a float: {t}')
-				self.state = PState.terminatedWithError
 	
-
-	def reset(self) -> None:
-		# Additional things to reset
-		self.requestParameters = {}
-		return super().reset()
-
 
 	def log(self, pcontext:PContext, msg:str) -> None:
 		"""	Callback for normal log messages.
@@ -177,11 +179,11 @@ class ACMEPContext(PContext):
 				msg: The log message.
 				exception: Optional exception to log.
 		"""
-		L.logErr(msg, exc = exception)
+		L.logErr(msg, exc = exception, stackOffset=1)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
-		"""	Callback for *print* command messages.
+		"""	Callback for *print* function messages.
 
 			Args:
 				pcontext: Script context. Not used.
@@ -200,7 +202,7 @@ class ACMEPContext(PContext):
 			Return:
 				String with the error message.
 		"""
-		return f'{self.error.error.name} error in {self.filename}:{self.error.line} - {self.error.message}'
+		return f'{self.error.error.name} error in {self.scriptFilename} - {self.error.message}'
 
 
 	@property
@@ -225,801 +227,821 @@ class ACMEPContext(PContext):
 
 	#########################################################################
 	#
-	#	Commands
+	#	Symbols
 	#
 
-	def doClear(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Execute a CLEAR command. Clear the console.
+
+	def doClearConsole(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Clear the console.
 		
 			Example:
-				CREATE
+				::
+
+					(clear-console)
 
 			Args:
-				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command. Not used.
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
 		"""
-		if CSE.isHeadless:
-			return pcontext
-		L.consoleClear()
+		pcontext.assertSymbol(symbol, 1)
+		if not CSE.isHeadless:
+			L.consoleClear()
 		return pcontext
 
 
-	def doCreate(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Execute a CREATE request. The originator must be set before this command.
-		
+	def doCreateResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute a "create-resource" request to create a resource on a CSE.
+
+			The function has the following arguments:
+
+				- originator of the request
+				- target resource ID
+				- JSON resource
+				- Optional: JSON with additional request arguments
+			
+			The function returns a quoted list as a result with the following symbols:
+				
+				- Response status
+				- Response resource
+				
 			Example:
-				CREATE <target> <resource>
+				::
+
+					(create-resource "originator" "cse-in"  { "m2m:cnt": { "rn": "myCnt" }} [<request arguments>]) -> ( <status> <resource> )
 
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: remaining argument(s) of the command.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
 		"""
-		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.CREATE, arg)
+		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.CREATE)
 	
 
-	def doDelete(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Execute a DELETE request. The originator must be set before this command.
+	def doCseStatus(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		""" Retrieve the CSE status.
 		
 			Example:
-				DELETE <target>
+				::
+
+					(cse-status)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. the CSE status as a string.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(string = CSE.cseStatus.name))
+
+
+	def doDeleteResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute a "delete-resource" request on the CSE.
+		
+			The function has the following arguments:
+
+				- originator of the request
+				- target resource ID
+				- Optional: JSON with additional request arguments
+			
+			The function returns a quoted list as a result with the following symbols:
+				
+				- Response status
+				- Response resource
+		
+			Example:
+				::
+
+					(delete-resource "originator "cse-in/myCnt" [<request arguments>]) -> ( <status> <resource> )
 
 			Args:
 				pcontext: PContext object of the running script.
-				arg: remaining argument(s) of the command, only the target.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
 		"""
-		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.DELETE, arg)
+		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 4)
+		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.DELETE)
 
 
-	_httpMethods = {
-		'get':		requests.get,
-		'post':		requests.post,
-		'put':		requests.put,
-		'delete':	requests.delete,
-		'patch':	requests.patch,
-	}
-	"""	Internal mapping between http methods and function callbacks.
-	"""
+	def doGetConfiguration(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Get a setting from the CSE's configuration.
+		
+			Example:
+				::
+
+					(get-configuration "cse.csi") -> "id-in
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PUndefinedError`: In case the configuration key is undefined
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# key path
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# config value
+		if (_v := Configuration.get(_key)) is None:
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined key: {_key}'))
+		elif isinstance(_v, str):
+			return pcontext.setResult(SSymbol(string = _v))
+		elif isinstance(_v, (int, float)):
+			return pcontext.setResult(SSymbol(number = Decimal(_v)))
+		elif isinstance(_v, dict):
+			return pcontext.setResult(SSymbol(jsn = _v))
+		elif isinstance(_v, bool):
+			return pcontext.setResult(SSymbol(boolean = _v))
+		# TODO support lists
+		return pcontext.setResult(SSymbol())
 
 
-	def doHttp(self, pcontext:PContext, arg:str) -> Optional[PContext]:
+	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Retrieve a value from the persistent storage.
+
+			Example:
+				::
+
+					(get-storage "aKey") -> value
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PUndefinedError`: If the key is undefined in the persistent storage.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# get key
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		if (_val := CSE.script.storageGet(_key)) is None:
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'Undefined storage key: {_key}'))
+		
+		return pcontext.setResult(_val)
+
+
+	def doHasConfiguration(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Test for the existence of a key in the CSE's configuration.
+
+			Example:
+				::
+
+					(has-config "aKey")
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. a boolean value.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# extract key
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		return pcontext.setResult(SSymbol(boolean = Configuration.has(_key)))
+
+
+	def doHasStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Test for the existence of a key in the persistent storage.
+
+			Example:
+				::
+
+					(has-storage "aKey")
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. a boolean value.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# extract key
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		return pcontext.setResult(SSymbol(boolean = CSE.script.storageHas(_key)))
+
+
+	def doHttp(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		""" Making a http(s) request.
 				
 			Example:
-				http post https://example.com
-				aHeader: a header value
-				anotherHeader: another header value
+				::
 
-				body content
-				endhttp
+					(http post "https://example.com"
+						('("aHeader" "a header value")
+						 '("anotherHeader" "another header value"))
+						"body content")
 
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: remaining argument(s) of the command, only the target.
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+
+			Raises:
+				`PInvalidArgumentError`: In case the operation is undefined or an invalid header definion is encountered.
 		"""
 		# clear all response variables first
 		for k, _ in pcontext.getVariables('response\\.*'):
 			pcontext.delVariable(k)
 
-		# Parse first command line
-		op, _, url = arg.partition(' ')
+		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 5)
 
-		if not op:
-			pcontext.setError(PError.invalid, 'Missing http method')
-			return None
-		if not url:
-			pcontext.setError(PError.invalid, 'Missing URL')
-			return None
+		# Get operation
+		pcontext, _op = pcontext.valueFromArgument(symbol, 1, (SType.tSymbol, SType.tSymbolQuote))
+		_op = _op.lower()
+		if (_method := _httpMethods.get(_op)) is None:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'unknown or unsupported http method: {_op}'))
 
-		# Check command -> method
-		if (method := self._httpMethods.get(op.lower())) is None:
-			pcontext.setError(PError.invalid, f'Unsupported http method: {op}')
-			return None
+		# Get URL
+		pcontext, _url = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
-		# Get headers & body
-		headers:dict[str, str] = {}
-		lines = re.split('\n', self.remainingLinesAsString(upto = 'endhttp')) # NO macros are evaluated
-		lenLines = len(lines)
-		pcontext.pc += lenLines + 1 # increment pc, skip over endhttp
+		# Get optional headers
+		_headers = {}
+		if symbol.length > 3:
+			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tList, SType.tListQuote, SType.tNIL))
+			if result.type != SType.tNIL:
+				for h in cast(list[SSymbol], result.value):
+					if h.type not in [ SType.tList, SType.tListQuote ]:
+						raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'header element must be a list: {h}'))
+					if h.length != 2:
+						raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'header must have 2 elements, is: {h.length}'))
+					pcontext, _k = pcontext.valueFromArgument(h, 0, SType.tString)
+					pcontext, _v = pcontext.valueFromArgument(h, 1, (SType.tString, SType.tNumber))
+					_headers[_k] = str(_v)
 
-		# parse & construct headers
-		idx = 0
-		while idx < lenLines and len(l := lines[idx].strip()):
-			if (l := checkMacros(pcontext, l)) is None:	# evaluate the macros here
-				pcontext.state = PState.terminatedWithError
-				return None
-			key, found, value = l.partition(':')
-			if not found:
-				pcontext.setError(PError.invalid, f'Invalid header: {l}')
-				return None
-			headers[key] = value.strip()
-			idx += 1
-		
-		# construct body
-		bodyLines:list[str] = []
-		for line in lines[idx+1:]:
-			if (l := checkMacros(pcontext, line)) is None:	# evaluate the macros here
-				pcontext.state = PState.terminatedWithError
-				return None
-			bodyLines.append(l)
-		body = '\n'.join(bodyLines)
-		if len(body):
-			headers['Content-Length'] = str(len(body))
+		# get body, if present
+		_body:str|JSON = None
+		if symbol.length == 5:
+			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson))
+			_body = str(result)
+			if len(_body):
+				_headers['Content-Length'] = str(len(_body))
 
 		# send http request
 		try:
-			response = method(url, 
-							  data = body,
-							  headers = headers, 
+			response = _method(_url, 
+							  data = _body,
+							  headers = _headers, 
 							  verify = CSE.security.verifyCertificateHttp,
 							  timeout = CSE.httpServer.requestTimeout)		# type: ignore[operator, call-arg]
 		except requests.exceptions.ConnectionError:
-			pcontext.setVariable('response.status', '-1')
-			return pcontext
-		
+			pcontext.variables['response.status'] = SSymbol()	# nil
+			return pcontext.setResult(SSymbol())
+		#print(response)
+
 		# parse response and assign to variables
-		pcontext.setVariable('response.status', str(response.status_code))
-		if response.text: # fill body variable
-			pcontext.setVariable('response.body', response.text)
+
+		pcontext.variables['response.status'] = SSymbol(number = response.status_code)
+		pcontext.variables['response.body'] =  SSymbol(string = response.text) if response.text else SSymbol()
 		if response.headers: # fill header variables
 			for k, v in response.headers.items():
-				pcontext.setVariable(f'response.{k}', v)
-		
+				pcontext.variables[f'response.{k}'] = SSymbol(string = v)
+
+		pcontext.result = SSymbol(lstQuote = [	SSymbol(number = response.status_code),
+												SSymbol(string = response.text),
+												SSymbol(jsn = dict(response.headers)) ])
 		return pcontext
 
 
-	def doImportRaw(self, pcontext:PContext, arg:str) -> Optional[PContext]:
+	def doImportRaw(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Import a raw resource. Not much verification is done, and a full resource
-			representation, including for example the parent resource ID, must be provided.
+			representation, including, for example, the parent resource ID, must be provided.
 		
 			Example:
-				importRaw <resource>
+				::
+
+					(import-raw <originator> <resource JSON> )
 
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: remaining argument(s) of the command, only the resource, which may start on a new line.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PRuntimeError`: In case an error during the import and create is encountered.
 		"""
-		#  Get and check primitive content
-		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
-			pcontext.setError(PError.invalid, f'No or invalid content found')
-			return None
+		pcontext.assertSymbol(symbol, 3)
+		
+		# originator
+		pcontext, _originator = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
-		resource = resourceFromDict(dct, create = True, isImported=True).resource
-
-		# Get the originator for the request
-		if (originator := self.getVariable('request.originator')) is None:
-			originator = CSE.cseOriginator
-
-		# Check resource creation
-		if not CSE.registration.checkResourceCreation(resource, originator):
-			return None
+		# resource object
+		pcontext, _resource = pcontext.valueFromArgument(symbol, 2, SType.tJson)
+		_resource = resourceFromDict(cast(dict, _resource), create = True, isImported = True).resource
 
 		# Get a potential parent resource
 		parentResource:Any = None
-		if resource.pi:
-			if not (pres := CSE.dispatcher.retrieveLocalResource(ri = resource.pi)).status:
-				return None
+		if _resource.pi:
+			if not (pres := CSE.dispatcher.retrieveLocalResource(ri = _resource.pi)).status:
+				raise PRuntimeError(self.setError(PError.runtime, pres.dbg))
 			parentResource = pres.resource
 
+		# Check resource registration
+		if not (result := CSE.registration.checkResourceCreation(_resource, _originator, parentResource)).status:
+			raise PRuntimeError(self.setError(PError.runtime, result.dbg))
+
 		# Create the resource
-		if not (res := CSE.dispatcher.createLocalResource(resource, parentResource, originator = originator)).resource:
-			L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
-			return None
+		if not (result := CSE.dispatcher.createLocalResource(_resource, parentResource, originator = _originator)).resource:
+			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {result.dbg}', showStackTrace = False)))
 			
-		return pcontext
+		return self._pcontextFromRequestResult(pcontext, result)
 
 
-	def doLogDivider(self, pcontext:PContext, arg:Optional[str] = '') -> Optional[PContext]:
+	def doIsIPython(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Determine whether the CSE currently runs in an IPython environment, such as Jupyter Notebooks.
+		
+			Example:
+				::
+
+					(is-ipython)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. a boolean value.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(boolean = runsInIPython()))
+
+
+	def doLogDivider(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Print a divider line to the log (on DEBUG level).
 			
 			Optionally add a message that is centered on the line.
 			
 			Example:
-				LOGDIVIDER a message
+				::
+
+					(log-divider "Hello, World")
 
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-			"""
-		L.logDivider(LogLevel.DEBUG, arg)
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, minLength = 1, maxLength = 2)
+	
+		# Message
+		msg = ''
+		if symbol.length == 2:
+			pcontext, msg = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		L.logDivider(LogLevel.DEBUG, msg)
 		return pcontext
 
 
-	def doNotify(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Execute a NOTIFY request. The originator must be set before this command.
+	def doNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute a NOTIFY request. The originator must be set before this function.
 		
-			Example:
-				NOTIFY <target> <resource>
+			The function has the following arguments:
 
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
+				- originator of the request
+				- target resource ID
+				- JSON resource
+				- Optional: JSON with additional request arguments
 			
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.NOTIFY, arg)
-
-
-	def doOriginator(self, pcontext:PContext, arg:str) -> PContext:
-		"""	Set the originator for the following requests.
+			The function returns a quoted list as a result with the following symbols:
+				
+				- Response status
+				- Response resource
 
 			Example:
-				originator [<name>]
-		
-			Internally, this sets the variable *request.originator* in the `PContext` object. The
-			difference is that with this command the originator can be set to an empty value.
+				::
+
+					(send-notification <originator> <target> <resource JSON> [<headers JSON>]) -> ( <status> <resource> )
 
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: Remaining argument of the command.
-
-			Returns:
-				The script's `PContext` object.
+				symbol: The symbol to execute.
+			
+			Return:
+				The updated `PContext` object with the operation result.
 		"""
-		self.setVariable('request.originator', arg if arg else '')
-		return pcontext
+		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.NOTIFY)
 
 
-	def doPoa(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Assign a "poa" for an identifier.
-
-			Example:
-				poa <identifier> <uri>
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument of the command.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		orig, found, url = arg.partition(' ')
-		if found:
-			self.poas[orig] = url.strip()
-		else:
-			pcontext.setError(PError.invalid, f'Missing of invalid argument for POA: {arg}')
-			return None
-		return pcontext
-
-
-	def doPrintJSON(self, pcontext:PContext, arg:str) -> Optional[PContext]:
+	def doPrintJSON(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Print a beautified JSON to the console.
+
+			Nothing will be printed if the CSE is running in *headless* mode.
 			
+			Example:
+				::
+
+					(print-json { "a" : "b" })
+
 			Args:
 				pcontext: `PContext` object of the running script.
-				arg: Remaining argument of the command, the JSON structure.
+				symbol: The symbol to execute.
 
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		 """
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
 		if CSE.isHeadless:
 			return pcontext
-		try:
-			L.console(json.loads(arg))
-		except Exception as e:
-			pcontext.setError(PError.invalid, str(e))
-			return None
+		
+		# json
+		pcontext, _json = pcontext.valueFromArgument(symbol, 1, SType.tJson)
+
+		L.console(cast(dict, _json))
 		return pcontext
 
 
-	def doRequestAttributes(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Add extra request attributes to a request. The argument to this
-			command is a JSON structure with the attributes.
+	def doPutStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		""" Store a value in the persistent storage.
+
+			Example:
+				::
+
+					(put-storage "aKey" "Hello, World")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 3)
+
+		# get key
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# get value
+		pcontext, _value = pcontext.valueFromArgument(symbol, 2, _storageTypes)
+
+		CSE.script.storagePut(_key, _value)
+		return pcontext
+
+
+	def doRemoveStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Remove a value from the persistent storage.
+
+			Example:
+				::
+
+					(storage-remove "aKey")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# get key
+		pcontext, key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		CSE.script.storageRemove(cast(str, key))
+		return pcontext
+
+
+	def doReset(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Reset the CSE.
+
+			Example:
+				::
+
+					(reset)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		CSE.resetCSE()
+		return pcontext
+	
+
+	def doRetrieveResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute a RETRIEVE request. 
+
+			The function has the following arguments:
+
+				- originator of the request
+				- target resource ID
+				- Optional: JSON with additional request arguments
 			
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument of the command, the JSON structure.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
-			pcontext.setError(PError.invalid, f'No or invalid content found {pcontext.error.message}')
-			return None
-		cast(ACMEPContext, pcontext).requestParameters = dct
-		return pcontext
-
-
-	def doReset(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Initiate a CSE reset.
-
-			Example:
-				RESET
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument of the command.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-
-		_, found, _ = arg.partition(' ')
-		if found:
-			pcontext.setError(PError.invalid, f'RESET command has no arguments')
-			return None
-		else:
-			CSE.resetCSE()
-		return pcontext
-	
-
-	def doRetrieve(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Execute a RETRIEVE request. The originator must be set before this command.
-		
-			Example:
-				RETRIEVE <target>
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.RETRIEVE, arg)
-	
-
-	def doRun(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Run another script. The *result* variable will contain the return value
-			of the run sript.
-		
-			Example:
-				RUN <script name> [<arguments>]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command, name of a script and arguments.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		name, found, arg = arg.partition(' ')
-		if name:
-			if len(scripts := CSE.script.findScripts(name = name)) == 0:
-				pcontext.setError(PError.undefined, f'No script "{name}" found')
-				return None
-			else:
-				script = scripts[0]
-				if not CSE.script.runScript(script, argument = arg, background = False):
-					pcontext.setError(script.error.error, f'Running script error: {script.error.message}')
-					return None
-				pcontext.result = script.result
-				return pcontext
-		pcontext.setError(PError.invalid, 'Script name required')
-		return None
-
-
-	def doSetConfig(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Set a CSE configuration. The configuration must be an existing configuration. No
-			new configurations can e created this way.
-		
-			Example:
-				setConfig <configuration key> <value>
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command, the key and the value.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		key, found, value = arg.partition(' ')
-		if found:
-			if Configuration.has(key):
-				# Do some conversions first
-				v = Configuration.get(key)
-				if isinstance(v, ACMEIntEnum):
-					r = Configuration.update(key, v.__class__.to(value, insensitive = True))
-				elif isinstance(v, str):
-					r = Configuration.update(key, value.strip())
-				# bool must be tested before int! 
-				# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
-				elif isinstance(v, bool):	
-					r = Configuration.update(key, value.strip().lower() == 'true')
-				elif isinstance(v, int):
-					r = Configuration.update(key, int(value.strip()))
-				elif isinstance(v, float):
-					r = Configuration.update(key, float(value.strip()))
-				elif isinstance(v, list):
-					r = Configuration.update(key, value.split(','))
-				else:
-					pcontext.setError(PError.invalid, f'Unsupported type: {type(v)}')
-					return None
+			The function returns a quoted list as a result with the following symbols:
 				
-				# Check whether something went wrong while setting the config
-				if r:
-					pcontext.setError(PError.invalid, r)
-					return None
+				- Response status
+				- Response resource
 
+			Example:
+				::
+
+					(retrieve-resource "originator" "cse-in" [(<headers JSON>)] -> ( <status> <resource> )
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.RETRIEVE)
+	
+
+	def doRunScript(self, pcontext:PContext, symbol:SSymbol, isInclude:bool = False) -> PContext:
+		"""	Run another script. 
+		
+			The result of the script is passed as the result of this function.
+		
+			Example:
+				::
+
+					(run-script <script name> [<arguments>]* ) -> ( <status> <resource> )
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+				isInclude: Boolean indicator whether the script result (functions, variables) shall be added to the currently running script.
+
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PUndefinedError`: In case there is no script with that name.
+				`PRuntimeError`:  In case the script exits with an error.
+		"""
+		pcontext.assertSymbol(symbol, minLength = 2)
+
+		# script name
+		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# arguments
+		arguments:list[str] = []
+		if symbol.length > 2:
+			for idx in range(2, symbol.length):
+				pcontext, value = pcontext.valueFromArgument(symbol, idx)
+				arguments.append(str(value))
+
+		# find script
+		if len(scripts := CSE.script.findScripts(name = name)) == 0:
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'script: "{name}" not found'))
+
+		# run script
+		script = scripts[0]
+		if not CSE.script.runScript(script, arguments = arguments, background = False):
+			raise PRuntimeError(pcontext.setError(PError.runtime, f'Running script error: {script.error.message}'))
+		
+		if isInclude:
+			# Copy newly defined functions
+			pcontext.functions.update(script.functions)
+			# Copy variables, except a few special ones
+			pcontext.variables.update( { k:v 
+										 for k,v in script.variables.items() 
+										 if k not in ['argc'] } )
+
+		return pcontext.setResult(script.result)
+
+
+	def doSetConfig(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Set a CSE configuration. The configuration must be an existing configuration. No
+			new configurations can be created this way.
+		
+			Example:
+				::
+
+					(setConfig <configuration key> <value>)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PInvalidTypeError`: In case the data types of the configuration setting and the new value are different from each other.
+				`PUnsupportedError`: In case the data type is not supported.
+				`PInvalidArgumentError`: In case the setting could not be updated.
+				`PUndefinedError`: In case the key references an undefined configuration setting.
+		"""
+		pcontext.assertSymbol(symbol, 3)
+
+		# key
+		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# value
+		pcontext, value = pcontext.valueFromArgument(symbol, 2)
+
+		if Configuration.has(_key):	# could be None, False, 0, empty string etc
+			# Do some conversions first
+			v = Configuration.get(_key)
+			if isinstance(v, ACMEIntEnum):
+				if value.type == SType.tString:
+					r = Configuration.update(_key, v.__class__.to(cast(str, value.value), insensitive = True))
+				else:
+					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+
+			elif isinstance(v, str):
+				if value.type == SType.tString:
+					r = Configuration.update(_key, cast(str, value.value).strip())
+				else:
+					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+			
+			# bool must be tested before int! 
+			# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
+			elif isinstance(v, bool):	
+				if value.type == SType.tBool:
+					r = Configuration.update(_key, value.value)
+				else:
+					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
+
+			elif isinstance(v, int):
+				if value.type == SType.tNumber:
+					r = Configuration.update(_key, int(cast(Decimal, value.value)))
+				else:
+					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
+
+			elif isinstance(v, float):
+				if value.type == SType.tNumber:
+					r = Configuration.update(_key, float(cast(Decimal, value.value)))
+				else:
+					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {value.type}'))
+
+			elif isinstance(v, list):
+				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
 			else:
-				pcontext.setError(PError.undefined, f'Undefined configuration: {key}')
-				return None
+				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
+			
+			# Check whether something went wrong while setting the config
+			if r:
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Error setting configuration: {r}'))
+
 		else:
-			pcontext.setError(PError.invalid, f'Syntax error')
-			return None
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'Undefined configuration: {_key}'))
+
 		return pcontext
 
 
-	def doSetLogging(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Implementation of the *setLoggin* command. Enable/disable the console logging.
+	def doSetLogging(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Enable/disable the console logging.
+
+			Example:
+				::
+
+					(set-console-logging true)
 
 			Args:
-				pcontext: Current script context.
-				arg: Remaining arguments, key and value.
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
 
 			Return:
-				Current `PContext` object, or *None* in case of an error.
+				The updated `PContext` object with the operation result.
 		"""
-		if arg and (a := arg.lower()) in [ 'on', 'off' ]:
-			L.enableScreenLogging = a == 'on'
-		else:
-			pcontext.setError(PError.invalid, f'Syntax error. Argument "on" or "off" missing')
-			return None
-		return pcontext
+		pcontext.assertSymbol(symbol, 2)
 
-	
-	def doStoragePut(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Implementation of the *storagePut* command. Store a value in the persistent storage.
-
-			Args:
-				pcontext: Current script context.
-				arg: Remaining arguments, key and value.
-
-			Return:
-				Current `PContext` object, or *None* in case of an error.
-		"""
-		key, found, value = arg.partition(' ')
-		if not found:
-			pcontext.setError(PError.invalid, f'Invalid format for "storagePut" command: {arg}')
-			return None
-		CSE.script.storagePut(key, value)
+		# Value
+		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+		L.enableScreenLogging = cast(bool, value)
 		return pcontext
 
 
-	def doStorageRemove(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Implementation of the *storageRemove* command. Remove a value from the persistent storage.
+	def doUpdateResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute an UPDATE request. 
+
+			The function has the following arguments:
+
+				- originator of the request
+				- target resource ID
+				- JSON resource
+				- Optional: JSON with additional request arguments
+			
+			The function returns a quoted list as a result with the following symbols:
+				
+				- Response status
+				- Response resource
+
+			Example:
+				::
+
+					(update-resource "originator" "cse-in/myCnt" { "m2m:cnt" { "lbl": ["aLabel"] }} [<request arguments>]) -> ( <status> <resource> )
 
 			Args:
-				pcontext: Current script context.
-				arg: Remaining arguments, key.
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
 
 			Return:
-				Current `PContext` object, or *None* in case of an error.
+				The updated `PContext` object with the operation result.
 		"""
-		key, found, value = arg.partition(' ')
-		if found:
-			pcontext.setError(PError.invalid, f'Invalid format for "storageRemove" command: {arg}')
-			return None
-		CSE.script.storageRemove(key)
-		return pcontext
-
-
-	def doUpdate(self, pcontext:PContext, arg:str) -> Optional[PContext]:
-		"""	Execute an UPDATE request. The originator must be set before this command.
-		
-			Example:
-				UPDATE <target> <resource>
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-
-			Returns:
-				The script's `PContext` object, or *None* in case of an error.
-		"""
-		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.UPDATE, arg)
-	
-
-	#########################################################################
-	#
-	#	Macros
-	#
-
-	def doAttribute(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
-		""" Retrieve an attribute of a resource via its key path. 
-		
-			Example:
-				[attribute <key path> <resource>]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				The value of the resource attribute, or *None* in case of an error.
-		"""
-		# extract key path
-		key, found, res = arg.strip().partition(' ')
-		if not found:
-			pcontext.setError(PError.invalid, f'Invalid format: attribute <key> <resource>')
-			return None
-		try:
-			if (value := findXPath(json.loads(res), key)) is None:
-				pcontext.setError(PError.undefined, f'Key "{key}" not found in resource')
-				return None
-		except Exception as e:
-			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
-			return None
-		return value
-
-
-	def doB64Encode(self, pcontext:PContext, arg:str, line:str) -> str:
-		"""	Base-64 encode a string.
-
-			Example:
-				[b64encode <string>]
-
-			Args:
-				pcontext: `PContext` object of the running script. Not used.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				Base-64 encoded result.
-		"""
-		return base64.b64encode(arg.encode('utf-8')).decode('utf-8')
-
-
-	def doCseStatus(self, pcontext:PContext, arg:str, line:str) -> str:
-		""" Retrieve the CSE status.
-		
-			Example:
-				[cseStatus]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				The CSE status as a string, or *None* in case of an error.
-		"""
-		return str(CSE.cseStatus)
-
-
-	def doHasAttribute(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
-		""" Check whether an attribute exists for the given its key path . 
-		
-			Example:
-				[hasAttribute <key path> <resource>]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				*True* or *False*, depending whether the *key path* exists in the *resource*.
-		"""
-		# extract key path
-		key, found, res = arg.strip().partition(' ')	
-		if not found:
-			pcontext.setError(PError.invalid, f'Invalid format: hasAttribute <key> <resource>')
-			return None
-		try:
-			if findXPath(json.loads(res), key) is None:
-				return 'false'
-		except Exception as e:
-			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
-			return None
-		return 'true'
-
-
-	def doIsIPython(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
-		"""	Check whether the CSE currently runs in an IPython environment,
-			such as Jupyter Notebooks.
-		
-			Example:
-				[isIPython]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command. Shall be none.
-				line: The original code line.
-
-			Returns:
-				*True* or *False*, depending whether the current environment in IPython.
-		"""
-		if arg:
-			pcontext.setError(PError.invalid, f'Invalid format: isIPython')
-			return None
-		return str(runsInIPython()).lower()
-
-
-	def doJsonify(self, pcontext:PContext, arg:str, line:str) -> str:
-		"""	Escape a string for use in a JSON structure. Newlines and quotes are escaped.
-
-			Example:
-				[jsonify <string>]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				Escaped JSON string.
-		"""
-		return arg.replace('\n', '\\n').replace('"', '\\"')
-
-
-	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
-		"""	Implementation of the *storageHas* macro. Test for a key in the persistent storage.
-
-			Args:
-				pcontext: Current script context.
-				arg: Remaining arguments, key only.
-				line: The original code line.
-
-			Return:
-				Boolean result, or *None* in case of an error.
-		"""
-		# extract key
-		key, found, res = arg.strip().partition(' ')	
-
-		if found:
-			pcontext.setError(PError.invalid, f'Invalid format: storageHas <key>')
-			return None
-
-		return CSE.script.storageHas(key)
-
-
-	def doStorageGet(self, pcontext:PContext, arg:str, line:str) -> Optional[str]:
-		"""	Implementation of the *storageGet* macro. Retrieve a value from the persistent storage.
-
-			Args:
-				pcontext: Current script context.
-				arg: Remaining arguments, key only.
-				line: The original code line.
-
-			Return:
-				The stored value for the key, or *None* in case of an error.
-		"""
-		# extract key
-		key, found, res = arg.strip().partition(' ')	
-
-		if found:
-			pcontext.setError(PError.invalid, f'Invalid format: storageGet <key>')
-			return None
-
-		if (res := CSE.script.storageGet(key)) is None:
-			pcontext.setError(PError.invalid, f'Undefined key in storage: {key}')
-			return None
-		return res
-
-
-	def doURLEncode(self, pcontext:PContext, arg:str, line:str) -> str:
-		"""	URL-Encode a string.
-
-			Example:
-				[urlencode <string>]
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				arg: Remaining argument(s) of the command.
-				line: The original code line.
-
-			Returns:
-				URL-encoded string.
-		"""
-		return urllib.parse.quote_plus(arg)
-
+		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.UPDATE)
 
 	#########################################################################
 	#
 	#	Internals
 	#
 
-	def  _getResourceFromScript(self, pcontext:PContext, arg:str) -> Optional[JSON]:
-		"""	Return a resource definition (JSON) from a script. The resource definition
-			may span multiple lines.
+
+	def _pcontextFromRequestResult(self, pcontext:PContext, res:Result) -> PContext:
+		"""	Update a `PContext` instance from a CSE `Result`.
 
 			Args:
-				pcontext: `PContext` object for the script.
-				arg: The remaining args
+				pcontext: `PContext` object of the running script.
+				res: `Result` object.
 
-			Returns:
-				A resource as JSON object (dict), or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
 		"""
-
-		# Get all in one line and resolve macros and variables
-		line = pcontext.remainingLinesAsString(prefix = arg)
-
-		# Look for the resource beginnig.
-		# Return an error if it doesn't startwith a {
-		i = 0
-		while i < len(line):
-			c = line[i]
-			if c.isspace():
-				i += 1
-				continue
-			if c == '{':
-				break
-			pcontext.setError(PError.invalid, f'Invalid content')
-			return None
-		
-		# Get content
-		# Ignore counting brackets [...] for now
-		openCurlies = 0
-		inQuote = False
-		while i < len(line):
-			c = line[i]
-			i += 1
-			if c == '"':	# found a quote
-				inQuote = not inQuote
-				continue
-			# TODO escape quotes
-			if inQuote:			# skip everything in a quote
-				continue
-			if c == '{':	# count opening {
-				openCurlies += 1
-				continue
-			if c == '}':	# count closing }
-				openCurlies -= 1
-				if openCurlies == 0:	# end search if this is the last closing }
-					break
-				continue
-		
-		if inQuote:
-			pcontext.setError(PError.invalid, f'Unmatched "')
-			return None
-		if openCurlies > 0:
-			pcontext.setError(PError.invalid, f'Unmatched }}')
-			return None
-
-		resultLine = line[:i]
-		if (resultLine := checkMacros(pcontext, resultLine)) is None:
-			pcontext.state = PState.terminatedWithError
-			return None
-
-		pcontext.pc += resultLine.count('\n')
+		# Construct response
+		responseStatus = SSymbol(number = Decimal(res.rsc.value))
 		try:
-			#L.isDebug and L.logDebug(resultLine)
-			return json.loads(resultLine)
+			if not res.status:
+				L.isDebug and L.logDebug(f'Request response: {res.dbg}')
+				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
+			elif res.resource:
+				L.isDebug and L.logDebug(f'Request response: {res.resource}')
+				responseResource = SSymbol(jsn= res.resource.asDict())
+			elif res.data:
+				L.isDebug and L.logDebug(f'Request response: {res.data}')
+				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))
+				# L.logDebug(self.getVariable('response.resource'))
+			else:
+				L.isDebug and L.logDebug('Request response: (unknown or none)')
+				responseResource = SSymbol()
 		except Exception as e:
-			pcontext.setError(PError.invalid, f'{str(e)}')
-			return None
+			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}'))
+		
+		return pcontext.setResult(SSymbol(lstQuote = [ responseStatus, responseResource ]))
 
 
-	def _handleRequest(self, pcontext:ACMEPContext, operation:Operation, arg:str) -> Optional[PContext]:
+	def _handleRequest(self, pcontext:PContext, symbol:SSymbol, operation:Operation) -> PContext:
 		"""	Internally handle a request, either via a direct URL or through an originator.
 
 			Return status and resources in the variables *result.status* and 
 			*result.resource* respectively.
 
 			Args:
-				pcontext: `PContext` object for the script.
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
 				operation: The operation to perform.
-				arg: The remaining args.
 
-			Returns:
-				The stored value for the key, or *None* in case of an error.
+			Return:
+				The updated `PContext` object with the operation result.
+
+			Raises:
+				`PInvalidArgumentError`: In case the input, e.g. the resource, is incorrect.
 		"""
-		target, _, content = arg.partition(' ')
 
-		# Get the request originator
-		if (originator := self.getVariable('request.originator')) is None:
-			originator = Configuration.get('cse.originator')
-			# pcontext.setError(PError.undefined, f'"originator" is not set. Set before a request with "originator <id>".')
-			# return None
+		# Get originator
+		pcontext, originator = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# Get target
+		pcontext, target = pcontext.valueFromArgument(symbol, 2, SType.tString)
+
+		# Get Content
+		content = None
+		if operation in [Operation.CREATE, Operation.UPDATE, Operation.NOTIFY]:
+			pcontext, content = pcontext.valueFromArgument(symbol, 3, SType.tJson)
+
+		# Get extra request attributes
+		attributes:JSON = {}
+		idx = 3 if operation in [Operation.RETRIEVE, Operation.DELETE] else 4
+		if symbol.length > idx:
+			pcontext, attributes = pcontext.valueFromArgument(symbol, idx, SType.tJson)
 
 		# Prepare request structure
 		req = { 'op': operation,
@@ -1030,40 +1052,25 @@ class ACMEPContext(PContext):
 			}
 		
 		# Transform the extra request attributes set by the script
-		if pcontext.requestParameters:
-			rp = pcontext.requestParameters
-			# requestIentifier
-			if (rqi := rp.pop('rqi', None)) is not None:
-				req['rqi'] = rqi
-			# add remaining attributes to the filterCriteria of a request
-			for key in list(rp.keys()):
-				setXPath(req, key, rp.pop(key))
-			pcontext.requestParameters = None
+		if attributes:
+			# add remaining attributes 
+			for key in list(attributes.keys()):
+				setXPath(req, key, attributes[key])
 
 		# Get the resource for some operations
 		dct:JSON = None
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
-			#  Get and check primitive content
-			if (dct := self._getResourceFromScript(pcontext, content)) is None:
-				pcontext.setError(PError.invalid, f'No or invalid content found')
-				return None
-
-			# TODO add defaults when CREATE
-
 			# Add type when CREATE
 			if operation == Operation.CREATE:
-				if (ty := ResourceTypes.fromTPE( list(dct.keys())[0] )) is None: # first is tpe
-					pcontext.setError(PError.invalid, 'Cannot determine resource type')
-					return None
+				if (ty := ResourceTypes.fromTPE( list(content.keys())[0] )) is None: # first is tpe
+					raise PInvalidArgumentError(pcontext.setError(PError.invalid, 'Cannot determine resource type'))
 				req['ty'] = ty
 
-
 			# Add primitive content when content is available
-			req['pc'] = dct
+			req['pc'] = content
 
 		elif content:	# operation in [ Operation.RETRIEVE, Operation.DELETE ]
-			pcontext.setError(PError.invalid, f'{operation.name} request shall have no content')
-			return None
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'{operation.name} request shall have no content'))
 
 		# Prepare request
 		request 					= CSERequest()
@@ -1071,17 +1078,9 @@ class ACMEPContext(PContext):
 		request.pc 					= dct
 
 		if not (res := CSE.request.fillAndValidateCSERequest(request)).status:
-			pcontext.setError(PError.invalid, f'Invalid resource: {res.dbg}')
-			#L.log(res)
-			return None
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {res.dbg}'))
 		
-
-		# Replace target with POA if available
-		if target in self.poas:
-			target = self.poas[target]
-			request.to = target
-		
-		L.isDebug and L.logDebug(f'Sending request from script: {res.request.originalRequest}')
+		L.isDebug and L.logDebug(f'Sending request from script: {res.request.originalRequest} to: {target}')
 		
 		# Send request
 		if isURL(target):
@@ -1100,28 +1099,7 @@ class ACMEPContext(PContext):
 			# Request via CSE-ID, either local, or otherwise a transit reqzest. Let the CSE handle it
 			res = CSE.request.handleRequest(request)
 
-		# Construct response
-		self.setVariable('response.status', str(res.rsc.value))
-		try:
-			if not res.status:
-				L.isDebug and L.logDebug(f'Request response: {res.dbg}')
-				self.setVariable('response.resource', f'{{ "m2m:dbg:": "{str(res.dbg)}"}}')
-			elif res.data:
-				L.isDebug and L.logDebug(f'Request response: {res.data}')
-				self.setVariable('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
-				L.logDebug(self.getVariable('response.resource'))
-			elif res.resource:
-				L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				self.setVariable('response.resource', json.dumps(res.resource) if isinstance(res.resource, dict) else json.dumps(res.resource.asDict()))
-			else:
-				L.isDebug and L.logDebug(f'Request response: (unknown or none)')
-				self.setVariable('response.resource', '')
-		except Exception as e:
-			pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}')
-			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
-			return None
-			
-		return pcontext
+		return self._pcontextFromRequestResult(pcontext, res)
 
 
 #########################################################################
@@ -1153,13 +1131,14 @@ class ScriptManager(object):
 		'scriptMonitorInterval',
 		'scriptDirectories',
 	)
+	""" Slots of class attributes. """
 
 	def __init__(self) -> None:
 		"""	Initializer for the ScriptManager class.
 		"""
 
 		self.scripts:Dict[str,ACMEPContext] = {}			# The managed scripts
-		self.storage:Dict[str, str] = {}					# storage for global values
+		self.storage:Dict[str, SSymbol] = {}				# storage for global values
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
@@ -1302,9 +1281,9 @@ class ScriptManager(object):
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
 								  uri,
 								  background = False, 
-								  environment = { 'notification.resource' : json.dumps(data), 
-								  				  'notification.originator' : originator,
-												  'notification.uri': uri })	
+								  environment = { 'notification.resource' : SSymbol(jsn = data), 
+								  				  'notification.originator' : SSymbol(string = originator),
+												  'notification.uri': SSymbol(string = uri) })	
 		except Exception as e:
 			L.logErr('Error in JSON', exc = e)
 
@@ -1324,14 +1303,14 @@ class ScriptManager(object):
 		"""
 		for eachName, eachScript in list(self.scripts.items()):
 			try:
-				if eachScript.fileMtime < os.stat(eachScript.filename).st_mtime:
-					L.isDebug and L.logDebug(f'Reloading script: {eachScript.filename}')
+				if eachScript.fileMtime < os.stat(eachScript.scriptFilename).st_mtime:
+					L.isDebug and L.logDebug(f'Reloading script: {eachScript.scriptFilename}')
 					if eachScript.state != PState.running:
 						del self.scripts[eachName]
-						self.loadScriptFromFile(eachScript.filename)
+						self.loadScriptFromFile(eachScript.scriptFilename)
 			except FileNotFoundError as e:
 				# Remove deleted scripts from the internal list
-				L.isDebug and L.logDebug(f'Removing script {eachScript.filename}')
+				L.isDebug and L.logDebug(f'Removing script {eachScript.scriptFilename}')
 				del self.scripts[eachName]
 
 		# Read new scripts
@@ -1387,7 +1366,7 @@ class ScriptManager(object):
 					Boolean, indicating whether a script with the filename exists.
 			"""
 			for each in self.scripts.values():
-				if each.filename == filename:
+				if each.scriptFilename == filename:
 					return True
 			return False
 
@@ -1414,7 +1393,7 @@ class ScriptManager(object):
 		return countScripts
 
 
-	def loadScriptFromFile(self, filename:str) -> ACMEPContext:
+	def loadScriptFromFile(self, filename:str) -> Optional[ACMEPContext]:
 		"""	Load and store a script from a file. 
 
 			Args:
@@ -1424,7 +1403,7 @@ class ScriptManager(object):
 				`ACMEPContext` object with the script, or *None*.
 		"""
 		with open(filename) as file:
-			return CSE.script.loadScript(file.read(), filename)
+			return self.loadScript(file.read(), filename)
 
 
 	def loadScript(self, script:str, filename:str) -> Optional[ACMEPContext]:
@@ -1438,17 +1417,25 @@ class ScriptManager(object):
 			Return:
 				`ACMEPContext` object with the script, or *None*.
 		"""
-		pcontext = ACMEPContext(script, filename = filename)
-		if pcontext.state != PState.ready:
-			L.isWarn and L.logWarn(f'Error loading script: {pcontext.errorMessage}')
+		try:
+			pcontext = ACMEPContext(script, filename = filename)
+			if pcontext.state != PState.ready:
+				L.isWarn and L.logWarn(f'Error loading script: {pcontext.errorMessage}')
+				return None
+		except PInvalidArgumentError as e:
+			L.logErr(f'Error loading script: {filename} : {e.pcontext.error.message}')
 			return None
+		except Exception as e:
+			L.logErr(str(e), exc = e)
+			return None
+
 
 		# Add to scripts
 		if not (name := pcontext.scriptName):		# Add name to meta data if not set
 			pcontext.scriptName = Path(filename).stem
 			name = pcontext.scriptName
-		if not pcontext.filename:							# Add filename to meta data
-			pcontext.filename = filename
+		if not pcontext.scriptFilename:							# Add filename to meta data
+			pcontext.scriptFilename = filename
 		self.scripts[name] = pcontext
 		return pcontext
 	
@@ -1477,7 +1464,7 @@ class ScriptManager(object):
 
 		# Find all the scripts by with simple match
 		if name:
-			result = [ script for script in self.scripts.values() if (n := script.scriptName) is not None and TextTools.simpleMatch(n, name) ]
+			result = [ script for script in self.scripts.values() if (n := script.scriptName) is not None and simpleMatch(n, name) ]
 		else:
 			result = list(self.scripts.values())
 
@@ -1495,22 +1482,34 @@ class ScriptManager(object):
 
 
 	def runScript(self, pcontext:PContext, 
-						argument:Optional[str] = '', 
+						arguments:Optional[list[str]|str] = '', 
 						background:Optional[bool] = False, 
 						finished:Optional[Callable] = None,
-						environment:Optional[dict[str, str]] = {}) -> bool:
+						environment:Optional[dict[str, SSymbol]] = {}) -> bool:
 		""" Run a script.
 
 			Args:
-				pcontext: The script to run.
-				argument: An optional argument to the script. This is available to the script via the *argv* macro.
+				pcontext: The script context to run.
+				arguments: Optional arguments to the script. These are available to the script via the *argv* macro.
 				background: Boolean to indicate whether to run the script in the backhround (as an Actor).
+				finished: An optional function that will be called after the script finished.
+				environment: An optional set of variables that are passed to script.
 
 			Return:
 				Boolean that indicates the successful running of the script. A background script always returns *True*.
 		"""
-		def runCB(pcontext:PContext, argument:str) -> None:
-			pcontext.run(verbose = self.verbose, argument = argument)
+		def runCB(pcontext:PContext, arguments:list[str]) -> None:
+			"""	Actually run the script.
+
+				Args:
+					pcontext: The script context to run.
+					arguments: Arguments to the script. These are available to the script via the *argv* macro.
+			"""
+			pcontext.run(verbose = self.verbose, arguments = arguments)
+			if pcontext.state == PState.terminatedWithResult:
+				L.logDebug(f'Script terminated with result: {pcontext.result}')
+			if pcontext.state == PState.terminatedWithError:
+				L.logWarn(f'Script terminated with error: {pcontext.error.message}')
 
 
 		if pcontext.state == PState.running:
@@ -1521,36 +1520,43 @@ class ScriptManager(object):
 		# Set environemt
 		pcontext.setEnvironment(environment)
 
+		# Handle arguments
+		_arguments:Optional[list[str]] = []
+		if arguments:
+			_arguments = cast(str, arguments).split() if isinstance(arguments, str) else arguments
+		_arguments.insert(0, pcontext.name)
+
 		# Run in background or direct
 		if background:
-			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{uniqueID()}', finished = finished).start(pcontext = pcontext, argument = argument)
+			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{uniqueID()}', 
+												 finished = finished).start(pcontext = pcontext, arguments = _arguments)
 			return True	# Always return True when running in Background
-		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
+
+		return pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
 	
 
 	def run(self, scriptName:str, 
-				  argument:Optional[str] = '',
-				  metaFilter:Optional[list[str]] = []) -> Tuple[bool, str]:
+				  arguments:Optional[list[str]|str] = '',
+				  metaFilter:Optional[list[str]] = []) -> Tuple[bool, SSymbol]:
 		""" Run a script by its name (only in the foreground).
 
 			Args:
 				scriptName: The name of the script to run..
-				argument: An optional argument to the script. This is available to the script via the *argv* macro.
+				arguments: Optional arguments to the script. These are available to the script via the *argv* macro.
 				metaFilter: Extra filter to select a script.
 
 			Return:
 				The result of the script run in a tuple. Boolean indicating success, and an optional result.
 		"""
-		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {argument if argument else "None"}, meta: {metaFilter}')
-		if len(scripts := CSE.script.findScripts(name = scriptName, meta = metaFilter)) != 1:
-			L.logWarn(dbg := f'Script not found: "{scriptName}"')
-			return (False, dbg)
+		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {arguments if arguments else "None"}, meta: {metaFilter}')
+		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter)) != 1:
+			return (False, SSymbol(string = L.logWarn(dbg := f'Script not found: "{scriptName}"')))
 		script = scripts[0]
-		if CSE.script.runScript(script, argument = argument, background = False):
+		if self.runScript(script, arguments = arguments, background = False):
 			L.isDebug and L.logDebug(f'Script: "{scriptName}" finished successfully')
-			return (True, script.result if script.result else '')
+			return (True, script.result if script.result else SSymbol())
 			
-		L.isWarn and L.logWarn(f'Script "{scriptName}" finished with error: {script.error.error.name} ({script.error.line}) : {script.error.message}')
+		L.isWarn and L.logWarn(f'Script "{scriptName}" finished with error: {script.error.error.name} : {script.error.message}')
 
 		if script.error.error == PError.quitWithError:
 			script.result = script.error.message
@@ -1562,7 +1568,7 @@ class ScriptManager(object):
 	#	Storage handlers
 	#
 
-	def storageGet(self, key:str) -> Optional[str]:
+	def storageGet(self, key:str) -> Optional[SSymbol]:
 		"""	Retrieve a key/value pair from the persistent storage. 
 		
 			Args:
@@ -1576,7 +1582,7 @@ class ScriptManager(object):
 		return None
 
 
-	def storageHas(self, key:str) -> str:
+	def storageHas(self, key:str) -> bool:
 		"""	Test whether a key exists in the persistent storage. 
 		
 			Args:
@@ -1585,10 +1591,10 @@ class ScriptManager(object):
 			Return:
 				Boolean result.
 		"""
-		return str(key in self.storage)
+		return key in self.storage
 
 
-	def storagePut(self, key:str, value:str) -> None:
+	def storagePut(self, key:str, value:SSymbol) -> None:
 		"""	Store a key/value pair in the persistent storage. Existing values will be overwritten.
 		
 			Args:
@@ -1614,9 +1620,9 @@ class ScriptManager(object):
 	#
 
 	def runEventScripts(self, event:str, 
-							  argument:Optional[str] = None, 
+							  eventData:Optional[str] = None, 
 							  background:Optional[bool] = True, 
-							  environment:Optional[dict[str, str]] = {}) -> None:
+							  environment:Optional[dict[str, SSymbol]] = {}) -> None:
 		"""	Get and run all the scripts for specific events. 
 		
 			If the *argument* is given then the event's parameter must match the argument.
@@ -1627,12 +1633,12 @@ class ScriptManager(object):
 
 			Args:
 				event: The event for which the script(s) are run.
-				argument: The optional argument that needs to match the event's pararmater in the script.
+				eventData: The optional event data that needs to match the event's pararmeter of the script.
 				background: Run the script in the background
 				environment: Extra variables to set in the script's environment
 		"""
 
-		def getPrompt(r:str) -> str:
+		def getPrompt(r:str = '') -> str:
 			"""	Prompt the user for input if the @prompt meta tag is set.
 
 				Return:
@@ -1648,10 +1654,13 @@ class ScriptManager(object):
 				L.on()
 			return r
 
-		arg = f'{event}' if argument is None else f'{event} {argument}'
+		environment['event.type'] = SSymbol(string = _metaOnKey)
+		if eventData:
+			environment['event.data'] = SSymbol(string = cast(FunctionKey, eventData).name if isinstance(eventData, FunctionKey) else eventData)
+
 		for each in self.findScripts(meta = event):
-			if argument:
-				if (v := each.meta.get(event)) and v == argument:
-					self.runScript(each, argument = getPrompt(arg), background = background, environment = environment)
+			if eventData:
+				if (v := each.meta.get(event)) and v == eventData:
+					self.runScript(each, arguments = getPrompt(), background = background, environment = environment)
 			else:
-				self.runScript(each, argument = getPrompt(''), background = background, environment = environment)
+				self.runScript(each, arguments = getPrompt(), background = background, environment = environment)

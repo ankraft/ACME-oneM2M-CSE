@@ -18,11 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGGING] Allow to exclude log messages from external libraries and components.
 
 ### Changed
+- [SCRIPTS] Moved the script interpreter from a batch-based to a lisp-based language.  
+**NOTE, that scripts in the old format are not supported anymore and need to be converted manually.**
 - [CSE] Lots of small runtime optimizations.
 
 ### Fixed
 - [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.
-- [HTTP] Fixed a bug when sending a CREATE request and the *Content-Type* header contains spaces before the *ty* argument. Thanks to KyeongHo!  
+- [HTTP] Fixed a bug when sending a CREATE request and the *Content-Type* header contains spaces before the *ty* argument.  
+Thanks to KyeongHo!  
 
 
 ## [0.11.2] - 2023-01-23

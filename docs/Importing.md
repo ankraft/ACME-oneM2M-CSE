@@ -10,24 +10,19 @@
 <a name="resources"></a>
 ## Resources
 
-During startup and CSE restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running the script *startup.as* from the
-[init](../init) directory.
-
-Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
+During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
 
 Not much validation, access control, or registration procedures are performed when importing resources this way.
 
-### Mandatory Resources to the CSE
+See also [@init meta tag](ACMEScript-metatags.md#meta_init)
 
-**Please note** that importing is required for creating the CSEBase, the administration AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree and the permissions for 
-the admin originator are created.
+**Mandatory Resources to the CSE**
 
+Please note that importing is required for creating the CSEBase, the administration AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree and the permissions for the admin originator are created.
 
-### Importing Other Resources
+**Other Resources**
 
-The script *startup.as* can be extended to import other resources as well, or it can call other scripts.
-
-Another option to import resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the [onStartup](ACMEScript-metatags.md#meta_onstartup) and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
+Another option to import resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#meta_onstartup)* and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
 
 
 ### Referencing Configuration Settings
@@ -45,8 +40,8 @@ importraw
 			"rn":   "[cse.rn]",
 			"csi":  "[cse.csi]",
 			"rr":   true,
-			"csz":  \[ "application/json", "application/cbor" ],
-			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
+			"csz":  [ "application/json", "application/cbor" ],
+			"acpi": [ "[cse.csi]/acpCreateACPs" ]
 	}
 }
 ```

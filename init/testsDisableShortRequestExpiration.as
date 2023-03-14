@@ -1,24 +1,18 @@
-#
-#	testDisableShortRequestExpiration.as
-#
-#	This script is supposed to be called by the test system via the upper tester interface
-#
+;;
+;;	testDisableShortRequestExpiration.as
+;;
+;;	This script is supposed to be called by the test system via the upper tester interface
+;;
 
 @name disableShortRequestExpiration
 @description (Tests) Disable shorter request expirations
 @usage disableShortRequestExpiration
 @uppertester
 
-if [> [argc] 0]
-	logError Wrong number of arguments: disableShortRequestExpiration
-	quitWithError
-endif
+(if (> argc 0)
+	(	(log-error "Wrong number of arguments: disableShortRequestExpiration")
+		(quit-with-error)))
 
-##################################################################
+(include-script "functions")
 
-# Restore the CSE's request expiration check
-if [storageHas cse.requestExpirationDelta]
-	setConfig cse.requestExpirationDelta [storageGet cse.requestExpirationDelta]
-	storageRemove cse.requestExpirationDelta
-endif
-
+(restore-config-value "cse.requestExpirationDelta")

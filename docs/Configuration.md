@@ -57,37 +57,37 @@ resourcesPath=${basic.config:baseDirectory}/init
 
 The following tables provide detailed descriptions of all the possible CSE configuration settings.
 
-[\[cse\] - General CSE Settings](#general)  
-[\[cse.security\] - General Security Settings](#security)  
-[\[cse.operation\] - CSE Operations Settings](#operation)  
-[\[server.http\] - HTTP Server Settings](#server_http)  
-[\[server.http.security\] - HTTP Security Settings](#security_http)  
-[\[server.http.cors\] - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
-[\[client.mqtt\] - MQTT Client Settings](#client_mqtt)  
-[\[client.mqtt.security\] - MQTT Security Settings](#security_mqtt)  
-[\[database\] - Database Settings](#database)  
-[\[logging\] - Logging Settings](#logging)  
-[\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
-[\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
-[\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
-[\[cse.statistics\] - Statistic Settings](#statistics)  
-[\[cse.resource.acp\] - Resource defaults: Access Control Policies](#resource_acp)  
-[\[cse.resource.actr\] - Resource defaults: Action](#resource_actr)  
-[\[cse.resource.cnt\] - Resource Defaults: Container](#resource_cnt)  
-[\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
-[\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
-[\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
-[\[cse.resource.tsb\] - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
-[\[cse.console\] - Console Settings](#console)  
-[\[cse.scripting\] - Scripting Settings](#scripting)  
-[\[cse.webui\] - Web UI Settings](#webui)  
+[&#91;cse&#93; - General CSE Settings](#general)  
+[&#91;cse.security&#93; - General Security Settings](#security)  
+[&#91;cse.operation&#93; - CSE Operations Settings](#operation)  
+[&#91;server.http&#93; - HTTP Server Settings](#server_http)  
+[&#91;server.http.security&#93; - HTTP Security Settings](#security_http)  
+[&#91;server.http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
+[&#91;client.mqtt&#93; - MQTT Client Settings](#client_mqtt)  
+[&#91;client.mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
+[&#91;database&#93; - Database Settings](#database)  
+[&#91;logging&#93; - Logging Settings](#logging)  
+[&#91;cse.registration&#93; - Settings for Self-Registrations](#cse_registration)  
+[&#91;cse.registrar&#93; - Settings for Remote CSE Access](#registrar)  
+[&#91;cse.announcements&#93; - Settings for Resource Announcements](#announcements)  
+[&#91;cse.statistics&#93; - Statistic Settings](#statistics)  
+[&#91;cse.resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
+[&#91;cse.resource.actr&#93; - Resource defaults: Action](#resource_actr)  
+[&#91;cse.resource.cnt&#93; - Resource Defaults: Container](#resource_cnt)  
+[&#91;cse.resource.req&#93; - Resource Defaults: Request](#resource_req)  
+[&#91;cse.resource.sub&#93; - Resource Defaults: Subscription](#resource_sub)  
+[&#91;cse.resource.ts&#93; - Resource Defaults: TimeSeries](#resource_ts)  
+[&#91;cse.resource.tsb&#93; - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
+[&#91;cse.console&#93; - Console Settings](#console)  
+[&#91;cse.scripting&#93; - Scripting Settings](#scripting)  
+[&#91;cse.webui&#93; - Web UI Settings](#webui)  
 	
 
 ### Additional Settings
-[\[server.http.mappings\] - ID Mappings](#id_mappings)  
-
+[&#91;server.http.mappings&#93;- ID Mappings](#id_mappings)  
 
 <a name="general"></a>
+
 ### [cse] - General CSE Settings
 
 | Keyword                        | Description                                                                                                                                            | Configuration Name                 |
@@ -112,8 +112,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | asyncSubscriptionNotifications | Enable or disable asynchronous notification for normal runtime subscription notifications.<br/>Default: true                                           | cse.asyncSubscriptionNotifications |
 | sendToFromInResponses          | Indicate whether the optional "to" and "from" parameters shall be sent in responses.br/>Default: true                                                  | cse.sendToFromInResponses          |
 
+[top](#sections)
+
+---
 
 <a name="security"></a>
+
 ### [cse.security] - General Security Settings
 
 | Keyword         | Description                                                                               | Configuration Name           |
@@ -121,8 +125,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.security.enableACPChecks |
 | fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin |
 
+[top](#sections)
+
+---
 
 <a name="operation"></a>
+
 ### [cse.operation] - CSE Operations Settings
 
 | Keyword                | Description                                                                                                                                                                                                                                     | Configuration Name                   |
@@ -131,8 +139,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | jobBalanceLatency      | Thread Pool Management: Number of get / create requests for a new thread before performing a balance check. A latency of 0 disables the thread pool balancing.<br/>Default: 1000                                                                | cse.operation.jobBalanceLatency      |
 | jobBalanceReduceFactor | Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobBalanceReduceFactor |
 
+[top](#sections)
+
+---
 
 <a name="server_http"></a>
+
 ###	[server.http] - HTTP Server Settings
 
 | Keyword                   | Description                                                                                                                                                                                                                                                                                                                             | Configuration Name             |
@@ -148,8 +160,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | allowPatchForDelete       | Allow the http PATCH method to be used as a replacement for the DELETE method. This is useful for constraint devices that only support http/1.0, which doesn't specify the DELETE method.<br />Default: False                                                                                                                           | http.allowPatchForDelete       |
 | timeout                   | Timeout when sending http requests and waiting for responses.<br />Default: 10.0 seconds                                                                                                                                                                                                                                                | http.timeout                   |
 
+[top](#sections)
+
+---
 
 <a name="security_http"></a>
+
 ### [server.http.security] - HTTP Security Settings
 
 | Keyword           | Description                                                                                                                                                                                                                                      | Configuration Name              |
@@ -160,7 +176,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | http.security.caCertificateFile |
 | caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | http.security.caPrivateKeyFile  |
 
+[top](#sections)
+
+---
+
 <a name="http_cors"></a>
+
 ### [server.http.cors] - HTTP CORS (Cross-Origin Resource Sharing) Settings
 
 | Keyword   | Description                                                                                                                                               | Configuration Name  |
@@ -168,8 +189,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enable    | Enable CORS support for the HTTP binding.<br />Default: false                                                                                             | http.cors.enable    |
 | resources | A comma separated list of allowed resource paths. The list elements could be regular expressions.<br />Default: "/*" , ie. all resources under the HTTP server's root | http.cors.resources |
 
+[top](#sections)
+
+---
 
 <a name="client_mqtt"></a>
+
 ###	[client.mqtt] - MQTT Client Settings
 
 | Keyword     | Description                                                                               | Configuration Name |
@@ -182,8 +207,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
 | timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 10.0 seconds  | mqtt.timeout       |
 
+[top](#sections)
+
+---
 
 <a name="security_mqtt"></a>
+
 ### [client.mqtt.security] - MQTT Security Settings		
 
 | Keyword              | Description                                                                                                                                                                                                                     | Configuration Name                 |
@@ -195,8 +224,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | caCertificateFile    | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                   | mqtt.security.caCertificateFile    |
 | allowedCredentialIDs | List of credential-IDs that can be used to register an AE via MQTT. If this list is empty then all credential IDs are allowed.<br />This is a comma-separated list. Wildcards (* and ?) are supported.<br />Default: empty list | mqtt.security.allowedCredentialIDs |
 
+[top](#sections)
+
+---
 
 <a name="database"></a>
+
 ###	[database] - Database Settings
 
 | Keyword        | Description                                                                                                                                                          | Configuration Name |
@@ -207,8 +240,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup  |
 | writeDelay     | Delay in seconds before new data is written to disk to avoid trashing. Must be full seconds-<br/>Default: 1 second                                                   | db.writeDelay      |
 
+[top](#sections)
+
+---
 
 <a name="logging"></a>
+
 ###	[logging] - Logging Settings
 
 | Keyword               | Description                                                                                                                                                 | Configuration Name            |
@@ -224,8 +261,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | queueSize             | Number of log entries that can be added to the asynchronous queue before blocking. A queue size of 0 means disabling the queue.<br />Default: F5000 entries | logging.queueSize             |
 | filter           		| List of component names to exclude from logging.<br />Default: werkzeug,markdown_it                                                                         | logging.filter                |
 
+[top](#sections)
+
+---
 
 <a name="cse_registration"></a>
+
 ###	[cse.registration] - Settings for Self-Registrations
 
 | Keyword               | Description                                                                                                                                                                     | Configuration Name                     |
@@ -234,8 +275,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
 | checkLiveliness       | Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                            | cse.registration.checkLiveliness       |
 
+[top](#sections)
+
+---
 
 <a name="registrar"></a>
+
 ### [cse.registrar] - Settings for Registrar Registrar CSE Access 
 
 | Keyword              | Description                                                                                                                                          | Configuration Name                 |
@@ -248,8 +293,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | checkInterval        | Wait n seconds between tries to to connect to the registrar CSE and to check validity of Registrar CSE connections in seconds.<br/>Default: 30       | cse.registrar.checkInterval        |
 | excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                                          | cse.registrar.excludeCSRAttributes |
 
+[top](#sections)
+
+---
 
 <a name="announcements"></a>
+
 ### [cse.announcements] - Settings for Resource Announcements 
 
 | Keyword                        | Description                                                                                                                        | Configuration Name                               |
@@ -258,8 +307,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                            | cse.announcements.allowAnnouncementsToHostingCSE |
 | delayAfterRegistration         | Specify a short delay in seconds before start announcing resources after a CSE has registered at the CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
 
+[top](#sections)
+
+---
 
 <a name="statistics"></a>
+
 ###	[cse.statistics] - Statistic Settings
 
 | Keyword       | Description                                                              | Configuration Name           |
@@ -267,8 +320,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enable        | Enable or disable collecting CSE statistics.<br />Default: True          | cse.statistics.enable        |
 | writeInterval | Interval for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeInterval |
 
+[top](#sections)
+
+---
 
 <a name="resource_acp"></a>
+
 ###	[cse.resource.acp] - Resource Defaults: ACP
 
 | Keyword        | Description                                                           | Configuration Name |
@@ -276,8 +333,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | permission     | Default permission when creating an ACP resource.<br />Default: 63    | cse.acp.pv.acop    |
 | selfPermission | Default selfPermission when creating an ACP resource.<br/>Default: 51 | cse.acp.pvs.acop   |
 
+[top](#sections)
+
+---
 
 <a name="resource_actr"></a>
+
 ###	[cse.resource.actr] - Resource Defaults: Action
 
 | Keyword       | Description                                                                                                                              | Configuration Name      |
@@ -285,8 +346,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | ecpContinuous | Default for the *evalControlParam* attribute, when the *evalMode* is "continuous". The unit is number.<br />Default: 1000                | cse.actr.ecp.continuous |
 | ecpPeriodic   | Default for the *evalControlParam* attribute, when the *evalMode* is "periodic". The unit is milliseconds.<br />Default: 10000 ms = 10 s | cse.actr.ecp.periodic   |
 
+[top](#sections)
+
+---
 
 <a name="resource_cnt"></a>
+
 ### [cse.resource.cnt] - Resource Defaults: Container
 
 | Keyword      | Description                                            | Configuration Name   |
@@ -295,8 +360,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.cnt.mni          |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.cnt.mbs          |
 
+[top](#sections)
+
+---
 
 <a name="resource_req"></a>
+
 ### [cse.resource.req] - Resource Defaults: Request
 
 | Keyword               | Description                                                                               | Configuration Name |
@@ -304,16 +373,24 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | minimumExpirationTime | A \<request> resource's minimum expiration time in seconds. Must be >0.<br />Default: 60  | cse.req.minet      |
 | maximumExpirationTime | A \<request> resource's maximum expiration time in seconds. Must be >0.<br />Default: 180 | cse.req.maxet      |
 
+[top](#sections)
+
+---
 
 <a name="resource_sub"></a>
+
 ### [cse.resource.sub] - Resource Defaults: Subscription
 
 | Keyword             | Description                                                                           | Configuration Name |
 |:--------------------|:--------------------------------------------------------------------------------------|:-------------------|
 | batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur        |
 
+[top](#sections)
+
+---
 
 <a name="resource_ts"></a>
+
 ### [cse.resource.ts] - Resource Defaults: TimeSeries
 
 | Keyword      | Description                                            | Configuration Name  |
@@ -323,8 +400,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs          |
 | mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn          |
 
+[top](#sections)
+
+---
 
 <a name="resource_tsb"></a>
+
 ### [cse.resource.tsb] - Resource Defaults: TimeSyncBeacon
 
 | Keyword | Description                                                                                                                                                                               | Configuration Name |
@@ -332,8 +413,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | bcni    | Default timeSyncBeacon interval. This is the duration between to beacon notifications sent by the CSE to an AE or CSE.T he format must be an ISO8601 duration.<br/>Default: PT1H = 1 hour | cse.tsb.bcni       |
 | bcnt    | Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications is sent to an AE or CSE.<br/>Default: 10.0 seconds                                       | cse.ts.bcnt        |
 
+[top](#sections)
+
+---
 
 <a name="console"></a>
+
 ###	[cse.console] - Console Settings
 
 | Keyword                     | Description                                                                                                                                                                                   | Configuration Name                      |
@@ -345,8 +430,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | confirmQuit                 | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                                                       | cse.console.confirmQuit                 |
 | theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | cse.console.theme                       |
 
+[top](#sections)
+
+---
 
 <a name="scripting"></a>
+
 ###	[cse.scripting] - Scripting Settings
 
 | Keyword                | Description                                                                                                                                                    | Configuration Name                   |
@@ -355,8 +444,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | cse.scripting.verbose                |
 | fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | cse.scripting.fileMonitoringInterval |
 
+[top](#sections)
+
+---
 
 <a name="webui"></a>
+
 ###	[cse.webui] - Web UI Settings
 
 | Keyword | Description                                  | Configuration Name |
@@ -364,8 +457,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enable  | Enable the web UI.<br/>Default: true         | cse.webui.enable   |
 | root    | Root path of the web UI.<br/>Default: /webui | cse.webui.root     |
 
+[top](#sections)
+
+---
 
 <a name="id_mappings"></a>
+
 ###	[server.http.mappings] - ID Mappings
 
 This section defines mappings for URI paths to IDs in the CSE. Mappings
@@ -390,7 +487,12 @@ The following snippet only presents some example for ID mappings.
 /access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
 ```
 
+[top](#sections)
+
+---
+
 <a name="advanced"></a>
+
 ## Advanced Usage
 
 ### Using Settings During Imports
@@ -404,5 +506,8 @@ The following configuration names are supported in addition to those defined in 
 | configfile         | Path and name of the configuration file. |
 | packageDirectory   | Path to the acme package directory.      |
 
+[top](#sections)
+
+---
 
 [← README](../README.md) 

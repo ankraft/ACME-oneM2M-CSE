@@ -21,9 +21,9 @@ from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
 from ..services.Configuration import Configuration
 from ..services import CSE
-from ..resources import Factory
 from ..helpers.TextTools import removeCommentsFromJSON
 from ..services.Logging import Logging as L
+from .ScriptManager import _metaInit
 
 # TODO Support child specialization in attribute definitionsEv
 
@@ -112,8 +112,8 @@ class Importer(object):
 				return False
 		
 			# Check that there is only one startup script, then execute it
-			if len(scripts := CSE.script.findScripts(meta = 'startup')) > 1:
-				L.logErr(f'Only one startup script allowed. Found: {[ s.scriptName for s in scripts ]}')
+			if len(scripts := CSE.script.findScripts(meta = _metaInit)) > 1:
+				L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
 				return False
 
 			elif len(scripts) == 1:

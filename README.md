@@ -11,7 +11,6 @@ Version 0.12.0-dev
 
 This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintainable CSE for educational purposes.
 
-
 ![](docs/images/title.png)
 
 ## Documentation
@@ -26,8 +25,7 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 - [Importing Resources](docs/Importing.md)
 - [Operation](docs/Operation.md)
 - [ACMEScript](docs/ACMEScript.md)
-	- [Commands](docs/ACMEScript-commands.md)
-	- [Macros](docs/ACMEScript-macros.md)
+	- [Functions](docs/ACMEScript-functions.md)
 	- [Meta Tags](docs/ACMEScript-metatags.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
@@ -43,18 +41,8 @@ Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 
 ### Highlights in this release
 
-- &lt;crossResourceSubscription> and &lt;semanticDescriptor> resource types support.
-- Support for semantic queries and semantic discovers.
-- [wifilient] and [dataCollect] management object specializations support.
-- Support for *blocking UPDATE* notification event type.
-- Various improvements: Support for *expirationCounter* and notification statistics (&lt;subscription> and &lt;crossResourceSubscription>).
-- Added CORS (Cross-Origin Resource Sharing) support for http binding.
-- Various new commands and macros for scripting interpreter and the console.
-- Improved definition of enumeration values for validation.
-- Changed subscription notification handling to asynchronous.
-- Improved request timeouts, especially for the http binding.
-- Improved internal handling of requests sent by the CSE itself.
-- And, as usual, many improvements, bug fixes, and performance improvements.
+- <font color="red"><b>The script interpreter is changed to a lisp-based language in this release. Be aware that scripts in the old format need be converted manually.</b></font>
+
 
 ## What to expect in the next release
 
