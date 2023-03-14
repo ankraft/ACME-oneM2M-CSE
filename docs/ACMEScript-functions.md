@@ -1458,7 +1458,7 @@ Examples:
 
 ### http
 
-`(http <operation:quoted symbol> <url:string> [<headers:quoted list of header fields)] [<body:string or JSON>])`
+`(http <operation:quoted symbol> <url:string> [<headers:JSON or nil)] [<body:string or JSON>])`
 
 The `http` function sends an http request to an http server.
 
@@ -1468,10 +1468,8 @@ The function has the following arguments:
 
 - The target server's *url*. This is a string with a valid URL.
 
-- Optional: A quoted list of header fields. Each header field definition is a (quoted) list with two values:
-  `(<header name:string> <header value:string>)`
-  If the optional *body* argument is present then this argument must be present as well, ie. with at least an empty list.
-
+- Optional: A JSON structure of header fields. Each header field is a JSON attribute with the name of the header field and its value. If the optional *body* argument is present then this argument must be present as well, ie. with at least an empty JSON structure or the *nil* symbol.
+  
 - Optional: The http request's body, which could be a string or a JSON structure. 
 
 The function returns a list:
@@ -1491,12 +1489,12 @@ Examples:
 (http 'get "https://www.onem2m.org")
 
 ;; Send a oneM2M CREATE request manually
-(http 'post "http://localhost:8080/cse-in"
-      '('("X-M2M-RI" "1234")
-        '("X-M2M-RVI" "4")
-        '("X-M2M-Origin" "CAdmin")
-		'("Content-type" "application/json;ty=3"))
-      { "m2m:cnt": {
+(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
+	  { "X-M2M-RI":"1234",                   ;; Header fields
+        "X-M2M-RVI": "4",
+        "X-M2M-Origin": "CAdmin",
+		"Content-type": "application/json;ty=3" }
+      { "m2m:cnt": {                         ;; Body
           "rn": "myCnt"}})
 ```
 
@@ -1508,9 +1506,9 @@ Examples:
 
 ### include-script
 
-`(include-script)`
+`(include-script <script name:string> [<argument:any>]*)`
 
-The `include-script` function runs another ACMEScript script by its name in its own context. Differently to the [run-script](#run-script) function variables, function definitions etc from the script execution are available in the calling script after the script finished.
+The `include-script` function runs another ACMEScript script by its *script name* in its own context. Differently to the [run-script](#run-script) function variables, function definitions etc from the script execution are available in the calling script after the script finished.
 
 The function returns the result of the finished script.
 
@@ -1519,7 +1517,7 @@ See also: [run-script](#run-script)
 Example:
 
 ```lisp
-(include-script "functions")
+(include-script "functions" "an argument")  ;; Run the script "functions"
 ```
 
 [top](#top)
@@ -1645,9 +1643,9 @@ Example:
 
 ### run-script
 
-`(run-script)`
+`(run-script <script name:string> [<argument:any>]*)`
 
-The `run-script` function runs another ACMEScript script by its name in its own scope. Variables, function definitions etc from the script execution are not available in the calling script.
+The `run-script` function runs another ACMEScript script by its *script name* in its own scope. Variables, function definitions etc from the script execution are not available in the calling script.
 
 The function returns the result of the finished script.
 
@@ -1656,7 +1654,7 @@ See also: [include-script](#include-script)
 Example:
 
 ```lisp
-(setq result (run-script "aScript")  ;; Run the script "aScript" and assign the result
+(setq result (run-script "aScript" "an argument"))  ;; Run the script "aScript" and assign the result
 ```
 
 [top](#top)
@@ -1667,7 +1665,7 @@ Example:
 
 ### set-config
 
-`(set-config <key:string> <value>)`
+`(set-config <key:string> <value:any>)`
 
 The `set-config` function updates a setting from the CSE's internal configuration. The *key* is a configuration name as defined in the [configuration documentation](Configuration.md).
 
@@ -1727,6 +1725,8 @@ The function has the following arguments:
 
 - Optional: A JSON structure  with additional *request arguments*
 
+The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
+
 The function returns a list:
 
 `(<response status:number> <resource:JSON>)`
@@ -1763,6 +1763,8 @@ The function has the following arguments:
 - *originator* of the request
 - The target *resource-id*
 - Optional: A JSON structure  with additional *request arguments*
+
+The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
 
 The function returns a list:
 
@@ -1842,6 +1844,8 @@ The function has the following arguments:
 - The target *resource-id*
 - Optional: A JSON structure  with additional *request arguments*
 
+The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
+
 The function returns a list:
 
 `(<response status:number> <resource:JSON>)`
@@ -1883,6 +1887,8 @@ The function has the following arguments:
 
 - Optional: A JSON structure  with additional *request arguments*
 
+The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
+
 The function returns a list:
 
 `(<response status:number> <resource:JSON>)`
@@ -1920,6 +1926,8 @@ The function has the following arguments:
 - The *resource* JSON structure
 
 - Optional: A JSON structure  with additional *request arguments*
+
+The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
 
 The function returns a list:
 

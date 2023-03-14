@@ -482,18 +482,11 @@ class ACMEPContext(PContext):
 		pcontext, _url = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
 		# Get optional headers
-		_headers = {}
+		_headers:JSON = {}
 		if symbol.length > 3:
-			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tList, SType.tListQuote, SType.tNIL))
+			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tNIL))
 			if result.type != SType.tNIL:
-				for h in cast(list[SSymbol], result.value):
-					if h.type not in [ SType.tList, SType.tListQuote ]:
-						raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'header element must be a list: {h}'))
-					if h.length != 2:
-						raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'header must have 2 elements, is: {h.length}'))
-					pcontext, _k = pcontext.valueFromArgument(h, 0, SType.tString)
-					pcontext, _v = pcontext.valueFromArgument(h, 1, (SType.tString, SType.tNumber))
-					_headers[_k] = str(_v)
+				_headers = cast(JSON, result.value)
 
 		# get body, if present
 		_body:str|JSON = None
