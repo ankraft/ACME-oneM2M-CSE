@@ -16,6 +16,7 @@ from init import *
 
 
 maxBS = 30
+testValue = 'aValue'
 
 class TestCNT_CIN(unittest.TestCase):
 
@@ -81,13 +82,13 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertIsNotNone(TestCNT_CIN.cnt)
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'text/plain:0',
-					'con' : 'aValue'
+					'con' : testValue
 				}}
 		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
-		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), testValue)
 		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'text/plain:0')
 		self.cinARi = findXPath(r, 'm2m:cin/ri')			# store ri
 
@@ -431,7 +432,7 @@ class TestCNT_CIN(unittest.TestCase):
 
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'text/plain:0',
-					'con' : 'aValue'
+					'con' : testValue
 				}}
 		for _ in range(5):
 			r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
@@ -441,6 +442,12 @@ class TestCNT_CIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTOl(self) -> None:
 		""" Delete <CNT>.OL """
+
+		# get cni and cbs from parent container
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		cni = findXPath(r, 'm2m:cnt/cni')
+		cbs = findXPath(r, 'm2m:cnt/cbs')
 
 		# Retrieve oldest
 		ol, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
@@ -455,10 +462,22 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertNotEqual(findXPath(r, 'm2m:cin/ri'), findXPath(ol, 'm2m:cin/ri'))
 
+		# Compare container's cni and cbs after delete
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(cni - 1, findXPath(r, 'm2m:cnt/cni'))
+		self.assertEqual(cbs - len(testValue), findXPath(r, 'm2m:cnt/cbs'))
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTLA(self) -> None:
 		""" Delete <CNT>.LA """
+
+		# get cni and cbs from parent container
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		cni = findXPath(r, 'm2m:cnt/cni')
+		cbs = findXPath(r, 'm2m:cnt/cbs')
 
 		# Retrieve latest
 		ol, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
@@ -473,6 +492,11 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertNotEqual(findXPath(r, 'm2m:cin/ri'), findXPath(ol, 'm2m:cin/ri'))
 
+		# Compare container's cni and cbs after delete
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(cni - 1, findXPath(r, 'm2m:cnt/cni'))
+		self.assertEqual(cbs - len(testValue), findXPath(r, 'm2m:cnt/cbs'))
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
