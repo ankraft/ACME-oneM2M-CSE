@@ -40,8 +40,8 @@
 
 ;; Return the response status
 (defun get-response-status (response) 
-	(car a))
+	(car response))
 
 ;; Return the response resource
 (defun get-response-resource (response) 
-	(cadr a))
+	(cadr response))

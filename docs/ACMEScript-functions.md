@@ -1288,8 +1288,8 @@ Examples:
 
 | operation | Description                                      | Example                      |
 | --------- | ------------------------------------------------ | ---------------------------- |
-| or, \|\|  | logical *or* of two or more boolean expressions  | (or a b)  ;; a or b          |
-| and, &&   | logical *and *of two or more boolean expressions | (and a b c) ;; a and b and c |
+| or, \|    | logical *or* of two or more boolean expressions  | (or a b)  ;; a or b          |
+| and, &    | logical *and *of two or more boolean expressions | (and a b c) ;; a and b and c |
 | not, !    | logical negation or one boolean expression       | (not true)  ;; false         |
 
 [top](#top)

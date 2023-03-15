@@ -22,11 +22,12 @@ from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PErr
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
-from . import CSE
 from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID
 from ..etc.DateUtils import cronMatchesTimestamp
+from ..helpers.TextTools import findXPath, setXPath
 from ..resources.Factory import resourceFromDict
-from .Logging import Logging as L, LogLevel
+from ..services import CSE
+from ..services.Logging import Logging as L, LogLevel
 
 #
 #	Meta Tags
@@ -510,13 +511,13 @@ class ACMEPContext(PContext):
 
 		# parse response and assign to variables
 
-		pcontext.variables['response.status'] = SSymbol(number = response.status_code)
+		pcontext.variables['response.status'] = SSymbol(number = Decimal(response.status_code))
 		pcontext.variables['response.body'] =  SSymbol(string = response.text) if response.text else SSymbol()
 		if response.headers: # fill header variables
 			for k, v in response.headers.items():
 				pcontext.variables[f'response.{k}'] = SSymbol(string = v)
 
-		pcontext.result = SSymbol(lstQuote = [	SSymbol(number = response.status_code),
+		pcontext.result = SSymbol(lstQuote = [	SSymbol(number = Decimal(response.status_code)),
 												SSymbol(string = response.text),
 												SSymbol(jsn = dict(response.headers)) ])
 		return pcontext
@@ -816,7 +817,7 @@ class ACMEPContext(PContext):
 		# run script
 		script = scripts[0]
 		if not CSE.script.runScript(script, arguments = arguments, background = False):
-			raise PRuntimeError(pcontext.setError(PError.runtime, f'Running script error: {script.error.message}'))
+			raise PRuntimeError(pcontext.setError(PError.runtime, f'Error in running script: {script.name}: {script.error.message}'))
 		
 		if isInclude:
 			# Copy newly defined functions
@@ -1029,10 +1030,12 @@ class ACMEPContext(PContext):
 		content = None
 		if operation in [Operation.CREATE, Operation.UPDATE, Operation.NOTIFY]:
 			pcontext, content = pcontext.valueFromArgument(symbol, 3, SType.tJson)
+			idx = 4
+		else:
+			idx = 3
 
 		# Get extra request attributes
 		attributes:JSON = {}
-		idx = 3 if operation in [Operation.RETRIEVE, Operation.DELETE] else 4
 		if symbol.length > idx:
 			pcontext, attributes = pcontext.valueFromArgument(symbol, idx, SType.tJson)
 

@@ -4,7 +4,7 @@
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Implementation of a simple lisp-based command processor.
+#	Implementation of a simple s-expression-based command processor.
 #
 """	The interpreter module implements an extensible lisp-based scripting runtime.
 """
@@ -502,7 +502,7 @@ class SExprParser(object):
 					index += 1
 					if index >= len(input):
 						self.errorExpression = input	# type:ignore[assignment]
-						raise ValueError('Invalid input: Unmatched opening parenthesis.')
+						raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
 					symbol = input[index]
 					if symbol.type == SType.tListBegin:
 						matchCtr += 1
@@ -1041,7 +1041,7 @@ class PContext():
 		_symbol = symbol[idx] if idx is not None else symbol
 
 		if doEval:
-			pcontext = self._executeExpression(_symbol)
+			pcontext = self._executeExpression(_symbol, symbol)
 		else:
 			pcontext = self
 			pcontext.result = _symbol
@@ -1170,6 +1170,8 @@ class PContext():
 			"""
 			if pcontext.error.error not in [ PError.noError, PError.quitWithError ]:
 				if pcontext.logErrorFunc:
+					# import traceback
+					# traceback.print_exc()
 					pcontext.logErrorFunc(pcontext, pcontext.error.message, pcontext.error.exception)
 				if pcontext.errorFunc:
 					pcontext.errorFunc(pcontext)
@@ -1228,7 +1230,7 @@ class PContext():
 		# execute all top level S-expressions
 		for symbol in self.ast:
 			try:
-				self._executeExpression(symbol)
+				self._executeExpression(symbol, None)
 			except PException as e:
 				if isSubCall:
 					raise e
@@ -1256,7 +1258,7 @@ class PContext():
 			raise PTimeoutError(self.setError(PError.timeout, f'Script timeout ({self.maxRuntime} s)'))
 
 
-	def _executeExpression(self, symbol:SSymbol) -> PContext:
+	def _executeExpression(self, symbol:SSymbol, parentSymbol:SSymbol) -> PContext:
 		"""	Recursively execute a symbol as an expression.
 
 			Args:
@@ -1307,7 +1309,7 @@ class PContext():
 				self.result = deepcopy(self.environment[_s])
 				return self
 			else:
-				raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s}'))
+				raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
 
 		elif firstSymbol.type == SType.tSymbolQuote:
 			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
@@ -1447,14 +1449,14 @@ class PContext():
 		_args:dict[str, SSymbol] = {}
 		if symbol.length > 1:
 			for i in range(1, symbol.length):
-				_args[_argNames[i-1]] = self._executeExpression(symbol[i]).result	# type:ignore [index]
+				_args[_argNames[i-1]] = self._executeExpression(symbol[i], symbol).result	# type:ignore [index]
 
 		# Assign arguments to new scope
 		self.saveScope(functionName)
 		self.scope.arguments = _args
 
 		# execute the code
-		self._executeExpression(_code)
+		self._executeExpression(_code, symbol)
 		self.restoreScope()
 		return self
 
@@ -1496,6 +1498,10 @@ PSymbolCallable = Callable[[PContext, SSymbol], PContext]
 
 PSymbolDict = Dict[str, PSymbolCallable]
 """	Dictionary of function callbacks for commands. 
+"""
+
+PSymbolList = List[SSymbol]
+"""	List of SSymbol instances.
 """
 
 PLogCallable = Callable[[PContext, str], None]
@@ -1692,14 +1698,14 @@ def _doCase(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 		# if it is the "orherwise" symbol (!) then execute that one and return
 		if e[0].type == SType.tSymbol and e[0].value == 'otherwise':
-			return pcontext._executeExpression(e[1])
+			return pcontext._executeExpression(e[1], symbol)
 
 		# Get match symbol
-		m = pcontext._executeExpression(e[0])
+		m = pcontext._executeExpression(e[0], symbol)
 
 		# match is string, number, or boolean
 		if m.result.type in [ SType.tString, SType.tNumber, SType.tBool] and m.result.value == value:
-			return pcontext._executeExpression(e[1])
+			return pcontext._executeExpression(e[1], symbol)
 		
 	return pcontext.setResult(SSymbol()) # NIL
 
@@ -1848,10 +1854,10 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# arguments
 	if symbol[2].type != SType.tList:
 		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires symbol argument list, got type: {symbol[2].type}'))
-	_args = cast(list[SSymbol], symbol[2].value)
+	_args = cast(PSymbolList, symbol[2].value)
 
 	_argNames:list[str] = []
-	for a in cast(list[SSymbol], _args):		# type:ignore[union-attr]
+	for a in cast(List[SSymbol], _args):		# type:ignore[union-attr]
 		if a.type != SType.tSymbol:
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun arguments must be symbol, got: {a}'))
 		_argNames.append(a.value) 	# type:ignore[arg-type]
@@ -1887,7 +1893,7 @@ def _doError(pcontext:PContext, symbol:SSymbol) -> PContext:
 	if symbol.type != SType.tList or symbol.length > 2:
 		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong format for quitwitherror: {symbol}'))
 	if symbol.length == 2:
-		pcontext = pcontext._executeExpression(symbol[1])
+		pcontext = pcontext._executeExpression(symbol[1], symbol)
 		raise PQuitWithError(pcontext.setError(PError.quitWithError, str(pcontext.result.value)))
 	raise PQuitWithError(pcontext.setError(PError.quitWithError, ''))
 
@@ -1913,7 +1919,7 @@ def _doEval(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote))
 	_s = deepcopy(result)
 	_s.type = _s.type.unquote()
-	return pcontext._executeExpression(_s)
+	return pcontext._executeExpression(_s, symbol)
 
 
 def _doEvaluateInline(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2031,9 +2037,9 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	pcontext, _e = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 	if _e:
-		_p = pcontext._executeExpression(symbol[2])
+		_p = pcontext._executeExpression(symbol[2], symbol)
 	elif symbol.length == 4:
-		_p = pcontext._executeExpression(symbol[3])
+		_p = pcontext._executeExpression(symbol[3], symbol)
 	else:
 		_p = _e
 	return _p
@@ -2251,10 +2257,10 @@ def _doLambda(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# arguments
 	if symbol[1].type != SType.tList:
 		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda requires symbol argument list, got: {symbol[1].type}'))
-	_args = cast(list[SSymbol], symbol[1].value)
+	_args = cast(PSymbolList, symbol[1].value)
 
 	_argNames:list[str] = []
-	for a in cast(list[SSymbol], _args):		# type:ignore[union-attr]
+	for a in cast(List[SSymbol], _args):		# type:ignore[union-attr]
 		if a.type != SType.tSymbol:
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda arguments must be symbol, got: {a}'))
 		_argNames.append(a.value) 	# type:ignore[arg-type]
@@ -2510,9 +2516,9 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 		- "==": equal
 		- "!=": unequal
 		- "or": boolean or
-		- "||": boolean or
+		- "|": boolean or
 		- "and": boolean and
-		- "&&": boolean and
+		- "&": boolean and
 		- "!": boolean not
 		- "+": Addition
 		- "-": Substraction
@@ -2546,12 +2552,11 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 
 	"""
 	pcontext.assertSymbol(symbol, minLength = 2)
-	r1 = pcontext._executeExpression(symbol[1]).result
+	r1 = pcontext._executeExpression(symbol[1], symbol).result
 
 	for i in range(2, symbol.length):
-		# r2 = pcontext._executeExpression(symbol[i]).result
 		try:
-			r1.value = op(r1.value, pcontext._executeExpression(symbol[i]).result.value)
+			r1.value = op(r1.value, pcontext._executeExpression(symbol[i], symbol).result.value)
 		except ZeroDivisionError as e:
 			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
 		except TypeError as e:
@@ -2618,7 +2623,7 @@ def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
 		if i == 1 and result is not None and result.type == SType.tLambda:
 			# Construct lambda call
 			_name = f'lambda_{"".join(random.choices(string.ascii_letters + string.digits, k = 10))}'
-			_call = cast(Tuple[list[str], SSymbol], result.value)
+			_call = cast(Tuple[List[str], SSymbol], result.value)
 			_arguments = _call[0]
 			_code = _call[1]
 			
@@ -3100,9 +3105,9 @@ _builtinCommands:PSymbolDict = {
 	'!=':				lambda p, a : _doOperation(p, a, operator.ne, SType.tBool),
 	'<>':				lambda p, a : _doOperation(p, a, operator.ne, SType.tBool),
 	'or':				lambda p, a : _doOperation(p, a, operator.or_,  SType.tBool),
-	'||':				lambda p, a : _doOperation(p, a, operator.or_,  SType.tBool),
+	'|':				lambda p, a : _doOperation(p, a, operator.or_,  SType.tBool),
 	'and':				lambda p, a : _doOperation(p, a, operator.and_, SType.tBool),
-	'&&':				lambda p, a : _doOperation(p, a, operator.and_, SType.tBool),
+	'&':				lambda p, a : _doOperation(p, a, operator.and_, SType.tBool),
 	'!':				_doNot,
 	'not':				_doNot,
 	'in':				_doIn,
