@@ -3,7 +3,7 @@
 # Importing
 
 [Resources](#resources)  
-[Attribute and Hierarchy Policies for FlexContainers](#flexcontainers)  
+[Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
 [Attribute Policies for Common Resources and Complex Types	](#attributes)
 
 
@@ -53,7 +53,7 @@ See the [documentation for scripts](ACMEScript.md).
 
 
 <a name="flexcontainers"></a>
-## FlexContainer Attribute and Hierarchy Policies
+## FlexContainer Specializations Attribute and Hierarchy Policies
 
 The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
 But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
