@@ -697,7 +697,7 @@ class ACMEPContext(PContext):
 		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# get value
-		pcontext, _value = pcontext.valueFromArgument(symbol, 2, _storageTypes)
+		pcontext, _value = pcontext.resultFromArgument(symbol, 2, _storageTypes)
 
 		CSE.script.storagePut(_key, _value)
 		return pcontext
@@ -858,42 +858,42 @@ class ACMEPContext(PContext):
 		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# value
-		pcontext, value = pcontext.valueFromArgument(symbol, 2)
+		pcontext, result = pcontext.resultFromArgument(symbol, 2)
 
 		if Configuration.has(_key):	# could be None, False, 0, empty string etc
 			# Do some conversions first
 			v = Configuration.get(_key)
 			if isinstance(v, ACMEIntEnum):
-				if value.type == SType.tString:
-					r = Configuration.update(_key, v.__class__.to(cast(str, value.value), insensitive = True))
+				if result.type == SType.tString:
+					r = Configuration.update(_key, v.__class__.to(cast(str, result.value), insensitive = True))
 				else:
 					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
 
 			elif isinstance(v, str):
-				if value.type == SType.tString:
-					r = Configuration.update(_key, cast(str, value.value).strip())
+				if result.type == SType.tString:
+					r = Configuration.update(_key, cast(str, result.value).strip())
 				else:
 					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
 			
 			# bool must be tested before int! 
 			# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
 			elif isinstance(v, bool):	
-				if value.type == SType.tBool:
-					r = Configuration.update(_key, value.value)
+				if result.type == SType.tBool:
+					r = Configuration.update(_key, result.value)
 				else:
 					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
 
 			elif isinstance(v, int):
-				if value.type == SType.tNumber:
-					r = Configuration.update(_key, int(cast(Decimal, value.value)))
+				if result.type == SType.tNumber:
+					r = Configuration.update(_key, int(cast(Decimal, result.value)))
 				else:
 					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
 
 			elif isinstance(v, float):
-				if value.type == SType.tNumber:
-					r = Configuration.update(_key, float(cast(Decimal, value.value)))
+				if result.type == SType.tNumber:
+					r = Configuration.update(_key, float(cast(Decimal, result.value)))
 				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {value.type}'))
+					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {result.type}'))
 
 			elif isinstance(v, list):
 				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))

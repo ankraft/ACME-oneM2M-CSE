@@ -10,8 +10,8 @@
 @uppertester
 
 (if (!= argc 2)
-	(	(log-error " Wrong number of arguments: enableShortResourceExpiration <expirationInterval>")
-		(quit-with-error)))
+	( (log-error " Wrong number of arguments: enableShortResourceExpiration <expirationInterval>")
+	  (quit-with-error)))
 
 (include-script "functions")
 

@@ -9,9 +9,9 @@
 @usage testCaseEnd <test case name>
 @uppertester
 
-(if (< argc 1)
+(if (< argc 2)
 	(	(log-error "Wrong number of arguments: testCaseEnd <test case name>")
 		(quit-with-error)))
 
 ;; Print start line to the debug log
-(log-divider "End of [(argv 1)]")
+(log-divider "End of ${(argv 1)}$")

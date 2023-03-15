@@ -9,7 +9,7 @@
 @usage disableShortRequestExpiration
 @uppertester
 
-(if (> argc 0)
+(if (> argc 1)
 	(	(log-error "Wrong number of arguments: disableShortRequestExpiration")
 		(quit-with-error)))
 
