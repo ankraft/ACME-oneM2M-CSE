@@ -983,17 +983,17 @@ class ACMEPContext(PContext):
 		responseStatus = SSymbol(number = Decimal(res.rsc.value))
 		try:
 			if not res.status:
-				L.isDebug and L.logDebug(f'Request response: {res.dbg}')
+				# L.isDebug and L.logDebug(f'Request response: {res.dbg}')
 				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
-				L.isDebug and L.logDebug(f'Request response: {res.resource}')
+				# L.isDebug and L.logDebug(f'Request response: {res.resource}')
 				responseResource = SSymbol(jsn= res.resource.asDict())
 			elif res.data:
-				L.isDebug and L.logDebug(f'Request response: {res.data}')
+				# L.isDebug and L.logDebug(f'Request response: {res.data}')
 				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))
 				# L.logDebug(self.getVariable('response.resource'))
 			else:
-				L.isDebug and L.logDebug('Request response: (unknown or none)')
+				# L.isDebug and L.logDebug('Request response: (unknown or none)')
 				responseResource = SSymbol()
 		except Exception as e:
 			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
