@@ -25,6 +25,7 @@ from tinydb.operations import delete
 
 from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
 from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
+from ..helpers.TinyDBBetterTable import TinyDBBetterTable
 from ..etc.DateUtils import utcTime, fromDuration
 from ..services.Configuration import Configuration
 from ..services import CSE
@@ -466,7 +467,7 @@ class Storage(object):
 	##	Actions
 	##
 
-	def getActions(self) -> JSON:
+	def getActions(self) -> list[Document]:
 		"""	Retrieve the actions data from the DB.
 		"""
 		return self.db.searchActionReprs()
@@ -589,12 +590,23 @@ class TinyDBBinding(object):
 
 		
 		# Open/Create tables
-		self.tabResources 				= self.dbResources.table('resources', cache_size = self.cacheSize)
-		self.tabIdentifiers 			= self.dbIdentifiers.table('identifiers', cache_size = self.cacheSize)
-		self.tabSubscriptions 			= self.dbSubscriptions.table('subsriptions', cache_size = self.cacheSize)
-		self.tabBatchNotifications 		= self.dbBatchNotifications.table('batchNotifications', cache_size = self.cacheSize)
-		self.tabStatistics 				= self.dbStatistics.table('statistics', cache_size = self.cacheSize)
-		self.tabActions 				= self.dbActions.table('actions', cache_size = self.cacheSize)
+		self.tabResources = self.dbResources.table('resources', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabResources)
+		
+		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabIdentifiers)
+		
+		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabSubscriptions)
+		
+		self.tabBatchNotifications = self.dbBatchNotifications.table('batchNotifications', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabBatchNotifications)
+		
+		self.tabStatistics = self.dbStatistics.table('statistics', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabStatistics)
+
+		self.tabActions = self.dbActions.table('actions', cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabActions)
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
@@ -863,15 +875,18 @@ class TinyDBBinding(object):
 
 	def searchStatistics(self) -> JSON:
 		with self.lockStatistics:
-			stats = self.tabStatistics.get(doc_id = 1)
+			stats = self.tabStatistics.all()
+			# stats = self.tabStatistics.get(doc_id = 1)
 			# return stats if stats is not None and len(stats) > 0 else None
-			return stats if stats else None
+			return stats[0] if stats else None
 
 
 	def upsertStatistics(self, stats:JSON) -> bool:
 		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
-				return self.tabStatistics.update(stats, doc_ids = [1]) is not None
+				doc_id = self.tabStatistics.all()[0].doc_id
+				#return self.tabStatistics.update(stats, doc_ids = [1]) is not None
+				return self.tabStatistics.update(stats, doc_ids = [doc_id]) is not None
 			else:
 				return self.tabStatistics.insert(stats) is not None
 
@@ -887,9 +902,10 @@ class TinyDBBinding(object):
 	#	Actions
 	#
 
-	def searchActionReprs(self) -> JSON:
+	def searchActionReprs(self) -> list[Document]:
 		with self.lockActions:
-			actions = self.tabActions.get(doc_id = 1)
+			actions = self.tabActions.all()
+			# actions = self.tabActions.get(doc_id = 1)
 			return actions if actions else None
 
 	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
