@@ -18,8 +18,6 @@
 	(get-config "cse.originator") 
 	{"m2m:cb": {
 		"ri":   "${ (get-config \"cse.ri\") }$",
-		"test": "\\${ (get-config \"cse.ri\") }$",
-		"test2": "${ (get-config \"cse.ri\") (+ 1 2)}$",
 		"rn":   "${ (get-config \"cse.rn\") }$",
 		"csi":  "${ (get-config \"cse.csi\") }$",
 		"rr":   true,
