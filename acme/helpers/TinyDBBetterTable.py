@@ -20,6 +20,11 @@ class TinyDBBetterTable(Table):
 
 	@classmethod
 	def assign(self, table:Table) -> None:
+		"""	Class method to assign this class to an existing *Table* instance.
+
+			Args:
+				table: A TinyDB *Table* instance.
+		"""
 		if not isinstance(table, Table):
 			raise TypeError(f'object must be of class Table, is: {type(table)}')
 		table.__class__ = TinyDBBetterTable
@@ -58,26 +63,11 @@ class TinyDBBetterTable(Table):
 			# The table does not exist yet, so it is empty
 			table = {}
 
-		# Convert the document IDs to the document ID class.
-		# This is required as the rest of TinyDB expects the document IDs
-		# to be an instance of ``self.document_id_class`` but the storage
-		# might convert dict keys to strings.
-		# table = {
-		# 	self.document_id_class(doc_id): doc
-		# 	for doc_id, doc in raw_table.items()
-		# }
-
 		# Perform the table update operation
 		updater(table) # type:ignore[arg-type]
 
-		# Convert the document IDs back to strings.
-		# This is required as some storages (most notably the JSON file format)
-		# don't support IDs other than strings.
-		# tables[self.name] = {
-		# 	str(doc_id): doc
-		# 	for doc_id, doc in table.items()
-		# }
 		tables[self.name] = table
+
 		# Write the newly updated data back to the storage
 		self._storage.write(tables)
 
