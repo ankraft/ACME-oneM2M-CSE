@@ -21,10 +21,23 @@
 
 ![](images/resources_uml.png)
 
+### Database Schemas
+
+![](images/db_schemas.png)
+
+If not hold in memory the database files are stored in the ["data"](../data) sub-directory. 
+
+The database used by the CSE is [TinyDB](https://github.com/msiemens/tinydb) which uses plain JSON files for storing the data. Some files only contain a single data table while other contain multiple tables.
+
+The filenames include the *CSE-ID* of the running CSE, so if multiple CSEs are running and are using the same data directory then they won't interfere with each other. The database files are copied to a *backup* directory at CSE startup.
+
+Some database tables duplicate attributes from actual resources, e.g. in the *subscription* database. This is mainly done for optimization reasons in order to prevent a retrieval and instantiation of a full resource when only a few attributes are needed.
+
+
 <a name="integration"></a>
 ## Integration Into Other Applications
 
-It is possible to integrate the CSE into other applications, e.g. a Jupyter Notebook. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
+It is possible to integrate the CSE into other applications. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
 
 You might want to get the example from the starter file [acme.py](acme.py) where you could replace the line:
 
@@ -41,6 +54,25 @@ CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
 Please note that in case you provide the arguments directly the first argument needs to be `None`. 
 
 The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
+
+### Jupyter Notebooks
+
+Since ACME CSE is written in pure Python it can be run in a Jupyter Notebook. The following code could be copied to a notebook to run the CSE.
+
+```python
+# Increase the width of the notebook to accommodate the log output
+from IPython.display import display, HTML
+display(HTML("<style>.container { width:100% !important; }</style>"))
+
+# Change to the CSE's directory and start the CSE
+# Ignore the error from the %cd command
+%cd -q tools/ACME   # adopt this to the location of the ACME CSE
+%run -m acme -- --headless
+```
+
+- The CSE should be run in *headless* mode to avoid too much output to the notebook.
+- Once executed the notebook cell will not finish its execution. It is therefore recommended to run the CSE in a separate notebook.
+- The CSE can only be stopped by stopping or restarting the notebook's Python kernel.
 
 <a name="unit_tests"></a>
 
