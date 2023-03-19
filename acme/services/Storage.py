@@ -1032,8 +1032,6 @@ class TinyDBBinding(object):
 		with self.lockActions:
 			_ri = action.ri
 			_sri = action.sri
-			L.inspect(action)
-
 			return self.tabActions.upsert(Document(
 					{	'ri':		_ri,
 						'subject':	_sri if _sri else action.pi,

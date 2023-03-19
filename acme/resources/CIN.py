@@ -65,6 +65,7 @@ class CIN(AnnounceableResource):
 		self.setAttribute('cs', getAttributeSize(self.con))
 		self.setAttribute('st', 0, overwrite = False)
 
+
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
