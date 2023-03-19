@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Moved the script interpreter from a batch-based to a lisp-based language.  
 **NOTE, that scripts in the old format are not supported anymore and need to be converted manually.**
 - [CSE] Lots of small runtime optimizations.
+- [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
+**This is a non-backward compatible change due to the DB schema changes.**
 
 ### Fixed
 - [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.

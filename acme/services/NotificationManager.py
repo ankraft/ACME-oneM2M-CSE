@@ -477,7 +477,7 @@ class NotificationManager(object):
 				}
 			}
 			# Add creator of the subscription!
-			(subOriginator := eachSub['originator']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
+			(subOriginator := eachSub['org']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
 
 			# Add representation, but don't include virtual resources
 			if not resource.isVirtual():

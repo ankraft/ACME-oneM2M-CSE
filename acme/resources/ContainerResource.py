@@ -14,9 +14,9 @@ from ..etc.Types import ResourceTypes, JSON
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
 from .AnnounceableResource import AnnounceableResource
+from .Resource import Resource
 from ..services import CSE
 from ..services.Logging import Logging as L
-
 
 
 class ContainerResource(AnnounceableResource):
@@ -73,12 +73,28 @@ class ContainerResource(AnnounceableResource):
 	def updateLaOlLatestTimestamp(self) -> None:
 		"""	Update the *lt* attribute of the *latest* and *oldest virtual child-resources.
 		"""
+		# Update latest
 		lt = getResourceDate()
 		if not (res := CSE.dispatcher.retrieveLocalResource(self.getLatestRI())).status:
 			return
 		res.resource.setAttribute('lt', lt)
 		res.resource.dbUpdate()
+
+		# Update oldest
 		if not (res := CSE.dispatcher.retrieveLocalResource(self.getOldestRI())).status:
 			return
 		res.resource.setAttribute('lt', lt)
 		res.resource.dbUpdate()
+
+	
+	def instanceAdded(self, instance:Resource) -> None:
+		L.logDebug('Add instance')
+		self.setAttribute('cni', self.cni + 1)	# Increment cni because an instance is added
+		self.setAttribute('cbs', self.cbs + instance.cs) # Add to sum of cbs
+
+
+	def instanceRemoved(self, instance:Resource) -> None:
+		L.logDebug('Remove instance')
+		self.setAttribute('cni', self.cni - 1)	# Decrement cni because an instance is added
+		self.setAttribute('cbs', self.cbs - instance.cs) # Substract from sum of cbs
+
