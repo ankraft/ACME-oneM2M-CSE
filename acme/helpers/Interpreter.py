@@ -89,6 +89,10 @@ class PNotANumberError(PException):
 	"""	Exception when a number is expected. """
 	...
 
+class PPermissionError(PException):
+	"""	Exception when execution of a function is not allowed. """
+	...
+
 class PQuitWithError(PException):
 	"""	Exception to regularly quit the script execution with an error status. """
 	...
@@ -205,7 +209,8 @@ class SSymbol(object):
 						listChar:str = None,
 						lmbda:Tuple[list[str], SSymbol] = None,
 						jsnString:str = None,
-						jsn:dict = None) -> None:
+						jsn:dict = None,
+						value:Union[bool, str, int, float, list, dict] = None) -> None:
 		"""	Initialization of a `SSymbol` object.
 			
 			Only one of the arguments must be passed to the function.
@@ -223,10 +228,26 @@ class SSymbol(object):
 				lmbda: `value` is a `SSymbol` object or a symbol that represents the executable part of a lambda expression (`SType.tLambda`).
 				jsnString: `value` is a JSON string representation. It will be converted internally to a dictionary (`SType.tJson`).
 				jsn: `value` is a JSON dictionary (`SType.tJson`).
+				value: A value that is then automatically assigned to one of the basic, quoted types.
 		"""
 
 		self.value:Union[str, Decimal, bool, list[SSymbol], Tuple[list[str], SSymbol], Dict[str, Any]] = None
 		self.type:SType = SType.tNIL
+
+		# Try to determine an unknown type
+		if value:
+			if isinstance(value, bool):
+				boolean = value
+			elif isinstance(value, str):
+				string = value
+			elif isinstance(value, (int, float)):
+				number = Decimal(value)
+			elif isinstance(value, list):
+				lstQuote = value
+			elif isinstance(value, dict):
+				jsn = value
+			else:
+				raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
 		if string:
 			self.type = SType.tString
@@ -284,19 +305,7 @@ class SSymbol(object):
 			Return:
 				String representation.
 		"""
-		if self.type in [ SType.tList, SType.tListQuote ]:
-			return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
-		elif self.type == SType.tLambda:
-			return f'( ( {", ".join(str(v) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
-		elif self.type == SType.tBool:
-			return str(self.value).lower()
-		elif self.type == SType.tString:
-			return str(self.value)
-		elif self.type == SType.tJson:
-			return json.dumps(self.value)
-		elif self.type == SType.tNIL:
-			return 'nil'
-		return str(self.value)
+		return self.toString()
 	
 
 	def __repr__(self) -> str:
@@ -343,6 +352,25 @@ class SSymbol(object):
 					return True
 		return False
 	
+
+	def toString(self, quoteStrings:bool = False) -> str:
+		if self.type in [ SType.tList, SType.tListQuote ]:
+			return f'( {" ".join("(" if v == "[" else ")" if v == "]" else v.toString(quoteStrings = quoteStrings) for v in cast(list, self.value))} )'
+			# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
+		elif self.type == SType.tLambda:
+			return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
+		elif self.type == SType.tBool:
+			return str(self.value).lower()
+		elif self.type == SType.tString:
+			if quoteStrings:
+				return f'"{str(self.value)}"'
+			return str(self.value)
+		elif self.type == SType.tJson:
+			return json.dumps(self.value)
+		elif self.type == SType.tNIL:
+			return 'nil'
+		return str(self.value)
+
 
 	def append(self, arg:SSymbol) -> SSymbol:
 		"""	Append an element if `value` is a list.
@@ -600,6 +628,8 @@ class PError(IntEnum):
 	"""	SSymbol is not a string, but it was exepected."""
 	notASymbol				= auto()
 	"""	SSymbol is not a symbol, but it was exepected."""
+	permissionDenied		= auto()
+	"""	Function is not allowed to be executed. """
 	timeout					= auto()
 	"""	Script max runtime exceeded. """
 	runtime					= auto()
@@ -663,6 +693,8 @@ class PContext():
 		'errorFunc',
 		'matchFunc',
 		'maxRuntime',
+		'fallbackFunc',
+		'monitorFunc',
 		'ast',
 		'result',
 		'state',
@@ -693,7 +725,9 @@ class PContext():
 				 postFunc:PFuncCallable				= None,
 			 	 errorFunc:PFuncCallable			= None,
 				 matchFunc:PMatchCallable			= lambda pcontext, l, r: l == r,
-				 maxRuntime:float					= None) -> None:
+				 maxRuntime:float					= None,
+				 fallbackFunc:PSymbolCallable		= None,
+				 monitorFunc:PSymbolCallable		= None) -> None:
 		"""	Initialization of a `PContext` object.
 
 			Args:
@@ -707,6 +741,8 @@ class PContext():
 				errorFunc: An optional function that is called when an error occured.
 				matchFunc: An optional function that is used to run regex comparisons.
 				maxRuntime: Number of seconds that is a script allowed to run.
+				fallbackFunc: An optional function to retrieve unknown symbols from the caller.
+				monitorFunc: An optional function to monitor function calls, e.g. to forbid them during particular executions.
 		"""
 
 		# Extra parameters that can be provided
@@ -720,6 +756,8 @@ class PContext():
 		self.errorFunc = errorFunc
 		self.matchFunc = matchFunc
 		self.maxRuntime = maxRuntime
+		self.fallbackFunc = fallbackFunc
+		self.monitorFunc = monitorFunc
 
 		# State, result and error attributes	
 		self.ast:list[SSymbol] = None
@@ -749,6 +787,7 @@ class PContext():
 		# where <argument> is optional 
 		# Running script:fy lines starting with @, extract meta data, remove this line from the script
 		for line in self.script.splitlines():
+			line = line.strip()
 			if line.startswith('@'):
 				_n, _, _v = line.strip().partition(' ')
 				self.meta[_n[1:]] = _v
@@ -1298,6 +1337,8 @@ class PContext():
 			if (_fn := self.functions.get(_s)) is not None:
 				return self._executeFunction(symbol, _s, _fn)
 			elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
+				if self.monitorFunc:
+					self.monitorFunc(self, firstSymbol)
 				return _cb(self, symbol)
 			elif _s in self.scope.arguments:
 				self.result = deepcopy(self.scope.arguments[_s])
@@ -1308,7 +1349,11 @@ class PContext():
 			elif _s in self.environment:
 				self.result = deepcopy(self.environment[_s])
 				return self
+
+			# Try to get the symbol's value from the caller, if possible
 			else:
+				if self.fallbackFunc:
+					return self.fallbackFunc(self, symbol)
 				raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
 
 		elif firstSymbol.type == SType.tSymbolQuote:
@@ -1496,14 +1541,6 @@ PSymbolCallable = Callable[[PContext, SSymbol], PContext]
 	it again, or None in case of an error.
 """
 
-PSymbolDict = Dict[str, PSymbolCallable]
-"""	Dictionary of function callbacks for commands. 
-"""
-
-PSymbolList = List[SSymbol]
-"""	List of SSymbol instances.
-"""
-
 PLogCallable = Callable[[PContext, str], None]
 """	Function callback for normal log functions.
 """
@@ -1518,6 +1555,14 @@ PMatchCallable = Callable[[PContext, str, str], bool]
 	It will get called with the current `PContext` instance,
 	a regular expression, and the string to check. It must return
 	a boolean value that indicates the result of the match.
+"""
+
+PSymbolDict = Dict[str, PSymbolCallable]
+"""	Dictionary of function callbacks for commands. 
+"""
+
+PSymbolList = List[SSymbol]
+"""	List of SSymbol instances.
 """
 
 PErrorState = namedtuple('PErrorState', [ 'error', 'message', 'expression', 'exception' ])
