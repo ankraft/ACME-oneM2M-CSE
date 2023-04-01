@@ -29,6 +29,7 @@ from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative,
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ..helpers.NetworkTools import isTCPPortAvailable
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..webui.webUI import WebUI
@@ -168,11 +169,15 @@ class HttpServer(object):
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 
 
-	def run(self) -> None:
+	def run(self) -> bool:
 		"""	Run the http server in a separate thread.
 		"""
-		self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
-		self.httpActor.start()
+		if isTCPPortAvailable(self.port):
+			self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
+			self.httpActor.start()
+			return True
+		L.logErr(f'Cannot start HTTP server. Port: {self.port} already in use.')
+		return False
 	
 
 	def shutdown(self) -> bool:
