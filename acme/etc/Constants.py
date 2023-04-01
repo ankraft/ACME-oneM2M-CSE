@@ -14,7 +14,10 @@ class Constants(object):
 	version	= '0.12.0-dev'
 	"""	ACME's release version """
 
-	textLogo = '[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim]'
+	logoColor = '#b42025'
+	"""	oneM2M logo colour """
+	
+	textLogo = f'[dim][[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
 
 	#
