@@ -637,7 +637,7 @@ class Dispatcher(object):
 			return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = L.logWarn(f'Resource with structured id: {newResource.getSrn()} already exists'))
 
 		# originator might have changed during this check. Result.data contains this new originator
-		originator = cast(str, rres.data) 					
+		originator = cast(str, rres.data) 	# ! Don't try to optimize this				
 		request.originator = originator	
 
 		# Create the resource. If this fails we deregister everything

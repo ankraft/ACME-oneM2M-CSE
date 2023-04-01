@@ -139,8 +139,8 @@ class CNT(ContainerResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		# TODO check necessary?
-		if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
-			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
+		# if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
+		# 	return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == ResourceTypes.CIN and self.mbs is not None:
@@ -156,11 +156,11 @@ class CNT(ContainerResource):
 		if childResource.ty == ResourceTypes.CIN:	# Validate if child is CIN
 
 			# Check for mia handling. This sets the et attribute in the CIN
-			if self.mia is not None:
+			if (mia := self.mia) is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller. 
 				# Don't change if maxExpirationDelta is 0.
-				maxEt = getResourceDate(self.mia 
-									    if self.mia <= CSE.request.maxExpirationDelta 
+				maxEt = getResourceDate(mia 
+									    if mia <= CSE.request.maxExpirationDelta 
 									    else CSE.request.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
@@ -168,6 +168,8 @@ class CNT(ContainerResource):
 					childResource.dbUpdate()
 
 			self.updateLaOlLatestTimestamp()	# EXPERIMENTAL TODO Also do in FCNT and TS
+			if childResource.ty == ResourceTypes.CIN:
+				self.instanceAdded(childResource)
 			self.validate(originator)
 
 
@@ -176,7 +178,8 @@ class CNT(ContainerResource):
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == ResourceTypes.CIN:	# Validate if child was CIN
-			self._validateChildren()
+			self.instanceRemoved(childResource)		# Update cni and cbs
+			self.dbUpdate()
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
@@ -203,12 +206,28 @@ class CNT(ContainerResource):
 			return
 		self.__validating = True
 
+		# No validation needed if no limits set
+		mni = self.mni
+		mbs = self.mbs
+		if mbs is None and mni is None:
+			self.dbUpdate()
+			return
+		
+		# TODO optimize the following a bit. 
+		# - only when cni/cbs > limits
+		# - Don't sum up. Using existing numbers
+
+
+
+
+		
+
 		# Only get the CINs in raw format. Instantiate them as resources if needed
 		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
 			
 		# Check number of instances
-		if (mni := self.mni) is not None:
+		if mni is not None:
 			while cni > mni and cni > 0:
 				# Only instantiate the <cin> when needed here for deletion
 				cin = Factory.resourceFromDict(cinsRaw[0]).resource
@@ -221,10 +240,11 @@ class CNT(ContainerResource):
 				cni -= 1	# decrement cni when deleting a <cin>
 
 		# Calculate cbs of remaining cins
+		# TODO 
 		cbs = sum([ each['cs'] for each in cinsRaw])
 
 		# check size
-		if (mbs := self.mbs) is not None:
+		if mbs is not None:
 			while cbs > mbs and cbs > 0:
 				# Only instantiate the <cin> when needed here for deletion
 				cin = Factory.resourceFromDict(cinsRaw[0]).resource
