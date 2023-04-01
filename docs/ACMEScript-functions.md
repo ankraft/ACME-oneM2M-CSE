@@ -36,7 +36,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 | | [let\*](#let-star) | Handles multiple variable assignments sequentially |
 | | [list](#list) | Returns a list from its arguments                            |
 | | [log](#log) | Print symbols to the log console (log-level *debug*) |
-| | [log-error](#log-error) | Print symbols to the log console (log-level *error*) |
+| | [log-error](#log-error) | Print symbols to the log console (log-level *warning*) |
 | | [lower](#lower) | Returns a lower case copy of a string |
 | | [match](#match) | Determines whether a string matches a regex |
 | | [nl](#nl) | Returns a newline character |
@@ -82,6 +82,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 | [oneM2M](#_onem2m) | [create-resource](#create-resource) | Send a oneM2M CREATE request |
 |  | [delete-resource](#delete-resource) | Send a oneM2M DELETE request |
 | | [import-raw](#import-raw) | Directly create a resource in the CSE's resource tree |
+| | [query-resource](#query-resource) | Evaluate an advanced query on a oneM2M resource |
 | | [retrieve-resource](#retrieve-resource) | Send a oneM2M RETRIEVE request |
 | | [send-notification](#send-notification) | Send a oneM2M NOTIFY request |
 | | [update-resource](#update-resource) | Send a oneM2M UPDATE request |
@@ -729,7 +730,7 @@ Example:
 
 `(log <s-expression>*)`
 
-The `log-error` function prints symbols to the logging console with an *error* log-level. Usually these symbols are strings or numbers, but representations of other data types are supported as well.
+The `log-error` function prints symbols to the logging console with an *warning* log-level. Usually these symbols are strings or numbers, but representations of other data types are supported as well.
 
 The function always returns *nil*.
 
@@ -738,7 +739,7 @@ See also: [log](#log), [print](#print)
 Example:
 
 ```lisp
-(log-error "Hello, World")  ;; Prints "Hello, World" to the error log
+(log-error "Hello, World")  ;; Prints "Hello, World" to the warning log
 ```
 
 [top](#top)
@@ -1711,7 +1712,7 @@ The following functions provide support for the oneM2M request operations.
 
 ### create-resource
 
-`(create-resoure <originator:string> <resource-id:string> <resource:JSON> [request argments:JSON])`
+`(create-resource <originator:string> <resource-id:string> <resource:JSON> [request arguments:JSON])`
 
 The `create-resource` function sends a oneM2M CREATE request to a target resource.
 
@@ -1754,7 +1755,7 @@ Examples:
 
 ### delete-resource
 
-`(delete-resoure <originator:string> <resource-id:string> [request argments:JSON])`
+`(delete-resource <originator:string> <resource-id:string> [request arguments:JSON])`
 
 The `delete-resource` function sends a oneM2M DELETE request to a target resource.
 
@@ -1830,11 +1831,45 @@ Example:
 
 ---
 
+<a name="query-resource"></a>
+
+### query-resource
+
+`(query-resource <query:quoted s-expression> <resource:JSON>)`
+
+The `query-resource` function evaluates a *query* for the attributes in the *resource* structure.
+
+The function has the following arguments:
+
+- *query* to evaluate. This query must be quoted and follows oneM2M's advanced query specification. the unknown symbols in the query are replaced by the resource's attribute values during the evaluation.
+    Only a limited set boolean and comparison operators are allowed in the query.
+- A oneM2M resource as a JSON structure.
+
+The function returns a boolean indicating the query result.
+
+See also: [get-json-attribute](#get-json-attribute)
+
+Examples:
+
+```lisp
+;; Returns true
+(query-resource 
+	'(& (> x 100) (== rn "cnt1234"))
+	{ "m2m:cnt": {
+		"rn": "cnt1234",
+	  	"x": 123
+	}})
+```
+
+[top](#top)
+
+---
+
 <a name="retrieve-resource"></a>
 
 ### retrieve-resource
 
-`(retrieve-resoure <originator:string> <resource-id:string> [request argments:JSON])`
+`(retrieve-resource <originator:string> <resource-id:string> [request arguments:JSON])`
 
 The `retrieve-resource` function sends a oneM2M RETRIEVE request to a target resource.
 
@@ -1873,7 +1908,7 @@ Examples:
 
 ### send-notification
 
-`(send-notification <originator:string> <resource-id:string> <notification:JSON> [request argments:JSON])`
+`(send-notification <originator:string> <resource-id:string> <notification:JSON> [request arguments:JSON])`
 
 The `send-notification` function sends a oneM2M NOTIFY request to a target resource.
 
@@ -1913,7 +1948,7 @@ Example:
 
 ### update-resource
 
-`(update-resoure <originator:string> <resource-id:string> <resource:JSON> [request argments:JSON])`
+`(update-resource <originator:string> <resource-id:string> <resource:JSON> [request arguments:JSON])`
 
 The `update-resource` function sends a oneM2M UPDATE request to a target resource.
 

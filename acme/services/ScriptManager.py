@@ -18,14 +18,15 @@ from decimal import Decimal
 from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
 from .Configuration import Configuration
-from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType
-from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError
+from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
+from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
-from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID
+from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
 from ..etc.DateUtils import cronMatchesTimestamp
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.Factory import resourceFromDict
+from ..resources.Resource import Resource
 from ..services import CSE
 from ..services.Logging import Logging as L, LogLevel
 
@@ -94,7 +95,9 @@ class ACMEPContext(PContext):
 				 preFunc:Optional[PFuncCallable] = None,
 				 postFunc:Optional[PFuncCallable] = None, 
 				 errorFunc:Optional[PFuncCallable] = None,
-				 filename:Optional[str] = None) -> None:
+				 filename:Optional[str] = None,
+				 fallbackFunc:PSymbolCallable = None,
+				 monitorFunc:PSymbolCallable = None) -> None:
 		"""	Initializer for the context class.
 
 			Args:
@@ -123,6 +126,7 @@ class ACMEPContext(PContext):
 										'log-divider':			self.doLogDivider,
 										'print-json':			self.doPrintJSON,
 										'put-storage':			self.doPutStorage,
+										'query-resource':		self.doQueryResource,
 						 				'remove-storage':		self.doRemoveStorage,
 										'reset-cse':			self.doReset,
 							 			'retrieve-resource':	self.doRetrieveResource,
@@ -138,10 +142,12 @@ class ACMEPContext(PContext):
 						 preFunc = preFunc, 
 						 postFunc = postFunc, 
 						 matchFunc = lambda p, l, r : simpleMatch(l, r),
-						 errorFunc = errorFunc)
+						 errorFunc = errorFunc,
+						 fallbackFunc = fallbackFunc,
+						 monitorFunc = monitorFunc)
 
-		self.scriptFilename = filename
-		self.fileMtime = os.stat(filename).st_mtime
+		self.scriptFilename = filename if filename else None
+		self.fileMtime = os.stat(filename).st_mtime if filename else None
 		self._validate()	# May change the state to indicate an error
 
 
@@ -180,7 +186,7 @@ class ACMEPContext(PContext):
 				msg: The log message.
 				exception: Optional exception to log.
 		"""
-		L.logErr(msg, exc = exception, stackOffset=1)
+		L.isWarn and L.logWarn(msg, stackOffset=1)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
@@ -703,6 +709,36 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
+	def doQueryResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Run a comparison query against a JSON structure. This compares to the oneM2M advanced
+			query filtering in RETRIEVE/DISCOVERY requests.
+
+			The first argument is an s-expression that only contains comparisons.
+
+			Example:
+				::
+
+					(query-resource '(== rn "cnt1234")) { "rn": "cnt1234", "x": 123 })
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 3)
+
+		# get query
+		pcontext = pcontext.getArgument(symbol, 1, (SType.tList, SType.tListQuote))
+		_query = pcontext.result.toString(quoteStrings = True)
+
+		# get JSON
+		pcontext, _json = pcontext.valueFromArgument(symbol, 2, SType.tJson)
+
+		return pcontext.setResult(SSymbol(boolean = CSE.script.runComparisonQuery(_query, _json)))
+
+
 	def doRemoveStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Remove a value from the persistent storage.
 
@@ -1184,10 +1220,13 @@ class ScriptManager(object):
 		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
 
 
-	def configUpdate(self, key:Optional[str] = None, value:Optional[Any] = None) -> None:
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
+						   value:Optional[Any] = None) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
@@ -1212,7 +1251,7 @@ class ScriptManager(object):
 	#	Event handlers
 	#
 
-	def cseStarted(self) -> None:
+	def cseStarted(self, name:str) -> None:
 		"""	Callback for the *cseStartup* event.
 
 			Start a background worker to monitor directories for scripts.
@@ -1229,7 +1268,7 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnStartup)
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Callback for the *cseReset* event.
 		
 			Restart the script manager service, ie. clear the scripts and storage. 
@@ -1240,7 +1279,7 @@ class ScriptManager(object):
 		L.isDebug and L.logDebug('ScriptManager restarted')
 	
 
-	def restartFinished(self) -> None:
+	def restartFinished(self, name:str) -> None:
 		"""	Callback for the *cseRestarted* event.
 		
 			Run the restart script(s), if any.
@@ -1249,12 +1288,13 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnRestart)
 
 
-	def onKeyboard(self, ch:str) -> None:
+	def onKeyboard(self, name:str, ch:str) -> None:
 		"""	Callback for the *keyboard* event.
 		
 			Run script(s) with configured meta tags, if any.
 
 			Args:
+				name:Event name.
 				ch: The pressed key.
 		"""
 		# Check for function key names first
@@ -1263,12 +1303,13 @@ class ScriptManager(object):
 							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 
 
-	def onNotification(self, uri:str, originator:str, data:JSON) -> None:
+	def onNotification(self, name:str, uri:str, originator:str, data:JSON) -> None:
 		"""	Callback for the *notification* event.
 
 			Run script(s) with configured meta tags, if any.
 
 			Args:
+				name:Event name.
 				uri: The target URI.
 				originator: The notification's originator.
 				data: The notification's payload.
@@ -1546,7 +1587,7 @@ class ScriptManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {arguments if arguments else "None"}, meta: {metaFilter}')
 		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter)) != 1:
-			return (False, SSymbol(string = L.logWarn(dbg := f'Script not found: "{scriptName}"')))
+			return (False, SSymbol(string = L.logWarn(f'Script not found: "{scriptName}"')))
 		script = scripts[0]
 		if self.runScript(script, arguments = arguments, background = False):
 			L.isDebug and L.logDebug(f'Script: "{scriptName}" finished successfully')
@@ -1558,6 +1599,60 @@ class ScriptManager(object):
 			script.result = script.error.message
 		return (False, script.result)
 
+
+	_allowedQuerySymbols = ( '==', '!=', '<', '<=', '>', '>=', '&', '&&', '|', '||', '!', 'not', 'in')
+
+	def runComparisonQuery(self, query:str, resource:JSON|Resource) -> bool:
+		"""	Run a comparison query against a JSON strcture or a resource.
+
+			The *query* consists of logical or comparison operations, and only those
+			are allowed. It can contain attributes, which values are taken from the JSON
+			structure or resource.
+		
+			Args:
+				query: String with a valid s-expression.
+				resource: JSON dictionary or resource for the attributes.				
+
+			Return:
+				Boolean value indicating the success of the query.
+		"""
+		jsn = pureResource(resource.asDict())[0] if isinstance(resource, Resource) else cast(JSON, resource)
+
+		L.isDebug and L.logDebug(f'Running query: {query} against: {jsn}')
+
+		def getAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
+			_attr = symbol.value
+			if not isinstance(_attr, str):
+				raise ValueError(f'attribute: {_attr} must be a string')
+			if (_value := jsn.get(_attr)) is not None:
+				L.isDebug and L.logDebug(f'Attribute: {_attr} = {_value}')
+				return pcontext.setResult(SSymbol(value = _value))
+			L.isDebug and L.logDebug(f'Attribute: {_attr} not found')
+			return pcontext.setResult(SSymbol()) # nil
+	
+
+		def monitorExecution(pcontext:PContext, symbol:SSymbol) -> PContext:
+			"""	Check whether the executed symbol is an allowed function for a comparison query.
+
+				Args:
+					pcontext: `PContext` object of the running script.
+					symbol: The symbol to test.
+				
+				Return:
+					The `PContext` object.
+				
+				Raises:
+					`PPermissionError` in case the symbol is not allowed.
+
+			"""
+			if not symbol.value in self._allowedQuerySymbols:
+				raise PPermissionError(pcontext.setError(PError.permissionDenied, f'Not allowed to use function: {str(symbol)} in expression'))
+			return pcontext
+
+	
+		pcontext = ACMEPContext(query, fallbackFunc = getAttribute, monitorFunc = monitorExecution)
+		pcontext = cast(ACMEPContext, pcontext.run())
+		return True
 
 	##########################################################################
 	#

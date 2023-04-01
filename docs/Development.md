@@ -246,7 +246,7 @@ To list the available test cases one can use the `--list-tests` (list in the ord
 
 Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of a test run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE), or by running the test suit with the `--run-teardown` option. The later runs only the tear-down  functions for the specified test suites and then exits.
 
-However, sometimes it would be useful to keep the resources created by the tests for further investigations. In this case specifyng the `--disable-teardown` option can help. It disables the execution of the tear-down functions after successful or unsuccessful execution.
+However, sometimes it would be useful to keep the resources created by the tests for further investigations. In this case specifying the `--disable-teardown` option can help. It disables the execution of the tear-down functions after successful or unsuccessful execution.
 
 
 ### Dependencies
