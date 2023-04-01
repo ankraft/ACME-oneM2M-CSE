@@ -825,7 +825,7 @@ class TinyDBBinding(object):
 			# self.tabIdentifiers.remove(self.identifierQuery.ri == resource.ri)
 
 		with self.lockStructuredIDs:
-			self.tabStructuredIDs.remove(doc_ids = [resource.getSrn()])	# type:ignore[arg-type]
+			self.tabStructuredIDs.remove(doc_ids = [resource.getSrn()])	# type:ignore[arg-type,list-item]
 
 
 	def searchIdentifiers(self, ri:Optional[str] = None, 
@@ -870,7 +870,7 @@ class TinyDBBinding(object):
 				}, ri))	# type:ignore[arg-type]
 
 			# Then add the child ri to the parent's record
-			if pi:	# CSE has no parent
+			if pi:	# ATN: CSE has no parent
 				_r = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type]
 				_ch = _r['ch']
 				if ri not in _ch:
@@ -1053,7 +1053,7 @@ class TinyDBBinding(object):
 	def removeActionRepr(self, ri:str) -> bool:
 		with self.lockActions:
 			if self.tabActions.get(doc_id = ri):	# type:ignore[arg-type]
-				return len(self.tabActions.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type]
+				return len(self.tabActions.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
 			return False
 			# return len(self.tabActions.remove(self.actionsQuery.ri == ri)) > 0
 
