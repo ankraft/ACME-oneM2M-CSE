@@ -176,7 +176,7 @@ class HttpServer(object):
 			self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
 			self.httpActor.start()
 			return True
-		L.logErr(f'Cannot start HTTP server. Port: {self.port} already in use.')
+		L.logErr(f'Cannot start HTTP server. Port: {self.port} already in use.', showStackTrace = False)
 		return False
 	
 
