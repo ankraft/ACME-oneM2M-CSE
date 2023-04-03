@@ -290,9 +290,12 @@ class ACMEResourceTree(TextualTree):
 
 	def _retrieve_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
-		for r in CSE.dispatcher.directChildResources(ri):
-			if not r.isVirtual():
-				result.append((r, len(CSE.dispatcher.directChildResources(r.ri)) > 0))
+		# for r in CSE.dispatcher.directChildResources(ri):
+		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
+		for r in chs:
+			#_r = filter(lambda x: not x.isVirtual(), CSE.dispatcher.directChildResources(r.ri))
+			# result.append((r, len(CSE.dispatcher.directChildResources(r.ri)) > 0))
+			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
 		return result
 
 
