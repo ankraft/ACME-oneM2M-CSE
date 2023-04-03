@@ -63,6 +63,8 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('registreeCSEHasRegistered')
 		self.addEvent('registreeCSEUpdate')
 		self.addEvent('registreeCSEHasDeregistered')
+		self.addEvent('aeHasRegistered')								# AE has registered
+		self.addEvent('aeHasDeregistered')								# AE has dereigistered
 		self.addEvent('notification')
 		self.addEvent('configUpdate', runInBackground = False)
 		self.addEvent('keyboard', runInBackground = False)
