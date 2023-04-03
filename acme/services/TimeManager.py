@@ -62,7 +62,7 @@ class TimeManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the time manager services.
 		"""
 		self._stopPeriodicBeacons()
@@ -77,11 +77,11 @@ class TimeManager(object):
 		self.periodicTimeSyncBeacons.clear()
 
 
-	def requestReveivedHandler(self, req:CSERequest) -> None:
+	def requestReveivedHandler(self, name:str, req:CSERequest) -> None:
 		# L.logErr(f'Received {req}')
 		...
 
-	def responseReveivedHandler(self, resp:CSERequest) -> None:
+	def responseReveivedHandler(self, name:str, resp:CSERequest) -> None:
 		# L.logErr(f'Received {resp}')
 		#L.logWarn(self.isLossOfSynchronization(resp))
 		...

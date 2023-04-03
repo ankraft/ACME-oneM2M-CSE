@@ -67,6 +67,7 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip-address>', default=None, help='specify the network interface/IP address to bind to')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--headless', action='store_true', dest='headless', default=None, help='operate the CSE in headless mode')
+	parser.add_argument('--textui', action='store_true', dest='textui', default=None, help='start with the CSE\'s text UI')
 	
 	return parser.parse_args()
 

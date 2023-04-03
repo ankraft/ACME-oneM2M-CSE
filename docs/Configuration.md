@@ -79,6 +79,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;cse.resource.ts&#93; - Resource Defaults: TimeSeries](#resource_ts)  
 [&#91;cse.resource.tsb&#93; - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
 [&#91;cse.console&#93; - Console Settings](#console)  
+[&#91;cse.textui&#93; - Text UI Settings](#textui)  
 [&#91;cse.scripting&#93; - Scripting Settings](#scripting)  
 [&#91;cse.webui&#93; - Web UI Settings](#webui)  
 	
@@ -97,12 +98,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | cseID                          | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                            | cse.csi                            |
 | resourceID                     | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in           | cse.ri                             |
 | resourceName                   | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                 | cse.rn                             |
-| resourcesPath                  | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                      | cse.resourcesPath                  |
+| resourcesPath                  | Directory of default resources to import.<br/>See also command line argument [–-import-directory](Running.md).<br/>Default: ./init                      | cse.resourcesPath                  |
 | maxExpirationDelta             | Default and maximum expirationTime allowed for resources in seconds.<br/>Default: 60*60*24*365*5 = 157680000 seconds = 5 years                         | cse.maxExpirationDelta             |
 | enableResourceExpiration       | Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.<br/>Default: true                     | cse.enableResourceExpiration       |
 | requestExpirationDelta         | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                      | cse.requestExpirationDelta         |
 | originator                     | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                      | cse.originator                     |
-| enableRemoteCSE                | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true       | cse.enableRemoteCSE                |
+| enableRemoteCSE                | Enable remote CSE registration and checking.<br/>See also command line arguments [–-remote-cse and -–no-remote-cse](Running.md).<br/>Default: true       | cse.enableRemoteCSE                |
 | sortDiscoveredResources        | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                    | cse.sortDiscoveredResources        |
 | checkExpirationsInterval       | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                | cse.checkExpirationsInterval       |
 | flexBlockingPreference         | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                             | cse.flexBlockingPreference         |
@@ -431,6 +432,20 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | cse.console.theme                       |
 
 [top](#sections)
+
+---
+
+<a name="textui"></a>
+
+###	[cse.textui] - Text UI Settings
+
+| Keyword      | Description                                                                                                           | Configuration Name      |
+|:-------------|:----------------------------------------------------------------------------------------------------------------------|:------------------------|
+| startWithTUI | Show the text UI after startup.<br />See also command line argument [–-textui](Running.md).<br />Default: False                                                                   | cse.textui.startWithTUI |
+| theme        | Set the color theme for the text UI. Allowed values are "dark" and "light".<br />Default: same as [cse.console].theme | cse.textui.theme        |
+
+[top](#sections)
+
 
 ---
 

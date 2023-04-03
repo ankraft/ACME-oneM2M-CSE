@@ -10,7 +10,7 @@
 """
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any
+from typing import List, cast, Optional, Any, Tuple
 
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
@@ -24,18 +24,21 @@ from rich.pretty import Pretty
 import plotext
 
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
-from ..helpers.TextTools import findXPath, setXPath, simpleMatch
+from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..etc.Constants import Constants
 from ..etc.Types import CSEType, ResourceTypes
-from ..etc.Utils import getIPAddress, getCSE
+from ..etc.Utils import getCSE
+from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..resources.Resource import Resource
 from ..services import CSE, Statistics
-from ..services.Configuration import Configuration
+from ..services.Configuration import Configuration, documentationLinks
 from ..services.Logging import Logging as L
 
+# Used in many "rich" functions
+_markup = Text.from_markup
 
 # TODO support configevent!
 
@@ -130,14 +133,18 @@ class Console(object):
 		'previousScript',
 		'previousArgument',
 		'previousGraphRi',
+		'tuiApp',
 		
 		'refreshInterval',
 		'hideResources',
 		'treeMode',
 		'treeIncludeVirtualResources',
 		'confirmQuit',
+		'theme',
+		'startWithTUI',
 
 		'_eventKeyboard',
+		'_exitFromTUI',
 
 		
 	)
@@ -164,6 +171,7 @@ class Console(object):
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 
 		self._eventKeyboard = CSE.event.keyboard			# type: ignore [attr-defined]
+		self._exitFromTUI = False
 
 		L.isInfo and L.log('Console initialized')
 
@@ -178,7 +186,7 @@ class Console(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the TimeSeriesManager service.
 		"""
 		self.interruptContinous = True	# This will indirectly interrupt a running continous console command
@@ -193,13 +201,16 @@ class Console(object):
 		self.treeMode:TreeMode = Configuration.get('cse.console.treeMode')
 		self.treeIncludeVirtualResources:bool = Configuration.get('cse.console.treeIncludeVirtualResources')
 		self.confirmQuit:bool = Configuration.get('cse.console.confirmQuit')
+		self.theme:str = Configuration.get('cse.console.theme')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str,
+						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 
 			Args:
+				name: Event name.
 				key: The key for the configuration setting that is updated.
 				value: The new configuration setting.
 		"""
@@ -240,7 +251,7 @@ class Console(object):
 			'l'     			: self.toggleScreenLogging,
 			'L'     			: self.toggleLogging,
 			'Q'					: self.shutdownCSE,		# See handler below
-			'r'					: self.cseRegistrations,
+			'r'					: self.registrations,
 			'R'					: self.runScript,
 			's'					: self.statistics,
 			FunctionKey.CTRL_S	: self.continuousStatistics,
@@ -248,19 +259,21 @@ class Console(object):
 			FunctionKey.CTRL_T	: self.continuousTree,
 			'T'					: self.childResourceTree,
 			'u'					: self.openWebUI,
-			'w'					: self.workers,
 			'='					: self.printLine,
+			'#'					: self.runTUI,
 			#'Z'		: self.resetCSE,
 		}
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
 		if not CSE.isHeadless:
 			L.console('Press ? for help')
-
+		
 		loop(commands, 
 			 catchKeyboardInterrupt = True, 
 			 headless = CSE.isHeadless,
-			 catchAll = lambda ch: CSE.event.keyboard(ch))	# type: ignore [attr-defined]
+			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
+			 nextKey = '#' if CSE.textUI.startWithTUI else None,
+			 postCommand = self._postCommandHandler)	
 		CSE.shutdown()
 
 
@@ -285,6 +298,15 @@ class Console(object):
 		if header:
 			L.console(header, nl = True, isHeader = True)
 	
+
+	def _postCommandHandler(self, key:str) -> str:
+		# TODO doc
+		if self._exitFromTUI:
+			if key in ['Q', FunctionKey.CTRL_C]:
+				return '#'
+			self._exitFromTUI = False
+		return None
+
 
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
@@ -319,7 +341,7 @@ class Console(object):
 			('T', 'Show child resource tree'),
 			('^T', 'Show & refresh resource tree continuously'),
 			('u', 'Open web UI'),
-			('w', 'Show workers and threads status'),
+			('#', 'Open/close text UI'),
 			('=', 'Print a separator line to the log'),
 		]
 
@@ -421,35 +443,6 @@ Available under the BSD 3-Clause License
 		L.logDivider()
 
 
-	def workers(self, key:str) -> None:
-		"""	Print the worker and actor threads.
-
-			Args:
-				key: Input key. Ignored.
-		"""
-		L.console('Worker & Actor Threads', isHeader=True)
-		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Name', no_wrap = True)
-		table.add_column('Type', no_wrap = True)
-		table.add_column('Intvl (s)', no_wrap = True, justify = 'right')
-		table.add_column('Runs', no_wrap = True, justify = 'right')
-		for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
-			a = 'Actor' if w.maxCount == 1 else 'Worker'
-			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
-		L.console(table, nl=True)
-
-		# Threads
-		L.console('System Threads', isHeader=True)
-
-		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Thread Queues', no_wrap = True)
-		table.add_column('Count', no_wrap = True)
-		r, p = BackgroundWorkerPool.countJobs()
-		table.add_row('Running', str(r))
-		table.add_row('Paused', str(p))
-		L.console(table, nl = True)
-
-
 	def configuration(self, key:str) -> None:
 		"""	Print the configuration.
 
@@ -457,19 +450,20 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('Configuration', isHeader = True)
-		conf = Configuration.print().split('\n')
-		conf.sort()
-			
-		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Key', no_wrap=True)
-		table.add_column('Value', no_wrap=False)
-		for c in conf:
-			if c.startswith('Configuration:'):
-				continue
-			kv = c.split(' = ', 1)
-			if len(kv) == 2:
-				table.add_row(kv[0].strip(), kv[1])
-		L.console(table, nl = True)
+		L.console(self.getConfigurationRich())
+		# conf = Configuration.print().split('\n')
+		# conf.sort()
+		#	
+		# table = Table(row_styles = [ '', L.tableRowStyle])
+		# table.add_column('Key', no_wrap=True)
+		# table.add_column('Value', no_wrap=False)
+		# for c in conf:
+		# 	if c.startswith('Configuration:'):
+		# 		continue
+		# 	kv = c.split(' = ', 1)
+		# 	if len(kv) == 2:
+		# 		table.add_row(kv[0].strip(), kv[1])
+		# L.console(table, nl = True)
 
 
 	def clearScreen(self, key:str) -> None:
@@ -526,7 +520,7 @@ Available under the BSD 3-Clause License
 		self._about('Resource Tree')
 		with Live(self.getResourceTreeRich(style = L.terminalStyle, withProgress = False), auto_refresh = False) as live:
 
-			def _updateTree(_:Resource = None) -> None:
+			def _updateTree(name:str = None, _:Resource = None) -> None:
 				"""	Callback to update the on-screen tree on an event.
 				"""
 				live.update(self.getResourceTreeRich(style = L.terminalStyle, withProgress = False), refresh = True)
@@ -549,16 +543,20 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def cseRegistrations(self, key:str) -> None:
+	def registrations(self, key:str) -> None:
 		"""	Render CSE registrations.
 
 			Args:
 				key: Input key. Ignored.
 		"""
 		L.console('CSE Registrations', isHeader = True)
-		poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
-		L.console(f'- **Point of Access**\n{poas}\n{self.getCSERegistrationsRich()}')
+		# poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
+		# L.console(f'- **Point of Access**\n{poas}\n{self.getRegistrationsRich()}')
 		L.console()
+		try:
+			L.console(self.getRegistrationsRich())
+		except Exception as e:
+			L.logErr('', exc = e)
 
 
 	def statistics(self, key:str) -> None:
@@ -670,7 +668,7 @@ Available under the BSD 3-Clause License
 				endMessage:str = None
 				with Live(Pretty(res.resource.asDict()), console = L._console, auto_refresh = False) as live:
 
-					def _updateResource(r:Resource = None) -> None:
+					def _updateResource(name:str, r:Resource = None) -> None:
 						"""	Callback to update the on-screen resource on an event.
 						"""
 						if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
@@ -877,7 +875,7 @@ Available under the BSD 3-Clause License
 
 		pri:str = None
 
-		def _plot(resource:Resource) -> bool:
+		def _plot(name:str = None, resource:Resource = None) -> bool:
 			if resource.ri != pri:	# filter only the container we want to observe
 				return True
 			self.clearScreen(None)
@@ -917,12 +915,22 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
+	def runTUI(self, key:str) -> None:
+		"""	Open the text UI.
+		
+			Args:
+				key: Input key. Ignored.
+		"""
+		if not CSE.textUI.runUI():
+			raise KeyboardInterrupt()
+
+
 	#########################################################################
 	#
 	#	Generators for rich output
 	#
 
-	def getCSERegistrationsRich(self) -> str:
+	def getRegistrationsRich(self) -> Table:
 		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
 
@@ -930,32 +938,102 @@ Available under the BSD 3-Clause License
 				Rich formatted string.
 		"""
 
-		result = ''
+		def _addCSERow(table:Table, style:Style, cse:Resource, registrarCSE:Resource, registrees:List[str]) -> None:
+			table.add_row(cse.csi, 
+						  CSEType(cse.cst.value if isinstance(cse.cst, CSEType) else cse.cst).name, 
+						  cse.rn, 
+						  cse.ri, 
+						  '' if not cse.srv else ', '.join(cse.srv),
+						  str(cse.rr), 
+						  '' if cse.poa is None else ', '.join(cse.poa),
+						  '' if not registrarCSE else registrarCSE.csi,
+						  '' if not registrees else ', '.join(registrees),
+						  style = style)
 
-		if CSE.cseType != CSEType.IN:
-			result += f'- **Registrar CSE**\n'
-			if CSE.remote.registrarAddress:
-				registrarCSE = CSE.remote.registrarCSE
-				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-				result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
-			else:
-				result += '   - None'
+		tableCSE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
+		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n'), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
+		tableCSE.add_column(_markup('[u]ResID[/u]\n'), width = 12, no_wrap = True)
+		tableCSE.add_column(_markup('[u]Release[/u]\n'), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Reachable[/u]\n'), no_wrap = True)
+		tableCSE.add_column(_markup('[u]POA[/u]\n'), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Registrar[/u]\n'), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Registrees[/u]\n'), no_wrap = False)
 
-		if CSE.cseType != CSEType.ASN:
-			result += f'- **Registree CSEs**\n'
-			if len(CSE.remote.descendantCSR) > 0:
-				for desc in CSE.remote.descendantCSR.keys():
-					(csr, _) = CSE.remote.descendantCSR[desc]
-					if csr:
-						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-						for desc2 in CSE.remote.descendantCSR.keys():
-							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-							if not csr2 and atCsi2 == desc:
-								result += f'    - {desc2[1:]}\n'
+		cse = getCSE().resource
+		_addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
+				_addCSERow(tableCSE, None, csr, None, [cse.csi] + csr.dcse)
 			else:
-				result += '    - None'
+				_addCSERow(tableCSE, None, csr, cse, csr.dcse)
+		
+		gridCSE = Table.grid(expand = True)
+		gridCSE.add_column()
+		gridCSE.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n\n'))
+		gridCSE.add_row(tableCSE)
+		
+
+		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
+		tableAE.add_column(_markup('[u]AE-ID[/u]\n'), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Name[/u]\n'), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]ResID[/u]\n'), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]APP-ID[/u]\n'), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Reachable[/u]\n'), width = 5, no_wrap = True)
+		tableAE.add_column(_markup('[u]POA[/u]\n'), width = 15, no_wrap = False)
+
+		for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
+			tableAE.add_row(ae.aei, 
+							ae.rn, 
+							ae.ri, 
+							ae.api, 
+							str(ae.rr), 
+							'' if ae.poa is None else ', '.join(ae.poa))
+
+		gridAE = Table.grid(expand = True)
+		gridAE.add_column()
+		gridAE.add_row(_markup('[u b]Application Entities (AE)[/u b]\n\n'))
+		gridAE.add_row(tableAE)
+
+
+		result = Table.grid(expand = True)
+		result.add_column()
+		# result.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n'))
+		# result.add_row(Panel(tableCSE))
+		result.add_row(Panel(gridCSE))
+		# result.add_row(Text(' '))
+		# result.add_row(_markup('[u b]Application Entities (AE)[/u b]\n'))
+		# result.add_row(Panel(tableAE))
+		result.add_row(Panel(gridAE))
+
+		return result
+		# result = ''
+
+		# if CSE.cseType != CSEType.IN:
+		# 	result += f'- **Registrar CSE**\n'
+		# 	if CSE.remote.registrarAddress:
+		# 		registrarCSE = CSE.remote.registrarCSE
+		# 		registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
+		# 		result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
+		# 	else:
+		# 		result += '   - None'
+
+		# if CSE.cseType != CSEType.ASN:
+		# 	result += f'- **Registree CSEs**\n'
+		# 	if len(CSE.remote.descendantCSR) > 0:
+		# 		for desc in CSE.remote.descendantCSR.keys():
+		# 			(csr, _) = CSE.remote.descendantCSR[desc]
+		# 			if csr:
+		# 				result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
+		# 				for desc2 in CSE.remote.descendantCSR.keys():
+		# 					(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
+		# 					if not csr2 and atCsi2 == desc:
+		# 						result += f'    - {desc2[1:]}\n'
+		# 	else:
+		# 		result += '    - None'
 	
-		return result if len(result) else 'None'
+		# return result if len(result) else 'None'
 		
 
 # TODO events transit requests
@@ -974,40 +1052,44 @@ Available under the BSD 3-Clause License
 		"""
 
 		def _stats() -> Table:
+			#
+			#	Right columns
+			#
+
 			stats = CSE.statistics.getStats()
 
 			if CSE.statistics.statisticsEnabled:
-				resourceOps  =  '[underline]Operations[/underline]\n'
+				resourceOps  =  _markup('[underline]Operations[/underline]\n')
 				resourceOps += 	'\n'
 				resourceOps +=  f'Created       : {stats.get(Statistics.createdResources, 0)}\n'
 				resourceOps +=  f'Updated       : {stats.get(Statistics.updatedResources, 0)}\n'
 				resourceOps +=  f'Deleted       : {stats.get(Statistics.deletedResources, 0)}\n'
 				resourceOps +=  f'Expired       : {stats.get(Statistics.expiredResources, 0)}\n'
 				resourceOps +=  f'Notifications : {stats.get(Statistics.notifications, 0)}\n'
-				resourceOps +=  f'\n[dim]Includes virtual\nresources[/dim]'
+				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
 
-				httpReceived  = '[underline]HTTP:R[/underline]\n'
+				httpReceived  = _markup('[underline]HTTP:R[/underline]\n')
 				httpReceived += 	'\n'
 				httpReceived += f'C : {stats.get(Statistics.httpCreates, 0)}\n'
 				httpReceived += f'R : {stats.get(Statistics.httpRetrieves, 0)}\n'
 				httpReceived += f'U : {stats.get(Statistics.httpUpdates, 0)}\n'
 				httpReceived += f'D : {stats.get(Statistics.httpDeletes, 0)}\n'
 
-				httpSent  = 	'[underline]HTTP:S[/underline]\n'
+				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n')
 				httpSent += 	'\n'
 				httpSent += 	f'C : {stats.get(Statistics.httpSendCreates, 0)}\n'
 				httpSent += 	f'R : {stats.get(Statistics.httpSendRetrieves, 0)}\n'
 				httpSent += 	f'U : {stats.get(Statistics.httpSendUpdates, 0)}\n'
 				httpSent += 	f'D : {stats.get(Statistics.httpSendDeletes, 0)}\n'
 
-				mqttReceived  = '[underline]MQTT:R[/underline]\n'
+				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n')
 				mqttReceived += 	'\n'
 				mqttReceived += f'C : {stats.get(Statistics.mqttCreates, 0)}\n'
 				mqttReceived += f'R : {stats.get(Statistics.mqttRetrieves, 0)}\n'
 				mqttReceived += f'U : {stats.get(Statistics.mqttUpdates, 0)}\n'
 				mqttReceived += f'D : {stats.get(Statistics.mqttDeletes, 0)}\n'
 
-				mqttSent  = 	'[underline]MQTT:S[/underline]\n'
+				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n')
 				mqttSent += 	'\n'
 				mqttSent += 	f'C : {stats.get(Statistics.mqttSendCreates, 0)}\n'
 				mqttSent += 	f'R : {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
@@ -1015,26 +1097,23 @@ Available under the BSD 3-Clause License
 				mqttSent += 	f'D : {stats.get(Statistics.mqttSendDeletes, 0)}\n'
 
 
-				logs  = '[underline]Logs[/underline]\n'
+				logs  = _markup('[underline]Logs[/underline]\n')
 				logs += '\n'
 				logs += f'LogLevel : {str(L.logLevel)}\n'
 				logs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
 				logs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
 
 			else:
-				resourceOps  = '\n[dim]statistics are disabled[/dim]\n'
-				httpReceived = '\n[dim]statistics are disabled[/dim]\n'
-				httpSent     = '\n[dim]statistics are disabled[/dim]\n'
-				logs         = '\n[dim]statistics are disabled[/dim]\n'
+				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n')
+				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n')
+				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n')
+				logs         = _markup('\n[dim]statistics are disabled[/dim]\n')
 
 
-			misc  = '[underline]Misc[/underline]\n'
+			misc  = _markup('[underline]Misc[/underline]\n')
 			misc += '\n'
-			misc += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-			misc += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
-			misc += f'Hostname          : {socket.gethostname()}\n'
 			misc += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
-
+			misc += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
 				misc += f'IP-Address        : {getIPAddress()}\n'
@@ -1043,6 +1122,9 @@ Available under the BSD 3-Clause License
 			misc += f'PoA               : {CSE.csePOA[0]}\n'
 			if len(CSE.csePOA) > 1:
 				misc += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+
+			misc += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			misc += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
 
 			misc += '\n'
 			if hasattr(os, 'getloadavg'):
@@ -1057,6 +1139,26 @@ Available under the BSD 3-Clause License
 			# It fills up the right columns to match the length of the left column.
 			misc += '\n' * ( (2 if CSE.statistics.statisticsEnabled else 3) - len(CSE.csePOA))
 
+			workers = _markup('[underline]Workers[/underline]\n')
+			workers += '\n'
+			tableWorkers = Table(row_styles = [ '', L.tableRowStyle], box = None)
+			tableWorkers.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n'), no_wrap = True, justify = 'right')
+			tableWorkers.add_column(_markup('[u]#Runs[/u]\n'), no_wrap = True, justify = 'right')
+			for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
+				a = 'Actor' if w.maxCount == 1 else 'Worker'
+				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
+			
+			threads = _markup('[underline]Threads[/underline]\n')
+			threads += '\n'
+			tableThreads = Table(row_styles = [ '', L.tableRowStyle], box = None)
+			tableThreads.add_column(_markup('[u]Thread Queues\n[/u]'), no_wrap = True)
+			tableThreads.add_column(_markup('[u]Count\n[/u]'), no_wrap = True)
+			r, p = BackgroundWorkerPool.countJobs()
+			tableThreads.add_row('Running', str(r))
+			tableThreads.add_row('Paused', str(p))
+
 			requestsGrid = Table.grid(expand = True)
 			requestsGrid.add_column(ratio = 28)
 			requestsGrid.add_column(ratio = 18)
@@ -1066,13 +1168,20 @@ Available under the BSD 3-Clause License
 			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
 
 			infoGrid = Table.grid(expand=True)
-			infoGrid.add_column(ratio = 33)
-			infoGrid.add_column(ratio = 67)
-			infoGrid.add_row(logs, misc)
+			infoGrid.add_column(ratio = 64)
+			infoGrid.add_column(ratio = 36)
+			infoGrid.add_row(misc, logs)
 
-			rightGrid = Table.grid(expand=True)
+			workerGrid = Table.grid(expand = True)
+			workerGrid.add_column(ratio = 64)
+			workerGrid.add_column(ratio = 36)
+			workerGrid.add_row(workers, threads)
+			workerGrid.add_row(tableWorkers, tableThreads)
+
+			rightGrid = Table.grid(expand = True)
 			rightGrid.add_column()
 			rightGrid.add_row(Panel(requestsGrid, style = style))
+			rightGrid.add_row(Panel(workerGrid, style = style))
 			rightGrid.add_row(Panel(infoGrid, style = style))
 
 			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
@@ -1084,7 +1193,11 @@ Available under the BSD 3-Clause License
 															ResourceTypes.GRP_FOPT, 
 															ResourceTypes.PCH_PCU))
 
-			resourceTypes = '[underline]Resource Types[/underline]\n'
+			#
+			#	Left column
+			#
+
+			resourceTypes = _markup('[underline]Resources[/underline]\n')
 			resourceTypes += '\n'
 			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
 			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
@@ -1108,10 +1221,13 @@ Available under the BSD 3-Clause License
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
 			resourceTypes += '\n'
 			resourceTypes += '\n'
-			resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n'	# substract the virtual resources
-			
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
+			# Correct height
+			resourceTypes += '\n' * (tableWorkers.row_count + 7)
+
+
 			result = Table.grid(expand = True)
-			result.add_column(width=15)
+			result.add_column(width = 15)
 			result.add_column()
 			result.add_row(Panel(resourceTypes, style = style), rightGrid )
 
@@ -1122,6 +1238,61 @@ Available under the BSD 3-Clause License
 				return _stats()
 		else:
 			return _stats()
+
+
+	def getConfigurationRich(self,
+							 style:Optional[Style] = Style()) -> Table:
+	
+		keys:list[Tuple[str, ...]] = []
+
+		# Prepare
+		for k in list(Configuration.all().keys()):
+			t = k.rsplit('.', maxsplit = 1) + [ k ]
+			keys.append(tuple(t))
+		keys.sort(key = lambda x : (x[0], x[1]))
+
+		# Init the result grid
+		result = Table.grid(expand = True)
+		result.add_column()
+
+		def _addTableToResult() -> None:
+			if table:
+				grid = Table.grid(expand = True)
+				grid.add_column()
+				grid.add_row(_markup(f'[u b]{previousTop}[/u b]  ') + Text('(info)\n\n', style = f'link {documentationLinks.get(previousTop)}'))
+				grid.add_row(table)
+
+				result.add_row(Panel(grid, style = style))
+
+
+		previousTop = None
+		table:Table = None
+		for section in keys:
+			if len(section) == 3:
+				if section[0] != previousTop:
+
+					# Finish the previous topic's table 
+					_addTableToResult()
+					# Assign a new headline topic
+					previousTop = section[0]
+				
+					# Create a table for the new topic
+					table = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
+					table.add_column(_markup('[u]Setting[/u]\n'), no_wrap = True, ratio = 30)
+					table.add_column(_markup('[u]Value(s)[/u]\n'), ratio = 70)
+				_v = Configuration.get(section[2])
+				if isinstance(_v, list) and len(_v) and isinstance(_v[0], tuple):
+					_v = [ str(x) for x in _v  ]
+				
+				#L.logDebug(_v)
+				table.add_row(section[1], str(_v) if not isinstance(_v, list) else ', '.join(list(_v)))
+		
+		# Add the final table to the result
+		_addTableToResult()
+
+		return result
+
+
 
 
 	def getResourceTreeRich(self, 

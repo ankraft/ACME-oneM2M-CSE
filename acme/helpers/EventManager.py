@@ -84,7 +84,7 @@ class Event(list):	# type:ignore[type-arg]
 				kwargs: Keyword function arguments.
 		"""
 
-		def _runner(*args:Any, **kwargs:Any) -> None:
+		def _runner(name:str, *args:Any, **kwargs:Any) -> None:
 			"""	Call all registered function for this event object. Pass on any argument.
 	
 				Args:
@@ -92,15 +92,15 @@ class Event(list):	# type:ignore[type-arg]
 					kwargs: Keyword function arguments.
 			"""
 			for function in self:
-				function(*args, **kwargs)
+				function(name, *args, **kwargs)
 
 		if not self.manager._running:
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(*args, **kwargs), name = f'ev_{self.name}')
+			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = f'ev_{self.name}')
 		else:
-			_runner(*args, **kwargs)
+			_runner(self.name, *args, **kwargs)
 
 
 	def __repr__(self) -> str:

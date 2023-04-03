@@ -260,7 +260,7 @@ class GroupManager(object):
 	#	Event Handler
 	#
 
-	def handleDeleteEvent(self, deletedResource:Resource) -> None:
+	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
 		"""	Handle a CSE-internal delete event (ie. whenever a resource is deleted).
 			Check whether the deleted resource is a member of a group. If yes, then remove the member.
 			This method is called by the `EventManager`. 

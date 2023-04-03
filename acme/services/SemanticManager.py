@@ -164,7 +164,7 @@ class SemanticManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the Semantic Manager.
 		"""
 		self.semanticHandler.reset()

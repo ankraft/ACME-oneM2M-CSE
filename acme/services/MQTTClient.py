@@ -358,11 +358,13 @@ class MQTTClient(object):
 		self.requestTimeout = Configuration.get('mqtt.timeout')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""

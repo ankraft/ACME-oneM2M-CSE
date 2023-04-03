@@ -69,7 +69,7 @@ class ActionManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the ActionManager service.
 		"""
 		L.isDebug and L.logDebug('ActionManager restarted')
@@ -82,7 +82,7 @@ class ActionManager(object):
 		self.ecpContinuousDefault = Configuration.get('cse.actr.ecp.continuous')
 
 
-	def configUpdate(self, key:Optional[str] = None, value:Any = None) -> None:
+	def configUpdate(self, name:str, key:Optional[str] = None, value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
 		if key not in [ 'cse.actr.ecp.periodic', 'cse.actr.ecp.continuous' ]:
@@ -93,7 +93,7 @@ class ActionManager(object):
 	###############################################################################################
 
 
-	def evaluateActions(self, resource:Resource) -> None:
+	def evaluateActions(self, name:str, resource:Resource) -> None:
 		_ri = resource.ri
 		_now = utcTime()
 		L.isDebug and L.logDebug(f'Looking for resource actions for: {_ri}')

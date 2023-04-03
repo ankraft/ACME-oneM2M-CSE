@@ -38,6 +38,7 @@ from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
 from ..services.Statistics import Statistics
 from ..services.Storage import Storage
+from ..services.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
@@ -100,6 +101,9 @@ statistics:Statistics							= None
 
 storage:Storage									= None
 """	Runtime instance of the `Storage`. """
+
+textUI:TextUI								= None
+"""	Runtime instance of the `TextUI`. """
 
 time:TimeManager								= None
 """	Runtime instance of the `TimeManager`. """
@@ -181,7 +185,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global action, announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
-	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
+	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
@@ -248,8 +252,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceReduceFactor = Configuration.get('cse.operation.jobBalanceReduceFactor'))
 
 	console = Console()						# Start the console
+	textUI = TextUI()						# Start the textUI
 
-	storage = Storage()						# Initiatlize the resource storage
+	storage = Storage()						# Initialize the resource storage
 	statistics = Statistics()				# Initialize the statistics system
 	registration = RegistrationManager()	# Initialize the registration manager
 	validator = Validator()					# Initialize the resource validator
@@ -277,11 +282,14 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		return False
 	
 	# Start the HTTP server
-	httpServer.run() 						# This does return (!)
+	if not httpServer.run(): 						# This does return (!)
+		L.logErr('Terminating', showStackTrace = False)
+		cseStatus = CSEStatus.STOPPED
+		return False 					
 
 	# Start the MQTT client
 	if not mqttClient.run():				# This does return
-		L.logErr('Terminating')
+		L.logErr('Terminating', showStackTrace = False)
 		cseStatus = CSEStatus.STOPPED
 		return False 					
 
@@ -336,6 +344,7 @@ def _shutdown() -> None:
 		event.cseShutdown() 	# type: ignore
 	
 	# shutdown the services
+	textUI and textUI.shutdown()
 	console and console.shutdown()
 	time and time.shutdown()
 	semantic and semantic.shutdown()

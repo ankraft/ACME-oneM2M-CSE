@@ -13,7 +13,7 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Tuple, cast, Optional
-import random, string, sys, re, threading, socket
+import random, string, sys, re, threading
 import traceback
 from distutils.util import strtobool
 
@@ -820,37 +820,6 @@ def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
 	thread.name = str(thread.native_id)
 
 
-##############################################################################
-#
-#	Network
-
-
-def getIPAddress(hostname:Optional[str] = None) -> str:
-	"""	Lookup and return the IP address for a host name.
-	
-		Args:
-			hostname: The host name to look-up. If none is given, the own host name is tried.
-		Return:
-			IP address, or 127.0.0.1 as a last resort. *None* is returned in case of an error.
-	"""
-	if not hostname:
-		hostname = socket.gethostname()
-	
-	try:
-		ip = socket.gethostbyname(hostname)
-
-		#	Try to resolve a local address. For example, sometimes raspbian
-		#	need to add a 'local' ir 'lan' postfix, depending on the local 
-		#	device configuration
-		if ip.startswith('127.'):	# All local host addresses
-			for ext in ['.local', '.lan']:
-				try:
-					ip = socket.gethostbyname(hostname + ext)
-				except:
-					pass
-		return ip
-	except Exception:
-		return ''
 
 ##############################################################################
 #

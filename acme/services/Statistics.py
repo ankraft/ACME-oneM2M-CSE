@@ -84,34 +84,34 @@ class Statistics(object):
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			CSE.event.addHandler(CSE.event.createResource, lambda _: self._handleStatsEvent(createdResources)) 	# type: ignore
-			CSE.event.addHandler(CSE.event.updateResource, lambda _: self._handleStatsEvent(updatedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.deleteResource, lambda _: self._handleStatsEvent(deletedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.expireResource, lambda _: self._handleStatsEvent(expiredResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpRetrieve, lambda: self._handleStatsEvent(httpRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.httpCreate, lambda: self._handleStatsEvent(httpCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpUpdate, lambda: self._handleStatsEvent(httpUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpDelete, lambda: self._handleStatsEvent(httpDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpNotify, lambda: self._handleStatsEvent(httpNotifies))			# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendCreate, lambda: self._handleStatsEvent(httpSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda: self._handleStatsEvent(httpSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendDelete, lambda: self._handleStatsEvent(httpSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendNotify, lambda: self._handleStatsEvent(httpSendNotifies))	# type: ignore
-			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda: self._handleStatsEvent(mqttRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.mqttCreate, lambda: self._handleStatsEvent(mqttCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttUpdate, lambda: self._handleStatsEvent(mqttUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttDelete, lambda: self._handleStatsEvent(mqttDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttNotify, lambda: self._handleStatsEvent(mqttNotifies))			# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda: self._handleStatsEvent(mqttSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
-			CSE.event.addHandler(CSE.event.notification, lambda: self._handleStatsEvent(notifications))			# type: ignore
+			CSE.event.addHandler(CSE.event.createResource, lambda n, _: self._handleStatsEvent(createdResources)) 	# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, lambda n: self._handleStatsEvent(httpRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, lambda n: self._handleStatsEvent(httpDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda n: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendCreate, lambda n: self._handleStatsEvent(httpSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda n: self._handleStatsEvent(httpSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendDelete, lambda n: self._handleStatsEvent(httpSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda n: self._handleStatsEvent(mqttRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttCreate, lambda n: self._handleStatsEvent(mqttCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttUpdate, lambda n: self._handleStatsEvent(mqttUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttDelete, lambda n: self._handleStatsEvent(mqttDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda n: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda n: self._handleStatsEvent(mqttSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda n: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda n: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))			# type: ignore
 			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)									# type: ignore
-			CSE.event.addHandler(CSE.event.logError, lambda: self._handleStatsEvent(logErrors))					# type: ignore
-			CSE.event.addHandler(CSE.event.logWarning, lambda: self._handleStatsEvent(logWarnings))				# type: ignore
+			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))					# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))				# type: ignore
 
 			# Also do some internal handling
 			CSE.event.addHandler(CSE.event.cseReset, self.restart)												# type: ignore
@@ -134,12 +134,12 @@ class Statistics(object):
 		return True
 	
 	
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the statistics service.
 		"""
 		self.purgeDBStatistics()
 		self.stats = self.setupStats()
-		self.handleCseStartup()
+		self.handleCseStartup(None)
 		L.isDebug and L.logDebug('Statistics restarted')
 
 
@@ -209,7 +209,7 @@ class Statistics(object):
 				self.stats[eventType] = 1		# type: ignore
 
 
-	def handleCseStartup(self) -> None:
+	def handleCseStartup(self, name:str) -> None:
 		"""	Assign the CSE's startup time.
 		"""
 		with self.statLock:

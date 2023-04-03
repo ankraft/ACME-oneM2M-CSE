@@ -149,11 +149,13 @@ class RemoteCSEManager(object):
 		self.csrOnRegistrarURI		= f'{self.registrarCSI}{CSE.cseCsi}'
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
@@ -177,7 +179,7 @@ class RemoteCSEManager(object):
 	#	Connection Monitor
 	#
 
-	def start(self) -> None:
+	def start(self, name:str) -> None:
 		"""	Start the remote monitor as a background worker. 
 		"""
 		if not self.enableRemoteCSE:
@@ -264,10 +266,13 @@ class RemoteCSEManager(object):
 	#	Event Handlers
 	#
 
-	def handleRegistrarRegistration(self, registrarCSE:Resource, ownRegistrarCSR:Resource) -> None:
+	def handleRegistrarRegistration(self, name:str,  
+										   registrarCSE:Resource, 
+										   ownRegistrarCSR:Resource) -> None:
 		""" Event handler for adding a registrar CSE/CSR CSI to the list of registered csi.
 
 			Args:
+				name:Event name.
 			 	registrarCSE: The CSR that just registered (the CSR from the registrar CSE).
 				ownRegistrarCSR: The own CSR on the the registrar CSE
 		"""
@@ -275,20 +280,22 @@ class RemoteCSEManager(object):
 		self.ownCSRonRegistrarCSE = ownRegistrarCSR
 
 
-	def handleRegistrarDeregistration(self, registrarCSE:Optional[Resource] = None) -> None:
+	def handleRegistrarDeregistration(self, name:str, registrarCSE:Optional[Resource] = None) -> None:
 		"""	Event handler for removing the registrar CSE/CSR CSI from the list of registered csi.
 
 			Args:
+				name:Event name.
 				registrarCSE: The registrar CSE that is de-registered.
 		"""
 		self.registrarCSE = None
 		self.ownCSRonRegistrarCSE = None
 
 
-	def handleRegistreeCSERegistration(self, registreeCSR:Resource) -> None:
+	def handleRegistreeCSERegistration(self, name:str, registreeCSR:Resource) -> None:
 		"""	Event handler for adding a registree's CSE's <CSR> to the list of registered descendant CSE. 
 
 			Args:
+				name:Event name.
 				registreeCSR: The CSR that just registered.
 		"""
 		if not (registreeCSRcsi := registreeCSR.csi):	# Not a CSR?
@@ -319,10 +326,11 @@ class RemoteCSEManager(object):
 			self._updateCSRonRegistrarCSE()
 
 
-	def handleRegistreeCSEDeregistration(self, registreeCSR:Resource ) -> None:
+	def handleRegistreeCSEDeregistration(self, name:str, registreeCSR:Resource ) -> None:
 		"""	Event handler for removals of registree's CSE/CSR CSI from the list of registered descendant CSE. 
 
 			Args:
+				name:Event name.
 				registreeCSR: the CSR that just de-registered.
 		"""
 		L.isDebug and L.logDebug(f'Handling de-registration of registree CSE: {registreeCSR.csi}')
@@ -341,10 +349,11 @@ class RemoteCSEManager(object):
 			self._updateCSRonRegistrarCSE()
 
 
-	def handleRegistreeCSEUpdate(self, registreeCSR:Resource, updateDict:JSON) -> None:
+	def handleRegistreeCSEUpdate(self, name:str, registreeCSR:Resource, updateDict:JSON) -> None:
 		"""	Event handler for an updates of a registree CSE.
 
 			Args:
+				name:Event name.
 				registreeCSR: The updated registree CSE.
 				updateDict: The resource dictionary with the updated attributes.
 		"""

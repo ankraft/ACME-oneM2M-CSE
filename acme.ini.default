@@ -481,6 +481,20 @@ confirmQuit=False
 theme=dark
 
 
+
+;
+;   Text UI settings
+;
+[cse.textui]
+; Start directly with the TUI
+startWithTUI=True
+; Set the color theme for the text UI. Allowed values are "dark" and "light".
+; Default: same as [cse.console].theme
+theme=${cse.console:theme}
+; Interval for refreshing various views in the text UI.
+; Default: 2.0
+refreshInterval=2.0
+
 ;
 ;	Scripting settings
 ;

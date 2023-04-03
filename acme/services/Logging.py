@@ -194,7 +194,9 @@ class Logging:
 
 
 	@staticmethod
-	def configUpdate(key:Optional[str] = None, value:Optional[Any] = None) -> None:
+	def configUpdate(name:str, 
+					 key:Optional[str] = None, 
+					 value:Optional[Any] = None) -> None:
 		"""	Handle configuration update.
 		"""
 		restartNeeded = False

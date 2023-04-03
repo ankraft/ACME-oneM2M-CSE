@@ -131,7 +131,7 @@ class RequestManager(object):
 		return True
 
 	
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the registrationManager service.
 		"""
 		# Terminate waiting request and pollingQueue actors
@@ -154,11 +154,13 @@ class RequestManager(object):
 		self.sendToFromInResponses	= Configuration.get('cse.sendToFromInResponses')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""

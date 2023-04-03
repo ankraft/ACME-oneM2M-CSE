@@ -83,7 +83,7 @@ class NotificationManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the NotificationManager service.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
@@ -103,7 +103,8 @@ class NotificationManager(object):
 		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""

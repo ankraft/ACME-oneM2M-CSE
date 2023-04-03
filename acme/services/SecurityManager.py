@@ -92,7 +92,9 @@ class SecurityManager(object):
 		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
 
 
-	def configUpdate(self, key:Optional[str] = None, value:Any = None) -> None:
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None,
+						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
 		if key not in [ 'cse.security.enableACPChecks', 

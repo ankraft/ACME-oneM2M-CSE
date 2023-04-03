@@ -35,7 +35,7 @@ class TimeSeriesManager(object):
 		return True
 
 	
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the TimeSeriesManager service.
 		"""
 		self.stopMonitoring()

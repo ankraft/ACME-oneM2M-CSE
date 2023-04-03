@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
 - [LOGGING] Allow to exclude log messages from external libraries and components.
+- [TUI] Added text UI.
 
 ### Changed
 - [SCRIPTS] Moved the script interpreter from a batch-based to a lisp-based language.  
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Lots of small runtime optimizations.
 - [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
 **This is a non-backward compatible change due to the DB schema changes.**
+- [CONSOLE] Re-implemented some console services to make them reusable for the text UI.
 
 ### Fixed
 - [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.

@@ -35,6 +35,8 @@ class RegistrationManager(object):
 
 		'_eventRegistreeCSEHasRegistered',
 		'_eventRegistreeCSEHasDeregistered',
+		'_eventAEHasRegistered',
+		'_eventAEHasDeregistered',
 		'_eventRegistreeCSEUpdate',
 		'_eventExpireResource',
 	)
@@ -57,6 +59,8 @@ class RegistrationManager(object):
 		# Optimized event handling
 		self._eventRegistreeCSEHasRegistered = CSE.event.registreeCSEHasRegistered			# type: ignore
 		self._eventRegistreeCSEHasDeregistered = CSE.event.registreeCSEHasDeregistered		# type: ignore
+		self._eventAEHasRegistered = CSE.event.aeHasRegistered								# type: ignore
+		self._eventAEHasDeregistered = CSE.event.aeHasDeregistered							# type: ignore
 		self._eventRegistreeCSEUpdate = CSE.event.registreeCSEUpdate						# type: ignore
 		self._eventExpireResource = CSE.event.expireResource								# type: ignore
 
@@ -76,7 +80,8 @@ class RegistrationManager(object):
 		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
@@ -89,7 +94,7 @@ class RegistrationManager(object):
 		self.restartExpirationMonitor()
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the registration services.
 		"""
 		self._assignConfig()
@@ -135,6 +140,21 @@ class RegistrationManager(object):
 		return Result(status = True, data = originator) # return (possibly new) originator
 
 
+	def postResourceCreation(self, resource:Resource) -> None:
+		"""	Handle some post-create aspects, for example send events for some resources.
+
+			Args:
+				resource: Resource that was created.
+		"""
+		ty = resource.ty
+		if ty == ResourceTypes.AE:
+			# Send event
+			self._eventAEHasRegistered(resource)
+		elif ty == ResourceTypes.CSR:
+			# send event
+			self._eventRegistreeCSEHasRegistered(resource)
+
+
 	def handleCreator(self, resource:Resource, originator:str) -> Result:
 		"""	Check for set creator attribute as well as assign it to allowed resources.
 		"""
@@ -169,6 +189,21 @@ class RegistrationManager(object):
 				return Result.errorResult(dbg = 'cannot deregister CSR')
 		# fall-through
 		return Result.successResult()
+
+
+	def postResourceDeletion(self, resource:Resource) -> None:
+		"""	Handle some post-delete aspects, for example send events for some resources.
+
+			Args:
+				resource: Resource that was created.
+		"""
+		ty = resource.ty
+		if ty == ResourceTypes.AE:
+			# Send event
+			self._eventAEHasDeregistered(resource)
+		elif ty == ResourceTypes.CSR:
+			# send event
+			self._eventRegistreeCSEHasDeregistered(resource)
 
 
 	#########################################################################
@@ -219,9 +254,13 @@ class RegistrationManager(object):
 	#	Handle AE deregistration
 	#
 
-	def handleAEDeRegistration(self, resource: Resource) -> bool:
+	def handleAEDeRegistration(self, ae:Resource) -> bool:
 		# More De-registration functions happen in the AE's deactivate() method
-		L.isDebug and L.logDebug(f'DeRegistering AE. aei: {resource.aei}')
+		L.isDebug and L.logDebug(f'DeRegistering AE. aei: {ae.aei}')
+
+		# Send event
+		self._eventAEHasDeregistered(ae)
+
 		return True
 
 
@@ -261,8 +300,6 @@ class RegistrationManager(object):
 		if not (res := CSE.validator.validateCSICB(csr.cb, 'cb')).status:
 			return res
 
-		# send event
-		self._eventRegistreeCSEHasRegistered(csr)
 		return Result.successResult()
 
 

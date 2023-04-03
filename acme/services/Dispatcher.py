@@ -645,6 +645,8 @@ class Dispatcher(object):
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
+		CSE.registration.postResourceCreation(res.resource)
+
 		#
 		# Handle RCN's
 		#
@@ -1039,6 +1041,10 @@ class Dispatcher(object):
 
 		# remove resource
 		res = self.deleteLocalResource(resource, originator, withDeregistration = True)
+
+		# Some post-deletion stuff
+		CSE.registration.postResourceDeletion(resource)
+
 		return Result(status = res.status, resource = resultContent, rsc = res.rsc, dbg = res.dbg)
 
 

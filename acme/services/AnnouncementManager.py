@@ -82,10 +82,11 @@ class AnnouncementManager(object):
 		self.delayAfterRegistration	= Configuration.get('cse.announcements.delayAfterRegistration')
 
 
-	def configUpdate(self, key:Optional[str] = None, value:Optional[Any] = None) -> None:
+	def configUpdate(self, name:str, key:Optional[str] = None, value:Optional[Any] = None) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
@@ -104,10 +105,11 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRegistrarCSE(self, remoteCSE:Resource, remoteCSR:Resource) -> None:
+	def handleRegisteredToRegistrarCSE(self, name:str, remoteCSE:Resource, remoteCSR:Resource) -> None:
 		"""	Handle registrations to a registrar CSE.
 
 			Args:
+				name:Event name.
 				remoteCSE: The remote `CSEBase` resource.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
@@ -115,10 +117,11 @@ class AnnouncementManager(object):
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
-	def handleRegistreeCSEHasRegistered(self, remoteCSR:Resource) -> None:
+	def handleRegistreeCSEHasRegistered(self, name:str, remoteCSR:Resource) -> None:
 		"""	Handle registrations when a registree CSE has registered.
 
 			Args:
+				name:Event name.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
 		time.sleep(self.delayAfterRegistration) 	# Give some time until remote CSE is fully connected
