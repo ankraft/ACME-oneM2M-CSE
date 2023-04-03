@@ -35,6 +35,7 @@ from ..services import CSE
 from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..helpers.Interpreter import SType
 from ..services.Logging import Logging as L, LogLevel
 
 
@@ -391,7 +392,12 @@ class HttpServer(object):
 			cmd, _, arg = cmd.partition(' ')
 			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
 				return prepareUTResponse(ResponseStatusCode.badRequest, str(res[1]))
-			return prepareUTResponse(ResponseStatusCode.OK, str(res[1]))
+			
+			if res[1].type in [SType.tList, SType.tListQuote]:
+				_r = ','.join(res[1].raw())
+			else:
+				_r = res[1].toString(quoteStrings = True, pythonList = True)
+			return prepareUTResponse(ResponseStatusCode.OK, _r)
 
 		L.logWarn('UT functionality is not fully supported.')
 		return prepareUTResponse(ResponseStatusCode.badRequest, None)

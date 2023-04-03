@@ -3186,6 +3186,15 @@
 	//	Request Arguments, Filter Criteria etc
 	//
 
+	"aq": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "advancedQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
 	"cra": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],

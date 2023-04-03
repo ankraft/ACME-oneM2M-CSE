@@ -1410,7 +1410,8 @@ class RequestManager(object):
 			if fcAttrs:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
 				for h in [ 'lim', 'lvl', 'ofst', 'arp',
 						   'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr',
-						   'smf' ]:
+						   'smf', 
+						   'aq']:
 					if (v := gget(fcAttrs, h)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
 				for h in [ 'lbl', 'cty' ]: # different handling of list attributes

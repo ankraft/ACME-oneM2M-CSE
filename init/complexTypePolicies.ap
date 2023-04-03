@@ -1215,6 +1215,16 @@
 	//
 	//	See also "atr", "cra", "crb", "exa", "exb", "ms", "us", "sts", "stb", "ty", "chty", 
 	//	"sza", "szb", "fo", "ops" above
+	"aq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "advancedQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
 	"lbl": [
 		{
 			"rtypes": [ "COMPLEX" ],

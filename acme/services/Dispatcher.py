@@ -196,7 +196,7 @@ class Dispatcher(object):
 				if not CSE.security.hasAccess(originator, res.resource, permission):
 					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
 
-				# if rcn == attributes then we can return here, whatever the result is
+				# if rcn == "attributes" then we can return here, whatever the result is
 				if rcn == ResultContentType.attributes:
 					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 						return resCheck
@@ -532,7 +532,6 @@ class Dispatcher(object):
 		# TODO childResourceType
 		# TODO parentResourceType
 
-
 		# Attributes:
 		for name, value in filterCriteria.attributes.items():
 			if isinstance(value, str) and '*' in value:
@@ -542,6 +541,10 @@ class Dispatcher(object):
 
 		# TODO childAttribute
 		# TODO parentAttribute
+
+		# Advanced query
+		if filterCriteria.aq:
+			found += 1 if CSE.script.runComparisonQuery(filterCriteria.aq, r) else 0
 
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')

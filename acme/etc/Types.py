@@ -1698,6 +1698,10 @@ class FilterCriteria:
 	lbl:list = None
 	""" List of labels. Default is *None*. """
 
+	aq:str = None
+	""" Advanced query. Default is *None*. """
+
+
 	# Other filter attributes
 	attributes:Parameters = field(default_factory = dict)
 	""" All other remaining filter resource attributes. """

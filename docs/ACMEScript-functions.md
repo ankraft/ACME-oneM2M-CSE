@@ -1261,6 +1261,16 @@ Example:
     (print "false"))  ;; This expression is not executed
 ```
 
+Note that the first operant in comparison operations may be a list or a quoted list. Only if the second operant is not a list, too, then the comparison operation is repeated for every member in the first operant's list. The comparison operation evaluates to *true* if any of these comparisons returns *true*.
+
+Example:
+
+```lisp
+(== '(1 2 3) 2)  ;; Evaluates to "true"
+```
+
+
+
 | operation | Description | Example      |
 | --------- | ----------- | ------------ |
 | == | Equal to | ` (== a b) ;; equal to: a == b` |
@@ -1287,6 +1297,17 @@ Examples:
 (and (or true false) (not true)) ;; Returns false
 ```
 
+Note that the first operant in logical operations may be a list or quoted list. Only if the second operant is not a list, too, then the logical operation is repeated for every member in the first operant's list. The logical operation evaluates to *true* if any of these operations returns *true*.
+
+Example:
+
+```lisp
+(and '(false false true) true)  ;; Evaluates to "true"
+(and '(false false false) true)  ;; Evaluates to "false"
+```
+
+
+
 | operation | Description                                      | Example                      |
 | --------- | ------------------------------------------------ | ---------------------------- |
 | or, \|    | logical *or* of two or more boolean expressions  | (or a b)  ;; a or b          |
@@ -1306,8 +1327,8 @@ The following mathematical operations are supported by ACMEScript. They are used
 Example:
 
 ```lisp
-(or (< 1 2) (>= 4 3) (== 1 1))   ;; Returns true
-(and (or true false) (not true)) ;; Returns false
+(* 6 7)        ;; Returns 42
+(* (+ 3 3) 7)  ;; Return 42
 ```
 
 | operation | Description                                 | Example                     |

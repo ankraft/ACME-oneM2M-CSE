@@ -242,13 +242,16 @@ class SSymbol(object):
 				string = value
 			elif isinstance(value, (int, float)):
 				number = Decimal(value)
-			elif isinstance(value, list):
-				lstQuote = value
+			# elif isinstance(value, list):
+			# 	lstQuote = value
 			elif isinstance(value, dict):
 				jsn = value
+			elif isinstance(value, list):
+				lstQuote = [ SSymbol(value = _v) for _v in value ]
 			else:
 				raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
+		# Assign known types
 		if string:
 			self.type = SType.tString
 			self.value = string
@@ -353,12 +356,15 @@ class SSymbol(object):
 		return False
 	
 
-	def toString(self, quoteStrings:bool = False) -> str:
+	def toString(self, quoteStrings:bool = False, pythonList:bool = False) -> str:
 		if self.type in [ SType.tList, SType.tListQuote ]:
-			return f'( {" ".join("(" if v == "[" else ")" if v == "]" else v.toString(quoteStrings = quoteStrings) for v in cast(list, self.value))} )'
+			# Set the list chars
+			lchar1 = '[' if pythonList else '('
+			lchar2 = ']' if pythonList else ')'
+			return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
 			# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
 		elif self.type == SType.tLambda:
-			return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
+			return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
 		elif self.type == SType.tBool:
 			return str(self.value).lower()
 		elif self.type == SType.tString:
@@ -410,7 +416,7 @@ class SExprParser(object):
 	errorExpression:SSymbol = None
 	"""	In case of an error this attribute contains the error expression. """
 
-	def normalizeInput(self, input:str) -> List[SSymbol]:
+	def normalizeInput(self, input:str, allowBrackets:bool = False) -> List[SSymbol]:
 		"""	Parse an input string into a list of opening and closing parentheses, and
 			atoms. Atoms include symbols, numbers and strings.
 
@@ -419,6 +425,7 @@ class SExprParser(object):
 
 			Args:
 				input: The input string.
+				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
 			
 			Return:
 				A list of paranthesis and atoms.
@@ -428,6 +435,23 @@ class SExprParser(object):
 		isEscaped = False
 		inString = False
 		jsonLevel = 0
+
+		# prepare the list chars () or mappings for brackets if allowed
+		if allowBrackets:
+			listChars = '()[]'
+			listCharsMapping ={ 
+				'(': '(',
+				')': ')',
+				'[': '(',
+				']': ')',
+			}
+		else:
+			listChars = '()'
+			listCharsMapping ={ 
+				'(': '(',
+				')': ')',
+			}
+
 
 		for ch in input:
 			# escape and skip
@@ -473,18 +497,22 @@ class SExprParser(object):
 				currentSymbol = ''
 				continue
 
-			# detect paranthesis
-			if ch in '()':
+			# detect parenthesis
+			if ch in listChars:
 				if currentSymbolLen > 1:
 					normalizedInput.append(SSymbol(symbol = currentSymbol[:-1]))
-				normalizedInput.append(SSymbol(listChar = ch))
+				if allowBrackets and ch == '[':
+					normalizedInput.append(SSymbol(symbol = "'"))
+				normalizedInput.append(SSymbol(listChar = listCharsMapping[ch]))
 				currentSymbol = ''
 				continue
 
 		return normalizedInput
 
 
-	def ast(self, input:List[SSymbol]|str, topLevel:bool = True) -> List[SSymbol]:
+	def ast(self, input:List[SSymbol]|str, 
+				  topLevel:bool = True, 
+				  allowBrackets:bool = False) -> List[SSymbol]:
 		""" Generate an abstract syntax tree (AST) from normalized input.
 
 			The result is a list of elements. Each element is either an
@@ -493,6 +521,7 @@ class SExprParser(object):
 			Args:
 				input: Either a string or a list of `SSymbol` elements. A string would internally be parsed to a list of `SSymbol` elements before further processing.
 				topLevel: Indicating whether a parsed input is at the top level or a branch of a another AST.
+				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
 			
 			Return:
 				A list that represents the abstract syntax tree.
@@ -503,7 +532,7 @@ class SExprParser(object):
 
 		# Normalize if the input is a string
 		if isinstance(input, str):
-			input = self.normalizeInput(input)
+			input = self.normalizeInput(input, allowBrackets)
 
 		ast:list[SSymbol] = []
 		# Go through each element in the normalizedInput:
@@ -538,9 +567,9 @@ class SExprParser(object):
 						matchCtr -= 1
 			
 				if isQuote:	# escaped with ' -> plain list
-					ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False)))
+					ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
 				else:		# normal list
-					ast.append(SSymbol(lst = self.ast(input[startIndex:index], False)))
+					ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
 			elif symbol.type == SType.tListEnd:
 					self.errorExpression = input	# type:ignore[assignment]
 					raise ValueError('Invalid input: Unmatched closing parenthesis.')
@@ -695,6 +724,7 @@ class PContext():
 		'maxRuntime',
 		'fallbackFunc',
 		'monitorFunc',
+		'allowBrackets',
 		'ast',
 		'result',
 		'state',
@@ -727,7 +757,8 @@ class PContext():
 				 matchFunc:PMatchCallable			= lambda pcontext, l, r: l == r,
 				 maxRuntime:float					= None,
 				 fallbackFunc:PSymbolCallable		= None,
-				 monitorFunc:PSymbolCallable		= None) -> None:
+				 monitorFunc:PSymbolCallable		= None,
+				 allowBrackets:bool					= False) -> None:
 		"""	Initialization of a `PContext` object.
 
 			Args:
@@ -743,6 +774,7 @@ class PContext():
 				maxRuntime: Number of seconds that is a script allowed to run.
 				fallbackFunc: An optional function to retrieve unknown symbols from the caller.
 				monitorFunc: An optional function to monitor function calls, e.g. to forbid them during particular executions.
+				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
 		"""
 
 		# Extra parameters that can be provided
@@ -758,6 +790,7 @@ class PContext():
 		self.maxRuntime = maxRuntime
 		self.fallbackFunc = fallbackFunc
 		self.monitorFunc = monitorFunc
+		self.allowBrackets = allowBrackets
 
 		# State, result and error attributes	
 		self.ast:list[SSymbol] = None
@@ -807,7 +840,7 @@ class PContext():
 		# Validate script first.
 		parser = SExprParser()
 		try:
-			self.ast = parser.ast(removeCommentsFromJSON(self.script))
+			self.ast = parser.ast(removeCommentsFromJSON(self.script), allowBrackets = self.allowBrackets)
 		except ValueError as e:
 			self.setError(PError.invalid, str(e), expression = parser.errorExpression)
 			return False
@@ -2601,7 +2634,31 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 
 	for i in range(2, symbol.length):
 		try:
-			r1.value = op(r1.value, pcontext._executeExpression(symbol[i], symbol).result.value)
+			# Get the second operant
+			r2 = pcontext._executeExpression(symbol[i], symbol).result
+			
+			# If the first operant is a list, then we have to perform a bit different
+			if r1.type in (SType.tList, SType.tListQuote):
+
+				# If both operants are list then do a raw comparison
+				if r2.type in (SType.tList, SType.tListQuote):
+					r1.value = op(r1.raw(), r2.raw())
+				
+				# If the second operant is NOT a list, then iterate of the first and do the
+				# operation. If any succeeds, then the operation is true.
+				# This is only possible for boolean operations
+				else:
+					if tp != SType.tBool:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators: {symbol}'))
+					_v1 = None
+					for s in cast(list, r1.value):
+						if _v1 := op(s.value, r2.value):	# True if any
+							break
+					r1.value = _v1
+			
+			# Otherwise just apply the operator
+			else:
+				r1.value = op(r1.value, r2.value)
 		except ZeroDivisionError as e:
 			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
 		except TypeError as e:
