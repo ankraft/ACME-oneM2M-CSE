@@ -321,7 +321,7 @@ class Storage(object):
 		if (_ris := self.db.searchChildResourceRIs(pi, ty)):
 			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
 			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x).resource, docs)))
-		return []
+		return []	# type:ignore[return-value]
 
 		# docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
 		# return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x).resource, docs)))
