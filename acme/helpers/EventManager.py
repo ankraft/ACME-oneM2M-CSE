@@ -92,6 +92,10 @@ class Event(list):	# type:ignore[type-arg]
 					kwargs: Keyword function arguments.
 			"""
 			for function in self:
+				# if self.runInBackground:
+				# 	x = BackgroundWorkerPool.runJob(lambda name = name, args = args, kwargs = kwargs: function(name, *args, **kwargs))
+				# else:
+				# 	function(name, *args, **kwargs)
 				function(name, *args, **kwargs)
 
 		if not self.manager._running:
@@ -101,6 +105,7 @@ class Event(list):	# type:ignore[type-arg]
 			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = f'ev_{self.name}')
 		else:
 			_runner(self.name, *args, **kwargs)
+		# _runner(self.name, *args, **kwargs)
 
 
 	def __repr__(self) -> str:

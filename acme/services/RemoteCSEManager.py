@@ -320,10 +320,13 @@ class RemoteCSEManager(object):
 				self.descendantCSR[eachDcse] = (None, registreeCSRcsi)	# add the remoteCSRcsr to self's dcse list
 
 		L.isDebug and L.logDebug(f'Registree CSE registered {registreeCSRcsi}')
-
+		
 		# Update the registrar CSE with the new values
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 			self._updateCSRonRegistrarCSE()
+		
+		# Send another event when the own CSE has fully registered
+		CSE.event.registeredToRemoteCSE(registreeCSR)	# type: ignore
 
 
 	def handleRegistreeCSEDeregistration(self, name:str, registreeCSR:Resource ) -> None:

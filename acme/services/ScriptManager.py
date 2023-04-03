@@ -97,7 +97,8 @@ class ACMEPContext(PContext):
 				 errorFunc:Optional[PFuncCallable] = None,
 				 filename:Optional[str] = None,
 				 fallbackFunc:PSymbolCallable = None,
-				 monitorFunc:PSymbolCallable = None) -> None:
+				 monitorFunc:PSymbolCallable = None,
+				 allowBrackets:bool = False) -> None:
 		"""	Initializer for the context class.
 
 			Args:
@@ -106,6 +107,7 @@ class ACMEPContext(PContext):
 				postFunc: An optional callback that is called with the `PContext` object just after the script finished execution.
 				errorFunc: An optional callback that is called with the `PContext` object when encountering an error during script execution.
 				filename: The script's filename.
+				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
 		"""
 		super().__init__(script, 
 
@@ -144,7 +146,8 @@ class ACMEPContext(PContext):
 						 matchFunc = lambda p, l, r : simpleMatch(l, r),
 						 errorFunc = errorFunc,
 						 fallbackFunc = fallbackFunc,
-						 monitorFunc = monitorFunc)
+						 monitorFunc = monitorFunc,
+						 allowBrackets = allowBrackets)
 
 		self.scriptFilename = filename if filename else None
 		self.fileMtime = os.stat(filename).st_mtime if filename else None
@@ -365,16 +368,8 @@ class ACMEPContext(PContext):
 		# config value
 		if (_v := Configuration.get(_key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined key: {_key}'))
-		elif isinstance(_v, str):
-			return pcontext.setResult(SSymbol(string = _v))
-		elif isinstance(_v, (int, float)):
-			return pcontext.setResult(SSymbol(number = Decimal(_v)))
-		elif isinstance(_v, dict):
-			return pcontext.setResult(SSymbol(jsn = _v))
-		elif isinstance(_v, bool):
-			return pcontext.setResult(SSymbol(boolean = _v))
-		# TODO support lists
-		return pcontext.setResult(SSymbol())
+		
+		return pcontext.setResult(SSymbol(value = _v))
 
 
 	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1616,7 +1611,7 @@ class ScriptManager(object):
 			Return:
 				Boolean value indicating the success of the query.
 		"""
-		jsn = pureResource(resource.asDict())[0] if isinstance(resource, Resource) else cast(JSON, resource)
+		jsn = pureResource(resource.asDict() if isinstance(resource, Resource) else cast(JSON, resource) )[0]  
 
 		L.isDebug and L.logDebug(f'Running query: {query} against: {jsn}')
 
@@ -1650,9 +1645,12 @@ class ScriptManager(object):
 			return pcontext
 
 	
-		pcontext = ACMEPContext(query, fallbackFunc = getAttribute, monitorFunc = monitorExecution)
+		pcontext = ACMEPContext(query, fallbackFunc = getAttribute, monitorFunc = monitorExecution, allowBrackets = True)
 		pcontext = cast(ACMEPContext, pcontext.run())
-		return True
+		if pcontext.result.type != SType.tBool:
+			L.logWarn(f'Expected boolean for comparison, received: {pcontext.result.value}')
+			return False
+		return cast(bool, pcontext.result.value)
 
 	##########################################################################
 	#

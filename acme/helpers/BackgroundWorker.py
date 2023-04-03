@@ -355,7 +355,7 @@ class Job(Thread):
 			if self in Job.runningJobs:
 				Job.runningJobs.remove(self)
 			Job.pausedJobs.append(self)
-		self.pauseFlag.clear() # Block the thread
+			self.pauseFlag.clear() # Block the thread
 		return self
 
 
@@ -370,7 +370,7 @@ class Job(Thread):
 			if self in Job.pausedJobs:
 				Job.pausedJobs.remove(self)
 			Job.runningJobs.append(self)
-		self.pauseFlag.set() # Stop blocking
+			self.pauseFlag.set() # Stop blocking
 		return self
 
 

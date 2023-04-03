@@ -75,8 +75,8 @@ class TextUI(object):
 							  CSE.event.aeHasDeregistered, 									# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
-							  CSE.event.registreeCSEUpdate],  self.registrationUpdate)		# type:ignore[attr-defined]
-
+							  CSE.event.registreeCSEUpdate,  								# type:ignore[attr-defined]
+							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
 
 		_textUI = self
 		L.isInfo and L.log('TextUI initialized')
@@ -107,10 +107,8 @@ class TextUI(object):
 	
 
 	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
-		L.log(name)
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
-
 
 	
 	def configUpdate(self, name:str, 
