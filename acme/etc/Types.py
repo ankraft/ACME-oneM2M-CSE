@@ -148,7 +148,7 @@ class ResourceTypes(ACMEIntEnum):
 	""" FlexContainerInstance resource type. """
 	TSB				= 60
 	"""	TimeSyncBeacon resource type. """
-	ACTR			= 63
+	ACTR			= 65
 	""" Action resource type. """
 	DEPR			= 66
 
@@ -234,7 +234,7 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
-	ACTRAnnc		= 10063
+	ACTRAnnc		= 10065
 	"""	Announced Action resource type. """
 	# TODO DEPRAnnc		= 10066
 
