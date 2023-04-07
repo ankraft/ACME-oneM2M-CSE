@@ -428,7 +428,7 @@ class Logging:
 		if nlb:	# Empty line before
 			Logging._console.print()
 		if isinstance(msg, str):
-			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end)
+			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end, highlight = False)
 		elif isinstance(msg, dict):
 			Logging._console.print(msg, style = style, end = end)
 		elif isinstance(msg, (Tree, Table, Text)):
