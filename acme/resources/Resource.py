@@ -660,7 +660,7 @@ class Resource(object):
 			If the attribute doesn't exist then it is created.
 		
 			Args:
-				key: The resource attribute's name. This can be a path (see `etc.Utils.setXPath`).
+				key: The resource attribute's name. This can be a path (see `setXPath`).
 				value: Value to assign to the attribute.
 				overwrite: Overwrite the value if already set.
 		"""
@@ -672,7 +672,7 @@ class Resource(object):
 		"""	Return the value of an attribute.
 		
 			Args:
-				key: Resource attribute name to look for. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to look for. This can be a path (see `findXPath`).
 				default: A default value to return if the attribute is not set.
 			Return:
 				The attribute's value, the *default* value, or None
@@ -715,7 +715,7 @@ class Resource(object):
 			It maps to the `setAttribute()` method, and always overwrites existing values.
 
 			Args:
-				key: The resource attribute's name. This can be a path (see `etc.Utils.setXPath`).
+				key: The resource attribute's name. This can be a path (see `setXPath`).
 				value: Value to assign to the attribute.
 		"""
 		self.setAttribute(key, value)
@@ -727,7 +727,7 @@ class Resource(object):
 			It maps to the `attribute()` method, but there is no default value.
 
 			Args:
-				key: Resource attribute name to look for. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to look for. This can be a path (see `findXPath`).
 			Return:
 				The attribute's value, or None
 		"""
@@ -740,7 +740,7 @@ class Resource(object):
 			It maps to the `delAttribute()` method, with *setNone* implicitly set to the default.
 
 			Args:
-				key: Resource attribute name to delete. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to delete. This can be a path (see `findXPath`).
 		"""
 		self.delAttribute(key)
 

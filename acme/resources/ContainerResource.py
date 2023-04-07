@@ -71,7 +71,7 @@ class ContainerResource(AnnounceableResource):
 
 
 	def updateLaOlLatestTimestamp(self) -> None:
-		"""	Update the *lt* attribute of the *latest* and *oldest virtual child-resources.
+		"""	Update the *lt* attribute of the *latest* and *oldest* virtual child-resources.
 		"""
 		# Update latest
 		lt = getResourceDate()

@@ -11,7 +11,7 @@ from typing import Dict, Callable, Mapping
 from tinydb.table import Table
 
 class TinyDBBetterTable(Table):
-	"""	This class is an addon to TinyDB's `Table` class. It removes some computations that are not
+	"""	This class is an addon to TinyDB's *Table* class. It removes some computations that are not
 		necessary in ACME.
 	
 		- Document ID's are always strings.
