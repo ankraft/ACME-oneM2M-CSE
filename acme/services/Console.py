@@ -14,24 +14,26 @@ from typing import List, cast, Optional, Any, Tuple
 
 import datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
-from rich.style import Style
-from rich.table import Table
-from rich.panel import Panel
-from rich.tree import Tree
 from rich.live import Live
-from rich.text import Text
+from rich.panel import Panel
 from rich.pretty import Pretty
+from rich.style import Style
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+from rich.tree import Tree
 import plotext
 
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
 from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
+from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants
-from ..etc.Types import CSEType, ResourceTypes
+from ..etc.Types import CSEType, ResourceTypes, Operation
 from ..etc.Utils import getCSE
 from ..helpers.NetworkTools import getIPAddress
-from ..etc.DateUtils import fromAbsRelTimestamp
+from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date
 from ..resources.Resource import Resource
 from ..services import CSE, Statistics
 from ..services.Configuration import Configuration, documentationLinks
@@ -133,6 +135,7 @@ class Console(object):
 		'previousScript',
 		'previousArgument',
 		'previousGraphRi',
+		'previousRequestRi',
 		'tuiApp',
 		
 		'refreshInterval',
@@ -159,6 +162,7 @@ class Console(object):
 		self.interruptContinous = False
 		self.previousTreeRi = ''
 		self.previousInspectRi = ''
+		self.previousRequestRi = ''
 		self.previosInspectChildrenRi = ''
 		self.previousScript = ''
 		self.previousArgument = ''
@@ -242,6 +246,9 @@ class Console(object):
 			'C'					: self.clearScreen,
 			'D'					: self.deleteResource,
 			'E'					: self.exportResources,
+			'f'					: self.showRequests,
+			'F'					: self.showAllRequests,
+			FunctionKey.CTRL_F	: self.deleteRequests,
 			FunctionKey.CTRL_G	: self.continuesPlotGraph,
 			'G'					: self.plotGraph,
 			'i'					: self.inspectResource,
@@ -326,6 +333,9 @@ class Console(object):
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
 			('E', 'Export resource tree to [i]init[/i] directory'),
+			('f', 'Show requests history for a resource'),
+			('F', 'Show all requests history'),
+			('^F', 'Clear requests history'),
 			('G', 'Plot graph (only for container)'),
 			('^G', 'Plot & refresh graph continuously (only for container)'),
 			('i', 'Inspect resource'),
@@ -925,6 +935,46 @@ Available under the BSD 3-Clause License
 			raise KeyboardInterrupt()
 
 
+	def showRequests(self, key:str) -> None:
+		"""	Show the requests for a resource.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+		L.console('Resource Requests', isHeader = True)
+		L.off()
+		if (ri := L.consolePrompt('ri', default = self.previousRequestRi)):
+			self.previousRequestRi = ri
+			table, uml = self.getRequestsRich(ri)
+			L.console(table)
+			L.console(uml, plain = True)
+		L.on()		
+
+
+	def showAllRequests(self, key:str) -> None:
+		"""	Show all the requests.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+		L.off()
+		table, uml = self.getRequestsRich()
+		L.console(table)
+		L.console(uml, plain = True)
+		L.on()
+	
+
+	def deleteRequests(self, key:str) -> None:
+		"""	Delete all requests.
+		
+			Args:
+				key: Input key. Ignored.
+		"""
+		L.console('Delete all requests')
+		CSE.storage.deleteRequests()
+
+
+
 	#########################################################################
 	#
 	#	Generators for rich output
@@ -1293,8 +1343,6 @@ Available under the BSD 3-Clause License
 		return result
 
 
-
-
 	def getResourceTreeRich(self, 
 							maxLevel:int = 0, 
 							parent:Optional[str] = None, 
@@ -1426,3 +1474,65 @@ Available under the BSD 3-Clause License
 		console.print(self.getResourceTreeRich(withProgress = False))
 		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
 
+
+	def getRequestsRich(self, id:Optional[str] = None) -> Tuple[Table, str]:
+
+
+		table = Table(row_styles = [ '', L.tableRowStyle],  expand = True)
+		table.add_column(_markup('[u]Timestamp[/u]\n'), no_wrap = True)
+		table.add_column(_markup('[u]Originator[/u]\n'), no_wrap = True)
+		table.add_column(_markup('[u]Operation[/u]\n'), no_wrap = True)
+		if not id:
+			table.add_column(_markup('[u]Resource ID[/u]\n'), no_wrap = True)
+		table.add_column(_markup('[u]Request[/u]\n'))
+		table.add_column(_markup('[u]Response[/u]\n'))
+
+		uml = """\
+@startuml
+hide footbox
+!theme plain
+skinparam backgroundcolor transparent
+skinparam BoxPadding 60
+
+"""
+
+		participants = OrderedSet()
+		targets = OrderedSet()
+		seqs = ''
+
+		for r in CSE.storage.getRequests(id):
+			req = r['req']
+			op = req['op']
+			ri = r['ri'] if r['ri'] else '(unknown)'
+			org = r['org']
+			
+			participants.add(f'"<originator>\\n{org}"')
+			ty = req.get('ty') if op == 1 else None
+
+			if id:
+				table.add_row(toISO8601Date(r['ts']), 
+							org,
+							Operation(op).name, 
+							Pretty(req, indent_size = 2),
+							Pretty(r['rsp'], indent_size = 2))
+			else:
+				table.add_row(toISO8601Date(r['ts']), 
+							org,
+							Operation(op).name, 
+							ri, 
+							Pretty(req, indent_size = 2),
+							Pretty(r['rsp'], indent_size = 2))
+			
+			targets.add(ri)
+			seqs += f'"<originator>\\n{org}" -> "{ri}": {Operation(op).name} {"<" + ResourceTypes(ty).name + ">" if ty else ""} \n'
+			seqs += f'"<originator>\\n{org}" <- "{ri}": RSC: {r["rsp"]["rsc"]} \n'
+		
+
+		uml += '\n'.join([f'participant {p}' for p in participants]) + '\n'
+		uml += f'box "CSE {CSE.cseCsi}" #f8f8f8\n'
+		uml += '\n'.join([f'participant "{p}"' for p in targets]) + '\n'
+		uml += 'end box\n'
+		uml += seqs
+		uml += '@enduml\n'
+
+		return (table, uml)

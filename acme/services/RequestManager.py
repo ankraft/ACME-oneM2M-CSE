@@ -208,7 +208,19 @@ class RequestManager(object):
 			if request.rcn not in [ ResultContentType.attributes, ResultContentType.originalResource ]:
 				return Result.errorResult(dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
 
-		return self.requestHandlers[request.op].ownRequest(request)
+
+		# Call the appropriate request function
+		res = self.requestHandlers[request.op].ownRequest(request)
+
+		# Add to requests database
+		CSE.storage.addRequest(request.id, 
+							   request.originator,
+							   request.originalRequest, 
+							   { 'rsc': res.rsc,
+							   	 'pc': res.resource.asDict() if res.resource else None,
+								 'dbg': res.dbg
+							   })
+		return res
 
 
 	def processRequest(self, request:CSERequest, originator:str, id:str) -> Result:

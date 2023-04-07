@@ -35,6 +35,18 @@ from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
 
 
+# Constants for database and table names
+_resources = 'resources'
+_identifiers = 'identifiers'
+_children = 'children'
+_srn = 'srn'
+_subscriptions = 'subscriptions'
+_batchNotifications = 'batchNotifications'
+_statistics = 'statistics'
+_actions = 'actions'
+_requests = 'requests'
+
+
 class Storage(object):
 	"""	This class implements the entry points to the CSE's underlying database functions.
 
@@ -69,7 +81,7 @@ class Storage(object):
 				raise RuntimeError('db.path not set')
 
 		# create DB object and open DB
-		self.db = TinyDBBinding(self.dbPath, postfix = f'-{CSE.cseCsi[1:]}') # add CSE CSI as postfix
+		self.db = TinyDBBinding(self.dbPath, CSE.cseCsi[1:]) # add CSE CSI as postfix
 
 		# Reset dbs?
 		if self.dbReset:
@@ -122,22 +134,20 @@ class Storage(object):
 		L.isDebug and L.logDebug('Validating database files')
 		dbFile = ''
 		try:
-			dbFile = 'resources'
+			dbFile = _resources
 			self.hasResource('_')
-			dbFile = 'identifiers'
+			dbFile = _identifiers
 			self.structuredIdentifier('_')
-			# TODO
-			# dbFile = 'childResources'
-			# self.structuredIdentifier('_')
-
-			dbFile = 'subscription'
+			self.directChildResources('_')
+			dbFile = _subscriptions
 			self.getSubscription('_')
-			dbFile = 'batchNotification'
+			dbFile = _batchNotifications
 			self.countBatchNotifications('_', '_')
-			dbFile = 'statistics'
+			dbFile = _statistics
 			self.getStatistics()
-			dbFile = 'actions'
+			dbFile = _actions
 			self.getActions()
+			# TODO requests
 
 		except Exception as e:
 			L.logErr(f'Error validating data files. Error in {dbFile} database.', exc = e)
@@ -503,6 +513,43 @@ class Storage(object):
 		return self.db.removeActionRepr(ri)
 
 
+	#########################################################################
+	##
+	##	Requests
+	##
+
+	def addRequest(self, ri:str, originator:str, request:JSON, response:JSON) -> bool:
+		"""	Add a request to the *requests* database.
+		
+			Args:
+				ri: Resource ID of a request's target resource.
+				originator: Request originator.
+				request: The request to store.
+				response: The response to store.
+			
+			Return:
+				Boolean value to indicate success or failure.
+			"""
+		return self.db.insertRequest(ri, originator, request, response)
+
+
+	def getRequests(self, ri:str) -> list[Document]:
+		"""	Get requests for a resource ID, or all requests.
+		
+			Args:
+				ri: The target resource's resource ID. If *None* or empty, then all requests are returned
+			
+			Return:
+				List of *Documents*. May be empty.
+		"""
+		return self.db.getRequests(ri)
+	
+
+	def deleteRequests(self) -> None:
+		"""	Delete all requests from the database.
+		"""
+		return self.db.deleteRequests()
+
 
 
 #########################################################################
@@ -527,6 +574,7 @@ class TinyDBBinding(object):
 		'lockBatchNotifications',
 		'lockStatistics',
 		'lockActions',
+		'lockRequests',
 
 		'fileResources',
 		'fileIdentifiers',
@@ -534,6 +582,7 @@ class TinyDBBinding(object):
 		'fileBatchNotifications',
 		'fileStatistics',
 		'fileActions',
+		'fileRequests',
 		
 		'dbResources',
 		'dbIdentifiers', 		
@@ -541,6 +590,7 @@ class TinyDBBinding(object):
 		'dbBatchNotifications',
 		'dbStatistics',
 		'dbActions',	
+		'dbRequests',	
 
 		'tabResources',
 		'tabIdentifiers',
@@ -550,15 +600,17 @@ class TinyDBBinding(object):
 		'tabBatchNotifications',
 		'tabStatistics',
 		'tabActions',
+		'tabRequests',
 
 		'resourceQuery',
 		'identifierQuery',
 		'subscriptionQuery',
 		'batchNotificationQuery',
 		'actionsQuery',
+		'requestsQuery',
 	)
 
-	def __init__(self, path:str = None, postfix:str = '') -> None:
+	def __init__(self, path:str, postfix:str) -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
 		self.writeDelay = Configuration.get('db.writeDelay')
@@ -573,14 +625,16 @@ class TinyDBBinding(object):
 		self.lockBatchNotifications		= Lock()
 		self.lockStatistics 			= Lock()
 		self.lockActions 				= Lock()
+		self.lockRequests 				= Lock()
 
 		# file names
-		self.fileResources				= f'{self.path}/resources{postfix}.json'
-		self.fileIdentifiers			= f'{self.path}/identifiers{postfix}.json'
-		self.fileSubscriptions			= f'{self.path}/subscriptions{postfix}.json'
-		self.fileBatchNotifications		= f'{self.path}/batchNotifications{postfix}.json'
-		self.fileStatistics				= f'{self.path}/statistics{postfix}.json'
-		self.fileActions				= f'{self.path}/actions{postfix}.json'
+		self.fileResources				= f'{self.path}/{_resources}-{postfix}.json'
+		self.fileIdentifiers			= f'{self.path}/{_identifiers}-{postfix}.json'
+		self.fileSubscriptions			= f'{self.path}/{_subscriptions}-{postfix}.json'
+		self.fileBatchNotifications		= f'{self.path}/{_batchNotifications}-{postfix}.json'
+		self.fileStatistics				= f'{self.path}/{_statistics}-{postfix}.json'
+		self.fileActions				= f'{self.path}/{_actions}-{postfix}.json'
+		self.fileRequests				= f'{self.path}/{_requests}-{postfix}.json'
 
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
@@ -591,6 +645,7 @@ class TinyDBBinding(object):
 			self.dbBatchNotifications	= TinyDB(storage = MemoryStorage)
 			self.dbStatistics			= TinyDB(storage = MemoryStorage)
 			self.dbActions				= TinyDB(storage = MemoryStorage)
+			self.dbRequests				= TinyDB(storage = MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
 			# self.dbResources 			= TinyDB(self.fileResources)
@@ -607,32 +662,37 @@ class TinyDBBinding(object):
 			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			self.dbStatistics 			= TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			self.dbActions	 			= TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbRequests	 			= TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 
 		
 		# Open/Create tables
-		self.tabResources = self.dbResources.table('resources', cache_size = self.cacheSize)
+		self.tabResources = self.dbResources.table(_resources, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabResources)
 		
-		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size = self.cacheSize)
+		self.tabIdentifiers = self.dbIdentifiers.table(_identifiers, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabIdentifiers)
 
-		self.tabChildResources = self.dbIdentifiers.table('children', cache_size = self.cacheSize)
+		self.tabChildResources = self.dbIdentifiers.table(_children, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabChildResources)
 
 		self.tabStructuredIDs = self.dbIdentifiers.table('srn', cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabStructuredIDs)
 		
-		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size = self.cacheSize)
+		self.tabSubscriptions = self.dbSubscriptions.table(_subscriptions, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabSubscriptions)
 		
-		self.tabBatchNotifications = self.dbBatchNotifications.table('batchNotifications', cache_size = self.cacheSize)
+		self.tabBatchNotifications = self.dbBatchNotifications.table(_batchNotifications, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabBatchNotifications)
 		
-		self.tabStatistics = self.dbStatistics.table('statistics', cache_size = self.cacheSize)
+		self.tabStatistics = self.dbStatistics.table(_statistics, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabStatistics)
 
-		self.tabActions = self.dbActions.table('actions', cache_size = self.cacheSize)
+		self.tabActions = self.dbActions.table(_actions, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabActions)
+
+		self.tabRequests = self.dbRequests.table(_requests, cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabRequests)
+
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
@@ -640,6 +700,7 @@ class TinyDBBinding(object):
 		self.subscriptionQuery			= Query()
 		self.batchNotificationQuery 	= Query()
 		self.actionsQuery				= Query()
+		self.requestsQuery				= Query()
 
 
 	def closeDB(self) -> None:
@@ -656,6 +717,8 @@ class TinyDBBinding(object):
 			self.dbStatistics.close()
 		with self.lockActions:
 			self.dbActions.close()
+		with self.lockRequests:
+			self.dbRequests.close()
 
 
 	def purgeDB(self) -> None:
@@ -668,6 +731,7 @@ class TinyDBBinding(object):
 		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
 		self.tabActions.truncate()
+		self.tabRequests.truncate()
 	
 
 	def backupDB(self, dir:str) -> bool:
@@ -676,7 +740,8 @@ class TinyDBBinding(object):
 					self.fileSubscriptions,
 					self.fileBatchNotifications,
 					self.fileStatistics,
-					self.fileActions]:
+					self.fileActions,
+					self.fileRequests]:
 			if Path(fn).is_file():
 				shutil.copy2(fn, dir)
 		return True
@@ -1057,3 +1122,56 @@ class TinyDBBinding(object):
 			return False
 			# return len(self.tabActions.remove(self.actionsQuery.ri == ri)) > 0
 
+
+	#
+	#	Requests
+	#
+
+	def insertRequest(self, ri:str, originator:str, request:JSON, response:JSON) -> bool:
+		"""	Add a request to the *requests* database.
+		
+			Args:
+				ri: Resource ID of a request's target resource.
+				originator: Request originator.
+				request: The request to store.
+				response: The response to store.
+			
+			Return:
+				Boolean value to indicate success or failure.
+			"""
+		with self.lockRequests:
+			try:
+				ts = utcTime()
+				self.tabRequests.insert(Document(
+					{	'ri': ri,
+						'ts': ts,
+						'org': originator,
+						'req': request,
+						'rsp': response
+					}, ts))	# type:ignore[arg-type]
+			except Exception as e:
+				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
+				return False
+		return True
+	
+
+	def getRequests(self, ri:Optional[str] = None) -> list[Document]:
+		"""	Get requests for a resource ID, or all requests.
+		
+			Args:
+				ri: The target resource's resource ID. If *None* or empty, then all requests are returned
+			
+			Return:
+				List of *Documents*. May be empty.
+		"""
+		with self.lockRequests:
+			if not ri:
+				return self.tabRequests.all()
+			return self.tabRequests.search(self.requestsQuery.ri == ri)
+
+
+	def deleteRequests(self) -> None:
+		"""	Remnove all stord requests from the database.
+		"""
+		with self.lockRequests:
+			self.tabRequests.truncate()
