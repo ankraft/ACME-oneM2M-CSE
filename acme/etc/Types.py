@@ -695,9 +695,13 @@ class Announced(ACMEIntEnum):
 			OA: Optionally announced.
 			MA: Mandatory announced.
 	"""
+
 	NA				= auto()
+	"""	Not announced """
 	OA				= auto()
+	"""	Optionally announced """
 	MA				= auto()
+	"""	Mandatory announced """
 
 
 ##############################################################################
@@ -708,20 +712,35 @@ class Announced(ACMEIntEnum):
 
 class ResponseStatusCode(ACMEIntEnum):
 	""" Response codes """
+
 	accepted									= 1000
+	"""	Request accepted """
 	acceptedNonBlockingRequestSynch				= 1001
+	"""	ACCEPTED for nonBlockingRequestSynch """
 	acceptedNonBlockingRequestAsynch			= 1002
+	"""	ACCEPTED for nonBlockingRequestAsynch """
 	OK											= 2000
+	"""	OK """
 	created 									= 2001
+	"""	CREATED """
 	deleted 									= 2002
+	"""	DELETED """
 	updated										= 2004
+	"""	UPDATED """
 	badRequest									= 4000
+	"""	BAD REQUEST """
 	releaseVersionNotSupported					= 4001
+	"""	RELEASE VERSION NOT SUPPORTED """
 	notFound 									= 4004
+	"""	NOT FOUND """
 	operationNotAllowed							= 4005
+	"""	OPERATION NOT ALLOWED """
 	requestTimeout 								= 4008
+	"""	REQUEST TIMEOUT """
 	unsupportedMediaType						= 4015
+	"""	UNSUPPORTED MEDIA TYPE """
 	subscriptionCreatorHasNoPrivilege			= 4101
+	"""	SUBSCRIPTION CREATOR HAS NO PRIVILEGE """
 	contentsUnacceptable						= 4102
 	originatorHasNoPrivilege					= 4103
 	conflict									= 4105
@@ -883,16 +902,32 @@ class EvalMode(ACMEIntEnum):
 class Permission(ACMEIntEnum):
 	""" Permissions """
 	NONE				=  0
+	"""	No permission """
 	CREATE				=  1
+	"""	CREATE permission """
 	RETRIEVE			=  2
+	"""	RETRIEVE permission """
 	UPDATE				=  4
+	"""	UPDATE permission """
 	DELETE 				=  8
+	"""	DELETE permission """
 	NOTIFY 				= 16
+	"""	NOTIFY permission """
 	DISCOVERY			= 32
+	"""	DISCOVERY permission """
 	ALL					= 63
+	"""	ALL permission (includes all other permissions) """
 
 	@classmethod
 	def allExcept(cls, permission:Permission) -> int:
+		"""	Get a permission set without the specified permission(s).
+
+			Args:
+				permission: The permission(s) to remove from a permission.
+
+			Return:
+				The new permission without the specified *permission*, or *Permission.NONE* in case of an error. 
+		"""
 		p = Permission.ALL - permission
 		return p if Permission.NONE <= p <= Permission.ALL else Permission.NONE
 
@@ -903,14 +938,22 @@ class Permission(ACMEIntEnum):
 #
 
 class Operation(ACMEIntEnum):
+	""" Request operations. """
 	# Operations
 	CREATE 				= 1
+	"""	CREATE operation """
 	RETRIEVE			= 2
+	"""	RETRIEVE operation """
 	UPDATE				= 3
+	"""	UPDATE operation """
 	DELETE				= 4
+	"""	DELETE operation """
 	NOTIFY 				= 5
+	"""	NOTIFY operation """
 	DISCOVERY			= -2
+	"""	DISCOVERY operation (special form of a RETRIEVE operation) """
 	NA 					= -1
+	"""	Not applicable """
 
 
 	def permission(self) -> Permission:
@@ -941,8 +984,7 @@ class Operation(ACMEIntEnum):
 		return Operation(v) if v is not None else None
 
 
-# Mapping between request operations and permissions
-_OperationPermissionsMapping =	{
+_OperationPermissionsMapping =	{	
 	Operation.RETRIEVE	: Permission.RETRIEVE,
 	Operation.CREATE 	: Permission.CREATE,
 	Operation.UPDATE 	: Permission.UPDATE,
@@ -950,6 +992,7 @@ _OperationPermissionsMapping =	{
 	Operation.NOTIFY 	: Permission.NOTIFY,
 	Operation.DISCOVERY : Permission.DISCOVERY,
 }
+"""	Mappings between request operations and permissions """
 
 ##############################################################################
 #
