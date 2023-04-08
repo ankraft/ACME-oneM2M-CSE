@@ -4,9 +4,7 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module contains various utilty functions that are used to work with requests and responses
-#
-
+"""	This module contains various utilty functions that are used to work with requests and responses. """
 
 from __future__ import annotations
 
@@ -23,6 +21,13 @@ from ..helpers import TextTools
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
 	"""	Serialize a dictionary, depending on the serialization type.
+
+		Args:
+			data: The data to serialize.
+			ct: The *data* content serialization format.
+		
+		Return:
+			A data *str* or *byte* object with the serialized data, or *None*.
 	"""
 	if ct == ContentSerializationType.PLAIN:
 		return data
@@ -34,7 +39,13 @@ def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|
 
 def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
-		If the len of the data is 0 then an empty dictionary is returned. 
+
+		Args:
+			data: The data to deserialize.
+			ct: The *data* content serialization format.
+		
+		Return:
+			If the *data* is not *None*, but has a length of 0 then an empty dictionary is returned. If an unknown content serialization is specified then *None* is returned. Otherwise, a `JSON` object is returned.
 	"""
 	if len(data) == 0:
 		return {}
@@ -47,6 +58,12 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 
 def toHttpUrl(url:str) -> str:
 	"""	Make the *url* a valid http URL (escape // and ///) and return it.
+
+		Args:
+			url: The URL to convert.
+		
+		Return:
+			A valid URL with escaped special characters.
 	"""
 	u = list(urlparse(url))
 	if u[2].startswith('///'):
@@ -61,6 +78,16 @@ def toHttpUrl(url:str) -> str:
 def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> Optional[ContentSerializationType]:
 	"""	Determine the type of serialization for a notification from either the *url*'s *ct* query parameter,
 		or the given list of *csz* (contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
+
+		As a side effect this function also validates the allowed URL scheme.
+
+		Args:
+			url: The *URL* to parse.
+			csz: The fallback content serialization.
+			defaultSerialization: The CSE's defaults serialization.
+		
+		Return:
+			The determined content serialization, or *None* if none could be determined.
 	"""
 	ct = None
 	scheme = None
@@ -109,6 +136,19 @@ def requestFromResult(inResult:Result,
 	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
 		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
+
+		Args:
+			inResult: The input `Result` object.
+			originator: The request originator.
+			ty: Optional resource type.
+			op: Optional request operation type
+			isResponse: Whether the result is actually a response, and not a request.
+		
+		Return:
+			`Result` object with the response.
+
+		See Also:
+			`responseFromResult`
 	"""
 	from ..services import CSE
 
@@ -193,7 +233,15 @@ def requestFromResult(inResult:Result,
 
 
 def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Result:
-	# TODO doc
+	"""	Shortcut for `requestFromResult` to create a response object.
+	
+		Args:
+			inResult: Result that contains the response.
+			originator: Originator for the response.
+		
+		Return:
+			`Result` object with the response.
+	"""
 	return requestFromResult(inResult, originator, isResponse = True)
 
 

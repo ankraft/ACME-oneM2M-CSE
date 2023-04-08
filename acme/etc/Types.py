@@ -1333,7 +1333,7 @@ class MissingData:
 
 @dataclass
 class LastTSInstance:
-	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
+	"""	Data class for a single `TS`'s latest and next expected `TSI`.dgt (data generation time) attribute, and other information """
 
 	# runtime attributes
 	dgt:list[float]						= field(default_factory = lambda: [0])
@@ -1354,7 +1354,7 @@ class LastTSInstance:
 
 
 	def prepareNextDgt(self) -> None:
-		"""	Set the next expectedDgt.
+		"""	Set the next expected data generation time.
 		"""
 		self.expectedDgt += self.pei
 	
@@ -1398,7 +1398,9 @@ class LastTSInstance:
 class AnnounceSyncType(ACMEIntEnum):
 	""" Announce Sync Types """
 	UNI_DIRECTIONAL = 1
+	"""	Announcement shall be done uni-directional, ie. changes in the announced resource are not synced back."""
 	BI_DIRECTIONAL = 2
+	"""	Announcement shall be done bi-directional, ie. changes in the announced resource are synced back."""
 
 
 ##############################################################################
