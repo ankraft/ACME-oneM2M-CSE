@@ -32,12 +32,13 @@ def getResourceDate(offset:Optional[int] = 0) -> str:
 	return toISO8601Date(utcTime() + offset)
 
 
-def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True) -> str:
+def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True, readable:Optional[bool] = False) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 
 		Args:
 			ts: Timestamp. Either a POSIX float timestamp, of a `datetime` object.
-			isUTCtimestamp: Boolean indicating whether the timestamp is UTC based.
+			isUTCtimestamp: Optional boolean indicating whether the timestamp is UTC based.
+			readable: Optional boolean indicating whether the output should be in the format "YYYY-MM-DDThh:mm:ss,f
 		Return:
 			ISO 8601 datetime string.
 	"""
@@ -46,7 +47,7 @@ def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = Tru
 			ts = datetime.fromtimestamp(ts)
 		else:
 			ts = datetime.utcfromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S,%f')
+	return ts.strftime('%Y-%m-%dT%H:%M:%S,%f' if readable else '%Y%m%dT%H%M%S,%f')
 
 
 def fromAbsRelTimestamp(absRelTimestamp:str, 
@@ -54,7 +55,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 						withMicroseconds:Optional[bool] = True) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-based POSIX timestamp as a float.
 
-		If the *absRelTimestamp* is a period (relatice) timestamp (e.g. "PT2S"), then this function
+		If the *absRelTimestamp* is a period (relative) timestamp (e.g. "PT2S"), then this function
 		tries to convert it and return an absolute POSIX timestamp as a float, based on the current UTC time.
 
 		If the *absRelTimestamp* contains a stringified integer then it is treated as a relative offset in ms and
