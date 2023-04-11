@@ -372,7 +372,8 @@ class RemoteCSEManager(object):
 				(_, registeredAtCsi) = self.descendantCSR[eachDcse]
 				if registeredAtCsi == registreeCsi :	# remove all descedants EXCEPT the ones hosted on THIS CSE
 					L.isDebug and L.logDebug(f'Removing from internal dcse list: {eachDcse}')
-					del self.descendantCSR[eachDcse]
+					if eachDcse in self.descendantCSR:
+						del self.descendantCSR[eachDcse]
 
 		# add new/updated values from remoteCSR
 		if dcse := findXPath(updateDict, 'm2m:csr/dcse'):
