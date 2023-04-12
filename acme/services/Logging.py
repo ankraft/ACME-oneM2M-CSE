@@ -545,6 +545,16 @@ class Logging:
 	
 
 	@staticmethod
+	def setEnableScreenLogging(value:bool) -> None:
+		"""	Set the `enableScreenLogging` attribute via a method call.
+		
+			Args:
+				value: New value for `enableScreenLogging.
+		"""
+		Logging.enableScreenLogging = value
+
+
+	@staticmethod
 	def setLogLevel(logLevel:LogLevel) -> None:
 		"""	Set a new log level to the logging system.
 

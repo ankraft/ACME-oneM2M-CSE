@@ -396,7 +396,8 @@ def loop(commands:Commands,
 		 ignoreException:Optional[bool] = True,
 		 catchAll:Optional[Callable] = None,
 		 nextKey:Optional[str] = None,
-		 postCommand:Optional[Callable] = None) -> None:
+		 postCommandHandler:Optional[Callable] = None,
+		 exceptionHandler:Optional[Callable] = None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary *commands*).
 
@@ -412,6 +413,9 @@ def loop(commands:Commands,
 				ignore, or passed on otherwise.
 			catchAll: If this attribute is set to a callback function then this callback is called in case a pressed
 				key was not found in *commands*.
+			nextKey: A simulated key-press that is interpreted when first calling the function.
+			postCommandHandler: A handler callback that is called after running a command.
+			exceptionHandler: A handler callback that is called in case an exception happened during the execution of a command.
 	"""
 	
 	# main loop
@@ -463,14 +467,16 @@ def loop(commands:Commands,
 		if ch in commands:
 			try:
 				commands[ch](ch)
-				if postCommand:
-					nextKey = postCommand(ch)
+				if postCommandHandler:
+					nextKey = postCommandHandler(ch)
 			except SystemExit:
 				raise
 			except KeyboardInterrupt:
 				if catchKeyboardInterrupt:
 					nextKey = '\x03'
 			except Exception as e:
+				if exceptionHandler:
+					exceptionHandler(ch)
 				if not ignoreException:
 					raise e
 		elif ch and catchAll:

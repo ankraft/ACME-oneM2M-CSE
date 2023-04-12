@@ -280,7 +280,8 @@ class Console(object):
 			 headless = CSE.isHeadless,
 			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
 			 nextKey = '#' if CSE.textUI.startWithTUI else None,
-			 postCommand = self._postCommandHandler)	
+			 postCommandHandler = self._postCommandHandler,
+			 exceptionHandler = lambda ch: L.setEnableScreenLogging(True))
 		CSE.shutdown()
 
 
