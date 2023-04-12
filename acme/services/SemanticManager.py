@@ -541,7 +541,8 @@ class RdfLibHandler(SemanticHandler):
 			graph.remove(i)						# type:ignore [no-untyped-call]
 		
 		# Remove the grapth from the store. In theory, this should also delete the triples, but doesn't seem in reality, though
-		self.store.remove_graph(URIRef(id))		# type:ignore [no-untyped-call]
+		# self.store.remove_graph(URIRef(id))		# type:ignore [no-untyped-call]
+		self.store.remove_graph(graph)		# type:ignore [no-untyped-call]
 		return Result.successResult()
 
 
