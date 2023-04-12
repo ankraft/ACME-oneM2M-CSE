@@ -26,6 +26,7 @@ from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, localResour
 from ..helpers.TextTools import setXPath
 from ..services.Configuration import Configuration
 from ..services import CSE
+from ..resources.Resource import Resource
 from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -208,18 +209,12 @@ class RequestManager(object):
 			if request.rcn not in [ ResultContentType.attributes, ResultContentType.originalResource ]:
 				return Result.errorResult(dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
 
-
 		# Call the appropriate request function
 		res = self.requestHandlers[request.op].ownRequest(request)
 
 		# Add to requests database
-		CSE.storage.addRequest(request.id, 
-							   request.originator,
-							   request.originalRequest, 
-							   { 'rsc': res.rsc,
-							   	 'pc': res.resource.asDict() if res.resource else None,
-								 'dbg': res.dbg
-							   })
+		self.recordRequest(request, res)
+
 		return res
 
 
@@ -247,7 +242,13 @@ class RequestManager(object):
 			return Result.errorResult(dbg = L.logDebug(f'Missing content/request in notification'))
 
 		# Forward the notification as received to the target
-		return self.sendNotifyRequest(id, originator = originator, content = request.originalRequest, raw = True)
+		res = self.sendNotifyRequest(id, originator = originator, content = request.originalRequest, raw = True)
+
+		# record  notification
+		self.recordRequest(request, res)
+
+		return res
+
 
 
 	#########################################################################
@@ -483,7 +484,6 @@ class RequestManager(object):
 
 		# send notifications.Ignore any errors here
 		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = CSE.cseCsi)
-		#CSE.notification.sendNotificationWithDict(responseNotification, to, originator=CSE.cseCsi)
 
 		return True
 
@@ -1695,3 +1695,28 @@ class RequestManager(object):
 		return resultList
 
 
+##############################################################################
+#
+#	Requests recording
+#
+
+	def recordRequest(self, request:CSERequest, result:Result) -> None:
+
+		# TODO configurable on/off
+		if result.resource and isinstance(result.resource, Resource):
+			pc = result.resource.asDict()
+		elif isinstance(result.resource, dict):
+			pc = result.resource
+		else:
+			pc = None
+		if not request.srn:
+			request.srn = request.id
+
+		CSE.storage.addRequest(request.id, 
+							   request.srn,
+							   request.originator,
+							   request.originalRequest, 
+							   { 'rsc': result.rsc,
+							   	 'pc': pc,
+								 'dbg': result.dbg
+							   })

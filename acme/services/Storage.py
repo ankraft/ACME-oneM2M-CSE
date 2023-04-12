@@ -23,10 +23,11 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON, Operation
 from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
 from ..helpers.TinyDBBetterTable import TinyDBBetterTable
 from ..etc.DateUtils import utcTime, fromDuration
+from ..etc.Utils import structuredPathFromRI
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -518,11 +519,12 @@ class Storage(object):
 	##	Requests
 	##
 
-	def addRequest(self, ri:str, originator:str, request:JSON, response:JSON) -> bool:
+	def addRequest(self, ri:str, srn:str, originator:str, request:JSON, response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
 		
 			Args:
 				ri: Resource ID of a request's target resource.
+				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
 				request: The request to store.
 				response: The response to store.
@@ -530,10 +532,10 @@ class Storage(object):
 			Return:
 				Boolean value to indicate success or failure.
 			"""
-		return self.db.insertRequest(ri, originator, request, response)
+		return self.db.insertRequest(ri, srn, originator, request, response)
 
 
-	def getRequests(self, ri:str) -> list[Document]:
+	def getRequests(self, ri:Optional[str] = None) -> list[Document]:
 		"""	Get requests for a resource ID, or all requests.
 		
 			Args:
@@ -545,10 +547,13 @@ class Storage(object):
 		return self.db.getRequests(ri)
 	
 
-	def deleteRequests(self) -> None:
+	def deleteRequests(self, ri:Optional[str] = None) -> None:
 		"""	Delete all requests from the database.
+
+			Args:
+				ri: Optional resouce ID. Only requests for this resource ID will be deleted.
 		"""
-		return self.db.deleteRequests()
+		return self.db.deleteRequests(ri)
 
 
 
@@ -1127,11 +1132,12 @@ class TinyDBBinding(object):
 	#	Requests
 	#
 
-	def insertRequest(self, ri:str, originator:str, request:JSON, response:JSON) -> bool:
+	def insertRequest(self, ri:str, srn:str, originator:str, request:JSON, response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
 		
 			Args:
 				ri: Resource ID of a request's target resource.
+				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
 				request: The request to store.
 				response: The response to store.
@@ -1142,10 +1148,16 @@ class TinyDBBinding(object):
 		with self.lockRequests:
 			try:
 				ts = utcTime()
+				op = request['op'] if 'op' in request else Operation.NA
+				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
+
 				self.tabRequests.insert(Document(
 					{	'ri': ri,
+						'srn': srn,
 						'ts': ts,
 						'org': originator,
+						'op': op,
+						'rsc': rsc,
 						'req': request,
 						'rsp': response
 					}, ts))	# type:ignore[arg-type]
@@ -1170,8 +1182,15 @@ class TinyDBBinding(object):
 			return self.tabRequests.search(self.requestsQuery.ri == ri)
 
 
-	def deleteRequests(self) -> None:
+	def deleteRequests(self, ri:Optional[str] = None) -> None:
 		"""	Remnove all stord requests from the database.
+
+			Args:
+				ri: Optional resouce ID. Only requests for this resource ID will be deleted.
 		"""
-		with self.lockRequests:
-			self.tabRequests.truncate()
+		if ri:
+			with self.lockRequests:
+				self.tabRequests.remove(self.requestsQuery.ri == ri)
+		else:
+			with self.lockRequests:
+				self.tabRequests.truncate()

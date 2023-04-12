@@ -1,0 +1,126 @@
+ 
+ Screen {
+	background: $surface;
+}
+
+#tree-view {
+	display: block; 
+	scrollbar-gutter: stable;
+	overflow: auto;    
+	width: auto;    
+	height: 100%;            
+	dock: left;
+	max-width: 50%;  
+}
+
+
+#resource-view {
+	overflow: auto scroll;  
+	min-width: 100%;
+	padding: 1 1;
+	/*background:red;*/
+}
+
+
+#requests-view {
+	/* overflow: auto scroll;   */
+	overflow: auto;  
+	min-width: 100%;
+	/* padding: 1 1; */
+	/*background:red;*/
+}
+
+#request-list-view {
+	/*overflow: auto scroll;  */
+	min-width: 100%;
+	/* padding: 1 1; */
+	/*background:red;*/
+}
+
+#request-list-header {
+	overflow: auto scroll;
+	min-width: 100%;
+	height: 3;
+	align-vertical: middle;
+	background: $panel;
+}
+
+#request-list-list {
+	overflow: auto scroll;  
+	min-width: 100%;
+	height: 50%;
+	/*background:red;*/
+}
+
+#request-list-details-header {
+	overflow: auto;
+	min-width: 100%;
+	height: 3;
+	align-vertical: middle;
+	/* background:#202020; */
+	background: $panel;
+}
+
+#request-list-details {
+	overflow: auto scroll;
+	min-width: 100%;
+	padding: 1 1;
+	/* height: 50%; */
+}	
+
+#request-list-request {
+	overflow: auto;  
+	width: 50%;
+	min-height: 100%;
+	/* padding: 1 1; */
+}
+
+#request-list-response {
+	overflow: auto;  
+	width: 50%;
+	min-height: 100%;
+	border-left: $panel;
+	/* padding: 1 1; */
+}
+
+#stats-view {
+	display: block;
+	overflow: auto scroll;  
+	min-width: 100%;
+	padding: 1 1;
+	/*background:red;*/
+}
+
+#regs-view {
+	display: block;
+	overflow: auto scroll;  
+	min-width: 100%;
+	padding: 1 1;
+	/*background:red;*/
+}
+
+#configs-view {
+	display: block;
+	overflow: auto scroll;  
+	min-width: 100%;
+	padding: 1 1;
+	/*background:red;*/
+}
+
+#about-view {
+	display: block;
+	overflow: auto scroll;  
+	min-width: 100%;
+	padding: 1 1;
+	/*background:red;*/
+}
+
+#code {
+	width: auto;    
+}
+
+.box {
+	height: 100%;
+	border: solid green;
+}
+
