@@ -163,7 +163,7 @@ class RegistrationManager(object):
 			if not resource.hasAttributeDefined('cr'):
 				return Result.errorResult(dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
 			if resource.cr is not None:		# Check whether cr is set to a value in the request. This is wrong
-				return Result.errorResult(dbg = L.logWarn('Setting a value to "creator" attribute is not allowed.'))
+				return Result.errorResult(dbg = L.logWarn('Setting the "creator" attribute is not allowed.'))
 			resource.setAttribute('cr', originator)
 			# fall-through
 		return Result.successResult() # implicit OK
