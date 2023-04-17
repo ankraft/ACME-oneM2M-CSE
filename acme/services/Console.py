@@ -1536,7 +1536,8 @@ skinparam BoxPadding 60
 							Pretty(r['rsp'], indent_size = 2))
 			
 			targets.add(ri)
-			seqs += f'"<originator>\\n{org}" -> "{ri}": {Operation(op).name} {"<" + ResourceTypes(ty).name + ">" if ty else ""} \n'
+			tyn = ResourceTypes(ty).name if ResourceTypes.has(ty) else f'UNKNOWN_TYPE_{ty}'
+			seqs += f'"<originator>\\n{org}" -> "{ri}": {Operation(op).name} {"<" + tyn + ">" if ty else ""} \n'
 			seqs += f'"<originator>\\n{org}" <- "{ri}": RSC: {r["rsp"]["rsc"]} \n'
 		
 

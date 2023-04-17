@@ -223,6 +223,7 @@ class MQTTClientHandler(MQTTHandler):
 		except ResponseException as e:
 			# something went wrong during dissection
 			dissectResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+			CSE.request.recordRequest(dissectResult.request, dissectResult)
 			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
 			return
@@ -233,14 +234,19 @@ class MQTTClientHandler(MQTTHandler):
 				L.logWarn(CSE.security.allowedCredentialIDsMqtt)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
 				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
+					CSE.request.recordRequest(dissectResult.request, dissectResult)
 					_logRequest(dissectResult)
 					_sendResponse(Result(rsc = ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
 										 request = request, 
 										 dbg = f'Invalid credential ID: {requestOriginator}'))
 					return
 			
+			# TODO Is it necessary to check here the originator for None, empty, C, S?
+			# TODO is the following necessary or isn't this been handled in the Registration Manager?
+
 			if request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
+				CSE.request.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
 				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
 									 request = request, 
@@ -249,14 +255,13 @@ class MQTTClientHandler(MQTTHandler):
 
 			if request.ty not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
+				CSE.request.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
 				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
 									 request = request, 
 									 dbg = L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
 				return
 			
-			# TODO Is it necessary to check here the originator for None, empty, C, S?
-
 		_logRequest(dissectResult)
 
 		# server stopped

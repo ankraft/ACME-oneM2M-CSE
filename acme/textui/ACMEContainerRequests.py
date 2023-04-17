@@ -15,7 +15,8 @@ from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
 from rich.pretty import Pretty
-from ..etc.Types import JSONLIST, JSON, Operation, ResponseStatusCode
+from ..etc.Types import JSONLIST, JSON, Operation
+from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..services import CSE
 
@@ -129,6 +130,12 @@ class ACMEViewRequests(Vertical):
 	def updateRequests(self) -> None:
 			# TODO plantuml?
 
+			def rscFmt(rsc:int) -> str:
+				_c = 'red'
+				_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
+				_c = 'green' if isSuccessRSC(_rsc) else 'red'
+				return f'[{_c}]{_rsc.name}[/{_c}]'
+
 			self.requestList.clear()
 			self.requestListRequest.update()
 			self.requestListResponse.update()
@@ -138,7 +145,7 @@ class ACMEViewRequests(Vertical):
 			for i, r in enumerate(self._currentRequests):
 				_ts = toISO8601Date(r["ts"], readable = True).split('T')
 				self.requestList.append(_l := ACMEListItem(
-					Label(f' {i:4}  -  {_ts[1]}   {str(r["ri"]):25}   {r["org"]:25}   {Operation(r["op"]).name:10}   {ResponseStatusCode(r["rsc"]).name}\n          [dim]{_ts[0]}[/dim]        [dim]{str(r["srn"])}[/dim]')))
+					Label(f' {i:4}  -  {_ts[1]}   {str(r["ri"]):25}   {str(r["org"]):25}   {Operation(r["op"]).name:10}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]        [dim]{str(r["srn"])}[/dim]')))
 				_l._data = i
 			if len(self._currentRequests):
 				self.setIndex(0)

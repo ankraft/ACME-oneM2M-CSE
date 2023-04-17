@@ -160,6 +160,21 @@ _ResponseStatusCodeHttpStatusCodes = {
 
 }
 
+_successRSC = (
+	ResponseStatusCode.ACCEPTED,
+	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_SYNC,
+	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_ASYNC,
+	ResponseStatusCode.OK,
+	ResponseStatusCode.CREATED,
+	ResponseStatusCode.DELETED,
+	ResponseStatusCode.UPDATED,
+)
+
+
+def isSuccessRSC(rsc:ResponseStatusCode) -> bool:
+	return rsc in _successRSC
+
+
 class ResponseException(Exception):
 	"""	Base class for CSE Exceptions.
 

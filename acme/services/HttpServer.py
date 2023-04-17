@@ -269,12 +269,14 @@ class HttpServer(object):
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
 			# Return an error if the server is stopped
+
 			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
 												request = dissectResult.request, 
 												dbg = 'http server not running'))
 
 		if dissectResult.rsc != ResponseStatusCode.UNKNOWN:	# any other value right now indicates an error condition
 			# Something went wrong during dissection
+			CSE.request.recordRequest(dissectResult.request, dissectResult)
 			return self._prepareResponse(dissectResult)
 
 		try:
