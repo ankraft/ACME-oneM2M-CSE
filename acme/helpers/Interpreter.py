@@ -1205,7 +1205,7 @@ class PContext():
 				maxLength: Optional maximum list length to assert.
 			
 			Raises:
-				PInvalidArgumentError: In case any assertion fails.
+				`PInvalidArgumentError`: In case any assertion fails.
 		"""
 
 		if symbol.type != SType.tList:
@@ -1393,7 +1393,7 @@ class PContext():
 			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
 
 		elif firstSymbol.type == SType.tLambda:
-			return self._executeFunction(symbol, _s)
+			return self._executeFunction(symbol, cast(str, firstSymbol.value))
 
 		elif firstSymbol.type == SType.tString:
 			return self.checkInStringExpressions(firstSymbol)
@@ -2712,7 +2712,7 @@ def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
 			The updated `PContext` object with the function result.
 		
 		Raises:
-			*PInvalidArgumentError`: In case of an invalid argument or parameter.
+			`PInvalidArgumentError`: In case of an invalid argument or parameter.
 	"""
 
 	# print(f'progn> {symbol} {symbol.len()}')
