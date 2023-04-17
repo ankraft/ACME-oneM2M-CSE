@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
 from ..etc.Types import CSEStatus, ResourceTypes, Result, CSEType, ResponseStatusCode, JSON
-from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR
+from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.Utils import pureResource, csiFromRelativeAbsoluteUnstructured
 from ..etc.Constants import Constants
 from ..helpers.TextTools import findXPath, setXPath
@@ -430,10 +430,17 @@ class RemoteCSEManager(object):
 			except:
 				L.isDebug and L.logDebug('CSR not found on registrar CSE')
 				# Potential disconnect
-				self._deleteRegistreeCSR(registrarCSR)	# ignore result
+				try:
+					# This deletes the CSR of the Registrar
+					self._deleteRegistreeCSR(registrarCSR)	# ignore result
+				except:
+					pass
 				self.registrarCSE = None				# Indicate that we are not registered to the registrar CSE anymore
 				try:
-					csr = self._createCSRonRegistrarCSE()
+					try:
+						csr = self._createCSRonRegistrarCSE()
+					except CONFLICT:
+						pass	# 
 					self.ownCSRonRegistrarCSE = csr
 					try:
 						self.registrarCSE = self._retrieveRegistrarCSE()	# We are registered to the registrar CSE again
@@ -458,7 +465,10 @@ class RemoteCSEManager(object):
 			if rsc in [ ResponseStatusCode.DELETED, ResponseStatusCode.NOT_FOUND ]:	# delete potential remote CSR
 				try:
 					# Should be None after an exception of the following calls
-					self.ownCSRonRegistrarCSE = self._createCSRonRegistrarCSE()
+					try:
+						self.ownCSRonRegistrarCSE = self._createCSRonRegistrarCSE()
+					except CONFLICT:
+						pass # We expect a conflict here, e.g. when the remote CSR is still present
 					self.registrarCSE = self._retrieveRegistrarCSE()	# retrieve remote CSE
 					self._createLocalCSR(self.registrarCSE) 	# create local CSR including ACPs to local CSR and local CSE. Ignore result
 					L.isInfo and L.log(f'Registered to registrar CSE: {self.registrarCSI}')
@@ -584,13 +594,13 @@ class RemoteCSEManager(object):
 		if res.rsc not in [ ResponseStatusCode.CREATED, ResponseStatusCode.OK, ResponseStatusCode.CONFLICT ]:
 			_exc = exceptionFromRSC(res.rsc)
 			if _exc:
-				raise _exc(dbg = L.logDebug(f'error creating CSR on registrar CSE: {int(res.rsc)} dbg: {res.dbg}')) # type:ignore[call-arg]
+				raise _exc(dbg = L.logDebug(f'error creating CSR on registrar CSE: {int(res.rsc)} dbg: {res.resource}')) # type:ignore[call-arg]
 			raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 		
 		# If the resource already exists then perhaps it is a leftover from a previous session. It should have been deleted,
 		# but who knows? Just re-use that one for now.
 		if res.rsc == ResponseStatusCode.CONFLICT:
-			L.isWarn and L.logWarn(f'error creating CSR on registrar CSE: {int(res.rsc)} dbg: {res.dbg}')
+			raise CONFLICT(L.logDebug(f'error creating CSR on registrar CSE: {res.rsc.name} dbg: {res.data}'))
 		else:
 			L.isDebug and L.logDebug(f'created CSR on registrar CSE: {self.registrarCSI}')
 		return resourceFromDict(cast(JSON, res.data), pi = '')
@@ -637,6 +647,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendDeleteRequest(self.csrOnRegistrarURI, 
 											CSE.cseCsi, 
 											ct = self.registrarSerialization)	# own CSE.csi is the originator
+		# NOT_FOUND might be raised above
 		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
 			_exc = exceptionFromRSC(res.rsc)
 			if _exc:
@@ -707,7 +718,6 @@ class RemoteCSEManager(object):
 
 		# We cannot regularly retrieve a remote resource if we are not fully registered (yet).
 		resourceList = self._retrieveLocalCSRResources(includeRegistrarCSR = True, withRegistreeCSR = True)
-		L.inspect(id)
 
 		_id = f'{id}/'
 		for eachCsr in resourceList:
