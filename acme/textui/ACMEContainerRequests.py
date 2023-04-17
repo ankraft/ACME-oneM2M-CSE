@@ -131,9 +131,8 @@ class ACMEViewRequests(Vertical):
 			# TODO plantuml?
 
 			def rscFmt(rsc:int) -> str:
-				_c = 'red'
 				_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
-				_c = 'green' if isSuccessRSC(_rsc) else 'red'
+				_c = 'green1' if isSuccessRSC(_rsc) else 'red'
 				return f'[{_c}]{_rsc.name}[/{_c}]'
 
 			self.requestList.clear()
