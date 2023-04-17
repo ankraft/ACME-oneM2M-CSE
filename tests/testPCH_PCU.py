@@ -57,7 +57,7 @@ class TestPCH_PCU(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		cls.aeRI = findXPath(cls.ae, 'm2m:ae/ri')
 
@@ -69,7 +69,7 @@ class TestPCH_PCU(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator2 = findXPath(cls.ae2, 'm2m:ae/aei')
 		cls.aeRI2 = findXPath(cls.ae2, 'm2m:ae/ri')
 
@@ -95,7 +95,7 @@ class TestPCH_PCU(unittest.TestCase):
 			},
 		}}
 		cls.acp2, rsc = CREATE(ae2URL, cls.originator2, T.ACP, dct)
-		assert rsc == RC.created, 'cannot create ACP'
+		assert rsc == RC.CREATED, 'cannot create ACP'
 		cls.acpRI2 = findXPath(cls.acp2, 'm2m:acp/ri')
 
 		# Add acpi to second AE 
@@ -103,14 +103,14 @@ class TestPCH_PCU(unittest.TestCase):
 					'acpi' : [ cls.acpRI2 ]
 				}}
 		cls.ae, rsc = UPDATE(ae2URL, cls.originator2, dct)
-		assert rsc == RC.updated, 'cannot update AE'
+		assert rsc == RC.UPDATED, 'cannot update AE'
 		
 		# Add container to first AE
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 		testCaseEnd('Setup TestPCH_PCU')
 
@@ -149,7 +149,7 @@ class TestPCH_PCU(unittest.TestCase):
 						aggregated:bool = False) -> None:
 		r, rsc = RETRIEVE(pcu2URL, originator)	# polling request
 		self.assertEqual(rsc, rcs, r)
-		if rcs in [ RC.originatorHasNoPrivilege, RC.requestTimeout ]:
+		if rcs in [ RC.ORIGINATOR_HAS_NO_PRIVILEGE, RC.REQUEST_TIMEOUT ]:
 			return
 		
 		def checkRequest(r:JSON) -> None:
@@ -244,7 +244,7 @@ class TestPCH_PCU(unittest.TestCase):
 					# 'su': TestPCH_PCU.aeRI2
 				}}
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+		self.assertEqual(rsc, RC.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -256,14 +256,14 @@ class TestPCH_PCU(unittest.TestCase):
 					'rqag': False,
 				}}
 		r, rsc = CREATE(ae2URL, TestPCH_PCU.originator2, T.PCH, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrievePCUunderAE2Fail(self) -> None:
 		"""	Retrieve <PCU>'s with implicite request timeout (nothing to retrieve) -> FAIL """
 		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -281,7 +281,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 		thread = self._pollWhenCreating(TestPCH_PCU.originator2)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self._waitForPolling(thread)
 
 
@@ -291,7 +291,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 		thread = self._pollWhenDeleting(TestPCH_PCU.originator2)
 		r, rsc = DELETE(f'{cntURL}/{subRN}', TestPCH_PCU.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 		self._waitForPolling(thread)
 	
 
@@ -308,9 +308,9 @@ class TestPCH_PCU(unittest.TestCase):
 					'nu': [ TestPCH_PCU.originator ],
 					'su': TestPCH_PCU.originator
 				}}
-		thread = self._pollWhenCreating(TestPCH_PCU.originator2, rcs=RC.requestTimeout)
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2, rcs=RC.REQUEST_TIMEOUT)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator2, T.SUB, dct)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 		self._waitForPolling(thread)
 		# No <sub> created
 
@@ -329,7 +329,7 @@ class TestPCH_PCU(unittest.TestCase):
 				}}
 		thread = self._pollWhenCreating(TestPCH_PCU.originator2, emptyAnswer=True)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+		self.assertEqual(rsc, RC.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED, r)
 		self._waitForPolling(thread)
 		# No <sub> created
 
@@ -348,7 +348,7 @@ class TestPCH_PCU(unittest.TestCase):
 				}}
 		thread = self._pollWhenCreating(TestPCH_PCU.originator2, wrongAnswer=True)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+		self.assertEqual(rsc, RC.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED, r)
 		self._waitForPolling(thread)
 		# No <sub> created
 
@@ -356,7 +356,7 @@ class TestPCH_PCU(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_accesPCUwithWrongOriginator(self) -> None:
 		"""	RETRIEVE <PCU> with wrong originator -> Fail"""
-		thread = self._pollWhenCreating(TestPCH_PCU.originator, rcs=RC.originatorHasNoPrivilege)
+		thread = self._pollWhenCreating(TestPCH_PCU.originator, rcs=RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 		thread.join()
 
 
@@ -364,7 +364,7 @@ class TestPCH_PCU(unittest.TestCase):
 	def test_accessPCUwithshortExpiration(self) -> None:
 		"""	RETRIEVE <PCU> with short expiration -> Fail"""
 		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(requestExpirationDelay/2.0*1000)})	# polling request
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -375,7 +375,7 @@ class TestPCH_PCU(unittest.TestCase):
 					'rqag': True,
 				}}
 		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 
@@ -395,7 +395,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 		thread = self._pollWhenCreating(TestPCH_PCU.originator2)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self._waitForPolling(thread)
 	
 		# enable aggregation
@@ -403,7 +403,7 @@ class TestPCH_PCU(unittest.TestCase):
 					'rqag': True,
 				}}
 		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 		# Add CIN
@@ -412,7 +412,7 @@ class TestPCH_PCU(unittest.TestCase):
 				'con' : 'test'
 			}}
 			r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.CIN, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 
 		for _ in range(5):
 			t = Thread(target = _createCin)
@@ -432,7 +432,7 @@ class TestPCH_PCU(unittest.TestCase):
 					'con' : 'test'
 				}}
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 

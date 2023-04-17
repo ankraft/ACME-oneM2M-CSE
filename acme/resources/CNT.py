@@ -10,7 +10,8 @@
 from __future__ import annotations
 from typing import Optional, cast
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, JSONLIST
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, JSONLIST
+from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
 from ..services import CSE
@@ -86,9 +87,8 @@ class CNT(ContainerResource):
 		self.__validating = False	# semaphore for validating
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 		
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -96,31 +96,28 @@ class CNT(ContainerResource):
 		# add latest
 		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_LA).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(latestResource, self)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
-		self.setLatestRI(res.resource.ri)
+													ty = ResourceTypes.CNT_LA)		# rn is assigned by resource itself
+		resource = CSE.dispatcher.createLocalResource(latestResource, self)
+		self.setLatestRI(resource.ri)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_OL).resource		# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(oldestResource, self)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
-		self.setOldestRI(res.resource.ri)
-
-		return Result.successResult()
+													ty = ResourceTypes.CNT_OL)		# rn is assigned by resource itself
+		resource = CSE.dispatcher.createLocalResource(oldestResource, self)
+		self.setOldestRI(resource.ri)
 
 
-	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
+	def update(self, dct:JSON = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> None:
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
 		disrNew = findXPath(dct, 'm2m:cnt/disr')
 
 		# Generic update
-		if not (res := super().update(dct, originator)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 		
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
 		#if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
@@ -130,12 +127,9 @@ class CNT(ContainerResource):
 		# Update stateTag when modified
 		self.setAttribute('st', self.st + 1)
 
-		return Result.successResult()
 
-
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
-		if not (res := super().childWillBeAdded(childResource, originator)).status:
-			return res
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
+		super().childWillBeAdded(childResource, originator)
 		
 		# Check whether the child's rn is "ol" or "la".
 		# TODO check necessary?
@@ -145,8 +139,7 @@ class CNT(ContainerResource):
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == ResourceTypes.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result.errorResult(rsc = ResponseStatusCode.notAcceptable, dbg = 'child content sizes would exceed mbs')
-		return Result.successResult()
+				raise NOT_ACCEPTABLE('child content sizes would exceed mbs')
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -187,11 +180,9 @@ class CNT(ContainerResource):
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 		self._validateChildren()
-		return Result.successResult()
 
 
 	# TODO Align this and FCNT implementations
@@ -218,10 +209,6 @@ class CNT(ContainerResource):
 		# - Don't sum up. Using existing numbers
 
 
-
-
-		
-
 		# Only get the CINs in raw format. Instantiate them as resources if needed
 		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
@@ -230,7 +217,7 @@ class CNT(ContainerResource):
 		if mni is not None:
 			while cni > mni and cni > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				cin = Factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
@@ -247,7 +234,7 @@ class CNT(ContainerResource):
 		if mbs is not None:
 			while cbs > mbs and cbs > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				cin = Factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
 				cbs -= cin.cs

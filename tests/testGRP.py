@@ -41,7 +41,7 @@ class TestGRP(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		cls._createContainers()
 		testCaseEnd('Setup TestGRP')
@@ -74,13 +74,13 @@ class TestGRP(unittest.TestCase):
 					'rn'  : cntRN
 				}}
 		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : f'{cntRN}2'
 				}}
 		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 
 
@@ -97,7 +97,7 @@ class TestGRP(unittest.TestCase):
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
 				}}
 		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -111,7 +111,7 @@ class TestGRP(unittest.TestCase):
 	def test_retrieveGRPWithWrongOriginator(self) -> None:
 		"""	Retrieve <GRP> with wrong originator """
 		_, rsc = RETRIEVE(grpURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -145,7 +145,7 @@ class TestGRP(unittest.TestCase):
 					'mnm': 15
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 15)
 
@@ -158,7 +158,7 @@ class TestGRP(unittest.TestCase):
 					'lbl' : [ 'wrong' ]
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
-		self.assertNotEqual(rsc, RC.updated)
+		self.assertNotEqual(rsc, RC.UPDATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -173,7 +173,7 @@ class TestGRP(unittest.TestCase):
 					'rn'  : f'{cntRN}3' 
 				}}
 		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
 		mid = findXPath(r, 'm2m:grp/mid')
 		mid.append(self.cnt3RI)
@@ -182,7 +182,7 @@ class TestGRP(unittest.TestCase):
 					'mid'  : mid
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
 
@@ -204,7 +204,7 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), RC.created)
+			self.assertEqual(findXPath(c, 'rsc'), RC.CREATED)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'pc/m2m:cin/ri')
 			self.assertIsNotNone(to)
@@ -262,7 +262,7 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), RC.updated)
+			self.assertEqual(findXPath(c, 'rsc'), RC.UPDATED)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cnt'))
 			to = findXPath(c, 'pc/m2m:cnt/ri')
 			self.assertIsNotNone(to)
@@ -284,7 +284,7 @@ class TestGRP(unittest.TestCase):
 					'mid'  : mid
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 
 
@@ -300,21 +300,21 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), RC.deleted)
+			self.assertEqual(findXPath(c, 'rsc'), RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteGRPByUnknownOriginator(self) -> None:
 		"""	Delete <GRP> by wrong originator """
 		_, rsc = DELETE(grpURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteGRPByAssignedOriginator(self) -> None:
 		""" Delete <GRP> by correct originator """
 		_, rsc = DELETE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -330,7 +330,7 @@ class TestGRP(unittest.TestCase):
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
 				}}
 		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addTooManyCNTToGRP2(self) -> None:
@@ -340,14 +340,14 @@ class TestGRP(unittest.TestCase):
 					'rn'  : f'{cntRN}3'
 				}}
 		TestGRP.cnt3, rsc = CREATE(aeURL, TestGRP.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		TestGRP.cnt3RI = findXPath(TestGRP.cnt3, 'm2m:cnt/ri')
 
 		dct2 = 	{ 'm2m:grp' : { 
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI, TestGRP.cnt3RI ]
 				}}
 		_, rsc = UPDATE(grpURL, TestGRP.originator, dct2)
-		self.assertEqual(rsc, RC.maxNumberOfMemberExceeded)
+		self.assertEqual(rsc, RC.MAX_NUMBER_OF_MEMBER_EXCEEDED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -363,7 +363,7 @@ class TestGRP(unittest.TestCase):
 					'rn'  : f'{cntRN}4' 
 				}}
 		self.cnt4, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, self.cnt4)
+		self.assertEqual(rsc, RC.CREATED, self.cnt4)
 		self.cnt4RI = findXPath(self.cnt4, 'm2m:cnt/ri')
 	
 		# Add container to group
@@ -373,13 +373,13 @@ class TestGRP(unittest.TestCase):
 					'mid'  : mid
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
 
 		# Delete container
 		r, rsc = DELETE(f'{aeURL}/{cntRN}4', self.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 		# Check group 
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
@@ -423,7 +423,7 @@ class TestGRP(unittest.TestCase):
 					'cr' : 'wrong'
 				}}
 		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -435,7 +435,7 @@ class TestGRP(unittest.TestCase):
 					'cr' : None
 				}}
 		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)	
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE

@@ -38,7 +38,7 @@ class TestRemote_GRP(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		testCaseEnd('Setup TestRemote_GRP')
 
 
@@ -74,7 +74,7 @@ class TestRemote_GRP(unittest.TestCase):
 					'mid': [ f'{CSEID}/{CSERN}', f'{REMOTECSEID}/{REMOTECSERN}' ]
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.GRP, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
 		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)

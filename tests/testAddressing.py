@@ -34,13 +34,13 @@ class TestAddressing(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 		testCaseEnd('Setup TestAddressing')
 
@@ -115,7 +115,7 @@ class TestAddressing(unittest.TestCase):
 		""" Test SP-relative /<cse-id> -> Fail" """
 		url = f'{CSEURL}{CSEID}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -145,7 +145,7 @@ class TestAddressing(unittest.TestCase):
 		""" Test absolute structured with wrong SPID -> Fail"""
 		url = f'{CSEURL}//wrong{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -153,7 +153,7 @@ class TestAddressing(unittest.TestCase):
 		""" Test absolute unstructured with wrong SPID -> Fail"""
 		url = f'{CSEURL}//wrong{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -161,7 +161,7 @@ class TestAddressing(unittest.TestCase):
 		""" Test absolute /cse-id -> Fail" """
 		url = f'{CSEURL}//{SPID}{CSEID}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

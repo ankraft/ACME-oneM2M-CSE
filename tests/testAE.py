@@ -66,7 +66,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
 		self.assertIsNotNone(TestAE.originator, r)
@@ -82,7 +82,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATORSelfReg, T.AE, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType, r)
+		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -96,7 +96,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.conflict)
+		self.assertEqual(rsc, RC.CONFLICT)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -108,7 +108,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct)
-		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_ALREADY_REGISTERED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -120,7 +120,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, CSEID[1:], T.AE, dct)
-		self.assertEqual(rsc, RC.securityAssociationRequired, r)
+		self.assertEqual(rsc, RC.SECURITY_ASSOCIATION_REQUIRED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -134,7 +134,7 @@ class TestAE(unittest.TestCase):
 	def test_retrieveAEWithWrongOriginator(self) -> None:
 		""" Retrieve <AE> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
-		self.assertIn(rsc, [RC.originatorHasNoPrivilege, RC.serviceSubscriptionNotEstablished])
+		self.assertIn(rsc, [RC.ORIGINATOR_HAS_NO_PRIVILEGE, RC.SERVICE_SUBSCRIPTION_NOT_ESTABLISHED])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -169,7 +169,7 @@ class TestAE(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
@@ -185,7 +185,7 @@ class TestAE(unittest.TestCase):
 					'ty' : int(T.CSEBase)
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -195,7 +195,7 @@ class TestAE(unittest.TestCase):
 					'pi' : 'wrongID'
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -205,21 +205,21 @@ class TestAE(unittest.TestCase):
 					'unknown' : 'unknown'
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByUnknownOriginator(self) -> None:
 		""" Delete <AE> with wrong originator -> Fail """
 		_, rsc = DELETE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByAssignedOriginator(self) -> None:
 		""" Delete <AE> with correct originator -> <AE> deleted """
 		_, rsc = DELETE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -234,7 +234,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -249,7 +249,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
 
 
@@ -257,7 +257,7 @@ class TestAE(unittest.TestCase):
 	def test_deleteAECSZ(self) -> None:
 		""" Delete <AE> with csr -> <AE> deleted """
 		_, rsc = DELETE(aeURL, TestAE.originator2)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -270,7 +270,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertNotEqual(rsc, RC.created)
+		self.assertNotEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -284,7 +284,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertNotEqual(rsc, RC.created)
+		self.assertNotEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -298,10 +298,10 @@ class TestAE(unittest.TestCase):
 				}}
 		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -315,10 +315,10 @@ class TestAE(unittest.TestCase):
 				}}
 		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -334,10 +334,10 @@ class TestAE(unittest.TestCase):
 		}
 		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -353,7 +353,7 @@ class TestAE(unittest.TestCase):
 		}
 		ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct, headers = headers)
 
-		self.assertEqual(rsc, RC.badRequest, ae)
+		self.assertEqual(rsc, RC.BAD_REQUEST, ae)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -366,10 +366,10 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		ae, rsc = CREATE(cseURL, None, T.AE, dct)
-		self.assertEqual(rsc, RC.created, ae)
+		self.assertEqual(rsc, RC.CREATED, ae)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -382,10 +382,10 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -400,7 +400,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 		# With space
 		dct = 	{ 'm2m:ae' : {
@@ -410,7 +410,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 # TODO register multiple AEs

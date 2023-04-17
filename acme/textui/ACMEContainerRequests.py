@@ -18,7 +18,6 @@ from rich.pretty import Pretty
 from ..etc.Types import JSONLIST, JSON, Operation, ResponseStatusCode
 from ..etc.DateUtils import toISO8601Date
 from ..services import CSE
-from ..textui.ACMELines import VerticalLine, HorizontalLine
 
 idRequests = 'requests'
 

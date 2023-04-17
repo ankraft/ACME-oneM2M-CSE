@@ -11,7 +11,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, Result, JSON
-from ..etc.Utils import isValidCSI
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.Utils import isValidCSI, resourceFromCSI
 from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -83,24 +84,17 @@ class CSEBase(AnnounceableResource):
 		self.delAttribute('et', setNone = False)	
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
-		
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 		if not isValidCSI(self.csi):
-			L.logWarn(dbg := f'Wrong format for CSEBase.csi: {self.csi}')
-			return Result.errorResult(dbg = dbg)
-
-		return Result.successResult()
+			raise BAD_REQUEST(f'Wrong format for CSEBase.csi: {self.csi}')
 
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
-		
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 		self._normalizeURIAttribute('poa')
 
 		# Update the hcl attribute in the hosting node (similar to AE)
@@ -110,23 +104,23 @@ class CSEBase(AnnounceableResource):
 		if nl or _nl_:
 			if nl != _nl_:
 				if _nl_:
-					if nresource := CSE.dispatcher.retrieveResource(_nl_).resource:
+					if nresource := CSE.dispatcher.retrieveResource(_nl_):
 						nresource['hcl'] = None # remove old link
 						CSE.dispatcher.updateLocalResource(nresource)
 				self[Constants.attrNode] = nl
-				if nresource := CSE.dispatcher.retrieveResource(nl).resource:
-					nresource['hcl'] = self['ri']
-					CSE.dispatcher.updateLocalResource(nresource)
-			self[Constants.attrNode] = nl
 
-		return Result.successResult()
+				nresource = CSE.dispatcher.retrieveResource(nl)
+				nresource['hcl'] = self['ri']
+				nresource.dbUpdate()
+				#CSE.dispatcher.updateLocalResource(nresource)
+
+			self[Constants.attrNode] = nl
 
 
 	def willBeRetrieved(self, originator:str, 
 							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> Result:
-		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
-			return res
+							  subCheck:Optional[bool] = True) -> None:
+		super().willBeRetrieved(originator, request, subCheck = subCheck)
 
 		# add the current time to this resource instance
 		self.setAttribute('ctm', CSE.time.getCSETimestamp())
@@ -134,7 +128,13 @@ class CSEBase(AnnounceableResource):
 		# add the supported release versions
 		self.setAttribute('srv', CSE.supportedReleaseVersions)
 
-		return Result.successResult()
 
 
-		
+def getCSE() -> CSEBase:	# Actual: CSEBase Resource
+	"""	Return the <CSEBase> resource.
+
+		Return:
+			<CSEBase> resource.
+	"""
+	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
+	return resourceFromCSI(CSE.cseCsi)

@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
+from ..etc.ResponseStatusCodes import ResponseException
 from .Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
@@ -550,24 +551,29 @@ class ACMEPContext(PContext):
 
 		# resource object
 		pcontext, _resource = pcontext.valueFromArgument(symbol, 2, SType.tJson)
-		_resource = resourceFromDict(cast(dict, _resource), create = True, isImported = True).resource
+		_resource = resourceFromDict(cast(dict, _resource), create = True, isImported = True)
 
 		# Get a potential parent resource
 		parentResource:Any = None
 		if _resource.pi:
-			if not (pres := CSE.dispatcher.retrieveLocalResource(ri = _resource.pi)).status:
-				raise PRuntimeError(self.setError(PError.runtime, pres.dbg))
-			parentResource = pres.resource
+			try:
+				parentResource = CSE.dispatcher.retrieveLocalResource(ri = _resource.pi)
+			except ResponseException as e:
+				raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Check resource registration
-		if not (result := CSE.registration.checkResourceCreation(_resource, _originator, parentResource)).status:
-			raise PRuntimeError(self.setError(PError.runtime, result.dbg))
+		try:
+			CSE.registration.checkResourceCreation(_resource, _originator, parentResource)
+		except ResponseException as e:
+			raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Create the resource
-		if not (result := CSE.dispatcher.createLocalResource(_resource, parentResource, originator = _originator)).resource:
-			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {result.dbg}', showStackTrace = False)))
-			
-		return self._pcontextFromRequestResult(pcontext, result)
+		try:
+			resource = CSE.dispatcher.createLocalResource(_resource, parentResource, originator = _originator)
+		except ResponseException as e:
+			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {e.dbg}', showStackTrace = False)))
+		# return self._pcontextFromRequestResult(pcontext, result)
+		return pcontext.setResult(SSymbol(jsn = resource.asDict()))
 
 
 	def doIsIPython(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1013,12 +1019,12 @@ class ACMEPContext(PContext):
 		# Construct response
 		responseStatus = SSymbol(number = Decimal(res.rsc.value))
 		try:
-			if not res.status:
+			if not res.dbg:
 				# L.isDebug and L.logDebug(f'Request response: {res.dbg}')
 				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
 				# L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				responseResource = SSymbol(jsn= res.resource.asDict())
+				responseResource = SSymbol(jsn = res.resource.asDict())
 			elif res.data:
 				# L.isDebug and L.logDebug(f'Request response: {res.data}')
 				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))
@@ -1104,12 +1110,13 @@ class ACMEPContext(PContext):
 		request.originalRequest 	= req
 		request.pc 					= dct
 
-		if not (res := CSE.request.fillAndValidateCSERequest(request)).status:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {res.dbg}'))
-		
-		L.isDebug and L.logDebug(f'Sending request from script: {res.request.originalRequest} to: {target}')
+		try:
+			resReq = CSE.request.fillAndValidateCSERequest(request)
+		except ResponseException as e:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}'))
 		
 		# Send request
+		L.isDebug and L.logDebug(f'Sending request from script: {resReq.originalRequest} to: {target}')
 		if isURL(target):
 			if operation == Operation.RETRIEVE:
 				res = CSE.request.sendRetrieveRequest(target, originator)

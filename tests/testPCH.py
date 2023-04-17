@@ -37,7 +37,7 @@ class TestPCH(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		# Create 2nd AE
@@ -49,7 +49,7 @@ class TestPCH(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator2 = findXPath(cls.ae2, 'm2m:ae/aei')
 
 		# Add permissions for second AE to first AE
@@ -70,7 +70,7 @@ class TestPCH(unittest.TestCase):
 			},
 		}}
 		cls.acp, rsc = CREATE(aeURL, cls.originator, T.ACP, dct)
-		assert rsc == RC.created, 'cannot create ACP'
+		assert rsc == RC.CREATED, 'cannot create ACP'
 		cls.acpRI = findXPath(cls.acp, 'm2m:acp/ri')
 
 		# Add acpi to second AE 
@@ -78,7 +78,7 @@ class TestPCH(unittest.TestCase):
 					'acpi' : [ cls.acpRI ]
 				}}
 		cls.ae, rsc = UPDATE(aeURL, cls.originator, dct)
-		assert rsc == RC.updated, 'cannot update AE'
+		assert rsc == RC.UPDATED, 'cannot update AE'
 		testCaseEnd('Setup TestPCH')
 
 
@@ -112,7 +112,7 @@ class TestPCH(unittest.TestCase):
 					'rn' : pchRN,
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.PCH, dct)	# Admin, should still fail
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -123,7 +123,7 @@ class TestPCH(unittest.TestCase):
 					'rn' : pchRN,
 				}}
 		r, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -134,7 +134,7 @@ class TestPCH(unittest.TestCase):
 					'rn' : f'{pchRN}2',
 				}}
 		_, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -145,7 +145,7 @@ class TestPCH(unittest.TestCase):
 					'rn' : pchRN,
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.PCH, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType)
+		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -159,14 +159,14 @@ class TestPCH(unittest.TestCase):
 	def test_retrievePCHwithWrongOriginatorFail(self) -> None:
 		""" Retrieve <PCH> with wrong originator -> Fail"""
 		_, rsc = RETRIEVE(pchURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrievePCHWithAE2Fail(self) -> None:
 		""" Retrieve <PCH> with <AE> 2 -> Fail """
 		r, rsc = RETRIEVE(pchURL, TestPCH.originator2)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -189,7 +189,7 @@ class TestPCH(unittest.TestCase):
 					'rqag' : True,
 				}}
 		r, rsc = UPDATE(pchURL, TestPCH.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 	
@@ -205,21 +205,21 @@ class TestPCH(unittest.TestCase):
 	def test_deletePCHwrongOriginatorFail(self) -> None:
 		""" Delete <PCH> with wrong originator -> Fail """
 		_, rsc = DELETE(pchURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deletePCH(self) -> None:
 		""" Delete <PCH> with correct originator """
 		_, rsc = DELETE(pchURL, self.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrievePCUAfterDeleteFail(self) -> None:
 		""" Retrieve <PCU> after delete -> Fail """
 		_, rsc = RETRIEVE(pcuURL, self.originator)
-		self.assertEqual(rsc, RC.notFound)
+		self.assertEqual(rsc, RC.NOT_FOUND)
 
 
 

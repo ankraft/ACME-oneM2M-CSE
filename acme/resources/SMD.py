@@ -14,7 +14,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -82,23 +83,20 @@ class SMD(AnnounceableResource):
 		self.setAttribute(self._decodedDsp, None, overwrite = False)	
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 		
 		# Validation of CREATE is done in self.validate()
 		
 		# Perform Semantic validation process and add descriptor
-		if not (res := CSE.semantic.addDescriptor(self)).status:
-			return res
+		CSE.semantic.addDescriptor(self)
 		self.setAttribute('svd', True)
 
-		return Result.successResult()
 
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None,
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 
 		# Some checks before the general validation that are necessary only in an UPDATE
 		soeNew = findXPath(dct, '{*}/soe')
@@ -108,15 +106,14 @@ class SMD(AnnounceableResource):
 
 		# soe and dsp cannot updated together
 		if soeNew and dspNew:
-			return Result(status = False, rsc = ResponseStatusCode.badRequest, dbg = 'Updating soe and dsp in one request is not allowed')
+			raise BAD_REQUEST('Updating soe and dsp in one request is not allowed')
 		
 		# If soe exists then validate it
-		if soeNew and not (res := CSE.semantic.validateSPARQL(soeNew)).status:
-			return res
+		if soeNew:
+			CSE.semantic.validateSPARQL(soeNew)
 
 		# Generic update and validation (with semantic procdures)
-		if not (res := super().update(dct, originator, doValidateAttributes)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 
 		# Test whether vlde changed in the request from True to False, then set svd to False as well.
 		if vldeOrg == True and vldeNew == False:
@@ -124,8 +121,6 @@ class SMD(AnnounceableResource):
 
 		# Update the semantic graph 
 		#CSE.semantic.updateDescription(self)
-
-		return Result.successResult()
 
 	
 	def deactivate(self, originator:str) -> None:
@@ -136,40 +131,32 @@ class SMD(AnnounceableResource):
 	def validate(self, originator:Optional[str] = None,
 					   create:Optional[bool] = False,
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+		super().validate(originator, create, dct, parentResource)
 		
 		# Validate validationEnable attribute
-		if not (res := CSE.semantic.validateValidationEnable(self)).status:
-			res.rsc = ResponseStatusCode.badRequest
-			return res
+		CSE.semantic.validateValidationEnable(self)
 
 		# Validate descriptor attribute
-		if not (res := CSE.semantic.validateDescriptor(self)).status:
-			res.rsc = ResponseStatusCode.badRequest
-			return res
+		try:
+			CSE.semantic.validateDescriptor(self)
+		except ResponseException as e:
+			raise BAD_REQUEST(dbg = e.dbg)
 		
 		# Perform Semantic validation process and add descriptor
 		if findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
-			if not (res := CSE.semantic.addDescriptor(self)).status:
-				return res
+			CSE.semantic.addDescriptor(self)
 		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		
 		self.dbUpdate()
 		
-		return Result.successResult()
-
 
 	def willBeRetrieved(self, originator:str, 
 							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> Result:
-		if (res := super().willBeRetrieved(originator, request, subCheck)).status == False:
-			return res
+							  subCheck:Optional[bool] = True) -> None:
+		super().willBeRetrieved(originator, request, subCheck)
 
 		# Remove semanticOpExec from result
 		self.delAttribute('soe')
-
-		return Result.successResult()

@@ -17,6 +17,7 @@ from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCo
 from .Constants import Constants
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
+from ..etc.ResponseStatusCodes import ResponseStatusCode
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
@@ -229,7 +230,11 @@ def requestFromResult(inResult:Result,
 		else:
 			req['pc'] = pc
 	
-	return Result(status = True, data = req, resource = inResult.resource, request = inResult.request, embeddedRequest = inResult.embeddedRequest, rsc = inResult.rsc)
+	return Result(data = req, 
+				  resource = inResult.resource, 
+				  request = inResult.request, 
+				  embeddedRequest = inResult.embeddedRequest, 
+				  rsc = inResult.rsc)
 
 
 def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Result:

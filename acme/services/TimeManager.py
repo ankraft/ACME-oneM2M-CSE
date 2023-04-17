@@ -13,6 +13,7 @@ from typing import cast, List, Tuple, Optional
 from ..resources.TSB import TSB
 from ..services import CSE
 from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.DateUtils import isodateDelta, toDuration, getResourceDate
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..services.Logging import Logging as L
@@ -96,15 +97,15 @@ class TimeManager(object):
 		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
-	def addTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO doc
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
-			return self.addPeriodicTimeSyncBeacon(tsb)
+			self.addPeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
-			return self.addLoSTimeSyncBeacon(tsb)
+			self.addLoSTimeSyncBeacon(tsb)
 
 
-	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
 		"""	Add a worker for a periodic timeSyncBeacon resource.
 		
 			Args:
@@ -135,22 +136,18 @@ class TimeManager(object):
 												f'tsbPeriodic_{ri}', 
 												startWithDelay = True).start()
 		self.periodicTimeSyncBeacons[ri] = worker
-		return Result.successResult()
 
 
-	def addLoSTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO doc
 		if not (bcnr := tsb.bcnr):
-			L.isWarn and L.logWarn(dbg := f'bcnr missing in TSB: {tsb.ri}')
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'bcnr missing in TSB: {tsb.ri}')
 		if bcnr in self.losTimeSyncBeacons: 
-			L.isDebug and L.logDebug(dbg := f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
 		self.losTimeSyncBeacons[bcnr] = (tsb.bcnt, tsb.ri)
-		return Result.successResult()
 
 	
-	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> Result:
+	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> None:
 		# TODO
 		...
 	

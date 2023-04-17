@@ -33,7 +33,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ni'	: nodeID
 				}}
 		cls.nod, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		assert rsc == RC.created, 'cannot create <node>'
+		assert rsc == RC.CREATED, 'cannot create <node>'
 		testCaseEnd('Setup TestMgmtObj')
 
 
@@ -78,7 +78,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ud' : False
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:fwr/ri'))
 
 
@@ -119,7 +119,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteFWR(self) -> None:
 		"""	DELETE [Firmware] """
 		_, rsc = DELETE(self.fwrURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 	#
 	#	SWR
@@ -141,7 +141,7 @@ class TestMgmtObj(unittest.TestCase):
 					'url': 'example.com'
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:swr/ri'))
 
 
@@ -181,7 +181,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteSWR(self) -> None:
 		"""	DELETE [Software] """
 		_, rsc = DELETE(self.swrURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -199,7 +199,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mmt' : 4321
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:mem/ri'))
 
 
@@ -234,7 +234,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteMEM(self) -> None:
 		""" DELETE [Memory] """
 		_, rsc = DELETE(memURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 	#
 	#	ANI
@@ -254,7 +254,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ldv' : [ 'dev1', 'dev2' ]
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:ani/ri'))
 
 
@@ -292,7 +292,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteANI(self) -> None:
 		"""	DELETE [areaNwkInfo] """
 		_, rsc = DELETE(self.aniURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -317,7 +317,7 @@ class TestMgmtObj(unittest.TestCase):
 					'lnh' : [ 'dev1', 'dev2']
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:andi/ri'))
 
 
@@ -363,7 +363,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteANDI(self) -> None:
 		""" DELETE [areaNwkDeviceInfo] """
 		_, rsc = DELETE(self.andiURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -382,7 +382,7 @@ class TestMgmtObj(unittest.TestCase):
 					'bts' : 99
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -396,7 +396,7 @@ class TestMgmtObj(unittest.TestCase):
 					'bts' : 5
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ri'))
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
 
@@ -432,7 +432,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteBAT(self) -> None:
 		""" DELETE [battery] """
 		_, rsc = DELETE(batURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -470,7 +470,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ptl' : [ 'http' ]
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:dvi/ri'))
 
 
@@ -539,7 +539,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteDVI(self) -> None:
 		""" DELETE [deviceInfo] """
 		_, rsc = DELETE(self.dviURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -567,7 +567,7 @@ class TestMgmtObj(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:dvc/ri'))
 
 
@@ -615,7 +615,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ena' : True,
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
 		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
 
@@ -627,7 +627,7 @@ class TestMgmtObj(unittest.TestCase):
 					'ena' : False,
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
 		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
 
@@ -639,7 +639,7 @@ class TestMgmtObj(unittest.TestCase):
 					'dis' : True
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
 		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
 
@@ -651,7 +651,7 @@ class TestMgmtObj(unittest.TestCase):
 					'dis' : False
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
 		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
 
@@ -664,7 +664,7 @@ class TestMgmtObj(unittest.TestCase):
 					'dis' : True
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -675,7 +675,7 @@ class TestMgmtObj(unittest.TestCase):
 					'dis' : False
 				}}
 		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
 		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
 
@@ -684,7 +684,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteDVC(self) -> None:
 		"""	DELETE [deviceCapability] """
 		_, rsc = DELETE(self.dvcURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -706,7 +706,7 @@ class TestMgmtObj(unittest.TestCase):
 					'far' : False
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:rbo/ri'))
 
 
@@ -744,7 +744,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rbo' : True,
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertFalse(findXPath(r, 'm2m:rbo/rbo'))
 		self.assertFalse(findXPath(r, 'm2m:rbo/far'))
 
@@ -756,7 +756,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rbo' : False,
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertFalse(findXPath(r, 'm2m:rbo/rbo'))
 		self.assertFalse(findXPath(r, 'm2m:rbo/far'))
 
@@ -768,7 +768,7 @@ class TestMgmtObj(unittest.TestCase):
 					'far' : True
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertFalse(findXPath(r, 'm2m:rbo/rbo'))
 		self.assertFalse(findXPath(r, 'm2m:rbo/far'))
 
@@ -780,7 +780,7 @@ class TestMgmtObj(unittest.TestCase):
 					'far' : False
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertFalse(findXPath(r, 'm2m:rbo/rbo'))
 		self.assertFalse(findXPath(r, 'm2m:rbo/far'))
 
@@ -793,7 +793,7 @@ class TestMgmtObj(unittest.TestCase):
 					'far' : True
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -804,7 +804,7 @@ class TestMgmtObj(unittest.TestCase):
 					'far' : False
 				}}
 		r, rsc = UPDATE(self.rboURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertFalse(findXPath(r, 'm2m:rbo/rbo'))
 		self.assertFalse(findXPath(r, 'm2m:rbo/far'))
 
@@ -813,7 +813,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteRBO(self) -> None:
 		"""	DELETE [reboot] """
 		_, rsc = DELETE(self.rboURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -835,7 +835,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mcfc' : 'secretKey'
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -850,7 +850,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mcfc' : 'secretKey'
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/ri'), r)
 
 
@@ -887,7 +887,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteNYCFC(self) -> None:
 		"""	DELETE [myCertFileCred] """
 		_, rsc = DELETE(self.nycfcURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -909,7 +909,7 @@ class TestMgmtObj(unittest.TestCase):
 					'lgst': 2
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:evl/ri'))
 
 
@@ -950,7 +950,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteEVL(self) -> None:
 		""" DELETE [eventLog] """
 		_, rsc = DELETE(self.evlURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	#
@@ -976,7 +976,7 @@ class TestMgmtObj(unittest.TestCase):
 					}
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:wific/ri'), r)
 
 
@@ -1022,7 +1022,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteWIFIC(self) -> None:
 		""" DELETE [wificlient] """
 		_, rsc = DELETE(self.wificURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1040,7 +1040,7 @@ class TestMgmtObj(unittest.TestCase):
 					}
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1057,7 +1057,7 @@ class TestMgmtObj(unittest.TestCase):
 					}
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 
@@ -1075,7 +1075,7 @@ class TestMgmtObj(unittest.TestCase):
 					}
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	#
@@ -1096,7 +1096,7 @@ class TestMgmtObj(unittest.TestCase):
 					'cntp': self.cntPath,
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/ri'), r)
 
 
@@ -1107,7 +1107,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpsc':	10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1117,7 +1117,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mesc':	10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1127,7 +1127,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpsc':	[ 10 ],	# must be [ scheduleEntries ]
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1137,7 +1137,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpsc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1147,7 +1147,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
 		self.assertIsInstance(findXPath(r, 'dcfg:datc/rpsc'), list, r)
 
@@ -1159,7 +1159,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpil':	10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1170,7 +1170,7 @@ class TestMgmtObj(unittest.TestCase):
 					'rpil': 10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1180,7 +1180,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mesc':	[ 10 ],	# must be [ scheduleEntries ]
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1190,7 +1190,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mesc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1200,7 +1200,7 @@ class TestMgmtObj(unittest.TestCase):
 					'mesc':	[ { 'sce': '10 * * * * * *' } ],
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/mesc'), r)
 		self.assertIsInstance(findXPath(r, 'dcfg:datc/mesc'), list, r)
 
@@ -1212,7 +1212,7 @@ class TestMgmtObj(unittest.TestCase):
 					'meil':	10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1223,7 +1223,7 @@ class TestMgmtObj(unittest.TestCase):
 					'meil': 10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 
@@ -1235,7 +1235,7 @@ class TestMgmtObj(unittest.TestCase):
 					'meil': 10000,
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNone(findXPath(r, 'dcfg:datc/mesc'), r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/meil'), r)
 		self.assertEqual(findXPath(r, 'dcfg:datc/meil'), 10000, r)
@@ -1266,7 +1266,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_deleteDATC(self) -> None:
 		""" DELETE [dataCollection] """
 		_, rsc = DELETE(self.datcURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 

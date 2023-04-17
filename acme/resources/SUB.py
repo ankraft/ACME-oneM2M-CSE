@@ -14,7 +14,8 @@ from copy import deepcopy
 from ..etc.Utils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
-from ..etc.Types import NotificationEventType, ResponseStatusCode, JSON
+from ..etc.Types import NotificationEventType, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -88,9 +89,8 @@ class SUB(Resource):
 		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
 		
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (result := super().activate(parentResource, originator)).status:
-			return result
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 
 		# set batchNotify default attributes
 		if self.bn:		
@@ -112,15 +112,14 @@ class SUB(Resource):
 	
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
-			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
-				return res
+			self._checkAllowedCHTY(parentResource, chty)
 		
 		# nsi is at least an empty list if nse is present, otherwise it must not be present
 		if self.nse is not None:
 			self.setAttribute('nsi', [], overwrite = False)
 			CSE.notification.validateAndConstructNotificationStatsInfo(self)
 
-		return CSE.notification.addSubscription(self, originator)
+		CSE.notification.addSubscription(self, originator)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -130,20 +129,19 @@ class SUB(Resource):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		previousNus = deepcopy(self.nu)
 
 		# We are validating the attributes here already because this actual update of the resource
 		# (where this happens) is done only after a lot of other stuff hapened.
 		# So, the resource is validated twice in an update :()
-		if not (res := CSE.validator.validateAttributes(dct, 
-														self.tpe, 
-														self.ty, 
-														self._attributes, 
-														create = False, 
-														createdInternally = self.isCreatedInternally(),
-														isAnnounced = self.isAnnounced())).status:
-			return res
+		CSE.validator.validateAttributes(dct, 
+										 self.tpe, 
+										 self.ty, 
+										 self._attributes, 
+										 create = False, 
+										 createdInternally = self.isCreatedInternally(),
+										 isAnnounced = self.isAnnounced())
 
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
@@ -154,7 +152,7 @@ class SUB(Resource):
 
 		# Reject updates with blocking *
 		if (net := findXPath(pure, 'enc/net')) and self._hasBlockingNET(net):
-			return Result.errorResult(dbg = L.logDebug('Updates with any blocking Notification Event Type if not allowed.'))
+			raise BAD_REQUEST(L.logDebug('Updates with any blocking Notification Event Type if not allowed.'))
 
 		# Handle changes to acrs (send deletion notifications)
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
@@ -163,8 +161,7 @@ class SUB(Resource):
 				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
 
 		# Do actual update
-		if not (res := super().update(dct, originator, doValidateAttributes = False)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes = False)
 		
 		# Check whether 'enc' is removed in the update
 		if 'enc' in dct['m2m:sub'] and dct['m2m:sub']['enc'] is None:
@@ -173,20 +170,17 @@ class SUB(Resource):
 
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
-			if not (parentResource := self.retrieveParentResource()):
-				return Result(status = False, rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
-			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
-				return res
+			parentResource = self.retrieveParentResource()
+			self._checkAllowedCHTY(parentResource, chty)
 
-		return CSE.notification.updateSubscription(self, previousNus, originator)
+		CSE.notification.updateSubscription(self, previousNus, originator)
 
  
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 		attrs = self.dict if create else pureResource(dct)[0]
@@ -195,7 +189,7 @@ class SUB(Resource):
 		# Check NotificationEventType
 		if (net := findXPath(attrs, 'enc/net')) is not None:
 			if not NotificationEventType.has(net):
-				return Result.errorResult(dbg = L.logDebug(f'enc/net={str(net)} is not an allowed or supported NotificationEventType'))
+				raise BAD_REQUEST(L.logDebug(f'enc/net={str(net)} is not an allowed or supported NotificationEventType'))
 
 		# Check if blocking RETRIEVE or blocking UPDATE is the only NET in the subscription, 
 		# AND that there is no other NET for this resource
@@ -203,25 +197,25 @@ class SUB(Resource):
 
 			# only one entry in NET must exist per blocking subscription
 			if len(net) > 1:
-				return Result.errorResult(dbg = L.logDebug(f'blockingRetrieve/blockingUpdate must be the only value in enc/net'))
+				raise BAD_REQUEST(L.logDebug(f'blockingRetrieve/blockingUpdate must be the only value in enc/net'))
 
 			# Only one of each blocking UPDATE or RETRIEVE etc must exist for this resource
 			# This works here in validate bc it is only allowed in CREATE/activate, and this resource has 
 			# not been written to DB yet.
 			if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = net):
-				return Result.errorResult(dbg = L.logDebug(f'A subscription with blockingRetrieve/blockingUpdate/blockingRetrieveDirectChild already exsists for this resource'))
+				raise BAD_REQUEST(L.logDebug(f'a subscription with blockingRetrieve/blockingUpdate/blockingRetrieveDirectChild already exsists for this resource'))
 
 			# Only one NU is allowed for blocking UPDATE or RETRIEVE
 			if len(self.nu) > 1:
-				return Result.errorResult(dbg = L.logDebug(f'nu must contain only one target for blockingRetrieve/blockingUpdate'))
+				raise BAD_REQUEST(L.logDebug(f'nu must contain only one target for blockingRetrieve/blockingUpdate'))
 
 			# Disallow other subscription-specific attributes if this is a blocking-* subscription
 			if self._hasDisallowedBlockingAttributes(attrs):
-				return Result.errorResult(dbg = L.logDebug(f'Disallowed attribute(s) in blocking-subscription'))
+				raise BAD_REQUEST(L.logDebug(f'disallowed attribute(s) in blocking-subscription'))
 
 			# Disallow condition tags other than 'atr' (and perhaps 'chty')
 			if enc and self._hasDisallowedENCAttributes(enc):
-				return Result.errorResult(dbg = L.logDebug(f'Disallowed "enc" attribute(s) in blocking-subscription'))
+				raise BAD_REQUEST(L.logDebug(f'disallowed "enc" attribute(s) in blocking-subscription'))
 
 			# TODO Where is it specified that the nu must target the parent's originator? -> Remove if not necessary
 			# parentOriginator = parentResource.getOriginator()
@@ -234,60 +228,53 @@ class SUB(Resource):
 		if net and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			# missing data must be created only under a <TS> resource
 			if parentResource is not None and parentResource.ty != ResourceTypes.TS:
-				return Result.errorResult(dbg = L.logDebug(f'parent resource must be a TimeSeries resource when "enc/md" is provided'))
+				raise BAD_REQUEST(L.logDebug(f'parent resource must be a TimeSeries resource when "enc/md" is provided'))
 
 			if (md := self['enc/md']) is not None:
 				if len(md.keys() & {'dur', 'num'}) != 2:
-					return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "enc/md" attribute'))
+					raise BAD_REQUEST(L.logDebug(f'"dur" and/or "num" missing in "enc/md" attribute'))
 			else:
-				return Result.errorResult(dbg = L.logDebug(f'"enc/md" is missing in subscription for "reportOnGeneratedMissingDataPoints"'))
+				raise BAD_REQUEST(L.logDebug(f'"enc/md" is missing in subscription for "reportOnGeneratedMissingDataPoints"'))
 			
 		# check nct and net combinations
 		if (nct := self.nct) is not None and net is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					return Result.errorResult(dbg = L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
+					raise BAD_REQUEST(L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
 				# fallthrough
 				if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
 					# TODO is this necessary, parent resource should be provided
 					# Check that parent is a TimeSeries
 					if not (parent := self.retrieveParentResource()):
-						return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+						raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent resource'))
 					if parent.ty != ResourceTypes.TS:
-						return Result.errorResult(dbg = L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
+						raise BAD_REQUEST(L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
 
 					# Check missing data structure
 					if (md := self['enc/md']) is None:	# enc/md is a boolean
-						return Result.errorResult(dbg = L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
-					if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
-						L.isDebug and L.logDebug(res.dbg)
-						return Result.errorResult(dbg = res.dbg)
-					if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
-						L.isDebug and L.logDebug(res.dbg)
-						return Result.errorResult(dbg = res.dbg)
+						raise BAD_REQUEST(L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
+					CSE.validator.validateAttribute('num', md.get('num'))
+					CSE.validator.validateAttribute('dur', md.get('dur'))
 
 		# check other attributes
 		self._normalizeURIAttribute('nfu')
 		self._normalizeURIAttribute('nu')
 		self._normalizeURIAttribute('su')
 
-		return Result.successResult()
 
-
-	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[ResourceTypes]) -> Result:
+	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[ResourceTypes]) -> None:
 		""" Check whether an observed child resource types are actually allowed by the parent. 
 		
 			Args:
 				parentResource: The resource to check.
 				chty: A list of resource types to check.
 			
-			Return:
-				Result object. Success result if the resource types are allowed.
+			Raises:
+				`BAD_REQUEST`: In case the observed child resource type is not allowed.
 		"""
 		for ty in chty:
-			if ty not in parentResource._allowedChildResourceTypes:		
-				return Result.errorResult(dbg = L.logDebug(f'ChildResourceType {ResourceTypes(ty).name} is not an allowed child resource of {ResourceTypes(parentResource.ty).name}'))
-		return Result.successResult()
+			if ty not in parentResource._allowedChildResourceTypes:
+				raise BAD_REQUEST(L.logDebug(f'ChildResourceType {ResourceTypes(ty).name} is not an allowed child resource of {ResourceTypes(parentResource.ty).name}'))
 
 
 	def _hasBlockingNET(self, net:list[NotificationEventType]) -> bool:

@@ -11,11 +11,12 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, RequestStatus, CSERequest, JSON
-from ..etc.Utils import getCSE
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
+from ..resources.CSEBase import getCSE
 from ..resources import Factory	# attn: circular import
 from ..services import CSE
 
@@ -60,7 +61,7 @@ class REQ(Resource):
 
 
 	@staticmethod
-	def createRequestResource(request:CSERequest) -> Result:
+	def createRequestResource(request:CSERequest) -> Resource:
 		"""	Create an initialized <request> resource.
 		"""
 
@@ -127,9 +128,8 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		if not (cseres := getCSE()).resource:
-			return Result.errorResult(dbg = cseres.dbg)
+		cseres = getCSE()
 
-		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = ResourceTypes.REQ)
+		return Factory.resourceFromDict(dct, pi = cseres.ri, ty = ResourceTypes.REQ)
 
 

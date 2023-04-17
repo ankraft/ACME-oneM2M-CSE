@@ -75,16 +75,14 @@ class ContainerResource(AnnounceableResource):
 		"""
 		# Update latest
 		lt = getResourceDate()
-		if not (res := CSE.dispatcher.retrieveLocalResource(self.getLatestRI())).status:
-			return
-		res.resource.setAttribute('lt', lt)
-		res.resource.dbUpdate()
+		resource = CSE.dispatcher.retrieveLocalResource(self.getLatestRI())
+		resource.setAttribute('lt', lt)
+		resource.dbUpdate()
 
 		# Update oldest
-		if not (res := CSE.dispatcher.retrieveLocalResource(self.getOldestRI())).status:
-			return
-		res.resource.setAttribute('lt', lt)
-		res.resource.dbUpdate()
+		resource = CSE.dispatcher.retrieveLocalResource(self.getOldestRI())
+		resource.setAttribute('lt', lt)
+		resource.dbUpdate()
 
 	
 	def instanceAdded(self, instance:Resource) -> None:

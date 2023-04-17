@@ -42,21 +42,21 @@ class GRP_FOPT(VirtualResource):
 									id:Optional[str] = None, 
 									originator:Optional[str] = None) -> Result:
 		L.isDebug and L.logDebug(f'RETRIEVE resources from fopt. ID: {id}')
-		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
+		return CSE.groupResource.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'CREATE resources at fopt. ID: {id}')
-		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator)
+		return CSE.groupResource.foptRequest(Operation.CREATE, self, request, id, originator)
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'UPDATE resources at fopt. ID: {id}')
-		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator)
+		return CSE.groupResource.foptRequest(Operation.UPDATE, self, request, id, originator)
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'DELETE resources at fopt. ID: {id}')
-		return CSE.group.foptRequest(Operation.DELETE, self, request, id, originator)
+		return CSE.groupResource.foptRequest(Operation.DELETE, self, request, id, originator)
 
 

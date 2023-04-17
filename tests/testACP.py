@@ -88,7 +88,7 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
-		self.assertEqual(rsc, RC.created, TestACP.acp)
+		self.assertEqual(rsc, RC.CREATED, TestACP.acp)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -102,7 +102,7 @@ class TestACP(unittest.TestCase):
 	def test_retrieveACPwrongOriginator(self) -> None:
 		"""	Retrieve <ACP> with wrong originator """
 		_, rsc = RETRIEVE(acpURL, 'wrongoriginator')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -151,7 +151,7 @@ class TestACP(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(acp, 'm2m:acp/lbl'))
 		self.assertEqual(len(findXPath(acp, 'm2m:acp/lbl')), 1)
 		self.assertIn('aTag', findXPath(acp, 'm2m:acp/lbl'))
@@ -164,7 +164,7 @@ class TestACP(unittest.TestCase):
 					'lbl' : [ 'bTag' ]
 				}}
 		r, rsc = UPDATE(acpURL, 'wrong', dct)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -180,7 +180,7 @@ class TestACP(unittest.TestCase):
 				}}
 		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
 		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(TestACP.ae, 'm2m:ae/acpi')), 0)
@@ -195,7 +195,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ 'anID' ]
 				}}
 		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
-		self.assertNotEqual(rsc, RC.updated)
+		self.assertNotEqual(rsc, RC.UPDATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -205,7 +205,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ 'anID' ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
-		self.assertNotEqual(rsc, RC.updated)
+		self.assertNotEqual(rsc, RC.UPDATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -215,7 +215,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATOR3, dct)
-		self.assertNotEqual(rsc, RC.updated)
+		self.assertNotEqual(rsc, RC.UPDATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -225,7 +225,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATOR2, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -235,7 +235,7 @@ class TestACP(unittest.TestCase):
 					'lbl': [ '1Label' ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATORWCTest, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'), r)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1, r)
 		self.assertIn('1Label', findXPath(r, 'm2m:ae/lbl'), 4)
@@ -248,7 +248,7 @@ class TestACP(unittest.TestCase):
 					'lbl': [ '2Label' ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC2Test, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'), r)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1, r)
 		self.assertIn('2Label', findXPath(r, 'm2m:ae/lbl'), 4)
@@ -261,7 +261,7 @@ class TestACP(unittest.TestCase):
 					'lbl': [ '3Label' ]
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC3Test, dct)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -271,7 +271,7 @@ class TestACP(unittest.TestCase):
 					'pvs' : {}
 				}}
 		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -281,7 +281,7 @@ class TestACP(unittest.TestCase):
 					'pvs' : None
 				}}
 		_, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -296,7 +296,7 @@ class TestACP(unittest.TestCase):
 					}
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -312,7 +312,7 @@ class TestACP(unittest.TestCase):
 					"pvs": {},
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -322,7 +322,7 @@ class TestACP(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
 
 
@@ -337,14 +337,14 @@ class TestACP(unittest.TestCase):
 	def test_retrieveCNTwithNoACPIWrongOriginator(self) -> None:
 		"""	Retrieve <CNT> without ACPI and wrong originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTwithNoACPI(self) -> None:
 		"""	Delete <CNT> without ACPI """
 		_, rsc = DELETE(cntURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -355,7 +355,7 @@ class TestACP(unittest.TestCase):
 					'cstn': 'someone'
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
 
 
@@ -370,21 +370,21 @@ class TestACP(unittest.TestCase):
 	def test_retrieveCNTwithNoACPIAndCustodianAEOriginator(self) -> None:
 		"""	Retrieve <CNT> without ACPI / with custodian and AE originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, TestACP.originator)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTwithNoACPIAndCustodianWrongOriginator(self) -> None:
 		"""	Retrieve <CNT> without ACPI / with custodian and wrong originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTwithNoACPIAndCustodian(self) -> None:
 		"""	Delete <CNT> without ACPI / with custodian"""
 		_, rsc = DELETE(cntURL, "someone")
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -398,7 +398,7 @@ class TestACP(unittest.TestCase):
 			 		'acpi': acpi
 				}}
 		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -412,7 +412,7 @@ class TestACP(unittest.TestCase):
 			 		'acpi': None
 				}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)	# missing self-privileges
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -426,21 +426,21 @@ class TestACP(unittest.TestCase):
 			 		'acpi': None
 				}}
 		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPwrongOriginator(self) -> None:
 		""" Delete <ACP> with wrong originator -> Fail """
 		_, rsc = DELETE(acpURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACP(self) -> None:
 		""" Delete <ACP> with correct originator """
 		_, rsc = DELETE(acpURL, self.acpORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -459,14 +459,14 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		TestACP.acp, rsc = CREATE(cseURL, TestACP.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created, TestACP.acp)
+		self.assertEqual(rsc, RC.CREATED, TestACP.acp)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPUnderCSEBaseWithOriginator(self) -> None:
 		""" Delete <ACP> under CSEBase with AE originator """
 		_, rsc = DELETE(acpURL, TestACP.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -491,7 +491,7 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod'))
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'), list)
@@ -506,7 +506,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
 		r, rsc = UPDATE(aeURL, TestACP.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'), r)
 
 
@@ -519,7 +519,7 @@ class TestACP(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 		# Try FCNT next -> Fail
 		dct2 = 	{ 'cod:tempe' : { 
@@ -532,14 +532,14 @@ class TestACP(unittest.TestCase):
 					'steVe'	: 0.5
 				}}
 		r, rsc = CREATE(aeURL, TestACP.originator, T.FCNT, dct2)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPUnderAEWithChty(self) -> None:
 		""" Delete <ACP> under AE for chty  """
 		_, rsc = DELETE(f'{aeURL}/{acpRN}', TestACP.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -562,7 +562,7 @@ class TestACP(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ],
 				}}
 		ae1, rsc = CREATE(cseURL, 'Cae1', T.AE, dct)
-		self.assertEqual(rsc, RC.created, ae1)
+		self.assertEqual(rsc, RC.CREATED, ae1)
 
 		# Create AE2
 		dct = 	{ 'm2m:ae' : {
@@ -572,7 +572,7 @@ class TestACP(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ],
 				}}
 		ae2, rsc = CREATE(cseURL, 'Cae2', T.AE, dct)
-		self.assertEqual(rsc, RC.created, ae2)
+		self.assertEqual(rsc, RC.CREATED, ae2)
 
 		# Create ACP under AE2
 		dct = 	{ "m2m:acp": {
@@ -591,25 +591,25 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		acp, rsc = CREATE(ae2URL, 'Cae2', T.ACP, dct)
-		self.assertEqual(rsc, RC.created, acp)
+		self.assertEqual(rsc, RC.CREATED, acp)
 
 		# Create CNT under AE2
 		dct = 	{ 'm2m:cnt' : {
 					'rn': cntRN,
 				}}
 		cnt, rsc = CREATE(ae2URL, 'Cae2', T.CNT, dct)
-		self.assertEqual(rsc, RC.created, cnt)
+		self.assertEqual(rsc, RC.CREATED, cnt)
 
 		# Add CIN
 		dct = 	{ 'm2m:cin' : {
 					'con' : 'content'
 				}}
 		r, rsc = CREATE(cnt2URL, 'Cae2', T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# Retrieve CIN by AE1
 		r, rsc = RETRIEVE(f'{cnt2URL}/la', 'Cae1')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -621,7 +621,7 @@ class TestACP(unittest.TestCase):
 					'acpi': [ f'{CSERN}/{ae2RN}/{acpRN}' ]
 				}}
 		cnt, rsc = UPDATE(cnt2URL, 'Cae2', dct)
-		self.assertEqual(rsc, RC.updated, cnt)
+		self.assertEqual(rsc, RC.UPDATED, cnt)
 
 		# Retrieve CIN by AE1
 		r, rsc = RETRIEVE(f'{cnt2URL}/la', 'Cae1')
@@ -653,7 +653,7 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor'))
 		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), TestACP.originator)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'))
@@ -661,7 +661,7 @@ class TestACP(unittest.TestCase):
 
 		# Retrieve the ACP by the originator
 		r, rsc = RETRIEVE(f'{aeURL}/{acpRN}', TestACP.originator)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 

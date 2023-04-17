@@ -78,25 +78,21 @@ class GRP(AnnounceableResource):
 		# optional set: spty, gn, nar
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 		
 		# add fanOutPoint
 		ri = self.ri
 		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty = ResourceTypes.GRP_FOPT).resource
-		if not (res := CSE.dispatcher.createLocalResource(fanOutPointResource, self, originator)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
-		return Result.successResult()
+		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty = ResourceTypes.GRP_FOPT)
+		CSE.dispatcher.createLocalResource(fanOutPointResource, self, originator)
 
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
-		return CSE.group.validateGroup(self, originator)
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
+		CSE.groupResource.validateGroup(self, originator)
 
 

@@ -23,11 +23,11 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON, Operation
+from ..etc.Types import ResourceTypes, JSON, Operation
+from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
 from ..helpers.TinyDBBetterTable import TinyDBBetterTable
 from ..etc.DateUtils import utcTime, fromDuration
-from ..etc.Utils import structuredPathFromRI
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -174,15 +174,12 @@ class Storage(object):
 	##
 
 
-	def createResource(self, resource:Resource, overwrite:Optional[bool] = True) -> Result:
+	def createResource(self, resource:Resource, overwrite:Optional[bool] = True) -> None:
 		"""	Create a new resource in the database.
 		
 			Args:
 				resource: The resource to store in the database.
 				overwrite: Indicator whether an existing resource shall be overwritten.
-			
-			Return:
-				Result object indicating success or error status.
 		"""
 		ri  = resource.ri
 		srn = resource.getSrn()
@@ -194,15 +191,13 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when resource with same ri or srn does not exist yet
 				self.db.insertResource(resource, ri)
 			else:
-				return Result.errorResult(rsc = ResponseStatusCode.conflict, dbg = L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
+				raise CONFLICT(L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
 
 		# Add record to childResources db
 		self.db.addChildResource(resource, ri)
-
-		return Result(status = True, rsc = ResponseStatusCode.created)
 
 
 	def hasResource(self, ri:Optional[str] = None, srn:Optional[str] = None) -> bool:
@@ -222,7 +217,7 @@ class Storage(object):
 	def retrieveResource(self,	ri:Optional[str] = None, 
 								csi:Optional[str] = None,
 								srn:Optional[str] = None, 
-								aei:Optional[str] = None) -> Result:
+								aei:Optional[str] = None) -> Resource:
 		""" Return a resource via different addressing methods. 
 
 			Either one of *ri*, *srn*, *csi*, or *aei* must be provided.
@@ -233,7 +228,7 @@ class Storage(object):
 				srn: The resource is retrieved via its structured resource name.
 				aei: The resource is retrieved via its AE-ID.
 			Returns:
-				The resource is returned in a `Result` object.
+				The resource.
 		"""
 		resources = []
 
@@ -256,25 +251,25 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return resourceFromDict(resources[0])
 		elif l == 0:
-			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'resource not found')
+			raise NOT_FOUND('resource not found')
 
-		return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'database inconsistency')
+		raise INTERNAL_SERVER_ERROR('database inconsistency')
 
 
-	def retrieveResourceRaw(self, ri:str) -> Result:
+	def retrieveResourceRaw(self, ri:str) -> JSON:
 		"""	Retrieve a resource as a raw dictionary.
 
 			Args:
 				ri:  The resource is retrieved via its rersource ID.
 			Returns:
-				The resource dictionary is returned in a Result object in the *resource* attribute.
+				The resource dictionary.
 		"""
 		resources = self.db.searchResources(ri = ri)
 		if (l := len(resources)) == 1:
-			return Result(status = True, resource = resources[0])
+			return resources[0]
 		elif l == 0:
-			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'resource not found')
-		return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'database inconsistency')
+			raise NOT_FOUND('resource not found')
+		raise INTERNAL_SERVER_ERROR('database inconsistency')
 
 
 	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Document]:
@@ -289,32 +284,29 @@ class Storage(object):
 		return self.db.searchResources(ty = int(ty))
 
 
-	def updateResource(self, resource:Resource) -> Result:
+	def updateResource(self, resource:Resource) -> Resource:
 		"""	Update a resource in the database.
 
 			Args:
 				resource: Resource to update.
 			Return:
-				Result object.
+				Updated Resource object.
 		"""
 		ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
-		return Result(status = True, resource = self.db.updateResource(resource, ri), rsc = ResponseStatusCode.updated)
+		return self.db.updateResource(resource, ri)
 
 
-	def deleteResource(self, resource:Resource) -> Result:
+	def deleteResource(self, resource:Resource) -> None:
 		"""	Delete a resource from the database.
 
 			Args:
 				resource: Resource to delete.
-			Return:
-				Result object.
 		"""
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		self.db.removeChildResource(resource)
-		return Result(status = True, rsc = ResponseStatusCode.deleted)
 
 
 	def directChildResources(self, pi:str, 
@@ -331,11 +323,11 @@ class Storage(object):
 		"""
 		if (_ris := self.db.searchChildResourceRIs(pi, ty)):
 			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
-			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x).resource, docs)))
+			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 
 		# docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
-		# return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x).resource, docs)))
+		# return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
@@ -391,7 +383,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
-						if (not filter or filter(each)) and (res := resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
+						if (not filter or filter(each)) and (res := resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
 				] 
 
 
@@ -404,7 +396,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
-						if (res := resourceFromDict(each).resource)
+						if (res := resourceFromDict(each))
 				]
 
 
@@ -883,10 +875,10 @@ class TinyDBBinding(object):
 			# 	self.identifierQuery.ri == ri)
 
 		with self.lockStructuredIDs:
-			self.tabStructuredIDs.upsert(Document(
-				{ 'srn': srn,
-				  'ri' : ri 
-				}, srn))	# type:ignore[arg-type]
+			self.tabStructuredIDs.upsert(
+				Document({'srn': srn,
+				  		  'ri' : ri 
+						 }, srn))	# type:ignore[arg-type]
 
 
 	def deleteIdentifier(self, resource:Resource) -> None:
@@ -934,10 +926,10 @@ class TinyDBBinding(object):
 		with self.lockChildResources:
 
 			# First add a new record
-			self.tabChildResources.upsert(Document(
-				{ 'ri' : ri,
-				  'ch' : [] 
-				}, ri))	# type:ignore[arg-type]
+			self.tabChildResources.upsert(
+				Document({'ri' : ri,
+				  		  'ch' : [] 
+						 }, ri))	# type:ignore[arg-type]
 
 			# Then add the child ri to the parent's record
 			if pi:	# ATN: CSE has no parent
@@ -966,7 +958,7 @@ class TinyDBBinding(object):
 			if _t in _ch:
 				_ch.remove(_t)
 				_r['ch'] = _ch
-				L.isDebug and L.logDebug(f'removeChildResource _r:{_r}')		
+				# L.isDebug and L.logDebug(f'removeChildResource _r:{_r}')		
 				self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
 
 
@@ -999,22 +991,22 @@ class TinyDBBinding(object):
 	def upsertSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
 			ri = subscription.ri
-			return self.tabSubscriptions.upsert(Document(
-					{	'ri'  	: ri, 
-						'pi'  	: subscription.pi,
-						'nct' 	: subscription.nct,
-						'net' 	: subscription['enc/net'],	# TODO perhaps store enc as a whole?
-						'atr' 	: subscription['enc/atr'],
-						'chty'	: subscription['enc/chty'],
-						'exc' 	: subscription.exc,
-						'ln'  	: subscription.ln,
-						'nus' 	: subscription.nu,
-						'bn'  	: subscription.bn,
-						'cr'  	: subscription.cr,
-						'org'	: subscription.getOriginator(),
-						'ma' 	: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
-						'nse' 	: subscription.nse
-					}, ri)) is not None
+			return self.tabSubscriptions.upsert(
+				Document({'ri'  	: ri, 
+						  'pi'  	: subscription.pi,
+						  'nct' 	: subscription.nct,
+						  'net' 	: subscription['enc/net'],	# TODO perhaps store enc as a whole?
+						  'atr' 	: subscription['enc/atr'],
+						  'chty'	: subscription['enc/chty'],
+						  'exc' 	: subscription.exc,
+						  'ln'  	: subscription.ln,
+						  'nus' 	: subscription.nu,
+						  'bn'  	: subscription.bn,
+						  'cr'  	: subscription.cr,
+						  'org'		: subscription.getOriginator(),
+						  'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
+						  'nse' 	: subscription.nse
+						 }, ri)) is not None
 					# self.subscriptionQuery.ri == ri) is not None
 
 
@@ -1151,16 +1143,16 @@ class TinyDBBinding(object):
 				op = request['op'] if 'op' in request else Operation.NA
 				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
 
-				self.tabRequests.insert(Document(
-					{	'ri': ri,
-						'srn': srn,
-						'ts': ts,
-						'org': originator,
-						'op': op,
-						'rsc': rsc,
-						'req': request,
-						'rsp': response
-					}, ts))	# type:ignore[arg-type]
+				self.tabRequests.insert(
+					Document({'ri': ri,
+							  'srn': srn,
+							  'ts': ts,
+							  'org': originator,
+							  'op': op,
+							  'rsc': rsc,
+							  'req': request,
+							  'rsp': response
+							 }, ts))	# type:ignore[arg-type]
 			except Exception as e:
 				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
 				return False

@@ -16,7 +16,6 @@ from typing import cast, Sequence, Optional
 import json, os, fnmatch, re
 from copy import deepcopy
 
-from ..etc.Utils import getCSE
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
 from ..services.Configuration import Configuration
@@ -24,6 +23,7 @@ from ..services import CSE
 from ..helpers.TextTools import removeCommentsFromJSON
 from ..services.Logging import Logging as L
 from .ScriptManager import _metaInit
+from ..resources.CSEBase import getCSE
 
 # TODO Support child specialization in attribute definitionsEv
 
@@ -132,7 +132,7 @@ class Importer(object):
 			self._finishImporting()
 
 		# But we still need the CSI etc of the CSE, and also check presence of CSE
-		if cse := getCSE().resource:
+		if cse := getCSE():
 			# Set some values in the configuration and the CSE instance
 			if CSE.cseCsi != cse.csi:
 				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {cse.csi}')

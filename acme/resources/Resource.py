@@ -10,11 +10,12 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, cast, Optional
+from typing import Any, Tuple, cast, Optional, List
 
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes, Result, NotificationEventType, ResponseStatusCode, CSERequest, JSON
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
 from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
@@ -183,7 +184,7 @@ class Resource(object):
 		return { self.tpe : dct } if embedded else dct
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> None:
 		"""	This method is called to activate a resource, usually in a CREATE request.
 
 			This is not always the case, e.g. when a resource object is just used temporarly.
@@ -194,8 +195,9 @@ class Resource(object):
 			Args:
 				parentResource: The resource's parent resource.
 				originator: The request's originator.
-			Return:
-				Result object indicating success or failure.
+
+			Raises:
+				`BAD_REQUEST`: In case of an invalid attribute.
 		"""
 		# TODO check whether 				CR is set in RegistrationManager
 		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
@@ -204,12 +206,16 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if not self[_isInstantiated] and not self.isVirtual() :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self._attributes, isImported = self.isImported, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
-				return res
+			CSE.validator.validateAttributes(self._originalDict, 
+											 self.tpe, 
+											 self.ty, 
+											 self._attributes, 
+											 isImported = self.isImported, 
+											 createdInternally = self.isCreatedInternally(), 
+											 isAnnounced = self.isAnnounced())
 
 		# validate the resource logic
-		if not (res := self.validate(originator, True, parentResource = parentResource)).status:
-			return res
+		self.validate(originator, True, parentResource = parentResource)
 		self.dbUpdate(False)
 		
 		# Various ACPI handling
@@ -217,16 +223,11 @@ class Resource(object):
 		if self.acpi is not None and not self.isAnnounced():
 			# Test wether an empty array is provided				
 			if len(self.acpi) == 0:
-				return Result.errorResult(dbg = 'acpi must not be an empty list')
-			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
-				return res
-			self.setAttribute('acpi', res.data)
+				raise BAD_REQUEST('acpi must not be an empty list')
+			self.setAttribute('acpi', self._checkAndFixACPIreferences(self.acpi))
 
 		self.setAttribute(_originator, originator, overwrite = False)
 		self.setAttribute(_rtype, self.tpe, overwrite = False) 
-
-		# return Result(status = True, rsc = RC.OK)
-		return Result.successResult()
 
 
 	def deactivate(self, originator:str) -> None:
@@ -254,7 +255,7 @@ class Resource(object):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
@@ -269,8 +270,10 @@ class Resource(object):
 				originator: The optional requests originator that let to the update of the resource.
 				doValidateAttributes: If *True* optionally call the resource's `validate()` method.
 
-			Return:
-				Result object indicating success or failure.
+			Raises:
+				`CONTENTS_UNACCEPTABLE`: In case of a resource mismatch.
+				`BAD_REQUEST`: In case of an invalid attribute.
+				`INTERNAL_SERVER_ERROR`: In case the parent resource coudln't be retrieved.
 		"""
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
@@ -278,11 +281,18 @@ class Resource(object):
 		if dct:
 			if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
-				return Result.errorResult(rsc = ResponseStatusCode.contentsUnacceptable, dbg = 'resource types mismatch')
+				raise CONTENTS_UNACCEPTABLE('resource types mismatch')
 
 			# validate the attributes
-			if doValidateAttributes and not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
-				return res
+			if doValidateAttributes:
+				CSE.validator.validateAttributes(dct, 
+												 self.tpe, 
+												 self.ty, 
+												 self._attributes, 
+												 create = False, 
+												 createdInternally = 
+												 self.isCreatedInternally(), 
+												 isAnnounced = self.isAnnounced())
 
 			if self.ty not in [ResourceTypes.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
@@ -298,12 +308,10 @@ class Resource(object):
 
 				# Test wether an empty array is provided				
 				if len(ua) == 0:
-					return Result.errorResult(dbg = 'acpi must not be an empty list')
+					raise BAD_REQUEST('acpi must not be an empty list')
+
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
-				if not (res := self._checkAndFixACPIreferences(ua)).status:
-					return res
-				
-				self.setAttribute('acpi', res.data, overwrite = True) # copy new value or add new attributes
+				self.setAttribute('acpi', self._checkAndFixACPIreferences(ua), overwrite = True) # copy new value or add new attributes
 
 			else:
 
@@ -329,11 +337,10 @@ class Resource(object):
 
 		# Retrieve the parent resource for validation
 		if not (parentResource := cast(Resource, self.retrieveParentResource())):
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+			raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent resource'))
 
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator, dct = dct, parentResource = parentResource)).status:
-			return res
+		self.validate(originator, dct = dct, parentResource = parentResource)
 
 		# store last modified attributes
 		self[_modified] = resourceDiff(dictOrg, self.dict, updatedAttributes)
@@ -348,12 +355,11 @@ class Resource(object):
 		# Notify parent that a child has been updated
 		parentResource.childUpdated(self, updatedAttributes, originator)
 
-		return Result.successResult()
 
 
 	def willBeUpdated(self, dct:Optional[JSON] = None, 
 							originator:Optional[str] = None, 
-							subCheck:Optional[bool] = True) -> Result:
+							subCheck:Optional[bool] = True) -> None:
 		""" This method is called before a resource will be updated and before calling the `update()` method.
 			
 			This method is implemented in some sub-classes.
@@ -362,14 +368,9 @@ class Resource(object):
 				dct: `JSON` dictionary with the attributes that will be updated.
 				originator: The request originator.
 				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
-
-			Return:
-				Result object indicating success or failure.
 		"""
 		# Perform BlockingUpdate check, and reload resource if necessary
-		if not (res := CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())).status:
-			return res
-		return Result.successResult()
+		CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())
 
 
 	def updated(self, dct:Optional[JSON] = None, 
@@ -389,7 +390,7 @@ class Resource(object):
 
 	def willBeRetrieved(self, originator:str, 
 							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> Result:
+							  subCheck:Optional[bool] = True) -> None:
 		""" This method is called before a resource will be send back in a RETRIEVE response.
 			
 			This method is implemented in some sub-classes.
@@ -398,17 +399,13 @@ class Resource(object):
 				originator: The request originator.
 				request: The RETRIEVE request.
 				subCheck: Optional indicator that a blocking Retrieve shall be performed, if configured.
-			Return:
-				Result object indicating success or failure.
 		"""
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
-			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())).status:
-				return res
-		return Result.successResult()
+			CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
 		""" Called before a child will be added to a resource.
 			
 			This method is implemented in some sub-classes.
@@ -416,10 +413,9 @@ class Resource(object):
 			Args:
 				childResource: Resource that will be added as a child to the resource.
 				originator: The request originator.
-			Return:
-				A Result object with status True, or False (in which case the adding will be rejected), and an error code.
+
 		"""
-		return Result.successResult()
+		pass
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
@@ -475,7 +471,7 @@ class Resource(object):
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		""" Validate a resource. 
 		
 			Usually called within `activate()` or `update()` methods.
@@ -487,23 +483,24 @@ class Resource(object):
 				create: Optional indicator whether this is CREATE request
 				dct: Updated attributes to validate
 				parentResource: The parent resource
-			Return:
-				A Result object with status True, or False (in which case the request will be rejected), and an error code.
+
+			Raises
+				`BAD_REQUEST`: In case of a validation error.
 		"""
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if not ( isValidID(self.ri) and
 				 isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
 				 isValidID(self.rn)):
-			return Result.errorResult(dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
+			raise BAD_REQUEST(L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
 		# expirationTimestamp handling
 		if et := self.et:
 			if self.ty == ResourceTypes.CSEBase:
-				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
+				raise BAD_REQUEST(L.logWarn('expirationTime is not allowed in CSEBase'))
 			
 			# In the past?
 			if len(et) > 0 and et < (etNow := getResourceDate()):
-				return Result.errorResult(dbg = L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
+				raise BAD_REQUEST(L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
 
 			# Check if the et is later than the parent's et
 			if parentResource and parentResource.ty != ResourceTypes.CSEBase and et > parentResource.et:
@@ -520,9 +517,6 @@ class Resource(object):
 				if not (et := parentResource.et):
 					et = getResourceDate(CSE.request.maxExpirationDelta)
 				self.setAttribute('et', et)
-
-
-		return Result.successResult()
 
 
 	#########################################################################
@@ -794,28 +788,30 @@ class Resource(object):
 				self[attributeName] = normalizeURL(uris)
 
 
-	def _checkAndFixACPIreferences(self, acpi:list[str]) -> Result:
+	def _checkAndFixACPIreferences(self, acpi:list[str]) -> List[str]:
 		""" Check whether a referenced `ACP` resoure exists, and if yes, change the ID in the list to CSE relative unstructured format.
 
 			Args:
 				acpi: List if resource IDs to `ACP` resources.
+
 			Return:
-				Result instance. If fully successful (ie. all `ACP` resources exist), then a new list with all IDs converted is returned in *Result.data*.
+				If fully successful (ie. all `ACP` resources exist), then a new list with all IDs converted is returned.
 		"""
-		newACPIList =[]
+
+		newACPIList:List[str] = []
 		for ri in acpi:
 			if not CSE.importer.isImporting:
-
-				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
-					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-					return Result.errorResult(dbg = dbg)
+				try:
+					acp = CSE.dispatcher.retrieveResource(ri)
+				except ResponseException as e:
+					raise BAD_REQUEST(L.logDebug(f'Referenced <ACP> resource not found: {ri} : {e.dbg}'))
 
 					# TODO CHECK TYPE + TEST
 
 				newACPIList.append(acp.ri)
 			else:
 				newACPIList.append(ri)
-		return Result(status = True, data = newACPIList)
+		return newACPIList
 	
 
 	def _addToInternalAttributes(self, name:str) -> None:
@@ -846,16 +842,16 @@ class Resource(object):
 	#	Database functions
 	#
 
-	def dbDelete(self) -> Result:
+	def dbDelete(self) -> None:
 		""" Delete the resource from the database.
 		
 			Return:
 				Result object indicating success or failure.
 		 """
-		return CSE.storage.deleteResource(self)
+		CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self, finalize:bool = True) -> Result:
+	def dbUpdate(self, finalize:bool = True) -> Resource:
 		""" Update the resource in the database.
 
 			This also raises a CSE internal *updateResource* event.
@@ -866,13 +862,13 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		if (res := CSE.storage.updateResource(self)).status:
-			if finalize:
-				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
-		return res
+		CSE.storage.updateResource(self)
+		if finalize:
+			CSE.event.changeResource(self)	 # type: ignore [attr-defined]
+		return self
 
 
-	def dbCreate(self, overwrite:Optional[bool] = False) -> Result:
+	def dbCreate(self, overwrite:Optional[bool] = False) -> None:
 		"""	Add the resource to the database.
 		
 			Args:
@@ -880,33 +876,34 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		return CSE.storage.createResource(self, overwrite)
+		CSE.storage.createResource(self, overwrite)
 
 
-	def dbReload(self) -> Result:
-		""" Load a new copy of the same resource from the database. 
+	def dbReload(self) -> Resource:
+		""" Load a **new** copy of the same resource from the database. 
 			
 			The current resource is NOT changed. 
 			
 			Note:
 				The version of the resource in the database might be different, e.g. when the resource instance has been modified but not updated in the database.
+
 			Return:
-				Result object indicating success or failure. The resource is returned in the *Result.resource* attribute.		
+				Resource instance.	
 			"""
 		return CSE.storage.retrieveResource(ri = self.ri)
 
 
-	def dbReloadDict(self) -> Result:
+	def dbReloadDict(self) -> Resource:
 		"""	Reload the resource instance from the database.
 		
 			The current resource's internal attributes are updated with the versions from the database.
 
 			Return:
-				Result object indicating success or failure. The resource is returned as well in the *Result.resource* attribute.		
+				Updated Resource instance.	
 		 """
-		if (res := CSE.storage.retrieveResource(ri = self.ri)).status:
-			self.dict = res.resource.dict
-		return res
+		resource = CSE.storage.retrieveResource(ri = self.ri)
+		self.dict = resource.dict
+		return self
 
 	#########################################################################
 	#
@@ -980,7 +977,7 @@ class Resource(object):
 			Return:
 				The parent Resource of the resource.
 		"""
-		return CSE.dispatcher.retrieveLocalResource(self.pi).resource	#type:ignore[no-any-return]
+		return CSE.dispatcher.retrieveLocalResource(self.pi)	#type:ignore[no-any-return]
 
 
 	def retrieveParentResourceRaw(self) -> JSON:
@@ -989,7 +986,7 @@ class Resource(object):
 			Return:
 				Document of the parent resource
 		"""
-		return CSE.storage.retrieveResourceRaw(self.pi).resource
+		return CSE.storage.retrieveResourceRaw(self.pi)
 
 
 	def getOriginator(self) -> str:

@@ -16,6 +16,7 @@ from rich.pretty import Pretty
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
+from ..etc.ResponseStatusCodes import ResponseException
 
 
 idTree = 'tree'
@@ -36,17 +37,19 @@ class ACMEResourceTree(TextualTree):
 	
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
-		if (_r := CSE.dispatcher.retrieveLocalResource(node.node.data)).status:
-			# _textUI.tuiApp.resourceView.update(Pretty(_r.resource.asDict()))
-			self.parentContainer.resourceView.update(Pretty(_r.resource.asDict()))
-
+		try:
+			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
+			self.parentContainer.resourceView.update(Pretty(resource.asDict()))
+		except ResponseException as e:
+			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
 
 	def on_tree_node_selected(self, node:TextualTree.NodeSelected) -> None:
-		if (_r := CSE.dispatcher.retrieveLocalResource(node.node.data)).status:
+		try:
+			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
 			# _textUI.tuiApp.resourceView.update(Pretty(_r.resource.asDict()))
-			self.parentContainer.resourceView.update(Pretty(_r.resource.asDict(), expand_all = True))
-			self.parentContainer._update_requests(_r.resource.ri)
-		else:
+			self.parentContainer.resourceView.update(Pretty(resource.asDict(), expand_all = True))
+			self.parentContainer._update_requests(resource.ri)
+		except ResponseException as e:
 			self.parentContainer.resourceView.update('[red]Resource not found')
 
 

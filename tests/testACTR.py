@@ -45,7 +45,7 @@ class TestACTR(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		cls.aeRI = findXPath(cls.ae, 'm2m:ae/ri')
 	
@@ -53,7 +53,7 @@ class TestACTR(unittest.TestCase):
 				'rn' : cntRN,
 			}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created
+		assert rsc == RC.CREATED
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 
 		# create ACP to test access control
@@ -72,7 +72,7 @@ class TestACTR(unittest.TestCase):
 			},
 		}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.ACP, dct)
-		assert rsc == RC.created
+		assert rsc == RC.CREATED
 		acpRI = findXPath(r, 'm2m:acp/ri')
 
 
@@ -82,7 +82,7 @@ class TestACTR(unittest.TestCase):
 				'acpi': [ acpRI ],
 			}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created
+		assert rsc == RC.CREATED
 		cls.cntRI2 = findXPath(cls.cnt, 'm2m:cnt/ri')
 
 		testCaseEnd('Setup TestACTR')
@@ -134,7 +134,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -157,7 +157,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -181,7 +181,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -205,7 +205,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -226,7 +226,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 
@@ -251,7 +251,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -275,7 +275,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -300,7 +300,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -325,7 +325,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -351,7 +351,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -377,7 +377,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -403,7 +403,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 	#
 	#	Valid <action> creation
@@ -430,7 +430,7 @@ class TestACTR(unittest.TestCase):
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.off, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/optr'), EvalCriteriaOperator.equal, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/sbjt'), 'lbl', r)
@@ -465,7 +465,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.off, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/optr'), EvalCriteriaOperator.equal, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/sbjt'), 'cni', r)
@@ -501,7 +501,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.once, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/optr'), EvalCriteriaOperator.equal, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/sbjt'), 'cni', r)
@@ -538,7 +538,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.periodic, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/ecp'), actionPeriod, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/optr'), EvalCriteriaOperator.equal, r)
@@ -576,7 +576,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.continous, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/ecp'), 10, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evc/optr'), EvalCriteriaOperator.equal, r)
@@ -603,7 +603,7 @@ class TestACTR(unittest.TestCase):
 					'ecp': 10,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -614,7 +614,7 @@ class TestACTR(unittest.TestCase):
 					'evm': EvalMode.once,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriContinuous"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -625,7 +625,7 @@ class TestACTR(unittest.TestCase):
 					'sri': 'wrong',
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -636,7 +636,7 @@ class TestACTR(unittest.TestCase):
 					'orc': 'wrong',
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -651,7 +651,7 @@ class TestACTR(unittest.TestCase):
 					},
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -667,7 +667,7 @@ class TestACTR(unittest.TestCase):
 					},
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -678,7 +678,7 @@ class TestACTR(unittest.TestCase):
 					'sri': TestACTR.aeRI,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -693,7 +693,7 @@ class TestACTR(unittest.TestCase):
 					},
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -704,7 +704,7 @@ class TestACTR(unittest.TestCase):
 					'orc': None,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -715,7 +715,7 @@ class TestACTR(unittest.TestCase):
 					'evm': EvalMode.once,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.once)
 
 
@@ -727,7 +727,7 @@ class TestACTR(unittest.TestCase):
 					'evm': EvalMode.periodic,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.periodic)
 
 
@@ -739,7 +739,7 @@ class TestACTR(unittest.TestCase):
 					'evm': EvalMode.continous,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.continous)
 
 
@@ -751,7 +751,7 @@ class TestACTR(unittest.TestCase):
 					'evm': EvalMode.off,
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{actrRN+"sriOnce"}', TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.off)
 
 
@@ -764,7 +764,7 @@ class TestACTR(unittest.TestCase):
 		"""	Delete <ACTR> with no SRI"""
 		self.assertIsNotNone(TestACTR.ae)
 		r, rsc = DELETE(f'{aeURL}/{actrRN}', TestACTR.originator)	# 
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -772,7 +772,7 @@ class TestACTR(unittest.TestCase):
 		"""	Delete <ACTR> with SRI"""
 		self.assertIsNotNone(TestACTR.ae)
 		r, rsc = DELETE(f'{aeURL}/{actrRN}sri', TestACTR.originator)	# 
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -780,7 +780,7 @@ class TestACTR(unittest.TestCase):
 		"""	Delete <ACTR> with SRI and once mode"""
 		self.assertIsNotNone(TestACTR.ae)
 		r, rsc = DELETE(f'{aeURL}/{actrRN}sriOnce', TestACTR.originator)	# 
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -788,7 +788,7 @@ class TestACTR(unittest.TestCase):
 		"""	Delete <ACTR> with SRI and periodic mode"""
 		self.assertIsNotNone(TestACTR.ae)
 		r, rsc = DELETE(f'{aeURL}/{actrRN}sriPeriodic', TestACTR.originator)	# 
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -796,7 +796,7 @@ class TestACTR(unittest.TestCase):
 		"""	Create valid <ACTR> with SRI and continuous mode"""
 		self.assertIsNotNone(TestACTR.ae)
 		r, rsc = DELETE(f'{aeURL}/{actrRN}sriContinuous', TestACTR.originator)	# 
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 
@@ -815,7 +815,7 @@ class TestACTR(unittest.TestCase):
 			'con': 'AnyValue'
 		}}
 		r, rsc = CREATE(TestACTR.cntURL3, TestACTR.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	def _retrieveAEandCheckLabel(self, lblExpected:bool) -> None:
@@ -834,7 +834,7 @@ class TestACTR(unittest.TestCase):
 					'lbl': None
 		}}
 		r, rsc = UPDATE(aeURL, TestACTR.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
 	
 	
@@ -842,7 +842,7 @@ class TestACTR(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{TestACTR.cntURL3}/{actrRN}', TestACTR.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(air := findXPath(r, 'm2m:actr/air'), r)
-		self.assertEqual(findXPath(air, 'rsc'), RC.updated, r)
+		self.assertEqual(findXPath(air, 'rsc'), RC.UPDATED, r)
 		self.assertEqual(findXPath(air, 'pc/m2m:ae/lbl'), [ 'aLabel' ], r)
 
 
@@ -858,7 +858,7 @@ class TestACTR(unittest.TestCase):
 					'rn' : cntRN+'3'
 			}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestACTR.cntRI3 = findXPath(r, 'm2m:cnt/ri')
 
 		# create <actr>
@@ -886,7 +886,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(TestACTR.cntURL3, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# create 1st <cin>
 		self._createCIN()
@@ -908,7 +908,7 @@ class TestACTR(unittest.TestCase):
 
 		# remove <cnt> & <actr>
 		r, rsc = DELETE(TestACTR.cntURL3, TestACTR.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -922,7 +922,7 @@ class TestACTR(unittest.TestCase):
 					'rn' : cntRN+'3'
 			}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestACTR.cntRI3 = findXPath(r, 'm2m:cnt/ri')
 
 		# create <actr>
@@ -948,7 +948,7 @@ class TestACTR(unittest.TestCase):
 					},
 				}}
 		r, rsc = CREATE(TestACTR.cntURL3, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# create 1st <cin>
 		self._createCIN()
@@ -970,7 +970,7 @@ class TestACTR(unittest.TestCase):
 
 		# remove <cnt> & <actr>
 		r, rsc = DELETE(TestACTR.cntURL3, TestACTR.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -984,7 +984,7 @@ class TestACTR(unittest.TestCase):
 					'rn' : cntRN+'3'
 			}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestACTR.cntRI3 = findXPath(r, 'm2m:cnt/ri')
 
 		# create <actr>
@@ -1013,7 +1013,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(TestACTR.cntURL3, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# create 1st <cin>
 		self._createCIN()
@@ -1040,7 +1040,7 @@ class TestACTR(unittest.TestCase):
 
 		# remove <cnt> & <actr>
 		r, rsc = DELETE(TestACTR.cntURL3, TestACTR.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1054,7 +1054,7 @@ class TestACTR(unittest.TestCase):
 					'rn' : cntRN+'3'
 			}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestACTR.cntRI3 = findXPath(r, 'm2m:cnt/ri')
 
 		# create <actr>
@@ -1083,7 +1083,7 @@ class TestACTR(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(TestACTR.cntURL3, TestACTR.originator, T.ACTR, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		#
 		#	Test 2 events within the same period
@@ -1120,7 +1120,7 @@ class TestACTR(unittest.TestCase):
 
 		# remove <cnt> & <actr>
 		r, rsc = DELETE(TestACTR.cntURL3, TestACTR.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 

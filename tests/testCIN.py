@@ -33,13 +33,13 @@ class TestCIN(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		testCaseEnd('Setup TestCIN')
 
 
@@ -76,7 +76,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -117,7 +117,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'NewValue'
 				}}
 		r, rsc = UPDATE(cinURL, TestCIN.originator, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed, r)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -129,7 +129,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(aeURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType, r)
+		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE, r)
 
 
 	def test_createCINwithNoneString(self) -> None:
@@ -140,14 +140,14 @@ class TestCIN(unittest.TestCase):
 					'con' : 23
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self) -> None:
 		""" Delete <CIN> resource """
 		_, rsc = DELETE(cinURL, TestCIN.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -158,7 +158,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -169,7 +169,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -180,7 +180,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -191,7 +191,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -202,7 +202,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -213,7 +213,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -224,7 +224,7 @@ class TestCIN(unittest.TestCase):
 					'cr' : None
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE
@@ -242,7 +242,7 @@ class TestCIN(unittest.TestCase):
 					'dcnt' : 5
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:cin/dcnt'), 5)					# dcnt should be set to 5
 
 		# Check dcnt in a RETRIEVE
@@ -253,7 +253,7 @@ class TestCIN(unittest.TestCase):
 
 		# The next RETRIEVE should fail since it should been deleted with last RETRIEVE
 		r, rsc = RETRIEVE(f'{cntURL}/dcntTest', TestCIN.originator)
-		self.assertEqual(rsc, RC.notFound)
+		self.assertEqual(rsc, RC.NOT_FOUND)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -265,7 +265,7 @@ class TestCIN(unittest.TestCase):
 					'acpi' : [ 'someACP' ]
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -281,7 +281,7 @@ class TestCIN(unittest.TestCase):
 					'dgt' : dgt
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# RETRIEVE the CIN with the dgt
 		r, rsc = RETRIEVE(f'{cntURL}/{cinRN}dgt', TestCIN.originator)

@@ -13,9 +13,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional
 from enum import auto
-from http import HTTPStatus
 from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
+from ..etc.ResponseStatusCodes import ResponseStatusCode
 
 
 #
@@ -703,130 +703,6 @@ class Announced(ACMEIntEnum):
 	MA				= auto()
 	"""	Mandatory announced """
 
-
-##############################################################################
-#
-#	Response Codes
-#
-
-
-class ResponseStatusCode(ACMEIntEnum):
-	""" Response codes """
-
-	accepted									= 1000
-	"""	Request accepted """
-	acceptedNonBlockingRequestSynch				= 1001
-	"""	ACCEPTED for nonBlockingRequestSynch """
-	acceptedNonBlockingRequestAsynch			= 1002
-	"""	ACCEPTED for nonBlockingRequestAsynch """
-	OK											= 2000
-	"""	OK """
-	created 									= 2001
-	"""	CREATED """
-	deleted 									= 2002
-	"""	DELETED """
-	updated										= 2004
-	"""	UPDATED """
-	badRequest									= 4000
-	"""	BAD REQUEST """
-	releaseVersionNotSupported					= 4001
-	"""	RELEASE VERSION NOT SUPPORTED """
-	notFound 									= 4004
-	"""	NOT FOUND """
-	operationNotAllowed							= 4005
-	"""	OPERATION NOT ALLOWED """
-	requestTimeout 								= 4008
-	"""	REQUEST TIMEOUT """
-	unsupportedMediaType						= 4015
-	"""	UNSUPPORTED MEDIA TYPE """
-	subscriptionCreatorHasNoPrivilege			= 4101
-	"""	SUBSCRIPTION CREATOR HAS NO PRIVILEGE """
-	contentsUnacceptable						= 4102
-	originatorHasNoPrivilege					= 4103
-	conflict									= 4105
-	securityAssociationRequired					= 4107
-	invalidChildResourceType					= 4108
-	groupMemberTypeInconsistent					= 4110
-	originatorHasAlreadyRegistered				= 4117
-	appRuleValidationFailed						= 4126
-	operationDeniedByRemoteEntity				= 4127
-	serviceSubscriptionNotEstablished			= 4128
-	invalidSPARQLQuery 							= 4143
-	internalServerError							= 5000
-	notImplemented								= 5001
-	targetNotReachable 							= 5103
-	receiverHasNoPrivileges						= 5105
-	alreadyExists								= 5106
-	remoteEntityNotReachable					= 5107
-	targetNotSubscribable						= 5203
-	subscriptionVerificationInitiationFailed	= 5204
-	subscriptionHostHasNoPrivilege				= 5205
-	notAcceptable 								= 5207
-	crossResourceOperationFailure 				= 5221
-	maxNumberOfMemberExceeded					= 6010
-	invalidArguments							= 6023
-	insufficientArguments						= 6024
-
-
-	UNKNOWN										= -1
-
-
-	def httpStatusCode(self) -> int:
-		""" Map the oneM2M RSC to an http status code. """
-		return _ResponseStatusCodeHttpStatusCodes[self]
-
-
-
-#
-#	Mapping of oneM2M return codes to http status codes
-#
-
-_ResponseStatusCodeHttpStatusCodes = {
-	ResponseStatusCode.OK 										: HTTPStatus.OK,						# OK
-	ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
-	ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
-	ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
-	ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
-	ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-	ResponseStatusCode.acceptedNonBlockingRequestAsynch 		: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-	ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
-	ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-	ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
-	ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-	ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
-	ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
-	ResponseStatusCode.invalidSPARQLQuery						: HTTPStatus.BAD_REQUEST,				# INVALID SPARQL QUERY
-	ResponseStatusCode.serviceSubscriptionNotEstablished		: HTTPStatus.FORBIDDEN,					# SERVICE SUBSCRIPTION NOT ESTABLISHED
-	ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
-	ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-	ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-	ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
-	ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
-	ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-	ResponseStatusCode.subscriptionCreatorHasNoPrivilege		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-	ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-	ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
-	ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-	ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
-	ResponseStatusCode.requestTimeout							: HTTPStatus.GATEWAY_TIMEOUT,			# REQUEST TIMEOUT
-	ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
-	ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
-	ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
-	ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-	ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
-	ResponseStatusCode.crossResourceOperationFailure			: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
-	ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
-	ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
-	ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
-	ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-	ResponseStatusCode.releaseVersionNotSupported				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-	ResponseStatusCode.notImplemented							: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
-	
-	ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
-
-}
-
-
 ##############################################################################
 #
 #	Evaluation Enums
@@ -1486,44 +1362,34 @@ class Result:
 	dbg:str 								= None
 	request:CSERequest						= None  	# may contain the processed incoming request object
 	embeddedRequest:CSERequest 				= None		# May contain a request as a response, e.g. when polling
-	status:bool 							= None
+	# status:bool 							= None
 
 
-	def errorResultCopy(self) -> Result:
-		""" Copy only the rsc and dbg to a new result instance.
+	# def errorResultCopy(self) -> Result:
+	# 	""" Copy only the rsc and dbg to a new result instance.
 
-			Return:
-				Result instance.
-		"""
-		return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
+	# 		Return:
+	# 			Result instance.
+	# 	"""
+	# 	return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
 	
 
-	@classmethod
-	def errorResult(cls, rsc:Optional[ResponseStatusCode] = ResponseStatusCode.badRequest,
-						 dbg:Optional[str] = '', 
-						 request:Optional[CSERequest] = None,
-						 data:Optional[Any] = None) -> Result:
-		"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
-			message set.
+	# @classmethod
+	# def errorResult(cls, rsc:Optional[ResponseStatusCode] = ResponseStatusCode.BAD_REQUEST,
+	# 					 dbg:Optional[str] = '', 
+	# 					 request:Optional[CSERequest] = None,
+	# 					 data:Optional[Any] = None) -> Result:
+	# 	"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
+	# 		message set.
 
-			Args:
-				rsc: `ResponseStatusCode` to return as an error.
-				dbg: String with the debug message.
-				request: `CSERequest` to return.
-			Return:
-				Error `Result` instance.
-		"""
-		return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
-
-
-	@classmethod
-	def successResult(cls) -> Result:
-		"""	Create and return a static `Result` object with *status* attribute set to *True*.
-
-			Return:
-				Success `Result` instance. This is always the same `Result` instance!
-		"""
-		return _successResult
+	# 		Args:
+	# 			rsc: `ResponseStatusCode` to return as an error.
+	# 			dbg: String with the debug message.
+	# 			request: `CSERequest` to return.
+	# 		Return:
+	# 			Error `Result` instance.
+	# 	"""
+	# 	return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
 
 
 	def toData(self, ct:Optional[ContentSerializationType] = None) -> str|bytes|JSON:
@@ -1575,7 +1441,7 @@ class Result:
 			
 
 # Result instance to be re-used all over the place
-_successResult = Result(status = True)
+# _successResult = Result(status = True)
 
 
 ##############################################################################

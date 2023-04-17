@@ -14,13 +14,16 @@ from __future__ import annotations
 from typing import Optional, Tuple, List, cast, Any
 
 import time
-from ..etc.Utils import isSPRelative, getCSE
+from ..etc.Utils import isSPRelative
 from ..helpers.TextTools import findXPath
 from ..etc.RequestUtils import createRawRequest
-from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, ResponseStatusCode, JSON, Result, ResultContentType
+from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result, ResultContentType
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR, OPERATION_NOT_ALLOWED, CONFLICT
 from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.CSEBase import getCSE
 from . import CSE
 from .Configuration import Configuration
 from .Logging import Logging as L
@@ -138,32 +141,27 @@ class AnnouncementManager(object):
 	#	Announcements
 	#
 
-	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> Result:
+	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> None:
 		"""	Check all resources in the resource tree and announce them if necessary.
 
 			Args:
 				remoteCSR: The registree or registrar CSE's `CSR` resource.
-			
-			Return:
-				Result object indicating the success of the operation.
 			
 			See Also:
 				- `announceResource`
 				- `searchAnnounceableResourcesForCSI`
 		"""
 		if not remoteCSR:
-			return Result(status = True)
+			return
 
 		# get all reources for this specific CSI that are NOT announced to it yet
 		resources = self.searchAnnounceableResourcesForCSI(remoteCSR.csi, False) # only return the resources that are *not* announced to this csi yet
 		# try to announce all not-announced resources to this csr
 		for resource in resources:
-			if not (res := self.announceResource(resource)).status:
-				return res
-		return Result(status = True)
+			self.announceResource(resource)
 
 
-	def announceResource(self, resource:AnnounceableResource) -> Result:
+	def announceResource(self, resource:AnnounceableResource) -> None:
 		"""	Announce a single resource to its announcement target(s).
 
 			Args:
@@ -182,10 +180,9 @@ class AnnouncementManager(object):
 				self._removeAnnouncementFromResource(resource, at)
 				continue
 			self.announceResourceToCSI(resource, at)	# ignore result
-		return Result(status=True)
 
 
-	def announceResourceToCSI(self, resource:AnnounceableResource, csi:str) -> Result:
+	def announceResourceToCSI(self, resource:AnnounceableResource, csi:str) -> None:
 		"""	Announce a resource to a specific registered remote CSE.
 
 			Args:
@@ -200,7 +197,7 @@ class AnnouncementManager(object):
 		"""
 		# TODO direct URL
 
-		def checkCSEBaseAnnouncement(cseBase:AnnounceableResource) -> Result:
+		def checkCSEBaseAnnouncement(cseBase:AnnounceableResource) -> None:
 			"""	Check and perform the announcement of a CSE.
 			
 				Args:
@@ -211,15 +208,18 @@ class AnnouncementManager(object):
 			"""
 			L.isDebug and L.logDebug(f'Check CSEBase announcement')
 			if t := self._announcedInfos(cseBase, csi):
+				L.isDebug and L.logDebug(f'announcedment infos: {t}')
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
-				if CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi).rsc != ResponseStatusCode.OK:	# Not a local resource
+				try:
+					_r = CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi)
+				except ResponseException as e:	# basically anything that isn't "OK"
 					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
 					self._removeAnnouncementFromResource(cseBase, csi)
 					# announce CSE recursively
-					if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
-						return res
+					self.announceResourceToCSI(cseBase, csi)
+
 			else:
 
 				# No internal announcement infos, try to discover it on the remote CSE.
@@ -227,7 +227,7 @@ class AnnouncementManager(object):
 
 				# Get the remote CSE's resource ID
 				if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
-					return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
+					raise BAD_REQUEST(f'cannot find CSR for csi: {csi}')
 
 				dct = createRawRequest( to = to,
 										rcn = ResultContentType.childResourceReferences.value,
@@ -236,9 +236,7 @@ class AnnouncementManager(object):
 										'lnk' : f'{cseBase.csi}/{cseBase.ri}'
 										})
 
-				if not (res := CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi, content = dct, raw = True)).status:
-					return res
-
+				res = CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi, content = dct, raw = True)
 				if res.rsc == ResponseStatusCode.OK and res.data:	# Found a remote CSEBaseAnnc
 					# Assign to the local CSEBase
 					if (remoteRi := findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
@@ -246,19 +244,17 @@ class AnnouncementManager(object):
 						L.isDebug and L.logDebug(f'CSEBase already announced: {atri}. Updating CSEBase announcement')
 						cseBase.addAnnouncementToResource(csi, remoteRi)
 						cseBase.dbUpdate()
-						return Result(status = True)
+						return
 
 				# Not found, so announce it
-				L.isDebug and L.logDebug(f'Announcing CSEBase: {cseBase.ri}')
-				if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
-					return res
-			return Result(status = True)
+				L.isDebug and L.logDebug(f'announcing CSEBase: {cseBase.ri}')
+				self.announceResourceToCSI(cseBase, csi)
 
 
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
 		if self._isResourceAnnouncedTo(resource, csi):
-			L.isDebug and L.logDebug(f'Resource already announced: {resource.ri}')
-			return Result(status = True)
+			L.isDebug and L.logDebug(f'resource already announced: {resource.ri}')
+			return
 
 		# Create announced resource & type
 		dct = resource.createAnnouncedResourceDict(isCreate = True)
@@ -268,42 +264,40 @@ class AnnouncementManager(object):
 		if resource.ty != ResourceTypes.CSEBase:	# CSEBase is just announced below
 			if not (at := resource.at):
 				L.isDebug and L.logDebug('at attribute is empty.')
-				return Result(status = True)	# Not much to do here
+				return	# Not much to do here
 
 			# Check if parent is announced already to the same remote CSE
-			if not (res := CSE.dispatcher.retrieveLocalResource(resource.pi)).status:
-				return Result(status = False, rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'Cannot retrieve parent. Announcement not possible: {res.dbg}'))
+			try:
+				parentResource = CSE.dispatcher.retrieveLocalResource(resource.pi)
+			except ResponseException as e:
+				raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent. Announcement not possible: {e.dbg}'))
 			
-			parentResource = res.resource
-
 			# For announcing the CSEBase we want to take some extra care and check whether it really
 			# is available at the remote CSE. It could have been removed (expiration, restart, ...) and
 			# this may not be reflected
 			if parentResource.ty == ResourceTypes.CSEBase:
-				if not (res := checkCSEBaseAnnouncement(parentResource)).status:
-					return res
+				checkCSEBaseAnnouncement(parentResource)	# type:ignore[arg-type]
 				parentResource.dbReload() 	# parent is already the CSEBase, just reload from DB
 
 			else:	# parent is not a CSEBase
 
 				if not self._isResourceAnnouncedTo(parentResource, csi):
-					L.isDebug and L.logDebug(f'Parent resource is not announced: {parentResource.ri}')
+					L.isDebug and L.logDebug(f'parent resource is not announced: {parentResource.ri}')
 					# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
 
 					# Don't allow instances to be announced without their parents
 					if resource.ty in [ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI]:
-						return Result(status = False, rsc = ResponseStatusCode.operationNotAllowed, dbg = L.logDebug('Announcing instances without their parents is not allowed'))
+						raise OPERATION_NOT_ALLOWED(L.logDebug('announcing instances without their parents is not allowed'))
 
 					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
 					# and set the announced CSEBase as new parent
-					if not (res := checkCSEBaseAnnouncement(parentResource := getCSE().resource)).status:
-						return res
+					checkCSEBaseAnnouncement(parentResource := getCSE())
 					
 					# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
 				
 			# parent resource is announced -> Announce the resource under the parent resource Annc
 			if not (at := self._announcedInfos(parentResource, csi)):
-				return Result(status = False, rsc = ResponseStatusCode.badRequest, dbg = L.logWarn(f'No announcement for parent resource: {parentResource.ri} to: {csi}'))
+				raise BAD_REQUEST(L.logWarn(f'no announcement for parent resource: {parentResource.ri} to: {csi}'))
 			targetID = at[1]
 
 		# Create the announed resource on the remote CSE
@@ -311,18 +305,20 @@ class AnnouncementManager(object):
 			csrID = targetID if isSPRelative(targetID) else f'{csi}/{targetID}'
 		else:
 			if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
-				return Result.errorResult(dbg = f'Cannot find CSR for csi: {csi}')
+				raise BAD_REQUEST(f'cannot find CSR for csi: {csi}')
 			csrID = to
-		L.isDebug and L.logDebug(f'Creating announced resource at: {csrID}')
-		res = CSE.request.sendCreateRequest(csrID, CSE.cseCsi, ty = tyAnnc, content = dct)
-		if res.rsc not in [ ResponseStatusCode.created, ResponseStatusCode.OK ]:
-			if res.rsc != ResponseStatusCode.conflict:	# assume that it is ok if the remote resource already exists 
-				return Result(status = False, rsc = res.rsc, dbg = L.logDebug(f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})'))
-		else:
-			resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
+
+		L.isDebug and L.logDebug(f'creating announced resource at: {csrID}')
+		try:
+			res = CSE.request.sendCreateRequest(csrID, CSE.cseCsi, ty = tyAnnc, content = dct)
+		except ResponseException as e:
+			if e.rsc != ResponseStatusCode.CONFLICT:	# assume that it is ok if the remote resource already exists 
+				e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
+				raise e
+
+		resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
 		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 		resource.dbUpdate()
-		return Result(status = True)
 
 
 	#
@@ -378,7 +374,7 @@ class AnnouncementManager(object):
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
 		res = CSE.request.sendDeleteRequest(csrID, CSE.cseCsi)
-		if res.rsc not in [ ResponseStatusCode.deleted, ResponseStatusCode.OK ]:
+		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
 			L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
 			# fall-through for some house-keeping
@@ -439,7 +435,7 @@ class AnnouncementManager(object):
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
 		res = CSE.request.sendUpdateRequest(csrID, CSE.cseCsi, content = dct)
-		if res.rsc not in [ ResponseStatusCode.updated, ResponseStatusCode.OK ]:
+		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
 			# Ignore and fallthrough
 		L.isDebug and L.logDebug('Announced resource updated')

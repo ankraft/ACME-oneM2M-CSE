@@ -69,7 +69,7 @@ class TestNOD(unittest.TestCase):
 					'ni'	: nodeID
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ri'))
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
 
@@ -85,7 +85,7 @@ class TestNOD(unittest.TestCase):
 	def test_retrieveNODWithWrongOriginator(self) -> None:
 		""" Retrieve <NOD> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(nodURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -110,7 +110,7 @@ class TestNOD(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/lbl'))
@@ -126,7 +126,7 @@ class TestNOD(unittest.TestCase):
 					'unknown' : 'unknown'
 				}}
 		_, rsc = UPDATE(nodURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -140,7 +140,7 @@ class TestNOD(unittest.TestCase):
 		 	'nl' 	: TestNOD.nodeRI
 		}}
 		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/ri'))
@@ -158,7 +158,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteAEForNOD(self) -> None:
 		""" Delete <AE> for <NOD> & test link """
 		_, rsc = DELETE(aeURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 		nod, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
@@ -177,7 +177,7 @@ class TestNOD(unittest.TestCase):
 			'ni'	: 'second'
 		}}
 		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
 		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)
 		node2RI = findXPath(nod2, 'm2m:nod/ri')
@@ -187,7 +187,7 @@ class TestNOD(unittest.TestCase):
 			'nl' : node2RI
 		}}
 		r, rsc = UPDATE(aeURL, TestNOD.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/nl'), node2RI)
 
@@ -208,7 +208,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteNOD2(self) -> None:
 		""" Delete second <NOD> """
 		_, rsc = DELETE(nod2URL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 		# Check AE
 		ae, rsc = RETRIEVE(aeURL, ORIGINATOR)
@@ -220,7 +220,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteNOD(self) -> None:
 		""" Delete <NOD> """
 		_, rsc = DELETE(nodURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -233,7 +233,7 @@ class TestNOD(unittest.TestCase):
 					'hael'	: []
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

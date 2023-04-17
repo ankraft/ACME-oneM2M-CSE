@@ -12,6 +12,7 @@ from typing import Optional, Tuple, Any, cast
 
 from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
 from ..etc.Types import BasicType
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.Utils import riFromID
 from ..helpers.TextTools import findXPath
 from ..services import CSE
@@ -69,26 +70,21 @@ class ACTR(AnnounceableResource):
 		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 
 		# Check referenced resources
-		if not (res := self._checkReferencedResources(originator, self.sri, self.orc)).status:
-			return res
-		sriResource = cast(Resource, cast(Tuple, res.data)[0])
-		orcResource = cast(Resource, cast(Tuple, res.data)[1])
+		sriResource, orcResource = self._checkReferencedResources(originator, self.sri, self.orc)
 		self.sri = riFromID(self.sri)
 		self.orc = riFromID(self.orc)
 
-		#	Check that the from parameter of the actionPrimitive is the originator
-		if not (res := self._checkApvFrom(originator)).status:
-			return res
+		#	Check that the from parameter of the actionPrimitive is the originatorz
+		self._checkApvFrom(originator)
 
 		# Check evalmode and control parameters
 		evm = self.evm
 		if evm in [EvalMode.off, EvalMode.once] and self.hasAttribute('ecp'):
-			return Result.errorResult(dbg = L.logDebug(f'ecp - must not be present for evm: {evm}'))
+			raise BAD_REQUEST(L.logDebug(f'ecp - must not be present for evm: {evm}'))
 
 		#	Check that the attribute referenced by the evalCriteria does exist
 		checkResource = parentResource \
@@ -96,34 +92,30 @@ class ACTR(AnnounceableResource):
 						else sriResource
 		sbjt = self.evc['sbjt']
 		if not checkResource.hasAttributeDefined(sbjt):
-			return Result.errorResult(dbg = L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {checkResource.ri}'))
+			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {checkResource.ri}'))
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
-		if not (res := self._checkThreshold(sbjt, (thld := self.evc['thld']))).status:
-			return res
-		dataType = cast(BasicType, res.data)
+		dataType = self._checkThreshold(sbjt, (thld := self.evc['thld']))
 
 		#	Check evalCriteria operator
-		if not (res := self._checkOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)).status:
-			return res
+		self._checkOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
 
 		# Schedule and process the <action> resource
 		CSE.action.scheduleAction(self)
 
-		return Result.successResult()
 
-
-	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
+	def update(self, dct:JSON = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		
 		# Check referenced resources
 		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))
 		orc = riFromID(findXPath(dct, 'm2m:actr/orc'))
-		if not (res := self._checkReferencedResources(originator, sri, orc)).status:
-			return res
+		self._checkReferencedResources(originator, sri, orc)
 
 		# Check not-NULL orc
 		if 'orc' in dct['m2m:actr'] and findXPath(dct, 'm2m:actr/orc') is None:
-			return Result.errorResult(dbg = L.logDebug(f'orc - must not be NULL in an UPDATE request'))
+			raise BAD_REQUEST(L.logDebug(f'orc - must not be NULL in an UPDATE request'))
 
 		# TODO check existence of dependencies
 
@@ -132,15 +124,14 @@ class ACTR(AnnounceableResource):
 		# return a response primitive with a Response Status Code indicating "BAD_REQUEST" error.
 
 		#	Check that the from parameter of the actionPrimitive is the originator
-		if not (res := self._checkApvFrom(originator)).status:
-			return res
+		self._checkApvFrom(originator)
 
 		# Check that ecp is not set in the request or resource if new evalmode is off or once
 		if (dctEvm := findXPath(dct, 'm2m:actr/evm')) in [ EvalMode.off, EvalMode.once ]:
 			if findXPath(dct, 'm2m:actr/ecp'):
-				return Result.errorResult(dbg = L.logDebug(f'ecp - must not be present in the UPDATE request if evm is: {dctEvm} in the request'))
+				raise BAD_REQUEST(L.logDebug(f'ecp - must not be present in the UPDATE request if evm is: {dctEvm} in the request'))
 			if self.ecp:
-				return Result.errorResult(dbg = L.logDebug(f'ecp - must not be present in the UPDATE request if evm is : {dctEvm} in the <actr> resource'))
+				raise BAD_REQUEST(L.logDebug(f'ecp - must not be present in the UPDATE request if evm is : {dctEvm} in the <actr> resource'))
 
 
 		# Determine newSri. Might be the parent RI if not present at all
@@ -153,30 +144,24 @@ class ACTR(AnnounceableResource):
 		# Check that a new sbjt attribute exists in the (potentially new) subject target
 		# Also check when only the subject target changes
 		if dctEvc or dctSri:
-			if not (res := CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())).status:
-				return res
-			sriResource = res.resource
+			sriResource = CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
 			sbjt = newEvc['sbjt']
 			if not sriResource.hasAttributeDefined(sbjt):
-				return Result.errorResult(dbg = L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {sriResource.ri}'))
+				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {sriResource.ri}'))
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
 		if dctEvc:
-			if not (res := self._checkThreshold(sbjt, (thld := dctEvc['thld']))).status:
-				return res
-			dataType = cast(BasicType, res.data)
+			dataType = self._checkThreshold(sbjt, (thld := dctEvc['thld']))
 
 			#	Check evalCriteria operator
-			if not (res := self._checkOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)).status:
-				return res
+			self._checkOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)
 
 		# Store some attributes for later evaluation
 		newEcp = findXPath(dct, 'm2m:actr/ecp')
 		origEvm = self.evm
 
 		# Now, apply all changes
-		if not (res := super().update(dct, originator)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 
 		# Restart the monitoring (unschedule and restart later) when new evm is given
 		doScheduleAction = False
@@ -195,9 +180,6 @@ class ACTR(AnnounceableResource):
 		if doScheduleAction:
 			CSE.action.scheduleAction(self)
 
-		# Call this last
-		return Result.successResult()
-
 
 	def deactivate(self, originator:str) -> None:
 		# Unschedule the action
@@ -210,7 +192,7 @@ class ACTR(AnnounceableResource):
 	#	Internals
 	#
 
-	def _checkReferencedResources(self, originator:str, sri:str, orc:str) -> Result:
+	def _checkReferencedResources(self, originator:str, sri:str, orc:str) -> Tuple[Resource, Resource]:
 		"""	Check whether all the referenced resources exists and we have access: subjectResourceID, objectResourceID
 		"""
 		# TODO doc
@@ -218,44 +200,45 @@ class ACTR(AnnounceableResource):
 		resSri = None
 		resOrc = None
 		if sri is not None: # sri is optional
-			
-			if not (resSri := CSE.dispatcher.retrieveResource(riFromID(sri), originator)).status:
-				return Result.errorResult(dbg = L.logDebug(f'sri - referenced resource: {sri} not found: {resSri.dbg})'))
-			if not CSE.security.hasAccess(originator, resSri.resource, Permission.RETRIEVE):
-				return Result.errorResult(dbg = L.logDebug(f'sri - originator has no access to the referenced resource: {sri}'))
+			try:
+				resSri = CSE.dispatcher.retrieveResource(riFromID(sri), originator)
+			except ResponseException as e:
+				raise BAD_REQUEST(L.logDebug(f'sri - referenced resource: {sri} not found: {e.dbg})'))
+			if not CSE.security.hasAccess(originator, resSri, Permission.RETRIEVE):
+				raise BAD_REQUEST(L.logDebug(f'sri - originator has no access to the referenced resource: {sri}'))
 
 		if orc is not None:
-			if not (resOrc := CSE.dispatcher.retrieveLocalResource(riFromID(orc), originator = originator)).status:
-				return Result.errorResult(dbg = L.logDebug(f'orc - referenced resource: {orc} not found: {resOrc.dbg})'))
-			if not CSE.security.hasAccess(originator, resOrc.resource, Permission.RETRIEVE):
-				return Result.errorResult(dbg = L.logDebug(f'orc - originator has no access to the referenced resource: {orc}'))
+			try:
+				resOrc = CSE.dispatcher.retrieveLocalResource(riFromID(orc), originator = originator)
+			except ResponseException as e:
+				raise BAD_REQUEST(L.logDebug(f'orc - referenced resource: {orc} not found: {e.dbg})'))
+			if not CSE.security.hasAccess(originator, resOrc, Permission.RETRIEVE):
+				raise BAD_REQUEST(L.logDebug(f'orc - originator has no access to the referenced resource: {orc}'))
 			
-		return Result(status = True, 
-					  data = (resSri.resource if resSri else None, 
-							  resOrc.resource if resOrc else None))
+		return (resSri, resOrc)
 
 
-	def _checkApvFrom(self, originator:str) -> Result:
+	def _checkApvFrom(self, originator:str) -> None:
 		"""	Check that the from parameter of the actionPrimitive is the originator
 		"""
 		# TODO doc
 		if (apvFr := findXPath(self.apv, 'fr')) != originator:
-			return Result.errorResult(dbg = L.logDebug(f'invalid "apv.from": {apvFr}. Must be: {originator}'))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logDebug(f'invalid "apv.from": {apvFr}. Must be: {originator}'))
 
 
-	def _checkThreshold(self, sbjt:str, thld:Any) -> Result:
+	def _checkThreshold(self, sbjt:str, thld:Any) -> BasicType:
 		# TODO doc
 		#	Check evalCriteria threshold attribute's value type and operation validity
-		if not (res := CSE.validator.validateAttribute(sbjt, thld)).status:
-			return Result.errorResult(dbg = L.logDebug(f'thld - invalid threshold value: {thld} for attribute: {sbjt}'))
+		try:
+			typ, value = CSE.validator.validateAttribute(sbjt, thld)
+		except ResponseException as e:
+			raise BAD_REQUEST(L.logDebug(f'thld - invalid threshold value: {thld} for attribute: {sbjt} : {e.dbg}'))
 		# the result "res" contains the attribute's data type in a tuple
-		return Result(status = True, data = cast(Tuple, res.data)[0])
+		return typ
 
 
-	def _checkOperator(self, optr:EvalCriteriaOperator, dataType:BasicType, sbjt:str) -> Result:
+	def _checkOperator(self, optr:EvalCriteriaOperator, dataType:BasicType, sbjt:str) -> None:
 		# TODO doc
 		if not optr.isAllowedType(dataType):
-			return Result.errorResult(dbg = L.logDebug(f'optr - invalid data type: {dataType} and operator: {optr} for attribute: {sbjt}'))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logDebug(f'optr - invalid data type: {dataType} and operator: {optr} for attribute: {sbjt}'))
 

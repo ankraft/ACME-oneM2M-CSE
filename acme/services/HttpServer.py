@@ -25,6 +25,7 @@ import isodate
 from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType
+from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
@@ -252,7 +253,11 @@ class HttpServer(object):
 		L.isDebug and L.logDebug(f'==> HTTP Request: {path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
-		dissectResult = self._dissectHttpRequest(request, operation, path)
+		try:
+			dissectResult = self._dissectHttpRequest(request, operation, path)
+		except ResponseException as e:
+			dissectResult = Result(rsc = e.rsc, request = e.data, dbg = e.dbg)
+
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.originalData:
@@ -264,11 +269,11 @@ class HttpServer(object):
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
 			# Return an error if the server is stopped
-			return self._prepareResponse(Result(status = False, 
-												rsc = ResponseStatusCode.internalServerError, 
+			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
 												request = dissectResult.request, 
 												dbg = 'http server not running'))
-		if not dissectResult.status:
+
+		if dissectResult.rsc != ResponseStatusCode.UNKNOWN:	# any other value right now indicates an error condition
 			# Something went wrong during dissection
 			return self._prepareResponse(dissectResult)
 
@@ -276,6 +281,7 @@ class HttpServer(object):
 			responseResult = CSE.request.handleRequest(dissectResult.request)
 		except Exception as e:
 			responseResult = exceptionToResult(e)
+		# L.inspect(responseResult)
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
@@ -391,16 +397,16 @@ class HttpServer(object):
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
 			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
-				return prepareUTResponse(ResponseStatusCode.badRequest, str(res[1]))
+				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, str(res[1]))
 			
 			if res[1].type in [SType.tList, SType.tListQuote]:
 				_r = ','.join(res[1].raw())
 			else:
-				_r = res[1].toString(quoteStrings = True, pythonList = True)
+				_r = res[1].toString(quoteStrings = False, pythonList = True)
 			return prepareUTResponse(ResponseStatusCode.OK, _r)
 
 		L.logWarn('UT functionality is not fully supported.')
-		return prepareUTResponse(ResponseStatusCode.badRequest, None)
+		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, None)
 
 
 	#########################################################################
@@ -541,7 +547,7 @@ class HttpServer(object):
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			data = serializeData(content, ct)
 		elif content and not raw:
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'Operation: {operation} doesn\'t allow content'))
+			raise INTERNAL_SERVER_ERROR(L.logErr(f'Operation: {operation} doesn\'t allow content'))
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
@@ -562,7 +568,7 @@ class HttpServer(object):
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)
 			resp.ct = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
-			resp.rsc = ResponseStatusCode(int(r.headers[Constants.hfRSC])) if Constants().hfRSC in r.headers else ResponseStatusCode.internalServerError
+			resp.rsc = ResponseStatusCode(int(r.headers[Constants.hfRSC])) if Constants().hfRSC in r.headers else ResponseStatusCode.INTERNAL_SERVER_ERROR
 			resp.pc = deserializeData(r.content, resp.ct)
 			resp.originator = r.headers.get(Constants.hfOrigin)
 			try:
@@ -571,18 +577,20 @@ class HttpServer(object):
 					isodate.parse_date(ot)
 					resp.ot = ot
 			except Exception as ee:
-				return Result.errorResult(dbg = L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
+				raise BAD_REQUEST(L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
 			if (rqi := r.headers.get(Constants().hfRI)) != hds[Constants().hfRI]:
-				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.rqi}'))
+				raise BAD_REQUEST(L.logWarn(f'Received wrong or missing request identifier: {resp.rqi}'))
 			resp.rqi = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
+		except ResponseException as e:
+			raise e
 		except requests.Timeout as e:
-			return Result.errorResult(rsc = ResponseStatusCode.requestTimeout, dbg = L.logWarn(f'http request timeout after {timeout}s'))
+			raise REQUEST_TIMEOUT(L.logWarn(f'http request timeout after {timeout}s'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
-			return Result.errorResult(rsc = ResponseStatusCode.targetNotReachable, dbg = 'target not reachable')
-		res = Result(status = True, rsc = resp.rsc, data = resp.pc, request = resp)
+			raise TARGET_NOT_REACHABLE('target not reachable')
+		res = Result(rsc = resp.rsc, data = resp.pc, request = resp)
 		self._eventResponseReceived(resp)
 		return res
 		
@@ -663,7 +671,7 @@ class HttpServer(object):
 						headers['Content-Location'] = uri
 		except Exception as e:
 			L.logErr(str(e))
-			quit()
+			quit()	# TODO
 
 		# Build and return the response
 		if isinstance(outResult.data, bytes):
@@ -744,7 +752,7 @@ class HttpServer(object):
 					try:
 						req['ty'] = int(t)			# Here we found the type for CREATE requests
 					except:
-						return Result.errorResult(rsc = ResponseStatusCode.badRequest, request = cseRequest, dbg = L.logWarn(f'resource type must be an integer: {t}'))
+						raise BAD_REQUEST(L.logWarn(f'resource type must be an integer: {t}'), data = cseRequest)
 
 		cseRequest.mediaType = contentType
 
@@ -802,27 +810,26 @@ class HttpServer(object):
 		else:
 
 			# De-Serialize the content
-			if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType)).status:
-				return Result.errorResult(rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
+			pc, ct = CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType) # may throw an exception
 			
 			# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 			req = removeNoneValuesFromDict(req)
 
 			# Add the primitive content and 
-			req['pc'] 	 				= cast(Tuple, contentResult.data)[0]	# The actual content
-			cseRequest.ct				= cast(Tuple, contentResult.data)[1]	# The conten serialization type
+			req['pc'] = pc		# The actual content
+			cseRequest.ct = ct	# The conten serialization type
 
 		cseRequest.originalRequest	= req									# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request
 		try:
-			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
-				return res
-		except Exception as e:
-			return Result.errorResult(request = cseRequest, dbg = f'invalid arguments/attributes ({str(e)})')
+			CSE.request.fillAndValidateCSERequest(cseRequest)
+		except ResponseException as e:
+			e.dbg = f'invalid arguments/attributes: {e.dbg}'
+			raise e
 
 		# Here, if everything went okay so far, we have a request to the CSE
-		return Result(status = True, request = cseRequest)
+		return Result(request = cseRequest)
 
 
 	_hdrArgument = re.compile(r'^\s*ty\s*=\s*', re.IGNORECASE)

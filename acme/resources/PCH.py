@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..resources.Resource import Resource
 from ..resources import Factory		# attn: circular import
 from ..resources import PCH_PCU
@@ -60,7 +61,7 @@ class PCH(Resource):
 		self.setAttribute('rqag', False, overwrite = False)	
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> None:
 		# register pollingChannelURI PCU virtual resource before anything else, because
 		# it will be needed during validation, 
 		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
@@ -69,42 +70,35 @@ class PCH(Resource):
 				'rn' : 'pcu'
 			}
 		}
-		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createLocalResource(pcu, self, originator = originator)).resource:
-			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		self.setAttribute(PCH._pcuRI, res.resource.ri)	# store own PCU ri
+		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU)	# rn is assigned by resource itself
+		
+		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
+		self.setAttribute(PCH._pcuRI, resource.ri)	# store own PCU ri
 
 		# General activation + validation
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+		super().activate(parentResource, originator)
 
 		# Store the parent's orginator/AE-ID/CSE-ID
 		if parentResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.AE]:
 			self.setAttribute(PCH._parentOriginator, parentResource.getOriginator())
 		else:
-			return Result.errorResult(dbg = L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
+			raise BAD_REQUEST(L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
 
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
 		
-		return Result.successResult()
-
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 
 		# Set the aggregation state in the own PCU
 		# This is done in activate and update
-		if not (res := CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))).status:
-			return res
-		pcu = cast(PCH_PCU.PCH_PCU, res.resource)
+		resource = CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))
+		pcu = cast(PCH_PCU.PCH_PCU, resource)
 		pcu.setAggregate(self.rqag)
 		pcu.dbUpdate()
-
-		return Result.successResult()
 		
 
 	def getParentOriginator(self) -> str:

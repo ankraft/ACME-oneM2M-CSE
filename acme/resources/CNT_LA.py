@@ -13,7 +13,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
@@ -65,10 +66,10 @@ class CNT_LA(VirtualResource):
 				id: The structured or unstructured resource ID of the target resource.
 				originator: The request's originator.
 			
-			Return:
-				Fails with error code for this resource type. 
+			Raises:
+				`OPERATION_NOT_ALLOWED`: Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
+		raise OPERATION_NOT_ALLOWED('CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -79,10 +80,10 @@ class CNT_LA(VirtualResource):
 				id: The structured or unstructured resource ID of the target resource.
 				originator: The request's originator.
 			
-			Return:
-				Fails with error code for this resource type. 
+			Raises:
+				`OPERATION_NOT_ALLOWED`: Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
+		raise OPERATION_NOT_ALLOWED('UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -96,9 +97,13 @@ class CNT_LA(VirtualResource):
 				originator: The request's originator.
 			
 			Return:
-				Result object indicating success or failure.
+				Result object with the latest resource.
+			
+			Raises:
+				`NOT_FOUND`: If there is no latest instance. 
 		"""
 		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN)):
-			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg='no instance for <latest>')
-		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)
+		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN)):
+			raise NOT_FOUND('no instance for <latest>')
+		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
+		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)

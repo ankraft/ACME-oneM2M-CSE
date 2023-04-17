@@ -31,10 +31,11 @@ from ..helpers.Interpreter import PContext, PError
 from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants
 from ..etc.Types import CSEType, ResourceTypes, Operation
-from ..etc.Utils import getCSE
+from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date
 from ..resources.Resource import Resource
+from ..resources.CSEBase import getCSE
 from ..services import CSE, Statistics
 from ..services.Configuration import Configuration, documentationLinks
 from ..services.Logging import Logging as L
@@ -245,7 +246,7 @@ class Console(object):
 			'c'					: self.configuration,
 			'C'					: self.clearScreen,
 			'D'					: self.deleteResource,
-			'E'					: self.exportResources,
+			# 'E'					: self.exportResources,
 			'f'					: self.showRequests,
 			'F'					: self.showAllRequests,
 			FunctionKey.CTRL_F	: self.deleteRequests,
@@ -281,6 +282,7 @@ class Console(object):
 			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
 			 nextKey = '#' if CSE.textUI.startWithTUI else None,
 			 postCommandHandler = self._postCommandHandler,
+			 ignoreException = False,
 			 exceptionHandler = lambda ch: L.setEnableScreenLogging(True))
 		CSE.shutdown()
 
@@ -333,7 +335,7 @@ class Console(object):
 			('c', 'Show configuration'),
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
-			('E', 'Export resource tree to [i]init[/i] directory'),
+			# ('E', 'Export resource tree to [i]init[/i] directory'),
 			('f', 'Show requests history for a resource'),
 			('F', 'Show all requests history'),
 			('^F', 'Clear requests history'),
@@ -607,14 +609,18 @@ Available under the BSD 3-Clause License
 			Args:
 				key: Input key. Ignored.
 		"""
-		L.console('Delete Resource', isHeader=True)
+		L.console('Delete Resource', isHeader = True)
 		L.off()
 		if (ri := L.consolePrompt('ri')):
-			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError=True)
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri)
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 			else:
-				if not (res := CSE.dispatcher.deleteLocalResource(res.resource, withDeregistration=True)).resource:
-					L.console(res.dbg, isError=True)
+				try:
+					CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)
+				except ResponseException as e:
+					L.console(e.dbg, isError = True)
 				else:
 					L.console('ok')
 		L.on()
@@ -631,10 +637,8 @@ Available under the BSD 3-Clause License
 
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
-			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError = True)
-			else:
-				L.console(res.resource.asDict())
+			resource = CSE.dispatcher.retrieveResource(ri)
+			L.console(resource.asDict())
 		L.on()		
 
 
@@ -648,14 +652,13 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('ri', default = self.previosInspectChildrenRi)):
 			self.previosInspectChildrenRi = ri
-			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError = True)
-			else: 
-				if not (resdis := CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)).status:
-					L.console(resdis.dbg, isError = True)
-				else:
-					CSE.dispatcher.resourceTreeDict(cast(List[Resource], resdis.data), res.resource)	# the function call add attributes to the target resource
-					L.console(res.resource.asDict())
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri)
+				children = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
+				CSE.dispatcher.resourceTreeDict(children, resource)	# the function call add attributes to the target resource
+				L.console(resource.asDict())
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 		L.on()
 
 
@@ -670,23 +673,27 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
-			if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
-				L.console(res.dbg, isError = True)
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 			else: 
 				self.clearScreen(key)
 				self._about(f'Inspect Resource: {ri}')
 				self.interruptContinous = False
 				endMessage:str = None
-				with Live(Pretty(res.resource.asDict()), console = L._console, auto_refresh = False) as live:
+				with Live(Pretty(resource.asDict()), console = L._console, auto_refresh = False) as live:
 
 					def _updateResource(name:str, r:Resource = None) -> None:
 						"""	Callback to update the on-screen resource on an event.
 						"""
-						if not (res := CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)).status:
+						try:
+							resource = CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)
+						except ResponseException as e:
 							endMessage = f'Resource is not available anymore: {ri}'
 							self.interruptContinous = True
 							return
-						live.update(Pretty(res.resource.asDict()), refresh = True)
+						live.update(Pretty(resource.asDict()), refresh = True)
 					
 					# Register events for which the resource is refreshed
 					CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateResource)		# type:ignore[attr-defined]
@@ -738,45 +745,45 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def exportResources(self, key:str) -> None:
-		"""	Export resources to the initialization directory.
+	# def exportResources(self, key:str) -> None:
+	# 	"""	Export resources to the initialization directory.
 
-			Only resources that have **not** been imported are exported.
-			The result is a script that can be used to re-build a previous resource tree.
+	# 		Only resources that have **not** been imported are exported.
+	# 		The result is a script that can be used to re-build a previous resource tree.
 
-			Args:
-				key: Input key. Ignored.
-		"""
-		L.console('Export Resources', isHeader = True)
-		L.off()
-		try:
-			if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
-				L.console(resdis.dbg, isError=True)
-			else:
-				resources:list[Resource] = []
-				for r in cast(List[Resource], resdis.data):
-					if r.isImported:
-						continue
-					resources.append(r)
-				if resources:
-					fn = f'{datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")}.as'
-					fpn = f'{CSE.importer.resourcePath}/{fn}'
-					L.console(f'Exporting to {fn}')
-					with open(fpn, 'w') as exportFile:
-						exportFile.write(f'expandMacros off\n')
-						for r in resources:
-							exportFile.write(f'originator {r.getOriginator()}\n')
-							exportFile.write(f'print Importing {r.ri}\n')
-							exportFile.write('importraw\n')
-							json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
-							exportFile.write('\n')
-						exportFile.write(f'expandMacros on\n')
-				L.console(f'Exported {len(resources)} resources')
-		except Exception as e:
-			import traceback
-			print(traceback.format_exc())
-			L.inspect(e)
-		L.on()
+	# 		Args:
+	# 			key: Input key. Ignored.
+	# 	"""
+	# 	L.console('Export Resources', isHeader = True)
+	# 	L.off()
+	# 	try:
+	# 		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
+	# 			L.console(resdis.dbg, isError=True)
+	# 		else:
+	# 			resources:list[Resource] = []
+	# 			for r in cast(List[Resource], resdis.data):
+	# 				if r.isImported:
+	# 					continue
+	# 				resources.append(r)
+	# 			if resources:
+	# 				fn = f'{datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")}.as'
+	# 				fpn = f'{CSE.importer.resourcePath}/{fn}'
+	# 				L.console(f'Exporting to {fn}')
+	# 				with open(fpn, 'w') as exportFile:
+	# 					exportFile.write(f'expandMacros off\n')
+	# 					for r in resources:
+	# 						exportFile.write(f'originator {r.getOriginator()}\n')
+	# 						exportFile.write(f'print Importing {r.ri}\n')
+	# 						exportFile.write('importraw\n')
+	# 						json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
+	# 						exportFile.write('\n')
+	# 					exportFile.write(f'expandMacros on\n')
+	# 			L.console(f'Exported {len(resources)} resources')
+	# 	except Exception as e:
+	# 		import traceback
+	# 		print(traceback.format_exc())
+	# 		L.inspect(e)
+	# 	L.on()
 	
 
 	def runScript(self, key:str) -> None:
@@ -865,12 +872,14 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
-			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError = True)
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri)
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 			else:
-				if res.resource.ty != ResourceTypes.CNT:
+				if resource.ty != ResourceTypes.CNT:
 					L.console('resource must be a <container>', isError = True)
-				self._plotGraph(res.resource)
+				self._plotGraph(resource)
 		L.on()
 
 
@@ -897,20 +906,22 @@ Available under the BSD 3-Clause License
 		L.off()
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
-			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError = True)
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri)
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 			else:
-				if res.resource.ty != ResourceTypes.CNT:
+				if resource.ty != ResourceTypes.CNT:
 					L.console('resource must be a <container>', isError = True)
 			
 				# Register for chil-added event (which would lead to a re-drawing of the graph)
 				CSE.event.addHandler(CSE.event.createChildResource,  _plot)		# type:ignore [attr-defined]
 
 				# Remember the parent ri
-				pri = res.resource.ri
+				pri = resource.ri
 
 				# Plot grapth for the first time
-				_plot(res.resource)	
+				_plot(resource = resource)	
 
 				# Wait for any keypress
 				self.interruptContinous = False
@@ -1012,7 +1023,7 @@ Available under the BSD 3-Clause License
 		tableCSE.add_column(_markup('[u]Registrar[/u]\n'), no_wrap = True)
 		tableCSE.add_column(_markup('[u]Registrees[/u]\n'), no_wrap = False)
 
-		cse = getCSE().resource
+		cse = getCSE()
 		_addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
@@ -1437,10 +1448,10 @@ Available under the BSD 3-Clause License
 					A Rich Tree object, or *None*.
 			"""
 			if parent:
-				if not (res := CSE.dispatcher.retrieveResource(parent).resource):
+				if not (res := CSE.dispatcher.retrieveResource(parent)):
 					return None
 			else:
-				res = getCSE().resource
+				res = getCSE()
 			if not res:
 				return None
 			tree = Tree(info(res), style = style, guide_style = style)

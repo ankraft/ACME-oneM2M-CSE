@@ -18,6 +18,7 @@ from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributeP
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..etc.Utils import pureResource, strToBool
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -76,7 +77,7 @@ class Validator(object):
 								 create:Optional[bool] = True , 
 								 isImported:Optional[bool] = False, 
 								 createdInternally:Optional[bool] = False, 
-								 isAnnounced:Optional[bool] = False) -> Result:
+								 isAnnounced:Optional[bool] = False) -> None:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -91,16 +92,16 @@ class Validator(object):
 			Return:
 				Result object
 		"""
-		L.isDebug and L.logDebug('Validating attributes')
+		L.isDebug and L.logDebug('validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported:
-			return Result.successResult()
+			return
 
 		# No policies?
 		if not attributes:
-			L.isWarn and L.logWarn(f'No attribute policies: {resource}')
-			return Result.successResult()
+			L.logErr(f'no attribute policies: {resource}')
+			return
 
 		# Set an index into the policy dataclass, depending on the validation type
 		optionalIndex = 2 if create else 3	# index to create or update
@@ -124,7 +125,7 @@ class Validator(object):
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
 			else:
-				return Result.errorResult(dbg = L.logWarn(f'Unknown resource type: {tpe}'))
+				raise BAD_REQUEST(L.logWarn(f'unknown resource type: {tpe}'))
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
@@ -132,11 +133,11 @@ class Validator(object):
 		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
-				return Result.errorResult(dbg = L.logWarn(f'Unknown attribute: {attributeName} in resource: {tpe}'))
+				raise BAD_REQUEST(L.logWarn(f'unknown attribute: {attributeName} in resource: {tpe}'))
 
 		for attributeName, policy in attributePolicies.items():
 			if not policy:
-				L.isWarn and L.logWarn(f'No attribute policy found for attribute: {attributeName}')
+				L.isWarn and L.logWarn(f'no attribute policy found for attribute: {attributeName}')
 				continue
 
 			# Get the correct tuple for a resource when there are more definitions
@@ -153,57 +154,52 @@ class Validator(object):
 					continue
 					
 				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
-					return Result.errorResult(dbg = L.logWarn(f'Cannot find mandatory attribute: {attributeName}'))
+					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute: {attributeName}'))
 
 				if attributeName in pureResDict:
 					if policy.cardinality == Cardinality.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
-						return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
+						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
-						return Result.errorResult(dbg = L.logWarn(f'Attribute: {attributeName} is NP for operation'))
+						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
 
 				if policyOptional in [ RequestOptionality.NP, RequestOptionality.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if policyOptional == RequestOptionality.NP:
-						return Result.errorResult(dbg = L.logWarn(f'Found non-provision attribute: {attributeName}'))
+						raise BAD_REQUEST(L.logWarn(f'found non-provision attribute: {attributeName}'))
 
 				# check the the announced cases
 				if isAnnounced:
 					if policy.announcement == Announced.NA:	# Not okay, attribute is not announced
-						return Result.errorResult(dbg = L.logWarn(f'Found non-announced attribute: {attributeName}'))
+						raise BAD_REQUEST(L.logWarn(f'found non-announced attribute: {attributeName}'))
 					continue
 
 				# Special handling for the ACP's pvs attribute
-				if attributeName == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
-					return Result.errorResult(dbg = res.dbg)
+				if attributeName == 'pvs':
+					self.validatePvs(pureResDict)
 
 			# Check whether the value is of the correct type
-			if (res := self._validateType(policy.type, attributeValue, policy = policy)).status:
+			try:
+				self._validateType(policy.type, attributeValue, policy = policy)
 				# Still some further checks are necessary
 
 				# Check list. May be empty or needs to contain at least one member
 				if policy.cardinality == Cardinality.CAR1LN and len(attributeValue) == 0:
-					return Result.errorResult(dbg = L.logWarn(f'Mandatory list attribute must be non-empty: {attributeName}'))
+					raise BAD_REQUEST(L.logWarn(f'Mandatory list attribute must be non-empty: {attributeName}'))
 
 				# Check list. May be empty or needs to contain at least one member
 				# L.isWarn and L.logWarn(f'CAR: {policy.cardinality.name}: {attributeValue}')
 				if policy.cardinality == Cardinality.CAR01L and attributeValue is not None and len(attributeValue) == 0:
-					return Result.errorResult(dbg = L.logWarn(f'Optional list attribute must be non-empty: {attributeName}'))
-				continue
-		
-
-			# fall-through means: not validated
-			return Result.errorResult(dbg = L.logWarn(f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})'))
-
-		return Result.successResult()
-
+					raise BAD_REQUEST(L.logWarn(f'Optional list attribute must be non-empty: {attributeName}'))
+			except ResponseException as e:
+				raise BAD_REQUEST(L.logWarn(f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({e.dbg})'))
 
 
 	def validateAttribute(self, attribute:str, 
 								value:Any, 
 								attributeType:Optional[BasicType] = None, 
-								rtype:Optional[ResourceTypes] = ResourceTypes.ALL) -> Result:
+								rtype:Optional[ResourceTypes] = ResourceTypes.ALL) -> Tuple[BasicType, Any]:
 		""" Validate a single attribute. 
 		
 			Args:
@@ -212,13 +208,13 @@ class Validator(object):
 				attributeType: If *attributeType* is set then that type is taken to perform the check, otherwise the attribute type is determined.
 				rtype: Some attributes' validations depend on the resource type.
 			Return:
-				`Result` object. If successful then *data* contains the determined attribute and the converted value in a tuple.
+				A tuple with determined data type and the converted value.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
 			return self._validateType(policy.type, value, True, policy = policy)
-		return Result.errorResult(dbg = f'validation for attribute {attribute} not defined')
+		raise BAD_REQUEST(f'validation for attribute {attribute} not defined')
 
 
 	#
@@ -257,42 +253,37 @@ class Validator(object):
 
 
 
-
-	def validatePrimitiveContent(self, pc:JSON) -> Result:
-		
+	def validatePrimitiveContent(self, pc:JSON) -> None:
 		# None - pc is ok
 		if pc is None:
-			return Result.successResult()
+			return
 		
 		# Check number of elements == 1
 		if len(pc.keys()) != 1:	# TODO is this correct?
-			return Result.errorResult(dbg = f'primitive content shall contain exactly one element')
+			raise BAD_REQUEST(f'primitive content shall contain exactly one element')
 		
 		name,obj = list(pc.items())[0]
 		if ap := self.complexAttributePolicies.get(name):
-			return self.validateAttributes(obj, tpe = name, attributes=ap)
+			self.validateAttributes(obj, tpe = name, attributes=ap)
 		
-		return Result.successResult()
-
 
 	#
 	#	Additional validations.
 	#
 
-	def validatePvs(self, dct:JSON) -> Result:
+	def validatePvs(self, dct:JSON) -> None:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(dct['pvs'])) == 0:
-			return Result.errorResult(dbg = L.logWarn('Attribute pvs must not be an empty list'))
+			raise BAD_REQUEST(L.logWarn('Attribute pvs must not be an empty list'))
 		elif l > 1:
-			return Result.errorResult(dbg = L.logWarn('Attribute pvs must contain only one item'))
+			raise BAD_REQUEST(L.logWarn('Attribute pvs must contain only one item'))
 		if not (acr := findXPath(dct, 'pvs/acr')):
-			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr not found'))
+			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr not found'))
 		if not isinstance(acr, list):
-			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr must be a list'))
+			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr must be a list'))
 		if len(acr) == 0:
-			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr must not be an empty list'))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr must not be an empty list'))
 
 
 	# TODO allowed media type chars
@@ -301,22 +292,24 @@ class Validator(object):
 		r'|^[^:/]+/[^:/]+:[0-2]$'	# TODO why twice?
 		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
-	def validateCNF(self, value:str) -> Result:
-		"""	Validate the contents of the *contentInfo* attribute. """
+	def validateCNF(self, value:str) -> None:
+		"""	Validate the contents of the *contentInfo* attribute. 
+		"""
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
-			return Result.successResult()
-		return Result.errorResult(dbg = f'validation of cnf attribute failed: {value}')
+			return
+		raise BAD_REQUEST(f'validation of cnf attribute failed: {value}')
+		# fall-through
 
 
-	def validateCSICB(self, val:str, name:str) -> Result:
+	def validateCSICB(self, val:str, name:str) -> None:
 		"""	Validate the format of a CSE-ID in csi or cb attributes.
 		"""
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
-			return Result.errorResult(dbg = L.logDebug(f"{name} is missing"))
+			raise BAD_REQUEST(L.logDebug(f"{name} is missing"))
 		if not val.startswith('/'):
-			return Result.errorResult(dbg = L.logDebug(f"{name} must start with '/': {val}"))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logDebug(f"{name} must start with '/': {val}"))
+		# fall-through
 
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
@@ -489,7 +482,7 @@ class Validator(object):
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 
 							convert:Optional[bool] = False, 
-							policy:Optional[AttributePolicy] = None) -> Result:
+							policy:Optional[AttributePolicy] = None) -> Tuple[BasicType, Any]:
 		""" Check a value for its type. 
 					
 			Args:
@@ -499,12 +492,12 @@ class Validator(object):
 					value and the method will attempt to convert the value to its target type; otherwise this
 					is an error. 
 			Return:
-				Result. If the check is positive (Result.status = =True) then Result.data is set to a tuple (the determined data type, the converted value).
+				Result. If the check is positive then Result.data is set to a tuple (the determined data type, the converted value).
 		"""
 
 		# Ignore None values
 		if value is None:
-			return Result(status = True, data = (dataType, value))
+			return (dataType, value)
 
 
 		# convert some types if necessary
@@ -518,50 +511,50 @@ class Validator(object):
 				try:
 					value = int(value)
 				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+					raise BAD_REQUEST(str(e))
 			elif dataType == BasicType.boolean and isinstance(value, str):	# "true"/"false"
 				try:
 					value = strToBool(value)
 				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+					raise BAD_REQUEST(str(e))
 			elif dataType == BasicType.float and isinstance(value, str):
 				try:
 					value = float(value)
 				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+					raise BAD_REQUEST(str(e))
 
 		# Check types and values
 
 		if dataType == BasicType.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status = True, data = (dataType, value))
-				return Result.errorResult(dbg = 'value must be > 0')
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
+					return (dataType, value)
+				raise BAD_REQUEST('value must be > 0')
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
 		
 		if dataType == BasicType.enum:
 			if isinstance(value, int):
 				if policy is not None and len(policy.evalues) and value not in policy.evalues:
-					return Result.errorResult(dbg = 'undefined enum value')
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
+					raise BAD_REQUEST('undefined enum value')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
 
 		if dataType == BasicType.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status = True, data = (dataType, value))
-				return Result.errorResult(dbg = 'value must be >= 0')
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+					return (dataType, value)
+				raise BAD_REQUEST('value must be >= 0')
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if dataType in [ BasicType.unsignedInt, BasicType.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: unsigned integer')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if dataType == BasicType.timestamp and isinstance(value, str):
 			if fromAbsRelTimestamp(value) == 0.0:
-				return Result.errorResult(dbg = f'format error in timestamp: {value}')
-			return Result(status = True, data = (dataType, value))
+				raise BAD_REQUEST(f'format error in timestamp: {value}')
+			return (dataType, value)
 
 		if dataType == BasicType.absRelTimestamp:
 			if isinstance(value, str):
@@ -570,86 +563,84 @@ class Validator(object):
 					# fallthrough
 				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
 					if fromAbsRelTimestamp(value) == 0.0:
-						return Result.errorResult(dbg = f'format error in absRelTimestamp: {value}')
+						raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
 				# fallthrough
 			elif not isinstance(value, int):
-				return Result.errorResult(dbg = f'unsupported data type for absRelTimestamp')
-			return Result(status = True, data = (dataType, value))		# int/long is ok
+				raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
+			return (dataType, value)		# int/long is ok
 
 		if dataType in [ BasicType.string, BasicType.anyURI ] and isinstance(value, str):
-			return Result(status = True, data = (dataType, value))
+			return (dataType, value)
 
 		if dataType in [ BasicType.list, BasicType.listNE ] and isinstance(value, list):
 			if dataType == BasicType.listNE and len(value) == 0:
-				return Result.errorResult(dbg = 'empty list is not allowed')
+				raise BAD_REQUEST('empty list is not allowed')
 			if policy is not None and policy.ltype is not None:
 				for each in value:
-					if not (res := self._validateType(policy.ltype, each, convert = convert, policy = policy)).status:
-						return res
-			return Result(status = True, data = (dataType, value))
+					self._validateType(policy.ltype, each, convert = convert, policy = policy)
+			return (dataType, value)
 
 		if dataType == BasicType.dict and isinstance(value, dict):
-			return Result(status = True, data = (dataType, value))
+			return (dataType, value)
 		
 		if dataType == BasicType.boolean:
 			if isinstance(value, bool):
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: bool')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if dataType == BasicType.float:
 			if isinstance(value, (float, int)):
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: float')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
 
 		if dataType == BasicType.integer:
 			if isinstance(value, int):
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: integer')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if dataType == BasicType.geoCoordinates and isinstance(value, dict):
-			return Result(status = True, data = (dataType, value))
+			return (dataType, value)
 		
 		if dataType == BasicType.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
-				return Result.errorResult(dbg = f'must be an ISO duration: {str(e)}')
-			return Result(status = True, data = (dataType, value))
+				raise BAD_REQUEST(f'must be an ISO duration: {str(e)}')
+			return (dataType, value)
 		
 		if dataType == BasicType.base64:
 			if not TextTools.isBase64(value):
-				return Result.errorResult(dbg = f'value is not base64-encoded')
-			return Result(status = True, data = (dataType, value))
+				raise BAD_REQUEST(f'value is not base64-encoded')
+			return (dataType, value)
 		
 		if dataType == BasicType.schedule:
 			if isinstance(value, str) and re.match(self._scheduleRegex, value):
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
+				return (dataType, value)
+			raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
 
 		if dataType == BasicType.any:
-			return Result(status = True, data = (dataType, value))
+			return (dataType, value)
 		
 		if dataType == BasicType.complex:
 			if not policy:
-				L.logErr(f'policy is missing for validation of complex attribute')
-				return Result.errorResult(dbg = f'internal error: policy missing for validation')
+				raise BAD_REQUEST(L.logErr(f'internal error: policy is missing for validation of complex attribute'))
 
 			if isinstance(value, dict):
 				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
 				for k, v in value.items():
 					if not (p := self.getAttributePolicy(typeName, k)):
-						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {typeName}')
-					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
-						return res
+						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+					# recursively validate a dictionary attribute
+					self._validateType(p.type, v, convert = convert, policy = p)
 
 				# Check that all mandatory attributes are present
 				attributeNames = value.keys()
 				for ap in self.getComplexTypeAttributePolicies(typeName):
 					if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
-						return Result.errorResult(dbg = f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
-				return Result(status = True, data = (dataType, value))
-			return Result.errorResult(dbg = f'Expected complex type, found: {value}')
+						raise BAD_REQUEST(f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
+				return (dataType, value)
+			raise BAD_REQUEST(f'Expected complex type, found: {value}')
 
-		return Result.errorResult(dbg = f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
+		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 
 

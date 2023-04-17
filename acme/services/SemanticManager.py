@@ -9,7 +9,7 @@
 """
 
 from __future__ import annotations
-from typing import Sequence, cast, Optional, Union
+from typing import Sequence, cast, Optional, Union, List
 
 import sys
 from abc import ABC, abstractmethod
@@ -17,8 +17,10 @@ from xml.etree import ElementTree
 import base64, binascii
 
 from ..resources.SMD import SMD
+from ..resources.Resource import Resource
 from ..services import CSE
-from ..etc.Types import Permission, ResourceTypes, ResponseStatusCode, Result, SemanticFormat
+from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
 from ..services.Logging import Logging as L
 
 
@@ -56,15 +58,12 @@ class SemanticHandler(ABC):
 
 
 	@abstractmethod
-	def addParentID(self, id:str, pi:str) -> Result:
+	def addParentID(self, id:str, pi:str) -> None:
 		"""	Add the parent ID to a resource's graph.
 		
 			Args:
 				id: Identifier for the graph. It should be a resouce identifier.
 				pi: Parent ID to add.
-			
-			Return:
-				A `Result` object indicating success or error.
 		"""
 
 
@@ -177,7 +176,7 @@ class SemanticManager(object):
 	#	SMD support functions
 	#
 
-	def validateDescriptor(self, smd:SMD) -> Result:
+	def validateDescriptor(self, smd:SMD) -> None:
 		"""	Check that the *descriptor* attribute conforms to the syntax defined by
 			the *descriptorRepresentation* attribute. 
 
@@ -186,9 +185,6 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` object to use in the validation.
-
-			Return:
-				`Result` object indicating success or error.
 		"""
 		L.isDebug and L.logDebug('Validating descriptor')
 		# Test base64 encoding is actually done during validation.
@@ -198,16 +194,17 @@ class SemanticManager(object):
 		# Validate descriptorRepresentation
 		# In TS-0004 this comes after the descriptor validation, but should come before it
 		if smd.dcrp == SemanticFormat.IRI:
-			return Result.errorResult(dbg = L.logDebug('dcrp format must not be IRI'))
+			raise BAD_REQUEST(L.logDebug('dcrp format must not be IRI'))
 		try:
 			# Also store the decoded B64 string in the resource
 			smd.setAttribute(smd._decodedDsp, _desc := base64.b64decode(smd.dsp, validate = True).decode('UTF-8').strip())
 		except binascii.Error as e:
-			return Result.errorResult(dbg = L.logDebug(f'Invalid base64-encoded descriptor: {str(e)}'))
-		return self.semanticHandler.validateDescription(_desc, smd.dcrp)
+			raise BAD_REQUEST(L.logDebug(f'Invalid base64-encoded descriptor: {str(e)}'))
+
+		self.semanticHandler.validateDescription(_desc, smd.dcrp)
 
 	
-	def validateSPARQL(self, query:str) -> Result:
+	def validateSPARQL(self, query:str) -> None:
 		"""	Validate wether an input string is a valid SPARQL query.
 
 			Todo:
@@ -215,17 +212,12 @@ class SemanticManager(object):
 
 			Args:
 				query: String with the SPARQL query to validate.
-
-			Return:
-				`Result` object indicating success or error. In case of an error the *rsc* 
-				is set to *INVALID_SPARQL_QUERY*.
 		"""
 		L.isDebug and L.logDebug(f'Validating SPARQL request')
 		L.isWarn and L.logWarn('Validation of SMD.semanticOpExec is not implemented')
-		return Result.successResult()
 
 
-	def validateValidationEnable(self, smd:SMD) -> Result:
+	def validateValidationEnable(self, smd:SMD) -> None:
 		"""	Check and handle the setting of the *validationEnable* attribute.
 
 			Todo:
@@ -233,18 +225,14 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` object to use in the validation. **Attn**: This procedure might update and change the provided *smd* object.
-
-			Return:
-				`Result` object indicating success or error.
 		"""
 		# The default for ACME is to not enable validation
 		if smd.vlde is None:
 			smd.setAttribute('vlde', False)
 			smd.setAttribute('svd', False)
-		return Result.successResult()
 
 
-	def addDescriptor(self, smd:SMD) -> Result:
+	def addDescriptor(self, smd:SMD) -> None:
 		"""	Perform the semantic validation of the <`SMD`> resource
 
 			Todo:
@@ -252,19 +240,18 @@ class SemanticManager(object):
 
 			Args:
 				smd: `SMD` resource object to use in the validation. **Attn**: This procedure might update and change the provided *smd* object.
-
-			Return:
-				`Result` object indicating success or error.
 		"""
 		L.isDebug and L.logDebug('Adding descriptor for: {smd.ri}')
 
-		res = self.semanticHandler.addDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
-		if not res.status and smd.vlde:
-			return res
+		try:
+			self.semanticHandler.addDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
+		except ResponseException as e:
+			# if validation is enabled re-raise the event
+			if smd.vlde:
+				raise e
 		
 		# Add parent ID
-		if not (res := self.semanticHandler.addParentID(smd.ri, smd.pi)).status:
-			return res
+		self.semanticHandler.addParentID(smd.ri, smd.pi)
 		
 		# TODO more validation!
 		# b) If the validationEnable attribute is set as true, the hosting CSE shall perform the semantic validation process in
@@ -299,38 +286,31 @@ class SemanticManager(object):
 		# j) Check all the aspects of semantic validation according to clause 7.10.3 in oneM2M TS-0034 [50] based upon the semantic triples and 
 		# 	referenced ontology. If any problem occurs, the Hosting CSE shall generate a Response Status Code indicating an "INVALID_SEMANTICS" error.
 
-		return Result.successResult()
 
-
-	def updateDescriptor(self, smd:SMD) -> Result:
+	def updateDescriptor(self, smd:SMD) -> None:
 		"""	Update the graph for a semantic descriptor.
 			
 			Args:
 				smd: `SMD` resource for which the graph is to be updated.
-
-			Return:
-				`Result` object indicating success or error.
 		"""
 		L.isDebug and L.logDebug(f'Removing descriptor for: {smd.ri}')
-		if not (res := self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)).status:
-			return res
+
+		# Update the semantic description
+		self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
 		
 		# Add parent ID
-		return self.semanticHandler.addParentID(smd.ri, smd.pi)
+		self.semanticHandler.addParentID(smd.ri, smd.pi)
 
 
 
-	def removeDescriptor(self, smd:SMD) -> Result:
+	def removeDescriptor(self, smd:SMD) -> None:
 		"""	Remove the graph for a semantic descriptor.
 			
 			Args:
 				smd: `SMD` resource for which the graph is to be update.
-
-			Return:
-				`Result` object indicating success or error.
 		"""
 		L.isDebug and L.logDebug(f'Updating descriptor for: {smd.ri}')
-		return self.semanticHandler.removeDescription(smd.ri)
+		self.semanticHandler.removeDescription(smd.ri)
 
 	
 
@@ -345,7 +325,9 @@ class SemanticManager(object):
 	# 			 for smd in smds ]
 	
 
-	def executeSPARQLQuery(self, query:str, smds:Union[Sequence[SMD], SMD], format:Optional[SemanticFormat] = None) -> Result:
+	def executeSPARQLQuery(self, query:str, 
+								 smds:Union[Sequence[SMD], SMD], 
+								 format:Optional[SemanticFormat] = None) -> Result:
 		"""	Run a SPARQL query against a list of <`SMD`> resources.
 		
 			Args:
@@ -367,7 +349,10 @@ class SemanticManager(object):
 		# return Result(status = True, data = qres.serialize(format='xml').decode('UTF-8'))
 
 
-	def executeSemanticDiscoverySPARQLQuery(self, originator:str, query:str, smds:Sequence[SMD], format:Optional[SemanticFormat] = None) -> Result:
+	def executeSemanticDiscoverySPARQLQuery(self, originator:str, 
+												  query:str, 
+												  smds:Sequence[SMD], 
+												  format:Optional[SemanticFormat] = None) -> List[Resource]:
 		"""	Recursively discover link-related <`SMD`> resources and run a SPARQL query against each of the results.
 		
 			This implementation support the "resource link-based" method, but not the "annotation-based" method.
@@ -395,21 +380,19 @@ class SemanticManager(object):
 		L.isDebug and L.logDebug(f'Found SMDs for semantic discovery: {graphIDs}')
 
 		# Determine the matches and add the parent resources for those who have one
-		from ..resources.Resource import Resource
-		pis:list[Resource] = []
+		resources:list[Resource] = []
 		for smd in graphIDs.values():
-			if not (res := self.executeSPARQLQuery(query, smd, format)).status:
-				return res
+			qres = self.executeSPARQLQuery(query, smd, format)
 			try:
-				for e in ElementTree.fromstring(cast(str, res.data)):	
+				for e in ElementTree.fromstring(cast(str, qres.data)):	
 					if e.tag.endswith('results'):	# ignore namespace
 						if len(e) > 0:				# Found at least 1 result, so add the *parent resource* to the result set
-							pis.append(smd.retrieveParentResource())
+							resources.append(smd.retrieveParentResource())
 							break
 			except Exception as e:
-				return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'Error parsing SPARQL result: {str(e)}'))
+				raise INTERNAL_SERVER_ERROR(L.logErr(f'Error parsing SPARQL result: {str(e)}'))
 		
-		return Result(status = True, data = pis)
+		return resources
 		
 
 
@@ -427,21 +410,25 @@ class SemanticManager(object):
 		if ris:
 			for ri in ris:
 				# Retrieve the resource for the ri and check permissions
-				if not (res := CSE.dispatcher.retrieveResource(ri, originator)).status:
+
+				try:
+					resource = CSE.dispatcher.retrieveResource(ri, originator)
+				except ResponseException as e:
+					L.isDebug and L.logDebug(f'skipping unavailable resource: {resource.ri}')
 					continue
-				ri = res.resource.ri
+				ri = resource.ri
 				if ri in graphIDs:	# Skip over existing IDS
 					# TODO warning or error when finding duplicates?
 					continue
-				if not CSE.security.hasAccess(originator, res.resource, Permission.DISCOVERY):
-					L.isDebug and L.logDebug(f'No DISCOVERY access to: {ri} for: {originator}')
+				if not CSE.security.hasAccess(originator, resource, Permission.DISCOVERY):
+					L.isDebug and L.logDebug(f'no DISCOVERY access to: {ri} for: {originator}')
 					continue
 
 				# Add found ri to list
-				graphIDs[ri] = res.resource
+				graphIDs[ri] = cast(SMD, resource)
 
 				# Recursively check relations
-				self._buildLinkedBasedGraphIDs(res.resource.rels, originator, graphIDs)
+				self._buildLinkedBasedGraphIDs(resource.rels, originator, graphIDs)
 
 
 
@@ -496,21 +483,20 @@ class RdfLibHandler(SemanticHandler):
 	#	Implementation of the abstract methods
 	#
 
-	def validateDescription(self, description:str, format:SemanticFormat) -> Result:
+	def validateDescription(self, description:str, format:SemanticFormat) -> None:
 		if not (_format := self.getFormat(format)):
-			return Result.errorResult(dbg = L.logWarn(f'Unsupported format: {format} for semantic descriptor'))
+			raise BAD_REQUEST(L.logWarn(f'Unsupported format: {format} for semantic descriptor'))
 
 		# Parse once to validate, but throw away the result
 		try:
 			rdflib.Graph().parse(data = description, format = _format)
 		except Exception as e:
-			return Result.errorResult(dbg = L.logWarn(f'Invalid descriptor: {str(e)}'))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logWarn(f'Invalid descriptor: {str(e)}'))
 	
 
-	def addDescription(self, description:str, format:SemanticFormat, id:str) -> Result:
+	def addDescription(self, description:str, format:SemanticFormat, id:str) -> None:
 		if not (_format := self.getFormat(format)):
-			return Result.errorResult(dbg = L.logWarn(f'Unsupported format: {format} for semantic descriptor'))
+			raise BAD_REQUEST(L.logWarn(f'Unsupported format: {format} for semantic descriptor'))
 		
 		# Parse into its own graph
 		try:
@@ -518,22 +504,20 @@ class RdfLibHandler(SemanticHandler):
 			g.parse(data = description, format = _format)
 		except Exception as e:
 			L.logErr('', exc = e)
-			return Result.errorResult(dbg = L.logWarn(f'Invalid descriptor: {str(e)}'))
-		return Result.successResult()
+			raise BAD_REQUEST(L.logWarn(f'Invalid descriptor: {str(e)}'))
 	
 
-	def addParentID(self, id: str, pi: str) -> Result:
+	def addParentID(self, id: str, pi: str) -> None:
 		graph = self.graph.get_graph(URIRef(id))
 		graph.add( (rdflib.Literal('m2m:resource'), rdflib.Literal('m2m:isChildOf'), rdflib.Literal(pi)) )
-		return Result.successResult()
 
-	def updateDescription(self, description:str, format:SemanticFormat, id: str) -> Result:
-		if not (res := self.removeDescription(id)).status:
-			return res
-		return self.addDescription(description, format, id)
+
+	def updateDescription(self, description:str, format:SemanticFormat, id: str) -> None:
+		self.removeDescription(id)
+		self.addDescription(description, format, id)
 		
 		
-	def removeDescription(self, id:str) -> Result:
+	def removeDescription(self, id:str) -> None:
 		graph = self.getGraph(id)
 
 		# Remove the triples from the graph
@@ -543,13 +527,12 @@ class RdfLibHandler(SemanticHandler):
 		# Remove the grapth from the store. In theory, this should also delete the triples, but doesn't seem in reality, though
 		# self.store.remove_graph(URIRef(id))		# type:ignore [no-untyped-call]
 		self.store.remove_graph(graph)		# type:ignore [no-untyped-call]
-		return Result.successResult()
 
 
 	def query(self, query:str, ids:Sequence[str], format:SemanticFormat) -> Result:
 		L.isDebug and L.logDebug(f'Querying graphs')
 		if not (_format := self.getFormat(format)):
-			return Result.errorResult(dbg = L.logWarn(f'Unsupported format: {format} for result'))
+			raise BAD_REQUEST(L.logWarn(f'Unsupported format: {format} for result'))
 
 		# Aggregate a new graph for the query
 		aggregatedGraph = self.getAggregatedGraph(ids)
@@ -565,11 +548,11 @@ class RdfLibHandler(SemanticHandler):
 				ElementTree.indent(element)	# type:ignore
 				L.logDebug(ElementTree.tostring(element, encoding = 'unicode'))
 		except Exception as e:
-			return Result.errorResult(dbg = L.logWarn(f'Query error: {str(e)} for result'))
+			raise BAD_REQUEST(L.logWarn(f'Query error: {str(e)} for result'))
 
 
 		# Serialize the result in the desired format and return
-		return Result(status = True, data = qres.serialize(format = _format).decode('UTF-8'))
+		return Result(data = qres.serialize(format = _format).decode('UTF-8'))
 
 
 	def reset(self) -> None:

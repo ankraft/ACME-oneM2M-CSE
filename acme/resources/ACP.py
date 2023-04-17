@@ -12,6 +12,7 @@ from typing import List, Optional
 from ..helpers.TextTools import simpleMatch
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -62,34 +63,28 @@ class ACP(AnnounceableResource):
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
+		super().validate(originator, create, dct, parentResource)
 		
 		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
-				return Result.errorResult(dbg = 'pvs must not be empty')
+				raise BAD_REQUEST('pvs must not be empty')
 		if not self.pvs:
-			return Result.errorResult(dbg = 'pvs must not be empty')
+			raise BAD_REQUEST('pvs must not be empty')
 
 		# Check acod
-		def _checkAcod(acrs:list) -> Result:
-			if not acrs:
-				return Result.successResult()
-			for acr in acrs:
-				if (acod := acr.get('acod')):
-					for each in acod:
-						if not (chty := each.get('chty')) or not isinstance(chty, list):
-							return Result.errorResult(dbg = 'chty is mandatory in acod')
-			return Result.successResult()
+		# TODO Is this still necessary? Check in resource validation?
+		def _checkAcod(acrs:list) -> None:
+			if acrs:
+				for acr in acrs:
+					if (acod := acr.get('acod')):
+						for each in acod:
+							if not (chty := each.get('chty')) or not isinstance(chty, list):
+								raise BAD_REQUEST('chty is mandatory in acod')
 
-		if not (res := _checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))).status:
-			return res
-		if not (res := _checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))).status:
-			return res
-
-		return Result.successResult()
+		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))
+		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))
 
 
 	def deactivate(self, originator:str) -> None:

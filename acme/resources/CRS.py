@@ -16,7 +16,9 @@ from copy import deepcopy
 from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import resourceState, getResourceState
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, TimeWindowType, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType, CSERequest
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
 from ..resources.Resource import Resource
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -79,33 +81,36 @@ class CRS(Resource):
 		self.setAttribute(self._subSratRIs, {}, overwrite = False)	
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if (res := super().activate(parentResource, originator)).status == False:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 		self.dbUpdate()	# Update in DB because we need some changes in other functions executed below
 		L.isDebug and L.logDebug(f'Activating crossResourceSubscription: {self.ri}')
 
 		# encs validation happens in validate()
 
 		# Check owns NU's etc
-		if not (res := CSE.notification.addCrossResourceSubscription(self, originator)).status:
-			return res
+		CSE.notification.addCrossResourceSubscription(self, originator)
 		
 		# Handle subscriptionResourcesAsTarget
 		if (_srat := self.srat):
 			for ri in _srat:
-				if not (res := self._addSratSubscription(ri, originator)).status:
+				try:
+					self._addSratSubscription(ri, originator)
+				except:
 					self._deleteSubscriptions(originator)
-					return res
+					raise
 
 		# Handle regularResourcesAsTarget
 		if (_rrat := self.rrat):
 			self.setAttribute('rrats', [ None ] * len(_rrat))	# add and initialize the rrats list
 			_encs = self.attribute('encs/enc')
 			for ri in _rrat:
-				if not (res := self._addRratSubscription(ri, _encs, _rrat.index(ri), originator)).status:
+				try:
+					self._addRratSubscription(ri, _encs, _rrat.index(ri), originator)
+				except:
+					# Error? Then rollback: delete all created subscriptions so far and return with an error
 					self._deleteSubscriptions(originator)
-					return res
+					raise
 	
 		# Start periodic window immediately if necessary
 		if self.twt == TimeWindowType.PERIODICWINDOW:
@@ -116,20 +121,17 @@ class CRS(Resource):
 			self.setAttribute('nsi', [], overwrite = False)
 			CSE.notification.validateAndConstructNotificationStatsInfo(self)
 
-
 		self.dbUpdate()
-		return Result.successResult()
 	
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		L.isDebug and L.logDebug(f'Updating crossResourceSubscription: {self.ri}')
 		
 		# We are validating the attributes already here because the actual update of the resource
 		# (where this happens) is done only after other procedures hapened.
-		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
-			return res
+		CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
 		# This is important bc it can be set to True, False, or Null.
@@ -142,8 +144,7 @@ class CRS(Resource):
 			self.setAttribute('nu', newNus)
 		
 		# Update the CRS for notifications
-		if not (res := CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)).status:
-			return res
+		CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)
 
 		# Update TimeWindowType and TimeWindowSize
 		oldTwt = self.twt
@@ -162,7 +163,7 @@ class CRS(Resource):
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		return super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
+		super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
 	
 
 	@resourceState('deactivate')
@@ -180,32 +181,29 @@ class CRS(Resource):
 		# Handle removing the csr by the notification manager
 		CSE.notification.removeCrossResourceSubscription(self)
 
-		return super().deactivate(originator)
+		super().deactivate(originator)
 
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 		L.isDebug and L.logDebug(f'Validating crossResourceSubscription: {self.ri}')
 
 		# Check that at least rrat or srat is present
 		if self.rrat is None and self.srat is None:
-			return Result.errorResult(dbg = L.logDebug(f'At least one of regularResourcesAsTarget or subscriptionResourcesAsTarget attributes shall be present'))
+			raise BAD_REQUEST(L.logDebug(f'At least one of regularResourcesAsTarget or subscriptionResourcesAsTarget attributes shall be present'))
 
 		# Check when rrat is set that enc is correctly set and filled
 		if self.rrat:
 			if not self.encs or not self.attribute('encs/enc'):
-				return Result.errorResult(dbg = L.logDebug(f'eventNotificationCriteriaSet must not be empty when regularResourcesAsTarget is provided'))
+				raise BAD_REQUEST(L.logDebug(f'eventNotificationCriteriaSet must not be empty when regularResourcesAsTarget is provided'))
 			if (_l := len(self.attribute('encs/enc'))) != 1 and _l != len(self.rrat):
-				return Result.errorResult(dbg = L.logDebug(f'Number of entries in eventNotificationCriteriaSet must be 1 or the same number as regularResourcesAsTarget entries'))
+				raise BAD_REQUEST(L.logDebug(f'Number of entries in eventNotificationCriteriaSet must be 1 or the same number as regularResourcesAsTarget entries'))
 
-		return Result.successResult()
-	
 
-	def handleNotification(self, request:CSERequest, originator:str) -> Result:
+	def handleNotification(self, request:CSERequest, originator:str) -> None:
 		"""	Handle a notification request to a CRS resource.
 
 			Args:
@@ -219,14 +217,14 @@ class CRS(Resource):
 		# Verification request
 		if (_vrq := findXPath(request.pc, 'm2m:sgn/vrq')) is not None and _vrq == True:
 			L.isDebug and L.logDebug('Received subscription verification request to CRS resource')
-			return Result(status = True, rsc = ResponseStatusCode.OK)
+			return
 		
 		# Deletion request
 		if (_sud := findXPath(request.pc, 'm2m:sgn/sud')) is not None and _sud == True:
 			_sur = findXPath(request.pc, 'm2m:sgn/sur')
 			if getResourceState(self.ri) in ['deactivate']:
 				L.isDebug and L.logDebug(f'Received subscription deletion notification from subscription: {_sur}. Already in delete. Ignored.')
-				return Result(status = True, rsc = ResponseStatusCode.OK)
+				return
 			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
 			# Store the 'sur' to ignore that subscription resource during deletion
 			self.setAttribute(self._sudRI, _sur)
@@ -234,11 +232,11 @@ class CRS(Resource):
 
 			# Delete self. Use the resource's creator for the creator
 			CSE.dispatcher.deleteLocalResource(self, originator = self.getOriginator(), withDeregistration = True)
-			return Result(status = True, rsc = ResponseStatusCode.OK)
+			return
 		
 		# Log any other notification
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
-			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
+			raise BAD_REQUEST(L.logWarn('No or empty "sur" attribute in notification'))
 
 		# Test whether the received sur points to one of the rrat or srat resources	
 		_subSratRIs = self.attribute(self._subSratRIs)
@@ -246,8 +244,6 @@ class CRS(Resource):
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
-
-		return Result(status = True, rsc = ResponseStatusCode.OK)
 
 
 	#########################################################################
@@ -264,7 +260,7 @@ class CRS(Resource):
 		return (len(_rrat) if _rrat else 0) + (len(_srat) if _srat else 0)
 
 
-	def _addRratSubscription(self, rrat:str, encs:list[dict], rratIndex:int, originator:str) -> Result:
+	def _addRratSubscription(self, rrat:str, encs:list[dict], rratIndex:int, originator:str) -> None:
 		"""	Add a single subscription for a rrat.
 			
 			Args:
@@ -287,46 +283,47 @@ class CRS(Resource):
 
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
-		if not (res := CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, ty = ResourceTypes.SUB, originator = originator)).status:
-			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat}: {res.dbg}'))
+		try:
+			tup = CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, 
+															 ty = ResourceTypes.SUB, 
+															 originator = originator)
+		except ResponseException as e:
+			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot create subscription for {rrat}: {e.dbg}'))
 		
-		# Error? Then rollback: delete all created subscriptions so far and return with an error
-		if not res.status or res.rsc != ResponseStatusCode.created:
-			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for: {rrat}: {res.dbg}'))
-		subRi, subCsi, pID = res.data # type: ignore [misc] # unpack
-
+		subRi, subCsi, pID = tup # type: ignore [misc] # unpack
 		# Add the created <sub>'s full RI to the correct position in the rrats list
 		_rrats = self.rrats
 		# _rrats[rratIndex] = f'{csiFromSPRelative(pri)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
 		_rrats[rratIndex] = f'{subCsi}/{subRi}'
 		self.setAttribute('rrats', _rrats)
 
-		return Result.successResult()
 
-
-	def _addSratSubscription(self, srat:str, originator:str) -> Result:
+	def _addSratSubscription(self, srat:str, originator:str) -> None:
 		"""	Update another subscription, pointed to by a *srat* entry, to
 			notify this <crs> resource.
 			
 			Args:
 				srat: The target <sub>'s uri.
 				originator: The originator of the request.
-			Return:
-				Result object.
+			
+			Raises:
+			`CROSS_RESOURCE_OPERATION_FAILURE`: In case there is an error adding the *srat* subscription.
+			`BAD_REQUEST`: In case the target resource is not a valid subscription.
+
 		"""
 		# Get subscription
 		L.logDebug(f'Retrieving srat <sub>: {srat}')
-		res = CSE.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator = originator)	# local or remote
-		if not res.status or res.rsc != ResponseStatusCode.OK:
+
+		try:
+			resource = CSE.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator = originator)	# local or remote
+		except ResponseException as e:
 			self._deleteSubscriptions(originator)
-			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
-		
-		resource = res.resource
+			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
 		
 		# Check whether the target is a subscription
 		if resource.ty != ResourceTypes.SUB:
 			self._deleteSubscriptions(originator)
-			return Result.errorResult(dbg = L.logWarn(f'Resource is not a subscription for {srat} uri: {_sratSpRelative}'))
+			raise BAD_REQUEST(L.logWarn(f'Resource is not a subscription for {srat} uri: {_sratSpRelative}'))
 
 		newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
@@ -346,10 +343,11 @@ class CRS(Resource):
 
 		# # Send UPDATE request
 		L.logDebug(f'Updating srat <sub>: {srat}')
-		res = CSE.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator = originator, resource =resource)
-		if not res.status or res.rsc != ResponseStatusCode.updated:
+		try:
+			CSE.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator = originator, resource =resource)
+		except:
 			self._deleteSubscriptions(originator)
-			return Result.errorResult(rsc = ResponseStatusCode.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
+			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
 
 		# Add <sub>'s SP-relative ri to internal references
 		_subRIs = self.attribute(self._subSratRIs)
@@ -358,10 +356,8 @@ class CRS(Resource):
 		_subRIs[srat] = f'{_sratCsi}/{_sratRi}'
 		self.setAttribute(self._subSratRIs, _subRIs)
 
-		return Result.successResult()
 
-
-	def _deleteSubscriptions(self, originator:str) -> Result:
+	def _deleteSubscriptions(self, originator:str) -> None:
 		"""	Delete the created subscriptions.
 
 			Args:
@@ -379,8 +375,7 @@ class CRS(Resource):
 				if sudRI and compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
 					L.isDebug and L.logDebug(f'Skipping deletion initiating subscription (from notification): {sudRI}')
 					continue
-				if not (res := self._deleteSubscriptionForRrat(subRI, originator)).status:
-					return res
+				self._deleteSubscriptionForRrat(subRI, originator)
 		
 		# Remove self from successfully done srat subscriptions
 		# This is the internal list, not srat, bc this list may be smaller
@@ -390,32 +385,28 @@ class CRS(Resource):
 				if sudRI and compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
 					L.isDebug and L.logDebug(f'Skipping deletion initiating subscription (from notification): {sudRI}')
 					continue
-				if not (res := self._deleteFromSubscriptionsForSrat(subRI, originator)).status:
-					return res
-		return Result.successResult()
+				self._deleteFromSubscriptionsForSrat(subRI, originator)
 
 
-	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> Result:
+	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> None:
 		if subRI is not None:
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
-			if not (res := CSE.dispatcher.deleteResource(subRI, originator = originator)).status:
-				return res
+			CSE.dispatcher.deleteResource(subRI, originator = originator)
 
 			# To be sure: Set the RI in the rrats list to None
 			_rrats = self.rrats
 			_index = _rrats.index(subRI)
 			_rrats[_index] = None
 			self.setAttribute('rrats', _rrats)
-		return Result.successResult()
 
 
-	def _deleteFromSubscriptionsForSrat(self, srat:str, originator:str) -> Result:
+	def _deleteFromSubscriptionsForSrat(self, srat:str, originator:str) -> None:
 		_subRIs = self.attribute(self._subSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
-			res = CSE.dispatcher.retrieveResource(subRI, originator = originator)
-			if not res.status or res.rsc != ResponseStatusCode.OK:
-				return Result.errorResult(rsc = ResponseStatusCode.badRequest, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
-			resource = res.resource
+			try:
+				resource = CSE.dispatcher.retrieveResource(subRI, originator = originator)
+			except:
+				raise BAD_REQUEST(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
 
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
@@ -434,11 +425,10 @@ class CRS(Resource):
 					setXPath(newDct, 'm2m:sub/acrs', acrs)
 
 			# Send UPDATE request
-			res = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
-			if not res.status or res.rsc != ResponseStatusCode.updated:
-				return Result.errorResult(dbg = L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}'))
+			try:
+				resource = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
+			except ResponseException as e:
+				raise BAD_REQUEST(L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e.dbg}'))
 
 			del _subRIs[srat]
 			self.setAttribute(self._subSratRIs, _subRIs)
-		return Result.successResult()
-

@@ -10,7 +10,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
 from ..services import CSE
 from ..etc.Utils import getAttributeSize
@@ -66,40 +67,35 @@ class CIN(AnnounceableResource):
 		self.setAttribute('st', 0, overwrite = False)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 
 		# increment parent container's state tag
-		parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
+		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 		st = parentResource.st + 1
 		parentResource.setAttribute('st',st)
-		if not (res := parentResource.dbUpdate(False)).resource:
-			return res
+		parentResource.dbUpdate(False)
 
 		# Set stateTag attribute in self as well
 		self.setAttribute('st', st)
-
-		return Result.successResult()
 
 
 	# Forbid updating
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'updating CIN is forbidden')
+					 doValidateAttributes:Optional[bool] = True) -> None:
+		raise OPERATION_NOT_ALLOWED('updating CIN is forbidden')
 
 
 	def willBeRetrieved(self, originator:str, 
 							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> Result:
-		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
-			return res
+							  subCheck:Optional[bool] = True) -> None:
+		super().willBeRetrieved(originator, request, subCheck = subCheck)
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		# "cnt" is a raw resource!
 		if (cntRaw := self.retrieveParentResourceRaw()) and cntRaw.get('disr'):	# disr is either None, True or False. False means "not disabled retrieval"
-			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = L.logDebug(f'Retrieval is disabled for the parent <container>'))
+			raise OPERATION_NOT_ALLOWED(L.logDebug(f'retrieval is disabled for the parent <container>'))
 		
 		# Check deletion Count
 		if (dcnt := self.dcnt) is not None:	# dcnt is an innt
@@ -116,19 +112,14 @@ class CIN(AnnounceableResource):
 				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
 				CSE.dispatcher.deleteLocalResource(self, originator = originator)
 
-		return Result.successResult()
-
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 
 		# Check the format of the CNF attribute
-		if (cnf := self.cnf) and not (res := CSE.validator.validateCNF(cnf)).status:
-			return Result.errorResult(dbg = res.dbg)
+		if cnf := self.cnf:
+			CSE.validator.validateCNF(cnf)
 		
-		return Result.successResult()
-

@@ -11,16 +11,17 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
-from ..etc.Types import ResponseStatusCode
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import Result, JSON
 from ..etc.Utils import pureResource
 from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 
 
+from ..resources.Resource import Resource
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
 from ..resources.ACTR import ACTR
@@ -181,7 +182,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 					 pi:Optional[str] = None, 
 					 ty:Optional[ResourceTypes] = None, 
 					 create:Optional[bool] = False, 
-					 isImported:Optional[bool] = False) -> Result:
+					 isImported:Optional[bool] = False) -> Resource:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
@@ -193,6 +194,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			ty: The resource type of the resource that shall be created.
 			create: The resource will be newly created.
 			isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
+
 		Return:
 			`Result` object with the *resource* attribute set to the created resource object.
 
@@ -201,22 +203,22 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	
 	# Check resouce type name (tpe), especially in FCT resources
 	if tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
-		return Result.errorResult(dbg = L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
+		raise BAD_REQUEST(L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
 
 	# Determine type
 	typ = ResourceTypes(resDict['ty']) if 'ty' in resDict else ty
 	if typ is None and (typ := ResourceTypes.fromTPE(tpe)) is None:
-		return Result.errorResult(dbg = L.logWarn(f'Cannot determine type for creating the resource: {tpe}'))
+		raise BAD_REQUEST(L.logWarn(f'Cannot determine type for creating the resource: {tpe}'))
 
 	if ty is not None:
 		if typ is not None and typ != ty:
-			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type ({typ}) mismatch'))
+			raise BAD_REQUEST(L.logWarn(f'Parameter type ({ty}) and resource type ({typ}) mismatch'))
 		if tpe is not None and ty.tpe() != tpe and ty not in _specResources:
-			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
+			raise BAD_REQUEST(L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# Check for Parent
 	if pi is None and typ != ResourceTypes.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
-		return Result.errorResult(dbg = L.logWarn(f'pi missing in resource: {tpe}'))
+		raise BAD_REQUEST(L.logWarn(f'pi missing in resource: {tpe}'))
 
 	# store the import status in the original resDict
 	if isImported:
@@ -234,8 +236,8 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	else:
 		factory = typ.resourceFactory()
 	if factory:
-		return Result(status = True, rsc = ResponseStatusCode.OK, resource = factory(resDict, tpe, pi, create))
+		return cast(Resource, factory(resDict, tpe, pi, create))
 
-	return Result(status = True, rsc = ResponseStatusCode.OK, resource = Unknown(resDict, tpe, pi = pi, create = create))	# Capture-All resource
+	return  Unknown(resDict, tpe, pi = pi, create = create)	# Capture-All resource
 
 

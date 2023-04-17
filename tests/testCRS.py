@@ -58,7 +58,7 @@ class TestCRS(unittest.TestCase):
 					'poa' : [ NOTIFICATIONSERVER ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		# create CNT1 & CNT2 & CNT3
@@ -66,19 +66,19 @@ class TestCRS(unittest.TestCase):
 					'rn'  : cntRN1
 				}}
 		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN2
 				}}
 		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN3
 				}}
 		cls.cnt3, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
-		assert rsc == RC.created, 'cannot create container'
+		assert rsc == RC.CREATED, 'cannot create container'
 		cls.cnt3RI = findXPath(cls.cnt3, 'm2m:cnt/ri')
 
 		testCaseEnd('Setup TestCRS')
@@ -120,7 +120,7 @@ class TestCRS(unittest.TestCase):
 					# missing rrat/srat
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -134,7 +134,7 @@ class TestCRS(unittest.TestCase):
 					'rrat': [ self.cnt1RI, self.cnt2RI]
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -148,7 +148,7 @@ class TestCRS(unittest.TestCase):
 					'rrat': [ self.cnt1RI, self.cnt2RI]
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -162,7 +162,7 @@ class TestCRS(unittest.TestCase):
 					'rrat': [ self.cnt1RI, self.cnt2RI]
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -175,7 +175,7 @@ class TestCRS(unittest.TestCase):
 					'rrat': [ self.cnt1RI, self.cnt2RI]
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -190,7 +190,7 @@ class TestCRS(unittest.TestCase):
 			        'encs': {},
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -217,7 +217,7 @@ class TestCRS(unittest.TestCase):
 						}
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -240,7 +240,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	#
@@ -266,7 +266,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 
 		# check subscriptions
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
@@ -296,7 +296,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 
 		# check subscriptions
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
@@ -325,7 +325,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
 
 		# check subscriptions
@@ -349,7 +349,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -360,7 +360,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -371,7 +371,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -388,7 +388,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -399,7 +399,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -423,7 +423,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/et'), et)
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
 
@@ -455,14 +455,14 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.crossResourceOperationFailure, TestCRS.crs)
+		self.assertEqual(rsc, RC.CROSS_RESOURCE_OPERATION_FAILURE, TestCRS.crs)
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCRSwithRrat(self) -> None:
 		"""	DELETE <CRS> with rrat"""
 		r, rsc = DELETE(crsURL, TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 		self._testSubscriptionForCnt(cntRN1, False)
 		self._testSubscriptionForCnt(cntRN2, False)
 		self._testSubscriptionForCnt(cntRN3, False)
@@ -486,7 +486,7 @@ class TestCRS(unittest.TestCase):
 		}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 		self._testSubscriptionForCnt(cntRN1, False)
 
 
@@ -503,7 +503,7 @@ class TestCRS(unittest.TestCase):
 					},
 				}}
 		TestCRS.sub1, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, self.sub1)
+		self.assertEqual(rsc, RC.CREATED, self.sub1)
 		TestCRS.sub1RI = findXPath(self.sub1, 'm2m:sub/ri')
 
 		dct = { 'm2m:sub' : {
@@ -514,7 +514,7 @@ class TestCRS(unittest.TestCase):
 					},
 				}}
 		TestCRS.sub2, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, self.sub2)
+		self.assertEqual(rsc, RC.CREATED, self.sub2)
 		TestCRS.sub2RI = findXPath(self.sub2, 'm2m:sub/ri')
 
 
@@ -531,7 +531,7 @@ class TestCRS(unittest.TestCase):
 		}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 
 		# check subscriptions
 		self._testSubscriptionForCnt(cntRN1)
@@ -555,14 +555,14 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCRSwithSrat(self) -> None:
 		"""	DELETE <CRS> with srat"""
 		r, rsc = DELETE(crsURL, TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 		# retrieve subs and check them directly
 		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
@@ -593,13 +593,13 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(len(rrats), 2)
 
 		r, rsc = DELETE(f'{CSEURL}/{rrats[0][1:]}', TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 		# Look for the other subscription and crs
 		r, rsc = RETRIEVE(f'{CSEURL}/{rrats[1][1:]}', TestCRS.originator)
-		self.assertEqual(rsc, RC.notFound, r)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
-		self.assertEqual(rsc, RC.notFound, r)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 		TestCRS.sub1RI = None
 		TestCRS.sub2RI = None
@@ -618,7 +618,7 @@ class TestCRS(unittest.TestCase):
 					'srat': [ self.sub1RI, self.sub2RI ],	
 				}}
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -628,13 +628,13 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(len(srat), 2)
 
 		r, rsc = DELETE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 		# Look for the other subscription and crs
 		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
-		self.assertEqual(rsc, RC.notFound, r)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 		TestCRS.sub1RI = None # Only sub1 is deleted, not sub2
 
@@ -644,12 +644,12 @@ class TestCRS(unittest.TestCase):
 		"""	DELETE <SUB> resources if present"""
 		if TestCRS.sub1RI:
 			r, rsc = DELETE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
-			self.assertEqual(rsc, RC.deleted, r)
+			self.assertEqual(rsc, RC.DELETED, r)
 			TestCRS.sub1RI = None
 
 		if TestCRS.sub2RI:
 			r, rsc = DELETE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
-			self.assertEqual(rsc, RC.deleted, r)
+			self.assertEqual(rsc, RC.DELETED, r)
 			TestCRS.sub2RI = None
 
 
@@ -660,12 +660,12 @@ class TestCRS(unittest.TestCase):
 					'acrs' : []
 		}}
 		r, rsc = UPDATE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertNotIn(findXPath(TestCRS.crs, 'm2m:crs/ri'), findXPath(r, 'm2m:sub/acrs'))
 
 		# Check that CRS was deleted
 		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
-		self.assertEqual(rsc, RC.notFound, r)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 		# Check that CRS was removed from second <SUB>
 		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, r)
@@ -684,7 +684,7 @@ class TestCRS(unittest.TestCase):
 			'con' : 'AnyValue',
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, self.sub1)
+		self.assertEqual(rsc, RC.CREATED, self.sub1)
 		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
@@ -699,13 +699,13 @@ class TestCRS(unittest.TestCase):
 
 		# CIN to first CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, self.sub1)
+		self.assertEqual(rsc, RC.CREATED, self.sub1)
 		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 		# CIN two second CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, self.sub1)
+		self.assertEqual(rsc, RC.CREATED, self.sub1)
 		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
@@ -721,7 +721,7 @@ class TestCRS(unittest.TestCase):
 			'tws': (_tws := f'PT{crsTimeWindowSize}S'),
 		}}
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/twt'), _twt)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), _tws)
 
@@ -730,9 +730,9 @@ class TestCRS(unittest.TestCase):
 			'con' : 'AnyValue',
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)	
+		self.assertEqual(rsc, RC.CREATED, r)	
 
 		# wait and check notification
 		testSleep(crsTimeWindowSize + 1.0)
@@ -751,7 +751,7 @@ class TestCRS(unittest.TestCase):
 					'tws' : tws,
 		}}
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), tws)
 
 		clearLastNotification()
@@ -761,9 +761,9 @@ class TestCRS(unittest.TestCase):
 					'con' : 'AnyValue',
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)	
+		self.assertEqual(rsc, RC.CREATED, r)	
 
 		# wait and check notification at around half the time
 		testSleep(crsTimeWindowSize * 1.2)
@@ -792,7 +792,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -805,7 +805,7 @@ class TestCRS(unittest.TestCase):
 					'tws' : tws,
 		}}
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), tws)
 
 		clearLastNotification()
@@ -815,7 +815,7 @@ class TestCRS(unittest.TestCase):
 					'con' : 'AnyValue',
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# wait and check notification at half the time
 		testSleep(crsTimeWindowSize + 1.0)
@@ -824,7 +824,7 @@ class TestCRS(unittest.TestCase):
 		# wait a bit longer to wait the second notification
 		testSleep(crsTimeWindowSize * 0.2)
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)	
+		self.assertEqual(rsc, RC.CREATED, r)	
 
 		testSleep(crsTimeWindowSize * 0.8)
 		self.assertIsNotNone(notification := getLastNotification())
@@ -859,7 +859,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nse'), TestCRS.crs)
 		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
 
@@ -872,7 +872,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -896,7 +896,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nse'), TestCRS.crs)
 		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
 		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
@@ -927,7 +927,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertFalse(findXPath(TestCRS.crs, 'm2m:crs/nse'))
 		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
 
@@ -940,7 +940,7 @@ class TestCRS(unittest.TestCase):
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
 		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/rqs'), 0, TestCRS.crs)
@@ -972,7 +972,7 @@ class TestCRS(unittest.TestCase):
 					'exc': 2
 				}}
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 
 		# create CIN to cause notifications
 		for _ in range(2):
@@ -980,14 +980,14 @@ class TestCRS(unittest.TestCase):
 				'con' : 'AnyValue',
 			}}
 			r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
-			self.assertEqual(rsc, RC.created, self.sub1)
+			self.assertEqual(rsc, RC.CREATED, self.sub1)
 			r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
-			self.assertEqual(rsc, RC.created, self.sub1)
+			self.assertEqual(rsc, RC.CREATED, self.sub1)
 			testSleep(crsTimeWindowSize + 1.0)
 		
 		# Check that the <crs> is not present anymore
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
-		self.assertEqual(rsc, RC.notFound, TestCRS.crs)
+		self.assertEqual(rsc, RC.NOT_FOUND, TestCRS.crs)
 
 
 	#########################################################################
@@ -1014,12 +1014,12 @@ class TestCRS(unittest.TestCase):
 					'su': TestCRS.originator
 				}}
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
-		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
 		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/su'), TestCRS.originator)
 
 		clearLastNotification()
 		r, rsc = DELETE(crsURL, TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 		notification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(notification, 'm2m:sgn/sud'))
 

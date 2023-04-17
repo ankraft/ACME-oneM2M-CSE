@@ -89,20 +89,20 @@ class TestMisc(unittest.TestCase):
 	def test_checkHTTPRETWrong(self) -> None:
 		"""	Check Request Expiration Timeout in request (past date) -> Fail"""
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getResourceDate(-10)}) # request expiration in 10 seconds
-		self.assertEqual(rsc, RC.requestTimeout)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT)
 
 
 	def test_checkHTTPRETRelativeWrong(self) -> None:
 		"""	Check Request Expiration Timeout in request (relative, past date) -> Fail"""
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : '-10000'}) # request expiration in 10 seconds
-		self.assertEqual(rsc, RC.requestTimeout)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRVIWrongInRequest(self) -> None:
 		"""	Check Wrong RVI version parameter in request -> Fail"""
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRVI : '1'})
-		self.assertEqual(rsc, RC.releaseVersionNotSupported)
+		self.assertEqual(rsc, RC.RELEASE_VERSION_NOT_SUPPORTED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -112,7 +112,7 @@ class TestMisc(unittest.TestCase):
 					'rn' : 'foo',
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)	# type: ignore [arg-type]
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -120,7 +120,7 @@ class TestMisc(unittest.TestCase):
 		"""	Create with empty content -> Fail """
 		dct = 	None
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.AE, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -128,7 +128,7 @@ class TestMisc(unittest.TestCase):
 		"""	Update with empty content -> Fail """
 		dct = 	None
 		r, rsc = UPDATE(cseURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -138,7 +138,7 @@ class TestMisc(unittest.TestCase):
 					'rn' : 'foo',
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', dct)	# type: ignore # Ignore type of type
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -148,7 +148,7 @@ class TestMisc(unittest.TestCase):
 					'rn' : 'foo',
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -156,7 +156,7 @@ class TestMisc(unittest.TestCase):
 	def test_checkHTTPmissingOriginator(self) -> None:
 		"""	Check missing originator in request"""
 		_, rsc = RETRIEVE(cseURL, None, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -187,7 +187,7 @@ class TestMisc(unittest.TestCase):
 					'poa': [ NOTIFICATIONSERVER ]
 				}}
 		ae, rsc = CREATE(cseURL, 'Crvi', T.AE, dct)
-		self.assertEqual(rsc, RC.created, ae)
+		self.assertEqual(rsc, RC.CREATED, ae)
 
 		# Send a notification to the AE. Content is not important here
 		dct = 	{	'm2m:sgn' : {
@@ -207,7 +207,7 @@ class TestMisc(unittest.TestCase):
 
 		# Remove AE
 		r, rsc = DELETE(aeURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -221,7 +221,7 @@ class TestMisc(unittest.TestCase):
 					'lbl': [ 'aLabel', 23 ]
 				}}
 		ae, rsc = CREATE(cseURL, 'Crvi', T.AE, dct)
-		self.assertEqual(rsc, RC.badRequest, ae)
+		self.assertEqual(rsc, RC.BAD_REQUEST, ae)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -230,13 +230,13 @@ class TestMisc(unittest.TestCase):
 		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
 				}}
 		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
-		self.assertEqual(rsc, RC.created, cnt)
+		self.assertEqual(rsc, RC.CREATED, cnt)
 		rn = findXPath(cnt, 'm2m:cnt/rn')
 		url = f'{CSEURL}{CSERN}/{rn}'
 		cnt2, rsc = RETRIEVE(url, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK, cnt2)
 		r, rsc = DELETE(url, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -247,13 +247,13 @@ class TestMisc(unittest.TestCase):
 				}}
 
 		sub, rsc = CREATE(cseURL, ORIGINATOR, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, sub)
+		self.assertEqual(rsc, RC.CREATED, sub)
 		rn = findXPath(sub, 'm2m:sub/rn')
 		url = f'{CSEURL}{CSERN}/{rn}'
 		sub2, rsc = RETRIEVE(url, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK, sub2)
 		r, rsc = DELETE(url, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -268,11 +268,11 @@ class TestMisc(unittest.TestCase):
 				}}
 		# Space in Content-Type header field
 		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Content-Type' : 'application/json;       ty=2'})
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 		# delete it again
 		r, rsc = DELETE(f'{CSEURL}{CSERN}/{aeRN}', ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	#
@@ -300,21 +300,21 @@ class TestMisc(unittest.TestCase):
 	def test_partialDeleteCSEBaseFail(self) -> None:
 		""" Partial DELETE of CSEBase with single attribute in atrl argument -> Fail"""
 		r, rsc = DELETE(f'{cseURL}?atrl=rn', ORIGINATOR)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_partialRetrieveCSEBaseWrongRcnFail(self) -> None:
 		""" Partial RETRIEVE of CSEBase with single attribute in atrl argument and wrong RCN -> Fail"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn&rcn=2', ORIGINATOR)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_partialRetrieveCSEBaseWrongAttributeFail(self) -> None:
 		""" Partial RETRIEVE of CSEBase with single unsupported attribute in atrl argument (http only) -> Fail"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=mni', ORIGINATOR)	# try to get mni from CSEBase
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 

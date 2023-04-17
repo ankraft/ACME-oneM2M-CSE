@@ -63,7 +63,7 @@ dispatcher:Dispatcher							= None
 event:EventManager								= None
 """	Runtime instance of the `EventManager`. """
 
-group:GroupManager								= None
+groupResource:GroupManager								= None
 """	Runtime instance of the `GroupManager`. """
 
 httpServer:HttpServer							= None
@@ -184,7 +184,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
+	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
@@ -264,7 +264,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	httpServer = HttpServer()				# Initialize the HTTP server
 	mqttClient = MQTTClient()				# Initialize the MQTT client
 	notification = NotificationManager()	# Initialize the notification manager
-	group = GroupManager()					# Initialize the group manager
+	groupResource = GroupManager()					# Initialize the group manager
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
@@ -354,7 +354,7 @@ def _shutdown() -> None:
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
-	group  and group.shutdown()
+	groupResource  and groupResource.shutdown()
 	notification  and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()

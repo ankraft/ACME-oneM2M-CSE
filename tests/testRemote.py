@@ -109,9 +109,9 @@ class TestRemote(unittest.TestCase):
 			'dcse': [],
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.originatorHasNoPrivilege:
+		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -129,9 +129,9 @@ class TestRemote(unittest.TestCase):
 			'dcse': [],
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.originatorHasNoPrivilege:
+		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -149,12 +149,12 @@ class TestRemote(unittest.TestCase):
 			'dcse': [],
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.originatorHasNoPrivilege:
+		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.created, r)	# actually, it is overwritten by the CSE
+		self.assertEqual(rsc, RC.CREATED, r)	# actually, it is overwritten by the CSE
 
 		_, rsc = DELETE(csrURL, csrOriginator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createCSRnoCsi(self) -> None:
@@ -170,12 +170,12 @@ class TestRemote(unittest.TestCase):
 			'dcse': [],
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.originatorHasNoPrivilege:
+		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print('\n[r]Please add "id-nocsi" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		
 		_, rsc = DELETE(csrURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -190,7 +190,7 @@ class TestRemote(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, 'Ctest', T.AE, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		dct = { 'm2m:csr' : {
 			'rn': csrRN,
@@ -203,12 +203,12 @@ class TestRemote(unittest.TestCase):
 			'dcse': [],
 		}}
 		r, rsc = CREATE(cseURL, 'Ctest', T.CSR, dct)
-		if rsc == RC.originatorHasNoPrivilege:
+		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print('\n[r]Please add "Ctest" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.operationNotAllowed, r)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
 
 		_, rsc = DELETE(aeURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 

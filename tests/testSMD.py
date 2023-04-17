@@ -90,7 +90,7 @@ class TestSMD(unittest.TestCase):
 					'poa' : [ NOTIFICATIONSERVER ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		testCaseEnd('Setup TestCRS')
@@ -127,7 +127,7 @@ class TestSMD(unittest.TestCase):
 					'dcrp' : 1,
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -139,7 +139,7 @@ class TestSMD(unittest.TestCase):
 					'dsp' : 'wrong',
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	#########################################################################
@@ -156,7 +156,7 @@ class TestSMD(unittest.TestCase):
 					'dsp' : rdfxml_1_B64,
 				}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.SMD, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		# TODO optional self.assertIsNotNone(findXPath(r, 'm2m:smd/svd'))
 		# TODO optuional self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
 
@@ -165,7 +165,7 @@ class TestSMD(unittest.TestCase):
 	def test_deleteSMD(self) -> None:
 		"""	DELETE <SMD>"""
 		r, rsc = DELETE(smdURL, TestSMD.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -184,7 +184,7 @@ class TestSMD(unittest.TestCase):
 			},
 		}}
 		r, rsc = CREATE(aeURL, TestSMD.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# Try to create SMD under ACP
 		dct = 	{ 'm2m:smd' : { 
@@ -193,11 +193,11 @@ class TestSMD(unittest.TestCase):
 					#'dsp' : 'Y29ycmVjdA==',
 				}}
 		r, rsc = CREATE(f'{aeURL}/{acpRN}', TestSMD.originator, T.SMD, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType, r)
+		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE, r)
 
 		# Delete ACP
 		r, rsc = DELETE(f'{aeURL}/{acpRN}', TestSMD.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	#########################################################################
@@ -213,7 +213,7 @@ class TestSMD(unittest.TestCase):
 					'dsp' : 'Y29ycmVjdA==',
 				}}
 		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -223,7 +223,7 @@ class TestSMD(unittest.TestCase):
 					'vlde' : True,
 				}}
 		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
 		self.assertIsInstance(findXPath(r, 'm2m:smd/vlde'), bool)
 		self.assertTrue(findXPath(r, 'm2m:smd/vlde'))
@@ -236,7 +236,7 @@ class TestSMD(unittest.TestCase):
 					'vlde' : False,
 				}}
 		r, rsc = UPDATE(smdURL, TestSMD.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:smd/vlde'))
 		self.assertIsInstance(findXPath(r, 'm2m:smd/vlde'), bool)
 		self.assertFalse(findXPath(r, 'm2m:smd/vlde'))
@@ -252,28 +252,28 @@ class TestSMD(unittest.TestCase):
 	def test_semanticQueryOnlyRCNFail(self) -> None:
 		"""	Semantic query with only RCN -> Fail"""
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={int(RCN.semanticContent)}', TestSMD.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryOnlySQIFail(self) -> None:
 		"""	Semantic query with only SQI -> Fail"""
 		r, rsc = RETRIEVE(f'{aeURL}?sqi=true', TestSMD.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryOnlySMFFail(self) -> None:
 		"""	Semantic query with only SMF -> Fail"""
 		r, rsc = RETRIEVE(f'{aeURL}?smf={query_query_URL}', TestSMD.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_semanticQueryAsDiscoveryFail(self) -> None:
 		"""	Semantic query as Discovery -> Fail"""
 		r, rsc = RETRIEVE(f'{aeURL}?fu=1&sqi=true&rcn={int(RCN.semanticContent)}&smf={query_query_URL}', TestSMD.originator)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

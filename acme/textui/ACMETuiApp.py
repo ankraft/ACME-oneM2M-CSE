@@ -51,6 +51,7 @@ class ACMETuiApp(App):
 	def __init__(self, textUI:TextUI.TextUI):
 		super().__init__()
 		self.textUI = textUI	# Keep backward link
+		self.quitReason = ACMETuiQuitReason.undefined
 
 
 	def compose(self) -> ComposeResult:

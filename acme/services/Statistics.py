@@ -16,11 +16,11 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Types import CSEType, ResourceTypes
-from ..etc.Utils import getCSE
 from ..etc.DateUtils import utcTime, toISO8601Date
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
+from ..resources.CSEBase import getCSE
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..services.Logging import Logging as L
 
@@ -300,7 +300,7 @@ skinparam rectangle {
 		# Build Resource Tree
 		result += 'note right of CSE\n'
 		result += '**Resource Tree**\n\n'
-		cse = getCSE().resource
+		cse = getCSE()
 		result += f'{cse.rn}\n'
 		result += getChildren(cse, 0)
 		result += 'end note\n'

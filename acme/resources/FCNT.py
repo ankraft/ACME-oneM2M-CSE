@@ -10,7 +10,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, BAD_REQUEST
 from ..etc.Utils import getAttributeSize
 from ..etc.DateUtils import getResourceDate
 from ..services import CSE
@@ -90,22 +91,18 @@ class FCNT(AnnounceableResource):
 		self.ignoreAttributes = self.internalAttributes + [ a for a in self._attributes.keys() ]
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 
 		# Add <latest>/<oldest> child resources only when necessary
 		if self.hasInstances:	# Set in validate() before
 			# register latest and oldest virtual resources
-			if not (res := self._addLaOl()).status:
-				return res
-
-		return Result.successResult()
+			self._addLaOl()
 
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		
 		# Increment stateTag before all because it is needed later to name
 		# a FCI, but only when any custom attributes is updated
@@ -114,37 +111,28 @@ class FCNT(AnnounceableResource):
 				self.setAttribute('st', self.st + 1)
 				break
 
-		if not (res := super().update(dct, originator)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 		
 		# Remove <latest>/<oldest> child resources when necessary (mni etc set to null)
 		hasFCI = self[self._hasFCI]
 		if self._hasInstances and not hasFCI:
-			if not (res := self._addLaOl()).status:
-				return res
+			self._addLaOl()
 		elif not self._hasInstances and hasFCI:
-			if not (res := self._removeLaOl()).status:
-				return res
-			if not (res := self._removeFCIs()).status:
-				return res
+			self._removeLaOl()
+			self._removeFCIs()
 			self.setAttribute('cni', None)
 			self.setAttribute('cbs', None)
 		
-		return Result.successResult()
-
-
 
 	# This method is NOT called when adding FCIN!!
 	# Because FCInn is added by the FCNT itself.
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
-		if not (res := super().childWillBeAdded(childResource, originator)).status:
-			return res
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
+		super().childWillBeAdded(childResource, originator)
 
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
-		return Result.successResult()
+			raise OPERATION_NOT_ALLOWED('resource types "latest" or "oldest" cannot be added')
 
 
 	# Handle the removal of a FCIN. 
@@ -158,19 +146,17 @@ class FCNT(AnnounceableResource):
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, create, dct, parentResource)
 		
 		# Validate containerDefinition
 		if create:
 			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe))[0]:
 				if t[0] != self.cnd:
-					return Result.errorResult(dbg = L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}'))
+					raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}'))
 
 		# Validate the child resources
 		self._validateChildren(originator, dct = dct)
-		return Result.successResult()
 
 
 	def _validateChildren(self, originator:str, 
@@ -273,7 +259,7 @@ class FCNT(AnnounceableResource):
 			if attr == 'at':
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = ResourceTypes.FCI).resource
+		resource = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = ResourceTypes.FCI)
 		CSE.dispatcher.createLocalResource(resource, self, originator = originator)
 		resource.setAttribute('cs', self.cs)
 		resource.setAttribute('org', originator)
@@ -291,7 +277,7 @@ class FCNT(AnnounceableResource):
 		resource.dbUpdate()	# store
 
 
-	def _addLaOl(self) -> Result:
+	def _addLaOl(self) -> None:
 		"""	Add <latest> and <oldest> virtual child resources.
 		"""
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -299,48 +285,42 @@ class FCNT(AnnounceableResource):
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_LA).resource	# rn is assigned by resource itself
-		# if not (res := CSE.dispatcher.createResource(resource)).resource:
+											ty = ResourceTypes.FCNT_LA)	# rn is assigned by resource itself
+		# if not (res := CSE.dispatcher.createResource(resource)):
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createLocalResource(resource, self)).status:
-			return res
+		CSE.dispatcher.createLocalResource(resource, self)
 
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_OL).resource	# rn is assigned by resource itself
-		# if not (res := CSE.dispatcher.createResource(resource)).resource:
+											ty = ResourceTypes.FCNT_OL)	# rn is assigned by resource itself
+		# if not (res := CSE.dispatcher.createResource(resource)):
 		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
-		if not (res := CSE.dispatcher.createLocalResource(resource, self)).status:
-			return res
+		CSE.dispatcher.createLocalResource(resource, self)
 		
 		self.setAttribute(self._hasFCI, True)
-		return Result.successResult()
 
 
-	def _removeLaOl(self) -> Result:
+	def _removeLaOl(self) -> None:
 		"""	Remove <latest> and <oldest> virtual child resources.
 		"""
 		L.isDebug and L.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
 
 		# remove latest
-		if len(res := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
+		if len(chs := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
+			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 		# remove oldest
-		if len(res := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteLocalResource(res[0])	# ignore errors
+		if len(chs := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
+			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 	
 		self.setAttribute(self._hasFCI, False)
-		return Result.successResult()
 
 
-	def _removeFCIs(self) -> Result:
+	def _removeFCIs(self) -> None:
 		"""	Remove the FCI childResources.
 		"""
 		L.isDebug and L.logDebug(f'Removing FCI child resources for: {self.ri}')
-		rs = CSE.dispatcher.directChildResources(self.ri, ty = ResourceTypes.FCI)
-		for r in rs:
+		chs = CSE.dispatcher.directChildResources(self.ri, ty = ResourceTypes.FCI)
+		for ch in chs:
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
-			if not (res := CSE.dispatcher.deleteLocalResource(r, parentResource = self)).status:
-				return res
-		return Result.successResult()
+			CSE.dispatcher.deleteLocalResource(ch, parentResource = self)

@@ -80,7 +80,7 @@ class NOD(AnnounceableResource):
 
 	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
 		""" Remove NOD.ri from AE node link. """
-		if aeResource := CSE.dispatcher.retrieveResource(aeRI).resource:
+		if aeResource := CSE.dispatcher.retrieveResource(aeRI):
 			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
 				aeResource.dbUpdate()

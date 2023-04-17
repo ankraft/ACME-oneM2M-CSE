@@ -444,7 +444,7 @@ def riFromCSI(csi:str) -> Optional[str]:
 		Return:
 			The resource ID of the resource with the *csi*, or None in case of an error.
 	 """
-	if not (res := resourceFromCSI(csi).resource):
+	if not (res := resourceFromCSI(csi)):
 		return None
 	return cast(str, res.ri)
 
@@ -717,26 +717,16 @@ def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
 			 if k in attributesToInclude }
 			 
 
-def getCSE() -> Result:
-	"""	Return the <CSEBase> resource.
-
-		Return:
-			<CSEBase> resource.
-	"""
-	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
-	return resourceFromCSI(CSE.cseCsi)
-
-
-def resourceFromCSI(csi:str) -> Result:
+def resourceFromCSI(csi:str) -> Any:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 
 		Args:
 			csi: *CSE-ID* of the <CSEBase> resource to retrieve.
+		
 		Return:
 			<CSEBase> resource.
 	"""
 	return CSE.storage.retrieveResource(csi = csi)
-
 
 
 def getAttributeSize(attribute:Any) -> int:
@@ -836,7 +826,7 @@ def exceptionToResult(e:Exception) -> Result:
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	return Result(rsc = ResponseStatusCode.internalServerError, dbg = f'encountered exception: {tbs}')
+	return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'encountered exception: {tbs}')
 
 
 

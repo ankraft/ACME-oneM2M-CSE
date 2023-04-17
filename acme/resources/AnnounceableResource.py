@@ -11,8 +11,9 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes, Result, JSON, AttributePolicyDict
+from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
 from ..etc.Types import Announced
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -32,15 +33,13 @@ class AnnounceableResource(Resource):
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> None:
 		# L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+		super().activate(parentResource, originator)
 
 		# Check announcements
 		if self.at:
-			return CSE.announce.announceResource(self)
-		return res
+			CSE.announce.announceResource(self)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -51,12 +50,13 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
+	def update(self, dct:JSON = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
-		if not (res := super().update(dct = dct, originator = originator)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 
 		# TODO handle update from announced resource. Check originator???
 
@@ -66,24 +66,21 @@ class AnnounceableResource(Resource):
 		else:
 			if self._origAT:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
-		return res
 
 
 	def validate(self, originator:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+		super().validate(originator, create, dct, parentResource)
 
 		announceableAttributes = []
 		if self.aa:
 			# Check whether all the attributes in announcedAttributes are actually resource attributes
 			for aa in self.aa:
 				if not aa in self._attributes:
-					L.logDebug(dbg := f'Non-resource attribute in aa: {aa}')
-					return Result.errorResult(dbg = dbg)
+					raise BAD_REQUEST(L.logDebug(f'Non-resource attribute in aa: {aa}'))
 
 			# deep-copy the announcedAttributes
 			announceableAttributes = deepcopy(self.aa)
@@ -100,7 +97,6 @@ class AnnounceableResource(Resource):
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-		return Result.successResult()
 
 
 	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:

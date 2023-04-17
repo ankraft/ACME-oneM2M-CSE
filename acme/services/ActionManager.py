@@ -13,7 +13,8 @@ from typing import Optional, Any, cast
 
 import sys, copy
 
-from ..etc.Types import Result, EvalMode, EvalCriteriaOperator, JSON, CSERequest, ResponseStatusCode
+from ..etc.Types import Result, EvalMode, EvalCriteriaOperator, JSON, CSERequest
+from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR
 from ..helpers.TextTools import setXPath
 from ..etc.DateUtils import utcTime
 from ..etc.RequestUtils import responseFromResult
@@ -110,31 +111,45 @@ class ActionManager(object):
 				L.isDebug and L.logDebug(f'Action: conditions {ri} evaluate to True')
 
 				# retrieve the real action resource
-				if not (res := CSE.dispatcher.retrieveLocalResource(ri)).status:
-					L.logErr(res.dbg)
-					continue
-				actr = cast(ACTR, res.resource)
+				try:
+					actr = cast(ACTR, CSE.dispatcher.retrieveLocalResource(ri))
+				except ResponseException as e:
+					L.logErr(e.dbg)
+					raise e
 
 				# Assign a new to (ie. the objectRecourceID)
 				apv = copy.deepcopy(actr.apv)
 				setXPath(apv, 'to', actr.orc)
 
 				# build request
-				if not (req := CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))).status:
-					L.logWarn(f'Error handling request: {req.request.originalRequest} : {req.dbg}')
+
+				# TODO exception
+				try:
+					resReq = CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))
+				except ResponseException as e:
+					L.logWarn(f'Error handling request: {request.originalRequest} : {e.dbg}')
 					continue
 
 				# Send request
-				L.isDebug and L.logDebug(f'Sending request: {req.request.originalRequest}')
-				if not (res := CSE.request.handleRequest(req.request)).status:
-					L.logWarn(f'Error processing request: {res.dbg}')
+				L.isDebug and L.logDebug(f'Sending request: {resReq.originalRequest}')
+				try:
+					res = CSE.request.handleRequest(resReq)
+
+					# TODO handleRequest handling
+
+
+					
+				except ResponseException as e:
+					L.logWarn(f'Error processing request: {e.dbg}')
 					continue
 
 				# Store response in the <actr>
 				res.request = request
 				actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
-				if not (res := actr.dbUpdate(False)).status:
-					L.logWarn(f'Error updating <actr>: {res.dbg}')
+				try:
+					actr.dbUpdate(False)
+				except ResponseException as e:
+					L.logWarn(f'Error updating <actr>: {e.dbg}')
 					continue
 
 				# Update according to evalMode
@@ -190,32 +205,29 @@ class ActionManager(object):
 		return False
 
 
-	def scheduleAction(self, action:ACTR) -> Result:
+	def scheduleAction(self, action:ACTR) -> None:
 		evm = action.evm
 		if evm == EvalMode.off:
 			L.isDebug and L.logDebug(f'evm: off for action: {action.ri} - Action inactive.')
 			CSE.storage.removeAction(action.ri)	# just remove, ignore result
-			return Result.successResult()
+			return
 		if evm == EvalMode.once:
 			L.isDebug and L.logDebug(f'evm: once for action: {action.ri}.')
 			CSE.storage.updateAction(action, 0, 0)
-			return Result.successResult()
+			return
 		if evm == EvalMode.periodic:
 			ecp = action.ecp if action.ecp else self.ecpPeriodicDefault
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
 			CSE.storage.updateAction(action, utcTime(), 0)
-			return Result.successResult()
+			return
 		if evm == EvalMode.continous:
 			ecp = action.ecp if action.ecp else self.ecpContinuousDefault
 			L.isDebug and L.logDebug(f'evm: continuous for action: {action.ri}, counter: {ecp}')
 			CSE.storage.updateAction(action, 0, ecp)
-			return Result.successResult()
+			return
+		raise INTERNAL_SERVER_ERROR(f'unknown EvalMode: {evm}. This should not happen.')
+		
 
-		return Result.errorResult(rsc = ResponseStatusCode.internalServerError, 
-								  dbg = f'Unknown EvalMode: {evm}. This should not happen.')
 
-
-	def unscheduleAction(self, action:ACTR) -> Result:
+	def unscheduleAction(self, action:ACTR) -> None:
 		CSE.storage.removeAction(action.ri)
-
-		return Result.successResult()
