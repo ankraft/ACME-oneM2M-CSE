@@ -217,7 +217,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 				'default': 1,
 				'choices': lambda _: [ 'Development   - Enable development, testing, and debugging support', 
 									   'Introduction  - Introduction to oneM2M (install extra demo resources) UNDER CONSTRUCTION',
-									   'Demonstration - Disable debugging features'],
+									   'Demonstration - Disable development features'],
 				'transformer': lambda result: result.split()[0],
 				'filter': lambda result: result.split()[0],
 				'name': 'cseEnvironment',
@@ -253,7 +253,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 		# Header for the configuration
 		# Split it into a header and configuration. 
 		# Also easier to print with rich and the [...]'s
-		cnfHeader = [
+		cnfHeader = (
 				f'; {configFile}',
 				';',
 				'; Simplified configuration file for the [ACME] CSE',
@@ -265,9 +265,9 @@ def buildUserConfigFile(configFile:str) -> bool:
 				';',
 				'',
 				'',
-		]
+		)
 
-		cnfExtra = [
+		cnfExtra = (
 				'',
 				'',
 				# Add basic registration configuration
@@ -275,10 +275,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 				'allowedCSROriginators=id-in,id-mn,id-asn'
 				'',
 				'',
-				# Add console config
-				'[cse.console]',
-				f'startWithTUI={"false" if cseEnvironment in ("Development") else "true"}'
-		]
+		)
 
 
 		# Construct the configuration
@@ -286,13 +283,19 @@ def buildUserConfigFile(configFile:str) -> bool:
 
 		# add more configurations for development
 		if cseEnvironment in ('Development'):	
-			jcnf += '\n\n'\
-					'[cse.operation.requests]\n'\
-					'enable=true\n'\
-					'\n\n'\
-					'[server.http]\n'\
-					'enableUpperTesterEndpoint=true\n'\
-					'enableStructureEndpoint=true\n'
+			jcnf += '\n'.join((
+				'',
+				'',
+				'[cse.textui]',
+				'startWithTUI=false',
+				'',
+				'[cse.operation.requests]',
+				'enable=true',
+				'',
+				'[server.http]',
+				'enableUpperTesterEndpoint=true',
+				'enableStructureEndpoint=true',
+			))
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')
