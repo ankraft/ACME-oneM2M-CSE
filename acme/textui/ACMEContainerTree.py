@@ -32,6 +32,7 @@ class ACMEResourceTree(TextualTree):
 
 	def _update_tree(self) -> None:
 		self.clear()
+		self.auto_expand = False
 		for r in self._retrieve_children(CSE.cseRi):
 			self.root.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
 	
@@ -74,7 +75,7 @@ class ACMEContainerTree(Container):
 
 	resourceTree:ACMEResourceTree
 
-	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh Resources') 
+	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh') 
 				
 				# TODO copy resource
 				# TODO delete

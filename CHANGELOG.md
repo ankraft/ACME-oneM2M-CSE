@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Improved validation of complex types and mandatory attributes.
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
-- [CSE] Refactored the internal error and failure handling to exceptions (Python's EAFP).
+- [CSE] Refactored the internal error and failure handling to using exceptions (Python's EAFP).
 - [CSE] Added recording of requests to support request debugging.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
