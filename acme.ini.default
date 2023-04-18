@@ -95,18 +95,31 @@ fullAccessAdmin=True
 ;	Settings for CSE operation
 ;
 
-[cse.operation]
+[cse.operation.jobs]
 ; Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).
 ; Default: 3.0
-jobBalanceTarget=3.0
+balanceTarget=3.0
 ; Thread Pool Management: Number of get / create requests for a new thread before performing a balance check.
 ; A latency of 0 disables the thread pool balancing.
 ; Default: 1000
-jobBalanceLatency=1000
+balanceLatency=1000
 ; Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.
 ; Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.
 ; Default: 2.0
-jobBalanceReduceFactor=2.0
+balanceReduceFactor=2.0
+
+
+;
+;	Settings for CSE requests recording
+;
+
+[cse.operation.requests]
+; Enable request reqcording.
+; Default: False
+enable=false
+; Max number requests to record. Oldest requests will be deleted when this threshold will be reached.
+; Default: 1000
+size=1000
 
 
 ;

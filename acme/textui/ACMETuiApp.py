@@ -66,6 +66,7 @@ class ACMETuiApp(App):
 		self.containerConfigs = ACMEContainerConfigurations(self)
 		self.containerInfo = ACMEContainerInfo(self)
 		self.containerAbout = ACMEContainerAbout()
+		self.footer = Footer()
 
 
 		# self.logPanel = TextLog(id = 'log')
@@ -89,7 +90,7 @@ class ACMETuiApp(App):
 			yield self.containerAbout
 			yield Container(id = 'empty')
 
-		yield Footer()
+		yield self.footer
 
 
 	async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:

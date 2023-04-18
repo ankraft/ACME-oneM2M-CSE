@@ -69,9 +69,7 @@ class Storage(object):
 		"""
 
 		# create data directory
-		self.inMemory 	= Configuration.get('db.inMemory')
-		self.dbPath 	= Configuration.get('db.path')
-		self.dbReset 	= Configuration.get('db.resetOnStartup') 
+		self._assignConfig()
 
 		if not self.inMemory:
 			if self.dbPath:
@@ -110,6 +108,14 @@ class Storage(object):
 		self.db = None
 		L.isInfo and L.log('Storage shut down')
 		return True
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign default configurations.
+		"""
+		self.inMemory 	= Configuration.get('db.inMemory')
+		self.dbPath 	= Configuration.get('db.path')
+		self.dbReset 	= Configuration.get('db.resetOnStartup') 
 
 
 	def purge(self) -> None:
@@ -562,6 +568,7 @@ class TinyDBBinding(object):
 		'path',
 		'cacheSize',
 		'writeDelay',
+		'maxRequests',
 		
 		'lockResources',
 		'lockIdentifiers',
@@ -609,8 +616,7 @@ class TinyDBBinding(object):
 
 	def __init__(self, path:str, postfix:str) -> None:
 		self.path = path
-		self.cacheSize = Configuration.get('db.cacheSize')
-		self.writeDelay = Configuration.get('db.writeDelay')
+		self._assignConfig()
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
@@ -698,6 +704,14 @@ class TinyDBBinding(object):
 		self.batchNotificationQuery 	= Query()
 		self.actionsQuery				= Query()
 		self.requestsQuery				= Query()
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign default configurations.
+		"""
+		self.cacheSize = Configuration.get('db.cacheSize')
+		self.writeDelay = Configuration.get('db.writeDelay')
+		self.maxRequests = Configuration.get('cse.operation.requests.size')
 
 
 	def closeDB(self) -> None:
@@ -1139,6 +1153,13 @@ class TinyDBBinding(object):
 			"""
 		with self.lockRequests:
 			try:
+				# First check whether we reached the max number of allowed requests.
+				# If yes, then remove the oldest.
+				if (_a := self.tabRequests.all()):
+					if len(_a) >= self.maxRequests:
+						self.tabRequests.remove(doc_ids = [_a[0].doc_id])
+				
+				# Adding a request
 				ts = utcTime()
 				op = request['op'] if 'op' in request else Operation.NA
 				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
@@ -1152,7 +1173,7 @@ class TinyDBBinding(object):
 							  'rsc': rsc,
 							  'req': request,
 							  'rsp': response
-							 }, ts))	# type:ignore[arg-type]
+							 }, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
 			except Exception as e:
 				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
 				return False

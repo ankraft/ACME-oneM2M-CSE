@@ -66,6 +66,7 @@ class RequestManager(object):
 		'requestExpirationDelta',
 		'maxExpirationDelta',
 		'sendToFromInResponses',
+		'enableRequestRecording',
 
 		'_eventRequestReceived',
 		'_eventRequestReceived',
@@ -157,6 +158,7 @@ class RequestManager(object):
 		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
 		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
 		self.sendToFromInResponses	= Configuration.get('cse.sendToFromInResponses')
+		self.enableRequestRecording	= Configuration.get('cse.operation.requests.enable')
 
 
 	def configUpdate(self, name:str, 
@@ -169,7 +171,7 @@ class RequestManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta', 'cse.maxExpirationDelta']:
+		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta', 'cse.maxExpirationDelta', 'cse.operation.requests.enable']:
 			return
 
 		# Configuration values
@@ -1155,6 +1157,19 @@ class RequestManager(object):
 			if isinstance(content, CSERequest):
 				content = content.pc
 
+			# Build request
+			request = CSERequest(op = Operation.NOTIFY,
+								 to = url,
+								 ty = ty,
+								 originator = requestOriginator,
+								 rvi = rvi,
+								 ct = ct,
+								 ec = parameters.ec,
+								 pc = content)
+			
+
+			# CONTINUE
+
 			if isHttpUrl(url):
 				self._eventHttpSendNotify()
 				return CSE.httpServer.sendHttpRequest(Operation.NOTIFY,
@@ -1731,7 +1746,11 @@ class RequestManager(object):
 
 	def recordRequest(self, request:CSERequest, result:Result) -> None:
 
-		# TODO configurable on/off
+		# Recoding enabled or disabled?
+		if not self.enableRequestRecording:
+			return
+		
+		# Construct and store request & response
 		if result.resource and isinstance(result.resource, Resource):
 			pc = result.resource.asDict()
 		elif isinstance(result.resource, dict):

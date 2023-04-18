@@ -55,7 +55,9 @@ class ACMEListItem(ListItem):
 class ACMEViewRequests(Vertical):
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh Requests'),
-				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D')]
+				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
+				  Binding('e', 'enable_requests', 'Enable Request Recording')
+				]
 
 
 	def __init__(self) -> None:
@@ -91,9 +93,11 @@ class ACMEViewRequests(Vertical):
 	def currentRI(self, ri:str) -> None:
 		self._currentRI = ri
 
-		# Change the "delete" binding accordingly (all or one)
+		# Change some bindings
 		self._bindings.bind('D', 'delete_requests', 'Delete Requests' if ri else 'Delete ALL Requests', key_display = 'SHIFT+D')
+		self.updateEnableRequestsBinding()
 
+	
 							
 	def compose(self) -> ComposeResult:
 		yield self.requestListHeader
@@ -125,29 +129,50 @@ class ACMEViewRequests(Vertical):
 
 	def action_delete_requests(self) -> None:
 		self.deleteRequests()
+	
+
+	def action_enable_requests(self) -> None:
+		CSE.request.enableRequestRecording = True
+		self.updateEnableRequestsBinding()
+
+
+	def action_disable_requests(self) -> None:
+		CSE.request.enableRequestRecording = False
+		self.updateEnableRequestsBinding()
+
+
+	def updateEnableRequestsBinding(self) -> None:
+		CSE.textUI.tuiApp.bell()
+
+		if CSE.request.enableRequestRecording:
+			self._bindings.bind('e', 'disable_requests', 'Disable Request Recording')
+		else:
+			self._bindings.bind('e', 'enable_requests', 'Enable Request Recording')
+		
+		CSE.textUI.tuiApp.footer.refresh(repaint=True)
 
 
 	def updateRequests(self) -> None:
 			# TODO plantuml?
 
-			def rscFmt(rsc:int) -> str:
-				_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
-				_c = 'green1' if isSuccessRSC(_rsc) else 'red'
-				return f'[{_c}]{_rsc.name}[/{_c}]'
+		def rscFmt(rsc:int) -> str:
+			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
+			_c = 'green1' if isSuccessRSC(_rsc) else 'red'
+			return f'[{_c}]{_rsc.name}[/{_c}]'
 
-			self.requestList.clear()
-			self.requestListRequest.update()
-			self.requestListResponse.update()
+		self.requestList.clear()
+		self.requestListRequest.update()
+		self.requestListResponse.update()
 
-			self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI))
+		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI))
 
-			for i, r in enumerate(self._currentRequests):
-				_ts = toISO8601Date(r["ts"], readable = True).split('T')
-				self.requestList.append(_l := ACMEListItem(
-					Label(f' {i:4}  -  {_ts[1]}   {str(r["ri"]):25}   {str(r["org"]):25}   {Operation(r["op"]).name:10}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]        [dim]{str(r["srn"])}[/dim]')))
-				_l._data = i
-			if len(self._currentRequests):
-				self.setIndex(0)
+		for i, r in enumerate(self._currentRequests):
+			_ts = toISO8601Date(r["ts"], readable = True).split('T')
+			self.requestList.append(_l := ACMEListItem(
+				Label(f' {i:4}  -  {_ts[1]}   {str(r["ri"]):25}   {str(r["org"]):25}   {Operation(r["op"]).name:10}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]        [dim]{str(r["srn"])}[/dim]')))
+			_l._data = i
+		if len(self._currentRequests):
+			self.setIndex(0)
 	
 	
 	def deleteRequests(self) -> None:

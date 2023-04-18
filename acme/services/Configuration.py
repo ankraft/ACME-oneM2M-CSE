@@ -29,7 +29,8 @@ documentationLinks = {
 	'cse.announcements': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#announcements',
 	'cse.cnt': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_cnt',
 	'cse.console': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#console',
-	'cse.operation': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#operation',
+	'cse.operation.jobs': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#operation_jobs',
+	'cse.operation.requests': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#operation_requests',
 	'cse.registrar': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#registrar',
 	'cse.registration': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#cse_registration',
 	'cse.req': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_req',
@@ -181,12 +182,19 @@ class Configuration(object):
 				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin',			 	fallback = True),
 
 				#
-				#	CSE Operation
+				#	CSE Operation : Jobs
 				#
 
-				'cse.operation.jobBalanceTarget'		: config.getfloat('cse.operation', 'jobBalanceTarget',			 	fallback = 3.0),
-				'cse.operation.jobBalanceLatency'		: config.getint('cse.operation', 'jobBalanceLatency', 				fallback = 1000),
-				'cse.operation.jobBalanceReduceFactor'	: config.getfloat('cse.operation', 'jobBalanceReduceFactor', 		fallback = 2.0),
+				'cse.operation.jobs.balanceTarget'		: config.getfloat('cse.operation.jobs', 'jobBalanceTarget',			fallback = 3.0),
+				'cse.operation.jobs.balanceLatency'		: config.getint('cse.operation.jobs', 'jobBalanceLatency', 			fallback = 1000),
+				'cse.operation.jobs.balanceReduceFactor': config.getfloat('cse.operation.jobs', 'jobBalanceReduceFactor', 	fallback = 2.0),
+
+				#
+				#	CSE Operation : Requests
+				#
+
+				'cse.operation.requests.enable'			: config.getboolean('cse.operation.requests', 'enable',				fallback = False),
+				'cse.operation.requests.size'			: config.getint('cse.operation.requests', 'size', 					fallback = 1000),
 
 				#
 				#	HTTP Server
@@ -510,12 +518,12 @@ class Configuration(object):
 
 
 		# Operation
-		if Configuration._configuration['cse.operation.jobBalanceTarget'] <= 0.0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceTarget[/i] must be > 0.0'
-		if Configuration._configuration['cse.operation.jobBalanceLatency'] < 0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceLatency[/i] must be >= 0'
-		if Configuration._configuration['cse.operation.jobBalanceReduceFactor'] < 1.0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceReduceFactor[/i] must be >= 1.0'
+		if Configuration._configuration['cse.operation.jobs.balanceTarget'] <= 0.0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0'
+		if Configuration._configuration['cse.operation.jobs.balanceLatency'] < 0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0'
+		if Configuration._configuration['cse.operation.jobs.balanceReduceFactor'] < 1.0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0'
 
 
 		#

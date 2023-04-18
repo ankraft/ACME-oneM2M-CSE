@@ -59,7 +59,8 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 [&#91;cse&#93; - General CSE Settings](#general)  
 [&#91;cse.security&#93; - General Security Settings](#security)  
-[&#91;cse.operation&#93; - CSE Operations Settings](#operation)  
+[&#91;cse.operation.jobs&#93; - CSE Operations Settings - Jobs](#operation_jobs)  
+[&#91;cse.operation.requests&#93; - CSE Operations Settings - Requests](#operation_requests)  
 [&#91;server.http&#93; - HTTP Server Settings](#server_http)  
 [&#91;server.http.security&#93; - HTTP Security Settings](#security_http)  
 [&#91;server.http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
@@ -130,15 +131,29 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
-<a name="operation"></a>
+<a name="operation_jobs"></a>
 
-### [cse.operation] - CSE Operations Settings
+### [cse.operation.jobs] - CSE Operations Settings - Jobs
 
-| Keyword                | Description                                                                                                                                                                                                                                     | Configuration Name                   |
-|:-----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
-| jobBalanceTarget       | Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).<br/>Default: 3.0                                                                                                                       | cse.operation.jobBalanceTarget       |
-| jobBalanceLatency      | Thread Pool Management: Number of get / create requests for a new thread before performing a balance check. A latency of 0 disables the thread pool balancing.<br/>Default: 1000                                                                | cse.operation.jobBalanceLatency      |
-| jobBalanceReduceFactor | Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobBalanceReduceFactor |
+| Keyword             | Description                                                                                                                                                                                                                                     | Configuration Name                     |
+|:--------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
+| balanceTarget       | Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).<br/>Default: 3.0                                                                                                                       | cse.operation.jobs.balanceTarget       |
+| balanceLatency      | Thread Pool Management: Number of get / create requests for a new thread before performing a balance check. A latency of 0 disables the thread pool balancing.<br/>Default: 1000                                                                | cse.operation.jobs.balanceLatency      |
+| balanceReduceFactor | Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobs.balanceReduceFactor |
+
+[top](#sections)
+
+
+---
+
+<a name="operation_requests"></a>
+
+### [cse.operation.requests] - CSE Operations Settings - Requests
+
+| Keyword | Description                                                | Configuration Name            |
+|:--------|:-----------------------------------------------------------|:------------------------------|
+| enable  | Enable request recording.<br/>Default: False               | cse.operation.requests.enable |
+| size    | Maximum number of requests to be stored.<br/>Default: 1000 | cse.operation.requests.size   |
 
 [top](#sections)
 

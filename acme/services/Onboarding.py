@@ -33,6 +33,7 @@ _iniValues = {
 		'httpPort': '8080',
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
+		'enableRequests': 'False',
 	},
 	'MN' : { 
 		'cseID': 'id-mn',
@@ -44,6 +45,7 @@ _iniValues = {
 		'httpPort': '8081',
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
+		'enableRequests': 'False',
 		'registrarCseHost': NetworkTools.getIPAddress(),
 		'registrarCsePort': '8080',
 		'registrarCseID': 'id-in',
@@ -60,6 +62,7 @@ _iniValues = {
 		'httpPort': '8082',
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
+		'enableRequests': 'False',
 		'registrarCseHost': '127.0.0.1',
 		'registrarCsePort': '8081',
 		'registrarCseID': 'id-mn',
@@ -284,10 +287,13 @@ def buildUserConfigFile(configFile:str) -> bool:
 		# add more configurations for development
 		if cseEnvironment in ('Development'):	
 			jcnf += '\n\n'\
+					'[cse.operation.requests]\n'\
+					'enable=true\n'\
+					'\n\n'\
 					'[server.http]\n'\
 					'enableUpperTesterEndpoint=true\n'\
 					'enableStructureEndpoint=true\n'
-				
+
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')
 		_jcnf = jcnf.replace("[", "\[")
