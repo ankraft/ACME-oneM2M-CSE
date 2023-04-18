@@ -41,6 +41,7 @@ class ACMEContainerRequests(Container):
 
 	async def onShow(self) -> None:
 		await self.requestsView.onShow()
+		self.requestsView.updateEnableRequestsBinding()
 
 
 
@@ -54,9 +55,9 @@ class ACMEListItem(ListItem):
 
 class ACMEViewRequests(Vertical):
 
-	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh Requests'),
+	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
-				  Binding('e', 'enable_requests', 'Enable Request Recording')
+				  Binding('e', 'enable_requests', '')
 				]
 
 
@@ -97,8 +98,7 @@ class ACMEViewRequests(Vertical):
 		self._bindings.bind('D', 'delete_requests', 'Delete Requests' if ri else 'Delete ALL Requests', key_display = 'SHIFT+D')
 		self.updateEnableRequestsBinding()
 
-	
-							
+			
 	def compose(self) -> ComposeResult:
 		yield self.requestListHeader
 		yield self.requestList
@@ -142,14 +142,16 @@ class ACMEViewRequests(Vertical):
 
 
 	def updateEnableRequestsBinding(self) -> None:
-		CSE.textUI.tuiApp.bell()
+		#CSE.textUI.tuiApp.bell()
 
 		if CSE.request.enableRequestRecording:
-			self._bindings.bind('e', 'disable_requests', 'Disable Request Recording')
+			self._bindings.bind('e', 'disable_requests', 'Record Requests: Enabled')
 		else:
-			self._bindings.bind('e', 'enable_requests', 'Enable Request Recording')
+			self._bindings.bind('e', 'enable_requests', 'Record Requests: Disabled')
 		
-		CSE.textUI.tuiApp.footer.refresh(repaint=True)
+		# HACK: force footer refresh
+		self.app.set_focus(None)
+		self.requestList.focus()
 
 
 	def updateRequests(self) -> None:
