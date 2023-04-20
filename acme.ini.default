@@ -117,9 +117,9 @@ balanceReduceFactor=2.0
 ; Enable request reqcording.
 ; Default: False
 enable=false
-; Max number requests to record. Oldest requests will be deleted when this threshold will be reached.
-; Default: 1000
-size=1000
+; Max number requests to record. Oldest requests will be deleted when this threshold is reached.
+; Default: 200
+size=200
 
 
 ;

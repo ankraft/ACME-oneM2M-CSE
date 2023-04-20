@@ -153,7 +153,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Keyword | Description                                                | Configuration Name            |
 |:--------|:-----------------------------------------------------------|:------------------------------|
 | enable  | Enable request recording.<br/>Default: False               | cse.operation.requests.enable |
-| size    | Maximum number of requests to be stored.<br/>Default: 1000 | cse.operation.requests.size   |
+| size    | Maximum number of requests to be stored. Oldest requests will be deleted when this threshold is reached. Note, that a large number requests might take a moment to be displayed in the console or UIs.<br/>Default: 250 | cse.operation.requests.size   |
 
 [top](#sections)
 
