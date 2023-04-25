@@ -205,7 +205,7 @@ def requestFromResult(inResult:Result,
 	
 	# Event Category
 	if inResult.request.ec:
-		req['ec'] = inResult.request.ec
+		req['ec'] = inResult.request.ec.value
 
 
 	# If the response contains a request (ie. for polling), then add that request to the pc
