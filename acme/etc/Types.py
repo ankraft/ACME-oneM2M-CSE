@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional
 from enum import auto
@@ -339,7 +340,7 @@ class ResourceTypes(ACMEIntEnum):
 	@classmethod
 	def isNotificationEntity(cls, ty:ResourceTypes) -> bool:
 		"""	Test whether a resource type represents an entity that can be a notification target.
-			This is different from any resource, that can be a notification target as well.
+			This is different from any other resource type, that can be a notification target as well.
 		
 			Args:
 				ty: `ResourceTypes` value to test.
@@ -1471,7 +1472,7 @@ class FilterCriteria:
 	"""
 
 	# Result handling
-	fu:FilterUsage = FilterUsage.conditionalRetrieval
+	fu:FilterUsage = None #FilterUsage.conditionalRetrieval
 	""" Filter usage. Default: conditional retrieval. """
 
 	fo:FilterOperation = None
@@ -1575,6 +1576,14 @@ class FilterCriteria:
 			   }
 
 
+	def fillCriteriaAttributes(self) -> dict:
+		return { k:v 
+				 for k, v in self.__dict__.items() 
+				 if v
+			   }
+
+
+
 	def __str__(self) -> str:
 		"""	String representation of the Filter Criteria attributes.
 			
@@ -1626,13 +1635,16 @@ class CSERequest:
 	ty:ResourceTypes = None
 	""" Resource type. """
 
-	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	_drtDefault = DesiredIdentifierResultType.structured
+	drt:DesiredIdentifierResultType	= _drtDefault
 	"""	Desired Indentifier Result Type (default: structured). """
 
-	rcn:ResultContentType = ResultContentType.discoveryResultReferences
+	_rcnDefault = ResultContentType.discoveryResultReferences
+	rcn:ResultContentType = _rcnDefault
 	""" Result Content Type. """
 
-	rt:ResponseType = ResponseType.blockingRequest
+	_rtDefault = ResponseType.blockingRequest
+	rt:ResponseType = _rtDefault
 	""" Response Type (default: blocking request)."""
 
 	rp:str = None
@@ -1665,7 +1677,7 @@ class CSERequest:
 	ct:ContentSerializationType = None
 	"""	Content Serialization Type. """
 
-	ec:int = None
+	ec:EventCategory = None
 	"""	Event Category. """
 
 	sqi:bool = None
@@ -1704,6 +1716,90 @@ class CSERequest:
 
 	originalHttpArgs:Any 			= None
 	""" Original http request arguments. A MultiDict. """
+
+	#
+	#	Helpers
+	#
+
+	_outgoing:bool = False
+	""" Whether this is a request sent by the CSE. """
+
+	_directURL:str = None
+
+
+	def fillOriginalRequest(self, update:bool = False) -> None:
+		"""	Create an originalRequest from at least some request attributes.
+			This overwrites the internal originalRequest attribute.
+		"""
+		if not update or not self.originalRequest:
+			self.originalRequest = {}
+
+		if self.op:
+			self.originalRequest['op'] = self.op.value
+		if self.to:
+			self.originalRequest['to'] = self.to
+		if self.rvi:
+			self.originalRequest['rvi'] = self.rvi
+		if self.rqi:
+			self.originalRequest['rqi'] = self.rqi
+		if self.ty:
+			self.originalRequest['ty'] = self.ty
+		if self.originator:
+			self.originalRequest['org'] = self.originator
+		if self.drt and self.drt != self._drtDefault:
+			self.originalRequest['drt'] = self.drt
+		if self.rcn and self.rcn != self._rcnDefault:
+			self.originalRequest['rcn'] = self.rcn
+		if self.rt and self.rt != self._rtDefault:
+			self.originalRequest['rt'] = self.rt
+		if self.rp:
+			self.originalRequest['rp'] = self.rp
+		if self.vsi:
+			self.originalRequest['vsi'] = self.vsi
+		if self.rqet:
+			self.originalRequest['rqet'] = self.rqet
+		if self.ot:
+			self.originalRequest['ot'] = self.ot
+		if self.oet:
+			self.originalRequest['oet'] = self.oet
+		if self.rset:
+			self.originalRequest['rset'] = self.rset
+		if self.rtu:
+			self.originalRequest['rtu'] = self.rtu
+		if self.rset:
+			self.originalRequest['rset'] = self.rset
+		if self.ct:
+			self.originalRequest['ct'] = self.ct
+		if self.ec:
+			self.originalRequest['ec'] = self.ec
+		if self.sqi:
+			self.originalRequest['sqi'] = self.sqi
+		if self.fc and (_fc := self.fc.fillCriteriaAttributes()):
+			self.originalRequest['fc'] = _fc
+		if self.pc:
+			self.originalRequest['pc'] = self.pc
+
+
+	def convertToR1Target(self, targetRvi:str) -> CSERequest:
+		"""	Remove the *Release Version Indicator* and the *Vendor Information*
+			from a request if the request targets a target that only supports 
+			release 1.
+
+			Args:
+				targetRvi: The target's supported release version.
+			Return:
+				A deep copy of the request, with the fields removed or set to None.
+		"""
+		newRequest = deepcopy(self)
+		if targetRvi != '1':
+			return newRequest
+		if self.rvi:
+			newRequest.rvi = None
+		if self.vsi:
+			newRequest.vsi = None
+		return newRequest
+
+
 
 
 ##############################################################################
@@ -1770,9 +1866,12 @@ JSON = Dict[str, Any]
 JSONLIST = List[JSON]
 ReqResp = Dict[str, Union[int, str, List[str], JSON]]
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent')
 RequestHandler = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
+
+RequestResponse = namedtuple('RequestResponse', 'request result')
+RequestResponseList = List[RequestResponse]
 
 FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """

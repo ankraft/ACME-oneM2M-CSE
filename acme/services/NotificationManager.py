@@ -18,7 +18,7 @@ from threading import Lock, current_thread
 
 import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
-from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes
+from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
@@ -380,9 +380,11 @@ class NotificationManager(object):
 
 			# Send notification and handle possible negative response status codes
 			try:
-				res = CSE.request.sendNotifyRequest(eachSub['nus'][0], 
-													originator = CSE.cseCsi,
-													content = notification)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+															   to = eachSub['nus'][0],
+															   originator = originator,
+															   pc = notification)
+												   )[0].result	# there should be at least one result
 				if res.rsc == ResponseStatusCode.OK:
 					if finished:
 						finished()
@@ -481,9 +483,10 @@ class NotificationManager(object):
 				setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			countNotifications += 1
-			CSE.request.sendNotifyRequest(eachSub['nus'][0], 
-										  originator = subOriginator,
-										  content = notification)
+			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+													 to = eachSub['nus'][0], 
+													 originator = subOriginator,
+										  			 pc = notification))
 			# TODO: correct RSC according to 7.3.2.9 - see above!
 		
 		if countNotifications == 0:
@@ -740,7 +743,10 @@ class NotificationManager(object):
 		def _sender(nu: str, originator:str, content:JSON) -> bool:
 			if preFunc:
 				preFunc(nu)
-			CSE.request.sendNotifyRequest(nu, originator = originator, content = content)
+			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+													 to = nu, 
+													 originator = originator, 
+													 pc = content))
 			if postFunc:
 				postFunc(nu)
 			return True
@@ -959,10 +965,11 @@ class NotificationManager(object):
 			originator and setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			try:
-				res = CSE.request.sendNotifyRequest(uri, 
-													originator = CSE.cseCsi,
-													content = verificationRequest, 
-													noAccessIsError = True)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+															   to = uri, 
+															   originator = CSE.cseCsi,
+															   pc = verificationRequest)
+												   )[0].result	# there should be at least one result
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {e.dbg}')
 				return False
@@ -995,9 +1002,10 @@ class NotificationManager(object):
 			}
 
 			try:
-				CSE.request.sendNotifyRequest(uri, 
-											  originator = CSE.cseCsi,
-											  content = deletionNotification)
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = uri, 
+														 originator = CSE.cseCsi,
+											  			 pc = deletionNotification))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {e.dbg}')
 				return False
@@ -1021,9 +1029,10 @@ class NotificationManager(object):
 
 		def _sendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
 			try:
-				CSE.request.sendNotifyRequest(uri, 
-											  originator = CSE.cseCsi,
-											  content = notificationRequest)
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = uri, 
+											  			 originator = CSE.cseCsi,
+											  			 pc = notificationRequest))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
 				return False
@@ -1218,11 +1227,11 @@ class NotificationManager(object):
 				return False
 
 			parameters:CSERequest = None
+			ec:EventCategory = None
 			if ln:
 				notifications = notifications[-1:]
 				# Add event category
-				parameters = CSERequest()
-				parameters.ec = EventCategory.Latest.value
+				ec = EventCategory.Latest
 
 			# Aggregate and send
 			notificationRequest:JSON = {
@@ -1249,10 +1258,11 @@ class NotificationManager(object):
 				
 			# Send the request
 			try:
-				CSE.request.sendNotifyRequest(nu, 
-											  originator = CSE.cseCsi,
-											  content = notificationRequest,
-											  parameters = parameters)
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = nu, 
+														 originator = CSE.cseCsi,
+														 pc = notificationRequest,
+														 ec = ec))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Error sending aggregated batch notifications: {e.dbg}')
 				return False

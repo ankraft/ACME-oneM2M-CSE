@@ -517,20 +517,28 @@ class Storage(object):
 	##	Requests
 	##
 
-	def addRequest(self, ri:str, srn:str, originator:str, request:JSON, response:JSON) -> bool:
+	def addRequest(self, op:Operation, 
+						 ri:str, 
+						 srn:str, 
+						 originator:str, 
+						 outgoing:bool, 
+						 request:JSON, 
+						 response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
 		
 			Args:
+				op: Operation.
 				ri: Resource ID of a request's target resource.
 				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
+				outgoing: If true, then this is a request sent by the CSE.
 				request: The request to store.
 				response: The response to store.
 			
 			Return:
 				Boolean value to indicate success or failure.
 			"""
-		return self.db.insertRequest(ri, srn, originator, request, response)
+		return self.db.insertRequest(op, ri, srn, originator, outgoing, request, response)
 
 
 	def getRequests(self, ri:Optional[str] = None) -> list[Document]:
@@ -1138,13 +1146,21 @@ class TinyDBBinding(object):
 	#	Requests
 	#
 
-	def insertRequest(self, ri:str, srn:str, originator:str, request:JSON, response:JSON) -> bool:
+	def insertRequest(self, op:Operation, 
+							ri:str, 
+							srn:str, 
+							originator:str, 
+							outgoing:bool, 
+							request:JSON, 
+							response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
 		
 			Args:
+				op: Operation.
 				ri: Resource ID of a request's target resource.
 				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
+				outgoing: If true, then this is a request sent by the CSE.
 				request: The request to store.
 				response: The response to store.
 			
@@ -1161,7 +1177,9 @@ class TinyDBBinding(object):
 				
 				# Adding a request
 				ts = utcTime()
-				op = request['op'] if 'op' in request else Operation.NA
+				# L.inspect(request)
+				# L.logWarn(type(request))
+				#op = request.get('op') if 'op' in request else Operation.NA
 				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
 
 				self.tabRequests.insert(
@@ -1171,6 +1189,7 @@ class TinyDBBinding(object):
 							  'org': originator,
 							  'op': op,
 							  'rsc': rsc,
+							  'out': outgoing,
 							  'req': request,
 							  'rsp': response
 							 }, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]

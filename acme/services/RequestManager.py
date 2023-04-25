@@ -17,8 +17,8 @@ from threading import Lock
 from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes
 from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, RequestType
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
-from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result
-from ..etc.Types import CSERequest, ContentSerializationType
+from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
+from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
 from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED
@@ -88,15 +88,6 @@ class RequestManager(object):
 		# Configuration values
 		self._assignConfig()	
 
-		self.requestHandlers:RequestHandler  = { 		# Map request handlers for operations in the RequestManager and the dispatcher
-			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
-			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
-			Operation.CREATE	: RequestCallback(self.createRequest,   CSE.dispatcher.processCreateRequest),
-			Operation.NOTIFY	: RequestCallback(self.notifyRequest,   CSE.dispatcher.processNotifyRequest),
-			Operation.UPDATE	: RequestCallback(self.updateRequest,   CSE.dispatcher.processUpdateRequest),
-			Operation.DELETE	: RequestCallback(self.deleteRequest,   CSE.dispatcher.processDeleteRequest),
-		}
-
 		#
 		#	Structures for pollingChannel requests
 		#
@@ -124,6 +115,47 @@ class RequestManager(object):
 		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
 		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
 		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
+
+
+		# Map request handlers and events for operations in the RequestManager and the dispatcher
+		self.requestHandlers:RequestHandler = { 		
+			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
+												  CSE.dispatcher.processRetrieveRequest, 
+												  self._sendRequest,
+												  self._eventHttpSendRetrieve,
+												  self._eventMqttSendRetrieve),
+												#   self.sendRetrieveRequest),
+			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
+												  CSE.dispatcher.processRetrieveRequest, 
+												  self._sendRequest,
+												  self._eventHttpSendRetrieve,
+												  self._eventMqttSendRetrieve),
+												#   self.sendRetrieveRequest),
+			Operation.CREATE	: RequestCallback(self.createRequest,
+												  CSE.dispatcher.processCreateRequest,
+												  self._sendRequest,
+												  self._eventHttpSendCreate,
+												  self._eventMqttSendCreate),
+												#   self.sendCreateRequest),
+			Operation.UPDATE	: RequestCallback(self.updateRequest,
+												  CSE.dispatcher.processUpdateRequest,
+												  self._sendRequest,
+												  self._eventHttpSendUpdate,
+												  self._eventMqttSendUpdate),
+												#   self.sendUpdateRequest),
+			Operation.DELETE	: RequestCallback(self.deleteRequest,
+												  CSE.dispatcher.processDeleteRequest,
+												  self._sendRequest,
+												  self._eventHttpSendDelete,
+												  self._eventMqttSendDelete),
+												#   self.sendDeleteRequest),
+			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
+												  CSE.dispatcher.processNotifyRequest,
+												  self._sendRequest,
+												  self._eventHttpSendNotify,
+												  self._eventMqttSendNotify),
+												#   self.sendNotifyRequest),
+		}
 
 
 		L.isInfo and L.log('RequestManager initialized')
@@ -253,12 +285,11 @@ class RequestManager(object):
 			raise BAD_REQUEST(L.logDebug(f'Missing content/request in notification'))
 
 		# Forward the notification as received to the target
-		res = self.sendNotifyRequest(id, originator = originator, content = request.originalRequest, raw = True)
-
-		# record  notification
-		self.recordRequest(request, res)
-		return res
-
+		return self.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+												 to = id, 
+												 originator = originator, 
+												 pc = request.originalRequest)
+									 )[0].result	# there should be at least one result
 
 
 	#########################################################################
@@ -281,7 +312,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		raise BAD_REQUEST('Unknown or unsupported ResponseType: {request.rt}')
+		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
 
 
@@ -549,6 +580,7 @@ class RequestManager(object):
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
 
+
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
 
@@ -558,10 +590,7 @@ class RequestManager(object):
 
 		# L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
 		L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {request.id}')
-		return self.sendRetrieveRequest(uri = cast(str, request.id),
-									    originator = request.originator,
-										content = request.originalRequest,
-										raw = True)
+		return self.handleSendRequest(request)[0].result		# there should be at least one result
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
@@ -572,11 +601,7 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding CREATE request to: {request.id}')
-		return self.sendCreateRequest(uri = request.id,
-									  originator = request.originator,
-									  content = request.originalRequest,
-									  ty = request.ty,
-									  raw = True)
+		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
@@ -587,10 +612,7 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {request.id}')
-		return self.sendUpdateRequest(uri = cast(str, request.id),
-									  originator = request.originator,
-									  content = request.originalRequest,
-									  raw = True)
+		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
@@ -601,10 +623,7 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding DELETE request to: {request.id}')
-		return self.sendDeleteRequest(uri = cast(str, request.id),
-									  originator = request.originator,
-  									  content = request.originalRequest,
-									  raw = True)
+		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
 	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
@@ -615,21 +634,18 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {request.id}')
-		return self.sendNotifyRequest(uri = cast(str, request.id),
-							 		  originator = request.originator,
-									  content = request.originalRequest,
-									  raw = True)
+		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
-	def _getForwardURL(self, path:str) -> Optional[str]:		# FIXME DELETE ME This may be removed due to the new request handling 
-		""" Get the new target URL when forwarding. 
-		"""
-		# L.isDebug and L.logDebug(path)
-		csr, pe = CSE.remote.getCSRFromPath(path)
-		# L.isDebug and L.logDebug(csr)
-		if csr and (poas := csr.poa) and len(poas) > 0:
-			return f'{poas[0]}//{"/".join(pe[1:])}'	# TODO check all available poas.
-		return None
+	# def _getForwardURL(self, path:str) -> Optional[str]:		# FIXME DELETE ME This may be removed due to the new request handling 
+	# 	""" Get the new target URL when forwarding. 
+	# 	"""
+	# 	# L.isDebug and L.logDebug(path)
+	# 	csr, pe = CSE.remote.getCSRFromPath(path)
+	# 	# L.isDebug and L.logDebug(csr)
+	# 	if csr and (poas := csr.poa) and len(poas) > 0:
+	# 		return f'{poas[0]}//{"/".join(pe[1:])}'	# TODO check all available poas.
+	# 	return None
 
 
 	# def _constructForwardURL(self, request:CSERequest) -> str:
@@ -652,7 +668,8 @@ class RequestManager(object):
 		"""
 		if isCSERelative(request.originator):
 			request.originator = toSPRelative(request.originator)
-			setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
+			if request.originalRequest:
+				setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
 			# Attn: not changed in originatData !
 
 
@@ -796,8 +813,8 @@ class RequestManager(object):
 							ty:ResourceTypes = None,
 							rvi:str = None,
 							request:CSERequest = None,
-							parameters:CSERequest = None,
 							reqType:RequestType = RequestType.REQUEST,
+							ec:EventCategory = None,
 							originator:str = None) -> Optional[CSERequest]:
 		"""	Queue a (incoming) *request* or *content* for a <PCH>. It can be retrieved via the target's <PCU> 
 			child resource.
@@ -822,11 +839,9 @@ class RequestManager(object):
 				 				 ot = getResourceDate(),
 				 				 rqi = uniqueRI(),
 				 				 rvi = rvi if rvi is not None else CSE.releaseVersion,
-				 				 pc = content)
-
-		# Copy additional parameter attributes
-		if parameters:
-			request.ec = parameters.ec
+				 				 pc = content,
+								 # Copy additional parameter attributes
+								 ec = ec)
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
@@ -840,8 +855,8 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with rqi: {request.rqi} pc:{request.pc} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
-	
 
+	
 	def waitForResponseToPCH(self, request:CSERequest) -> Result:
 		"""	Wait for a RESPONSE to a request.
 		"""
@@ -887,318 +902,353 @@ class RequestManager(object):
 	#	Sending Requests
 	#
 
-	def sendRetrieveRequest(self, 
-							uri:str, 
-							originator:str, 
-							content:Optional[JSON] = None,
-							ct:Optional[ContentSerializationType] = None, 
-							raw:Optional[bool] = False) -> Result:
-		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
-		"""
-		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}')
+	def handleSendRequest(self, request:CSERequest) -> RequestResponseList:
 
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri, 
-																					  originator = originator,
-																					  permission = Permission.RETRIEVE,
-																					  raw = raw):
-			# Special handling for Release 1 targets
-			content = self.handleRequestToR1Target(content, rvi)
+		if request.op is None:
+			raise BAD_REQUEST(L.logErr('request is missing operation attribute'))
+		
+		# Set outgoing flag for recording
+		request._outgoing = True
+
+		# Call the appropriate request function
+		try:
+			# The following line, at the moment, always calls the same function that
+			# handles the send request. This is a leftover from when there were 
+			# different functions to handle the send requests.
+			# Perhaps this could be simplified sometime later when we know that no
+			# further function is needed.
+			res = self.requestHandlers[request.op].sendRequest(request)
+		except ResponseException as e:
+			res = [ RequestResponse(request, Result(rsc = e.rsc, dbg = e.dbg, request = e.data)) ]
+
+		# Add to requests database
+		for r in res:
+			self.recordRequest(r.request, r.result)
+
+		return res
+
+
+	def _sendRequest(self, request:CSERequest) -> RequestResponseList:
+		"""	Send a request via the appropriate channel or transport protocol.
+		"""
+		L.isDebug and L.logDebug(f'Sending {request.op.name} request to: {request.to}')
+
+		# Determine all the details for one or multiple targets
+		if not (resolved := self.determineTargetDetails(request)):	# empty list?
+			raise BAD_REQUEST(L.logWarn('cannot determine target details for the request'))
+
+		results:RequestResponseList = []
+		for url, csz, rvi, pch, requestOriginator, to, targetType in resolved:
+
+			# Some adjustments to the originat request
+			_request = request.convertToR1Target(rvi) 
+			_request.rvi = rvi
+			_request.originator = requestOriginator
 
 			# Send the request via a PCH, if present
 			if pch:
-				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.RETRIEVE,
-																		 pch.getOriginator(), 
-																		 originator = requestOriginator,
-																		 rvi = rvi))
-
-			# Otherwise send it via one of the bindings
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+				_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
+																			pchOriginator = pch.getOriginator(), 
+																			content = request.pc,
+																			ec = _request.ec,
+																			originator = _request.originator,
+																			rvi = _request.rvi))
+				results.append( RequestResponse(_request, _result) )
 				continue
 
-			if isHttpUrl(url):
-				self._eventHttpSendRetrieve()
-				return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, 
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			elif isMQTTUrl(url):
-				self._eventMqttSendRetrieve()
-				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+			# Small optimization: if the target is a local resource and is NOT a normal notification receiving resource, then handle the request directly
+			if request.op == Operation.NOTIFY and \
+				(_id := localResourceID(to)) is not None and \
+				not ResourceTypes.isNotificationEntity(targetType) and \
+				targetType != ResourceTypes.UNKNOWN:
+					_result = CSE.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+					results.append( RequestResponse(request, _result) )
+					continue
 
-		raise NOT_FOUND(f'No target found for uri: {uri}')
-
-
-	def sendCreateRequest(self, 
-						  uri:str,
-						  originator:str, 
-						  ty:Optional[ResourceTypes] = None,
-						  content:Optional[JSON] = None, 
-						  ct:Optional[ContentSerializationType] = None,
-						  raw:Optional[bool] = False, 
-						  noAccessIsError:Optional[bool] = False) -> Result:
-		"""	Send a CREATE request via the appropriate channel or transport protocol.
-		"""
-		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri}')
-
-		for url, csz, rvi, pch, requestOriginator, to, tty in self.determineTargetDetails(uri, 
-																					   originator = originator,
-																					   permission = Permission.CREATE,
-																					   noAccessIsError = noAccessIsError,
-																					   raw = raw):
-			# Special handling for Release 1 targets
-			content = self.handleRequestToR1Target(content, rvi)
-
-			# Send the request via a PCH, if present
-			if pch:
-				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.CREATE,
-																		 pchOriginator = pch.getOriginator(), 
-																		 content = content,
-																		 originator = requestOriginator,
-																		 rvi = rvi))
-
-			# Otherwise send it via one of the bindings
+			ct = request.ct
 			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
 				L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
-				continue
-
-			if isHttpUrl(url):
-				self._eventHttpSendCreate()
-				return CSE.httpServer.sendHttpRequest(Operation.CREATE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  ty = ty,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			elif isMQTTUrl(url):
-				self._eventMqttSendCreate()
-				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  ty = ty,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-
-			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
-		
-		raise NOT_FOUND(f'No target found for uri: {uri}')
-
-
-	def sendUpdateRequest(self, 
-						  uri:str,
-						  originator:str,
-						  content:JSON,
-						  ct:Optional[ContentSerializationType] = None,
-						  raw:Optional[bool] = False) -> Result:
-		"""	Send an UPDATE request via the appropriate channel or transport protocol.
-		"""
-		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}')
-
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri,
-																					  originator = originator,
-																					  permission = Permission.UPDATE,
-																					  raw = raw):
-
-			# Special handling for Release 1 targets
-			content = self.handleRequestToR1Target(content, rvi)
-
-			# Send the request via a PCH, if present
-			if pch:
-				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.UPDATE,
-																		 pchOriginator = pch.getOriginator(),
-																		 content = content,
-																		 originator = requestOriginator,
-																		 rvi = rvi))
+				continue		
+			_request.ct = ct
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
-				continue
-			
 			if isHttpUrl(url):
-				self._eventHttpSendUpdate()
-				return CSE.httpServer.sendHttpRequest(Operation.UPDATE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			elif isMQTTUrl(url):
-				self._eventMqttSendUpdate
-				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
-		
-		raise NOT_FOUND(f'No target found for uri: {uri}')
-
-
-	def sendDeleteRequest(self, 
-						  uri:str,
-						  originator:str,
-						  content:Optional[JSON] = None,
-						  ct:Optional[ContentSerializationType] = None,
-						  raw:Optional[bool] = False) -> Result:
-		"""	Send a DELETE request via the appropriate channel or transport protocol.
-		"""
-		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}')
-
-		for url, csz, rvi, pch, requestOriginator, to, ty in self.determineTargetDetails(uri,
-																					  originator = originator, 
-																					  permission = Permission.DELETE, 
-																					  raw = raw):
-
-			# Special handling for Release 1 targets
-			content = self.handleRequestToR1Target(content, rvi)
-
-			# Send the request via a PCH, if present
-			if pch:
-				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.DELETE,
-																		 pchOriginator = pch.getOriginator(),
-																		 originator = requestOriginator, 
-																		 rvi = rvi))
-
-			# Otherwise send it via one of the bindings
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+				self.requestHandlers[_request.op].httpEvent()	# send event
+				results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
 				continue
 
-			if isHttpUrl(url):
-				self._eventHttpSendUpdate()
-				return CSE.httpServer.sendHttpRequest(Operation.DELETE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
 			elif isMQTTUrl(url):
-				self._eventMqttSendUpdate()
-				return CSE.mqttClient.sendMqttRequest(Operation.DELETE,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
-
-		raise NOT_FOUND(f'No target found for uri: {uri}')
-
-
-	def sendNotifyRequest(self, 
-						  uri:str, 
-						  originator:str, 
-						  content:Optional[JSON] = None, 
-						  parameters:Optional[CSERequest] = None, 
-						  ct:Optional[ContentSerializationType] = None,
-						  noAccessIsError:Optional[bool] = False, 
-						  raw:Optional[bool] = False) -> Result:
-		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
-		"""
-		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} for Originator: {originator}')
-
-		if (resolved := self.determineTargetDetails(uri, 
-												 originator = originator, 
-												 permission = Permission.NOTIFY, 
-												 noAccessIsError = noAccessIsError, 
-												 raw = raw)) is None:
-			raise BAD_REQUEST(L.logWarn('cannot determine target details for notification'))
-
-		for url, csz, rvi, pch, requestOriginator, to, ty in resolved:
-
-			# Special handling for Release 1 targets
-			content = self.handleRequestToR1Target(content, rvi)
-			
-			# Send the request via a PCH, if present
-			if pch:
-				return self.waitForResponseToPCH(self.queueRequestForPCH(Operation.NOTIFY,
-																		 pch.getOriginator(), 
-																		 content = content, 
-																		 parameters = parameters, 
-																		 originator = requestOriginator,
-																		 rvi = rvi))
-
-
-			# Small optimization: if the target is a local resource and is NOT a notification receiving resource, then handle the request directly
-			# if (_id := localResourceID(to)) is not None and ty not in [ResourceTypes.AE, ResourceTypes.CSEBase, ResourceTypes.CSR]:
-			if (_id := localResourceID(to)) is not None and not ResourceTypes.isNotificationEntity(ty) and ty != ResourceTypes.UNKNOWN:
-				return CSE.dispatcher.notifyLocalResource(_id, originator, content)
-
-			# Otherwise send it via one of the bindings
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+				self.requestHandlers[_request.op].mqttEvent()	# send event
+				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
 				continue
-		
-			# Get the content if data is a CSERequest
-			if isinstance(content, CSERequest):
-				content = content.pc
 
-			# Build request
-			request = CSERequest(op = Operation.NOTIFY,
-								 to = url,
-								 ty = ty,
-								 originator = requestOriginator,
-								 rvi = rvi,
-								 ct = ct,
-								 ec = parameters.ec,
-								 pc = content)
-			
-
-			# CONTINUE
-
-			if isHttpUrl(url):
-				self._eventHttpSendNotify()
-				return CSE.httpServer.sendHttpRequest(Operation.NOTIFY,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  parameters = parameters,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			elif isMQTTUrl(url):
-				self._eventMqttSendNotify()
-				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY,
-													  url,
-													  originator = requestOriginator,
-													  to = to,
-													  content = content,
-													  parameters = parameters,
-													  ct = ct,
-													  rvi = rvi,
-													  raw = raw)
-			elif isAcmeUrl(url):
-				self._eventAcmeSendNotify(url, requestOriginator, content)
-				return Result(rsc = ResponseStatusCode.OK)
+			# Special handling for ACME internal events.
+			# This might be more generalize when other opeations are supported as well
+			elif isAcmeUrl(url) and request.op == Operation.NOTIFY:
+				self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+				results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+				continue
 
 			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
 		
-		raise NOT_FOUND(f'No target found for uri: {uri}')
+		if not len(results):
+			raise NOT_FOUND(f'No target found for uri: {request.to}')
+		return results
+
+
+	# def sendRetrieveRequest(self, request:CSERequest) -> RequestResponseList:
+	# 	"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {request.to}')
+
+	# 	results:RequestResponseList = []
+
+	# 	for url, csz, rvi, pch, requestOriginator, to, targetType in self.determineTargetDetails(request):
+
+	# 		# Some adjustments to the originat request
+	# 		_request = request.convertToR1Target(rvi)		# Special handling for Release 1 targets, and deepcopy
+	# 		_request.rvi = rvi
+	# 		_request.originator = requestOriginator
+
+	# 		# Send the request via a PCH, if present
+	# 		if pch:
+	# 			_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
+	# 																		pch.getOriginator(), 
+	# 																		originator = request.originator,
+	# 																		rvi = request.rvi))
+	# 			results.append( RequestResponse(_request, _result) )
+	# 			continue							
+
+	# 		# TODO move this to "determine...."
+	# 		ct = request.ct
+	# 		if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+	# 			L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
+	# 			continue		
+	# 		_request.ct = ct
+
+	# 		# Otherwise send it via one of the bindings
+	# 		if isHttpUrl(url):
+	# 			self._eventHttpSendRetrieve()
+	# 			results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isMQTTUrl(url):
+	# 			self._eventMqttSendRetrieve()
+	# 			results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+	# 			continue
+				
+	# 		raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+
+	# 	if not len(results):
+	# 		raise NOT_FOUND(f'No target found for uri: {request.to}')
+	# 	return results
+
+
+	# def sendCreateRequest(self, request:CSERequest) -> RequestResponseList:
+	# 	"""	Send a CREATE request via the appropriate channel or transport protocol.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'Sending CREATE request to: {request.to}')
+
+	# 	results:RequestResponseList = []
+
+	# 	for url, csz, rvi, pch, requestOriginator, to, targetType in self.determineTargetDetails(request):
+
+	# 		# Some adjustments to the originat request
+	# 		_request = request.convertToR1Target(rvi) 
+	# 		_request.rvi = rvi
+	# 		_request.originator = requestOriginator
+
+	# 		# Send the request via a PCH, if present
+	# 		if pch:
+	# 			_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
+	# 																		pchOriginator = pch.getOriginator(), 
+	# 																		content = request.pc,
+	# 																		originator = requestOriginator,
+	# 																		rvi = rvi))
+	# 			results.append( RequestResponse(_request, _result) )
+	# 			continue
+
+	# 		ct = request.ct
+	# 		if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+	# 			L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
+	# 			continue		
+	# 		_request.ct = ct
+
+	# 		# Otherwise send it via one of the bindings
+	# 		if isHttpUrl(url):
+	# 			self._eventHttpSendCreate()	# event
+	# 			results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isMQTTUrl(url):
+	# 			self._eventMqttSendCreate()
+	# 			results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+	# 			continue
+
+	# 		raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+		
+	# 	if not len(results):
+	# 		raise NOT_FOUND(f'No target found for uri: {request.to}')
+	# 	return results
+
+
+	# def sendUpdateRequest(self, request:CSERequest) -> RequestResponseList:
+	# 	"""	Send an UPDATE request via the appropriate channel or transport protocol.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'Sending UPDATE request to: {request.to}')
+
+	# 	results:RequestResponseList = []
+
+	# 	for url, csz, rvi, pch, requestOriginator, to, targetType in self.determineTargetDetails(request):
+
+	# 		# Some adjustments to the originat request
+	# 		_request = request.convertToR1Target(rvi) 
+	# 		_request.rvi = rvi
+	# 		_request.originator = requestOriginator
+
+	# 		# Send the request via a PCH, if present
+	# 		if pch:
+	# 			_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
+	# 																		pchOriginator = pch.getOriginator(),
+	# 																		content = request.pc,
+	# 																		originator = request.originator,
+	# 																		rvi = request.rvi))
+	# 			results.append( RequestResponse(_request, _result) )
+	# 			continue
+
+	# 		ct = request.ct
+	# 		if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+	# 			L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
+	# 			continue		
+	# 		_request.ct = ct
+
+	# 		# Otherwise send it via one of the bindings
+	# 		if isHttpUrl(url):
+	# 			self._eventHttpSendUpdate()
+	# 			results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isMQTTUrl(url):
+	# 			self._eventMqttSendUpdate
+	# 			results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+	# 			continue
+
+	# 		raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+		
+	# 	if not len(results):
+	# 		raise NOT_FOUND(f'No target found for uri: {request.to}')
+	# 	return results
+
+
+	# def sendDeleteRequest(self, request:CSERequest) -> RequestResponseList:
+	# 	"""	Send a DELETE request via the appropriate channel or transport protocol.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'Sending DELETE request to: {request.to}')
+
+	# 	results:RequestResponseList = []
+
+	# 	for url, csz, rvi, pch, requestOriginator, to, targetType in self.determineTargetDetails(request, Permission.DELETE):
+
+	# 		# Some adjustments to the originat request
+	# 		_request = request.convertToR1Target(rvi) 
+	# 		_request.rvi = rvi
+	# 		_request.originator = requestOriginator
+
+	# 		# Send the request via a PCH, if present
+	# 		if pch:
+	# 			_result = self.waitForResponseToPCH(self.queueRequestForPCH(Operation.DELETE,
+	# 																		pchOriginator = pch.getOriginator(),
+	# 																		originator = request.originator, 
+	# 																		rvi = request.rvi))
+	# 			results.append( RequestResponse(_request, _result) )
+	# 			continue
+
+	# 		ct = request.ct
+	# 		if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+	# 			L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
+	# 			continue
+	# 		_request.ct = ct
+
+	# 		# Otherwise send it via one of the bindings
+	# 		if isHttpUrl(url):
+	# 			self._eventHttpSendUpdate()
+	# 			results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isMQTTUrl(url):
+	# 			self._eventMqttSendUpdate()
+	# 			results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+	# 			continue
+
+	# 		raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+
+	# 	if not len(results):
+	# 		raise NOT_FOUND(f'No target found for uri: {request.to}')
+	# 	return results
+
+
+	# def sendNotifyRequest(self, request:CSERequest) -> RequestResponseList:
+	# 	"""	Send a NOTIFY request via the appropriate channel or transport protocol.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'Sending NOTIFY request to: {request.to} for Originator: {request.originator}')
+
+	# 	results:RequestResponseList = []
+
+	# 	if (resolved := self.determineTargetDetails(request)) is None:
+	# 		raise BAD_REQUEST(L.logWarn('cannot determine target details for notification'))
+
+	# 	for url, csz, rvi, pch, requestOriginator, to, targetType in resolved:
+
+	# 		# Some adjustments to the original request
+	# 		_request = request.convertToR1Target(rvi) 
+	# 		_request.rvi = rvi
+	# 		_request.originator = requestOriginator
+	# 		# _request.fillOriginalRequest()
+			
+	# 		# Send the request via a PCH, if present
+	# 		if pch:
+	# 			_result = self.waitForResponseToPCH(self.queueRequestForPCH(Operation.NOTIFY,
+	# 																		pch.getOriginator(), 
+	# 																		content = _request.pc, 
+	# 																		ec = _request.ec, 
+	# 																		originator = _request.originator,
+	# 																		rvi = _request.rvi))
+	# 			results.append( RequestResponse(_request, _result) )
+	# 			continue
+
+	# 		# Small optimization: if the target is a local resource and is NOT a normal notification receiving resource, then handle the request directly
+	# 		if (_id := localResourceID(to)) is not None and not ResourceTypes.isNotificationEntity(targetType) and targetType != ResourceTypes.UNKNOWN:
+	# 			_result = CSE.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+	# 			results.append( RequestResponse(request, _result) )
+	# 			continue
+
+	# 		ct = request.ct
+	# 		if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+	# 			L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
+	# 			continue		
+	# 		_request.ct = ct
+
+	# 		# Otherwise send it via one of the bindings
+	# 		if isHttpUrl(url):
+	# 			self._eventHttpSendNotify()
+	# 			results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isMQTTUrl(url):
+	# 			self._eventMqttSendNotify()
+	# 			results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+	# 			continue
+
+	# 		elif isAcmeUrl(url):
+	# 			self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+	# 			results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+	# 			continue
+
+	# 		raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
+		
+	# 	if not len(results):
+	# 		raise NOT_FOUND(f'No target found for uri: {request.to}')
+	# 	return results
 
 
 	###########################################################################
@@ -1592,59 +1642,36 @@ class RequestManager(object):
 		return [ ContentSerializationType.getType(c) for c in csz]
 
 
-
-	def handleRequestToR1Target(self, content:JSON, targetRvi:str) -> JSON:
-		"""	Remove the *Release Version Indicator* and the *Vendor Information*
-			from a request if the request targets a target that only supports 
-			release 1.
-
-			Args:
-				content: Dictionary with the request.
-				targetRvi: The target's supported release version.
-			Return:
-				A copy of *content*, with the fields removed.
-		"""
-		if targetRvi != '1':
-			return content
-		newContent = deepcopy(content)
-		if 'rvi' in newContent:
-			del newContent['rvi']
-		if 'vsi' in newContent:
-			del newContent['vsi']
-		return newContent
-
-
-	def determineTargetDetails(self, 
-							uri:str, 
-							permission:Permission, 
-							originator:Optional[str] = None,
-							noAccessIsError:Optional[bool] = False,
-							raw:Optional[bool] = False) -> Optional[TargetDetails]:
+	def determineTargetDetails(self, request:CSERequest) -> Optional[TargetDetails]:
 		"""	Resolve the real URL and more message parameters for a request and a target,
 		
 			Args:
 				uri: Target resource ID or a URL for a target.
-				permission: The necessary permissions for the about-to-be performed operation.
 				originator: The request originator.
-				noAccessIsError: Ignore or handle permission errors.
-				raw: This is intended for a *raw* request. Ignore permission checks.
+			
+			Notes:
+				A successful determination may include the type of the target resource. This is different from the request content's
+				resource type.
+
 			Return:
 				The results could differ:
 
 				The result is a list of tuples of (real url including the protocol, list of allowed contentSerializations,
-				target supported release version, PollingChannel resource, originator with adapted scope, target uri, target resource type).
+				target supported release version, PollingChannel resource, originator with adapted scope, target uri, 
+				determined target resource type).
 				
 				Or, return a list of (url, None, None, None, originator, None, UNKNOWN), containing only one element, if the URI is
 				already a URL. We cannot determine the preferred serializations in this case. and we don't know the target entity.
 				
 				Return a list of (None, list of allowed contentSerializations, srv, PollingChannel resource,
-				originator with adapted scope, target, uri, target resource type), containing only one element, if the target resourec is not
+				originator with adapted scope, target, uri, determined target resource type), containing only one element, if the target resourec is not
 				request reachable and has a PollingChannel as a child resource.
 
 				Otherwise, return a list of the mentioned tuples.
 
+				
+
 				In case of an error, an empty list is returned. 
-				If *noAccessIsError* is *True* and access is not permitted then *None* is returned.
 
 				# TODO correct doc
 		"""
@@ -1654,11 +1681,20 @@ class RequestManager(object):
 				return sorted(srv)[-1]	# return highest srv
 			return CSE.releaseVersion
 				
-		# TODO check whether noAccessIsError is needed anymore
+		originator = request.originator
+		uri = request.to
+		if request._directURL:
+			uri = request._directURL
 
 		if isURL(uri):	# The uri is a direct URL
 			L.isDebug and L.logDebug(f'Direct URL: {uri}')
-			return [ (uri, None, None, None, originator, None, ResourceTypes.UNKNOWN) ]
+			return [ (uri, 
+					  None, 
+					  CSE.releaseVersion, 
+					  None, 
+					  originator, 
+					  uri, 
+					  ResourceTypes.UNKNOWN) ]
 
 
 		# targetResource will be assigned the real resource that offers the POA
@@ -1683,8 +1719,7 @@ class RequestManager(object):
 				targetResource, _ = t
 			elif CSE.remote.registrarCSE:	# just send it up to the registrar CSE, if any
 				targetResource = CSE.remote.registrarCSE
-			# L.logWarn(targetResource)
-			# L.logWarn(uri)
+
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri)):
@@ -1692,13 +1727,13 @@ class RequestManager(object):
 			return []
 		
 		# Checking permissions
+		permission = request.op.permission()
 		if not uri.startswith(CSE.cseCsiSlash):	# TODO make a utility out of this
 			if originator == CSE.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-			elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
+			# TODO DELETEME elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
+			elif not CSE.security.hasAccess(originator, targetResource, permission):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
-				if noAccessIsError:
-					return None
 				return []
 
 		# Check requestReachability
@@ -1755,16 +1790,31 @@ class RequestManager(object):
 			pc = result.resource.asDict()
 		elif isinstance(result.resource, dict):
 			pc = result.resource
+		elif result.data:
+			pc = result.data # type:ignore
 		else:
 			pc = None
-		if not request.srn:
-			request.srn = request.id
+		if not (srn := request.srn):
+			srn = request.id if request.id else request.to
+		
+		request.fillOriginalRequest(update = True)
 
-		CSE.storage.addRequest(request.id, 
-							   request.srn,
+		#reqPc = request.originalRequest
+		# if request.originalRequest:
+		# 	reqPc = request.originalRequest
+		# elif request.pc:
+		# 	reqPc = request.pc
+		# else:
+		# 	reqPc = None
+
+		CSE.storage.addRequest(request.op,
+							   request.id, 
+							   srn,
 							   request.originator,
-							   request.originalRequest, 
-							   { 'rsc': result.rsc,
+							   request._outgoing,
+							   request.originalRequest,
+							   { 'rsc': result.rsc.value,
 							   	 'pc': pc,
 								 'dbg': result.dbg
 							   })
+	

@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Improved validation of complex types and mandatory attributes.
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
-- [CSE] Refactored the internal error and failure handling to using exceptions (Python's EAFP).
-- [CSE] Added recording of requests to support request debugging.
+- [CSE] Added recording of received and sent requests to support request debugging.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
@@ -22,10 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TUI] Added text UI.
 
 ### Changed
-- [SCRIPTS] Moved the script interpreter from a batch-based to a lisp-based language.  
+- [SCRIPTS] Changed the script interpreter from a batch-based to a lisp-based language.  
 **NOTE, that scripts in the old format are not supported anymore and need to be converted manually.**
 - [CSE] Lots of small runtime optimizations.
 - [CSE] Moved current configuration settings for *cse.operation* to *cse.operation.jobs.
+- [CSE] Refactored the internal error and failure handling to using exceptions (Python's EAFP).
+- [CSE] Refactored and simplified the internal request sending procedures.
 - [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
 **This is a non-backward compatible change due to the DB schema changes.**
 - [CONSOLE] Re-implemented some console services to make them reusable for the text UI.

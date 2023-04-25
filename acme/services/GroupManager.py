@@ -104,10 +104,13 @@ class GroupManager(object):
 				if csiFromSPRelative(mid) != CSE.cseCsi:
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
-					if not (url := CSE.request._getForwardURL(mid)):
-						raise NOT_FOUND(f'forwarding URL not found for group member: {mid}')
-					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
-					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
+					# if not (url := CSE.request._getForwardURL(mid)):
+					# 	raise NOT_FOUND(f'forwarding URL not found for group member: {mid}')
+					L.isDebug and L.logDebug(f'Retrieve request to: {mid}')
+					remoteResult = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+																			to = mid, 
+																			originator = CSE.cseCsi)
+																)[0].result	# there should be at least one result
 
 			# get the resource and check it
 			hasFopt = False

@@ -16,14 +16,9 @@ from copy import deepcopy
 
 from ..helpers import TextTools
 from ..etc.Constants import Constants
-from ..etc.Types import FilterCriteria, FilterUsage, Operation, ResourceTypes
-from ..etc.Types import FilterOperation
-from ..etc.Types import Permission
-from ..etc.Types import DesiredIdentifierResultType
-from ..etc.Types import ResultContentType
-from ..etc.Types import Result
-from ..etc.Types import CSERequest
-from ..etc.Types import JSON
+from ..etc.Types import FilterCriteria, FilterUsage, CSERequest, ResourceTypes, Operation
+from ..etc.Types import FilterOperation, DesiredIdentifierResultType, Permission, ResultContentType
+from ..etc.Types import Result, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
@@ -688,11 +683,12 @@ class Dispatcher(object):
 		# Create remotely
 		else:
 			L.isDebug and L.logDebug(f'Creating remote resource with ID: {pID} originator: {originator}')
-			res = CSE.request.sendCreateRequest((pri := toSPRelative(parentID)), 
-												originator = originator,
-												ty = ty,
-												content = dct)
-			
+			res = CSE.request.handleSendRequest(CSERequest(to = (pri := toSPRelative(parentID)),
+														   originator = originator,
+														   ty = ty,
+														   pc = dct)
+											   )[0].result	# there should be at least one result
+
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
 			if res.rsc != ResponseStatusCode.CREATED:
@@ -911,7 +907,11 @@ class Dispatcher(object):
 		# Update remotely
 		else:
 			L.isDebug and L.logDebug(f'Updating remote resource with ID: {id} originator: {originator}')
-			result = CSE.request.sendUpdateRequest(id, originator = originator, content = dct)
+			result = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
+															  to = id, 
+															  originator = originator, 
+															  pc = dct)
+												  )[0].result	# there should be at least one result
 		
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
@@ -1074,7 +1074,9 @@ class Dispatcher(object):
 		# Delete remotely
 		else:
 			L.isDebug and L.logDebug(f'Deleting remote resource with ID: {id} originator: {originator}')
-			res = CSE.request.sendDeleteRequest(id, originator = originator)
+			res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+														   to = id, 
+														   originator = originator))[0].result	# there should be at least one result
 		
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
@@ -1155,14 +1157,15 @@ class Dispatcher(object):
 
 		L.isDebug and L.logDebug(f'Sending NOTIFY to local resource: {ri}')
 		resource = self.retrieveLocalResource(ri, originator = originator)
-
+		
 		# Check Permission
 		if not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no NOTIFY access to: {resource.ri}'))
 		
 		# Send notification
 		try:
-			resource.handleNotification(CSERequest(id = ri,
+			resource.handleNotification(CSERequest(to = ri,
+												   id = ri,
 												   op = Operation.NOTIFY,
 												   originator = originator,
 												   ot = getResourceDate(),

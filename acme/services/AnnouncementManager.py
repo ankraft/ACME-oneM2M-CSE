@@ -17,7 +17,8 @@ import time
 from ..etc.Utils import isSPRelative
 from ..helpers.TextTools import findXPath
 from ..etc.RequestUtils import createRawRequest
-from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result, ResultContentType
+from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result, ResultContentType, CSERequest, FilterCriteria 
+from ..etc.Types import Operation 
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR, OPERATION_NOT_ALLOWED, CONFLICT
 from ..etc.Constants import Constants
@@ -235,8 +236,16 @@ class AnnouncementManager(object):
 										fc = {	'ty' : ResourceTypes.CSEBaseAnnc.value,
 										'lnk' : f'{cseBase.csi}/{cseBase.ri}'
 										})
+				# TODO remove the function above if not needed anymore
 
-				res = CSE.request.sendRetrieveRequest(to, originator = CSE.cseCsi, content = dct, raw = True)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+															   to = to,
+															   originator = CSE.cseCsi,
+															   rcn = ResultContentType.childResourceReferences,
+															   drt = DesiredIdentifierResultType.unstructured,
+															   fc = FilterCriteria(ty = [ ResourceTypes.CSEBaseAnnc ],
+																				   attributes = { 'lnk' : f'{cseBase.csi}/{cseBase.ri}' } ))
+													)[0].result		# there should be at least one result
 				if res.rsc == ResponseStatusCode.OK and res.data:	# Found a remote CSEBaseAnnc
 					# Assign to the local CSEBase
 					if (remoteRi := findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
@@ -310,7 +319,12 @@ class AnnouncementManager(object):
 
 		L.isDebug and L.logDebug(f'creating announced resource at: {csrID}')
 		try:
-			res = CSE.request.sendCreateRequest(csrID, CSE.cseCsi, ty = tyAnnc, content = dct)
+			res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
+						  								   to = csrID, 
+														   originator = CSE.cseCsi, 
+														   ty = tyAnnc, 
+														   pc = dct)
+											   )[0].result	# there should be at least one result
 		except ResponseException as e:
 			if e.rsc != ResponseStatusCode.CONFLICT:	# assume that it is ok if the remote resource already exists 
 				e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
@@ -373,7 +387,9 @@ class AnnouncementManager(object):
 		# Delete the announed resource from the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
-		res = CSE.request.sendDeleteRequest(csrID, CSE.cseCsi)
+		res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+													   to = csrID, 
+													   originator = CSE.cseCsi))[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
 			L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
@@ -434,7 +450,10 @@ class AnnouncementManager(object):
 		# Create the announed resource on the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
-		res = CSE.request.sendUpdateRequest(csrID, CSE.cseCsi, content = dct)
+		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
+													   to = csrID, 
+													   originator = CSE.cseCsi, 
+													   pc = dct))[0].result		# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
 			# Ignore and fallthrough

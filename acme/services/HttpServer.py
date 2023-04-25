@@ -26,7 +26,7 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict
+from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
@@ -431,17 +431,7 @@ class HttpServer(object):
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, 
-						operation:Operation, 
-						url:str, 
-						originator:str,
-						to:str,
-						ty:Optional[ResourceTypes] = None, 
-						content:Optional[JSON] = None, 
-						parameters:Optional[CSERequest] = None, 
-						ct:Optional[ContentSerializationType] = None, 
-						rvi:Optional[str] = None,
-						raw:Optional[bool] = False) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, request:CSERequest, url:str) -> Result:
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -450,106 +440,78 @@ class HttpServer(object):
 		timeout:float = None
 
 		# Set the request method
-		method:Callable = self.operation2method[operation] 	# type: ignore[assignment]
+		method:Callable = self.operation2method[request.op] 	# type: ignore[assignment]
 
 		# Add the to to the base url
-		if to:
-			url = url + to
+		if request.to:
+			if isURL(request.to):
+				url = request.to
+			else:
+				url = url + request.to
+
 		# Make the URL a valid http URL (escape // and ///)
 		url = toHttpUrl(url)
 
 		# get the serialization
-		ct = CSE.defaultSerialization if not ct else ct
+		ct = request.ct if request.ct else CSE.defaultSerialization
 
 		# Set basic headers
-		hty = f';ty={int(ty):d}' if ty else ''
+		hty = f';ty={int(request.ty):d}' if request.ty else ''
 		hds = {	'Date'			: rfc1123Date(),
 				'User-Agent'	: self.serverID,
 				'Content-Type' 	: f'{ct.toHeader()}{hty}',
 				'cache-control'	: 'no-cache',
 		}
+		hds[Constants.hfOrigin]	= toSPRelative(request.originator)
+		hds[Constants.hfRI]		= request.rqi if request.rqi else uniqueRI()
+		if request.rvi != '1':
+			hds[Constants.hfRVI]= request.rvi if request.rvi is not None else CSE.releaseVersion
+		hds[Constants.hfOT]		= request.ot if request.ot else getResourceDate()
+		if request.ec:				# Event Category
+			hds[Constants.hfEC] = str(request.ec.value)
+		if request.rqet:
+			hds[Constants.hfRET] = request.rqet
+			timeout = timeUntilAbsRelTimestamp(request.rqet)
+		if request.rset:
+			hds[Constants.hfRST] = request.rset
+		if request.oet:
+			hds[Constants.hfOET] = request.oet
+		if request.rt and request.rt != request	._rtDefault:
+			hds[Constants.hfRTU] = str(request.rt.value)
+		if request.vsi:
+			hds[Constants.hfVSI] = request.vsi
 
-		if not raw:
-			# Not raw means we need to construct everything from the request
-			hds[Constants.hfOrigin] = originator
-			hds[Constants.hfRI] 	= uniqueRI()
-			if rvi != '1':
-				hds[Constants.hfRVI]= rvi if rvi is not None else CSE.releaseVersion
-			hds[Constants.hfOT]		= getResourceDate()
-
-			# Add additional headers
-			if parameters:
-				if parameters.ec:	# Event Category
-					hds[Constants.hfEC] = str(parameters.ec)
+		# Add filterCriteria arguments
+		arguments = []
+		if request.rcn:
+			arguments.append(f'rcn={request.rcn.value}')
+		if request.drt:
+			arguments.append(f'drt={request.drt.value}')
+		if fc := request.fc:
+			for k,v in fc.criteriaAttributes().items():
+				arguments.append(f'{k}={v}')
+		# Add further non-filterCriteria arguments
+		if request.sqi:
+			arguments.append(f'sqi={request.sqi}')
 			
-		else:	
-			# raw	-> "data" contains a whole requests
+		# Add attributeList
+		if (atrl := findXPath(request.pc, 'm2m:atrl')) is not None:
+			arguments.append(f'atrl={"+".join(atrl)}')
 
-			hds[Constants.hfOrigin]	= toSPRelative(content['fr']) if 'fr' in content else ''
-			hds[Constants.hfRI]		= content['rqi']
-			if rvi != '1':
-				hds[Constants.hfRVI]= rvi if rvi is not None else content['rvi']
-			
-			# Add additional headers from the request
-			if 'ec' in content:				# Event Category
-				hds[Constants.hfEC] = content['ec']
-			if 'rqet' in content:
-				hds[Constants.hfRET] = content['rqet']
-				timeout = timeUntilAbsRelTimestamp(content['rqet'])
-			if 'rset' in content:
-				hds[Constants.hfRST] = content['rset']
-			if 'oet' in content:
-				hds[Constants.hfOET] = content['oet']
-			if 'rt' in content:
-				hds[Constants.hfRTU] = content['rt']
-			if 'vsi' in content:
-				hds[Constants.hfVSI] = content['vsi']
-			if 'ot' in content:
-				hds[Constants.hfOT] = content['ot']
+		# Add content
+		content = request.pc if request.pc else None
 
-			# Get filter criteria
-			arguments = []
-			if 'rcn' in content:
-				arguments.append(f'rcn={content["rcn"]}')
-			if 'drt' in content:
-				arguments.append(f'drt={content["drt"]}')
-			if fc := content.get('fc'):
-				for key in list(fc.keys()):
-					arguments.append(f'{key}={fc[key]}')
-			
-			# Add further non-filterCriteria arguments
-			if 'sqi' in content:
-				arguments.append(f'sqi={content["sqi"]}')
-			
-			# Add attributeList
-			if (atrl := findXPath(content, 'pc/m2m:atrl')) is not None:
-				arguments.append(f'atrl={"+".join(atrl)}')
-
-
-			# Add to to URL
-			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
-			# TODO  check this
-			# if not url.endswith(to := data["to"]):	# Do not append to when forwarding. The URL already contains the target
-			# 	delim = '~'	if url.endswith('/') else '/~'
-			# 	url = f'{url}{delim}{to}'
-
-			# Add arguments to URL
-			if arguments:
-				url += f'?{"&".join(arguments)}'
-				
-			# re-assign the content to pc
-			if 'pc' in content:
-				content = content['pc']
 		
 		# Get request timeout
 		timeout = self.requestTimeout if timeout is None else timeout
 
 		# serialize data (only if dictionary, pass on non-dict data)
 		data = None
-		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
+		if request.op in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			data = serializeData(content, ct)
-		elif content and not raw:
-			raise INTERNAL_SERVER_ERROR(L.logErr(f'Operation: {operation} doesn\'t allow content'))
+		# elif content and not raw:
+		elif content:
+			raise INTERNAL_SERVER_ERROR(L.logErr(f'Operation: {request.op.name} doesn\'t allow content'))
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different

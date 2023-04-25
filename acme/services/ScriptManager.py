@@ -1119,18 +1119,38 @@ class ACMEPContext(PContext):
 		L.isDebug and L.logDebug(f'Sending request from script: {resReq.originalRequest} to: {target}')
 		if isURL(target):
 			if operation == Operation.RETRIEVE:
-				res = CSE.request.sendRetrieveRequest(target, originator)
-			if operation == Operation.DELETE:
-				res = CSE.request.sendDeleteRequest(target, originator)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+															   to = target, 
+															   originator = originator)
+												   )[0].result	# there should be at least one result
+
+			elif operation == Operation.DELETE:
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+															   to = target, 
+															   originator = originator)
+												   )[0].result	# there should be at least one result
 			elif operation == Operation.CREATE:
-				res = CSE.request.sendCreateRequest(target, originator, ty, content = request.pc)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
+															   to = target, 
+															   originator = originator, 
+															   ty = ty,
+															   pc = request.pc)
+												   )[0].result	# there should be at least one result
 			elif operation == Operation.UPDATE:
-				res = CSE.request.sendUpdateRequest(target, originator, content = request.pc)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
+															   to = target, 
+															   originator = originator, 
+															   pc = request.pc)
+												   )[0].result	# there should be at least one result
 			elif operation == Operation.NOTIFY:
-				res = CSE.request.sendNotifyRequest(target, originator, content = request.pc)
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+															   to = target, 
+															   originator = originator, 
+															   pc = request.pc)
+												   )[0].result	# there should be at least one result
 
 		else:
-			# Request via CSE-ID, either local, or otherwise a transit reqzest. Let the CSE handle it
+			# Request via CSE-ID, either local, or otherwise a transit request. Let the CSE handle it
 			res = CSE.request.handleRequest(request)
 
 		return self._pcontextFromRequestResult(pcontext, res)
@@ -1305,7 +1325,7 @@ class ScriptManager(object):
 							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 
 
-	def onNotification(self, name:str, uri:str, originator:str, data:JSON) -> None:
+	def onNotification(self, name:str, uri:str, request:CSERequest) -> None:
 		"""	Callback for the *notification* event.
 
 			Run script(s) with configured meta tags, if any.
@@ -1320,8 +1340,8 @@ class ScriptManager(object):
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
 								  uri,
 								  background = False, 
-								  environment = { 'notification.resource' : SSymbol(jsn = data), 
-								  				  'notification.originator' : SSymbol(string = originator),
+								  environment = { 'notification.resource' : SSymbol(jsn = request.pc), 
+								  				  'notification.originator' : SSymbol(string = request.originator),
 												  'notification.uri': SSymbol(string = uri) })	
 		except Exception as e:
 			L.logErr('Error in JSON', exc = e)

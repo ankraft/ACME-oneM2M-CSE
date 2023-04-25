@@ -47,6 +47,7 @@ class ACMEContainerRequests(Container):
 
 class ACMEListItem(ListItem):
 	# TODO own module?
+
 	def __init__(self, *children: Widget, name: str | None = None, id: str | None = None, classes: str | None = None, disabled: bool = False) -> None:
 		super().__init__(*children, name=name, id=id, classes=classes, disabled=disabled)
 		self._data:Any = None
@@ -68,7 +69,7 @@ class ACMEViewRequests(Vertical):
 		self._currentRI:str = None
 
 		# Request list view : header + list
-		self.requestListHeader = Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]         [u b]Target[/u b]                      [u b]Originator[/u b]                  [u b]Operation[/u b]    [u b]Response Status[/u b]', 
+		self.requestListHeader = Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]         [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]', 
 									   id = 'request-list-header')
 		self.requestListHeader.styles.height = 2
 		self.requestList = ListView(id = 'request-list-list')
@@ -112,15 +113,15 @@ class ACMEViewRequests(Vertical):
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
-		self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req']))
-		self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp']))
+		self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
+		self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
 	
 
 	async def on_list_view_highlighted(self, selected:ListView.Highlighted) -> None:
 		# self.tuiApp.bell()
 		if selected and selected.item:
-			self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req']))
-			self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp']))
+			self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
+			self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
 
 
 	def action_refresh_requests(self) -> None:
@@ -168,11 +169,22 @@ class ACMEViewRequests(Vertical):
 
 		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI))
 
+
 		for i, r in enumerate(self._currentRequests):
 			_ts = toISO8601Date(r["ts"], readable = True).split('T')
+			_out = r['out']
+			if _out:
+				_to = r['req']['to']
+			else:
+				_to = r['ri']
+			_to = _to if _to else ''
+			_srn = r["srn"]
+			_srn = _srn if _srn else ''
 			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {str(r["ri"]):25}   {str(r["org"]):25}   {Operation(r["op"]).name:10}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]        [dim]{str(r["srn"])}[/dim]')))
+				Label(f' {i:4}  -  {_ts[1]}   {r["op"].name:10.10}   {str(r["org"]):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
 			_l._data = i
+			if r['out']:
+				_l.set_class(True, '--outgoing')
 		if len(self._currentRequests):
 			self.setIndex(0)
 	

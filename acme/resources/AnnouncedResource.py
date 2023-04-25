@@ -8,7 +8,7 @@
 #
 
 from typing import Optional
-from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON
+from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON, CSERequest, Operation
 from ..etc.ResponseStatusCodes import ResponseException
 from ..resources.Resource import Resource
 from ..services import CSE
@@ -41,7 +41,10 @@ class AnnouncedResource(Resource):
 			content:JSON = {}
 			content[ResourceTypes(self.ty).fromAnnounced().tpe()] = dct[self.tpe]	# take only the resource attributes and assign to the non-announced version
 			try:
-				CSE.request.sendUpdateRequest(self.lnk, CSE.cseCsi, content = content)
+				CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
+														 to = self.lnk, 
+														 originator = CSE.cseCsi, 
+														 pc = content))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Cannot update original resource on remote CSE: {self.lnk} : {e.dbg}')
 				return

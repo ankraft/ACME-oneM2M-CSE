@@ -479,16 +479,17 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self,
-						operation:Operation,
-						url:str, originator:str,
-						to:str = None,
-						ty:ResourceTypes = None, 
-						content:JSON = None,
-						parameters:CSERequest = None, 
-						ct:ContentSerializationType = None, 
-						rvi:str = None,
-						raw:bool = False) -> Result:	 # type: ignore[type-arg]
+	# def sendMqttRequest(self,
+	# 					operation:Operation,
+	# 					url:str, originator:str,
+	# 					to:str = None,
+	# 					ty:ResourceTypes = None, 
+	# 					content:JSON = None,
+	# 					parameters:CSERequest = None, 
+	# 					ct:ContentSerializationType = None, 
+	# 					rvi:str = None,
+	# 					raw:bool = False) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, request:CSERequest, url:str) -> Result:
 		"""	Sending a request via MQTT.
 		"""
 
@@ -508,37 +509,31 @@ class MQTTClient(object):
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
-		req 					= Result(request = CSERequest())
-		req.request.id			= u.path[1:] if u.path[1:] else to
-		req.request.op			= operation
-		req.resource			= content
-		req.request.originator	= originator
+
+		req 					= Result(request = request)
+		req.request.id			= u.path[1:] if u.path[1:] else req.request.to
+		req.resource			= req.request.pc
 		req.request.rqi			= uniqueRI()
-		if rvi != '1':
-			req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
+		if req.request.rvi != '1':
+			req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
 		req.request.ot			= getResourceDate()
 		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-		req.request.ct			= ct if ct else CSE.defaultSerialization 	# get the serialization
-
-		# Add additional parameters. This is a CSERequest
-		if parameters:
-			req.request.ec = parameters.ec
+		req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
 
 		# construct the actual request and topic.
-		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw = raw)
+		# Some work is needed here because we take a normal URL for the address
+		preq = prepareMqttRequest(req)
 		topic = u.path
 		pathSplit = u.path.split('/')
-		ct = ct if ct else CSE.defaultSerialization
 
 		# Build the topic
 		if not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(to if to else originator))}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
@@ -606,6 +601,7 @@ class MQTTClient(object):
 ##############################################################################
 
 
+# TODO check whether this still needs to be this complicated after we refactored request sending
 def prepareMqttRequest(inResult:Result, 
 					   originator:Optional[str] = None, 
 					   ty:Optional[ResourceTypes] = None, 
