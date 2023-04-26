@@ -89,7 +89,6 @@ class ACMETuiApp(App):
 			yield self.containerInfo
 			yield self.containerAbout
 			yield Container(id = 'empty')
-
 		yield self.footer
 
 

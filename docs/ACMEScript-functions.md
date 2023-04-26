@@ -664,7 +664,7 @@ Example:
 
 The `let*` function let one assigns values to variables in multiple steps. 
 
-Each assignment is consists, like the [setq](#setq) function, of an implicit quoted list with a variable symbol and an s-expression, but differently from the [setq](#setq) function, the `let*` function handles multiple assignments. The assignments are handled sequentially.
+Each assignment consists, like the [setq](#setq) function, of an implicit quoted list with a variable symbol and an s-expression, but differently from the [setq](#setq) function, the `let*` function handles multiple assignments. The assignments are handled sequentially.
 
 Note: The `let` function (without the star), where assignments are handled in parallel is yet not supported.
 

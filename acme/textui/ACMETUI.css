@@ -1,5 +1,17 @@
- 
- Screen {
+/*
+ *	ACMETUI.css
+ *
+ *	(c) 2023 by Andreas Kraft
+ *	License: BSD 3-Clause License. See the LICENSE file for further details.
+ *
+ *	CSS file for the Text UI based on Textualize
+ */
+
+/*
+ *	Changes to Textualize default CSS
+ */
+
+Screen {
 	background: $surface;
 }
 
@@ -19,8 +31,10 @@ ListView > ListItem.--outgoing.--highlight {
 	background: $accent;
 }
 
-/****************************************************************************/
-
+/*
+ *	ACME TUI own components
+ */
+ 
 #tree-view {
 	display: block; 
 	scrollbar-gutter: stable;
