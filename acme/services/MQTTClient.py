@@ -17,7 +17,7 @@ from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, R
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import requestFromResult, serializeData
 from ..etc.DateUtils import getResourceDate, waitFor
-from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread
+from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread, csiFromSPRelative, getIdFromOriginator
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..services.Configuration import Configuration
@@ -231,7 +231,7 @@ class MQTTClientHandler(MQTTHandler):
 		if isRegistration:
 			# Check access in case of a registration
 			if CSE.security.allowedCredentialIDsMqtt:
-				L.logWarn(CSE.security.allowedCredentialIDsMqtt)
+				#L.logWarn(CSE.security.allowedCredentialIDsMqtt)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
 				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
 					CSE.request.recordRequest(dissectResult.request, dissectResult)
@@ -474,21 +474,10 @@ class MQTTClient(object):
 
 
 	#########################################################################
-
 	#
 	#	Send MQTT requests
 	#
 
-	# def sendMqttRequest(self,
-	# 					operation:Operation,
-	# 					url:str, originator:str,
-	# 					to:str = None,
-	# 					ty:ResourceTypes = None, 
-	# 					content:JSON = None,
-	# 					parameters:CSERequest = None, 
-	# 					ct:ContentSerializationType = None, 
-	# 					rvi:str = None,
-	# 					raw:bool = False) -> Result:	 # type: ignore[type-arg]
 	def sendMqttRequest(self, request:CSERequest, url:str) -> Result:
 		"""	Sending a request via MQTT.
 		"""
@@ -528,8 +517,11 @@ class MQTTClient(object):
 
 		# Build the topic
 		if not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
+			# Miguel's proposal
+			# topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
@@ -594,6 +586,8 @@ class MQTTClient(object):
 		if not waitFor(timeOut, _receivedResponse):
 			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, 
 						  dbg = 'Target not reachable or timeout'), None
+		resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
+													# TODO perhaps unify the use of response values throughout the CSE
 		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
 		return resp, topic
 
@@ -603,29 +597,23 @@ class MQTTClient(object):
 
 # TODO check whether this still needs to be this complicated after we refactored request sending
 def prepareMqttRequest(inResult:Result, 
-					   originator:Optional[str] = None, 
-					   ty:Optional[ResourceTypes] = None, 
-					   op:Optional[Operation] = None, 
-					   isResponse:Optional[bool] = False, 
-					   raw:Optional[bool] = False) -> Result:
-	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
+					   isResponse:Optional[bool] = False,) -> Result:
+	"""	Prepare a new request for MQTT. 
 	
-		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
+		Attention:
+			Remember, a response is actually just a new request. This takes care of the fact that in MQTT
+			a response is very similar to a response.
+	
+		Args:
+			inResult: A `Result` object, that contains a request in its *request* attribute.
+			isResponse: Indicater whether the `Result` object is actually a response or a request.
+
+		Return:
+			The constructed and serialized content is returned in a tuple in the `Result.data` attribute:
+		    the content as a dictionary and the serialized content.
 	"""
-	result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
-
-	# When raw: Replace the data with its own primitive content, and a couple of headers
-	if raw and (pc := cast(JSON, result.data).get('pc')):
-		result.data = pc
-		if 'rqi' in pc:
-			result.request.rqi = pc['rqi']
-		if 'ot' in pc:
-			result.request.ot = pc['ot']
-	
-	# Always add the original timestamp in a response
-	if not result.request.ot:
-		result.request.ot = getResourceDate()
-
+	# result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
+	result = requestFromResult(inResult, isResponse = isResponse)
 	result.data = (result.data, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 

@@ -24,7 +24,7 @@ import isodate
 
 from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
-from ..etc.Types import Operation, CSERequest, ContentSerializationType
+from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
 from ..helpers.TextTools import findXPath
@@ -476,20 +476,20 @@ class HttpServer(object):
 			hds[Constants.hfRST] = request.rset
 		if request.oet:
 			hds[Constants.hfOET] = request.oet
-		if request.rt and request.rt != request	._rtDefault:
+		if request.rt and request.rt != ResponseType._default:
 			hds[Constants.hfRTU] = str(request.rt.value)
 		if request.vsi:
 			hds[Constants.hfVSI] = request.vsi
 
 		# Add filterCriteria arguments
 		arguments = []
-		if request.rcn:
+		if request.rcn and request.rcn != ResultContentType.default(request.op):
 			arguments.append(f'rcn={request.rcn.value}')
-		if request.drt:
+		if request.drt and request.drt != DesiredIdentifierResultType._default:
 			arguments.append(f'drt={request.drt.value}')
 		if fc := request.fc:
-			for k,v in fc.criteriaAttributes().items():
-				arguments.append(f'{k}={v}')
+			fc.mapAttributes(lambda k, v: arguments.append(f'{k}={v}'), False)
+
 		# Add further non-filterCriteria arguments
 		if request.sqi:
 			arguments.append(f'sqi={request.sqi}')
@@ -497,6 +497,10 @@ class HttpServer(object):
 		# Add attributeList
 		if (atrl := findXPath(request.pc, 'm2m:atrl')) is not None:
 			arguments.append(f'atrl={"+".join(atrl)}')
+		
+		# Add arguments to URL
+		if arguments:
+			url += f'?{"&".join(arguments)}'
 
 		# Add content
 		content = request.pc if request.pc else None
@@ -554,6 +558,7 @@ class HttpServer(object):
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
 			raise TARGET_NOT_REACHABLE('target not reachable')
+		
 		res = Result(rsc = resp.rsc, data = resp.pc, request = resp)
 		self._eventResponseReceived(resp)
 		return res
@@ -594,7 +599,7 @@ class HttpServer(object):
 		#
 		#	Transform request to oneM2M request
 		#
-		outResult = requestFromResult(result, isResponse=True)
+		outResult = requestFromResult(result, isResponse = True)
 
 		#
 		#	Transform oneM2M request to http message

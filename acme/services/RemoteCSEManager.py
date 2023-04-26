@@ -428,7 +428,8 @@ class RemoteCSEManager(object):
 					L.isDebug and L.logDebug('Remote CSR updated')
 
 			# No CSR on registrar CSE found, try to register
-			except:
+			except Exception as e:
+				L.logErr(str(e), exc = e)
 				L.isDebug and L.logDebug('CSR not found on registrar CSE')
 				# Potential disconnect
 				try:
@@ -762,7 +763,6 @@ class RemoteCSEManager(object):
 													   to = id, 
 													   originator = originator)
 											)[0].result		# there should be at least one result
-		
 		# assign the remote ID to the resource's dictionary
 		_, tpe, _ = pureResource(cast(JSON, res.data))
 		setXPath(cast(JSON, res.data), f'{tpe}/{Constants.attrRemoteID}', id)

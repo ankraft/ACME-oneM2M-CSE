@@ -171,7 +171,11 @@ def requestFromResult(inResult:Result,
 
 	# Originating Timestamp
 	if inResult.request.ot:
-		req['ot'] = getResourceDate()
+			req['ot'] = inResult.request.ot
+	else:
+		# Always add the OT in a response if not already present
+		if isResponse:
+			req['ot'] = getResourceDate()
 	
 	# Response Status Code
 	if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
@@ -205,7 +209,16 @@ def requestFromResult(inResult:Result,
 	
 	# Event Category
 	if inResult.request.ec:
-		req['ec'] = inResult.request.ec.value
+		req['ec'] = int(inResult.request.ec)
+	
+	# Result Content
+	if inResult.request.rcn:
+		req['rcn'] = int(inResult.request.rcn)
+
+	# Result Content
+	if inResult.request.drt:
+		req['drt'] = int(inResult.request.drt)
+
 
 
 	# If the response contains a request (ie. for polling), then add that request to the pc
@@ -229,6 +242,15 @@ def requestFromResult(inResult:Result,
 			req['pc'] = { 'm2m:rqp' : pc }
 		else:
 			req['pc'] = pc
+
+	# Filter Criteria attributes
+	if inResult.request.fc:
+		fcAttributes:JSON = {}
+		inResult.request.fc.mapAttributes(lambda k,v: fcAttributes.update({k:v}), False)
+		if fcAttributes:
+			req['fc'] = fcAttributes
+
+
 	
 	return Result(data = req, 
 				  resource = inResult.resource, 

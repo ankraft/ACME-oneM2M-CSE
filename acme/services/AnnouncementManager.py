@@ -209,7 +209,7 @@ class AnnouncementManager(object):
 			"""
 			L.isDebug and L.logDebug(f'Check CSEBase announcement')
 			if t := self._announcedInfos(cseBase, csi):
-				L.isDebug and L.logDebug(f'announcedment infos: {t}')
+				L.isDebug and L.logDebug(f'announcement infos: {t}')
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
 				try:
@@ -243,7 +243,7 @@ class AnnouncementManager(object):
 															   originator = CSE.cseCsi,
 															   rcn = ResultContentType.childResourceReferences,
 															   drt = DesiredIdentifierResultType.unstructured,
-															   fc = FilterCriteria(ty = [ ResourceTypes.CSEBaseAnnc ],
+															   fc = FilterCriteria(ty = [ ResourceTypes.CSEBaseAnnc.value ],
 																				   attributes = { 'lnk' : f'{cseBase.csi}/{cseBase.ri}' } ))
 													)[0].result		# there should be at least one result
 				if res.rsc == ResponseStatusCode.OK and res.data:	# Found a remote CSEBaseAnnc
