@@ -902,6 +902,12 @@ class ResultContentType(ACMEIntEnum):
 		"""
 		return op in _ResultContentTypeForOperations and self.value in _ResultContentTypeForOperations[op] 
 
+	@classmethod
+	def default(cls, op:Operation) -> ResultContentType:
+		return _ResultContentTypeDefaults[op]
+	
+
+
 _ResultContentTypeForOperations = {
 	Operation.RETRIEVE:		[ ResultContentType.attributes, 					
 		   					  ResultContentType.attributesAndChildResources, 
@@ -929,12 +935,22 @@ _ResultContentTypeForOperations = {
 	Operation.NOTIFY:		[ ResultContentType.nothing ],
 }
 
+_ResultContentTypeDefaults = {
+	Operation.RETRIEVE:	ResultContentType.attributes, 					
+	Operation.DISCOVERY: ResultContentType.discoveryResultReferences,
+	Operation.CREATE: ResultContentType.attributes,
+	Operation.UPDATE: ResultContentType.attributes,
+	Operation.DELETE: ResultContentType.nothing,
+	Operation.NOTIFY: None,
+}
+
 
 	# ResultContentType.discoveryRCN = [ ResultContentType.discoveryResultReferences,		 #  type: ignore
 	# 								   ResultContentType.childResourceReferences ]
 
 class FilterOperation(ACMEIntEnum):
 	"""	Filter Operation """
+	_default		= 1
 	AND 			= 1 # default
 	OR 				= 2
 	XOR 			= 3
@@ -942,6 +958,7 @@ class FilterOperation(ACMEIntEnum):
 
 class FilterUsage(ACMEIntEnum):
 	"""	Filter Usage """
+	_default				= 2
 	discoveryCriteria		= 1
 	conditionalRetrieval	= 2 # default
 	ipeOnDemandDiscovery	= 3
@@ -950,6 +967,7 @@ class FilterUsage(ACMEIntEnum):
 
 class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
+	_default		= 1
 	structured		= 1 # default
 	unstructured	= 2
 
@@ -982,6 +1000,8 @@ class CSEStatus(ACMEIntEnum):
 class ResponseType(ACMEIntEnum):
 	"""	Reponse Types enum values. """
 
+	_default					= 3
+	
 	nonBlockingRequestSynch		= 1
 	""" Non-blocking synchronous. """
 
@@ -1565,7 +1585,7 @@ class FilterCriteria:
 
 	def criteriaAttributes(self) -> dict:
 		"""	Return all the set Filter Criteria attributes, ie. that are not None.
-			The result doesn't include handling attributes, such as 'fu' or 'fo'.
+			The result doesn't include handling attributes, such as 'fu','lim' or 'fo' etc.
 			
 			Return:
 				Dictionary with set Filter Criteria attributes.
@@ -1577,11 +1597,49 @@ class FilterCriteria:
 
 
 	def fillCriteriaAttributes(self) -> dict:
+		"""	Create and return a dictionary with all (unfiltered) Filter Criteria attributes.
+		
+			Return:
+				Dictionary with all attributes.
+		"""
 		return { k:v 
 				 for k, v in self.__dict__.items() 
 				 if v
 			   }
 
+
+	def mapAttributes(self, cb:Callable, flattenList:bool) -> None:
+		"""	Map the standard and attribute Filter Criteria attributes.
+		 	
+			This method calls a callback or lambda function that can map the keys and attributes
+			further.
+			  
+			Args:
+				cb: Callback function that receives a key and its value.
+				flattenList: Separate a list in multiple values or keep the list
+		"""
+
+		# Map only the attributes that are part of the Filter Criteria
+		 
+		for k, v in self.__dict__.items():
+			if k in [ 'attributes']:	# Handle "attributes" below
+				continue
+			if v is None:
+				continue
+			if isinstance(v, list) and flattenList:
+				for e in v:
+					cb(k, e)
+			else:
+				cb(k, v)
+
+		# Also map free filter criteria attributes
+		if self.attributes:
+			for k, v in self.attributes.items():
+				if isinstance(v, list):
+					for e in v:
+						cb(k, e)
+				else:
+					cb(k, v)
 
 
 	def __str__(self) -> str:
@@ -1635,16 +1693,14 @@ class CSERequest:
 	ty:ResourceTypes = None
 	""" Resource type. """
 
-	_drtDefault = DesiredIdentifierResultType.structured
-	drt:DesiredIdentifierResultType	= _drtDefault
+	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType._default
 	"""	Desired Indentifier Result Type (default: structured). """
 
 	_rcnDefault = ResultContentType.discoveryResultReferences
-	rcn:ResultContentType = _rcnDefault
+	rcn:ResultContentType = None
 	""" Result Content Type. """
 
-	_rtDefault = ResponseType.blockingRequest
-	rt:ResponseType = _rtDefault
+	rt:ResponseType = ResponseType._default
 	""" Response Type (default: blocking request)."""
 
 	rp:str = None
@@ -1746,11 +1802,11 @@ class CSERequest:
 			self.originalRequest['ty'] = self.ty
 		if self.originator:
 			self.originalRequest['org'] = self.originator
-		if self.drt and self.drt != self._drtDefault:
+		if self.drt and self.drt != DesiredIdentifierResultType._default:
 			self.originalRequest['drt'] = self.drt
 		if self.rcn and self.rcn != self._rcnDefault:
 			self.originalRequest['rcn'] = self.rcn
-		if self.rt and self.rt != self._rtDefault:
+		if self.rt and self.rt != ResponseType._default:
 			self.originalRequest['rt'] = self.rt
 		if self.rp:
 			self.originalRequest['rp'] = self.rp
