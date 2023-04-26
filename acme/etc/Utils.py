@@ -232,13 +232,19 @@ def isValidCSI(csi:str) -> bool:
 
 _aeRx = re.compile('^[^/\s]+') # Must not start with a / and must not contain a further / or white space
 def isValidAEI(aei:str) -> bool:
-	"""	Test for valid AE-ID format.
+	"""	Test for valid AE-ID format. 
+
+		It takes SP-Relative AEI's into account.
 
 		Args:
 			aei: The AE-ID to check
 		Return:
 			Boolean
 	"""
+	if isSPRelative(aei):
+		ids = aei.split('/')
+		aei = ids[-1]
+
 	return re.fullmatch(_aeRx, aei) is not None
 
 
