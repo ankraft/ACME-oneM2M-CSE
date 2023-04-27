@@ -1536,7 +1536,7 @@ class RequestManager(object):
 							   request.originator,
 							   request._outgoing,
 							   request.originalRequest,
-							   { 'rsc': result.rsc.value,
+							   { 'rsc': result.rsc,
 							   	 'pc': pc,
 								 'dbg': result.dbg
 							   })

@@ -839,14 +839,6 @@ class Operation(ACMEIntEnum):
 		return _OperationPermissionsMapping[self]
 
 
-	def __str__(self) -> str:
-		return self.name
-
-
-	def __repr__(self) -> str:
-		return self.__str__()
-
-
 	@classmethod
 	def isvalid(cls, op:int) -> bool:
 		"""	Check whether an operation is valid.
