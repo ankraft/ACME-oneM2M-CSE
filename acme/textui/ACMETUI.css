@@ -34,7 +34,7 @@ ListView > ListItem.--outgoing.--highlight {
 /*
  *	ACME TUI own components
  */
- 
+
 #tree-view {
 	display: block; 
 	scrollbar-gutter: stable;
@@ -54,6 +54,9 @@ ListView > ListItem.--outgoing.--highlight {
 }
 
 
+/*
+ * Requests
+ */
 #requests-view {
 	/* overflow: auto scroll;   */
 	overflow: auto;  
@@ -87,7 +90,7 @@ ListView > ListItem.--outgoing.--highlight {
 #request-list-details-header {
 	overflow: auto;
 	min-width: 100%;
-	height: 3;
+	height: 2;
 	align-vertical: middle;
 	/* background:#202020; */
 	background: $panel;
@@ -96,54 +99,72 @@ ListView > ListItem.--outgoing.--highlight {
 #request-list-details {
 	overflow: auto scroll;
 	min-width: 100%;
-	padding: 1 1;
+	/* padding: 1 1; */
 	/* height: 50%; */
 }	
 
 #request-list-request {
 	overflow: auto;  
-	width: 50%;
+	width: 1fr;
 	min-height: 100%;
-	/* padding: 1 1; */
+	padding: 1 1;
 }
 
 #request-list-response {
 	overflow: auto;  
-	width: 50%;
+	width: 1fr;
 	min-height: 100%;
 	border-left: $panel;
-	/* padding: 1 1; */
+	padding: 1 1;
 }
+
+
+
+/*
+ * Statistics & Info
+ */
 
 #stats-view {
 	display: block;
 	overflow: auto scroll;  
 	min-width: 100%;
-	padding: 1 1;
+	/* padding: 1 1; */
 	/*background:red;*/
 }
+
+/*
+ * Registrations
+ */
 
 #regs-view {
 	display: block;
 	overflow: auto scroll;  
 	min-width: 100%;
-	padding: 1 1;
+	/* padding: 1 1; */
 	/*background:red;*/
 }
+
+/*
+ * Configurations
+ */
 
 #configs-view {
 	display: block;
 	overflow: auto scroll;  
 	min-width: 100%;
-	padding: 1 1;
+	/* padding: 1 1; */
 	/*background:red;*/
 }
+
+/* 
+ * About
+ */
 
 #about-view {
 	display: block;
 	overflow: auto scroll;  
 	min-width: 100%;
-	padding: 1 1;
+	/* padding: 1 1; */
 	/*background:red;*/
 }
 

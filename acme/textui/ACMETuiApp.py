@@ -13,6 +13,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Tabs, Tab, Footer, ContentSwitcher
 from textual.binding import Binding
 from textual.containers import Container
+from textual.design import ColorSystem
 from ..textui.ACMEHeader import ACMEHeader
 from ..textui.ACMEContainerAbout import ACMEContainerAbout, idAbout
 from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations, idConfigs
@@ -22,12 +23,45 @@ from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRe
 from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
 
 
+
 tabResources = 'tab-resources'
 tabRequests = 'tab-requests'
 tabRegistrations = 'tab-registrations'
 tabConfigurations = 'tab-configurations'
 tabInfo = 'tab-info'
 tabAbout = 'tab-about'
+
+# AYU theme (see https://github.com/Textualize/textual/discussions/1407)
+CUSTOM_COLORS = {
+	'dark': ColorSystem(
+		primary = '#39BAE6',      # syntax.tag
+		secondary = '#FFB454',    # syntax.func
+		accent = '#59C2FF',       # syntax.entity
+		warning = '#E6B450',      # common.accent
+		error = '#D95757',        # common.error
+		success = '#7FD962',      # vcs.added
+		background = '#0B0E14',   # ui.bg
+		boost = '#47526633',      # ui.selection.normal
+		surface = '#0F131A',      # ui.panel.bg
+		panel = '#565B66',        # ui.fg
+		dark = True,
+	),
+
+	'light': ColorSystem(
+		primary = '#55B4D4',
+		secondary = '#F2AE49',
+		accent = '#399EE6',
+		warning = '#FFAA33',
+		error = '#E65050',
+		success = '#6CBF43',
+		background = '#F8F9FA',
+		boost = '#6B7D8F1F',
+		surface = '#F3F4F5',
+		panel = '#8A9199',
+		dark = False,
+	)
+}
+
 
 class ACMETuiQuitReason(IntEnum):
 	undefined = auto()
@@ -52,6 +86,7 @@ class ACMETuiApp(App):
 		super().__init__()
 		self.textUI = textUI	# Keep backward link
 		self.quitReason = ACMETuiQuitReason.undefined
+		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
 
 
 	def compose(self) -> ComposeResult:
@@ -92,6 +127,10 @@ class ACMETuiApp(App):
 		yield self.footer
 
 
+	def on_mount(self) -> None:
+		self.design = CUSTOM_COLORS
+		self.refresh_css()
+	
 	async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
 		"""Handle TabActivated message sent by Tabs."""
 		if event.tab.id == tabResources:
