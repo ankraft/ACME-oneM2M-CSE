@@ -25,22 +25,18 @@ class ACMEContainerRegistrations(Container):
 		self.tuiApp = tuiApp
 		self.registrationsView = Static(expand = True)
 		self.registrationsUpdate()
-		#self.set_interval(_textUI.refreshInterval, self.registrationsUpdate)
 
 
 	def compose(self) -> ComposeResult:
-		yield Container(
-			Vertical(self.registrationsView, id = 'regs-view')
-		)
+		with Vertical(id = 'regs-view'):
+			yield self.registrationsView
 
 
-	async def onShow(self) -> None:
+	def on_show(self) -> None:
 		self.registrationsUpdate()
-
+	
 
 	def registrationsUpdate(self) -> None:
-		# _textUI.tuiApp.bell()
-		if self.tuiApp.content.current == idRegs:
-			self.registrationsView.update(CSE.console.getRegistrationsRich())
+		self.registrationsView.update(CSE.console.getRegistrationsRich())
 
 

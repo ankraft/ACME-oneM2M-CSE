@@ -10,14 +10,14 @@
 from __future__ import annotations
 from enum import IntEnum, auto
 from textual.app import App, ComposeResult
-from textual.widgets import Tabs, Tab, Footer, ContentSwitcher
+from textual.widgets import Tabs, Tab, Footer, ContentSwitcher, TabbedContent, TabPane, Static
 from textual.binding import Binding
 from textual.containers import Container
 from textual.design import ColorSystem
 from ..textui.ACMEHeader import ACMEHeader
 from ..textui.ACMEContainerAbout import ACMEContainerAbout, idAbout
 from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations, idConfigs
-from ..textui.ACMEContainerInfo import ACMEContainerInfo, idInfo
+from ..textui.ACMEContainerInfo import ACMEContainerInfo, tabInfo
 from ..textui.ACMEContainerTree import ACMEContainerTree, idTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRegs
 from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
@@ -28,7 +28,6 @@ tabResources = 'tab-resources'
 tabRequests = 'tab-requests'
 tabRegistrations = 'tab-registrations'
 tabConfigurations = 'tab-configurations'
-tabInfo = 'tab-info'
 tabAbout = 'tab-about'
 
 # AYU theme (see https://github.com/Textualize/textual/discussions/1407)
@@ -81,76 +80,68 @@ class ACMETuiApp(App):
 				  Binding('Q', 'quit_acme', 'Quit ACME', key_display = 'SHIFT-Q'),
 				]
 
-
 	def __init__(self, textUI:TextUI.TextUI):
 		super().__init__()
-		self.textUI = textUI	# Keep backward link
+		self.textUI = textUI	# Keep backward link to the textUI manager
+		self.dark = self.textUI.theme == 'dark'
 		self.quitReason = ACMETuiQuitReason.undefined
+		self.debugging = False
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
 
-
-	def compose(self) -> ComposeResult:
-		"""Create child widgets for the app."""
-
-		self.dark = self.textUI.theme == 'dark'
-
-		self.content = ContentSwitcher(initial = idTree)
+		self.tabs = TabbedContent()
 		self.containerTree = ACMEContainerTree()
 		self.containerRequests = ACMEContainerRequests(self)
 		self.containerRegistrations = ACMEContainerRegistrations(self)
 		self.containerConfigs = ACMEContainerConfigurations(self)
 		self.containerInfo = ACMEContainerInfo(self)
 		self.containerAbout = ACMEContainerAbout()
-		self.footer = Footer()
+		self.debugConsole = Static('', id = 'debug-console')
 
+	def compose(self) -> ComposeResult:
+		"""Create child widgets for the app."""
 
-		# self.logPanel = TextLog(id = 'log')
 		yield ACMEHeader(show_clock = True)
-		yield Tabs(
-			Tab('Resources', id = tabResources),
-			# Tab('AEs', id = 'tab-aes'),
-			# Tab('Logs', id = 'tab-logs'),
-			Tab('Requests', id = tabRequests),
-			Tab('Registrations', id = tabRegistrations),
-			Tab('Configurations', id = tabConfigurations),
-			Tab('Infos', id = tabInfo),
-			Tab('About', id = tabAbout),
-		)
-		with self.content:
-			yield self.containerTree
-			yield self.containerRequests
-			yield self.containerRegistrations
-			yield self.containerConfigs
-			yield self.containerInfo
-			yield self.containerAbout
-			yield Container(id = 'empty')
-		yield self.footer
+		if self.debugging:
+			yield self.debugConsole
+		with self.tabs:
+			with TabPane('Resources', id = tabResources):
+				yield self.containerTree
+			with TabPane('Requests', id = tabRequests):
+				yield self.containerRequests
+			with TabPane('Registrations', id = tabRegistrations):
+				yield self.containerRegistrations
+			with TabPane('Configurations', id = tabConfigurations):
+				yield self.containerConfigs
+			with TabPane('Infos', id = tabInfo):
+				yield self.containerInfo
+			with TabPane('About', id = tabAbout):
+				yield self.containerAbout
+		yield Footer()
 
 
 	def on_mount(self) -> None:
 		self.design = CUSTOM_COLORS
 		self.refresh_css()
 	
-	async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
-		"""Handle TabActivated message sent by Tabs."""
-		if event.tab.id == tabResources:
-			await self.containerTree.onShow()
-			self.content.current = idTree
-		elif event.tab.id == tabRequests:
-			self.content.current = idRequests
-			await self.containerRequests.onShow()
-		elif event.tab.id == tabRegistrations:
-			self.content.current = idRegs
-			await self.containerRegistrations.onShow()
-		elif event.tab.id == tabConfigurations:
-			self.content.current = idConfigs
-			await self.containerConfigs.onShow()
-		elif event.tab.id == tabInfo:
-			self.content.current = idInfo
-			await self.containerInfo.onShow()
-		elif event.tab.id == tabAbout:
-			self.content.current = idAbout
-			await self.containerInfo.onShow()
+	# async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
+	# 	"""Handle TabActivated message sent by Tabs."""
+	# 	if event.tab.id == tabResources:
+	# 		await self.containerTree.onShow()
+	# 		self.content.current = idTree
+	# 	elif event.tab.id == tabRequests:
+	# 		self.content.current = idRequests
+	# 		await self.containerRequests.onShow()
+	# 	elif event.tab.id == tabRegistrations:
+	# 		self.content.current = idRegs
+	# 		await self.containerRegistrations.onShow()
+	# 	elif event.tab.id == tabConfigurations:
+	# 		self.content.current = idConfigs
+	# 		await self.containerConfigs.onShow()
+	# 	elif event.tab.id == tabInfo:
+	# 		self.content.current = idInfo
+	# 		await self.containerInfo.onShow()
+	# 	elif event.tab.id == tabAbout:
+	# 		self.content.current = idAbout
 		# else:
 		# 	self.content.current = 'empty'
 
@@ -168,6 +159,20 @@ class ACMETuiApp(App):
 	async def action_quit_acme(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitAll
 		self.exit()
+
+
+	async def updateFooter(self) -> None:
+		"""	Hack to update the footer. 
+		"""
+		self.set_focus(None)
+
+
+	#########################################################################
+
+	def logDebug(self, msg:str) -> None:
+		"""	Print debug msg """
+		self.debugConsole.update(msg)
+
 
 	#########################################################################
 

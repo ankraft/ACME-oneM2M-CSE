@@ -8,13 +8,13 @@
 """
 
 from __future__ import annotations
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.widgets import Static
 from ..services import CSE
 
-
-idInfo = 'info'
+tabInfo = 'tab-info'
 
 
 class ACMEContainerInfo(Container):
@@ -22,23 +22,26 @@ class ACMEContainerInfo(Container):
 	from ..textui import ACMETuiApp
 
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__(id = idInfo)
+		super().__init__()
 		self.statsView = Static(expand = True)
 		self.tuiApp = tuiApp
-		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
 
 
 	def compose(self) -> ComposeResult:
-		yield Container(
-			Vertical(self.statsView, id = 'stats-view'))
+		with Vertical(id = 'stats-view'):
+			yield self.statsView
 
+	def on_mount(self) -> None:
+		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
+		self._statsUpdate(True)	# Update once at the beginning
+	
 
-	async def onShow(self) -> None:
-		self._statsUpdate()
+	def on_show(self) -> None:
+		self._statsUpdate(True)
+	
 
-
-	def _statsUpdate(self) -> None:
-		if self.tuiApp.content.current == idInfo:
-			# _textUI.tuiApp.bell()
+	def _statsUpdate(self, force:bool = False) -> None:
+		# self.tuiApp.logDebug(self.tuiApp.tabs.active)
+		if force or self.tuiApp.tabs.active == tabInfo:
 			self.statsView.update(CSE.console.getStatisticsRich())
 

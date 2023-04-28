@@ -69,32 +69,18 @@ Available under the BSD 3-Clause License"""
 ▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀\
 """
 
-												   
-	def __init__(self) -> None:
-		super().__init__(id = idAbout)
-	
-		self.logoView = Center(_l := Label(self.text))
-		_l.styles.text_align = 'center'
-		self.logoView.styles.padding = (4, 0, 0, 0)
-
-		self.linkView = Center(Label(self.link))
-		self.linkView.styles.padding = (2, 0, 0, 0)
-
-		self.socialLinkView = Center(Label(self.socialLink))
-		self.socialLinkView.styles.padding = (1, 0, 0, 0)
-
-		self.qrcodeView = Center(Label(self.qrcode))
-		self.qrcodeView.styles.padding = (8, 0, 0, 0)
-
-		self.aboutView = Vertical(self.logoView, 
-								  self.linkView,
-								  self.socialLinkView,
-								  self.qrcodeView,
-								  id = 'about-view')
-
-
 	def compose(self) -> ComposeResult:
-		yield self.aboutView
-
-	async def onShow(self) -> None:
-		...
+		with Vertical(id = 'about-view'):
+			with (_c := Center()):
+				_c.styles.padding = (4, 0, 0, 0)
+				yield (_l := Label(self.text))
+				_l.styles.text_align = 'center'
+			with (_c := Center()):
+				_c.styles.padding = (2, 0, 0, 0)
+				yield Label(self.link)
+			with (_c := Center()):
+				_c.styles.padding = (1, 0, 0, 0)
+				yield Label(self.socialLink)
+			with (_c := Center()):
+				_c.styles.padding = (8, 0, 0, 0)
+				yield Label(self.qrcode)

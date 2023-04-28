@@ -9,8 +9,8 @@
 from __future__ import annotations
 from typing import List, Tuple, Optional
 from textual.app import ComposeResult
-from textual.widgets import Tree as TextualTree, Static, Tabs, Tab, ContentSwitcher
-from textual.containers import Container, Vertical
+from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Label
+from textual.containers import Container, Vertical, ScrollableContainer
 from textual.binding import Binding
 from rich.pretty import Pretty
 from ..services import CSE
@@ -44,6 +44,7 @@ class ACMEResourceTree(TextualTree):
 		except ResponseException as e:
 			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
 
+
 	def on_tree_node_selected(self, node:TextualTree.NodeSelected) -> None:
 		try:
 			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
@@ -62,11 +63,8 @@ class ACMEResourceTree(TextualTree):
 
 	def _retrieve_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
-		# for r in CSE.dispatcher.directChildResources(ri):
 		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		for r in chs:
-			#_r = filter(lambda x: not x.isVirtual(), CSE.dispatcher.directChildResources(r.ri))
-			# result.append((r, len(CSE.dispatcher.directChildResources(r.ri)) > 0))
 			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
 		return result
 
@@ -87,49 +85,24 @@ class ACMEContainerTree(Container):
 		super().__init__(id = idTree)
 		self.resourceTree = ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view')
 		self.resourceTree.parentContainer = self
-		
-		# Resource view
+
+		# Tabs
+		self.tabs = TabbedContent()
+
+		# Resource and Request views
 		self.resourceView = Static(id = 'resource-view', expand = True)
-
-		# Request list view : header + list
-		# self.requestListHeader = Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]                       [u b]Originator[/u b]             [u b]Operation[/u b]    [u b]Response Status[/u b]')
-		# self.requestListHeader.styles.height = 2
-		# self.requestList = ListView(id = 'request-list-list')
-
-		# # Request view: request + response
-		# self.requestListRequest = Static(id = 'request-list-request')
-		# self.requestListResponse = Static(id = 'request-list-response')
-		# self.requestListDetails = Horizontal(self.requestListRequest, 
-		# 									 self.requestListResponse,
-		# 									 id = 'request-list-details')
-
-		# # Combine request views
-		# self.requestView = Vertical(self.requestListHeader, 
-		# 							self.requestList, 
-		# 							self.requestListDetails,
-		# 							id = 'request-list-view')
 		self.requestView = ACMEViewRequests()
-
-		# Tabs for the content view
-		self.treeInfoTabs = Tabs(
-			Tab('Resource', id = 'tree-tab-resource'),
-			Tab('Requests', id = 'tree-tab-requests'))
-
-		# Build the content view for the tabs
-		self.contentView = ContentSwitcher(
-			self.resourceView,
-			self.requestView,
-			initial = 'resource-view')
-
 
 	def compose(self) -> ComposeResult:
 		self.resourceTree.focus()
 
-		yield Container(
-			self.resourceTree,
-			#Vertical(self.resourceView, id = 'resource-view'),
-			Vertical(self.treeInfoTabs,
-					 self.contentView))
+		with Container():
+			yield self.resourceTree
+			with self.tabs:
+				with TabPane('Resource', id = 'tree-tab-resource'):
+					yield self.resourceView
+				with TabPane('Requests', id = 'tree-tab-requests'):
+					yield self.requestView
 	
 
 	def action_refresh_resources(self) -> None:
@@ -138,26 +111,23 @@ class ACMEContainerTree(Container):
 
 
 	async def onShow(self) -> None:
-		#self.resourceTree._update_tree()
 		self.resourceTree.focus()
 		self._update_requests()
 
 
-	async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
+	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
+	#async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
 		"""Handle TabActivated message sent by Tabs."""
-		if event.tab.id == 'tree-tab-resource':
-			#await self.containerTree.onShow()
-			self.contentView.current = 'resource-view'
-		elif event.tab.id == 'tree-tab-requests':
-			#await self.containerTree.onShow()
-			#self.contentView.current = 'requests-view'
-			self.contentView.current = 'request-list-view'
+		# self.app.debugConsole.update(event.tab.id)
+
+		if self.tabs.active == 'tree-tab-requests':
 			self._update_requests()
+			self.requestView.updateBindings()
+		self.app.updateFooter()	# type:ignore[attr-defined]
 
 
 	def _update_requests(self, ri:Optional[str] = None) -> None:
-		# TODO nicer representation
-		if self.contentView.current == 'request-list-view':
+		if self.tabs.active == 'tree-tab-requests':
 			self.requestView.currentRI = ri if ri else self.resourceTree.cursor_node.data
 			self.requestView.updateRequests()
 			self.requestView.requestList.focus()

@@ -114,7 +114,7 @@ balanceReduceFactor=2.0
 ;
 
 [cse.operation.requests]
-; Enable request reqcording.
+; Enable request recording.
 ; Default: False
 enable=false
 ; Max number requests to record. Oldest requests will be deleted when this threshold is reached.

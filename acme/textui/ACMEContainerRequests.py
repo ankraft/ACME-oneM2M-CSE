@@ -15,7 +15,7 @@ from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
 from rich.pretty import Pretty
-from ..etc.Types import JSONLIST, JSON, Operation
+from ..etc.Types import JSONLIST, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..services import CSE
@@ -34,14 +34,18 @@ class ACMEContainerRequests(Container):
 
 
 	def compose(self) -> ComposeResult:
-		yield Container(
-			Vertical(self.requestsView, id = 'requests-view')
-		)
+		with Container():
+			with Vertical(id = 'requests-view'):
+				yield self.requestsView
 
 
-	async def onShow(self) -> None:
-		await self.requestsView.onShow()
-		self.requestsView.updateEnableRequestsBinding()
+	def on_show(self) -> None:
+		self.requestsView.onShow()
+		self.requestsView.updateBindings()
+
+	# async def onShow(self) -> None:
+	# 	await self.requestsView.onShow()
+	# 	self.requestsView.updateBindings()
 
 
 
@@ -68,22 +72,12 @@ class ACMEViewRequests(Vertical):
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
 
-		# Request list view : header + list
-		self.requestListHeader = Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]         [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]', 
-									   id = 'request-list-header')
-		self.requestListHeader.styles.height = 2
+		# Request List
 		self.requestList = ListView(id = 'request-list-list')
 
 		# Request view: request + response
-
 		self.requestListRequest = Static(id = 'request-list-request', expand = True)
 		self.requestListResponse = Static(id = 'request-list-response', expand = True)
-		self.requestListDetailsHeader = Horizontal(Center(Label('[u b]Request[/u b]')), 
-												   Center(Label('[u b]Response[/u b]')),
-												   id = 'request-list-details-header')
-		self.requestListDetails = Horizontal(self.requestListRequest,
-											 self.requestListResponse,
-											 id = 'request-list-details')
 		
 	
 	@property
@@ -97,17 +91,32 @@ class ACMEViewRequests(Vertical):
 
 		# Change some bindings
 		self._bindings.bind('D', 'delete_requests', 'Delete Requests' if ri else 'Delete ALL Requests', key_display = 'SHIFT+D')
-		self.updateEnableRequestsBinding()
+		self.updateBindings()
 
 			
 	def compose(self) -> ComposeResult:
-		yield self.requestListHeader
+
+		# Requests List Header
+		with Horizontal(id = 'request-list-header'):
+			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]         [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]')
+
+		# Request List
 		yield self.requestList
-		yield self.requestListDetailsHeader
-		yield self.requestListDetails
+
+		# Details Header
+		with Horizontal(id = 'request-list-details-header'):
+			with Center():
+				yield Label('[u b]Request[/u b]')
+			with Center():
+				yield Label('[u b]Response[/u b]')
+
+		# Details
+		with Horizontal(id = 'request-list-details'):
+			yield self.requestListRequest
+			yield self.requestListResponse
 	
 
-	async def onShow(self) -> None:
+	def onShow(self) -> None:
 		self.updateRequests()
 		self.requestList.focus()
 
@@ -134,15 +143,15 @@ class ACMEViewRequests(Vertical):
 
 	def action_enable_requests(self) -> None:
 		CSE.request.enableRequestRecording = True
-		self.updateEnableRequestsBinding()
+		self.updateBindings()
 
 
 	def action_disable_requests(self) -> None:
 		CSE.request.enableRequestRecording = False
-		self.updateEnableRequestsBinding()
+		self.updateBindings()
 
 
-	def updateEnableRequestsBinding(self) -> None:
+	def updateBindings(self) -> None:
 		#CSE.textUI.tuiApp.bell()
 
 		if CSE.request.enableRequestRecording:
