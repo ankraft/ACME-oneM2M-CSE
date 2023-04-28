@@ -120,31 +120,9 @@ class ACMETuiApp(App):
 
 
 	def on_mount(self) -> None:
-		self.design = CUSTOM_COLORS
+		#self.design = CUSTOM_COLORS
 		self.refresh_css()
 	
-	# async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
-	# 	"""Handle TabActivated message sent by Tabs."""
-	# 	if event.tab.id == tabResources:
-	# 		await self.containerTree.onShow()
-	# 		self.content.current = idTree
-	# 	elif event.tab.id == tabRequests:
-	# 		self.content.current = idRequests
-	# 		await self.containerRequests.onShow()
-	# 	elif event.tab.id == tabRegistrations:
-	# 		self.content.current = idRegs
-	# 		await self.containerRegistrations.onShow()
-	# 	elif event.tab.id == tabConfigurations:
-	# 		self.content.current = idConfigs
-	# 		await self.containerConfigs.onShow()
-	# 	elif event.tab.id == tabInfo:
-	# 		self.content.current = idInfo
-	# 		await self.containerInfo.onShow()
-	# 	elif event.tab.id == tabAbout:
-	# 		self.content.current = idAbout
-		# else:
-		# 	self.content.current = 'empty'
-
 
 	async def action_quit_tui(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitTUI

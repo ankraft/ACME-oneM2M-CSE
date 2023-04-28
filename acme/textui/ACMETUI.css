@@ -20,6 +20,11 @@ TabbedContent ContentSwitcher {
 	/* overflow: hidden hidden;   */
     height: 1fr;
 	width: 1fr;
+
+}
+
+TabPane {
+	padding: 0 0;
 }
 
 /* Additional CSS for highlight outgoing requests in ACMEListItem */
@@ -56,7 +61,7 @@ ListView > ListItem.--outgoing.--highlight {
  */
 
 #resource-view {
-	overflow: hidden scroll;  
+	/* overflow: hidden scroll;   */
 	/* width: 1fr;
 	height: 1fr; */
 	width: auto;
@@ -65,10 +70,13 @@ ListView > ListItem.--outgoing.--highlight {
 }
 
 #tree-tab-resource {
-	overflow: hidden scroll;  
+	overflow: hidden auto;  
+	/* height: 1fr; */
 	height: 100%;
+	/* padding: 1 1; */
 
 	/* background:red; */
+	/* TODO try to get padding working with later released of textualize */
 }
 
 
@@ -76,8 +84,8 @@ ListView > ListItem.--outgoing.--highlight {
  * Requests
  */
 #requests-view {
-	/* overflow: auto scroll;   */
-	overflow: auto;  
+	overflow: auto scroll;  
+	/* overflow: auto;   */
 	width: 1fr;
 	height: 1fr;
 	/* background:red; */
@@ -101,13 +109,13 @@ ListView > ListItem.--outgoing.--highlight {
 #request-list-list {
 	overflow: auto scroll;  
 	min-width: 100%;
-	height: 40%;
+	height: 2fr;
 	/*background:red;*/
 }
 
 #request-list-details-header {
 	overflow: auto;
-	width: 1fr;
+	/* width: 1fr; */
 	height: 2;
 	align-vertical: middle;
 	/* background:#202020; */
@@ -116,7 +124,7 @@ ListView > ListItem.--outgoing.--highlight {
 
 #request-list-details {
 	overflow: auto scroll;
-	width: 1fr;
+	height: 3fr;
 	/* padding: 1 1; */
 	/* height: 50%; */
 }	
