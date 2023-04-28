@@ -99,6 +99,26 @@
 			"car": "01"
 		}
 	],
+	"drt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "desiredIdentifierResultType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:desIdResType",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType",
+			"car": "01"
+		}
+	],
 	"dur": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -1543,17 +1563,6 @@
 			"lname": "filterCriteria",
 			"ns": "m2m",
 			"type": "m2m:filterCriteria",
-			"car": "01"
-		}
-	],
-	"drf": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:metaInformation",
-			"lname": "desiredIdentifierResultType",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:desIdResType",
 			"car": "01"
 		}
 	],

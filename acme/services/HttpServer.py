@@ -476,17 +476,18 @@ class HttpServer(object):
 			hds[Constants.hfRST] = request.rset
 		if request.oet:
 			hds[Constants.hfOET] = request.oet
-		if request.rt and request.rt != ResponseType._default:
+		if request.rt and request.rt != ResponseType.blockingRequest:
 			hds[Constants.hfRTU] = str(request.rt.value)
 		if request.vsi:
 			hds[Constants.hfVSI] = request.vsi
 
-		# Add filterCriteria arguments
 		arguments = []
 		if request.rcn and request.rcn != ResultContentType.default(request.op):
 			arguments.append(f'rcn={request.rcn.value}')
-		if request.drt and request.drt != DesiredIdentifierResultType._default:
+		if request.drt and request.drt != DesiredIdentifierResultType.structured:
 			arguments.append(f'drt={request.drt.value}')
+
+		# Add filterCriteria arguments
 		if fc := request.fc:
 			fc.mapAttributes(lambda k, v: arguments.append(f'{k}={v}'), False)
 

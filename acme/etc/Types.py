@@ -942,7 +942,6 @@ _ResultContentTypeDefaults = {
 
 class FilterOperation(ACMEIntEnum):
 	"""	Filter Operation """
-	_default		= 1
 	AND 			= 1 # default
 	OR 				= 2
 	XOR 			= 3
@@ -950,7 +949,6 @@ class FilterOperation(ACMEIntEnum):
 
 class FilterUsage(ACMEIntEnum):
 	"""	Filter Usage """
-	_default				= 2
 	discoveryCriteria		= 1
 	conditionalRetrieval	= 2 # default
 	ipeOnDemandDiscovery	= 3
@@ -959,7 +957,6 @@ class FilterUsage(ACMEIntEnum):
 
 class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
-	_default		= 1
 	structured		= 1 # default
 	unstructured	= 2
 
@@ -991,8 +988,6 @@ class CSEStatus(ACMEIntEnum):
 
 class ResponseType(ACMEIntEnum):
 	"""	Reponse Types enum values. """
-
-	_default					= 3
 	
 	nonBlockingRequestSynch		= 1
 	""" Non-blocking synchronous. """
@@ -1484,7 +1479,7 @@ class FilterCriteria:
 	"""
 
 	# Result handling
-	fu:FilterUsage = None #FilterUsage.conditionalRetrieval
+	fu:FilterUsage = FilterUsage.conditionalRetrieval
 	""" Filter usage. Default: conditional retrieval. """
 
 	fo:FilterOperation = None
@@ -1594,10 +1589,18 @@ class FilterCriteria:
 			Return:
 				Dictionary with all attributes.
 		"""
-		return { k:v 
-				 for k, v in self.__dict__.items() 
-				 if v
-			   }
+		result = {}
+
+		def _fill(k:str, v:Any) -> None:
+			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
+				return
+			if k == 'fo' and int(v) == FilterOperation.AND:
+				return
+			result[k] = v
+		
+		self.mapAttributes(_fill, False)
+		return result
+
 
 
 	def mapAttributes(self, cb:Callable, flattenList:bool) -> None:
@@ -1611,6 +1614,12 @@ class FilterCriteria:
 				flattenList: Separate a list in multiple values or keep the list
 		"""
 
+		def _getValue(v:Any) -> Any:
+			if isinstance(v, ACMEIntEnum):
+				return int(v)
+			return v
+
+
 		# Map only the attributes that are part of the Filter Criteria
 		 
 		for k, v in self.__dict__.items():
@@ -1620,9 +1629,9 @@ class FilterCriteria:
 				continue
 			if isinstance(v, list) and flattenList:
 				for e in v:
-					cb(k, e)
+					cb(k, _getValue(e))
 			else:
-				cb(k, v)
+				cb(k, _getValue(v))
 
 		# Also map free filter criteria attributes
 		if self.attributes:
@@ -1685,14 +1694,14 @@ class CSERequest:
 	ty:ResourceTypes = None
 	""" Resource type. """
 
-	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType._default
+	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
 	"""	Desired Indentifier Result Type (default: structured). """
 
 	_rcnDefault = ResultContentType.discoveryResultReferences
 	rcn:ResultContentType = None
 	""" Result Content Type. """
 
-	rt:ResponseType = ResponseType._default
+	rt:ResponseType = ResponseType.blockingRequest
 	""" Response Type (default: blocking request)."""
 
 	rp:str = None
@@ -1794,11 +1803,11 @@ class CSERequest:
 			self.originalRequest['ty'] = self.ty
 		if self.originator:
 			self.originalRequest['org'] = self.originator
-		if self.drt and self.drt != DesiredIdentifierResultType._default:
+		if self.drt and int(self.drt) != DesiredIdentifierResultType.structured:
 			self.originalRequest['drt'] = self.drt
-		if self.rcn and self.rcn != self._rcnDefault:
+		if self.rcn and int(self.rcn) != self._rcnDefault:
 			self.originalRequest['rcn'] = self.rcn
-		if self.rt and self.rt != ResponseType._default:
+		if self.rt and int(self.rt) != ResponseType.blockingRequest:
 			self.originalRequest['rt'] = self.rt
 		if self.rp:
 			self.originalRequest['rp'] = self.rp
@@ -1824,9 +1833,11 @@ class CSERequest:
 			self.originalRequest['sqi'] = self.sqi
 		if self.fc and (_fc := self.fc.fillCriteriaAttributes()):
 			self.originalRequest['fc'] = _fc
+		elif 'fc' in self.originalRequest:
+			del self.originalRequest['fc']
 		if self.pc:
 			self.originalRequest['pc'] = self.pc
-
+		
 
 	def convertToR1Target(self, targetRvi:str) -> CSERequest:
 		"""	Remove the *Release Version Indicator* and the *Vendor Information*
