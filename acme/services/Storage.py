@@ -76,8 +76,7 @@ class Storage(object):
 				L.isInfo and L.log('Using data directory: ' + self.dbPath)
 				os.makedirs(self.dbPath, exist_ok = True)
 			else:
-				L.logErr('db.path not set')
-				raise RuntimeError('db.path not set')
+				raise RuntimeError(L.logErr('database.path not set'))
 
 		# create DB object and open DB
 		self.db = TinyDBBinding(self.dbPath, CSE.cseCsi[1:]) # add CSE CSI as postfix
@@ -113,9 +112,9 @@ class Storage(object):
 	def _assignConfig(self) -> None:
 		"""	Assign default configurations.
 		"""
-		self.inMemory 	= Configuration.get('db.inMemory')
-		self.dbPath 	= Configuration.get('db.path')
-		self.dbReset 	= Configuration.get('db.resetOnStartup') 
+		self.inMemory 	= Configuration.get('database.inMemory')
+		self.dbPath 	= Configuration.get('database.path')
+		self.dbReset 	= Configuration.get('database.resetOnStartup') 
 
 
 	def purge(self) -> None:
@@ -648,7 +647,7 @@ class TinyDBBinding(object):
 		self.fileRequests				= f'{self.path}/{_requests}-{postfix}.json'
 
 		# All databases/tables will use the smart query cache
-		if Configuration.get('db.inMemory'):
+		if Configuration.get('database.inMemory'):
 			L.isInfo and L.log('DB in memory')
 			self.dbResources 			= TinyDB(storage = MemoryStorage)
 			self.dbIdentifiers 			= TinyDB(storage = MemoryStorage)
@@ -717,8 +716,8 @@ class TinyDBBinding(object):
 	def _assignConfig(self) -> None:
 		"""	Assign default configurations.
 		"""
-		self.cacheSize = Configuration.get('db.cacheSize')
-		self.writeDelay = Configuration.get('db.writeDelay')
+		self.cacheSize = Configuration.get('database.cacheSize')
+		self.writeDelay = Configuration.get('database.writeDelay')
 		self.maxRequests = Configuration.get('cse.operation.requests.size')
 
 

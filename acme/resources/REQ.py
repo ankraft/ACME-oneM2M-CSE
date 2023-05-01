@@ -75,9 +75,9 @@ class REQ(Resource):
 		
 		# otherwise calculate request et
 		else:	
-			et = getResourceDate(Configuration.get('cse.req.minet'))
-			# minEt = getResourceDate(Configuration.get('cse.req.minet'))
-			# maxEt = getResourceDate(Configuration.get('cse.req.maxet'))
+			et = getResourceDate(offset = Configuration.get('resource.req.et'))
+			# minEt = getResourceDate(Configuration.get('resource.req.minet'))
+			# maxEt = getResourceDate(Configuration.get('resource.req.maxet'))
 			# if request.args.rpts:
 			# 	et = request.args.rpts if request.args.rpts < maxEt else maxEt
 			# else:

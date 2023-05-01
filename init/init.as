@@ -17,13 +17,14 @@
 (import-raw 
 	(get-config "cse.originator") 
 	{"m2m:cb": {
-		"ri":   "${ (get-config \"cse.ri\") }$",
-		"rn":   "${ (get-config \"cse.rn\") }$",
-		"csi":  "${ (get-config \"cse.csi\") }$",
+		"ri":   "${ (get-config \"cse.resourceID\") }$",
+		"rn":   "${ (get-config \"cse.resourceName\") }$",
+		"csi":  "${ (get-config \"cse.cseID\") }$",
 		"rr":   true,
 		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${ (get-config \"cse.csi\") }$/acpCreateACPs" ],
+		"acpi": [ "${ (get-config \"cse.cseID\") }$/acpCreateACPs" ],
 		"poa":  [ "${ (get-config \"http.address\") }$" ]
+		;; "poa":  [ "mqtt://mqtt" ]
 	}})
 
 ;;
@@ -35,7 +36,7 @@
 	{ "m2m:acp": {
 		"rn": "acpCreateACPs",
 		"ri": "acpCreateACPs",
-		"pi": "${ (get-config \"cse.ri\") }$",
+		"pi": "${ (get-config \"cse.resourceID\") }$",
 		"pv": {
 			"acr": [ {
 				"acor": [ "all"	],
@@ -60,7 +61,7 @@
 	{ "m2m:ae": {
 		"ri":  "${ (get-config \"cse.originator\") }$",
 		"rn":  "${ (get-config \"cse.originator\") }$",
-		"pi":  "${ (get-config \"cse.ri\") }$",
+		"pi":  "${ (get-config \"cse.resourceID\") }$",
 		"rr":  true,
 		"api": "N${ (get-config \"cse.originator\") }$",
 		"aei": "${ (get-config \"cse.originator\") }$",

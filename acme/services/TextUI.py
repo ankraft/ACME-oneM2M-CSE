@@ -86,9 +86,9 @@ class TextUI(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the manager.
 		"""
-		self.startWithTUI = Configuration.get('cse.textui.startWithTUI')
-		self.theme = Configuration.get('cse.textui.theme')
-		self.refreshInterval = Configuration.get('cse.textui.refreshInterval')
+		self.startWithTUI = Configuration.get('extui.startWithTUI')
+		self.theme = Configuration.get('textui.theme')
+		self.refreshInterval = Configuration.get('textui.refreshInterval')
 	
 
 	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
@@ -106,7 +106,7 @@ class TextUI(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.textui.startWithTUI', 'cse.textui.theme', 'cse.textui.refreshInterval']:
+		if key not in [ 'textui.startWithTUI', 'textui.theme', 'textui.refreshInterval']:
 			return
 		
 		# Configuration values

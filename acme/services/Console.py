@@ -201,12 +201,12 @@ class Console(object):
 	def _assignConfig(self) -> None:
 		"""	Assign configuration settings.
 		"""
-		self.refreshInterval:float = Configuration.get('cse.console.refreshInterval')
-		self.hideResources:list[str] = Configuration.get('cse.console.hideResources')
-		self.treeMode:TreeMode = Configuration.get('cse.console.treeMode')
-		self.treeIncludeVirtualResources:bool = Configuration.get('cse.console.treeIncludeVirtualResources')
-		self.confirmQuit:bool = Configuration.get('cse.console.confirmQuit')
-		self.theme:str = Configuration.get('cse.console.theme')
+		self.refreshInterval:float = Configuration.get('console.refreshInterval')
+		self.hideResources:list[str] = Configuration.get('console.hideResources')
+		self.treeMode:TreeMode = Configuration.get('console.treeMode')
+		self.treeIncludeVirtualResources:bool = Configuration.get('console.treeIncludeVirtualResources')
+		self.confirmQuit:bool = Configuration.get('console.confirmQuit')
+		self.theme:str = Configuration.get('console.theme')
 
 
 	def configUpdate(self, name:str,
@@ -219,11 +219,11 @@ class Console(object):
 				key: The key for the configuration setting that is updated.
 				value: The new configuration setting.
 		"""
-		if key not in [ 'cse.console.refreshInterval',
-						'cse.console.hideResources',
-						'cse.console.treeMode',
-						'cse.console.treeIncludeVirtualResources',
-						'cse.console.confirmQuit']:
+		if key not in [ 'console.refreshInterval',
+						'console.hideResources',
+						'console.treeMode',
+						'console.treeIncludeVirtualResources',
+						'console.confirmQuit']:
 			return
 		self._assignConfig()
 

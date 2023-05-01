@@ -16,4 +16,4 @@
 (include-script "functions")
 
 (restore-config-value "cse.checkExpirationsInterval")
-(restore-config-value "cse.req.minet")
+(restore-config-value "resource.req.et")

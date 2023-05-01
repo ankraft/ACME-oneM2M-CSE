@@ -215,13 +215,13 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# Initialize configurable constants
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
-	cseCsi					 = Configuration.get('cse.csi')
+	cseCsi					 = Configuration.get('cse.cseID')
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseCsiSlashLess			 = cseCsi[1:]
 	cseSpid					 = Configuration.get('cse.spid')
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
-	cseRi					 = Configuration.get('cse.ri')
-	cseRn					 = Configuration.get('cse.rn')
+	cseRi					 = Configuration.get('cse.resourceID')
+	cseRn					 = Configuration.get('cse.resourceName')
 	cseOriginator			 = Configuration.get('cse.originator')
 	cseSPRelative			 = f'{cseCsi}/{cseRn}'
 	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'

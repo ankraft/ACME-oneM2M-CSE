@@ -118,7 +118,7 @@ class TSB(AnnounceableResource):
 		if self.hasAttribute('bcni') and self.bcnc != BeaconCriteria.PERIODIC:
 			raise BAD_REQUEST(L.logWarn(f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC'))
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
-			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
+			self.setAttribute('bcni', Configuration.get('resource.tsb.bcni'))
 		if self.hasAttribute('bcni'):
 			self.setAttribute(self._bcni, fromDuration(self.bcni))
 		
@@ -126,7 +126,7 @@ class TSB(AnnounceableResource):
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
 			raise BAD_REQUEST(L.logWarn(f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
-			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
+			self.setAttribute('bcnt', Configuration.get('resource.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
 			self.setAttribute(self._bcnt, fromDuration(self.bcnt))
 		

@@ -349,7 +349,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(get-configuration "cse.csi") -> "id-in
+					(get-configuration "cse.cseID") -> "id-in
 
 			Args:
 				pcontext: PContext object of the running script.
@@ -1237,9 +1237,9 @@ class ScriptManager(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the manager.
 		"""
-		self.verbose = Configuration.get('cse.scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
-		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
+		self.verbose = Configuration.get('scripting.verbose')
+		self.scriptMonitorInterval = Configuration.get('scripting.fileMonitoringInterval')
+		self.scriptDirectories = Configuration.get('scripting.scriptDirectories')
 
 
 	def configUpdate(self, name:str, 
@@ -1252,9 +1252,9 @@ class ScriptManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.scripting.verbose', 
-						'cse.scripting.fileMonitoringInterval', 
-						'cse.scripting.scriptDirectories']:
+		if key not in [ 'scripting.verbose', 
+						'scripting.fileMonitoringInterval', 
+						'scripting.scriptDirectories']:
 			return
 
 		# assign new values

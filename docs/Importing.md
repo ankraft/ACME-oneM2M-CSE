@@ -29,16 +29,16 @@ Another option to import resources automatically whenever the CSE starts or rest
 
 By using macros the initial resources can be kept independent from individual settings. 
 Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism.
-For this a given macro name is enclosed by  ```[...]```, e.g. ```[cse.csi]```. 
+For this a given macro name is enclosed by  ```${...}$```, e.g. ```${cse.cseID}$```. 
 The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
 ```jsonc
 importraw 
 {	
 	"m2m:cb" : {
-			"ri":   "[cse.ri]",
-			"rn":   "[cse.rn]",
-			"csi":  "[cse.csi]",
+			"ri":   "[cse.resourceID]",
+			"rn":   "[cse.resourceName]",
+			"csi":  "[cse.cseID]",
 			"rr":   true,
 			"csz":  [ "application/json", "application/cbor" ],
 			"acpi": [ "[cse.csi]/acpCreateACPs" ]

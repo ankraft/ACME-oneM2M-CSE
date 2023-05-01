@@ -77,9 +77,9 @@ class CNT(ContainerResource):
 		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
 
 		# TODO optimize this
-		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite = False)
-			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite = False)
+		if Configuration.get('resource.cnt.enableLimits'):	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.get('resource.cnt.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('resource.cnt.mbs'), overwrite = False)
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)

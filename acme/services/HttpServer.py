@@ -90,7 +90,7 @@ class HttpServer(object):
 		self.port 				= Configuration.get('http.port')
 		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
 		self.requestTimeout 	= Configuration.get('http.timeout')
-		self.webuiRoot 			= Configuration.get('cse.webui.root')
+		self.webuiRoot 			= Configuration.get('webui.root')
 		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
 		self.isStopped			= False
 		self.corsEnable			= Configuration.get('http.cors.enable')

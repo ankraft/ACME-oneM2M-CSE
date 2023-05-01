@@ -1407,8 +1407,8 @@ See also: [has-config](#has-config), [set-config](#set-config)
 Examples:
 
 ```lisp
-(get-config "cse.type")  ;; Returns, for example, 1
-(get-config "cse.csi")   ;; Returns, for example, "/id-in"
+(get-config "cse.type")    ;; Returns, for example, 1
+(get-config "cse.cseID")   ;; Returns, for example, "/id-in"
 ```
 
 [top](#top)
@@ -1448,7 +1448,7 @@ See also: [get-config](#get-config), [set-config](#set-config)
 Examples:
 
 ```lisp
-(has-config "cse.csi")       ;; Returns true
+(has-config "cse.cseID")     ;; Returns true
 (has-config "cse.unknown")   ;; Returns false
 ```
 

@@ -126,7 +126,7 @@ size=200
 ;	HTTP Server settings
 ;
 
-[server.http]
+[http]
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
@@ -140,7 +140,7 @@ root=/
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
 ; passwords, and is a security risk.
-; See also the [cse.console].hideResources setting to hide resources
+; See also the [console].hideResources setting to hide resources
 ; from the tree.
 ; Default: False
 enableStructureEndpoint=false
@@ -163,7 +163,7 @@ timeout=${cse:requestExpirationDelta}
 ;	HTTP security settings
 ;
 
-[server.http.security]
+[http.security]
 ; Enable TLS for communications.
 ; See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 ; Default: False
@@ -181,7 +181,7 @@ caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
 caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
 
 
-[server.http.cors]
+[http.cors]
 ; Enable CORS support for the HTTP binding.
 ; Default: false
 enable=false
@@ -194,7 +194,7 @@ resources=/*
 ;	MQTT client settings
 ;
 
-[client.mqtt]
+[mqtt]
 ; Enable the MQTT binding.
 ; Default: false
 enable=false
@@ -222,7 +222,7 @@ timeout=${cse:requestExpirationDelta}
 ;	MQTT security settings
 ;
 
-[client.mqtt.security]
+[mqtt.security]
 ; The username for MQTT broker authentication if required by the broker.
 ; Default: None
 username=username
@@ -368,11 +368,8 @@ writeInterval=60
 ;	Resource defaults: ACP
 ;
 
-[cse.resource.acp]
-; Default permission when creating an ACP resource.
-; Default: 63
-permission=63
-; Default selfPermission when creating an ACP resource.
+[resource.acp]
+; Default selfPermission when internally creating an ACP resource.
 ; Default: 51
 selfPermission=51
 
@@ -381,7 +378,7 @@ selfPermission=51
 ;	Resource defaults: Action
 ;
 
-[cse.resource.actr]
+[resource.actr]
 ; Default for the evalControlParam attribute, when the evalMode is "continuous".
 ; The unit is number.
 ; Default: 1000
@@ -396,7 +393,7 @@ ecpPeriodic=10000
 ;	Resource defaults: Container
 ;
 
-[cse.resource.cnt]
+[resource.cnt]
 ; Enable/disable the default limits. Default: False
 enableLimits=False
 ; Default for maxNrOfInstances. Default: 10
@@ -409,7 +406,7 @@ mbs=10000
 ;	Resource defaults: TimeSeries
 ;
 
-[cse.resource.ts]
+[resource.ts]
 ; Enable/disable the default limits. Default: False
 enableLimits=False
 ; Default for maxNrOfInstances. Default: 10
@@ -424,7 +421,7 @@ mdn=10
 ;	Resource defaults: TimeSyncBeacon
 ;
 
-[cse.resource.tsb]
+[resource.tsb]
 ; Default timeSyncBeacon interval. This is the duration between to beacon notifications sent by the CSE
 ; to an AE or CSE. The format must be an ISO8601 duration.
 ; Default: PT1H = 1 hour
@@ -439,18 +436,16 @@ bcnt=10.0
 ;	Resource defaults: Request
 ;
 
-[cse.resource.req]
-; A <request> resource's minimum expiration time in seconds. Must be >0. Default: 60 
-minimumExpirationTime=60
-; A <request> resource's maximum expiration time in seconds. Must be >0. Default: 180
-maximumExpirationTime=180
+[resource.req]
+; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
+expirationTime=60
 
 
 ;
 ;	Resource defaults: Subscription
 ;
 
-[cse.resource.sub]
+[resource.sub]
 ; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
 batchNotifyDuration=60
 
@@ -459,9 +454,7 @@ batchNotifyDuration=60
 ;	Web UI settings
 ;
 
-[cse.webui]
-; Enable the web UI. Default: True
-enable=true
+[webui]
 ; Root path of the web UI. Default: /webui
 root=/webui
 
@@ -470,7 +463,7 @@ root=/webui
 ;   Console settings
 ;
 
-[cse.console]
+[console]
 ; Interval for continuously refreshing information displays. Must be > 0.0. 
 ; Default: 2.0 seconds.
 refreshInterval=2.0
@@ -498,12 +491,12 @@ theme=dark
 ;
 ;   Text UI settings
 ;
-[cse.textui]
+[textui]
 ; Start directly with the TUI
 startWithTUI=True
 ; Set the color theme for the text UI. Allowed values are "dark" and "light".
-; Default: same as [cse.console].theme
-theme=${cse.console:theme}
+; Default: same as [console].theme
+theme=${console:theme}
 ; Interval for refreshing various views in the text UI.
 ; Default: 2.0
 refreshInterval=2.0
@@ -512,7 +505,7 @@ refreshInterval=2.0
 ;	Scripting settings
 ;
 
-[cse.scripting]
+[scripting]
 ; Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory.
 ; Must be a comma-separated list.
 ; Default: not set

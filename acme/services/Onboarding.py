@@ -286,13 +286,13 @@ def buildUserConfigFile(configFile:str) -> bool:
 			jcnf += '\n'.join((
 				'',
 				'',
-				'[cse.textui]',
+				'[textui]',
 				'startWithTUI=false',
 				'',
 				'[cse.operation.requests]',
 				'enable=true',
 				'',
-				'[server.http]',
+				'[http]',
 				'enableUpperTesterEndpoint=true',
 				'enableStructureEndpoint=true',
 			))

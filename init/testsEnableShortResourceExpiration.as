@@ -16,7 +16,7 @@
 (include-script "functions")
 
 (set-and-store-config-value "cse.checkExpirationsInterval" (to-number (argv 1)))
-(set-and-store-config-value "cse.req.minet" (to-number (argv 1)))
+(set-and-store-config-value "resource.req.et" (to-number (argv 1)))
 
 ;; Return the original cse.checkExpirationsInterval and cse.maxExpirationDelta
 (quit (. (get-storage "cse.checkExpirationsInterval") "," (get-config "cse.maxExpirationDelta")))

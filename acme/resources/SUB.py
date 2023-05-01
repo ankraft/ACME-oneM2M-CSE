@@ -94,7 +94,7 @@ class SUB(Resource):
 
 		# set batchNotify default attributes
 		if self.bn:		
-			self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite = False)
+			self.setAttribute('bn/dur', Configuration.get('resource.sub.dur'), overwrite = False)
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']

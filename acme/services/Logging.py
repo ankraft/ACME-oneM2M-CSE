@@ -134,7 +134,7 @@ class Logging:
 		Logging.queueSize				= Configuration.get('logging.queueSize')
 		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
 
-		Logging._configureColors(Configuration.get('cse.console.theme'))
+		Logging._configureColors(Configuration.get('console.theme'))
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger

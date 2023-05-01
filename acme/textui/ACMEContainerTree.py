@@ -48,7 +48,6 @@ class ACMEResourceTree(TextualTree):
 	def on_tree_node_selected(self, node:TextualTree.NodeSelected) -> None:
 		try:
 			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
-			# _textUI.tuiApp.resourceView.update(Pretty(_r.resource.asDict()))
 			self.parentContainer.resourceView.update(Pretty(resource.asDict(), expand_all = True))
 			self.parentContainer._update_requests(resource.ri)
 		except ResponseException as e:

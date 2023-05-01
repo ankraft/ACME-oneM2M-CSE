@@ -82,10 +82,10 @@ class TS(AnnounceableResource):
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
-		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
-			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
-			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite = False)
+		if Configuration.get('resource.ts.enableLimits'):	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.get('resource.ts.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('resource.ts.mbs'), overwrite = False)
+			self.setAttribute('mdn', Configuration.get('resource.ts.mdn'), overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 

@@ -82,10 +82,11 @@ class ACMETuiApp(App):
 
 	def __init__(self, textUI:TextUI.TextUI):
 		super().__init__()
+		self.debugging = False
+
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.dark = self.textUI.theme == 'dark'
 		self.quitReason = ACMETuiQuitReason.undefined
-		self.debugging = False
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
 
 		self.tabs = TabbedContent()
