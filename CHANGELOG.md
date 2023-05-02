@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Moved current configuration settings for *cse.operation* to *cse.operation.jobs.
 - [CSE] Refactored the internal error and failure handling to using exceptions (Python's EAFP).
 - [CSE] Refactored and simplified the internal request sending procedures.
+- [CSE] Renamed configuration setting "cse.csi" (to "cse.cseID"), "cse.ri" (to "cse.resourceID"), "cse.ri" (to "cse.resourceName").
+- [CSE] Moved resource, console, http, db, scripting configuration settings to their own namespaces in the configuration files.
+
+
+
 - [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
 **This is a non-backward compatible change due to the DB schema changes.**
 - [CONSOLE] Re-implemented some console services to make them reusable for the text UI.
