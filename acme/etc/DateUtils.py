@@ -205,14 +205,20 @@ def waitFor(timeout:float,
 	if timeout < 0.0:
 		return False
 	if not condition:
-		time.sleep(timeout)
+		try:
+			time.sleep(timeout)
+		except KeyboardInterrupt:
+			pass
 		return False
 	else:
 		if not callable(condition):
 			return False
 		toTs = time.time() + timeout
 		while not (res := condition()) and toTs > time.time():
-			time.sleep(latency)
+			try:
+				time.sleep(latency)
+			except KeyboardInterrupt:
+				return False
 		return res
 
 ##############################################################################
