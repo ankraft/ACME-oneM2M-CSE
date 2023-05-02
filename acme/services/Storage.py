@@ -308,10 +308,14 @@ class Storage(object):
 			Args:
 				resource: Resource to delete.
 		"""
-		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
-		self.db.deleteResource(resource)
-		self.db.deleteIdentifier(resource)
-		self.db.removeChildResource(resource)
+		L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn})')
+		try:
+			self.db.deleteResource(resource)
+			self.db.deleteIdentifier(resource)
+			self.db.removeChildResource(resource)
+		except KeyError as e:
+			L.isDebug and L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.')
+			raise NOT_FOUND(dbg = e.msg)
 
 
 	def directChildResources(self, pi:str, 
