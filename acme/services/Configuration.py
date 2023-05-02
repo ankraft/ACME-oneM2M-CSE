@@ -52,6 +52,30 @@ documentationLinks = {
 	'webui': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#webui',
 }
 
+#
+#	Deprecated secttions
+#
+
+_deprecatedSections = (
+	('server.http', 'http'),
+    ('server.http.security', 'http.security'),
+    ('server.http.cors', 'http.cors'), 
+    ('client.mqtt', 'mqtt'),
+    ('client.mqtt.security', 'mqtt.security'),
+    ('cse.resource.acp', 'resource.acp'),
+    ('cse.resource.actr', 'resource.actr'),
+    ('cse.resource.cnt', 'resource.cnt'),
+    ('cse.resource.ts', 'resource.ts'),
+    ('cse.resource.tsb', 'resource.tsb'),
+    ('cse.resource.req', 'resource.req'),
+    ('cse.resource.sub', 'resource.sub'),
+    ('cse.webui', 'webui'),
+    ('cse.console', 'console'),
+    ('cse.textui', 'textui'),
+    ('cse.scripting', 'scripting')
+)
+
+
 
 class Configuration(object):
 	"""	The static class Configuration holds all the configuration values of the CSE. It is initialized only once by calling the static
@@ -141,6 +165,15 @@ class Configuration(object):
 			Configuration._print('[red]Error in configuration file')
 			Configuration._print(str(e))
 			return False
+	
+		#
+		#	Look for deprecated and renamed sections
+		#
+
+		for o, n in _deprecatedSections:
+			if config.has_section(o):
+				Configuration._print(f'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
+				return False
 
 		#
 		#	Retrieve configuration values
