@@ -15,6 +15,7 @@ from textual.widgets._header import HeaderIcon, HeaderClock, HeaderClockSpace, H
 
 from ..services import CSE
 from ..etc.Constants import Constants
+from ..etc.DateUtils import toISO8601Date
 
 
 class ACMEHeaderClock(HeaderClock):
@@ -23,7 +24,7 @@ class ACMEHeaderClock(HeaderClock):
 	
 	DEFAULT_CSS = """
 	HeaderClockSpace {
-		width: 14;
+		width: 25;
 	}
 	"""
 	
@@ -33,8 +34,7 @@ class ACMEHeaderClock(HeaderClock):
 		Returns:
 			The rendered clock.
 		"""
-		return Text(f'{datetime.utcnow().time().strftime("%X")} UTC')
-	
+		return Text(f'{toISO8601Date(datetime.utcnow(), readable = True)[:19]} UTC')	
 
 
 class ACMEHeaderTitle(HeaderTitle):
