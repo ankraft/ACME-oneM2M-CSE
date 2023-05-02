@@ -192,6 +192,11 @@ if __name__ == '__main__':
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart
 
+	# No test run?
+	if totalRunTests == 0 or init.requestCount == 0:
+		console.print('[yellow]0 tests run')
+		quit()
+		
 	# Print Summary
 	console.print()
 	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title=f'{C.textLogo} - Test Results')
