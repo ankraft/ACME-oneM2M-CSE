@@ -28,10 +28,10 @@ fontfamily=Monospaced
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>256</x>
-      <y>168</y>
+      <x>208</x>
+      <y>120</y>
       <w>408</w>
-      <h>72</h>
+      <h>80</h>
     </coordinates>
     <panel_attributes>resources
 --
@@ -47,8 +47,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>256</x>
-      <y>304</y>
+      <x>208</x>
+      <y>272</y>
       <w>408</w>
       <h>104</h>
     </coordinates>
@@ -68,8 +68,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>256</x>
-      <y>424</y>
+      <x>208</x>
+      <y>392</y>
       <w>408</w>
       <h>80</h>
     </coordinates>
@@ -87,8 +87,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>256</x>
-      <y>520</y>
+      <x>208</x>
+      <y>488</y>
       <w>408</w>
       <h>88</h>
     </coordinates>
@@ -107,22 +107,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>240</x>
-      <y>120</y>
-      <w>440</w>
-      <h>136</h>
-    </coordinates>
-    <panel_attributes>resources-&lt;csi&gt;.json
-fg=gray
-bg=#dddddd
-</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLPackage</id>
-    <coordinates>
-      <x>240</x>
-      <y>272</y>
+      <x>192</x>
+      <y>240</y>
       <w>440</w>
       <h>352</h>
     </coordinates>
@@ -134,8 +120,8 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>256</x>
-      <y>672</y>
+      <x>208</x>
+      <y>640</y>
       <w>408</w>
       <h>232</h>
     </coordinates>
@@ -165,8 +151,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>240</x>
-      <y>640</y>
+      <x>192</x>
+      <y>608</y>
       <w>440</w>
       <h>280</h>
     </coordinates>
@@ -178,8 +164,8 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>720</x>
-      <y>160</y>
+      <x>672</x>
+      <y>464</y>
       <w>408</w>
       <h>104</h>
     </coordinates>
@@ -199,8 +185,8 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>744</x>
-      <y>720</y>
+      <x>712</x>
+      <y>960</y>
       <w>408</w>
       <h>64</h>
     </coordinates>
@@ -212,8 +198,8 @@ Why extra structs? Cheaper than full resources</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>704</x>
-      <y>128</y>
+      <x>656</x>
+      <y>432</y>
       <w>440</w>
       <h>152</h>
     </coordinates>
@@ -225,8 +211,8 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>704</x>
-      <y>296</y>
+      <x>656</x>
+      <y>88</y>
       <w>440</w>
       <h>112</h>
     </coordinates>
@@ -238,8 +224,8 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>720</x>
-      <y>328</y>
+      <x>672</x>
+      <y>120</y>
       <w>408</w>
       <h>64</h>
     </coordinates>
@@ -256,21 +242,21 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>720</x>
-      <y>456</y>
+      <x>672</x>
+      <y>248</y>
       <w>408</w>
       <h>152</h>
     </coordinates>
     <panel_attributes>actions
 --
-ri       : string               // action's resourceID
-subject  : string               // subject's resourceID
-apy      : integer              // action priority
-evm      : integer              // evalMode
-evc      : evalCriteria struct  // evalCriteria
-ecp      : integer              // run period or count
-periodTS : timestamp            // Action run perios
-count    : integer              // run counter
+PK ri       : string               // action's resourceID
+   subject  : string               // subject's resourceID
+   apy      : integer              // action priority
+   evm      : integer              // evalMode
+   evc      : evalCriteria struct  // evalCriteria
+   ecp      : integer              // run period or count
+   periodTS : timestamp            // Action run period
+   count    : integer              // run counter
 --
 
 bg=#ffffff
@@ -281,12 +267,64 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>704</x>
-      <y>424</y>
+      <x>656</x>
+      <y>216</y>
       <w>440</w>
       <h>200</h>
     </coordinates>
     <panel_attributes>actions-&lt;csi&gt;.json
+fg=gray
+bg=#dddddd</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>672</x>
+      <y>632</y>
+      <w>408</w>
+      <h>168</h>
+    </coordinates>
+    <panel_attributes>requests
+--
+   ri  : string       // target's resourceID
+   srn : string       // target's structured resourceID
+PK ts  : float        // UTC timestamp
+   org : string       // request originator
+   op  : Operation    // request operation
+   rsc : status code  // Response Status Code
+   out : boolean      // CSE initiated request
+   req : JSON         // request JSON
+   rsp : JSON         // response JSON
+--
+
+bg=#ffffff
+transparency=0
+layer=1</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>656</x>
+      <y>600</y>
+      <w>440</w>
+      <h>216</h>
+    </coordinates>
+    <panel_attributes>requests	-&lt;csi&gt;.json
+fg=gray
+bg=#dddddd</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>192</x>
+      <y>88</y>
+      <w>440</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>resources-&lt;csi&gt;.json
 fg=gray
 bg=#dddddd</panel_attributes>
     <additional_attributes/>
