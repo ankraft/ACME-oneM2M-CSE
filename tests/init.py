@@ -972,7 +972,11 @@ def isSPRelative(uri:str) -> bool:
 
 
 def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
-	if not testCaseNames or case._testMethodName in testCaseNames:
+	global testCaseNames
+
+	# if not testCaseNames or case._testMethodName in testCaseNames:
+	if not testCaseNames or case._testMethodName == testCaseNames[0]:
+		testCaseNames = testCaseNames[1:]
 		suite.addTest(case)
 
 

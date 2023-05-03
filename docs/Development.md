@@ -228,6 +228,12 @@ It is also possible  to run individual test cases from test suites. This is done
 $ python runTests.py testSUB --run-tests test_createCNTforEXC
 ```
 
+If test cases appear more than once one can specify the order in which the test cases are run. Example:
+
+- Order of test cases in the test suite: A, B, A, C
+- Desired test cases and order to run: B, A
+- Option: `--run-tests B A`
+
 > **Note**
 >
 > Most test cases in a test suite depend on each other (created resources, subscriptions, etc). Just running a single test case will most likely fail. 
@@ -237,7 +243,7 @@ $ python runTests.py testSUB --run-tests test_createCNTforEXC
 >```
 >$ python runTests.py testSUB --disable-teardown
 >...
->$ python runTests.py testSUB --disable-teardown --run-tests >test_createCNTforEXC
+>$ python runTests.py testSUB --disable-teardown --run-tests test_createCNTforEXC
 >```
 
 To list the available test cases one can use the `--list-tests` (list in the order the test cases have been defined in the test suite) and the `--list-tests-sorted` (list alphabetically) options.
