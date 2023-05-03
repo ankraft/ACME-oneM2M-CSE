@@ -1043,7 +1043,10 @@ class Dispatcher(object):
 		# delete the resource from the DB. Save the result to return later
 		try:
 			resource.dbDelete()
+		except NOT_FOUND as e:
+			L.isDebug and L.logDebug(f'Cannot delete resource: {e.dbg}')
 		except:
+			L.logErr('deleteLocalResource')
 			raise
 		finally:
 			# send a delete event
