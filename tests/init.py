@@ -8,6 +8,8 @@
 #
 
 from __future__ import annotations
+from typing import Any, Callable, Tuple, cast, Optional
+
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
@@ -15,7 +17,6 @@ import unittest
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
 import cbor2
-from typing import Any, Callable, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
@@ -31,13 +32,12 @@ from acme.etc.Constants import Constants as C
 from config import *
 
 
-verifyCertificate			= False	# verify the certificate when using https?
-oauthToken					= None	# current OAuth Token
-verboseRequests				= False	# Print requests and responses
-testCaseNames:list[str]		= []	# List of test cases to run
-enableTearDown:bool			= True  # Run or don't run TearDownClass test case methods
-
-initialRequestTimeout		= 10.0	# Timeout in s for the initial connectivity test.
+verifyCertificate = False					# verify the certificate when using https?
+oauthToken = None							# current OAuth Token
+verboseRequests = False						# Print requests and responses
+testCaseNames:Optional[list[str]] = None	# List of test cases to run
+enableTearDown:bool = True  				# Run or don't run TearDownClass test case methods
+initialRequestTimeout = 10.0				# Timeout in s for the initial connectivity test.
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -975,7 +975,8 @@ def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
 	global testCaseNames
 
 	# if not testCaseNames or case._testMethodName in testCaseNames:
-	if not testCaseNames or case._testMethodName == testCaseNames[0]:
+	print(testCaseNames)
+	if testCaseNames is None or (testCaseNames and case._testMethodName == testCaseNames[0]):
 		testCaseNames = testCaseNames[1:]
 		suite.addTest(case)
 
