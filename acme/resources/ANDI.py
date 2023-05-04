@@ -6,13 +6,13 @@
 #
 #	ResourceType: mgmtObj:areaNwkDeviceInfo
 #
+""" [AreaNwkDeviceInfo] (ANDI) `MgmtObj` specialization. """
+
 from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
-
-defaultDeviceID = ''
 
 class ANDI(MgmtObj):
 
@@ -58,7 +58,3 @@ class ANDI(MgmtObj):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.ANDI, create = create)
-
-		self.setAttribute('dvd', defaultDeviceID, overwrite = False)
-		self.setAttribute('dvt', '', overwrite = False)
-		self.setAttribute('awi', '', overwrite = False)

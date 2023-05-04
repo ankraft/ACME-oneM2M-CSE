@@ -6,15 +6,13 @@
 #
 #	ResourceType: mgmtObj:areaNwkInfo
 #
+""" [AreaNwkInfo] (ANI) `MgmtObj` specialization. """
 
 from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
-
-defaultAreaNwkType = ''
-
 
 class ANI(MgmtObj):
 	
@@ -55,4 +53,3 @@ class ANI(MgmtObj):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.ANI, create = create)
-		self.setAttribute('ant', defaultAreaNwkType, overwrite = False)
