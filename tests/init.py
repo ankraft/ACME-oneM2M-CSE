@@ -975,7 +975,6 @@ def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
 	global testCaseNames
 
 	# if not testCaseNames or case._testMethodName in testCaseNames:
-	print(testCaseNames)
 	if testCaseNames is None or (testCaseNames and case._testMethodName == testCaseNames[0]):
 		testCaseNames = testCaseNames[1:]
 		suite.addTest(case)
