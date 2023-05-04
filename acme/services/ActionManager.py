@@ -228,6 +228,9 @@ class ActionManager(object):
 		raise INTERNAL_SERVER_ERROR(f'unknown EvalMode: {evm}. This should not happen.')
 		
 
-
 	def unscheduleAction(self, action:ACTR) -> None:
 		CSE.storage.removeAction(action.ri)
+
+	#
+	#	Helper 
+	#

@@ -60,24 +60,16 @@ class DEPR(AnnounceableResource):
 
 		super().activate(parentResource, originator)
 
-		rri = self.rri
- 
 		# Check existence and accessibility of the references resource in rri.
 		try:
-			resRri = CSE.dispatcher.retrieveResource(riFromID(rri), originator)
+			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.rri, originator, Permission.RETRIEVE)
 		except ResponseException as e:
-			raise BAD_REQUEST(L.logDebug(f'rri - referenced resource: {rri} not found: {e.dbg})'))
+			raise BAD_REQUEST(dbg = e.dbg)
 
-		if not CSE.security.hasAccess(originator, resRri, Permission.RETRIEVE):
-			raise BAD_REQUEST(L.logDebug(f'rri - originator has no access to the referenced resource: {rri}'))
-
-
-		# 3) The Receiver shall check that the attribute referenced by the subject element of the evalCriteria
-		#  attribute is an attribute of the resource type referenced by the referencedResourceID attribute. 
-		# If it is not, the receiver shall return a response primitive with a Response Status Code indicating 
-		# "BAD_REQUEST" error.
-
-		# → Move this from action to actionamanger.py
+		# Check existence of attribute in the referenced resource.
+		sbjt = self.evc['sbjt']
+		if not resRri.hasAttributeDefined(sbjt):
+			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
 
 		# 4) The Receiver shall check that the value provided for the threshold element of the evalCriteria
 		#  attribute is within the value space (as defined in [3]) of the data type of the subject element of 
@@ -88,8 +80,6 @@ class DEPR(AnnounceableResource):
 
 		# 5) Process the <dependency> resource as described in clause 10.2.21 of oneM2M TS-0001 [6] after Recv-6.7.
 
-
-		super().activate(parentResource, originator)
 	
 
 	def update(self, dct: JSON = None, 

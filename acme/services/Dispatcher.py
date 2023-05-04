@@ -23,7 +23,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exc
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
-from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes
+from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes, riFromID
 from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
@@ -1290,6 +1290,29 @@ class Dispatcher(object):
 		for rs in (rss or []):
 			result.append(resourceFromDict(rs))
 		return result
+
+
+	def retrieveResourceWithPermission(self, ri:str, originator:str, permission:Permission) -> Resource:
+		"""	Retrieve a resource and check access for an originator.
+
+			Args:
+				ri: Resource ID of the resource to be retrieved.
+				originator: The originator to check the permission for.
+				permission: The permission to check.
+
+			Return:
+				The retrieved resource.
+			
+				
+			Raises:
+				`NOT_FOUND`: In case the resource could not be found.
+				`ORIGINATOR_HAS_NO_PRIVILEGE': In case the originator has not the required permission to the resoruce.
+
+		"""
+		resource = CSE.dispatcher.retrieveResource(riFromID(ri), originator)
+		if not CSE.security.hasAccess(originator, resource, permission):
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator has no access to the resource: {ri}'))
+		return resource
 	
 
 	def deleteChildResources(self, parentResource:Resource, 

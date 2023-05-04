@@ -78,7 +78,7 @@ class ACTR(AnnounceableResource):
 		self.sri = riFromID(self.sri)
 		self.orc = riFromID(self.orc)
 
-		#	Check that the from parameter of the actionPrimitive is the originatorz
+		#	Check that the from parameter of the actionPrimitive is the originator
 		self._checkApvFrom(originator)
 
 		# Check evalmode and control parameters
@@ -201,19 +201,29 @@ class ACTR(AnnounceableResource):
 		resOrc = None
 		if sri is not None: # sri is optional
 			try:
-				resSri = CSE.dispatcher.retrieveResource(riFromID(sri), originator)
+				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(L.logDebug(f'sri - referenced resource: {sri} not found: {e.dbg})'))
-			if not CSE.security.hasAccess(originator, resSri, Permission.RETRIEVE):
-				raise BAD_REQUEST(L.logDebug(f'sri - originator has no access to the referenced resource: {sri}'))
+				raise BAD_REQUEST(dbg = e.dbg)
+
+			# try:
+			# 	resSri = CSE.dispatcher.retrieveResource(riFromID(sri), originator)
+			# except ResponseException as e:
+			# 	raise BAD_REQUEST(L.logDebug(f'sri - referenced resource: {sri} not found: {e.dbg})'))
+			# if not CSE.security.hasAccess(originator, resSri, Permission.RETRIEVE):
+			# 	raise BAD_REQUEST(L.logDebug(f'sri - originator has no access to the referenced resource: {sri}'))
 
 		if orc is not None:
 			try:
-				resOrc = CSE.dispatcher.retrieveLocalResource(riFromID(orc), originator = originator)
+				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(L.logDebug(f'orc - referenced resource: {orc} not found: {e.dbg})'))
-			if not CSE.security.hasAccess(originator, resOrc, Permission.RETRIEVE):
-				raise BAD_REQUEST(L.logDebug(f'orc - originator has no access to the referenced resource: {orc}'))
+				raise BAD_REQUEST(dbg = e.dbg)
+
+			# try:
+			# 	resOrc = CSE.dispatcher.retrieveLocalResource(riFromID(orc), originator = originator)
+			# except ResponseException as e:
+			# 	raise BAD_REQUEST(L.logDebug(f'orc - referenced resource: {orc} not found: {e.dbg})'))
+			# if not CSE.security.hasAccess(originator, resOrc, Permission.RETRIEVE):
+			# 	raise BAD_REQUEST(L.logDebug(f'orc - originator has no access to the referenced resource: {orc}'))
 			
 		return (resSri, resOrc)
 

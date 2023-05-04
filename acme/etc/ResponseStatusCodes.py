@@ -191,8 +191,6 @@ class ResponseException(Exception):
 		self.rsc = rsc
 		self.dbg = dbg
 		self.data = data
-		# print_stack()
-
 
 
 class ALREADY_EXISTS(ResponseException):
