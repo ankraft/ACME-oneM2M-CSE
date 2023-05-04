@@ -73,7 +73,7 @@ if __name__ == '__main__':
 	parser.add_argument('--disable-teardown', '-notd', action='store_true', dest='disableTearDown', default=False, help='disable the tear-down / cleanup procedure at the end of a test suite')
 	parser.add_argument('--run-teardown', '-runtd', action='store_true', dest='runTearDown', default=False, help='run the specified test cases\' tear-down functions and exit')
 	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test suite n times (default: 1)')
-	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=[], help='run only the specified test cases from the set of test suites')
+	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
 
