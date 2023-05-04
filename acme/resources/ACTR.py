@@ -7,6 +7,8 @@
 #	ResourceType: Action
 #
 
+""" Action (ACTRA) resource type. """
+
 from __future__ import annotations
 from typing import Optional, Tuple, Any, cast
 
@@ -22,6 +24,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class ACTR(AnnounceableResource):
+	""" Action (ACTRA) resource type. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
@@ -61,6 +64,7 @@ class ACTR(AnnounceableResource):
 		'ipu': None,
 		'air': None,
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:

@@ -4,8 +4,7 @@
 #	(c) 2022 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" Action announced (ACTRAA) resource type.
-"""
+""" Action announced (ACTRAA) resource type. """
 
 from __future__ import annotations
 from typing import Optional

@@ -4,7 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" AccessControlPolicy (ACP) resource type """
+""" AccessControlPolicy (ACP) resource type. """
 
 from __future__ import annotations
 from typing import List, Optional

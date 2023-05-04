@@ -1379,8 +1379,7 @@ class RequestManager(object):
 		"""	Resolve the real URL and more message parameters for a request and a target,
 		
 			Args:
-				uri: Target resource ID or a URL for a target.
-				originator: The request originator.
+				request: The request from which the target details are taken from.
 			
 			Notes:
 				A successful determination may include the type of the target resource. This is different from the request content's
@@ -1403,8 +1402,6 @@ class RequestManager(object):
 				Otherwise, return a list of the mentioned tuples.
 
 				In case of an error, an empty list is returned. 
-
-				# TODO correct doc
 		"""
 
 		def getTargetReleaseVersion(srv:list) -> str:

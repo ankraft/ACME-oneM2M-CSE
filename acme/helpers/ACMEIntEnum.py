@@ -51,6 +51,16 @@ class ACMEIntEnum(IntEnum):
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool]=False) -> Any:
+		"""	Return an enum value by its name.
+
+			Args:
+				name: String or a tuple of strings with names.
+				insensitive: Optional boolean indicating whether names should be treated case-sensitive or not.
+			
+			Return:
+				A valid enum value, a list of enum values if *name* is a tupple of strings (according to the order in the tuple), or *None* in case of an error.
+
+		"""
 		# TODO docu
 		
 		def _to(name:str) -> Any:
@@ -74,8 +84,18 @@ class ACMEIntEnum(IntEnum):
 
 
 	def __str__(self) -> str:
+		"""	Stringify an enum.
+
+			Return:
+				The name of an enum value.		
+		"""
 		return self.name
 
 
 	def __repr__(self) -> str:
+		"""	Stringify an enum.
+
+			Return:
+				The name of an enum value.		
+		"""
 		return self.__str__()

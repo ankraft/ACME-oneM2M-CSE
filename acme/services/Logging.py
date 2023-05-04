@@ -549,7 +549,7 @@ class Logging:
 		"""	Set the `enableScreenLogging` attribute via a method call.
 		
 			Args:
-				value: New value for `enableScreenLogging.
+				value: New value for `enableScreenLogging`.
 		"""
 		Logging.enableScreenLogging = value
 

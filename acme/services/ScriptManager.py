@@ -1333,8 +1333,7 @@ class ScriptManager(object):
 			Args:
 				name:Event name.
 				uri: The target URI.
-				originator: The notification's originator.
-				data: The notification's payload.
+				request: The notifiction request.
 		"""
 		try:
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
@@ -1516,7 +1515,7 @@ class ScriptManager(object):
 				meta: Filter by script meta data. This can be a single string or a list of strings.
 
 			Return:
-				List of `PContext` objects with the script(s), sorted by name, or `None` in case of an error.
+				List of `PContext` objects with the script(s), sorted by name, or *None* in case of an error.
 		"""
 
 		result:list[PContext] = []

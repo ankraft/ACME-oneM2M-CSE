@@ -1,0 +1,1 @@
+""" This package provides class definitions for oneM2M resources. """

@@ -15,7 +15,8 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
 class ANI(MgmtObj):
-	
+	""" [AreaNwkInfo] (ANI) `MgmtObj` specialization. """
+
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
@@ -47,7 +48,8 @@ class ANI(MgmtObj):
 			'ant': None,
 			'ldv': None
 	}
-	
+	"""	Attributes and `AttributePolicy` for this resource type. """
+
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 

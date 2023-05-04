@@ -15,6 +15,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
 class ANDI(MgmtObj):
+	""" [AreaNwkDeviceInfo] (ANDI) `MgmtObj` specialization. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -52,6 +53,7 @@ class ANDI(MgmtObj):
 			'ss': None,
 			'lnh': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 

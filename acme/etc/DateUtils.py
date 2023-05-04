@@ -36,7 +36,7 @@ def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = Tru
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 
 		Args:
-			ts: Timestamp. Either a POSIX float timestamp, of a `datetime` object.
+			ts: Timestamp. Either a POSIX float timestamp, of a *datetime* object.
 			isUTCtimestamp: Optional boolean indicating whether the timestamp is UTC based.
 			readable: Optional boolean indicating whether the output should be in the format "YYYY-MM-DDThh:mm:ss,f
 		Return:

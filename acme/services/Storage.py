@@ -283,7 +283,7 @@ class Storage(object):
 			Args:
 				ty: resource type to retrieve.
 			Returns:
-				List of resource `Document`. 
+				List of resource *Document* objects. 
 		"""
 		# L.logDebug(f'Retrieving all resources ty: {ty}')
 		return self.db.searchResources(ty = int(ty))

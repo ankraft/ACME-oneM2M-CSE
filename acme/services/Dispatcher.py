@@ -1303,10 +1303,9 @@ class Dispatcher(object):
 			Return:
 				The retrieved resource.
 			
-				
 			Raises:
 				`NOT_FOUND`: In case the resource could not be found.
-				`ORIGINATOR_HAS_NO_PRIVILEGE': In case the originator has not the required permission to the resoruce.
+				`ORIGINATOR_HAS_NO_PRIVILEGE`: In case the originator has not the required permission to the resoruce.
 
 		"""
 		resource = CSE.dispatcher.retrieveResource(riFromID(ri), originator)
