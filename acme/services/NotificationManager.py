@@ -17,7 +17,7 @@ import sys, copy
 from threading import Lock, current_thread
 
 import isodate
-from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
+from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, TimeWindowInterpretation
 from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
@@ -562,7 +562,10 @@ class NotificationManager(object):
 
 
 
-	def _crsCheckForNotification(self, data:list[str], crsRi:str, subCount:int) -> None:
+	def _crsCheckForNotification(self, data:list[str], 
+			      					   crsRi:str, 
+									   subCount:int, 
+									   twi:TimeWindowInterpretation = TimeWindowInterpretation.ALL_EVENTS_PRESENT) -> None:
 		"""	Test whether a notification must be sent for a a <crs> window.
 
 			This method also sends the notification(s) if the window requirements are met.
@@ -571,9 +574,21 @@ class NotificationManager(object):
 				data: List of unique resource IDs.
 				crsRi: The resource ID of the <crs> resource for the window.
 				subCount: Maximum number of expected resource IDs in *data*.
+				twi: How to tread the notifications (all, some, none)
 		"""
-		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, expected count: {subCount}')
-		if len(data) == subCount:
+		
+		# First make sure that the list in 'data' only contains unique resource IDs
+		data = list(set(data))
+
+		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, twi: {twi}')
+
+		# Test for conditions
+		if	(twi == TimeWindowInterpretation.ALL_EVENTS_PRESENT and len(data) == subCount) or \
+			(twi == TimeWindowInterpretation.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
+			(twi == TimeWindowInterpretation.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
+			(twi == TimeWindowInterpretation.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
+			(twi == TimeWindowInterpretation.ALL_EVENTS_MISSING and len(data) == 0):
+
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
 			try:
@@ -610,6 +625,8 @@ class NotificationManager(object):
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
 					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
+		else:
+			L.isDebug and L.logDebug(f'No notification sent')
 		data.clear()
 
 
@@ -627,17 +644,20 @@ class NotificationManager(object):
 		return f'crsPeriodic_{ri}'
 
 
-	def startCRSPeriodicWindow(self, crsRi:str, tws:str, expectedCount:int) -> None:
+	def startCRSPeriodicWindow(self, crsRi:str, 
+			    					 tws:str, 
+									 expectedCount:int,
+									 twi:TimeWindowInterpretation = TimeWindowInterpretation.ALL_EVENTS_PRESENT) -> None:
 
 		crsTws = fromDuration(tws)
-		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
+		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {twi}')
 
 		# Start a background worker. "data", which will contain the RI's later is empty
 		BackgroundWorkerPool.newWorker(crsTws, 
 									   self._crsPeriodicWindowMonitor, 
 									   name = self._getPeriodicWorkerName(crsRi), 
 									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, expectedCount = expectedCount)
+									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, twi = twi)
 
 
 	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
@@ -645,9 +665,12 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
 
 
-	def _crsPeriodicWindowMonitor(self, _data:list[str], crsRi:str, expectedCount:int) -> bool: 
+	def _crsPeriodicWindowMonitor(self, _data:list[str], 
+			       						crsRi:str, 
+										expectedCount:int,
+										twi:TimeWindowInterpretation) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, expectedCount)
+		self._crsCheckForNotification(_data, crsRi, expectedCount, twi)
 		return True
 
 

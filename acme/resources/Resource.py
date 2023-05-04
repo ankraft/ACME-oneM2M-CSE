@@ -10,13 +10,13 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, cast, Optional, List
+from typing import Any, Tuple, cast, Optional, List, overload
 
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
-from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL
+from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL, pureResource
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
 from ..services.Logging import Logging as L
@@ -215,7 +215,7 @@ class Resource(object):
 											 isAnnounced = self.isAnnounced())
 
 		# validate the resource logic
-		self.validate(originator, True, parentResource = parentResource)
+		self.validate(originator, parentResource = parentResource)
 		self.dbUpdate(False)
 		
 		# Various ACPI handling
@@ -356,7 +356,6 @@ class Resource(object):
 		parentResource.childUpdated(self, updatedAttributes, originator)
 
 
-
 	def willBeUpdated(self, dct:Optional[JSON] = None, 
 							originator:Optional[str] = None, 
 							subCheck:Optional[bool] = True) -> None:
@@ -385,7 +384,7 @@ class Resource(object):
 				dct: Optional JSON dictionary with the updated attributes.
 				originator: The optional request originator.
 		"""
-		pass
+		...
 
 
 	def willBeRetrieved(self, originator:str, 
@@ -415,7 +414,7 @@ class Resource(object):
 				originator: The request originator.
 
 		"""
-		pass
+		...
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
@@ -441,7 +440,7 @@ class Resource(object):
 				updatedAttributes: JSON dictionary with the updated attributes.
 				originator: The request originator.
 		"""
-		pass
+		...
 
 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
@@ -469,7 +468,6 @@ class Resource(object):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		""" Validate a resource. 
@@ -480,7 +478,6 @@ class Resource(object):
 
 			Args:
 				originator: Optional request originator
-				create: Optional indicator whether this is CREATE request
 				dct: Updated attributes to validate
 				parentResource: The parent resource
 
@@ -576,6 +573,7 @@ class Resource(object):
 	#
 	#	request handler stubs for virtual resources
 	#
+
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
 									id:Optional[str] = None,
@@ -701,6 +699,23 @@ class Resource(object):
 				self.dict[key] = None
 			else:
 				del self.dict[key]
+	
+
+	def getFinalResourceAttribute(self, key:str, dct:Optional[JSON]) -> Any:
+		"""	Determine and return the final value of an attribute during an update.
+		
+			Args:
+				key: Attribute name.
+				dct: The dictionary with updated attributes.
+			
+			Return:
+				The either updated attribute, or old value if the attribute is not updated. The methon returns *None* if the attribute does not exists.
+		"""
+		value = self.attribute(key)	# old value
+		if dct is not None:
+			newValue = findXPath(dct, f'{self.tpe}/{key}')
+			value = newValue if newValue is not None else value
+		return value
 
 
 	def __setitem__(self, key:str, value:Any) -> None:
@@ -827,7 +842,7 @@ class Resource(object):
 
 
 	def hasAttributeDefined(self, name:str) -> bool:
-		"""	Test wether a resource supports the specified attribute.
+		"""	Test whether a resource supports the specified attribute.
 		
 			Args:
 				name: Attribute to test.

@@ -114,7 +114,7 @@ class CNT(ContainerResource):
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
-		disrNew = findXPath(dct, 'm2m:cnt/disr')
+		disrNew = findXPath(dct, 'm2m:cnt/disr')	# TODO or pureResource?
 
 		# Generic update
 		super().update(dct, originator, doValidateAttributes)
@@ -178,10 +178,9 @@ class CNT(ContainerResource):
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		self._validateChildren()
 
 

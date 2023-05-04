@@ -10,14 +10,14 @@
 """	<crossResourceSubscription> submodule. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from copy import deepcopy
 from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import resourceState, getResourceState
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType, CSERequest
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType, TimeWindowInterpretation, CSERequest
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, NOT_FOUND
 from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
 from ..resources.Resource import Resource
 from ..services import CSE
@@ -60,6 +60,7 @@ class CRS(Resource):
 		'rrat': None,
 		'srat': None,
 		'rrats': None,
+		'twi': None,	# EXPERIMENTAL
 		'twt': None,
 		'tws': None,
 		'encs': None,
@@ -114,12 +115,15 @@ class CRS(Resource):
 	
 		# Start periodic window immediately if necessary
 		if self.twt == TimeWindowType.PERIODICWINDOW:
-			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions())
+			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions(), self.twi)
 
 		# nsi is at least an empty list if nse is present, otherwise it must not be present
 		if self.nse is not None:
 			self.setAttribute('nsi', [], overwrite = False)
 			CSE.notification.validateAndConstructNotificationStatsInfo(self)
+		
+		# Set twi default if not present
+		self.setAttribute('twi', TimeWindowInterpretation.ALL_EVENTS_PRESENT, False)
 
 		self.dbUpdate()
 	
@@ -185,10 +189,9 @@ class CRS(Resource):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		L.isDebug and L.logDebug(f'Validating crossResourceSubscription: {self.ri}')
 
 		# Check that at least rrat or srat is present
@@ -201,6 +204,16 @@ class CRS(Resource):
 				raise BAD_REQUEST(L.logDebug(f'eventNotificationCriteriaSet must not be empty when regularResourcesAsTarget is provided'))
 			if (_l := len(self.attribute('encs/enc'))) != 1 and _l != len(self.rrat):
 				raise BAD_REQUEST(L.logDebug(f'Number of entries in eventNotificationCriteriaSet must be 1 or the same number as regularResourcesAsTarget entries'))
+		
+		# EXPERIMENTAL
+		# Check that twi is only set to SOME_EVENTS_MISSING, ALL_OR_SOME_EVENTS_MISSING or ALL_EVENTS_MISSING when twt is SLIDINGWINDOW
+		twi = self.getFinalResourceAttribute('twi', dct)
+		if twi is not None and twi in (TimeWindowInterpretation.ALL_OR_SOME_EVENTS_PRESENT,
+				 					   TimeWindowInterpretation.SOME_EVENTS_MISSING, 
+				 					   TimeWindowInterpretation.ALL_OR_SOME_EVENTS_MISSING, 
+									   TimeWindowInterpretation.ALL_EVENTS_MISSING):
+			if cast(TimeWindowType, self.getFinalResourceAttribute('twt', dct)) == TimeWindowType.SLIDINGWINDOW:
+				raise BAD_REQUEST(L.logDebug(f'twi = {twi} is not allowed with twt = SLIDINGWINDOW'))
 
 
 	def handleNotification(self, request:CSERequest, originator:str) -> None:
@@ -391,7 +404,10 @@ class CRS(Resource):
 	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> None:
 		if subRI is not None:
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
-			CSE.dispatcher.deleteResource(subRI, originator = originator)
+			try:
+				CSE.dispatcher.deleteResource(subRI, originator = originator)
+			except NOT_FOUND as e:
+				pass # ignore not found resources here
 
 			# To be sure: Set the RI in the rrats list to None
 			_rrats = self.rrats

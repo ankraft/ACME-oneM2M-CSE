@@ -68,10 +68,9 @@ class RBO(MgmtObj):
 	#
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		self.setAttribute('rbo', False, overwrite = True)	# always set (back) to False
 		self.setAttribute('far', False, overwrite = True)	# always set (back) to False
 

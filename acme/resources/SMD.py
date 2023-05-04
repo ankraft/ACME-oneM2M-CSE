@@ -129,11 +129,10 @@ class SMD(AnnounceableResource):
 
 
 	def validate(self, originator:Optional[str] = None,
-					   create:Optional[bool] = False,
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		
 		# Validate validationEnable attribute
 		CSE.semantic.validateValidationEnable(self)
@@ -145,7 +144,7 @@ class SMD(AnnounceableResource):
 			raise BAD_REQUEST(dbg = e.dbg)
 		
 		# Perform Semantic validation process and add descriptor
-		if findXPath(dct, 'm2m:smd/dsp') or create:	# only on create or when descriptor is present in the UPDATE request
+		if findXPath(dct, 'm2m:smd/dsp') or dct is None:	# only on create or when descriptor is present in the UPDATE request
 			CSE.semantic.addDescriptor(self)
 		self.setAttribute('svd', True)
 		

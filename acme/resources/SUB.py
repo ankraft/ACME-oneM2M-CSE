@@ -177,13 +177,12 @@ class SUB(Resource):
 
  
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
-		attrs = self.dict if create else pureResource(dct)[0]
+		attrs = self.dict if dct is None else pureResource(dct)[0]
 		enc = attrs.get('enc')
 
 		# Check NotificationEventType

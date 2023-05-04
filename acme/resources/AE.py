@@ -100,11 +100,10 @@ class AE(AnnounceableResource):
 
 
 	def validate(self, originator:Optional[str] = None,
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')
 
 		# Update the nl attribute in the hosting node (similar to csebase) in case 

@@ -1316,6 +1316,23 @@ class TimeWindowType(ACMEIntEnum):
 	SLIDINGWINDOW = 2
 	"""	Sliding Window. """
 
+
+# EXPERIMENTAL
+class TimeWindowInterpretation(ACMEIntEnum):
+	"""	Time Window Interpretation.
+		This determines how events received in a time window are to be interpreted.
+	"""
+	ALL_EVENTS_PRESENT = 1
+	"""	All events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window. This is the default. """
+	ALL_OR_SOME_EVENTS_PRESENT = 2
+	"""	All or some events present for a `PERIODICWINDOW` (only)."""
+	SOME_EVENTS_MISSING = 3
+	"""	Some events present for a `PERIODICWINDOW` (only)."""
+	ALL_OR_SOME_EVENTS_MISSING = 4
+	"""	All or some events missing for a `PERIODICWINDOW` (only)."""
+	ALL_EVENTS_MISSING = 5
+	"""	All some events missing for a `PERIODICWINDOW` (only)."""
+
 ##############################################################################
 #
 #	Semantic related

@@ -119,8 +119,7 @@ class CSR(AnnounceableResource):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')

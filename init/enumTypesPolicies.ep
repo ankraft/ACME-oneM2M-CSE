@@ -89,6 +89,10 @@
 	"m2m:suid" : {
 		"evalues" : [ "10..15", "21..25", "32..35", "40..45" ]
 	},
+	"m2m:timeWindowInterpretation" : {
+		"evalues" : [ "1..5" ]
+	},
+
 	"m2m:timeWindowType" : {
 		"evalues" : [ 1, 2 ]
 	},

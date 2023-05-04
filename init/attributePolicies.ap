@@ -3052,9 +3052,28 @@
 			"annc": "OA"
 		}
 	],
+
+	// EXPERIMENTAL
+	"twi": [
+		{
+			"rtypes": [ "CRS", "REQRESP" ],
+			"lname": "timeWindowInterpretation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:timeWindowInterpretation",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+
+
+
 	"tws": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "timeWindowSize",
 			"ns": "m2m",
 			"type": "duration",
@@ -3067,7 +3086,7 @@
 	],
 	"twt": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "timeWindowType",
 			"ns": "m2m",
 			"type": "enum",

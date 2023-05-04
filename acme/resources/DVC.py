@@ -75,10 +75,9 @@ class DVC(MgmtObj):
 	#
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		self.setAttribute('ena', True, overwrite = True)	# always set (back) to True
 		self.setAttribute('dis', True, overwrite = True)	# always set (back) to True
 

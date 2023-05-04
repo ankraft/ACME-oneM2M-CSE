@@ -88,10 +88,9 @@ class PCH(Resource):
 		
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 
 		# Set the aggregation state in the own PCU
 		# This is done in activate and update

@@ -61,11 +61,10 @@ class ACP(AnnounceableResource):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		
 		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:

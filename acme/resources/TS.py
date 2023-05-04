@@ -180,11 +180,10 @@ class TS(AnnounceableResource):
 
  
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 		
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:

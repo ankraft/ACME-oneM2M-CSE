@@ -959,7 +959,7 @@ class TestCRS(unittest.TestCase):
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'nu' : [ TestCRS.originator ],
-					'twt': 2,
+					'twt': 2,	# SLIDINGWINDOW
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
 			        'encs': {
@@ -997,11 +997,11 @@ class TestCRS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_testCRSwithSu(self) -> None:
-		"""	CREATE <CRS> subscriber URI and DELETE"""
+		""" CREATE <CRS> subscriber URI and DELETE"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'nu' : [ TestCRS.originator ],
-					'twt': 2,
+					'twt': 2,	# SLIDINGWINDOW
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
 			        'encs': {
@@ -1022,6 +1022,772 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 		notification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(notification, 'm2m:sgn/sud'))
+
+
+
+	#########################################################################
+	#
+	#	TimeWindowInterpretation
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCorrectTWI_1(self) -> None:
+		"""	CREATE <CRS> with TWI (1) and TWT (2)"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'twi': 1,	# ALL_EVENTS_PRESENT
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWrongTWI_2Fail(self) -> None:
+		"""	CREATE <CRS> with wrong TWI (2) and TWT (2) -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'twi': 2,	# ALL_OR_SOME_EVENTS_PRESENT
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWrongTWI_3Fail(self) -> None:
+		"""	CREATE <CRS> with wrong TWI (2) and TWT (3) -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'twi': 3,	# SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWrongTWI_4Fail(self) -> None:
+		"""	CREATE <CRS> with wrong TWI (3) and TWT (4) -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'twi': 4,	# ALL_OR_SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWrongTWI_5Fail(self) -> None:
+		"""	CREATE <CRS> with wrong TWI (4) and TWT (5) -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'twi': 5,	# ALL_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTWT1_TWIs(self) -> None:
+		"""	CREATE <CRS> with TWIs (1,2,3, 4) and TWT (1)"""
+
+		for twi in range(1, 4):
+			dct = 	{ 'm2m:crs' : { 
+						'rn' : crsRN,
+						'nu' : [ TestCRS.originator ],
+						'twt': 1,	# PERIODIC
+						'twi': twi,	# loop
+						'tws' : f'PT{crsTimeWindowSize}S',
+						'rrat': [ self.cnt1RI, self.cnt2RI],
+						'encs': {
+							'enc' : [
+								{
+									'net': [ NET.createDirectChild ],
+								}
+								]
+							},
+						'su': TestCRS.originator
+					}}
+			TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+			self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+			# DELETE again
+			r, rsc = DELETE(crsURL, TestCRS.originator)
+			self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCorrectTWI_1(self) -> None:
+		"""	UPDATE <CRS> with TWI (1) and TWT (2)"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# UPDATE with wrong twi
+		dct = 	{ 'm2m:crs' : { 
+					'twi': 1,	# ALL_EVENTS_PRESENT
+				}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateWrongTWI_2Fail(self) -> None:
+		"""	UPDATE <CRS> with wrong TWI (2) and TWT (2) -> Fail"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# UPDATE with wrong twi
+		dct = 	{ 'm2m:crs' : { 
+					'twi': 2,	# ALL_OR_SOME_EVENTS_PRESENT
+				}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateWrongTWI_3Fail(self) -> None:
+		"""	UPDATE <CRS> with wrong TWI (2) and TWT (3) -> Fail"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# UPDATE with wrong twi
+		dct = 	{ 'm2m:crs' : { 
+					'twi': 3,	# SOME_EVENTS_MISSING
+				}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateWrongTWI_4Fail(self) -> None:
+		"""	UPDATE <CRS> with wrong TWI (3) and TWT (4) -> Fail"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# UPDATE with wrong twi
+		dct = 	{ 'm2m:crs' : { 
+					'twi': 4,	# ALL_OR_SOME_EVENTS_MISSING
+				}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateWrongTWI_5Fail(self) -> None:
+		"""	UPDATE <CRS> with wrong TWI (4) and TWT (5) -> Fail"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 2,	# SLIDINGWINDOW
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# UPDATE with wrong twi
+		dct = 	{ 'm2m:crs' : { 
+					'twi': 5,	# SOME_EVENTS_MISSING
+				}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTWT1_TWIs(self) -> None:
+		"""	UPDATE <CRS> with TWIs (1,2,3,4,5) and TWT (1)"""
+		# First create correct CRS
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ TestCRS.originator ],
+					'twt': 1,	# PERIODIC
+					'twi': 1,	# loop
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+					'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': TestCRS.originator
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		for twi in range(1, 5):
+			dct = 	{ 'm2m:crs' : { 
+						'twi': twi,	# loop
+					}}
+			TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+			self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllSomeEventsPresentAll(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events present, all events"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 2, # ALL_OR_SOME_EVENTS_PRESENT
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create one CIN
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)	
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllSomeEventsPresentSome(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events present, some events"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 2, # ALL_OR_SOME_EVENTS_PRESENT
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create one CIN
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllSomeEventsPresentNone(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events present, no events"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 2, # ALL_OR_SOME_EVENTS_PRESENT
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create NO event
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNone(notification := getLastNotification())
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicSomeEvents(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, some events missing, 1 event"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 3, # SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create one CIN
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicSomeEventsFail(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, some events missing, 0 events -> Fail"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 3, # SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create NO event
+
+		# wait and check for NO notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNone(notification := getLastNotification())
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicSomeEventsAllFail(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, some events missing, all events -> Fail"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 3, # SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create All events
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)	
+
+		# wait and check for NO notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNone(notification := getLastNotification())
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllSomeEvents(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events missing, 1 event"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 4, # ALL_OR_SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create one CIN
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllSomeEventsZero(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events missing, 0 events"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 4, # ALL_OR_SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create NO event
+
+		# wait and check for NO notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllEventsFail(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all events missing, 1 event -> Fail"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 5, # ALL_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create one CIN
+		dct = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# wait and check notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNone(notification := getLastNotification())
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSPeriodicAllEventsZero(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, periodic window, all events missing, 0 events"""
+		clearLastNotification()
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ '/id-in/'+TestCRS.originator ],
+					'twt': 1, # periodic
+					'twi': 5, # ALL_SOME_EVENTS_MISSING
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# NO subscription checking here. Done in other tests already
+
+		# Create NO event
+
+		# wait and check for NO notification
+		testSleep(crsTimeWindowSize + 1.0)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+		# DELETE again
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	#########################################################################
@@ -1140,6 +1906,38 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# Test Deletion Notification
 	addTest(suite, TestCRS('test_testCRSwithSu'))
+
+	# Test TimeWindowInterpretation
+	addTest(suite, TestCRS('test_createCorrectTWI_1'))
+	addTest(suite, TestCRS('test_createWrongTWI_2Fail'))
+	addTest(suite, TestCRS('test_createWrongTWI_3Fail'))
+	addTest(suite, TestCRS('test_createWrongTWI_4Fail'))
+	addTest(suite, TestCRS('test_createWrongTWI_5Fail'))
+	addTest(suite, TestCRS('test_updateCorrectTWI_1'))
+	addTest(suite, TestCRS('test_updateWrongTWI_2Fail'))
+	addTest(suite, TestCRS('test_updateWrongTWI_3Fail'))
+	addTest(suite, TestCRS('test_updateWrongTWI_4Fail'))
+	addTest(suite, TestCRS('test_updateWrongTWI_5Fail'))
+	addTest(suite, TestCRS('test_createTWT1_TWIs'))
+	addTest(suite, TestCRS('test_updateTWT1_TWIs'))
+
+	# Test TimeWindowInterpretation: ALL_OR_SOME_EVENTS_PRESENT
+	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentAll'))
+	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentSome'))
+	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentNone'))
+
+	# Test TimeWindowInterpretation: SOME_EVENTS_MISSING
+	addTest(suite, TestCRS('test_createCRSPeriodicSomeEvents'))
+	addTest(suite, TestCRS('test_createCRSPeriodicSomeEventsFail'))
+	addTest(suite, TestCRS('test_createCRSPeriodicSomeEventsAllFail'))
+
+	# Test TimeWindowInterpretation: ALL_OR_SOME_EVENTS_MISSING
+	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEvents'))
+	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsZero'))
+
+	# Test TimeWindowInterpretation: ALL_EVENTS_MISSING
+	addTest(suite, TestCRS('test_createCRSPeriodicAllEventsFail'))
+	addTest(suite, TestCRS('test_createCRSPeriodicAllEventsZero'))
 
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)

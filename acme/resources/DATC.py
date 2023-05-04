@@ -63,11 +63,10 @@ class DATC(MgmtObj):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
-		super().validate(originator, create, dct, parentResource)
+		super().validate(originator, dct, parentResource)
 
 		# Test for unique occurence of either rpsc and rpil		
 		rpscNew = findXPath(dct, '{*}/rpsc')
