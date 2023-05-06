@@ -10,18 +10,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
 from ..resources.MgmtObj import MgmtObj
-
-statusUninitialized = 0
-statusSuccessful = 1
-statusFailure = 2
-statusInProcess = 3
-
-defaultSoftwareName = 'unknown'
-defaultVersion = '0.0'
-defaultURL = 'unknown'
-defaultStatus = { 'acn' : '', 'sus' : statusUninitialized }
+from ..resources.Resource import Resource
 
 
 class SWR(MgmtObj):
@@ -71,11 +62,14 @@ class SWR(MgmtObj):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.SWR, create = create)
 
-		self.setAttribute('vr', defaultVersion, overwrite = False)
-		self.setAttribute('swn', defaultSoftwareName, overwrite = False)
-		self.setAttribute('url', defaultURL, overwrite = False)
-		self.setAttribute('ins', defaultStatus, overwrite = False)
-		self.setAttribute('acts', defaultStatus, overwrite = False)
+
+
+	def activate(self, parentResource:Resource, originator: str) -> None:
+		super().activate(parentResource, originator)
+		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
+
+		self.setAttribute('ins', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
+		self.setAttribute('acts', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
 		self.setAttribute('in', False, overwrite = False)
 		self.setAttribute('un', False, overwrite = False)
 		self.setAttribute('act', False, overwrite = False)

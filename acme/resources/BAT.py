@@ -11,14 +11,6 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
-
-defaultBatteryLevel  = 100
-"""	Constant - Default battery level """
-
-defaultBatteryStatus = 7 # unknown
-"""	Constant - Default battery status (UNKNOWN) """
-
-
 class BAT(MgmtObj):
 	""" [battery] (bat) management object specialization """
 
@@ -60,7 +52,4 @@ class BAT(MgmtObj):
 					   pi:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.BAT, create = create)
-
-		self.setAttribute('btl', defaultBatteryLevel, overwrite = False)
-		self.setAttribute('bts', defaultBatteryStatus, overwrite = False)
 

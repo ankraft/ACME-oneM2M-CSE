@@ -1335,6 +1335,43 @@ class EventEvaluationMode(ACMEIntEnum):
 
 ##############################################################################
 #
+#	MgmtObj related
+#
+
+class Status(ACMEIntEnum):
+	"""	Status of Firmware Update and Software Update.
+	"""
+	UNINITIALIZED = 0
+	"""	Uninitialized. """
+	SUCCESSFUL = 1
+	"""	Successful. """
+	FAILURE = 2
+	"""	Failure. """
+	IN_PROCESS = 3
+	"""	In process. """
+
+
+class WifiConnectionStatus(ACMEIntEnum):
+	"""	Wifi Connection Status.
+	"""
+	CONNECTED = 0
+	"""	Connected. """
+	DISCONNECTED = 1
+	"""	Disconnected. """
+	IDLE = 2
+	"""	Idle. """
+	NO_SSID_AVAILABLE = 3
+	"""	No SSID available. """
+	SCAN_COMPLETED = 4
+	"""	Scan completed. """
+	FAILED = 5
+	"""	Failed. """
+	LOST = 6
+	"""	Lost. """
+	
+
+##############################################################################
+#
 #	Semantic related
 #
 

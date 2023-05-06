@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
@@ -65,12 +65,18 @@ class WIFIC(MgmtObj):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.WIFIC, create = create)
 
+
+
+	def activate(self, parentResource: Resource, originator: str) -> None:
+		super().activate(parentResource, originator)
 		self.setAttribute('ssi', '', overwrite = False)
+		self.setAttribute('scan', False)
 		self.setAttribute('scan', False)
 		self.setAttribute('scanr', [])
 		self.setAttribute('ud', False)
 		self.setAttribute('trdst', False)
 		self.setAttribute('rdst', False)
+		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED }, False)
 
 
 	def validate(self, originator:Optional[str] = None, 

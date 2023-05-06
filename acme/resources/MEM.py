@@ -14,10 +14,6 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
 
-defaultMemoryAvailable = 0
-defaultMemTotal = 0
-
-
 class MEM(MgmtObj):
 
 	# Attributes and Attribute policies for this Resource Class
@@ -57,7 +53,4 @@ class MEM(MgmtObj):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.MEM, create = create)
-
-		self.setAttribute('mma', defaultMemoryAvailable, overwrite = False)
-		self.setAttribute('mmt', defaultMemTotal, overwrite = False)
 

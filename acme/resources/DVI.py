@@ -13,12 +13,6 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
-
-defaultDeviceType = 'unknown'
-defaultModel = "unknown"
-defaultManufacturer = "unknown"
-defaultDeviceLabel = "unknown serial id"
-
 class DVI(MgmtObj):
 
 	# Attributes and Attribute policies for this Resource Class
@@ -74,9 +68,3 @@ class DVI(MgmtObj):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.DVI, create = create)
-
-		self.setAttribute('dty', defaultDeviceType, overwrite = False)
-		self.setAttribute('mod', defaultModel, overwrite = False)
-		self.setAttribute('man', defaultManufacturer, overwrite = False)
-		self.setAttribute('dlb', defaultDeviceLabel, overwrite = False)
-

@@ -10,19 +10,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
 from ..resources.MgmtObj import MgmtObj
-
-
-statusUninitialized = 0
-statusSuccessful = 1
-statusFailure = 2
-statusInProcess = 3
-
-defaultFirmwareName = 'unknown'
-defaultVersion = '0.0'
-defaultURL = 'unknown'
-defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
+from ..resources.Resource import Resource
 
 
 class FWR(MgmtObj):
@@ -68,9 +58,7 @@ class FWR(MgmtObj):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.FWR, create = create)
 
-		self.setAttribute('vr', defaultVersion, overwrite = False)
-		self.setAttribute('fwn', defaultFirmwareName, overwrite = False)
-		self.setAttribute('url', defaultURL, overwrite = False)
-		self.setAttribute('uds', defaultUDS, overwrite = False)
-		self.setAttribute('ud', False, overwrite = False)
 
+	def activate(self, parentResource:Resource, originator: str) -> None:
+		super().activate(parentResource, originator)
+		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
