@@ -1318,20 +1318,20 @@ class TimeWindowType(ACMEIntEnum):
 
 
 # EXPERIMENTAL
-class TimeWindowInterpretation(ACMEIntEnum):
+class EventEvaluationMode(ACMEIntEnum):
 	"""	Time Window Interpretation.
 		This determines how events received in a time window are to be interpreted.
 	"""
 	ALL_EVENTS_PRESENT = 1
 	"""	All events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window. This is the default. """
 	ALL_OR_SOME_EVENTS_PRESENT = 2
-	"""	All or some events present for a `PERIODICWINDOW` (only)."""
-	SOME_EVENTS_MISSING = 3
-	"""	Some events present for a `PERIODICWINDOW` (only)."""
-	ALL_OR_SOME_EVENTS_MISSING = 4
+	"""	All or some events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window."""
+	ALL_OR_SOME_EVENTS_MISSING = 3
 	"""	All or some events missing for a `PERIODICWINDOW` (only)."""
-	ALL_EVENTS_MISSING = 5
+	ALL_EVENTS_MISSING = 4
 	"""	All some events missing for a `PERIODICWINDOW` (only)."""
+	SOME_EVENTS_MISSING = 5
+	"""	Some events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window."""
 
 ##############################################################################
 #
@@ -1384,10 +1384,9 @@ class Result:
 	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
 	rsc:ResponseStatusCode					= ResponseStatusCode.UNKNOWN	#	The responseStatusCode of a Result
-	dbg:str 								= None
-	request:CSERequest						= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 				= None		# May contain a request as a response, e.g. when polling
-	# status:bool 							= None
+	dbg:Optional[str]						= None
+	request:Optional[CSERequest]			= None  	# may contain the processed incoming request object
+	embeddedRequest:Optional[CSERequest]	= None		# May contain a request as a response, e.g. when polling
 
 
 	# def errorResultCopy(self) -> Result:

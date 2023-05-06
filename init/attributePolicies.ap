@@ -1172,6 +1172,23 @@
 			"annc": "OA"
 		}
 	],
+
+	// EXPERIMENTAL
+	"eem": [
+		{
+			"rtypes": [ "CRS", "REQRESP" ],
+			"lname": "eventEvaluationMode",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:eventEvaluationMode",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+
 	"egid": [
 		{
 			"rtypes": [ "ALL" ],
@@ -3052,25 +3069,6 @@
 			"annc": "OA"
 		}
 	],
-
-	// EXPERIMENTAL
-	"twi": [
-		{
-			"rtypes": [ "CRS", "REQRESP" ],
-			"lname": "timeWindowInterpretation",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:timeWindowInterpretation",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-
-
-
 	"tws": [
 		{
 			"rtypes": [ "CRS", "REQRESP" ],

@@ -22,6 +22,12 @@
 		// m2m:stdEventCat + user defined range
 		"evalues" : [ "2..4", "100..999"]
 	},
+	
+	// EXPERIMENTAL
+	"m2m:eventEvaluationMode" : {
+		"evalues" : [ "1..5" ]
+	},
+
 	"m2m:filterOperation" : {
 		"evalues" : [ "1..3" ]
 	},
@@ -89,10 +95,6 @@
 	"m2m:suid" : {
 		"evalues" : [ "10..15", "21..25", "32..35", "40..45" ]
 	},
-	"m2m:timeWindowInterpretation" : {
-		"evalues" : [ "1..5" ]
-	},
-
 	"m2m:timeWindowType" : {
 		"evalues" : [ 1, 2 ]
 	},

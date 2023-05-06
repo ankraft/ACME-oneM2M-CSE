@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGGING] Allow to exclude log messages from external libraries and components.
 - [TUI] Added text UI.
 
+### Experimental
+- [CSE] Added experimental *subi* attribute support to &lt;CNT> only. Other resource types may follow.
+- [CSE] Added first experimental support for advanced queries via the `aq` request parameter. This is probably subject to change.
+- [CSE] Added experimental *eventEvaluationMode* support to &lt;CRS>.
+
 ### Changed
 - [SCRIPTS] Changed the script interpreter from a batch-based to a lisp-based language.  
 **NOTE, that scripts in the old format are not supported anymore and need to be converted manually.**
@@ -29,9 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored and simplified the internal request sending procedures.
 - [CSE] Renamed configuration setting "cse.csi" (to "cse.cseID"), "cse.ri" (to "cse.resourceID"), "cse.ri" (to "cse.resourceName").
 - [CSE] Moved resource, console, http, db, scripting configuration settings to their own namespaces in the configuration files.
-
-
-
 - [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
 **This is a non-backward compatible change due to the DB schema changes.**
 - [CONSOLE] Re-implemented some console services to make them reusable for the text UI.

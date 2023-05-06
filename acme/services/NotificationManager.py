@@ -17,7 +17,7 @@ import sys, copy
 from threading import Lock, current_thread
 
 import isodate
-from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, TimeWindowInterpretation
+from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, EventEvaluationMode
 from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
@@ -565,7 +565,7 @@ class NotificationManager(object):
 	def _crsCheckForNotification(self, data:list[str], 
 			      					   crsRi:str, 
 									   subCount:int, 
-									   twi:TimeWindowInterpretation = TimeWindowInterpretation.ALL_EVENTS_PRESENT) -> None:
+									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
 		"""	Test whether a notification must be sent for a a <crs> window.
 
 			This method also sends the notification(s) if the window requirements are met.
@@ -580,14 +580,14 @@ class NotificationManager(object):
 		# First make sure that the list in 'data' only contains unique resource IDs
 		data = list(set(data))
 
-		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, twi: {twi}')
+		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, eem: {eem}')
 
 		# Test for conditions
-		if	(twi == TimeWindowInterpretation.ALL_EVENTS_PRESENT and len(data) == subCount) or \
-			(twi == TimeWindowInterpretation.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
-			(twi == TimeWindowInterpretation.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
-			(twi == TimeWindowInterpretation.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
-			(twi == TimeWindowInterpretation.ALL_EVENTS_MISSING and len(data) == 0):
+		if	(eem == EventEvaluationMode.ALL_EVENTS_PRESENT and len(data) == subCount) or \
+			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
+			(eem == EventEvaluationMode.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
+			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
+			(eem == EventEvaluationMode.ALL_EVENTS_MISSING and len(data) == 0):
 
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
@@ -647,17 +647,17 @@ class NotificationManager(object):
 	def startCRSPeriodicWindow(self, crsRi:str, 
 			    					 tws:str, 
 									 expectedCount:int,
-									 twi:TimeWindowInterpretation = TimeWindowInterpretation.ALL_EVENTS_PRESENT) -> None:
+									 eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
 
 		crsTws = fromDuration(tws)
-		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {twi}')
+		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {eem}')
 
 		# Start a background worker. "data", which will contain the RI's later is empty
 		BackgroundWorkerPool.newWorker(crsTws, 
 									   self._crsPeriodicWindowMonitor, 
 									   name = self._getPeriodicWorkerName(crsRi), 
 									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, twi = twi)
+									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, eem = eem)
 
 
 	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
@@ -668,9 +668,9 @@ class NotificationManager(object):
 	def _crsPeriodicWindowMonitor(self, _data:list[str], 
 			       						crsRi:str, 
 										expectedCount:int,
-										twi:TimeWindowInterpretation) -> bool: 
+										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, expectedCount, twi)
+		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
 		return True
 
 
@@ -688,7 +688,11 @@ class NotificationManager(object):
 		return f'crsSliding_{ri}'
 
 
-	def startCRSSlidingWindow(self, crsRi:str, tws:str, sur:str, subCount:int) -> BackgroundWorker:
+	def startCRSSlidingWindow(self, crsRi:str,
+			   						tws:str, 
+									sur:str, 
+									subCount:int,
+									eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
 		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
@@ -696,7 +700,7 @@ class NotificationManager(object):
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
 											 crsTws,
 											 name = self._getSlidingWorkerName(crsRi), 
-											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount)
+											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount, eem = eem)
 
 
 	def stopCRSSlidingWindow(self, crsRi:str) -> None:
@@ -704,9 +708,12 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any, crsRi:str, subCount:int) -> bool:
+	def _crsSlidingWindowMonitor(self, _data:Any, 
+			      					   crsRi:str, 
+									   subCount:int, 
+									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, subCount)
+		self._crsCheckForNotification(_data, crsRi, subCount, eem)
 		return True
 
 
@@ -723,7 +730,7 @@ class NotificationManager(object):
 				if sur not in workers[0].data:
 					workers[0].data.append(sur)
 			else:
-				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions()) ]	# sur is added automatically when creating actor
+				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
 		elif crsTwt == TimeWindowType.PERIODICWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
 				if sur not in workers[0].data:
