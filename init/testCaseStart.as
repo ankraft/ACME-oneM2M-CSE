@@ -14,5 +14,5 @@
 		(quit-with-error)))
 
 ;; Print start line to the debug log
-(log-divider "Start of ${(argv 1)}$")
+(log-divider "Start of ${(argv 1)}")
 

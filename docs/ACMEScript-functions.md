@@ -1840,7 +1840,7 @@ Example:
     { "m2m:ae": {
         "ri":  "CmyAE",
         "rn":  "CmyAE",
-        "pi":  "${ (get-config \"cse.ri\") }$",  ;; Get the CSE's resource ID from the configuration
+        "pi":  "${ (get-config \"cse.ri\") }",  ;; Get the CSE's resource ID from the configuration
         "rr":  true,
         "api": "NmyAppId",
         "aei": "CmyAE",

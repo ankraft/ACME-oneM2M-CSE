@@ -164,18 +164,18 @@ See:  [get-storage](ACMEScript-functions.md##get-storage), [has-storage](ACMEScr
 
 ### Evaluating S-Expressions in Strings and JSON Structures
 
-S-expressions that are enclosed in the pattern `${..}$` in a string or JSON structure are evaluated when the string or JSON symbol is evaluated. The result of the s-expression replaces the pattern. Pattern replacement can be escaped with two backslashes: `\\${..}$`.
+S-expressions that are enclosed in the pattern `${..}` in a string or JSON structure are evaluated when the string or JSON symbol is evaluated. The result of the s-expression replaces the pattern. Pattern replacement can be escaped with two backslashes: `\\${..}`.
 
 In the following example the s-expression `(+ 1 2)` is evaluated when the string is processed:
 
 ```lisp
-(print "1 + 2 = ${ (+ 1 2) }$")  ;; Prints "1 + 2 = 3"
+(print "1 + 2 = ${ (+ 1 2) }")  ;; Prints "1 + 2 = 3"
 ```
 
 Evaluation can be locally disabled by escaping the opening part:
 
 ```lisp
- (print "1 + 2 = \\${ (+ 1 2) }$")  ;; Prints "1 + 2 = [(+ 1 2)]"
+ (print "1 + 2 = \\${ (+ 1 2) }")  ;; Prints "1 + 2 = [(+ 1 2)]"
 ```
 
 Evaluation can also be disabled and enabled by using the [evaluate-inline](ACMEScript-functions.md#evaluate-inline) function.

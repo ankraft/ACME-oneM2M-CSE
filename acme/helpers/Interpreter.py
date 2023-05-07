@@ -742,7 +742,7 @@ class PContext():
 	)
 	""" Slots of class attributes. """
 
-	_macroMatch = re.compile(r'\$\{.*?\}\$|\\\\\$\{.*?\}\$')	# Trick: ".*?" The ? is for non-greedy, for the shortest match
+	_macroMatch = re.compile(r'\$\{.*?\}|\\\\\$\{.*?\}')	# Trick: ".*?" The ? is for non-greedy, for the shortest match
 	"""	Regex for matching macros in strings and JSON. """
 
 	def __init__(self, 
