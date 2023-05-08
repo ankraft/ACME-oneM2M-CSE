@@ -1443,7 +1443,7 @@ class PContext():
 			
 			# Replace macro text with result of its evaluation
 			else:
-				_x = str(_m[2:-2]).replace('\\"', '"')
+				_x = str(_m[2:-1]).replace('\\"', '"')	# remove '${' and '}' and unescape escaped quotes
 				_e = self.executeSubexpression(_x)	# may throw exception
 				# replace only the first occurance
 				line = line.replace(_m, str(_e.result), 1)
