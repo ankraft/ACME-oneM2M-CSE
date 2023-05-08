@@ -192,7 +192,7 @@ class AnnounceableResource(Resource):
 		# Set the internal __announcedTo__ attribute
 		ats = self.getAnnouncedTo()
 		ats.append((csi, remoteRI))
-		self.setAttribute(Constants.attrAnnouncedTo, ats)	# TODO replacement as below?
+		self.setAnnouncedTo(ats)
 
 		# Modify the at attribute, if applicable
 		if 'at' in self._attributes:
@@ -205,7 +205,23 @@ class AnnounceableResource(Resource):
 			self.setAttribute('at', at)
 
 
-	# TODO add _removeAnnouncementFromResource() here
+	def removeAnnouncementFromResource(self, csi:str) -> Optional[str]:
+		"""	Remove anouncement information from the resource. These are a list of tuples of 
+			the csi to which the resource is registered and the CSE-relative ri of the 
+			resource on the remote CSE. Also, remove the reference from the at attribute.
+
+			Args:
+				csi: csi of the remote CSE
+		"""
+		ats = self.getAnnouncedTo()
+		remoteRI = None
+		for x in ats:
+			if x[0] == csi:
+				remoteRI = x[1]
+				ats.remove(x)
+				self.setAnnouncedTo(ats)
+				break
+		return remoteRI
 
 	
 	#########################################################################

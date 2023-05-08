@@ -1021,7 +1021,7 @@ class Resource(object):
 			Args:
 				originator: The originator to assign to a resource.
 		"""
-		self.setAttribute(_originator, originator, overwrite = True)
+		self.setAttribute(_originator, originator)
 	
 
 
@@ -1032,6 +1032,15 @@ class Resource(object):
 				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
 		"""
 		return self[_announcedTo]
+	
+
+	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
+		"""	Set the internal *announcedTo* list attribute of a resource.
+
+			Args:
+				announcedTo: The list of *announcedTo* tupples (csi, remote resource ID) to assign to a resource.
+		"""
+		self.setAttribute(_announcedTo, announcedTo)
 
 	
 	def setResourceName(self, rn:str) -> None:
@@ -1065,7 +1074,7 @@ class Resource(object):
 			Args:
 				srn: The full structured resource name to assign to a resource.
 		"""
-		self.setAttribute(_srn, srn, overwrite = True)
+		self.setAttribute(_srn, srn)
 
 
 	def getRVI(self) -> str:
@@ -1085,4 +1094,4 @@ class Resource(object):
 			Args:
 				rvi: Original CREATE request's *rvi*.
 		"""
-		self.setAttribute(_rvi, rvi, overwrite = True)
+		self.setAttribute(_rvi, rvi)

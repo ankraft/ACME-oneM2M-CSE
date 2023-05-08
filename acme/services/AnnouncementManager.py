@@ -230,14 +230,6 @@ class AnnouncementManager(object):
 				if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
 					raise BAD_REQUEST(f'cannot find CSR for csi: {csi}')
 
-				dct = createRawRequest( to = to,
-										rcn = ResultContentType.childResourceReferences.value,
-										drt = DesiredIdentifierResultType.unstructured.value,
-										fc = {	'ty' : ResourceTypes.CSEBaseAnnc.value,
-										'lnk' : f'{cseBase.csi}/{cseBase.ri}'
-										})
-				# TODO remove the function above if not needed anymore
-
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 															   to = to,
 															   originator = CSE.cseCsi,
@@ -445,7 +437,6 @@ class AnnouncementManager(object):
 				csi: The CSE-ID of the CSE where the announced resource is hosted.
 				remoteRI: The resource ID of the remote announced resource.
 		"""
-		# TODO doc
 		dct = resource.createAnnouncedResourceDict(isCreate = False)
 		# Create the announed resource on the remote CSE
 		csrID = f'{csi}/{remoteRI}'
@@ -470,17 +461,9 @@ class AnnouncementManager(object):
 				resource: The announceable resource to remove.
 				csi: The CSE-ID of the CSE where the announced resource is hosted.
 		"""
-		ats = resource.getAnnouncedTo()
-		remoteRI:str = None
-
-		# TODO put this method of AnnounceableResource
-		for x in ats:
-			if x[0] == csi:
-				remoteRI = x[1]
-				ats.remove(x)
-				resource.setAttribute(Constants.attrAnnouncedTo, ats)
-
-		# # Modify the at attribute
+		remoteRI = resource.removeAnnouncementFromResource(csi)
+		
+		# Modify the at attribute
 		if remoteRI:
 			atCsi = f'{csi}/{remoteRI}'
 			if (at := resource.at) and atCsi in at:
