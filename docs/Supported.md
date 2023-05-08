@@ -31,11 +31,13 @@ The ACME CSE supports the following oneM2M resource types:
 | Resource Type                   | Supported | Remarks & Limitations                                                                                                                                                                                             |
 |:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Access Control Policy (ACP)     |  &check;  |                                                                                                                                                                                                                   |
+| Action (ACTR)                   |  &check;  | No support for the `input` attribute.                                                                                                                                                                             |
 | Application Entity (AE)         |  &check;  |                                                                                                                                                                                                                   |
 | Container (CNT)                 |  &check;  |                                                                                                                                                                                                                   |
 | ContentInstance (CIN)           |  &check;  |                                                                                                                                                                                                                   |
 | CrossResourceSubscription (CRS) |  &check;  |                                                                                                                                                                                                                   |
 | CSEBase (CB)                    |  &check;  |                                                                                                                                                                                                                   |
+| Dependency (DEPR)               |  &check;  |                                                                                                                                                                                                                   |
 | FlexContainer & Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported specializations include: TS-0023 R4, GenericInterworking, AllJoyn. |
 | FlexContainerInstance           |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                         |
 | Group (GRP)                     |  &check;  | The support includes requests via the *fopt* (fanOutPoint) virtual resource. Groups may contain remote resources.                                                                                                 |
@@ -76,34 +78,53 @@ The following table presents the supported management object specifications.
 
 | Functionality                 | Supported | Remark                                                                                    |
 |:------------------------------|:---------:|:------------------------------------------------------------------------------------------|
-| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.  |
-| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE, NOTIFY                                                  |
-| Discovery                     |  &check;  |                                                                                           |
-| Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                      |
-| Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                         |
 | AE registration               |  &check;  |                                                                                           |
-| Remote CSE registration       |  &check;  |                                                                                           |
-| Resource expiration           |  &check;  |                                                                                           |
-| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                  |
-| Resource validations          |  &check;  |                                                                                           |
-| Request parameter validations |  &check;  |                                                                                           |
-| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                              |
 | Blocking requests             |  &check;  |                                                                                           |
-| Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
-| TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
-| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
-| Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
-| Time Synchronization          |  &check;  |                                                                                           |
+| Discovery                     |  &check;  |                                                                                           |
+| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
+| Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
+| Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                         |
+| Partial Retrieve              |  &check;  | Support for partial retrieve of individual resource attributes.                           |
+| Remote CSE registration       |  &check;  |                                                                                           |
+| Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
+| Request parameter validations |  &check;  |                                                                                           |
+| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.  |
+| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                  |
+| Resource expiration           |  &check;  |                                                                                           |
+| Resource validations          |  &check;  |                                                                                           |
 | Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries and discovery.                |
+| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE, NOTIFY                                                  |
+| Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                      |
+| Time Synchronization          |  &check;  |                                                                                           |
+| TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
+| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                              |
+
 
 ### Additional CSE Features
-| Functionality         | Supported | Remark                                                                                                    |
-|:----------------------|:---------:|:----------------------------------------------------------------------------------------------------------|
-| Web UI                |  &check;  |                                                                                                           |
-| Text Console          |  &check;  | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
-| Testing: Upper Tester |  &check;  | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
-| Script Interpreter    |  &check;  | Simple batch scripting support to extent functionalities, implement simple AEs, prototypes, test, ...     |
+| Functionality         | Remark                                                                                                    |
+|:----------------------|:----------------------------------------------------------------------------------------------------------|
+| Web UI                |                                                                                                           |
+| HTTP CORS			    | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                 | 
+| Text Console          | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
+| Test UI               | Text-based UI to inspect resources and requests, configurations, stats, and more                          |
+| Testing: Upper Tester | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
+| Request Recording     | Record requests to and from the CSE to learn and debug requests over Mca and Mcc.                         |
+| Script Interpreter    | Lisp-based scripting support to extent functionalities, implement simple AEs, prototypes, test, ...       |
+
+
+### Experimental CSE Features
+These features are prove-of-concept implementations of new and currently discussed oneM2M features. They are not yet part of the oneM2M standard.
+
+| Functionality                            | Remark                                                                                     |
+|:-----------------------------------------|:-------------------------------------------------------------------------------------------|
+| Enhanced CSR functionality               | Support of new *eventEvaluationMode* to react in missing events                            |
+| Subscription References                  | Support for subscription references for resource instead of direct subscriptions.          |
+| Advanced Queries                         | Experimental implementation of a new query language to support enhanced query capabilities |
+| Simplified Time Synchronization          | Experimental implementation of a simplified time synchronization mechanism.                |
+| Support for DELETE requests for http/1.0 | Using PATCH requests to emulate DELETE requests for http/1.0 clients.                      |
+
+
 
 ## Result Content Types
 The following result contents are implemented for standard oneM2M requests & discovery:
@@ -141,14 +162,15 @@ The following result contents are implemented for standard oneM2M requests & dis
 ## Protocols Bindings
 The following Protocol Bindings are supported:
 
-| Protocol Binding | Supported | Remark                                                                                           |
-|:-----------------|:---------:|:-------------------------------------------------------------------------------------------------|
+| Protocol Binding | Supported | Remark                                                                                                  |
+|:-----------------|:---------:|:--------------------------------------------------------------------------------------------------------|
 | http             |  &check;  | incl. TLS (https) and CORS support.<br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
-| coap             |  &cross;  |                                                                                                  |
-| mqtt             |  &check;  | incl. mqtts                                                                                      |
-| WebSocket        |  &cross;  |                                                                                                  |
+| coap             |  &cross;  |                                                                                                         |
+| mqtt             |  &check;  | incl. mqtts                                                                                             |
+| WebSocket        |  &cross;  |                                                                                                         |
 
 The supported bindings can be used together, and combined and mixed in any way.
+
 
 ## Serialization Types
 The following serialization types are supported:
