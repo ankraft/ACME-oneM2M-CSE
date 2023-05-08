@@ -224,11 +224,11 @@ timeout=${cse:requestExpirationDelta}
 
 [mqtt.security]
 ; The username for MQTT broker authentication if required by the broker.
-; Default: None
-username=username
+; Default: empty string
+username=
 ; The password for MQTT broker authentication if required by the broker.
-; Default: None
-password=password
+; Default: empty string
+password=
 ; Enable TLS for communications with the MQTT broker.
 ; Default: False
 useTLS=False
@@ -426,8 +426,8 @@ mdn=10
 ; to an AE or CSE. The format must be an ISO8601 duration.
 ; Default: PT1H = 1 hour
 bcni=PT1H
-; Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications
-; is sent to an AE or CSE.
+; Default timeSyncBeacon difference threshold. When this time threshold is reached then a beacon notifications
+; is sent to an AE or CSE target.
 ; Default: 10.0 seconds
 bcnt=10.0
 

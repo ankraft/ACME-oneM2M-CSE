@@ -81,7 +81,7 @@ class RegistrationManager(object):
 		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
 		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
 		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
-		self.acpPvsAcop					= Configuration.get('resource.acp.pvs.acop')
+		self.acpPvsAcop					= Configuration.get('resource.acp.selfPermission')
 
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
@@ -92,7 +92,7 @@ class RegistrationManager(object):
 						'cse.registration.allowedCSROriginators',
 						'cse.registration.allowedAEOriginators',
 						'cse.enableResourceExpiration',
-						'resource.acp.pvs.acop']:
+						'resource.acp.selfPermission']:
 			return
 		self._assignConfig()
 		self.restartExpirationMonitor()

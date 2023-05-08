@@ -206,7 +206,7 @@ class Configuration(object):
 				'cse.sendToFromInResponses'				: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
 				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
 				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
-				'cse.spid'								: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
+				'cse.serviceProviderID'					: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
 				'cse.type'								: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
 
 				#
@@ -239,9 +239,9 @@ class Configuration(object):
 
 				'cse.registrar.address'					: config.get('cse.registrar', 'address', 							fallback = None),
 				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 					fallback = 30),		# Seconds
-				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 								fallback = None),
+				'cse.registrar.cseID'					: config.get('cse.registrar', 'cseID', 								fallback = None),
 				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',			fallback = []),		# type: ignore [attr-defined]
-				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 						fallback = None),
+				'cse.registrar.resourceName'						: config.get('cse.registrar', 'resourceName', 						fallback = None),
 				'cse.registrar.root'					: config.get('cse.registrar', 'root', 								fallback = ''),
 				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',						fallback = 'json'),
 
@@ -353,8 +353,8 @@ class Configuration(object):
 
 				'mqtt.security.allowedCredentialIDs'	: config.getlist('mqtt.security', 'allowedCredentialIDs', 			fallback = []),	# type: ignore [attr-defined]
 				'mqtt.security.caCertificateFile'		: config.get('mqtt.security', 'caCertificateFile',					fallback = None),
-				'mqtt.security.password' 				: config.get('mqtt.security', 'password',							fallback = None),
-				'mqtt.security.username'				: config.get('mqtt.security', 'username',							fallback = None),
+				'mqtt.security.password' 				: config.get('mqtt.security', 'password',							fallback = ''),
+				'mqtt.security.username'				: config.get('mqtt.security', 'username',							fallback = ''),
 				'mqtt.security.useTLS'					: config.getboolean('mqtt.security', 'useTLS', 						fallback = False),
 				'mqtt.security.verifyCertificate'		: config.getboolean('mqtt.security', 'verifyCertificate', 			fallback = False),
 
@@ -363,15 +363,15 @@ class Configuration(object):
 				#	Defaults for Access Control Policies
 				#
 
-				'resource.acp.pvs.acop'					: config.getint('resource.acp', 'selfPermission', 					fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
+				'resource.acp.selfPermission'			: config.getint('resource.acp', 'selfPermission', 					fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
 
 
 				#
 				#	Defaults for Actions
 				#
 
-				'resource.actr.ecp.continuous'			: config.getint('resource.actr', 'ecpContinuous', 					fallback = 1000),
-				'resource.actr.ecp.periodic'			: config.getint('resource.actr', 'ecpPeriodic', 					fallback = 10000),
+				'resource.actr.ecpContinuous'			: config.getint('resource.actr', 'ecpContinuous', 					fallback = 1000),
+				'resource.actr.ecpPeriodic'				: config.getint('resource.actr', 'ecpPeriodic', 					fallback = 10000),
 
 
 				#
@@ -394,7 +394,7 @@ class Configuration(object):
 				#	Defaults for Subscription Resources
 				#
 
-				'resource.sub.dur'						: config.getint('resource.sub', 'batchNotifyDuration', 				fallback = 60),	# seconds
+				'resource.sub.batchNotifyDuration'		: config.getint('resource.sub', 'batchNotifyDuration', 				fallback = 60),	# seconds
 
 
 				#
@@ -563,8 +563,8 @@ class Configuration(object):
 		if not Configuration._configuration['http.security.useTLS']:	# clear certificates configuration if not in use
 			Configuration._configuration['http.security.verifyCertificate'] = False
 			Configuration._configuration['http.security.tlsVersion'] = 'auto'
-			Configuration._configuration['http.security.caCertificateFile'] = None
-			Configuration._configuration['http.security.caPrivateKeyFile'] = None
+			Configuration._configuration['http.security.caCertificateFile'] = ''
+			Configuration._configuration['http.security.caPrivateKeyFile'] = ''
 		else:
 			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
 				return False, f'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}'
@@ -597,14 +597,14 @@ class Configuration(object):
 		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
 
-		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
-			if not isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
+		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.cseID']:
+			if not isValidCSI(val:=Configuration._configuration['cse.registrar.cseID']):
 				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
-			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
+			if len(Configuration._configuration['cse.registrar.cseID']) > 0 and len(Configuration._configuration['cse.registrar.resourceName']) == 0:
 				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
 
 		# Check default subscription duration
-		if Configuration._configuration['resource.sub.dur'] < 1:
+		if Configuration._configuration['resource.sub.batchNotifyDuration'] < 1:
 			return False, 'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0'
 
 		# Check flexBlocking value

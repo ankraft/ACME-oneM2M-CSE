@@ -18,6 +18,7 @@ from copy import deepcopy
 
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
+from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..helpers.TextTools import removeCommentsFromJSON
@@ -26,6 +27,8 @@ from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
 
 # TODO Support child specialization in attribute definitionsEv
+
+# TODO change error handling to exceptions
 
 class Importer(object):
 	""" Importer class to import various objects, configurations etc.
@@ -65,10 +68,11 @@ class Importer(object):
 		self.removeImports()
 
 		# Do Imports
-		if not (self.importEnumPolicies() and \
-				self.importAttributePolicies() and \
-				self.importFlexContainerPolicies() and \
-				self.assignAttributePolicies() and \
+		if not (self.importEnumPolicies() and
+				self.importAttributePolicies() and
+				self.importFlexContainerPolicies() and
+				self.assignAttributePolicies() and
+				self.importConfigDocs() and
 				self.importScripts()):
 			return False
 		if CSE.script.scriptDirectories:
@@ -85,6 +89,11 @@ class Importer(object):
 		CSE.validator.clearFlexContainerSpecializations()
 		CSE.script.removeScripts()
 
+
+	###########################################################################
+	#
+	#	Scripts
+	#
 
 	def importScripts(self, path:Optional[str] = None) -> bool:
 		"""	Import the ACME script from a directory.
@@ -137,15 +146,15 @@ class Importer(object):
 			if CSE.cseCsi != cse.csi:
 				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {cse.csi}')
 				CSE.cseCsi = cse.csi
-				Configuration.update('cse.csi', cse.csi)
+				Configuration.update('cse.cseID', cse.csi)
 			if CSE.cseRi != cse.ri:
 				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {cse.ri}')
 				CSE.cseRi = cse.ri
-				Configuration.update('cse.ri',cse.ri)
+				Configuration.update('cse.resourceID',cse.ri)
 			if CSE.cseRn != cse.rn:
 				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {cse.rn}')
 				CSE.cseRn  = cse.rn
-				Configuration.update('cse.rn', cse.rn)
+				Configuration.update('cse.resourceName', cse.rn)
 		else:
 			# We don't have a CSE!
 			L.logErr('CSE missing in startup script')
@@ -153,6 +162,51 @@ class Importer(object):
 
 		L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
 		return True
+
+
+	###########################################################################
+	#
+	#	Configuraton documentation
+	#
+
+	def importConfigDocs(self) -> bool:
+		# Get import path
+		if (path := self.resourcePath) is None:
+			L.logErr('cse.resourcesPath not set')
+			raise RuntimeError('cse.resourcesPath not set')
+
+		if not os.path.exists(path):
+			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			return False
+
+		L.isInfo and L.log(f'Importing configuration documentation from: {os.path.relpath(path)}')
+		
+		# Import the markdown help texts here. Split them in section at each "# name" line.
+		try:
+			with open(f'{path}/configurations.docmd', 'r') as f:
+				id = None
+				text:list[str] = []
+				for line in f: 
+					if line.lstrip().startswith('# '):
+
+						# Add current documentation
+						Configuration.addDoc(id, ''.join(text))
+						
+						# Prepare the next documentation
+						id = line[2:].strip()
+						text = []
+						continue
+					text.append(line)
+				else:
+					# Add last documentation
+					Configuration.addDoc(id, ''.join(text))
+
+		except FileNotFoundError as e:
+			L.isWarn and L.logWarn(f'Documentation file not forund: {e}')
+			return False
+		return True
+
+
 
 
 	###########################################################################

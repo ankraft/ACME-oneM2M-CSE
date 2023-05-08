@@ -218,7 +218,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	cseCsi					 = Configuration.get('cse.cseID')
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseCsiSlashLess			 = cseCsi[1:]
-	cseSpid					 = Configuration.get('cse.spid')
+	cseSpid					 = Configuration.get('cse.serviceProviderID')
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
 	cseRi					 = Configuration.get('cse.resourceID')
 	cseRn					 = Configuration.get('cse.resourceName')

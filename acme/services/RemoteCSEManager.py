@@ -139,8 +139,8 @@ class RemoteCSEManager(object):
 		self.checkInterval			= Configuration.get('cse.registrar.checkInterval')
 		self.registrarSerialization	= Configuration.get('cse.registrar.serialization')
 		self.checkLiveliness		= Configuration.get('cse.registration.checkLiveliness')
-		self.registrarCSI			= Configuration.get('cse.registrar.csi')
-		self.registrarCseRN			= Configuration.get('cse.registrar.rn')
+		self.registrarCSI			= Configuration.get('cse.registrar.cseID')
+		self.registrarCseRN			= Configuration.get('cse.registrar.resourceName')
 		self.excludeCSRAttributes	= Configuration.get('cse.registrar.excludeCSRAttributes')
 		self.enableRemoteCSE		= Configuration.get('cse.enableRemoteCSE')
 
@@ -166,8 +166,8 @@ class RemoteCSEManager(object):
 						'cse.registrar.checkInterval',
 						'cse.registrar.serialization',
 						'cse.registration.checkLiveliness',
-						'cse.registrar.csi',
-						'cse.registrar.rn',
+						'cse.registrar.cseID',
+						'cse.registrar.resourceName',
 						'cse.registrar.excludeCSRAttributes',
 						'cse.enableRemoteCSE' ]:
 			return

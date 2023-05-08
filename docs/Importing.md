@@ -4,7 +4,8 @@
 
 [Resources](#resources)  
 [Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
-[Attribute Policies for Common Resources and Complex Types	](#attributes)
+[Attribute Policies for Common Resources and Complex Types](#attributes)  
+[Help Documentation](#help-documentation)
 
 
 <a name="resources"></a>
@@ -22,32 +23,30 @@ Please note that importing is required for creating the CSEBase, the administrat
 
 **Other Resources**
 
-Another option to import resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#meta_onstartup)* and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
+Another option to import more resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#meta_onstartup)* and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
 
 
 ### Referencing Configuration Settings
 
 By using macros the initial resources can be kept independent from individual settings. 
 Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism.
-For this a given macro name is enclosed by  ```${...}$```, e.g. ```${cse.cseID}$```. 
+For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.cseID}```. 
 The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
-```jsonc
-importraw 
-{	
-	"m2m:cb" : {
-			"ri":   "[cse.resourceID]",
-			"rn":   "[cse.resourceName]",
-			"csi":  "[cse.cseID]",
-			"rr":   true,
-			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "[cse.csi]/acpCreateACPs" ]
-	}
-}
+```list
+(import-raw 
+	(get-config "cse.originator") 
+	{"m2m:cb": {
+		"ri":   "${ (get-config \"cse.resourceID\") }",
+		"rn":   "${ (get-config \"cse.resourceName\") }",
+		"csi":  "${ (get-config \"cse.cseID\") }",
+		"rr":   true,
+		"csz":  [ "application/json", "application/cbor" ],
+		"acpi": [ "${ (get-config \"cse.cseID\") }/acpCreateACPs" ],
+		"poa":  [ "${ (get-config \"http.address\") }" ]
+		;; "poa":  [ "mqtt://mqtt" ]
+	}})
 ```
-
-Please note, that normal opening square brackets, e.g. in JSON lists, must be escaped.
-
 
 See the [documentation for scripts](ACMEScript.md).
 
@@ -357,4 +356,33 @@ The following example show the definition for the enumeration data types used in
 	}
 }
 ```
+
+
+<a name="help-documentation"></a>
+## Help Documentation
+
+Some CSE components provide a markdown documentation to the user, such as the Text UI. That documentation is imported from the 
+[init](../init) directory as well. The file extension for documentation files is ".docmd". 
+
+In the documentation file individual sections are separated by markdown level 1 headers where the header title is the help topic
+for the following section, which is a markdown text block with the help text.
+
+**Example**
+
+```markdown
+# Topic 1
+
+Some help text for topic 1.
+
+## Help sub section
+
+# Topic 2
+...
+```
+
+
+
+
+
+
 [← README](../README.md) 

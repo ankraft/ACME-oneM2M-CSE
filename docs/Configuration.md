@@ -16,7 +16,7 @@ Also, some settings can be applied via the command line when starting the CSE. T
 settings in the configuration file.
 
 
-## The Configuration File
+## The Default Configuration File
 
 **Changes should only be done to a copy of the default configuration file.**
 
@@ -35,7 +35,7 @@ with basic configuration settings. You can add further configurations if necessa
 
 In addition to assigning individual values for configurations settings you can use
 [settings interpolation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) which allows you to
-referece settings from the same or from other sections. The syntax to denote a value from a section is ```${section:option}```.
+reference settings from the same or from other sections. The syntax to denote a value from a section is ```${section:option}```.
 
 ### Built-in Configuration Macros
 
@@ -95,7 +95,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting                        | Description                                                                                                                                                                | Configuration Name                 |
 |:-------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
 | type                           | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                 | cse.type                           |
-| serviceProviderID              | The CSE's service provider ID.<br/>Default: acme                                                                                                                           | cse.spid                           |
+| serviceProviderID              | The CSE's service provider ID.<br/>Default: acme.example.com                                      	                                                                      | cse.serviceProviderID              |
 | cseID                          | The CSE ID. A CSE-ID must start with a /.<br/>Default: id-in                                                                                                               | cse.cseID                          |
 | resourceID                     | The \<CSEBase> resource's resource ID. This should be the same value as *cseID* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in | cse.resourceID                     |
 | resourceName                   | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                     | cse.resourceName                   |
@@ -139,7 +139,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 |:--------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | balanceTarget       | Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).<br/>Default: 3.0                                                                                                                       | cse.operation.jobs.balanceTarget       |
 | balanceLatency      | Thread Pool Management: Number of get / create requests for a new thread before performing a balance check. A latency of 0 disables the thread pool balancing.<br/>Default: 1000                                                                | cse.operation.jobs.balanceLatency      |
-| balanceReduceFactor | Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobs.balanceReduceFactor |
+| balanceReduceFactor | Thread Pool Management: The factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobs.balanceReduceFactor |
 
 [top](#sections)
 
@@ -150,10 +150,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ### [cse.operation.requests] - CSE Operations Settings - Requests
 
-| Setting | Description                                                | Configuration Name            |
-|:--------|:-----------------------------------------------------------|:------------------------------|
-| enable  | Enable request recording.<br/>Default: False               | cse.operation.requests.enable |
-| size    | Maximum number of requests to be stored. Oldest requests will be deleted when this threshold is reached. Note, that a large number requests might take a moment to be displayed in the console or UIs.<br/>Default: 250 | cse.operation.requests.size   |
+| Setting | Description                                                                                                                                                                                                                | Configuration Name            |
+|:--------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
+| enable  | Enable request recording.<br/>Default: False                                                                                                                                                                               | cse.operation.requests.enable |
+| size    | Maximum number of requests to be stored. Oldest requests will be deleted when this threshold is reached. Note, that a large number of requests might take a moment to be displayed in the console or UIs.<br/>Default: 250 | cse.operation.requests.size   |
 
 [top](#sections)
 
@@ -171,7 +171,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                                                                                                                                  | http.root                      |
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                                                                                                            | http.enableRemoteConfiguration |
 | enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/>See also the \[console].hideResources setting to hide resources from the tree.<br /> Default: false | http.enableStructureEndpoint   |
-| enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**.<br/>Default: false                                                                                                                                      | http.enableResetEndpoint       |
 | enableUpperTesterEndpoint | Enable an endpoint for supporting Upper Tester commands to the CSE. This is to support certain testing and certification systems. See oneM2M's TS-0019 for further details.<br/>**ATTENTION: Enabling this feature may lead to a total loss of data.**<br/>Default: false                                                               | http.enableUpperTesterEndpoint |
 | allowPatchForDelete       | Allow the http PATCH method to be used as a replacement for the DELETE method. This is useful for constraint devices that only support http/1.0, which doesn't specify the DELETE method.<br />Default: False                                                                                                                           | http.allowPatchForDelete       |
 | timeout                   | Timeout when sending http requests and waiting for responses.<br />Default: 10.0 seconds                                                                                                                                                                                                                                                | http.timeout                   |
@@ -289,7 +288,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 |:----------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                              | cse.registration.allowedAEOriginators  |
 | allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
-| checkLiveliness       | Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                            | cse.registration.checkLiveliness       |
+| checkLiveliness       | Check the liveliness of the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                            | cse.registration.checkLiveliness       |
 
 [top](#sections)
 
@@ -299,15 +298,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ### [cse.registrar] - Settings for Registrar Registrar CSE Access 
 
-| Setting              | Description                                                                                                                                          | Configuration Name                 |
-|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
-| address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                    | cse.registrar.address              |
-| root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                       | cse.registrar.root                 |
-| cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                   | cse.registrar.csi                  |
-| resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                           | cse.registrar.rn                   |
-| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json       | cse.registrar.serialization        |
-| checkInterval        | Wait n seconds between tries to to connect to the registrar CSE and to check validity of Registrar CSE connections in seconds.<br/>Default: 30       | cse.registrar.checkInterval        |
-| excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                                          | cse.registrar.excludeCSRAttributes |
+| Setting              | Description                                                                                                                                                                                                                    | Configuration Name                 |
+|:---------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                                                                                              | cse.registrar.address              |
+| root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                 | cse.registrar.root                 |
+| cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                                                                             | cse.registrar.cseID                |
+| resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                                                                                                     | cse.registrar.resourceName         |
+| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json                                                                                 | cse.registrar.serialization        |
+| checkInterval        | This setting specifies the pause in seconds between tries to connect to the configured registrar CSE. This value is also used to check the connectivity to the registrar CSE after a successful registration..<br/>Default: 30 | cse.registrar.checkInterval        |
+| excludeCSRAttributes | List of attributes that are excluded when creating a registrar CSR.<br />Default: empty list                                                                                                                                    | cse.registrar.excludeCSRAttributes |
 
 [top](#sections)
 
@@ -317,11 +316,11 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ### [cse.announcements] - Settings for Resource Announcements 
 
-| Setting                        | Description                                                                                                                        | Configuration Name                               |
-|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------|
-| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10                                      | cse.announcements.checkInterval                  |
-| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                            | cse.announcements.allowAnnouncementsToHostingCSE |
-| delayAfterRegistration         | Specify a short delay in seconds before start announcing resources after a CSE has registered at the CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
+| Setting                        | Description                                                                                                                                          | Configuration Name                               |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------|
+| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10                                                        | cse.announcements.checkInterval                  |
+| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                                              | cse.announcements.allowAnnouncementsToHostingCSE |
+| delayAfterRegistration         | Specify a short delay in seconds before starting announcing resources after a remote CSE has registered at the hosting CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
 
 [top](#sections)
 
@@ -331,10 +330,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[cse.statistics] - Statistic Settings
 
-| Setting       | Description                                                              | Configuration Name           |
-|:--------------|:-------------------------------------------------------------------------|:-----------------------------|
-| enable        | Enable or disable collecting CSE statistics.<br />Default: True          | cse.statistics.enable        |
-| writeInterval | Interval for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeInterval |
+| Setting       | Description                                                                                                              | Configuration Name           |
+|:--------------|:-------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
+| enable        | This setting enables or disables the CSE's statistics collection and reporting.<br />Default: True                       | cse.statistics.enable        |
+| writeInterval | This setting specifies the pause, in seconds, between writing the collected statistics to the database.<br />Default: 60 | cse.statistics.writeInterval |
 
 [top](#sections)
 
@@ -344,9 +343,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[resource.acp] - Resource Defaults: ACP
 
-| Setting        | Description                                                           | Configuration Name |
-|:---------------|:----------------------------------------------------------------------|:-------------------|
-| selfPermission | Default selfPermission when creating an ACP resource.<br/>Default: 51 | resource.acp.pvs.acop   |
+| Setting        | Description                                                           | Configuration Name            |
+|:---------------|:----------------------------------------------------------------------|:------------------------------|
+| selfPermission | Default selfPermission when creating an ACP resource.<br/>Default: 51 | resource.acp.selfPermission   |
 
 [top](#sections)
 
@@ -356,10 +355,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[resource.actr] - Resource Defaults: Action
 
-| Setting       | Description                                                                                                                              | Configuration Name           |
-|:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
-| ecpContinuous | Default for the *evalControlParam* attribute, when the *evalMode* is "continuous". The unit is number.<br />Default: 1000                | resource.actr.ecp.continuous |
-| ecpPeriodic   | Default for the *evalControlParam* attribute, when the *evalMode* is "periodic". The unit is milliseconds.<br />Default: 10000 ms = 10 s | resource.actr.ecp.periodic   |
+| Setting       | Description                                                                                                                              | Configuration Name          |
+|:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| ecpContinuous | Default for the *evalControlParam* attribute, when the *evalMode* is "continuous". The unit is number.<br />Default: 1000                | resource.actr.ecpContinuous |
+| ecpPeriodic   | Default for the *evalControlParam* attribute, when the *evalMode* is "periodic". The unit is milliseconds.<br />Default: 10000 ms = 10 s | resource.actr.ecpPeriodic   |
 
 [top](#sections)
 
@@ -395,9 +394,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ### [resource.sub] - Resource Defaults: Subscription
 
-| Setting             | Description                                                                           | Configuration Name |
-|:--------------------|:--------------------------------------------------------------------------------------|:-------------------|
-| batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | resource.sub.dur   |
+| Setting             | Description                                                                           | Configuration Name                 |
+|:--------------------|:--------------------------------------------------------------------------------------|:-----------------------------------|
+| batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | resource.sub.batchNotifyDuration   |
 
 [top](#sections)
 

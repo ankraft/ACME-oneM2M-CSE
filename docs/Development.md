@@ -90,7 +90,7 @@ One can also provide OAuth2 settings in case the CSE under test is behind an OAu
 
 #### Enable Remote Configuration (Upper Tester)
 
-The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
+The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [http.enableUpperTesterEndpoint](Configuration.md#server_http) in the [configuration file](../acme.ini.default).
 
 > **Note**
 >

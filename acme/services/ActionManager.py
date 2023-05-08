@@ -79,14 +79,14 @@ class ActionManager(object):
 	def _assignConfig(self) -> None:
 		"""	Assign default configurations.
 		"""
-		self.ecpPeriodicDefault = Configuration.get('resource.actr.ecp.periodic')
-		self.ecpContinuousDefault = Configuration.get('resource.actr.ecp.continuous')
+		self.ecpPeriodicDefault = Configuration.get('resource.actr.ecpPeriodic')
+		self.ecpContinuousDefault = Configuration.get('resource.actr.ecpContinuous')
 
 
 	def configUpdate(self, name:str, key:Optional[str] = None, value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
-		if key not in [ 'resource.actr.ecp.periodic', 'resource.actr.ecp.continuous' ]:
+		if key not in [ 'resource.actr.ecpPeriodic', 'resource.actr.ecpContinuous' ]:
 			return
 		self._assignConfig()
 		return

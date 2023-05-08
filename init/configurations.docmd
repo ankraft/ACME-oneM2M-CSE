@@ -1,0 +1,1325 @@
+# Configurations
+
+The ACME configuration file is a INI file with sections and key-value pairs.
+
+The default configuration file's name is `acme.ini` in the current working directory when starting the CSE, 
+but other configuration file names can be specified with the command line argument `--config`. 
+This file contains all configurable and customizable settings for the CSE.
+
+All sections and settings in this file are optional. If provided then they overwrite the CSE's default values 
+which are specified in the file *acme.ini.default* in the base directory of the CSE installation.
+
+The configuration file is read only once during the startup of the CSE. Changes to the configuration 
+file are only recognized by the CSE when it is restarted.
+
+### The Default Configuration File
+
+**Changes should only be done to a copy of the default configuration file. 
+The default configuration file *acme.ini.default* should never be changed.**
+
+If the specified or the default *acme.ini* could not be found then an interactive procedure is started to generate a file
+with basic configuration settings. One can then later add further configurations if necessary by copying sections and settings
+from *acme.ini.default*. 
+
+The automatically generated configuration file makes use of *settings interpolation* to specify 
+the values in the *basic.config* section, which are then referenced from other sections.
+
+### Setting Interpolation
+
+In addition to assigning individual values for configurations settings one can use
+*settings interpolation* which allows to reference settings from the same or from other sections.
+The syntax to denote a value from a section is:
+
+```key = ${section:option}```.
+
+### Built-in Configuration Macros
+
+- ${basic.config:baseDirectory}  
+A built-in configuration setting that points to the base-directory of the CSE installation can be 
+referenced by the interpolation `${basic.config:baseDirectory}`.
+
+Example:
+
+```ini
+[cse]
+resourcesPath=${basic.config:baseDirectory}/init
+```
+
+
+
+# configfile
+
+This is the filename of the currently used configuration file. 
+
+The default is `acme.ini`, but others can be specified with the command line argument `--config` when starting the CSE.
+
+
+
+# packageDirectory
+
+This is the path name of the directory where the *ACME* packages and modules can be found. 
+It is the full path of the current working directory when starting the CSE.
+
+
+
+# cse
+
+This section contains basic and operative CSE-specific configuration settings.
+
+Settings in this section are listed under the `[cse]` section.
+
+
+
+# cse.asyncSubscriptionNotifications
+
+This setting enables or disables asynchronous notification for normal runtime subscription notifications.
+
+The default is `True`.
+
+
+
+# cse.checkExpirationsInterval
+
+This setting specifies the time interval, in seconds, between checks for expired resources. 
+0 means "no checking".
+
+The default is `60 seconds`.
+
+
+
+# cse.cseID
+
+The CSE-ID of the CSE. A CSE-ID must start with a "/" character.
+
+This value may be overwritten during startup when importing the \<CSEBase> resource in the startup script.
+
+The default is `/id-in` 
+
+
+
+# cse.defaultSerialization
+
+Specify the default serialization format if none was given in a request and when it cannot be determined otherwise, for example in notifications to direct URLs
+
+**Allowed values**: `json`, `cbor`.
+
+The default format is `json`.
+
+
+
+# cse.enableRemoteCSE
+
+This setting enables or disables remote CSE registration and checking.
+
+The default value is `True`.
+
+See also command line arguments `–-remote-cse` and `-–no-remote-cse`.
+
+
+
+# cse.enableResourceExpiration
+
+This setting enable or disables resource expiration. If set to `disabled` resources will not be expired when the *expirationTimestamp* of a resource is reached.
+
+The default value is `True`.
+
+
+
+# cse.flexBlockingPreference
+
+This setting specifies the preference for *flexBlocking* response types. 
+
+**Allowed values**: `blocking`, `nonblocking`
+
+The default value is `blocking`.
+
+
+
+#  cse.maxExpirationDelta
+
+This setting specifies the default and at the same time the maximum *expirationTime* delta, in seconds, allowed for resources. 
+
+If a resource doesn't contain an `expirationTimestamp` attribute then the CSE will provide a value based on this setting. If the resource provides a value for `expirationTimestamp` but if it is too large, then the CSE will correct that value to a maximum timestamp based on this setting.
+
+The default value is `60 * 60 * 24 * 365 * 5 = 157680000 seconds = 5 years`
+
+
+
+# cse.originator
+
+The administrator originator ID for the CSE that has full access to all resources. 
+
+During the startup of the CSE \<AE> and \<ACP> resources are created by the *init&period;as* startup script for the administrator originator. 
+
+The default value is `CAdmin`.
+
+
+
+# cse.releaseVersion
+
+The release version indicator for the CSE. Requests sent by the CSE will be marked with this release version.
+
+**Allowed values**: `2a`, `3`, `4` and `5`.
+
+The default value is `4`.
+
+
+
+# cse.requestExpirationDelta
+
+This setting specifies the value to determine the expiration timestamp for requests sent by the CSE in seconds.
+
+The default value is `10.0 seconds`.
+
+
+
+# cse.resourcesPath
+
+This setting specifies the directory where various configuration and script files that are imported during the CSE startup are located. The CSE also monitors this directory for added, updated and removed script files (with the file extension *.as*) 
+
+See also the command line argument `–-import-directory` to specify the path for this directory at the command line.
+
+The default value is `./init` (relative to the current working directory when starting the CSE).
+
+
+
+# cse.resourceID
+
+This setting specified the \<CSEBase> resource's resource ID. This should be the same value as *cse-ID*, without the leading "/", to simplify the CSE's operation.
+
+This value may be overwritten during startup when importing the \<CSEBase> resource in the startup script.
+
+The default value is `id-in`.
+
+
+
+# cse.resourceName
+
+This is the \<CSEBase> resource's resource name. 
+
+This value may be overwritten during startup when importing the \<CSEBase> resource in the startup script.
+
+The default value is `cse-in`.
+
+
+
+# cse.sendToFromInResponses
+
+This setting indicate whether the optional "to" and "from" parameters shall be sent in responses.
+
+**Attention**: Turning off this setting might cause interoperability problems, and vice versa.
+
+The default value is `True`.
+
+
+
+# cse.sortDiscoveredResources
+
+This setting turns on the sorting of discovery resources. Otherwise the order is non-deterministic.
+
+Sorting follows these rules:
+- Instance-type resources are sorted by *resourceType* and *creationTime*.
+- Other resources are sorted by *resourceType* and *resourceName* (case-insensitive).
+
+The default value is `True`.
+
+
+
+# cse.supportedReleaseVersions
+
+This is a comma-separated list of the supported oneM2M release versions. 
+
+The default value is `2a,3,4`
+
+
+
+# cse.serviceProviderID
+
+This is the CSE's service provider ID.
+
+The default is `acme.example.com`.
+
+
+
+# cse.type
+
+This setting specifies the CSE type. 
+
+**Allowed values**: `IN`, `MN`, `ASN`.
+
+The default is `IN`.
+
+
+
+# cse.announcements
+
+This section defines configuration settings for *Resource Announcement* behavior.
+
+
+Settings in this section are listed under the `[cse.announcements]` section.
+
+
+
+ # cse.announcements.allowAnnouncementsToHostingCSE
+
+This setting enables or disables resource announcements to the own (resource hosting) CSE.
+
+The default value is `True`.
+
+
+
+# cse.announcements.checkInterval
+
+This setting is used to set a wait delay, in seconds, between tries to announce resources to registered remote CSE(s).
+It is used in case one or more announcement target is not reachable for some time.
+
+The default value is `10 seconds`.
+
+
+
+# cse.announcements.delayAfterRegistration
+
+Sometimes the registration process between two CSEs needs a moment on one side or the other. Announcements might fail in those cases while technically the CSEs are registered with each other.
+
+With this setting one can specify a short delay, in seconds, before starting announcing resources after a remote CSE has registered with the hosting CSE.
+
+The default value is `3.0 seconds`.
+
+
+# cse.operation
+
+This section defines configuration settings for *CSE-internal Operation* behavior.
+
+
+
+# cse.operation.jobs
+
+The CSE uses thread pooling in order to optimize background tasks and jobs performance. Depending on request load the number of overall threads may rise temporarily to a high number. 
+
+The settings in this section can be used to balance the thread pool's size over time. 
+
+To cover sudden high loads it could make sense to keep a larger number of threads in the pool.
+
+Settings in this section are listed under the `[cse.operation.jobs]` section.
+
+
+
+
+# cse.operation.jobs.balanceLatency
+
+This setting specifies the number of get / create requests to the thread pool before performing a balance check. A latency of `0` disables thread pool balancing.
+
+The default value is `1000` pool requests.
+
+
+
+# cse.operation.jobs.balanceReduceFactor
+
+This setting specifies the factor by which the thread pool is reduced in a balance check:
+
+- number of paused jobs to remove from the thread pool = number of paused threads / balanceReduceFactor
+
+The default value is `2.0`
+
+### Example
+
+A factor of 2.0 reduces the number of paused threads by half in a single balance check.
+
+
+
+# cse.operation.jobs.balanceTarget
+
+This setting specifies the target balance factor between paused and running jobs to achieve when the CSE performs the internal balancing. The value is the factor between paused and running threads.
+
+The default value is `3`.
+
+### Example
+
+6 paused and 2 running threads -> factor 3
+
+
+
+# cse.operation.requests
+
+The CSE can record incoming and outgoing requests for later analyzing the communication flow between AEs and CSEs.
+
+Due to the impact on CSE performance request recording should only be enabled when needed.
+
+Settings in this section are listed under the `[cse.operation.requests]` section.
+
+
+
+# cse.operation.requests.enable
+
+This setting enables or disables request recording.
+
+The default value is `False`.
+
+
+
+# cse.operation.requests.size
+
+This setting specifies the maximum number of recorded requests to be stored. Oldest requests will be deleted when this threshold is reached. 
+
+Note, that a large number of requests might take a moment to be processed and displayed in the console or UIs.
+
+The default value is `250`.
+
+
+
+# cse.registrar
+
+This section specifies the settings needed to register to a registrar CSE.
+
+Please note that these settings are only used for *MN-CSE* and *ASN-CSE* installations because only these CSE types can register to another CSE. An *IN-CSE* installation ignores these settings.
+
+Settings in this section are listed under the `[cse.registrar]` section.
+
+
+
+# cse.registrar.address
+
+This setting specifies the URL of the registrar CSE.
+
+There is NO default value.
+
+
+
+# cse.registrar.checkInterval
+
+This setting specifies the pause, in seconds, between tries to connect to the registrar CSE. 
+This value is also used to check the connectivity to the registrar CSE after a successful registration.
+
+The default value is `30 seconds`.
+
+
+
+#  cse.registrar.cseID
+
+This setting specifies the CSE-ID of the registrar CSE. The CSE-ID must start with a `/` character
+
+There is NO default value.
+
+### Example
+
+`/id-in`
+
+
+
+# cse.registrar.excludeCSRAttributes
+
+This setting specifies a comma-separated list of resource attributes that are excluded when creating a registrar CSR.
+
+This feature can be used when the registrar CSE doesn't support certain attributes.
+
+The default value is a an empty list.
+
+
+
+#  cse.registrar.resourceName
+
+This setting specifies the registrar CSE's resource name.
+
+There is NO default value.
+
+
+
+# cse.registrar.root
+
+This setting specifies an optional root path for the registrar CSE's URL.
+
+**Attention**: Don't provide a trailing `/` character.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.serialization
+
+This setting specifies the serialization type that must be used for the registration to the registrar CSE.
+
+**Allowed values**: `json`, `cbor`.
+
+The default for is `json`.
+
+
+
+# cse.registration
+
+The settings in this section handle registrations to this CSE.
+
+Settings in this section are listed under the `[cse.registration]` section.
+
+
+
+# cse.registration.allowedAEOriginators
+
+This setting specifies a comma-separated list of AE originators that can register to this CSE. 
+Simple wildcards (* and ?) are supported.
+
+The default value is `C*,S*`.
+
+
+
+#  cse.registration.allowedCSROriginators
+
+This setting specifies a comma-separated list of CSR originators (or CSE-IDs) that can register. 
+Simple wildcards (* and ?) are supported.
+
+Note: No leading `/` characters are allowed.
+
+The default value is an empty list.
+
+
+
+# cse.registration.checkLiveliness
+
+This setting specifies whether to check the connection liveliness of registrations to the registrar CSE 
+and also the ones from the registree CSEs.
+
+Registrations will be removed if the respective connectivity liveliness could not be validated.
+
+The default value is `True`.
+
+
+
+# cse.security
+
+This section contains settings that control some of the CSE's security.
+
+Settings in this section are listed under the `[cse.security]` section.
+
+
+
+# cse.security.enableACPChecks
+
+This setting enables or disables the CSE's ACP checks.
+
+**Attention**: Disabling ACP checks is a security risk and should only be done for debugging purposes.
+
+The default value is `True`.
+
+
+
+# cse.security.fullAccessAdmin
+
+This setting enables or disables the CSE's full access admin mode.
+
+**Attention**: Enabling full access admin mode is a security risk and should only be done for debugging and testing purposes.
+
+The default value is `True`.
+
+
+
+#  cse.statistics
+
+This section contains settings that control the CSE's statistics collection and reporting.
+
+Statistics are collected for various events in the CSE, such as for each request type, transfer protocol, or error conditions. 
+
+Settings in this section are listed under the `[cse.statistics]` section.
+
+
+
+#  cse.statistics.enable
+
+This setting enables or disables the CSE's statistics collection and reporting.
+
+The default value is `True`.
+
+
+
+# cse.statistics.writeInterval
+
+This setting specifies the pause, in seconds, between writing the collected statistics to the database.
+
+The default value is `60 seconds`.
+
+
+
+#  console
+
+This section contains settings that control the CSE's console.
+
+Settings in this section are listed under the `[console]` section.
+
+
+
+# console.confirmQuit
+
+This setting enables or disables the confirmation dialog when quitting the CSE's console.
+
+The default value is `False`.
+
+
+
+# console.hideResources
+
+This setting specifies a comma-separated list of resource identifiers that should be hidden in the CSE's console, for example the resource tree command.
+
+The default value is an empty list.
+
+
+
+# console.refreshInterval
+
+This setting specifies the pause, in seconds, between refreshing continuous views, for example the resource tree, statistics, or diagram view, in the CSE's console.
+
+The default value is `2 seconds`.
+
+
+
+# console.theme
+
+This setting specifies the CSE's console theme.
+
+**Allowed values**: `dark`, `light`.
+
+The default value is `dark`.
+
+
+
+# console.treeIncludeVirtualResources
+
+This setting enables or disables the inclusion of virtual resources in the CSE's console resource tree.
+
+The default value is `False`.
+
+
+
+# console.treeMode
+
+This setting specifies the CSE's console resource tree mode.
+
+**Allowed values**: `normal`, `compact`, `content`, `contentOnly`
+
+The default value is `normal`.
+
+
+# database
+
+This section contains settings that control the CSE's database setup.
+
+Settings in this section are listed under the `[database]` section.
+
+
+
+# database.cacheSize
+
+This setting specifies the number of database query result to be cached.
+
+The default value is `0`.
+
+
+
+# database.inMemory
+
+This setting enables or disables the CSE's in-memory database mode.
+
+See also the command line argument `--db-storage`.
+
+**Attention**: No data is stored persistently when in-memory database mode is enabled.
+
+The default value is `False`.
+
+
+
+# database.path
+
+
+This setting specifies the path to the CSE's database files.
+
+The databases' file names contain the CSE's CSE-ID to allow multiple CSE installation to use the same directory.
+
+The default value is `./data`.
+
+
+
+# database.resetOnStartup
+
+
+Reset the databases at startup. This removes all data from the CSE's database.
+
+See also command line argument `--db-reset`.
+
+The default value is `False`.
+
+
+
+#  database.writeDelay
+
+This setting specifies the latency of the database write cache, in seconds, before writing new or updated data to the database files.
+
+The default value is `1 seconds`.
+
+
+
+# http
+
+This section contains settings that control the CSE's HTTP server and its Upper Tester API.
+
+Settings in this section are listed under the `[http]` section.
+
+
+
+# http.address
+
+This setting specifies the CSE's HTTP server URL: Scheme (http, https), address and port. This is the URL under which the CSE is reachable
+
+The default value is `http://127.0.0.1:8080`.
+
+
+
+# http.allowPatchForDelete
+
+This setting enables or disables the CSE's HTTP server's support for using the http PATCH method for delete requests. 
+
+This is useful for constraint devices that only support "http/1.0", which doesn't specify the DELETE method.
+
+The default value is `False`.
+
+
+
+#  http.enableStructureEndpoint
+
+This setting enables or disables the CSE's HTTP server's support for the structure endpoint. 
+The structure endpoint provides the structure of the CSE's resources and the deployment infrastructure 
+(remote CSE's).
+
+The structure endpoint can queried by a http GET request with the following URL paths:
+- `/__structure__` : The resource and deployment structure is retruned in PlantUML format.
+- `/__structure__/text` : The resource structure and a few resource information is returned as plain text.
+
+**ATTENTION**: Enabling this feature exposes various potentially sensitive information.
+
+
+The default value is `False`.
+
+
+
+# http.enableUpperTesterEndpoint
+
+This setting enables an endpoint for supporting sending Upper Tester commands to the CSE. 
+This is to support certain testing and certification systems. See oneM2M's TS-0019 for further details.
+
+The Upper tester endpoint is available at the URL path `/__UT__`.
+
+**ATTENTION**: Enabling this feature may exposes various potentially sensitive information and also may lead to a total loss of data.
+
+The default value is `False`.
+
+
+
+# http.listenIF
+
+This setting specifies the network interface on which the CSE's HTTP server is listening. 
+Use `0.0.0.0` to listen on all available interfaces.
+
+The default value is `127.0.0.1`.
+
+
+
+# http.port
+
+This setting specifies the port on which the CSE's HTTP server is listening.
+
+The default value is `8080`.
+
+
+
+# http.root
+
+This setting specifies the root path of the CSE's HTTP server. 
+This is the URL path prefix under which the CSE is reachable.
+
+Note: Don't provide a trailing `/` character
+
+The default value is an empty string.
+
+
+
+# http.timeout
+
+This setting specifies the timeout, in seconds, after which an outgoing request from the CSE via http is canceled.
+
+The default value is `10 seconds`.
+
+
+
+#  http.cors
+
+This section contains settings that control the CSE's HTTP server's CORS configuration.
+
+Settings in this section are listed under the `[http.cors]` section.
+
+
+
+# http.cors.enable
+
+This setting enables or disables the CSE's HTTP server's CORS support.
+
+The default value is `False`.
+
+
+
+# http.cors.resources
+
+This setting specifies a comma-separated list of URL path prefixes for which CORS is enabled.
+These prefixes can be regular expressions.
+
+The default value is `/*` , ie. all http resources under the HTTP server's root.
+
+
+
+# http.security
+
+This section contains settings that control the CSE's HTTP server's security.
+
+Settings in this section are listed under the `[http.security]` section.
+
+
+
+# http.security.caCertificateFile
+
+This setting specifies the path to the CSE's HTTP server's CA certificate file.
+
+The default value is an empty string.
+
+It is recommended to store the CSE's CA certificate in the file `{baseDirectory}./certs/acme_cert.pem`.
+
+
+
+# http.security.caPrivateKeyFile
+
+This setting specifies the path to the CSE's HTTP server's CA private key file.
+
+The default value is an empty string.
+
+It is recommended to store the CSE's CA private key in the file `{baseDirectory}/certs/acme_key.pem`.
+
+
+
+# http.security.tlsVersion
+
+This setting specifies the CSE's HTTP server's TLS version.
+
+**Allowed values**: `TLS1.1`, `TLS1.2`, or `auto` (to allow client-server certificate version negotiation).
+
+The default value is `auto`.
+
+
+
+# http.security.useTLS
+
+This setting enables or disables the CSE's HTTP server's TLS support.
+
+See also *oneM2M TS-0003 "Clause 8.2.1 Overview on Security Association Establishment Frameworks"*.
+
+The default value is `False`.
+
+
+
+# http.security.verifyCertificate
+
+This setting enables or disables the CSE's HTTP server's client certificate verification. 
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid certificate.
+
+Set to False when using self-signed certificates. 
+
+The default value is `False`.
+
+
+
+# logging
+
+This section contains settings that control the CSE's logging behavior.
+
+Settings in this section are listed under the `[logging]` section.
+
+
+
+# logging.count
+
+This setting specifies the number of log files to keep.
+
+The default value is `10`.
+
+
+
+# logging.enableBindingsLogging
+
+This setting enables or disables detailed and internal logging of the CSE's protocol sbindings.
+
+The default value is `False`.
+
+
+
+# logging.enableFileLogging
+
+This setting enables or disables the CSE's file logging.
+
+The default value is `False`.
+
+
+
+# logging.enableScreenLogging
+
+This setting enables or disables the CSE's screen logging.
+
+The default value is `True`.
+
+
+
+# logging.filter
+
+This setting specifies a comma-separated list of non-CSE component names to exclude from logging.
+
+The default value is `werkzeug,markdown_it`.
+
+
+
+# logging.level
+
+This setting specifies the CSE's logging level.
+
+**Allowed values**: `debug`, `info`, `warning`, `error`, `off`.
+
+The default value is `debug`.
+
+
+
+# logging.path
+
+This setting specifies the path to the CSE's log files.
+
+The default value is `{baseDirectory}/logs`.
+
+
+
+# logging.queueSize
+
+This setting specifies the number of log entries that can be added to the asynchronous queue before logging blocks.
+
+A queue size of `0` means disabling the queue.
+
+The default value is `5000` entries.
+
+
+
+# logging.size
+
+This setting specifies the maximum size, in bytes, of a single log file.
+
+The default value is `100000` bytes.
+
+
+
+# logging.stackTraceOnError
+
+This setting enables or disables the CSE's stack trace logging on log messages with `ERROR` level.
+
+The default value is `False`.
+
+
+
+#  mqtt
+
+This section contains settings that control the CSE's MQTT client.
+
+Settings in this section are listed under the `[mqtt]` section.
+
+
+
+# mqtt.address
+
+This setting specifies the CSE's MQTT broker's hostname. 
+
+The default value is `127.0.0.1`.
+
+
+
+# mqtt.enable
+
+This setting enables or disables the CSE's MQTT binding.
+
+The default value is `False`.
+
+
+
+# mqtt.keepalive
+
+This setting specifies the CSE's MQTT client's keepalive interval, in seconds. 
+This is the interval at which the CSE's MQTT client will send keepalive messages to the MQTT broker.
+
+The default value is `60 seconds`.
+
+
+
+# mqtt.listenIF
+
+This setting specifies the network interface on which the CSE's MQTT client is binding to. 
+Use `0.0.0.0` to listen on all available interfaces.
+
+The default value is `127.0.0.1`.
+
+
+
+# mqtt.port
+
+This setting specifies the port on which the CSE's MQTT client is listening.
+
+The default value is `1883`.
+
+
+
+# mqtt.timeout
+
+This setting specifies the timeout, in seconds, after which an outgoing request from the CSE via MQTT is canceled.
+
+The default value is the same as the *cse.requestExpirationDelta* setting.
+
+
+
+# mqtt.topicPrefix
+
+This setting specifies an optional CSE's MQTT client's topic prefix.
+
+The default value is an empty string.
+
+
+
+# mqtt.security
+
+This section contains settings that control the CSE's MQTT client's security.
+
+Settings in this section are listed under the `[mqtt.security]` section.
+
+
+
+# mqtt.security.allowedCredentialIDs
+
+This setting specifies a comma-separated list of credential-IDs that can be used to register an AE via MQTT. 
+If this list is empty then all credential IDs are allowed. Simple wildcards (\* and ?) are supported.
+
+The default value is an empty list.
+
+
+
+# mqtt.security.caCertificateFile
+
+This setting specifies the path to the CSE's MQTT client's CA certificate file.
+
+The default value is an empty string.
+
+It is recommended to store the CSE's CA certificate in the file `{baseDirectory}/certs/acme_cert.pem`.
+
+
+
+# mqtt.security.password
+
+This setting specifies the CSE's assigned MQTT broker's password.
+
+The default value is an empty string.
+
+
+
+# mqtt.security.username
+
+This setting specifies the CSE's assigned MQTT broker's username.
+
+The default value is an empty string.
+
+
+
+# mqtt.security.useTLS
+
+This setting enables or disables the CSE's MQTT client's TLS support.
+
+The default value is `False`.
+
+
+
+# mqtt.security.verifyCertificate
+
+This setting enables or disables the CSE's MQTT client's server certificate verification.
+
+Set to `False` when using self-signed certificates. 
+
+The default value is `False`.
+
+
+
+# resource
+
+This section contains settings that control the CSE's resource handling and default values.
+
+
+
+# resource.acp
+
+This section specifies the CSE's defaults for ACP (Access Control Policy) resources.
+
+Settings in this section are listed under the `[resource.acp]` section.
+
+
+
+# resource.acp.selfPermission
+
+This setting specifies the CSE's default for the ACP's *pvs.acop* (accessControlOperation) attribute.
+
+**Allowed values** are in the range `1` to `63`.
+
+The default value is `51`.
+
+
+
+ # resource.actr
+
+This section specifies the CSE's defaults for ACTR (Action) resources.
+
+Settings in this section are listed under the `[resource.actr]` section.
+
+
+
+# resource.actr.ecpContinuous
+
+This setting specifies the CSE's default for the ACTR's *ecp* (evalControlParam) attribute 
+when the ACTR's *evm (evalMode) attribute is set to *continuous*. In this case the value
+specifies the maximum number of evaluations for an ACTR resource.
+
+The value is a number.
+
+The default value is `1000`.
+
+
+
+# resource.actr.ecpPeriodic
+
+This setting specifies the CSE's default for the ACTR's *ecp* (evalControlParam) attribute 
+when the ACTR's *evm (evalMode) attribute is set to *periodic*. In this case the value
+specifies the duration, in milliseconds, between two evaluations.
+
+The value is in milliseconds.
+
+The default value is `10000 ms`.
+
+
+
+# resource.cnt
+
+This section specifies the CSE's defaults for CNT (Container) resources.
+
+Settings in this section are listed under the `[resource.cnt]` section.
+
+
+
+# resource.cnt.enableLimits
+
+This setting enables or disables the CSE's default limits for some CNT's resource attributes.
+
+The default value is `False`.
+
+
+
+# resource.cnt.mni
+
+This setting specifies the CSE's default for the CNT's *mni* (maxNrOfInstances) attribute.
+
+The default value is `10`.
+
+
+
+# resource.cnt.mbs
+
+This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attribute.
+
+The default value is `10000 bytes`.
+
+
+
+# resource.req
+
+This section specifies the CSE's defaults for REQ (Request) resources.
+
+Settings in this section are listed under the `[resource.req]` section.
+
+
+
+#  resource.req.et
+
+This setting specifies the CSE's default for the REQ's *et* (expirationTime) attribute.
+
+The default value is `60 seconds`.
+
+
+
+# resource.sub
+
+This section specifies the CSE's defaults for SUB (Subscription) resources.
+
+Settings in this section are listed under the `[resource.sub]` section.
+
+
+
+# resource.sub.batchNotifyDuration
+
+This setting specifies the CSE's default for the SUB's *batchNotify/durartion* (dur) complex type attribute.
+
+The default value is `60 seconds`.
+
+
+
+# resource.ts
+
+This section specifies the CSE's defaults for TS (TimeSeries) resources.
+
+Settings in this section are listed under the `[resource.ts]` section.
+
+
+
+# resource.ts.enableLimits
+
+This setting enables or disables the CSE's default limits for some TS's resource attributes.
+
+
+
+#  resource.ts.mbs
+
+This setting specifies the CSE's default for the TS's *mbs* (maxByteSize) attribute.
+
+The default value is `10000 bytes`.
+
+
+
+# resource.ts.mdn
+
+This setting specifies the CSE's default for the TS's *mdn* (missingDataMaxNr) attribute.
+
+The default value is `10`.
+
+
+
+# resource.ts.mni
+
+This setting specifies the CSE's default for the TS's *mni* (maxNrOfInstances) attribute.
+
+The default value is `10`.
+
+
+
+# resource.tsb
+
+This section specifies the CSE's defaults for TSB (TimeSyncBeacon) resources.
+
+Settings in this section are listed under the `[resource.tsb]` section.
+
+
+
+# resource.tsb.bcni
+
+This setting specifies the CSE's default for the TSB's *bcni* (beaconInterval) attribute.
+This is the duration between to beacon notifications sent by the CSE to an AE or CSE. 
+
+The format must be an ISO8601 duration.
+
+The default value is `PT1H` = 1 hour.
+
+
+
+# resource.tsb.bcnt
+
+This setting specifies the CSE's default for the TSB's *bcnt* (beaconThreshold) attribute.	
+It is the default timeSyncBeacon difference threshold. When this threshold is reached then
+a beacon notifications is sent to an AE or CSE target.
+
+The default value is `10 seconds`.
+
+
+
+# scripting
+
+This section contains settings that control the CSE's scripting support.
+
+Settings in this section are listed under the `[scripting]` section.
+
+
+
+# scripting.fileMonitoringInterval
+
+This setting specifies the interval, in seconds, for monitoring for changes in the CSE's script files and the script
+directory(s).
+
+The default value is `2.0 seconds`.
+
+
+
+# scripting.scriptDirectories
+
+This setting specifies a comma-separated list of directories that contain additional CSE's script files.
+
+By default the CSE's script files are located in the `{baseDirectory}/init` directory. 
+They have the file extension `.ap`.
+
+The default value is an empty string.
+
+
+
+# scripting.verbose
+
+This setting enables or disables the CSE's script engine's verbose mode. 
+Script execution details are logged.
+
+The default value is `False`.
+
+
+
+# textui
+
+This section contains settings that control the CSE's terminal user interface.
+
+Settings in this section are listed under the `[textui]` section.
+
+
+
+# textui.refreshInterval
+
+This setting specifies the interval, in seconds, for refreshing various views in the CSE's terminal user interface.
+
+The default value is `2.0 seconds`.
+
+
+
+# textui.startWithTUI
+
+This setting defines the CSE's terminal user interface's startup behaviour.
+If `True` then the CSE's terminal user interface is started at startup.
+
+The default value is `True`.
+
+
+
+# textui.theme
+
+This setting specifies the CSE's terminal user interface's theme.
+
+**Allowed values** are `dark` and `light`.
+
+The default value is the same value as the `console.theme` setting.
+
+
+
+# webui
+
+This section contains settings that control the CSE's web user interface.
+
+Settings in this section are listed under the `[webui]` section.
+
+
+
+# webui.root
+
+This setting specifies the CSE's web user interface's http path.
+
+The default value is `/webui`.
+
+

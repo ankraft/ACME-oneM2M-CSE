@@ -83,9 +83,9 @@ ListView > ListItem.--outgoing.--highlight {
 /*
  * Requests
  */
+
 #requests-view {
-	overflow: auto scroll;  
-	/* overflow: auto;   */
+	overflow: auto auto;  
 	width: 1fr;
 	height: 1fr;
 	/* background:red; */
@@ -107,26 +107,21 @@ ListView > ListItem.--outgoing.--highlight {
 }
 
 #request-list-list {
-	overflow: auto scroll;  
+	overflow: auto auto;  
 	min-width: 100%;
 	height: 2fr;
-	/*background:red;*/
 }
 
 #request-list-details-header {
 	overflow: auto;
-	/* width: 1fr; */
 	height: 2;
 	align-vertical: middle;
-	/* background:#202020; */
 	background: $panel;
 }
 
 #request-list-details {
-	overflow: auto scroll;
+	overflow: auto auto;
 	height: 3fr;
-	/* padding: 1 1; */
-	/* height: 50%; */
 }	
 
 #request-list-request {
@@ -152,7 +147,7 @@ ListView > ListItem.--outgoing.--highlight {
 
 #stats-view {
 	display: block;
-	overflow: auto scroll;  
+	overflow: auto auto;  
 	min-width: 100%;
 }
 
@@ -162,7 +157,7 @@ ListView > ListItem.--outgoing.--highlight {
 
 #regs-view {
 	display: block;
-	overflow: auto scroll;  
+	overflow: auto auto;  
 	min-width: 100%;
 }
 
@@ -176,13 +171,19 @@ ListView > ListItem.--outgoing.--highlight {
 	min-width: 100%;
 }
 
+#configs-documentaion-view {
+	display: block;
+	overflow: auto auto;  
+}
+
+
 /* 
  * About
  */
 
 #about-view {
 	display: block;
-	overflow: auto scroll;  
+	overflow: auto auto;  
 	min-width: 100%;
 }
 
