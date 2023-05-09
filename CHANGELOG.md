@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HTTP] Fixed a bug when sending a CREATE request and the *Content-Type* header contains spaces before the *ty* argument.  
 Thanks to KyeongHo!  
 
+### Removed
+- [HTTP] Removed support for http path mappings to oneM2M requests.
+
 
 ## [0.11.2] - 2023-01-23
 

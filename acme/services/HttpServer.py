@@ -75,7 +75,6 @@ class HttpServer(object):
 		'_eventNotify',
 		'_eventHttpUpdate',
 		'_eventHttpDelete',
-		'_eventHttpRedirect',
 		'_eventResponseReceived',
 	)
 
@@ -145,15 +144,6 @@ class HttpServer(object):
 		if Configuration.get('http.allowPatchForDelete'):
 			self.addEndpoint(self.rootPath + '/<path:path>', handler = self.handlePATCH, methods = ['PATCH'])
 
-		# Add mapping / macro endpoints
-		self.mappings = {}
-		if mappings := Configuration.get('server.http.mappings'):
-			# mappings is a list of tuples
-			for (k, v) in mappings:
-				L.isInfo and L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
-				self.addEndpoint(self.rootPath + k, handler = self.requestRedirect, methods = ['GET', 'POST', 'PUT', 'DELETE'])
-			self.mappings = dict(mappings)
-
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
@@ -167,7 +157,6 @@ class HttpServer(object):
 		self._eventNotify =  CSE.event.httpNotify					# type: ignore [attr-defined]
 		self._eventHttpUpdate = CSE.event.httpUpdate				# type: ignore [attr-defined]
 		self._eventHttpDelete = CSE.event.httpDelete				# type: ignore [attr-defined]
-		self._eventHttpRedirect = CSE.event.httpRedirect			# type: ignore [attr-defined]
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 
 
@@ -324,21 +313,6 @@ class HttpServer(object):
 		renameThread('HTDE')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
-
-
-	#########################################################################
-
-
-	# Handle requests to mapped paths
-	def requestRedirect(self, path:Optional[str] = None) -> Response:
-		if self.isStopped:
-			return Response('Service not available', status = 503)
-		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
-		if path in self.mappings:
-			L.isDebug and L.logDebug(f'==> Redirecting to: /{path}')
-			self._eventHttpRedirect()
-			return flask.redirect(self.mappings[path], code = 307)
-		return Response('', status = 404)
 
 
 	#########################################################################

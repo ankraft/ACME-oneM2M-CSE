@@ -519,22 +519,3 @@ verbose=false
 fileMonitoringInterval=2.0
 
 
-;
-;	ID Mappings
-;	This section defines mappings for URI paths to IDs in the CSE. Mappings
-;	can be used to provide a more convenient way to access the CSE's resources.
-;	Each line specifies a mapping, where the key specifies a new path,
-;	and the value represents the mapping to a request (including optional arguments).
-;	The http server redirects (307) a request to one of the new paths to the
-;	respective request mapping.
-;	Please note, that the "root" path in [server.http] prefixes both the new
-;	path and the mapping.
-;
-
-[server.http.mappings]
-/access/v1/devices=/cse-mn?ty=14&fu=1&fo=2&rcn=8
-/access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
-/access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
-
-
-

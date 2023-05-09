@@ -41,16 +41,6 @@ ACME supports Mca and Mcc communication via MQTT. This binding must be enabled i
 ACME does not bring an own MQTT broker. Instead any MQTT broker that supports at least MQTT version 3.1.x can be used. This can be either be an own operated or a public broker installation (see, for example, [https://test.mosquitto.org](https://test.mosquitto.org)). The connection details need to be configured in the "[client.mqtt]" section as well.
 
 
-<a name="url_mappings"></a>
-## URL Mappings
-
-As a convenience to access resources on a CSE and to let requests look more like "normal" REST request you can define mappings. The format is a path that maps to another path and arguments. When issued a request to one of those mapped paths the http server issues a redirect to the other path.
-
-For example, the path */access/v1/devices* can be mapped to */cse-mn?ty=14&fu=1&fo=2&rcn=8* to easily retrieve all nodes from the CSE.
-
-See the [configuration](Configuration.md) for more examples.
-
-
 <a name="diagrams"></a>
 ## Resource Tree and Deployment Infrastructure Diagram
 

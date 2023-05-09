@@ -85,9 +85,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;webui&#93; - Web UI Settings](#webui)  
 	
 
-### Additional Settings
-[&#91;server.http.mappings&#93;- ID Mappings](#id_mappings)  
-
 <a name="general"></a>
 
 ### [cse] - General CSE Settings
@@ -483,36 +480,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting | Description                                  | Configuration Name |
 |:--------|:---------------------------------------------|:-------------------|
 | root    | Root path of the web UI.<br/>Default: /webui | webui.root         |
-
-[top](#sections)
-
----
-
-<a name="id_mappings"></a>
-
-###	[server.http.mappings] - ID Mappings
-
-This section defines mappings for URI paths to IDs in the CSE. Mappings
-can be used to provide a more convenient way to access the CSE's resources via http.
-Each setting in the configuration file  specifies a mapping, where the key
-specifies a new path and the value specified the mapping to a request
-(including optional arguments).
-
-The http server redirects a request to a path element that matches one of 
-specified keys to the respective request mapping (using the http status code 307).
-
-Please note, that the "root" path in [server.http](#server_http) prefixes both the new
-path and the respecting mapping. Also note, that the request still needs to have the necessary
-headers set in the request.
-
-The following snippet only presents some example for ID mappings.
-
-```ini
-[server.http.mappings]
-/access/v1/devices=/cse-mn?ty=14&fu=1&fo=2&rcn=8
-/access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
-/access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
-```
 
 [top](#sections)
 

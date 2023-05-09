@@ -447,11 +447,6 @@ class Configuration(object):
 			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
 			return False
 
-		# Read id-mappings
-		if  config.has_section('server.http.mappings'):
-			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
-			# print(config.items('http.mappings'))
-		
 		if not (v := Configuration.validate(True))[0]:
 			Configuration._print(f'[red]{v[1]}')
 		return v[0]
