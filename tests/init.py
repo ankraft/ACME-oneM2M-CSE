@@ -220,6 +220,7 @@ cinRN	= 'testCIN'
 cntRN	= 'testCNT'
 crsRN	= 'testCRS'
 csrRN	= 'testCSR'
+deprRN	= 'testDEPR'
 grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
@@ -251,7 +252,8 @@ smdURL 	= f'{aeURL}/{smdRN}'	# under the <ae>
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
 tsBURL 	= f'{aeURL}/{tsbRN}'
-actrURL = f'{aeURL}/{actrRN}'
+actrURL = f'{cntURL}/{actrRN}'
+deprURL = f'{actrURL}/{deprRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>

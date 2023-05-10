@@ -172,7 +172,7 @@ class CNT(ContainerResource):
 		super().childRemoved(childResource, originator)
 		if childResource.ty == ResourceTypes.CIN:	# Validate if child was CIN
 			self.instanceRemoved(childResource)		# Update cni and cbs
-			self.dbUpdate()
+			self.dbUpdate(True)
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
@@ -200,7 +200,7 @@ class CNT(ContainerResource):
 		mni = self.mni
 		mbs = self.mbs
 		if mbs is None and mni is None:
-			self.dbUpdate()
+			self.dbUpdate(True)
 			return
 		
 		# TODO optimize the following a bit. 
@@ -246,7 +246,7 @@ class CNT(ContainerResource):
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni
 		self['cbs'] = cbs
-		self.dbUpdate()
+		self.dbUpdate(True)
 	
 		# End validating
 		self.__validating = False

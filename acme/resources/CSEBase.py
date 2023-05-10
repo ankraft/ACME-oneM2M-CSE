@@ -110,7 +110,7 @@ class CSEBase(AnnounceableResource):
 
 				nresource = CSE.dispatcher.retrieveResource(nl)
 				nresource['hcl'] = self['ri']
-				nresource.dbUpdate()
+				nresource.dbUpdate(True)
 				#CSE.dispatcher.updateLocalResource(nresource)
 
 			self[Constants.attrNode] = nl

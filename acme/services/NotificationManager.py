@@ -620,7 +620,7 @@ class NotificationManager(object):
 				exc -= 1
 				crs.setAttribute('exc', exc)
 				L.isDebug and L.logDebug(f'Reducing <crs> expiration counter to {exc}')
-				crs.dbUpdate()
+				crs.dbUpdate(True)
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
 					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
@@ -863,7 +863,7 @@ class NotificationManager(object):
 				if each['tg'] == target:
 					each[activeField] += count
 					break
-			sub.dbUpdate()
+			sub.dbUpdate(True)
 
 
 	def countNotificationEvents(self, ri:str, 
@@ -893,7 +893,7 @@ class NotificationManager(object):
 			sub.dbReloadDict()	# get a fresh copy of the subscription
 			for each in sub.nsi:
 				each['noec'] += 1
-			sub.dbUpdate()
+			sub.dbUpdate(True)
 
 
 	def updateOfNSEAttribute(self, sub:CRS|SUB, newNse:bool) -> None:
@@ -1146,7 +1146,7 @@ class NotificationManager(object):
 				CSE.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
-				subResource.dbUpdate()						# Update the real subscription
+				subResource.dbUpdate(True)						# Update the real subscription
 				CSE.storage.updateSubscription(subResource)	# Also update the internal sub
 		return result								
 

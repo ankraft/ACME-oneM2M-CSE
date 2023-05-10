@@ -227,7 +227,7 @@ class FCNT(AnnounceableResource):
 			self._hasInstances = False	# Indicate that reqs for child resources is not given
 		
 		# May have been changed, so store the resource
-		self.dbUpdate()
+		self.dbUpdate(True)
 	
 		# End validating
 		self.__validating = False
@@ -273,7 +273,7 @@ class FCNT(AnnounceableResource):
 			if resource.et > maxEt:
 				resource.setAttribute('et', maxEt)
 
-		resource.dbUpdate()	# store
+		resource.dbUpdate(True)	# store
 
 
 	def _addLaOl(self) -> None:

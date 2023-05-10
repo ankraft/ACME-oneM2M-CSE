@@ -301,7 +301,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	event.cseStartup()	# type: ignore
 
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
-	BackgroundWorkerPool.newActor(lambda : (L.console('CSE started'), L.log('CSE started')) if cseStatus == CSEStatus.RUNNING else None, delay = 2.0 if isHeadless else 0.5, name = 'Delayed startup message' ).start()
+	BackgroundWorkerPool.newActor(lambda : (L.console('CSE started'), L.log('CSE started')) if cseStatus == CSEStatus.RUNNING else None, delay = 2.0 if isHeadless else 0.5, name = 'Delayed_startup_message' ).start()
 	
 	return True
 

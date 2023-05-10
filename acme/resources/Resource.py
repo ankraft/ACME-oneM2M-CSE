@@ -216,7 +216,7 @@ class Resource(object):
 
 		# validate the resource logic
 		self.validate(originator, parentResource = parentResource)
-		self.dbUpdate(False)
+		self.dbUpdate()
 		
 		# Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
@@ -279,20 +279,21 @@ class Resource(object):
 
 		updatedAttributes:dict[str, Any] = None
 		if dct:
-			if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
-				L.isWarn and L.logWarn("Update type doesn't match target")
-				raise CONTENTS_UNACCEPTABLE('resource types mismatch')
+			CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+			# if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+			# 	L.isWarn and L.logWarn("Update type doesn't match target")
+			# 	raise CONTENTS_UNACCEPTABLE('resource types mismatch')
 
-			# validate the attributes
-			if doValidateAttributes:
-				CSE.validator.validateAttributes(dct, 
-												 self.tpe, 
-												 self.ty, 
-												 self._attributes, 
-												 create = False, 
-												 createdInternally = 
-												 self.isCreatedInternally(), 
-												 isAnnounced = self.isAnnounced())
+			# # validate the attributes
+			# if doValidateAttributes:
+			# 	CSE.validator.validateAttributes(dct, 
+			# 									 self.tpe, 
+			# 									 self.ty, 
+			# 									 self._attributes, 
+			# 									 create = False, 
+			# 									 createdInternally = 
+			# 									 self.isCreatedInternally(), 
+			# 									 isAnnounced = self.isAnnounced())
 
 			if self.ty not in [ResourceTypes.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
@@ -347,7 +348,7 @@ class Resource(object):
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[_modified])
-		self.dbUpdate(False)
+		self.dbUpdate()
 
 		# Check Attribute Trigger
 		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[_modified])
@@ -866,7 +867,7 @@ class Resource(object):
 		CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self, finalize:bool = True) -> Resource:
+	def dbUpdate(self, finalize:bool = False) -> Resource:
 		""" Update the resource in the database.
 
 			This also raises a CSE internal *updateResource* event.

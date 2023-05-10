@@ -13,8 +13,8 @@ from typing import Optional, Any, cast
 
 import sys, copy
 
-from ..etc.Types import Result, EvalMode, EvalCriteriaOperator, JSON, CSERequest
-from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR
+from ..etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes
+from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
 from ..helpers.TextTools import setXPath
 from ..etc.DateUtils import utcTime
 from ..etc.RequestUtils import responseFromResult
@@ -95,6 +95,10 @@ class ActionManager(object):
 
 
 	def evaluateActions(self, name:str, resource:Resource) -> None:
+
+		if ResourceTypes.isVirtualResource(resource.ty):
+			return
+		
 		_ri = resource.ri
 		_now = utcTime()
 		L.isDebug and L.logDebug(f'Looking for resource actions for: {_ri}')
@@ -106,9 +110,9 @@ class ActionManager(object):
 
 		for action in actions:
 
-			if self.evaluateSingleAction(resource, action, _now):
+			if self.evaluateSingleAction(resource, action, _now) and self.evaluateDependencies(action):
 				ri = action['ri']
-				L.isDebug and L.logDebug(f'Action: conditions {ri} evaluate to True')
+				L.isDebug and L.logDebug(f'Action: conditions {ri} evaluated to True')
 
 				# retrieve the real action resource
 				try:
@@ -122,8 +126,6 @@ class ActionManager(object):
 				setXPath(apv, 'to', actr.orc)
 
 				# build request
-
-				# TODO exception
 				try:
 					resReq = CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))
 				except ResponseException as e:
@@ -132,22 +134,13 @@ class ActionManager(object):
 
 				# Send request
 				L.isDebug and L.logDebug(f'Sending request: {resReq.originalRequest}')
-				try:
-					res = CSE.request.handleRequest(resReq)
-
-					# TODO handleRequest handling
-
-
-					
-				except ResponseException as e:
-					L.logWarn(f'Error processing request: {e.dbg}')
-					continue
+				res = CSE.request.handleRequest(resReq)
 
 				# Store response in the <actr>
 				res.request = request
 				actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
 				try:
-					actr.dbUpdate(False)
+					actr.dbUpdate()
 				except ResponseException as e:
 					L.logWarn(f'Error updating <actr>: {e.dbg}')
 					continue
@@ -172,23 +165,26 @@ class ActionManager(object):
 					action['periodTS'] = _now + ((action['periodTS'] - _now) % _ecp)
 					L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
 					CSE.storage.updateActionRepr(action)
+			else:
+				L.isDebug and L.logDebug(f'Action: conditions {action["ri"]} evaluated to False')
 
 
-	def evaluateSingleAction(self, resource:Resource, action:JSON, nowTS:float) -> bool:
-		# TODO doc
 
-		# If the mode is periodic, and the next timestamp for the action is greater then now,
-		# then the action is not yet available.
-		if action['evm'] == EvalMode.periodic:
-			L.isDebug and L.logDebug(f'next action TS: {action["periodTS"]} - now: {nowTS}')
-			if action['periodTS'] > nowTS:
-				return False
+	def _evaluateEVC(self, resource:Resource, evc:JSON) -> bool:
+		"""	Evaluate a single evaluation criteria.
 
-		sbjt = action['evc']['sbjt']
+			Args:
+				resource:		The resource to evaluate against.
+				evc:			The evaluation criteria to evaluate.
+
+			Returns:
+				Boolean that indicates the success of the evaluation.
+		"""
+		sbjt = evc['sbjt']
 		if (attr := resource.attribute(sbjt)) is None:
 			return False
-		optr = action['evc']['optr']
-		thld = action['evc']['thld']
+		optr = evc['optr']
+		thld = evc['thld']
 
 		if optr == EvalCriteriaOperator.equal:
 			return attr == thld
@@ -203,6 +199,77 @@ class ActionManager(object):
 		if optr == EvalCriteriaOperator.greaterThanEqual:
 			return attr >= thld
 		return False
+
+
+	def evaluateSingleAction(self, resource:Resource, action:JSON, nowTS:float) -> bool:
+		# TODO doc
+
+		L.isDebug and L.logDebug(f'Evaluate action: {action["ri"]}')
+		# If the mode is periodic, and the next timestamp for the action is greater then now,
+		# then the action is not yet available.
+		if action['evm'] == EvalMode.periodic:
+			L.isDebug and L.logDebug(f'next action TS: {action["periodTS"]} - now: {nowTS}')
+			if action['periodTS'] > nowTS:
+				return False
+		
+		return self._evaluateEVC(resource, action['evc'])
+			
+
+
+	def evaluateDependencies(self, action:JSON) -> bool:
+		# TODO doc
+		
+		if not (dependencies := action.get('dep')):
+			return True
+		
+		dependencySatisified = False
+		for idx, dep in enumerate(dependencies):
+			L.isDebug and L.logDebug(f'Evaluate dependency: {dep}')
+
+			# Get the dependency resource
+			try:
+				dependency = CSE.dispatcher.retrieveLocalResource(dep)
+			except NOT_FOUND:
+				L.isDebug and L.logDebug(f'Dependency evaluation: {dep} not found. Skipping resource evaluation.')
+				continue
+			except ResponseException as e:
+				L.logErr(f'Dependency evaluation: {e.dbg}. Skipping resource evaluation.')
+				return False
+
+			# Evaluate the dependency
+			sfc = dependency.sfc	# sufficient condition
+
+			# Retrieve the referenced resource
+			try:
+				resource = CSE.dispatcher.retrieveLocalResource(dependency['rri'])
+			except ResponseException as e:
+				L.logErr(f'Dependency evaluation: {e.dbg}. Skipping resource evaluation.')
+				continue
+			
+			# Check criteria
+			if self._evaluateEVC(resource, dependency.evc):	# evaluation criteria met
+				dependencySatisified = True
+				if sfc:
+					break	# sufficient condition met, no need to check other dependencies
+				else:
+					if idx == len(dependencies) - 1:	# last dependency, but still True
+						break 	# Last one anyway
+					continue	# check next dependency
+			
+			# Evaluation criteria not met
+			else:
+				if sfc:
+					if idx == len(dependencies) - 1:	# last dependency
+						break		# Return current value of dependencySatisified
+					continue	# check next dependency
+				else:
+					dependencySatisified = False
+					break
+
+		L.isDebug and L.logDebug(f'Dependency evaluation: {dependencySatisified}')
+		return dependencySatisified
+
+
 
 
 	def scheduleAction(self, action:ACTR) -> None:
@@ -231,6 +298,46 @@ class ActionManager(object):
 	def unscheduleAction(self, action:ACTR) -> None:
 		CSE.storage.removeAction(action.ri)
 
+	
+	def updateAction(self, actr:ACTR) -> None:
+		# TODO  doc
+		# hack, only update the dep attribute
+		if action := CSE.storage.getAction(actr.ri):
+			action['dep'] = actr.dep
+			CSE.storage.updateActionRepr(action)
+
+	#######################################################################
 	#
 	#	Helper 
 	#
+
+	def checkAttributeThreshold(self, sbjt:str, thld:Any) -> BasicType:
+		""" Check the threshold value for the given subject attribute.
+
+			Args:
+				sbjt: The subject attribute name
+				thld: The threshold value.
+
+			Return:
+				The basic type of the attribute value.
+		"""
+		# TODO doc
+		
+		#	Check evalCriteria threshold attribute's value type and operation validity
+		try:
+			typ, _ = CSE.validator.validateAttribute(sbjt, thld)
+		except ResponseException as e:
+			raise BAD_REQUEST(L.logDebug(f'thld - invalid threshold value: {thld} for attribute: {sbjt} : {e.dbg}'))
+		return typ
+
+
+	def checkAttributeOperator(self, optr:EvalCriteriaOperator, dataType:BasicType, sbjt:str) -> None:
+		""" Check the operator for the given subject attribute.
+
+			Args:
+				optr: The operator.
+				dataType: The basic type of the attribute value.
+				sbjt: The subject attribute name.
+		"""
+		if not optr.isAllowedType(dataType):
+			raise BAD_REQUEST(L.logDebug(f'optr - invalid data type: {dataType} and operator: {optr} for attribute: {sbjt}'))

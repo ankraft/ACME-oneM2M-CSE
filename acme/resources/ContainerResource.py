@@ -77,22 +77,25 @@ class ContainerResource(AnnounceableResource):
 		lt = getResourceDate()
 		resource = CSE.dispatcher.retrieveLocalResource(self.getLatestRI())
 		resource.setAttribute('lt', lt)
-		resource.dbUpdate()
+		resource.dbUpdate(True)
 
 		# Update oldest
 		resource = CSE.dispatcher.retrieveLocalResource(self.getOldestRI())
 		resource.setAttribute('lt', lt)
-		resource.dbUpdate()
+		resource.dbUpdate(True)
 
 	
 	def instanceAdded(self, instance:Resource) -> None:
-		L.logDebug('Add instance')
+		L.logDebug('Adding instance')
 		self.setAttribute('cni', self.cni + 1)	# Increment cni because an instance is added
 		self.setAttribute('cbs', self.cbs + instance.cs) # Add to sum of cbs
+		self.dbUpdate(True)
+
 
 
 	def instanceRemoved(self, instance:Resource) -> None:
-		L.logDebug('Remove instance')
+		L.logDebug('Removing instance')
 		self.setAttribute('cni', self.cni - 1)	# Decrement cni because an instance is added
 		self.setAttribute('cbs', self.cbs - instance.cs) # Substract from sum of cbs
+		self.dbUpdate(True)
 

@@ -10,10 +10,11 @@
 from __future__ import annotations
 from typing import Optional, Tuple, Any, cast
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, Permission
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..services.Logging import Logging as L
 from ..etc.Utils import riFromID
+from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -66,39 +67,40 @@ class DEPR(AnnounceableResource):
 		except ResponseException as e:
 			raise BAD_REQUEST(dbg = e.dbg)
 
-		# Check existence of attribute in the referenced resource.
+		# Check existence of referenced subject attribute in the referenced resource.
 		sbjt = self.evc['sbjt']
 		if not resRri.hasAttributeDefined(sbjt):
 			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
+		
+		# Check the value space of the threshold attribute.
+		dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'])
 
-		# 4) The Receiver shall check that the value provided for the threshold element of the evalCriteria
-		#  attribute is within the value space (as defined in [3]) of the data type of the subject element of 
-		# the evalCriteria attribute. The Receiver shall also check that the value provided for the operator 
-		# element of the evalCriteria attribute is a valid value based on Table 6.3.4.2.861. If either 
-		# check fails, the receiver shall return a response primitive with a Response Status Code indicating 
-		# "BAD_REQUEST" error.
+		# Check evalCriteria operator
+		CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
 
-		# 5) Process the <dependency> resource as described in clause 10.2.21 of oneM2M TS-0001 [6] after Recv-6.7.
-
-	
 
 	def update(self, dct: JSON = None, 
 					 originator: Optional[str] = None,
 					 doValidateAttributes: Optional[bool] = True) -> None:
 
-		# 13)If the evalCriteria attribute is present in the request, the Receiver shall check that the 
-		# attribute referenced by the subject element of the evalCriteria attribute is an attribute of the
-		# resource type referenced by the referencedResourceID attribute. If it is not, the receiver shall
-		#  return a response primitive with a Response Status Code indicating "BAD_REQUEST" error.
+		# Check existence and accessibility of the references resource in rri.
+		try:
+			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.getFinalResourceAttribute('rri', dct), originator, Permission.RETRIEVE)
+		except ResponseException as e:
+			raise BAD_REQUEST(dbg = e.dbg)
 
-		# 14)If the evalCriteria attribute is present in the request, the Receiver shall check the value 
-		# provided for the threshold element of the evalCriteria attribute is within the value space 
-		# (as defined in [3]) of the data type of the subject element of the evalCriteria attribute. 
-		# The Receiver shall also check that the value provided for the operator element of the evalCriteria 
-		# attribute is a valid value based on Table 6.3.4.2.861. If either check fails, the receiver shall 
-		# return a response primitive with a Response Status Code indicating "BAD_REQUEST" error.
-
-		# 15)Process the <dependency> resource as described in clause 10.2.21 of oneM2M TS-0001 [6] after Recv-6.7.
+		if (evc := findXPath(dct, 'm2m:depr/evc')) is not None:
 
 
-		return super().update(dct, originator, doValidateAttributes)
+			# Check existence of referenced subject attribute in the referenced resource.
+			sbjt = evc['sbjt']
+			if not resRri.hasAttributeDefined(sbjt):
+				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
+
+			# Check the value space of the threshold attribute.
+			dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'])
+
+			# Check evalCriteria operator
+			CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
+
+		super().update(dct, originator, doValidateAttributes)

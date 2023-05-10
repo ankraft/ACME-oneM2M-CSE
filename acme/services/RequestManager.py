@@ -566,7 +566,7 @@ class RequestManager(object):
 		reqres.update()
 
 		# Update in DB
-		reqres.dbUpdate()
+		reqres.dbUpdate(True)
 
 		return reqres
 

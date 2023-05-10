@@ -507,6 +507,12 @@ class Storage(object):
 		"""	Retrieve the actions data from the DB.
 		"""
 		return self.db.searchActionReprs()
+	
+
+	def getAction(self, ri:str) -> Optional[Document]:
+		"""	Retrieve the actions data from the DB.
+		"""
+		return self.db.getAction(ri)
 
 	
 	def searchActionsForSubject(self, ri:str) -> Sequence[JSON]:
@@ -1116,6 +1122,11 @@ class TinyDBBinding(object):
 		with self.lockActions:
 			actions = self.tabActions.all()
 			return actions if actions else None
+	
+
+	def getAction(self, ri:str) -> Optional[Document]:
+		with self.lockActions:
+			return self.tabActions.get(doc_id = ri)	# type:ignore[arg-type]
 
 
 	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
@@ -1131,6 +1142,7 @@ class TinyDBBinding(object):
 			return self.tabActions.upsert(Document(
 					{	'ri':		_ri,
 						'subject':	_sri if _sri else action.pi,
+						'dep':		action.dep,
 						'apy':		action.apy,
 						'evm':		action.evm,
 						'evc':		action.evc,	
@@ -1143,7 +1155,6 @@ class TinyDBBinding(object):
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
 		with self.lockActions:
 			return self.tabActions.update(actionRepr, doc_ids = [actionRepr['ri']]) is not None	# type:ignore[arg-type]
-			# return self.tabActions.update(actionRepr, self.actionsQuery.ri == _ri) is not None
 
 
 	def removeActionRepr(self, ri:str) -> bool:

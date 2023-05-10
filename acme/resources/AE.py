@@ -128,7 +128,7 @@ class AE(AnnounceableResource):
 						if isinstance(hael, list):
 							hael.append(ri)
 							node['hael'] = hael
-					node.dbUpdate()
+					node.dbUpdate(True)
 			self[Constants.attrNode] = nl
 		
 		# check csz attribute
@@ -182,5 +182,5 @@ class AE(AnnounceableResource):
 					node.delAttribute('hael')
 				else:
 					node['hael'] = hael
-				node.dbUpdate()
+				node.dbUpdate(True)
 

@@ -102,7 +102,7 @@ class Event(list):	# type:ignore[type-arg]
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = f'ev_{self.name}')
+			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = self.name)
 		else:
 			_runner(self.name, *args, **kwargs)
 		# _runner(self.name, *args, **kwargs)

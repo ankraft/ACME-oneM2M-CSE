@@ -416,7 +416,7 @@ class RemoteCSEManager(object):
 						# Update the local registrar <CSR> resource
 						L.isDebug and L.logDebug(f'Updating local registrar CSR resource: {registrarCSR.rn}')
 						self._copyCSE2CSR(registrarCSR, self.registrarCSE)
-						registrarCSR.dbUpdate()		# update in DB only
+						registrarCSR.dbUpdate(True)		# update in DB only
 						L.isDebug and L.logDebug('Local CSR updated')
 				except ResponseException as e:
 					self.registrarCSE = None	# Always assign, if there is an error "resource" is None
@@ -546,7 +546,7 @@ class RemoteCSEManager(object):
 		except ResponseException as e:
 			raise BAD_REQUEST(f'cannot register CSR: {e.dbg}')
 
-		return csrResource.dbUpdate()
+		return csrResource.dbUpdate(True)
 
 
 	def _deleteRegistreeCSR(self, registreeCSR:Resource) -> None:

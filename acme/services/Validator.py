@@ -18,7 +18,7 @@ from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributeP
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -68,6 +68,34 @@ class Validator(object):
 		return True
 
 	#########################################################################
+
+
+	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool = False) -> None:
+		"""	Validate a resource update dictionary. Besides of the attributes it also validates the resource type.
+
+			Args:
+				resource: The resource to validate the update request for.
+				dct: The JSON dictionary of the update request.
+				doValidateAttributes: Boolean indicating whether to validate the attributes.
+
+			See Also:
+				`validateAttributes`
+
+			Return:
+				None
+		"""
+		if resource.tpe not in dct and resource.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+			raise CONTENTS_UNACCEPTABLE(L.logWarn(f"Update type doesn't match target (expected: {resource.tpe}, is: {list(dct.keys())[0]})"))
+		# validate the attributes
+		if doValidateAttributes:
+			self.validateAttributes(dct, 
+									resource.tpe, 
+									resource.ty, 
+									resource._attributes, 
+									create = False, 
+									createdInternally = 
+									resource.isCreatedInternally(), 
+									isAnnounced = resource.isAnnounced())
 
 
 	def	validateAttributes(self, resource:JSON, 

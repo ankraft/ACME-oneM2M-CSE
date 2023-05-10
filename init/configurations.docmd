@@ -38,10 +38,14 @@ The syntax to denote a value from a section is:
 A built-in configuration setting that points to the base-directory of the CSE installation can be 
 referenced by the interpolation `${basic.config:baseDirectory}`.
 
-Example:
+Examples:
 
 ```ini
+[basic.config]
+cseID=id-in
+
 [cse]
+cseID=/${basic.config:cseID}
 resourcesPath=${basic.config:baseDirectory}/init
 ```
 

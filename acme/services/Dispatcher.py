@@ -741,7 +741,7 @@ class Dispatcher(object):
 		
 		# Could be that we changed the resource in the activate, therefore write it again
 		try:
-			resource.dbUpdate()
+			resource.dbUpdate(True)	# with an event
 		except:
 			resource.dbDelete()
 			raise
@@ -878,7 +878,7 @@ class Dispatcher(object):
 		resource.updated(dct, originator)
 
 		# Update and send an update event
-		resource.dbUpdate()
+		resource.dbUpdate(True)
 		self._eventUpdateResource(resource)
 		return resource
 

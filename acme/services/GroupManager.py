@@ -271,5 +271,5 @@ class GroupManager(object):
 			L.isDebug and L.logDebug(f'Removing deleted resource: {ri} from group: {group.ri}')
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1
-			group.dbUpdate()
+			group.dbUpdate(True)
 

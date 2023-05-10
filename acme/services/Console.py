@@ -1269,6 +1269,7 @@ Available under the BSD 3-Clause License
 			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(ResourceTypes.CNT)}\n'
 			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(ResourceTypes.CRS)}\n'
 			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(ResourceTypes.CSR)}\n'
+			resourceTypes += f'DEPR    : {CSE.dispatcher.countResources(ResourceTypes.DEPR)}\n'
 			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(ResourceTypes.FCNT)}\n'
 			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(ResourceTypes.FCI)}\n'
 			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(ResourceTypes.GRP)}\n'
@@ -1285,7 +1286,7 @@ Available under the BSD 3-Clause License
 			resourceTypes += '\n'
 			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
 			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 7)
+			resourceTypes += '\n' * (tableWorkers.row_count + 6)
 
 
 			result = Table.grid(expand = True)

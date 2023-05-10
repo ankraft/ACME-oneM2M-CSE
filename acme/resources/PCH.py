@@ -97,7 +97,7 @@ class PCH(Resource):
 		resource = CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))
 		pcu = cast(PCH_PCU.PCH_PCU, resource)
 		pcu.setAggregate(self.rqag)
-		pcu.dbUpdate()
+		pcu.dbUpdate(True)
 		
 
 	def getParentOriginator(self) -> str:

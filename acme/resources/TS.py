@@ -243,7 +243,7 @@ class TS(AnnounceableResource):
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)
-					childResource.dbUpdate()
+					childResource.dbUpdate(True)
 
 			self.validate(originator)	# Handle old TSI removals
 		
@@ -316,7 +316,7 @@ class TS(AnnounceableResource):
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni
 		self['cbs'] = cbs
-		self.dbUpdate()
+		self.dbUpdate(True)
 	
 		# End validating
 		self.__validating = False
@@ -362,7 +362,7 @@ class TS(AnnounceableResource):
 			self.setAttribute('mdc', len(self.mdlt))
 
 		# Save changes
-		self.dbUpdate()
+		self.dbUpdate(True)
 
 
 	def _clearMdlt(self, overwrite:Optional[bool] = True) -> None:
@@ -390,5 +390,5 @@ class TS(AnnounceableResource):
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
 				self.setAttribute('mdlt', self.mdlt[1:], overwrite = True)	# Shorten the mdlt
 			self.setAttribute('mdc', len(self.mdlt), overwrite = True)		# Set the mdc
-			self.dbUpdate()													# Update in DB
+			self.dbUpdate(True)													# Update in DB
 

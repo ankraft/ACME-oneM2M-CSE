@@ -149,7 +149,7 @@ class SMD(AnnounceableResource):
 		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		
-		self.dbUpdate()
+		self.dbUpdate(True)
 		
 
 	def willBeRetrieved(self, originator:str, 

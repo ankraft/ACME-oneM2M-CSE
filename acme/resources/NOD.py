@@ -83,5 +83,5 @@ class NOD(AnnounceableResource):
 		if aeResource := CSE.dispatcher.retrieveResource(aeRI):
 			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
-				aeResource.dbUpdate()
+				aeResource.dbUpdate(True)
 
