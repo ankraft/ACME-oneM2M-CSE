@@ -330,14 +330,24 @@ class Storage(object):
 			Returns:
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
-		if (_ris := self.db.searchChildResourceRIs(pi, ty)):
+		if (_ris := self.db.searchChildResourcesByParentRI(pi, ty)):
 			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
 			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
+	
 
-		# docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
-		# return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
-		
+	def directChildResourcesRI(self, pi:str, 
+			    					 ty:Optional[ResourceTypes] = None) -> list[str]:
+		"""	Return a list of direct child resource IDs, or an empty list
+
+			Args:
+				pi: The parent resource's Resource ID.
+				ty: Optional resource type to filter the result.
+			Returns:
+				Return a list of resource IDs.
+		"""
+		return self.db.searchChildResourcesByParentRI(pi, ty)
+
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
 		"""	Count the number of direct child resources.
@@ -987,14 +997,13 @@ class TinyDBBinding(object):
 				self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
 
 
-	def searchChildResourceRIs(self, pi:str, ty:int = None) -> list[str]:
+	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[int] = None) -> Optional[list[str]]:
 		_r = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type]
 		if _r:
 			if ty is None:	# optimization: only check ty once for None
 				return [ c[0] for c in _r['ch'] ]
-			return [ c[0] for c in _r['ch'] if ty == c[1] ]
-		return None
-
+			return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
+		return []
 
 	#
 	#	Subscriptions

@@ -1196,11 +1196,26 @@ class Dispatcher(object):
 		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
 
 
-	def countDirectChildResources(self, pi:str, ty:ResourceTypes = None) -> int:
+	def directChildResourcesRI(self, pi:str, 
+			    					 ty:Optional[ResourceTypes] = None) -> list[str]:
+		"""	Return the resourceIdentifiers of all child resources of a resource, optionally filtered by type.
+			An empty list is returned if no child resource could be found.
+		"""
+		return CSE.storage.directChildResourcesRI(pi, ty)
+	
+
+	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
 		"""	Return the number of all child resources of resource, optionally filtered by type. 
 		"""
 		return CSE.storage.countDirectChildResources(pi, ty)
 
+
+	def hasDirectChildResource(self, pi:str, 
+			    					 ri:str) -> bool:
+		"""	Check if a resource has a direct child resource with a given resourceID
+		"""
+		return riFromID(ri) in self.directChildResourcesRI(pi)
+	
 
 	def retrieveLatestOldestInstance(self, pi:str, 
 										   ty:ResourceTypes, 
