@@ -823,7 +823,7 @@ class PContext():
 			line = line.strip()
 			if line.startswith('@'):
 				_n, _, _v = line.strip().partition(' ')
-				self.meta[_n[1:]] = _v
+				self.meta[_n[1:]] = _v.replace('\\n', '\n')
 				self.script = self.script.replace(line, '')
 		
 		if not self.validate():
@@ -1303,7 +1303,7 @@ class PContext():
 		self.state = PState.running
 		if self.maxRuntime is not None:	# set max runtime
 			self._maxRTimestamp = datetime.datetime.utcnow().timestamp() + self.maxRuntime
-		if scriptName := self.scriptName and not isSubCall:
+		if (scriptName := self.scriptName) and not isSubCall:
 			self.logFunc(self, f'Running script: {scriptName}, arguments: {arguments}')
 
 		# execute all top level S-expressions
