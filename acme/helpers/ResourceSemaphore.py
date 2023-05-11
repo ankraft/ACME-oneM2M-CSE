@@ -14,17 +14,19 @@ from __future__ import annotations
 from typing import Any, Dict, Callable, Optional, Type
 from types import TracebackType
 from functools import wraps
-from ..etc.DateUtils import waitFor
+from threading import Semaphore
 
 #
 #	Resource States
 #
 		
-_resourceStates:Dict[str, str]	= {}
-"""	Dictionary for store states for ID's. """
+_semaphores:Dict[(str, str), Semaphore]	= {}
+"""	Dictionary for store semaphores states for (ID, state) tuples. """
 
-def setResourceState(id:str, state:str, timeout:Optional[float] = None) -> None:
-	"""	Store the state of a resource.
+def  enterCriticalSection(id:str, 
+		     			  state:str, 
+		     			  timeout:Optional[float] = None) -> None:
+	"""	Store the state of a resource, and enter or wait for entering a critical section.
 
 		This can be used by resources to store individual transient states
 		(only in memory).
@@ -45,35 +47,45 @@ def setResourceState(id:str, state:str, timeout:Optional[float] = None) -> None:
 		Raises:
 			TimeoutError: Raised if the *timeout* passes and no new *state* can be set for *id*.
 	"""
-	if timeout is not None and id in _resourceStates:
-		if not waitFor(timeout, lambda: getResourceState(id) == None):
-			raise TimeoutError(f'Timeout reached while waiting for setting resource state for id: {id}')
+	
+	if not (semaphore := _semaphores.get((id, state))):
+		semaphore = Semaphore()
+		semaphore.acquire(timeout = timeout)
+		_semaphores[(id, state)] = semaphore
+	else:
+		if not semaphore.acquire(timeout = timeout):
+			raise TimeoutError(f'Timeout reached while waiting for semaphore state for: ({id}, {state})')
 
-	_resourceStates[id] = state
 
-
-def getResourceState(id:str) -> str:
-	"""	Retrieve the state of a resource.
+def inCriticalSection(id:str, state:str) -> bool:
+	"""	Check if a resource and state are in a critical section or waiting to enter.
 	
 		Args:
 			id: Resource ID
+			state: The state to check.
+
 		Return:
-			The resource state, or None.
+			True if a resource and state are set, False otherwise.
 	"""
-	return _resourceStates.get(id)
+	return (id, state) in _semaphores
 
 
-def clearResourceState(id:str) -> None:
+def leaveCriticalSection(id:str, state:str) -> None:
 	"""	Clear the state of a resource.
 	
 		Args:
 			id: Resource ID
+			state: The state to clear.
 	"""
-	if id in _resourceStates:
-		del _resourceStates[id]
+
+	if semaphore := _semaphores.get((id, state)):
+		# if no one else is waiting, remove the semaphore
+		if not semaphore._cond._waiters:	# type: ignore[attr-defined]
+			del _semaphores[(id, state)]
+		semaphore.release()
 
 
-def resourceState(state:str) -> Callable:
+def criticalResourceSection(id:str = '', state:str = '') -> Callable:
 	"""	Decorator to set and remove a state when a resource method is called.
 	
 		Args:
@@ -84,9 +96,13 @@ def resourceState(state:str) -> Callable:
 	def decorate(func:Callable) -> Callable:
 		@wraps(func)
 		def wrapper(*args:Any, **kwargs:Any) -> Any:
-			setResourceState(args[0].ri, state)
+			try:
+				_id = args[0].ri	# ACME Resource type
+			except:
+				_id = id 
+			enterCriticalSection(_id, state)
 			r = func(*args, **kwargs)
-			clearResourceState(args[0].ri)
+			leaveCriticalSection(_id, state)
 			return r
 		return wrapper
 	return decorate
@@ -94,39 +110,32 @@ def resourceState(state:str) -> Callable:
 
 #
 #	Context Manager
-#
-		
-
-class CriticalResourceSectionException(Exception):
-	"""	This exception is raised when a resource is alreay in a critical path.
-	"""
-	...
+# 
 
 
-class CriticalResourceSection(object):
+class CriticalSection(object):
 	""" Context manager to guard a critical resource path. """
 
-	def __init__(self, id:str, state:str) -> None:
+	def __init__(self, id:str, state:Optional[str] = '', timeout:Optional[float] = None) -> None:
 		"""	Initialization of the context manager.
 		
 			Args:
 				id: Resource ID of the resource to be monitored.
 				state: State of the resource.
 		"""
-		if (_s := getResourceState(id)) and _s == state:
-			raise CriticalResourceSectionException(f'Resource {id} already in state {state}')
 		self.id = id
 		self.state = state
+		self.timeout = timeout
 
 
 	def __enter__(self) -> None:
-		setResourceState(self.id, self.state)
+		enterCriticalSection(self.id, self.state, self.timeout)
 
 	
 	def __exit__(self,	exctype: Optional[Type[BaseException]],
 			 			excinst: Optional[BaseException],
 						exctb: Optional[TracebackType]) -> Optional[bool]:
-		clearResourceState(self.id)
+		leaveCriticalSection(self.id, self.state)
 		return None
 
 

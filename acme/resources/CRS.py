@@ -15,7 +15,7 @@ from typing import Optional, cast
 from copy import deepcopy
 from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
 from ..helpers.TextTools import findXPath, setXPath
-from ..helpers.ResourceSemaphore import resourceState, getResourceState
+from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, TimeWindowType, EventEvaluationMode, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, NOT_FOUND
 from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
@@ -170,7 +170,7 @@ class CRS(Resource):
 		super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
 	
 
-	@resourceState('deactivate')
+	@criticalResourceSection(state = 'deactivate')
 	def deactivate(self, originator:str) -> None:
 
 		# Deactivate time windows
@@ -233,7 +233,7 @@ class CRS(Resource):
 		# Deletion request
 		if (_sud := findXPath(request.pc, 'm2m:sgn/sud')) is not None and _sud == True:
 			_sur = findXPath(request.pc, 'm2m:sgn/sur')
-			if getResourceState(self.ri) in ['deactivate']:
+			if inCriticalSection(self.ri, 'deactivate'):
 				L.isDebug and L.logDebug(f'Received subscription deletion notification from subscription: {_sur}. Already in delete. Ignored.')
 				return
 			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
