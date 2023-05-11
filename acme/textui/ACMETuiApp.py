@@ -111,10 +111,14 @@ class ACMETuiApp(App):
 				yield self.containerRequests
 			with TabPane('Registrations', id = tabRegistrations):
 				yield self.containerRegistrations
-			with TabPane('Configurations', id = tabConfigurations):
-				yield self.containerConfigs
+
+			# TODO Tools: Scripts with meta tags are displayed here
+			# with TabPane('Infos', id = tabInfo):
+				# yield self.containerInfo
 			with TabPane('Infos', id = tabInfo):
 				yield self.containerInfo
+			with TabPane('Configurations', id = tabConfigurations):
+				yield self.containerConfigs
 			with TabPane('About', id = tabAbout):
 				yield self.containerAbout
 		yield Footer()

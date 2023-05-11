@@ -22,6 +22,7 @@ from ..services import CSE
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources.ACTR import ACTR
+from ..helpers.ResourceSemaphore import CriticalResourceSection
 
 
 # TODO implement support for input attribute when the procedure is clear
@@ -96,7 +97,7 @@ class ActionManager(object):
 
 	def evaluateActions(self, name:str, resource:Resource) -> None:
 
-		if ResourceTypes.isVirtualResource(resource.ty):
+		if resource.isVirtual():
 			return
 		
 		_ri = resource.ri
@@ -110,63 +111,65 @@ class ActionManager(object):
 
 		for action in actions:
 
-			if self.evaluateSingleAction(resource, action, _now) and self.evaluateDependencies(action):
-				ri = action['ri']
-				L.isDebug and L.logDebug(f'Action: conditions {ri} evaluated to True')
+			with CriticalResourceSection(action['ri'], 'action'):
 
-				# retrieve the real action resource
-				try:
-					actr = cast(ACTR, CSE.dispatcher.retrieveLocalResource(ri))
-				except ResponseException as e:
-					L.logErr(e.dbg)
-					raise e
+				if self.evaluateSingleAction(resource, action, _now) and self.evaluateDependencies(action):
+					ri = action['ri']
+					L.isDebug and L.logDebug(f'Action: conditions {ri} evaluated to True')
 
-				# Assign a new to (ie. the objectRecourceID)
-				apv = copy.deepcopy(actr.apv)
-				setXPath(apv, 'to', actr.orc)
+					# retrieve the real action resource
+					try:
+						actr = cast(ACTR, CSE.dispatcher.retrieveLocalResource(ri))
+					except ResponseException as e:
+						L.logErr(e.dbg)
+						raise e
 
-				# build request
-				try:
-					resReq = CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))
-				except ResponseException as e:
-					L.logWarn(f'Error handling request: {request.originalRequest} : {e.dbg}')
-					continue
+					# Assign a new to (ie. the objectRecourceID)
+					apv = copy.deepcopy(actr.apv)
+					setXPath(apv, 'to', actr.orc)
 
-				# Send request
-				L.isDebug and L.logDebug(f'Sending request: {resReq.originalRequest}')
-				res = CSE.request.handleRequest(resReq)
+					# build request
+					try:
+						resReq = CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))
+					except ResponseException as e:
+						L.logWarn(f'Error handling request: {request.originalRequest} : {e.dbg}')
+						continue
 
-				# Store response in the <actr>
-				res.request = request
-				actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
-				try:
-					actr.dbUpdate()
-				except ResponseException as e:
-					L.logWarn(f'Error updating <actr>: {e.dbg}')
-					continue
+					# Send request
+					L.isDebug and L.logDebug(f'Sending request: {resReq.originalRequest}')
+					res = CSE.request.handleRequest(resReq)
 
-				# Update according to evalMode
-				evm = action['evm']
-				if evm == EvalMode.once:			# remove if only once
-					L.isDebug and L.logDebug(f'Removing "once" action: {ri}')
-					CSE.storage.removeAction(ri)
-					continue
-				if evm == EvalMode.continous:		# remove from action DB if count reaches 0
-					count = action['count']
-					if (count := count - 1) == 0:
-						L.isDebug and L.logDebug(f'Removing "continuous" action: {ri} (count: {actr.ecp} reached)')
+					# Store response in the <actr>
+					res.request = request
+					actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
+					try:
+						actr.dbUpdate()
+					except ResponseException as e:
+						L.logWarn(f'Error updating <actr>: {e.dbg}')
+						continue
+
+					# Update according to evalMode
+					evm = action['evm']
+					if evm == EvalMode.once:			# remove if only once
+						L.isDebug and L.logDebug(f'Removing "once" action: {ri}')
 						CSE.storage.removeAction(ri)
-					else:
-						action['count'] = count
+						continue
+					if evm == EvalMode.continous:		# remove from action DB if count reaches 0
+						count = action['count']
+						if (count := count - 1) == 0:
+							L.isDebug and L.logDebug(f'Removing "continuous" action: {ri} (count: {actr.ecp} reached)')
+							CSE.storage.removeAction(ri)
+						else:
+							action['count'] = count
+							CSE.storage.updateActionRepr(action)
+						continue
+					if evm == EvalMode.periodic:
+						_ecp = action['ecp'] / 1000.0
+						action['periodTS'] = _now + ((action['periodTS'] - _now) % _ecp)
+						L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
 						CSE.storage.updateActionRepr(action)
-					continue
-				if evm == EvalMode.periodic:
-					_ecp = action['ecp'] / 1000.0
-					action['periodTS'] = _now + ((action['periodTS'] - _now) % _ecp)
-					L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
-					CSE.storage.updateActionRepr(action)
-			else:
-				L.isDebug and L.logDebug(f'Action: conditions {action["ri"]} evaluated to False')
+				else:
+					L.isDebug and L.logDebug(f'Action: conditions {action["ri"]} evaluated to False')
 
 
 

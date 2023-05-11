@@ -11,7 +11,7 @@
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Callable, Optional, Type
+from typing import Any, Dict, Callable, Optional, Type, Tuple
 from types import TracebackType
 from functools import wraps
 from threading import Semaphore
@@ -20,7 +20,7 @@ from threading import Semaphore
 #	Resource States
 #
 		
-_semaphores:Dict[(str, str), Semaphore]	= {}
+_semaphores:Dict[Tuple[str, str], Semaphore]	= {}
 """	Dictionary for store semaphores states for (ID, state) tuples. """
 
 def  enterCriticalSection(id:str, 

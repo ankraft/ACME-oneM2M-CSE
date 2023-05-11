@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.9.0
+// oneM2M Release: 4.12.0
 // Domain:         org.onem2m.metadata
 [
     // ModuleClass: features (feats)
@@ -21,6 +21,9 @@
             { "sname" : "weigt", "lname" : "weight", "type" : "float", "car" : "01" }, 
             // DataPoint: size
             { "sname" : "size", "lname" : "size", "type" : "list", "car" : "01" }
+        ],
+		"children"  : [
+            "mdd:featsInst"
         ]
     },
 
@@ -29,6 +32,28 @@
         "type"      : "mdd:featsAnnc",
         "lname"     : "featuresAnnc",
         "cnd"       : "org.onem2m.metadata.moduleclass.featuresAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: metadata
+            { "sname" : "metaa", "lname" : "metadata", "type" : "list", "car" : "01" }, 
+            // DataPoint: precision
+            { "sname" : "precn", "lname" : "precision", "type" : "integer", "car" : "01" }, 
+            // DataPoint: reliability
+            { "sname" : "reliy", "lname" : "reliability", "type" : "integer", "car" : "01" }, 
+            // DataPoint: weight
+            { "sname" : "weigt", "lname" : "weight", "type" : "float", "car" : "01" }, 
+            // DataPoint: size
+            { "sname" : "size", "lname" : "size", "type" : "list", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: featuresInst (featsInst)
+    {
+        "type"      : "mdd:featsInst",
+        "lname"     : "featuresInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.featuresInst",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -63,6 +88,9 @@
             { "sname" : "friLn", "lname" : "friendlyLocation", "type" : "string", "car" : "01" }, 
             // DataPoint: room
             { "sname" : "room", "lname" : "room", "type" : "string", "car" : "01" }
+        ],
+		"children"  : [
+            "mdd:locanInst"
         ]
     },
 
@@ -71,6 +99,26 @@
         "type"      : "mdd:locanAnnc",
         "lname"     : "locationAnnc",
         "cnd"       : "org.onem2m.metadata.moduleclass.locationAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: postalAddress
+            { "sname" : "posAs", "lname" : "postalAddress", "type" : "string", "car" : "01" }, 
+            // DataPoint: geoJSON
+            { "sname" : "geoJN", "lname" : "geoJSON", "type" : "string", "car" : "01" }, 
+            // DataPoint: friendlyLocation
+            { "sname" : "friLn", "lname" : "friendlyLocation", "type" : "string", "car" : "01" }, 
+            // DataPoint: room
+            { "sname" : "room", "lname" : "room", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: locationInst (locanInst)
+    {
+        "type"      : "mdd:locanInst",
+        "lname"     : "locationInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.locationInst",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -103,6 +151,9 @@
             { "sname" : "dc", "lname" : "description", "type" : "string", "car" : "01" }, 
             // DataPoint: friendlyLocation
             { "sname" : "friLn", "lname" : "friendlyLocation", "type" : "string", "car" : "01" }
+        ],
+		"children"  : [
+            "mdd:loca0Inst"
         ]
     },
 
@@ -111,6 +162,26 @@
         "type"      : "mdd:loca0Annc",
         "lname"     : "localizationAnnc",
         "cnd"       : "org.onem2m.metadata.moduleclass.localizationAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: locale
+            { "sname" : "locae", "lname" : "locale", "type" : "string", "car" : "1" }, 
+            // DataPoint: friendlyName
+            { "sname" : "friNe", "lname" : "friendlyName", "type" : "string", "car" : "01" }, 
+            // DataPoint: description
+            { "sname" : "dc", "lname" : "description", "type" : "string", "car" : "01" }, 
+            // DataPoint: friendlyLocation
+            { "sname" : "friLn", "lname" : "friendlyLocation", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: localizationInst (loca0Inst)
+    {
+        "type"      : "mdd:loca0Inst",
+        "lname"     : "localizationInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.localizationInst",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -141,6 +212,9 @@
             { "sname" : "datTe", "lname" : "dataType", "type" : "string", "car" : "01" }, 
             // DataPoint: dataSourceID
             { "sname" : "daSID", "lname" : "dataSourceID", "type" : "string", "car" : "01" }
+        ],
+		"children"  : [
+            "mdd:orignInst"
         ]
     },
 
@@ -149,6 +223,24 @@
         "type"      : "mdd:orignAnnc",
         "lname"     : "originAnnc",
         "cnd"       : "org.onem2m.metadata.moduleclass.originAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: originID
+            { "sname" : "oriID", "lname" : "originID", "type" : "string", "car" : "01" }, 
+            // DataPoint: dataType
+            { "sname" : "datTe", "lname" : "dataType", "type" : "string", "car" : "01" }, 
+            // DataPoint: dataSourceID
+            { "sname" : "daSID", "lname" : "dataSourceID", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: originInst (orignInst)
+    {
+        "type"      : "mdd:orignInst",
+        "lname"     : "originInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.originInst",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime

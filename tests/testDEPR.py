@@ -391,10 +391,11 @@ class TestDEPR(unittest.TestCase):
 	#	Test <action> & <dependency>
 	#
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_ACTRDEPRsfcTrue(self) -> None:
 		"""	Test ACTR & DEPR - 1 DEPR, sfc = True """
+
+		self._restartWindow()
 
 		# Create <DEPR>
 		dct = 	{ 'm2m:depr' : { 
@@ -436,6 +437,8 @@ class TestDEPR(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_ACTRDEPRsfcFalse(self) -> None:
 		"""	Test ACTR & DEPR - 1 DEPR, sfc = False """
+
+		self._restartWindow()
 
 		# Create <DEPR>
 		dct = 	{ 'm2m:depr' : { 
@@ -738,6 +741,17 @@ class TestDEPR(unittest.TestCase):
 		r, rsc = UPDATE(aeURL, TestDEPR.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
+	
+
+	def _restartWindow(self) -> None:
+		"""	Update once <ACTR> with periodic mode"""
+		dct = 	{ 'm2m:actr' : { 
+					'evm': EvalMode.periodic,
+				}}
+		r, rsc = UPDATE(actrURL, TestDEPR.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertEqual(findXPath(r, 'm2m:actr/evm'), EvalMode.periodic)
+
 	
 
 

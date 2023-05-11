@@ -1,7 +1,8 @@
 // Created by SDTTool
-// oneM2M Release: 4.9.0
+// oneM2M Release: 4.12.0
 // Domain:         org.onem2m.management
 [
+
     // DeviceClass: flexNode
     {
         "type"      : "mad:fleNe",
@@ -32,10 +33,9 @@
             "mad:dmCay", 
             "mad:dmSte", 
             "mad:dANIo"
+            ,"mad:fleNeInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: flexNodeAnnc
     {
@@ -78,6 +78,25 @@
             "mad:dmSteAnnc", 
             "mad:dANIo", 
             "mad:dANIoAnnc"
+        ]
+    },
+    // DeviceClass Instance: flexNodeInst
+    {
+        "type"      : "mad:fleNeInst",
+        "lname"     : "flexNodeInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.management.device.flexNodeInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }, 
+            // Property: nodeID
+            { "sname" : "nodID", "lname" : "nodeID", "type" : "string", "car" : "1" }, 
+            // Property: hostedAELinks
+            { "sname" : "hAELs", "lname" : "hostedAELinks", "type" : "string", "car" : "01" }, 
+            // Property: hostedServiceLinks
+            { "sname" : "hoSLs", "lname" : "hostedServiceLinks", "type" : "string", "car" : "01" }
         ]
     }
 

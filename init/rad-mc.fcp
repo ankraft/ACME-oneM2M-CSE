@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.9.0
+// oneM2M Release: 4.12.0
 // Domain:         org.onem2m.railway
 [
     // ModuleClass: baliseTransmissionModule (baTMe)
@@ -15,6 +15,9 @@
             { "sname" : "baSId", "lname" : "baliseSystemId", "type" : "nonNegInteger", "car" : "01" }, 
             // DataPoint: telegramMessage
             { "sname" : "telMe", "lname" : "telegramMessage", "type" : "string", "car" : "01" }
+        ],
+		"children"  : [
+            "rad:baTMeInst"
         ]
     },
 
@@ -23,6 +26,22 @@
         "type"      : "rad:baTMeAnnc",
         "lname"     : "baliseTransmissionModuleAnnc",
         "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: baliseSystemId
+            { "sname" : "baSId", "lname" : "baliseSystemId", "type" : "nonNegInteger", "car" : "01" }, 
+            // DataPoint: telegramMessage
+            { "sname" : "telMe", "lname" : "telegramMessage", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: baliseTransmissionModuleInst (baTMeInst)
+    {
+        "type"      : "rad:baTMeInst",
+        "lname"     : "baliseTransmissionModuleInst",
+        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleInst",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
