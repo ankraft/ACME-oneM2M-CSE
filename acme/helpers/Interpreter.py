@@ -1024,7 +1024,7 @@ class PContext():
 		return self.environment.get(key.lower())
 	
 
-	def setEnvironmentVariale(self, key:str, value:SSymbol) -> None:
+	def setEnvironmentVariable(self, key:str, value:SSymbol) -> None:
 		"""	Set an environment variable for a case insensitive name.
 
 			Args:
@@ -1042,13 +1042,20 @@ class PContext():
 
 	def setEnvironment(self, environment:Optional[dict[str, SSymbol]] = {}) -> None:
 		"""	Clear old environment and assign a new environment.
+
+			This includes the meta tags in the format *meta.<tag>*.
 			
 			Args:
 				environment: Dictionary with the new environment
 		"""
 		self.clearEnvironment()
+		# First, add meta tags
+		for eachKey, eachMeta in self.meta.items():
+			self.setEnvironmentVariable(f'meta.{eachKey}', SSymbol(eachMeta))
+
+		# Add the environment variables
 		for eachKey, eachValue in environment.items():
-			self.setEnvironmentVariale(eachKey, eachValue)
+			self.setEnvironmentVariable(eachKey, eachValue)
 
 	
 	@property
@@ -1452,52 +1459,6 @@ class PContext():
 		for _p, _m in _escapedMatches.items():
 			line = line.replace(_p, _m[2:], 1)
 
-		# The following might be easier with a regex, but we want to allow recursive macros, therefore
-		# parsing the string is simpler for now. Suggestions welcome!
-
-		# i = 0
-		# l = len(line)
-		# result = ''
-		# while i < l:
-		# 	c = line[i]
-		# 	i += 1
-
-		# 	# Found escape
-		# 	if c == '\\' and i < l:
-		# 		result += line[i]
-		# 		i += 1
-
-		# 	# Found [ in the input line
-		# 	elif c == '[':
-		# 		expression = c
-		# 		oc = 0	# expression deep level
-		# 		# try to find the end of the expression.
-		# 		# Skip contained macros in between. They will be
-		# 		# resolved recursively later
-		# 		while i < l:
-		# 			c = line[i]
-		# 			i += 1
-		# 			if c == '\\' and i < l:
-		# 				expression += line[i]
-		# 				i += 1
-		# 			elif c == '[':
-		# 				oc += 1
-		# 				expression += '['
-		# 			elif c == ']':
-		# 				if oc > 0:	# Skip if not end of _this_ expression
-		# 					oc -= 1
-		# 					expression += ']'
-		# 				else:	# End of macro. Might contain other expressions! Those will be resolved later
-		# 					expression += c
-		# 					r = self.executeSubexpression(expression[1:-1])	# may throw exception
-		# 					result += str(r.result.value) if r.result else ''
-		# 					break	# Break the inner while
-		# 			else:
-		# 				expression += c
-			
-		# 	# Normal character found
-		# 	else:
-		# 		result += c
 		if symbol.type == SType.tString:
 			return self.setResult(SSymbol(string = line))
 		return self.setResult(SSymbol(jsnString = line))
@@ -2257,7 +2218,7 @@ def _doIsDefined(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.assertSymbol(symbol, 2)
 	
 	# symbol name
-	pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+	pcontext, name = pcontext.valueFromArgument(symbol, 1, (SType.tString, SType.tSymbolQuote))
 	return pcontext.setResult(SSymbol(boolean = name in pcontext.variables or
 												name in pcontext.functions or
 												name in pcontext.symbols or

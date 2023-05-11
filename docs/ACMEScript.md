@@ -82,7 +82,7 @@ In addition to the normal script variables the runtime environment may pass extr
 
 ### Quoting
 
-It doesn't matter whether a symbol is another s-expression, a built-in, self-defined or even nameless function, or a variable. If symbols can be evaluated they are evaluated in order. However, sometimes it is necessary to pass an executable symbol without evaluating it first. This is called quoting and is achieved by adding a single quote to the beginning of a symbol or list.
+It doesn't matter whether a symbol is another s-expression, a built-in, self-defined or even nameless function, or a variable:If symbols can be evaluated they are evaluated in order. However, sometimes it is necessary to pass an executable symbol without evaluating it first. This is called quoting and is achieved by adding a single quote to the beginning of a symbol or list.
 
 Some functions assume that one or more arguments are implicitly quoted, such as the *setq* function that doesn't evaluating its first argument.
 
@@ -103,7 +103,7 @@ Sometimes it is not possible to quote an s-expression or symbol because it is th
 
 Meta tags are special commands in a script that are not executed during the runtime of a script, but describe certain capabilities of the script or give, for example, the script a name or provide instructions when a script should be executed.
 
-Meta tags start with a **@** character and may have additional parameters.
+Meta tags start with a **@** character and may have additional parameters. Meta tags are added as constants to the script's environment, prefixed with "meta.".
 
 Meta tags are described in [a separate document](ACMEScript-metatags.md).
 

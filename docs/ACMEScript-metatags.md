@@ -9,25 +9,36 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 
 <a name="top"></a>
 
-| Meta Tag                                | Description                                                  |
-| --------------------------------------- | ------------------------------------------------------------ |
-| [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval   |
-| [@description](#meta_description)       | Provide a one-line script description                        |
-| [@filename](#meta_filename)             | Contains a script's filename (internal only)                 |
-| [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog              |
-| [@init](#init)                          | Run a script to initialize the CSE during startup and restart |
-| [@name](#meta_name)                     | Assign a name to a script                                    |
-| [@onKe](#meta_onkey)                    | Run a script when a specified key is pressed                 |
-| [@onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE  |
-| [@onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                    |
-| [@onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                  |
-| [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                      |
-| [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run           |
-| [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped        |
+| Meta Tag                                | Description                                                                                    |
+|-----------------------------------------|------------------------------------------------------------------------------------------------|
+| [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval                                     |
+| [@description](#meta_description)       | Provide a one-line script description                                                          |
+| [@filename](#meta_filename)             | Contains a script's filename (internal only)                                                   |
+| [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog                                                |
+| [@init](#init)                          | Run a script to initialize the CSE during startup and restart                                  |
+| [@name](#meta_name)                     | Assign a name to a script                                                                      |
+| [@onKe](#meta_onkey)                    | Run a script when a specified key is pressed                                                   |
+| [@onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE                                    |
+| [@onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                                                      |
+| [@onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                                                    |
+| [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                                                        |
+| [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run                                             |
+| [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped                                          |
 | [@uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [@usage](#meta_usage)                   | Provide a short usage help                                   |
+| [@usage](#meta_usage)                   | Provide a short usage help                                                                     |
+
+## Accessing Meta Tags
+Meta tags are added as constants to the script's environment, prefixed with "meta.".
+They can be accessed like any other environment variable, for example:
+
+```lisp
+(if (is-defined 'meta.name)            ;; note the quote in front of meta.name
+	(print "Script name:" meta.name))  ;; prints the script's name
+```
 
 ---
+
+## Meta Tags
 
 <a name="meta_at"></a>
 
