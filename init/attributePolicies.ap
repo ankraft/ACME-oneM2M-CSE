@@ -1256,8 +1256,7 @@
 	],
 	"evc": [
 		{
-			// TODO "rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "DEPRAnnc", "REQRESP" ],
-			"rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "REQRESP" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "DEPRAnnc", "REQRESP" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
 			"type": "m2m:evalCriteria",
@@ -1592,7 +1591,7 @@
 	"lnk": [
 		{
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
-						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
+						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
@@ -2588,8 +2587,7 @@
 	],
 	"rri": [
 		{
-			//TODO "rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
-			"rtypes": [ "DEPR",  "REQRESP" ],
+			"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
 			"lname": "referencedResourceID",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2669,8 +2667,7 @@
 	],
 	"sfc": [
 		{
-			//"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
-			"rtypes": [ "DEPR", "REQRESP" ],
+			"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
 			"lname": "sufficient",
 			"ns": "m2m",
 			"type": "boolean",

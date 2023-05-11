@@ -40,7 +40,7 @@ from ..resources.CRS import CRS
 from ..resources.CSR import CSR
 from ..resources.CSRAnnc import CSRAnnc
 from ..resources.DEPR import DEPR
-# TODO DEPRAnnc
+from ..resources.DEPRAnnc import DEPRAnnc
 from ..resources.FCI import FCI
 from ..resources.FCNT import FCNT
 from ..resources.FCNTAnnc import FCNTAnnc
@@ -115,7 +115,7 @@ addResourceFactoryCallback(ResourceTypes.CRS,			CRS,			lambda dct, tpe, pi, crea
 addResourceFactoryCallback(ResourceTypes.CSR,			CSR,			lambda dct, tpe, pi, create : CSR(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.CSRAnnc,		CSRAnnc,		lambda dct, tpe, pi, create : CSRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.DEPR,			DEPR,			lambda dct, tpe, pi, create : DEPR(dct, pi = pi, create = create)) 
-# TODO DEPRAnnc
+addResourceFactoryCallback(ResourceTypes.DEPRAnnc,		DEPRAnnc,		lambda dct, tpe, pi, create : DEPRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCI,			FCI,			lambda dct, tpe, pi, create : FCI(dct, pi = pi, fcntType = tpe, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNT,			FCNT,			lambda dct, tpe, pi, create : FCNT(dct, pi = pi, fcntType = tpe, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNTAnnc,		FCNTAnnc,		lambda dct, tpe, pi, create : FCNTAnnc(dct, pi = pi, create = create)) 

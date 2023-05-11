@@ -1,10 +1,10 @@
 #
-#	ACTRAnnc.py
+#	DEPRAnnc.py
 #
-#	(c) 2022 by Andreas Kraft
+#	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" Action announced (ACTRA) resource type. """
+""" Dependency announced (DEPRA) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -12,12 +12,12 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from .AnnouncedResource import AnnouncedResource
 
-class ACTRAnnc(AnnouncedResource):
-	""" Action announced (ACTRA) resource type """
+class DEPRAnnc(AnnouncedResource):
+	""" Action announced (DEPRA) resource type """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB,
-													   ResourceTypes.DEPRAnnc 
+													#    ResourceTypes.DEBAnnc 
 													   ]
 
 	# Assigned during startup in the Importer
@@ -37,16 +37,9 @@ class ACTRAnnc(AnnouncedResource):
 		'ast': None,
 
 		# Resource attributes
-		'apy': None,
-		'sri': None,
+		'sfc': None,
 		'evc': None,
-		'evm': None,
-		'ecp': None,
-		'dep': None,
-		'orc': None,
-		'apv': None,
-		'ipu': None,
-		'air': None,
+		'rri': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
@@ -54,5 +47,5 @@ class ACTRAnnc(AnnouncedResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.ACTRAnnc, dct, pi = pi, create = create)
+		super().__init__(ResourceTypes.DEPRAnnc, dct, pi = pi, create = create)
 

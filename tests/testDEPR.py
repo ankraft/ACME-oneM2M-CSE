@@ -72,7 +72,6 @@ class TestDEPR(unittest.TestCase):
 		cls.cntRI2 = findXPath(cls.cnt, 'm2m:cnt/ri')
 		cls.cnt2URL = f'{aeURL}/{cntRN}2'
 
-
 		# create <actr>
 		dct = 	{ 'm2m:actr' : { 
 					'rn' : actrRN,
@@ -82,7 +81,7 @@ class TestDEPR(unittest.TestCase):
 						'thld': 0	# react immediately
 					},
 					'evm': EvalMode.periodic,
-					'ecp': requestCheckDelay * 4 * 1000,	# 2 seconds
+					'ecp': requestCheckDelay * 2 * 1000,	# 2 seconds
 					'orc': cls.aeRI,
 					'apv': {
 						'op': Operation.UPDATE,
@@ -635,6 +634,68 @@ class TestDEPR(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_ACTRDEPRsfcFalseTwoDependenciesOneChangeFail(self) -> None:
+		"""	Test ACTR & DEPR - 2 DEPR, sfc = False, only 1 condition met -> Fail"""
+
+		# Create 2 <DEPR>
+		dct = 	{ 'm2m:depr' : { 
+					'rn' : deprRN,
+					'evc' : { 
+						'optr': EvalCriteriaOperator.equal,
+						'sbjt': 'lbl',
+						'thld': ['test']
+					},
+					'sfc': False,
+					'rri': TestDEPR.cntRI,
+				}}
+		r, rsc = CREATE(actrURL, TestDEPR.originator, T.DEPR, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		_ri = findXPath(r, 'm2m:depr/ri')
+
+		dct = 	{ 'm2m:depr' : { 
+					'rn' : deprRN+'2',
+					'evc' : { 
+						'optr': EvalCriteriaOperator.greaterThan,
+						'sbjt': 'cbs',
+						'thld': 0
+					},
+					'sfc': False,
+					'rri': TestDEPR.cntRI,
+				}}
+		r, rsc = CREATE(actrURL, TestDEPR.originator, T.DEPR, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		_ri2 = findXPath(r, 'm2m:depr/ri')
+
+		# UPDATE <ACTR>
+		dct = 	{ 'm2m:actr' : { 
+					'dep': [ _ri, _ri2 ],
+				}}
+		r, rsc = UPDATE(actrURL, TestDEPR.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertEqual(findXPath(r, 'm2m:actr/dep'), [ _ri, _ri2 ])
+
+		# create 1st <cin>
+		self._createCIN()
+		testSleep(requestCheckDelay)
+
+		# Read and test <ae> -> NO label expected
+		self._retrieveAEandCheckLabel(False)
+
+		# UPDATE <CNT> and remove label
+		dct = 	{ 'm2m:cnt' : {
+					'lbl': None,
+				}}
+		r, rsc = UPDATE(cntURL, TestDEPR.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		# DELETE <DEPR> again
+		r, rsc = DELETE(deprURL, TestDEPR.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+		r, rsc = DELETE(deprURL+'2', TestDEPR.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_ACTRDEPRsfcFalseTwoDependencies(self) -> None:
@@ -685,7 +746,7 @@ class TestDEPR(unittest.TestCase):
 		self._retrieveAEandCheckLabel(False)
 
 		# UPDATE <CNT> with label
-		# This should already trigger a successfull <ACTR> and <DEPR> evaluation
+		# This should now trigger a successfull <ACTR> and <DEPR> evaluation
 		dct = 	{ 'm2m:cnt' : {
 					'lbl': ['test'],
 				}}
@@ -783,12 +844,12 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestDEPR('test_ACTRDEPRsfcTrueMissingConditionFail'))
 	addTest(suite, TestDEPR('test_ACTRDEPRsfcTrueAddedCondition'))
 	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseAddedCondition'))
+	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseTwoDependenciesOneChangeFail'))
 	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseTwoDependencies'))
 
 
 	
 
-	# TODO update of ACTR (!) resource: validity of referenced depr in actr update
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

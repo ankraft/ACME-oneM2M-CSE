@@ -846,7 +846,6 @@ class TestACTR(unittest.TestCase):
 		self.assertEqual(findXPath(air, 'pc/m2m:ae/lbl'), [ 'aLabel' ], r)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_testACTROnce(self) -> None:
 		"""	Create and test <ACTR> under a <CNT> in once mode"""
@@ -1036,7 +1035,7 @@ class TestACTR(unittest.TestCase):
 		testSleep(requestCheckDelay)
 
 		# Read and test <ae> -> NO label expected (no continuous)
-		self._retrieveAEandCheckLabel(True)
+		self._retrieveAEandCheckLabel(False)
 
 		# remove <cnt> & <actr>
 		r, rsc = DELETE(TestACTR.cntURL3, TestACTR.originator)

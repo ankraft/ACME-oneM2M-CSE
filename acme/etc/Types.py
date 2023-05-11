@@ -169,8 +169,9 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSyncBeacon resource type. """
 	ACTRAnnc		= 10065
 	"""	Announced Action resource type. """
-	# TODO DEPRAnnc		= 10066
+	DEPRAnnc		= 10066
 
+	"""	Announced Dependency resource type. """
 	FWRAnnc			= -30001
 	"""	Announced Firmware ManagementObject specialization. """
 	SWRAnnc			= -30002
@@ -397,9 +398,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True),
 	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True),
 	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True),
-	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', ),
-	#ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', announcedType = ResourceTypes.DEPRAnnc),
-	# TODO DEPRAnnc
+	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc),
+	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True),
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False),					# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True),				# not an official type name

@@ -879,7 +879,7 @@ class Resource(object):
 				Result object indicating success or failure.
 		"""
 		CSE.storage.updateResource(self)
-		L.logWarn(f'{finalize} - {self.ri}')
+		# L.logWarn(f'{finalize} - {self.ri}')
 		if finalize and not self.isVirtual():
 				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
 		return self

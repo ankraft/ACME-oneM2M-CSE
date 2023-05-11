@@ -22,11 +22,10 @@ from ..services import CSE
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources.ACTR import ACTR
-from ..helpers.ResourceSemaphore import CriticalResourceSection
+from ..helpers.ResourceSemaphore import CriticalSection
 
 
 # TODO implement support for input attribute when the procedure is clear
-# TODO dependcy resources
 
 class ActionManager(object):
 	"""	This class defines functionalities to handle action triggerings, 
@@ -102,7 +101,7 @@ class ActionManager(object):
 		
 		_ri = resource.ri
 		_now = utcTime()
-		L.isDebug and L.logDebug(f'Looking for resource actions for: {_ri}')
+		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {_ri}')
 
 		# Get actions. Remember, these are NOT <action> resources
 		actions = CSE.storage.searchActionsForSubject(_ri)		
@@ -111,11 +110,25 @@ class ActionManager(object):
 
 		for action in actions:
 
-			with CriticalResourceSection(action['ri'], 'action'):
+			# Some explnation why this is done in a critical section:
+			# It might be that an action is triggered multiple times for a single resource change.
+			# to prevent sending multiple requests, the section is locked for a particular action
+			# while it is being executed. Other actions for the same or other resources are not affected.
+			# When the next action is allowed to execute, it is checked if the action is still valid
+			# and is allowed to execute (e.g. in the same period). If not, it is skipped.
+			with CriticalSection(action['ri'], 'execution'):
+				ri = action['ri']
+				# L.logWarn(f'Enter {ri}')
+				
+				# re-read the action document because it might have changed while waiting for the lock
+				# However, it might be under rare circumstances that the action is deleted while waiting
+				if not (action := CSE.storage.getAction(ri)):
+					L.logWarn(f'Action {ri} not found anymore. Skipping')
+					continue
 
+				# Check if the action is still valid to execute
 				if self.evaluateSingleAction(resource, action, _now) and self.evaluateDependencies(action):
-					ri = action['ri']
-					L.isDebug and L.logDebug(f'Action: conditions {ri} evaluated to True')
+					L.isDebug and L.logDebug(f'Action: conditions {ri} evaluated to True and the action is executed')
 
 					# retrieve the real action resource
 					try:
@@ -169,8 +182,9 @@ class ActionManager(object):
 						L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
 						CSE.storage.updateActionRepr(action)
 				else:
-					L.isDebug and L.logDebug(f'Action: conditions {action["ri"]} evaluated to False')
+					L.isDebug and L.logDebug(f'Action: {ri} - conditions evaluated to False')
 
+				# L.logWarn(f'Leave {action["ri"]}')
 
 
 	def _evaluateEVC(self, resource:Resource, evc:JSON) -> bool:
@@ -271,8 +285,6 @@ class ActionManager(object):
 
 		L.isDebug and L.logDebug(f'Dependency evaluation: {dependencySatisified}')
 		return dependencySatisified
-
-
 
 
 	def scheduleAction(self, action:ACTR) -> None:
