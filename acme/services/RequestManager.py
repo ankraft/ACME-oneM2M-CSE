@@ -434,8 +434,7 @@ class RequestManager(object):
 		CSE.registration.checkResourceCreation(resource, request.originator, cseres)
 		
 		# set the CSE.ri as indicator that this resource was created internally
-		# resource.setCreatedInternally(cseres.pi)
-		resource.setCreatedInternally(cseres.ri)
+		resource.setCreatedInternally(cseres.pi)
 
 		# create <request>
 		return CSE.dispatcher.createLocalResource(resource, cseres, request.originator)
@@ -446,6 +445,8 @@ class RequestManager(object):
 			the background, but immediately returns with the reference of the <request> resource that
 			will contain the result of the operation.
 		"""
+
+		L.isDebug and L.logDebug(f'handleNonBlockingRequest: {request.rqi}')
 
 		# Create the <request> resource first
 		resource =  self._createRequestResource(request)

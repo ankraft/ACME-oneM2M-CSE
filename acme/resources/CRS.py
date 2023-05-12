@@ -135,7 +135,12 @@ class CRS(Resource):
 		
 		# We are validating the attributes already here because the actual update of the resource
 		# (where this happens) is done only after other procedures hapened.
-		CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())
+		CSE.validator.validateAttributes(dct, self.tpe, 
+				   							  self.ty, 
+											  self._attributes, 
+											  create = False, 
+											  createdInternally = self.isCreatedInternally(), 
+											  isAnnounced = self.isAnnounced())
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
 		# This is important bc it can be set to True, False, or Null.

@@ -93,8 +93,7 @@ class Validator(object):
 									resource.ty, 
 									resource._attributes, 
 									create = False, 
-									createdInternally = 
-									resource.isCreatedInternally(), 
+									createdInternally = resource.isCreatedInternally(), 
 									isAnnounced = resource.isAnnounced())
 
 

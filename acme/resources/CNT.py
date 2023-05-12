@@ -205,7 +205,6 @@ class CNT(ContainerResource):
 		
 		# TODO optimize the following a bit. 
 		# - only when cni/cbs > limits
-		# - Don't sum up. Using existing numbers
 
 
 		# Only get the CINs in raw format. Instantiate them as resources if needed
@@ -226,7 +225,6 @@ class CNT(ContainerResource):
 				cni -= 1	# decrement cni when deleting a <cin>
 
 		# Calculate cbs of remaining cins
-		# TODO 
 		cbs = sum([ each['cs'] for each in cinsRaw])
 
 		# check size

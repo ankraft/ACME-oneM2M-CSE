@@ -426,54 +426,56 @@ class RegistrationManager(object):
 
 	#########################################################################
 
+	# TODO remove after 0.13.0 . Check whether the acp.functions are still needed !!!
+	
 
-	def _createACP(self, parentResource:Optional[Resource] = None, 
-						 rn:Optional[str] = None, 
-						 createdByResource:Optional[str] = None, 
-						 originators:Optional[List[str]] = None, 
-						 permission:Optional[Permission] = None, 
-						 selfOriginators:Optional[List[str]] = None, 
-						 selfPermission:Optional[Permission] = None) -> Resource:
-		""" Create an ACP with some given defaults. """
-		if not parentResource or not rn or not originators or permission is None:	# permission is an int
-			raise BAD_REQUEST('missing attribute(s)')
+	# def _createACP(self, parentResource:Optional[Resource] = None, 
+	# 					 rn:Optional[str] = None, 
+	# 					 createdByResource:Optional[str] = None, 
+	# 					 originators:Optional[List[str]] = None, 
+	# 					 permission:Optional[Permission] = None, 
+	# 					 selfOriginators:Optional[List[str]] = None, 
+	# 					 selfPermission:Optional[Permission] = None) -> Resource:
+	# 	""" Create an ACP with some given defaults. """
+	# 	if not parentResource or not rn or not originators or permission is None:	# permission is an int
+	# 		raise BAD_REQUEST('missing attribute(s)')
 
-		# Remove existing ACP with that name first
-		try:
-			acpSrn = f'{CSE.cseRn}/{rn}'
-			acpResourse = CSE.dispatcher.retrieveResource(id = acpSrn)	# May throw an exception if no resource exists
-			CSE.dispatcher.deleteLocalResource(acpResourse)	# ignore errors
-		except:
-			pass
+	# 	# Remove existing ACP with that name first
+	# 	try:
+	# 		acpSrn = f'{CSE.cseRn}/{rn}'
+	# 		acpResourse = CSE.dispatcher.retrieveResource(id = acpSrn)	# May throw an exception if no resource exists
+	# 		CSE.dispatcher.deleteLocalResource(acpResourse)	# ignore errors
+	# 	except:
+	# 		pass
 
-		# Create the ACP
-		selfPermission = selfPermission if selfPermission is not None else Permission(self.acpPvsAcop)
+	# 	# Create the ACP
+	# 	selfPermission = selfPermission if selfPermission is not None else Permission(self.acpPvsAcop)
 
-		origs = deepcopy(originators)
-		origs.append(CSE.cseOriginator)	# always append cse originator
+	# 	origs = deepcopy(originators)
+	# 	origs.append(CSE.cseOriginator)	# always append cse originator
 
-		selfOrigs = [ CSE.cseOriginator ]
-		if selfOriginators:
-			selfOrigs.extend(selfOriginators)
+	# 	selfOrigs = [ CSE.cseOriginator ]
+	# 	if selfOriginators:
+	# 		selfOrigs.extend(selfOriginators)
 
-		acpResourse = ACP({}, pi = parentResource.ri, rn = rn)
-		acpResourse.setCreatedInternally(createdByResource)
-		acpResourse.addPermission(origs, permission)
-		acpResourse.addSelfPermission(selfOrigs, selfPermission)
+	# 	acpResourse = ACP({}, pi = parentResource.ri, rn = rn)
+	# 	acpResourse.setCreatedInternally(createdByResource)
+	# 	acpResourse.addPermission(origs, permission)
+	# 	acpResourse.addSelfPermission(selfOrigs, selfPermission)
 
-		self.checkResourceCreation(acpResourse, CSE.cseOriginator, parentResource)
-		return CSE.dispatcher.createLocalResource(acpResourse, parentResource, originator = CSE.cseOriginator)
+	# 	self.checkResourceCreation(acpResourse, CSE.cseOriginator, parentResource)
+	# 	return CSE.dispatcher.createLocalResource(acpResourse, parentResource, originator = CSE.cseOriginator)
 
 
-	def _removeACP(self, srn:str, resource:Resource) -> None:
-		""" Remove an ACP created during registration before. """
+	# def _removeACP(self, srn:str, resource:Resource) -> None:
+	# 	""" Remove an ACP created during registration before. """
 
-		try:
-			acpResourse = CSE.dispatcher.retrieveResource(id = srn)
-		except ResponseException as e:
-			L.isWarn and L.logWarn(f'Could not find ACP: {srn}: {e.dbg}')	# ACP not found, either not created or already deleted
-			return
-		# only delete the ACP when it was created in the course of AE registration internally
-		if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
-			CSE.dispatcher.deleteLocalResource(acpResourse)
+	# 	try:
+	# 		acpResourse = CSE.dispatcher.retrieveResource(id = srn)
+	# 	except ResponseException as e:
+	# 		L.isWarn and L.logWarn(f'Could not find ACP: {srn}: {e.dbg}')	# ACP not found, either not created or already deleted
+	# 		return
+	# 	# only delete the ACP when it was created in the course of AE registration internally
+	# 	if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
+	# 		CSE.dispatcher.deleteLocalResource(acpResourse)
 

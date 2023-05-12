@@ -16,8 +16,6 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 
-# TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2
-
 class RBO(MgmtObj):
 
 	# Attributes and Attribute policies for this Resource Class

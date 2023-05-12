@@ -6,6 +6,7 @@
 #
 #	ResourceType: Request
 #
+""" Request (REQ) resource type. """
 
 from __future__ import annotations
 from typing import Optional, Dict, Any
@@ -22,9 +23,11 @@ from ..services import CSE
 
 
 class REQ(Resource):
+	""" Request (REQ) resource type. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -52,6 +55,7 @@ class REQ(Resource):
 		'rs': None,
 		'ors': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
@@ -63,6 +67,12 @@ class REQ(Resource):
 	@staticmethod
 	def createRequestResource(request:CSERequest) -> Resource:
 		"""	Create an initialized <request> resource.
+
+			Args:
+				request: The request to create the resource for.
+
+			Return:
+				The created REQ resource.
 		"""
 
 		# Check if a an expiration ts has been set in the request
@@ -128,8 +138,6 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		cseres = getCSE()
-
-		return Factory.resourceFromDict(dct, pi = cseres.ri, ty = ResourceTypes.REQ)
+		return Factory.resourceFromDict(dct, pi = CSE.cseRi, ty = ResourceTypes.REQ)
 
 

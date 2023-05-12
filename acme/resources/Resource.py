@@ -33,7 +33,7 @@ from ..etc.Constants import Constants
 _rtype = Constants.attrRtype
 _srn = Constants.attrSrn
 _node = Constants.attrNode
-_createdInternally = Constants.attrCreatedInternally
+_createdInternallyRI = Constants.attrCreatedInternallyRI
 _imported = Constants.attrImported
 _announcedTo = Constants.attrAnnouncedTo
 _isInstantiated = Constants.attrIsInstantiated
@@ -63,7 +63,8 @@ class Resource(object):
 	"""	Resource attributes that are excluded when updating the resource """
 
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, 
+
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
 							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
@@ -519,25 +520,13 @@ class Resource(object):
 
 	#########################################################################
 
-	def createdInternally(self) -> str:
-		""" Return the resource.ri for which a resource was created.
-
-			This is done in case a resource must be created as a side-effect when another resource
-			is, for example, created.
-		
-			Return:
-				Resource ID of the resource for which this resource has been created, or None.
-		"""
-		return str(self[_createdInternally])
-
-
 	def isCreatedInternally(self) -> bool:
 		""" Test whether a resource has been created for another resource.
 
 			Return:
 				True if this resource has been created for another resource.
 		"""
-		return self[_createdInternally] is not None
+		return self[_createdInternallyRI] is not None
 
 
 	def setCreatedInternally(self, ri:str) -> None:
@@ -549,7 +538,7 @@ class Resource(object):
 				ri: Resource ID of the resource for which this resource has been created for.
 
 		"""
-		self[_createdInternally] = ri
+		self[_createdInternallyRI] = ri
 
 
 	def isAnnounced(self) -> bool:

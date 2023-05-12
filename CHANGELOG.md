@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
 - [CSE] Added recording of received and sent requests to support request debugging.
 - [CSE] Added support for &lt;action> and &lt;dependency> resource types
+- [CSE] Cleaned up and removed some obsolete code.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
