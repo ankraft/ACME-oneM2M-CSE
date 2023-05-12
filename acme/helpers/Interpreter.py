@@ -20,11 +20,12 @@ from decimal import Decimal, InvalidOperation, DivisionUndefined
 from copy import deepcopy
 from enum import IntEnum, auto
 from collections import namedtuple
-import datetime, operator
+import operator
+from datetime import timezone, datetime
 
 from .TextTools import removeCommentsFromJSON, findXPath, setXPath
 
-# TODO More functions: set-nth, count-of, remove-nth, Insert-nth, floors
+# TODO More functions: set-nth, count-of, remove-nth, Insert-nth, floors, let in parallel, etc.
 
 
 
@@ -1302,7 +1303,7 @@ class PContext():
 		# Start running
 		self.state = PState.running
 		if self.maxRuntime is not None:	# set max runtime
-			self._maxRTimestamp = datetime.datetime.utcnow().timestamp() + self.maxRuntime
+			self._maxRTimestamp = _utcTimestamp() + self.maxRuntime
 		if (scriptName := self.scriptName) and not isSubCall:
 			self.logFunc(self, f'Running script: {scriptName}, arguments: {arguments}')
 
@@ -1333,7 +1334,7 @@ class PContext():
 			Raises:
 				`PTimeoutError`: In case the script timeout is reached.
 		"""
-		if self._maxRTimestamp is not None and self._maxRTimestamp < datetime.datetime.utcnow().timestamp():
+		if self._maxRTimestamp is not None and self._maxRTimestamp < _utcTimestamp():
 			raise PTimeoutError(self.setError(PError.timeout, f'Script timeout ({self.maxRuntime} s)'))
 
 
@@ -1857,7 +1858,7 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 	_format = '%Y%m%dT%H%M%S.%f'
 	if symbol.length == 2:
 		pcontext, _format = pcontext.valueFromArgument(symbol, 1, SType.tString)
-	return pcontext.setResult(SSymbol(string = datetime.datetime.utcnow().strftime(_format)))
+	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
 
 
 def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2370,8 +2371,6 @@ def _doLet(pcontext:PContext, symbol:SSymbol, sequential:bool = True) -> PContex
 			pcontext, result = pcontext.resultFromArgument(cast(SSymbol, symbol.value), 1)
 			pcontext.variables[variablename] = result
 
-
-	# TODO LET in parallel
 	return pcontext
 
 
@@ -3241,3 +3240,25 @@ _builtinCommands:PSymbolDict = {
 	# argc
 }
 """ Dictionary to map the functions to Python functions. """
+
+################################################################################
+#
+#	Utilities
+#
+
+def _utcNow() -> datetime:
+	"""	Return the current time, but relative to UTC.
+
+		Return:
+			Datetime UTC-based timestamp
+	"""
+	return datetime.now(tz = timezone.utc)
+
+
+def _utcTimestamp() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+
+		Return:
+			Float UTC-based timestamp
+	"""
+	return _utcNow().timestamp()

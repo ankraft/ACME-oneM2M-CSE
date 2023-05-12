@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from typing import Callable, List, Dict, Any, Tuple, Optional
 from .TextTools import simpleMatch
-import random, sys, heapq, datetime, traceback, time
+import random, sys, heapq, traceback, time
+from datetime import datetime, timezone
 from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
 import logging
 
@@ -24,7 +25,7 @@ def _utcTime() -> float:
 		Return:
 			Float UTC-based timestamp
 	"""
-	return datetime.datetime.utcnow().timestamp()
+	return datetime.now(tz = timezone.utc).timestamp()
 
 
 class BackgroundWorker(object):
