@@ -16,6 +16,7 @@ import unittest
 
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
+from datetime import datetime, timezone
 import cbor2
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -913,6 +914,23 @@ def clearSleepTimeCount() -> None:
 def getSleepTimeCount() -> float:
 	return _sleepTimeCount
 
+
+def utcNow() -> datetime:
+	"""	Return the current time, but relative to UTC.
+
+		Return:
+			Datetime UTC-based timestamp
+	"""
+	return datetime.now(tz = timezone.utc)
+
+
+def utcTimestamp() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+
+		Return:
+			Float UTC-based timestamp
+	"""
+	return utcNow().timestamp()
 
 
 #

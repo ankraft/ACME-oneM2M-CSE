@@ -12,7 +12,7 @@ from typing import Callable, Union, Tuple, Optional
 
 import time
 from email.utils import formatdate
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import isodate
 
 ##############################################################################
@@ -135,7 +135,7 @@ def utcTime() -> float:
 		Returns:
 			Float with current UTC-based POSIX time.
 	"""
-	return datetime.utcnow().timestamp()
+	return datetime.now(tz = timezone.utc).timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
@@ -328,7 +328,7 @@ def cronMatchesTimestamp(cronPattern:Union[str,
 		return False
 
 	if ts is None:
-		ts = datetime.utcnow()
+		ts = datetime.now(tz = timezone.utc)
 	
 	cronElements = cronPattern.split() if isinstance(cronPattern, str) else cronPattern
 	if len(cronElements) != 5:
@@ -371,7 +371,7 @@ def cronInPeriod(cronPattern:Union[str,
 
 	# Fill in the default
 	if endTs is None:
-		endTs = datetime.utcnow()
+		endTs =  datetime.now(tz = timezone.utc)
 
 	# Check the validity of the range
 	if endTs < startTs:

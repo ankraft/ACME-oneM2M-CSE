@@ -401,7 +401,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		date = datetime.datetime.utcnow().timestamp()
+		date = utcTimestamp()
 		for i in range(3):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(date),
@@ -411,7 +411,7 @@ class TestTS_TSI(unittest.TestCase):
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.CREATED, r)
 			# testSleep(pei / 1000)
-			testSleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
+			testSleep(timeSeriesInterval - (utcTimestamp() - date)) # == pei
 			date += timeSeriesInterval
 
 		# Check TS for missing TSI
@@ -429,7 +429,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp() - timeSeriesInterval
+		dgt = utcTimestamp() - timeSeriesInterval
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -458,7 +458,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp()
+		dgt = utcTimestamp()
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -485,7 +485,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp()
+		dgt = utcTimestamp()
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -608,7 +608,7 @@ class TestTS_TSI(unittest.TestCase):
 		clearLastNotification()
 
 		# Start the timeSeries monitoring
-		dgt = datetime.datetime.utcnow().timestamp() 
+		dgt = utcTimestamp() 
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : toISO8601Date(dgt),
 					'con' : 'aValue',
@@ -669,7 +669,7 @@ class TestTS_TSI(unittest.TestCase):
 		# Add some TSI
 		for i in range(0, 5):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : toISO8601Date(datetime.datetime.utcnow().timestamp()),
+						'dgt' : toISO8601Date(utcTimestamp()),
 						'con' : 'aValue',
 						'snr' : i
 					}}
