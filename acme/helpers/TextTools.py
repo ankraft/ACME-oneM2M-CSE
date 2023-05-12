@@ -14,9 +14,6 @@ from typing import Optional, Any, Dict
 
 import base64, binascii, re
 
-# _commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
-# 						   re.MULTILINE|re.DOTALL)
-# TODO The ' interferes with lisp quotes. Maybe, switch between the regex?
 _commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
 """	Compiled regex expression of recognize comments. """
