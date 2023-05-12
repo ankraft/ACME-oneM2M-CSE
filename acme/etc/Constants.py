@@ -82,7 +82,7 @@ class Constants(object):
 	attrNode = '__node__'
 	"""	Constant: Name of the `Resource` internal __node__ attribute. This attribute is used in some resource types to hold a reference to the hosting <node> resource. """
 
-	attrCreatedInternally = '__createdInternally__'	# TODO better name. This is actually an RI
+	attrCreatedInternallyRI = '__createdInternallyRI__'
 	""" Constant: Name of the `Resource` internal *__createdInternally__* attribute. This attribute indicates whether a resource was created internally or by an external request. """
 
 	attrImported = '__imported__'

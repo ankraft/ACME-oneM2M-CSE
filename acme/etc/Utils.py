@@ -115,7 +115,7 @@ def _randomID() -> str:
 	"""
 	while True:
 		result = ''.join(random.choices(_randomIDCharSet, k = _maxIDLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
+		if 'fopt' not in result:	# prevent 'fopt' in ID
 			return result
 
 
