@@ -57,7 +57,7 @@ tableRowColorDark		= 'grey15'
 
 terminalColorLight		= '#137E6D'
 terminalColorErrorLight	= '#FF073A'
-tableRowColorLight		= 'grey93'
+tableRowColorLight		= 'grey89'
 
 
 class LogLevel(ACMEIntEnum):
