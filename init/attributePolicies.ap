@@ -3249,6 +3249,19 @@
 			"annc": "NA"
 		}
 	],
+	"dbg": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "debugInfo",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
 	"dcrp": [
 		{
 			"rtypes": [ "SMD", "SMDAnnc", "REQRESP" ],
