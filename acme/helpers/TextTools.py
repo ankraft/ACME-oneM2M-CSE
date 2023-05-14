@@ -10,9 +10,9 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Union
 
-import base64, binascii, re
+import base64, binascii, re, json
 
 _commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
@@ -48,6 +48,43 @@ def removeCommentsFromJSON(data:str) -> str:
 			return match.group(1) # captured quoted-string
 	return _commentRegex.sub(_replacer, data)
 
+
+def commentJson(data:Union[str, dict], explanations:Dict[str,str]) -> str:
+	"""	Add explanations for JSON attributes as comments to the end of the line.
+
+		Args:
+			data: The JSON string or as a dictionary.
+			explanations: A dictionary with the explanations. The keys must match the JSON keys.
+		
+		Return:
+			The JSON string with comments.
+	"""
+
+	if isinstance(data, dict):
+		data = json.dumps(data, indent=4, sort_keys=True)
+
+	# find longest line
+	maxLineLength = 0
+	for line in data.splitlines():
+		if len(line) > maxLineLength:
+			maxLineLength = len(line)
+	
+	# Add comments to each line
+	lines = []
+	for line in data.splitlines():
+		if line.strip().startswith('"'):
+			# Find the key
+			key = line.strip().split(':')[0].strip('"')
+			if key in explanations:
+				lines.append(f'{line.ljust(maxLineLength)}    // {explanations[key]}')
+			else:
+				lines.append(line)
+		else:
+			lines.append(line)
+	
+	return '\n'.join(lines)
+	
+	
 
 _decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Optional[Any]:
