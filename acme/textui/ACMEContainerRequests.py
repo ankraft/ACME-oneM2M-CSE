@@ -45,11 +45,6 @@ class ACMEContainerRequests(Container):
 		self.requestsView.onShow()
 		self.requestsView.updateBindings()
 
-	# async def onShow(self) -> None:
-	# 	await self.requestsView.onShow()
-	# 	self.requestsView.updateBindings()
-
-
 
 class ACMEListItem(ListItem):
 	# TODO own module?
@@ -131,26 +126,25 @@ class ACMEViewRequests(Vertical):
 		# self.tuiApp.bell()
 		if selected and selected.item:
 			self._showRequests(cast(ACMEListItem, selected.item))
-			# self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
-			# self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
 
 
 	def _showRequests(self, item:ACMEListItem) -> None:
+		""" Show the request and response of a request. 
+
+			Args:
+				item: The selected request item.
+		"""
+		# Get the request's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
 					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
-		# Add syntax highlighting and add to the view
+		# Add syntax highlighting and explanations, and add to the view
 		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
-
+		# Get the response's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
 					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
-
+		# Add syntax highlighting and explanations, and add to the view
 		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
-
-		# self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
-		# self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
-	
-
 
 
 	def action_refresh_requests(self) -> None:

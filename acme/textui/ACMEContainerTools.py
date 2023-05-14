@@ -32,7 +32,6 @@ class ACMEToolsTree(TextualTree):
 		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
 		self.allLogs = False
 
-
 		# Build the resource tree
 		self.auto_expand = False
 		root = self.root
@@ -173,7 +172,6 @@ class ACMEContainerTools(Container):
 	# Logging
 	#
 
-
 	def _logMessage(self, scriptName:str, msg:str, prefix:str) -> None:
 
 		# Prepare the message
@@ -187,13 +185,32 @@ class ACMEContainerTools(Container):
 
 
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
+		"""	Prints a normal message for a script.
+
+			Args:
+				scriptName: The name of the script.
+				msg: The message to print.
+		"""
 		self._logMessage(scriptName, msg, ' ')
 
+
 	def scriptLog(self, scriptName:str, msg:str) -> None:
+		""" Prints a log message for a script.
+
+			Args:
+				scriptName: The name of the script.
+				msg: The message to print.
+		"""
 		self._logMessage(scriptName, f'[dim]{msg}[/dim]', 'L')
 
 
 	def scriptLogError(self, scriptName:str, msg:str) -> None:
+		""" Prints an error message for a script.
+		
+			Args:
+				scriptName: The name of the script.
+				msg: The message to print.	
+		"""
 		self._logMessage(scriptName, f'[red1]{msg}[/red1]', 'E')
 
 
@@ -206,7 +223,6 @@ def _getContext(name:str) -> Optional[PContext]:
 	return None
 
 
-# TODO add categories
 # TODO add input field for arguments
 # TODO Binding for executing a script (R?)
 # TODO Menu for editing a script (E?)
