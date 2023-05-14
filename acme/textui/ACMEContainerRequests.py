@@ -201,10 +201,10 @@ class ACMEViewRequests(Vertical):
 			else:
 				_to = r.get('ri', '')
 			# _to = _to if _to else ''
-			_srn = r["srn"]
-			_srn = _srn if _srn else ''
+			_srn = r.get('srn', '')
+			# _srn = _srn if _srn else ''
 			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {r["op"].name:10.10}   {str(r["org"]):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
+				Label(f' {i:4}  -  {_ts[1]}   {r["op"].name:10.10}   {str(r.get("org", "")):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')
