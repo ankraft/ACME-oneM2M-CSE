@@ -164,7 +164,8 @@ class Resource(object):
 	# Default encoding implementation. Overwrite in subclasses
 	def asDict(self, embedded:Optional[bool] = True, 
 					 update:Optional[bool] = False, 
-					 noACP:Optional[bool] = False) -> JSON:
+					 noACP:Optional[bool] = False,
+					 sort:bool = False) -> JSON:
 		"""	Get the JSON resource representation.
 		
 			Args:
@@ -181,7 +182,8 @@ class Resource(object):
 					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
 					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
 				}
-
+		if sort:
+			dct = dict(sorted(dct.items())) # sort the dictionary by key
 		return { self.tpe : dct } if embedded else dct
 
 
