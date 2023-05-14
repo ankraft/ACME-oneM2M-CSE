@@ -502,6 +502,17 @@ class Validator(object):
 		attributePolicies.clear()
 
 
+	def getShortnameLongNameMappings(self) -> dict[str, str]:
+		"""	Return the shortname to longname mappings.
+
+			Return:
+				Dictionary with the shortname to longname mappings.
+		"""
+		result = {}
+		for a in attributePolicies.values():
+			result[a.sname] = a.lname
+		return result
+
 	#
 	#	Internals.
 	#
