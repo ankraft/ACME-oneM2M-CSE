@@ -66,6 +66,7 @@ ListView > ListItem.--outgoing.--highlight {
 	height: 1fr; */
 	width: auto;
 	height: auto;
+	margin: 0 0 0 1;
 	/* background:red; */
 }
 

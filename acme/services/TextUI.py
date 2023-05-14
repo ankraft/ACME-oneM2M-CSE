@@ -41,6 +41,8 @@ class TextUI(object):
 		'tuiApp'
 	)
 	
+	objectColor = 'dodger_blue3'
+
 	def __init__(self) -> None:
 		global _textUI
 		self.startWithTUI:bool = None

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Added http keep-alive to tests.
 - [LOGGING] Allow to exclude log messages from external libraries and components.
 - [TUI] Added text UI.
+- [SCRIPTS] Added *category* and *tool* meta-tags for scripts to allow for better categorization and filtering in the text UI.
 
 ### Experimental
 - [CSE] Added experimental *subi* attribute support to &lt;CNT> only. Other resource types may follow.

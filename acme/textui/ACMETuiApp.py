@@ -23,6 +23,7 @@ from ..textui.ACMEContainerTree import ACMEContainerTree, idTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRegs
 from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools, idTools
+from ..services import CSE
 
 
 
@@ -89,7 +90,9 @@ class ACMETuiApp(App):
 
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.dark = self.textUI.theme == 'dark'
+		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		self.quitReason = ACMETuiQuitReason.undefined
+		self.attributeExplanations = CSE.validator.getShortnameLongNameMappings()
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
 		# _app.DEFAULT_COLORS = CUSTOM_COLORS
 
@@ -129,7 +132,8 @@ class ACMETuiApp(App):
 
 	def on_mount(self) -> None:
 		#self.design = CUSTOM_COLORS
-		self.refresh_css()
+		#self.refresh_css()
+		...
 	
 
 	async def action_quit_tui(self) -> None:

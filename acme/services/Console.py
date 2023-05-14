@@ -1516,7 +1516,7 @@ skinparam BoxPadding 60
 		for r in CSE.storage.getRequests(id):
 			req = r['req']
 			op = req['op']
-			ri = r['ri'] if r['ri'] else '(unknown)'
+			ri = r.get('ri', '(unknown)')
 			org = r['org']
 			
 			participants.add(f'"<originator>\\n{org}"')

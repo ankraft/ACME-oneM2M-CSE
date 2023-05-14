@@ -47,6 +47,7 @@ class ACMEConfigurationTree(TextualTree):
 				_n = node.add(_s, f'{node.data}.{_s}' )
 			if level == len(splits) - 1:
 				_n.allow_expand = False
+				_n.label = f'[{CSE.textUI.objectColor}]{_s}[/]'
 			else:
 				_addSetting(splits, level + 1, _n)
 

@@ -12,6 +12,7 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 | Meta Tag                                | Description                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------|
 | [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval                                     |
+| [@category](#meta_category)             | Add a category to the script                                                                   |
 | [@description](#meta_description)       | Provide a one-line script description                                                          |
 | [@filename](#meta_filename)             | Contains a script's filename (internal only)                                                   |
 | [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog                                                |
@@ -24,6 +25,7 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 | [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                                                        |
 | [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run                                             |
 | [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped                                          |
+| [@tool](#meta_tool)                     | Tag a script for listing in the text UI's *Tools* section.                                     |
 | [@uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
 | [@usage](#meta_usage)                   | Provide a short usage help                                                                     |
 
@@ -68,6 +70,26 @@ Example:
 ```
 
 [top](#top)
+
+---
+
+<a name="meta_category"></a>
+
+### @category
+
+`@category <string>`
+
+A category name for the script. This is used, for example, in the text UI tools to group scripts.
+
+See also: [@name](#meta_name), [@tool](#meta_tool)
+
+Example:
+```lisp
+@categoy System
+```
+
+[top](#top)
+
 
 ---
 
@@ -194,7 +216,7 @@ With this meta tag a script acts as a handler for a notification request from th
 
 The ACME URL scheme "acme://&lt;identifier>" is used to define a URI that is targeting the script. Such a URI must be used in either the *notificationURI* attribute of a subscription resource, or the *pointOfAccess* of an AE.
 
-When  a notification is received and the handler script is run the following variables are set:
+When a notification is received and the handler script is run the following variables are set:
 
 
 - [notification.originator](ACMEScript-functions.md#var_notification_originator) : The notification's originator
@@ -307,6 +329,24 @@ Note, that the script may terminate some time after the timeout when a script co
 Example:
 ```lisp
 @timeout 10
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tool"></a>
+
+### @tool
+
+`@tool`
+
+This meta tag categorizes a script as a tool. Scripts marked as *tools* are listed in the text UI's *Tools*
+section.
+
+Example:
+```lisp
+@tool
 ```
 
 [top](#top)

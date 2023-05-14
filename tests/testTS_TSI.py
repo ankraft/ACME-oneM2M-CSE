@@ -7,7 +7,7 @@
 #	Unit tests for timeSeriean & timeSeries functionality
 #
 
-import unittest, sys, datetime
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple

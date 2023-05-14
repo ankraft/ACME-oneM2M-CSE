@@ -15,10 +15,12 @@ from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
 from rich.pretty import Pretty
+from rich.syntax import Syntax
 from ..etc.Types import JSONLIST, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..services import CSE
+from ..helpers.TextTools import commentJson
 
 idRequests = 'requests'
 
@@ -98,7 +100,7 @@ class ACMEViewRequests(Vertical):
 
 		# Requests List Header
 		with Horizontal(id = 'request-list-header'):
-			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp[/u b]         [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]')
+			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]')
 
 		# Request List
 		yield self.requestList
@@ -122,15 +124,33 @@ class ACMEViewRequests(Vertical):
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
-		self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
-		self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
-	
+		self._showRequests(cast(ACMEListItem, selected.item))
+
 
 	async def on_list_view_highlighted(self, selected:ListView.Highlighted) -> None:
 		# self.tuiApp.bell()
 		if selected and selected.item:
-			self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
-			self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
+			self._showRequests(cast(ACMEListItem, selected.item))
+			# self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
+			# self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
+
+
+	def _showRequests(self, item:ACMEListItem) -> None:
+		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
+					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
+		# Add syntax highlighting and add to the view
+		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+
+
+		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
+					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
+
+		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+
+		# self.requestListRequest.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['req'], expand_all = True))
+		# self.requestListResponse.update(Pretty(self._currentRequests[cast(ACMEListItem, selected.item)._data]['rsp'], expand_all = True))
+	
+
 
 
 	def action_refresh_requests(self) -> None:
@@ -183,10 +203,10 @@ class ACMEViewRequests(Vertical):
 			_ts = toISO8601Date(r["ts"], readable = True).split('T')
 			_out = r['out']
 			if _out:
-				_to = r['req']['to']
+				_to = r['req'].get('to', '')
 			else:
-				_to = r['ri']
-			_to = _to if _to else ''
+				_to = r.get('ri', '')
+			# _to = _to if _to else ''
 			_srn = r["srn"]
 			_srn = _srn if _srn else ''
 			self.requestList.append(_l := ACMEListItem(

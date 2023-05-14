@@ -8,15 +8,18 @@
 """
 from __future__ import annotations
 from typing import List, Tuple, Optional
+from textual import events
 from textual.app import ComposeResult
-from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Label
+from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Markdown
 from textual.containers import Container, Vertical, ScrollableContainer
 from textual.binding import Binding
-from rich.pretty import Pretty
+from rich.syntax import Syntax
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
+from ..etc.Types import ResourceTypes
+from ..helpers.TextTools import commentJson
 
 
 idTree = 'tree'
@@ -26,41 +29,45 @@ class ACMEResourceTree(TextualTree):
 
 	parentContainer:ACMEContainerTree = None
 
-	async def _on_compose(self) -> None:
-		self._update_tree()
-		return await super()._on_compose()
-
 	def _update_tree(self) -> None:
 		self.clear()
 		self.auto_expand = False
-		for r in self._retrieve_children(CSE.cseRi):
+		for r in self._retrieve_resource_children(CSE.cseRi):
 			self.root.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
-	
+		self._update_content(self.cursor_node.data)
+
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
 		try:
-			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
-			self.parentContainer.resourceView.update(Pretty(resource.asDict()))
+			self._update_content(node.node.data)
 		except ResponseException as e:
 			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
 
 
-	def on_tree_node_selected(self, node:TextualTree.NodeSelected) -> None:
-		try:
-			resource = CSE.dispatcher.retrieveLocalResource(node.node.data)
-			self.parentContainer.resourceView.update(Pretty(resource.asDict(), expand_all = True))
-			self.parentContainer._update_requests(resource.ri)
-		except ResponseException as e:
-			self.parentContainer.resourceView.update('[red]Resource not found')
-
-
 	def on_tree_node_expanded(self, node:TextualTree.NodeSelected) -> None:
 		node.node._children = []	# no available method?
-		for r in self._retrieve_children(node.node.data):
+		for r in self._retrieve_resource_children(node.node.data):
 			node.node.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
+	
+
+	def on_tree_node_hover(self, event:events.MouseMove) -> None:
+		self.parentContainer.header.update('## Resources')
 
 
-	def _retrieve_children(self, ri:str) -> List[Tuple[Resource, bool]]:
+	def _update_content(self, ri:str) -> None:
+		resource = CSE.dispatcher.retrieveLocalResource(ri)
+		# Add attribute explanations
+		jsns = commentJson(resource.asDict(sort = True), 
+		     			   explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
+		# Add syntax highlighting and add to the view
+		self.parentContainer.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+
+		# self.parentContainer.resourceView.update(commentJson(Pretty(resource.asDict(sort = True)), explanations={'rn': 'resourceName'}))
+		self.parentContainer._update_requests(resource.ri)
+		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}')
+
+
+	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
 		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		for r in chs:
@@ -89,8 +96,13 @@ class ACMEContainerTree(Container):
 		self.tabs = TabbedContent()
 
 		# Resource and Request views
+
+		# For some reason, the markdown header is not refreshed the very first time
+		self.header = Markdown('')
 		self.resourceView = Static(id = 'resource-view', expand = True)
+		# self.resourceView = Markdown('', id = 'resource-view')
 		self.requestView = ACMEViewRequests()
+
 
 	def compose(self) -> ComposeResult:
 		self.resourceTree.focus()
@@ -99,19 +111,29 @@ class ACMEContainerTree(Container):
 			yield self.resourceTree
 			with self.tabs:
 				with TabPane('Resource', id = 'tree-tab-resource'):
+					yield self.header
 					yield self.resourceView
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield self.requestView
 	
 
-	def action_refresh_resources(self) -> None:
-		# _textUI.tuiApp.bell()
+	def on_mount(self) -> None:
 		self.resourceTree._update_tree()
 
 
-	async def onShow(self) -> None:
+	def on_show(self) -> None:
 		self.resourceTree.focus()
+		self.resourceTree._update_tree()
 		self._update_requests()
+
+
+	def action_refresh_resources(self) -> None:
+		self.resourceTree._update_tree()
+
+	
+	# async def onShow(self) -> None:
+	# 	self.resourceTree.focus()
+	# 	self._update_requests()
 
 
 	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
