@@ -32,21 +32,17 @@ def getResourceDate(offset:Optional[int] = 0) -> str:
 	return toISO8601Date(utcTime() + offset)
 
 
-def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True, readable:Optional[bool] = False) -> str:
+def toISO8601Date(ts:Union[float, datetime], readable:Optional[bool] = False) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 
 		Args:
 			ts: Timestamp. Either a POSIX float timestamp, of a *datetime* object.
-			isUTCtimestamp: Optional boolean indicating whether the timestamp is UTC based.
 			readable: Optional boolean indicating whether the output should be in the format "YYYY-MM-DDThh:mm:ss,f
 		Return:
 			ISO 8601 datetime string.
 	"""
 	if isinstance(ts, float):
-		if isUTCtimestamp:
-			ts = datetime.fromtimestamp(ts)
-		else:
-			ts = datetime.utcfromtimestamp(ts)
+		ts = datetime.fromtimestamp(ts, tz = timezone.utc)
 	return ts.strftime('%Y-%m-%dT%H:%M:%S,%f' if readable else '%Y%m%dT%H%M%S,%f')
 
 
