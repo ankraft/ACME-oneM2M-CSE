@@ -1200,22 +1200,36 @@ class TinyDBBinding(object):
 				
 				# Adding a request
 				ts = utcTime()
-				# L.inspect(request)
-				# L.logWarn(type(request))
+
 				#op = request.get('op') if 'op' in request else Operation.NA
 				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
 
+				# The following removes all None values from the request and response, and the requests structure
+				_doc = {'ri': ri,
+						 'srn': srn,
+						 'ts': ts,
+						 'org': originator,
+						 'op': op,
+						 'rsc': rsc,
+						 'out': outgoing,
+						 'req': { k: v for k, v in request.items() if v is not None }, 
+						 'rsp': { k: v for k, v in response.items() if v is not None }
+					   }
 				self.tabRequests.insert(
-					Document({'ri': ri,
-							  'srn': srn,
-							  'ts': ts,
-							  'org': originator,
-							  'op': op,
-							  'rsc': rsc,
-							  'out': outgoing,
-							  'req': request,
-							  'rsp': response
-							 }, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
+					Document({k: v for k, v in _doc.items() if v is not None}, 
+			    			 self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
+
+				# self.tabRequests.insert(
+					# Document({'ri': ri,
+					# 		  'srn': srn,
+					# 		  'ts': ts,
+					# 		  'org': originator,
+					# 		  'op': op,
+					# 		  'rsc': rsc,
+					# 		  'out': outgoing,
+					# 		  'req': request,
+					# 		  'rsp': response
+					# 		 }, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
 			except Exception as e:
 				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
 				return False
