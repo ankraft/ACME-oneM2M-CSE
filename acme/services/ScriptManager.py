@@ -179,7 +179,11 @@ class ACMEPContext(PContext):
 				pcontext: Script context. Not used.
 				msg: log message.
 		"""
-		L.isDebug and L.logDebug(msg)
+		if CSE.isHeadless:
+			return
+		for line in msg.split('\n'):	# handle newlines in the msg
+			CSE.textUI.scriptLog(pcontext.name, line)	# Additionally print to the text UI script console
+			L.isDebug and L.logDebug(msg, stackOffset=1)
 
 
 	def logError(self, pcontext:PContext, msg:str, exception:Optional[Exception] = None) -> None:
@@ -190,7 +194,11 @@ class ACMEPContext(PContext):
 				msg: The log message.
 				exception: Optional exception to log.
 		"""
-		L.isWarn and L.logWarn(msg, stackOffset=1)
+		if CSE.isHeadless:
+			return
+		for line in msg.split('\n'):	# handle newlines in the msg
+			CSE.textUI.scriptLogError(pcontext.name, line)	# Additionally print to the text UI script console
+			L.isWarn and L.logWarn(msg, stackOffset=1)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
@@ -203,6 +211,7 @@ class ACMEPContext(PContext):
 		if CSE.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
+			CSE.textUI.scriptPrint(pcontext.name, line)	# Additionally print to the text UI script console
 			L.console(line, nl = not len(line))
 	
 	

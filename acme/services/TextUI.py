@@ -19,6 +19,7 @@ from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..etc.Types import CSEStatus
+from ..helpers.Interpreter import PContext
 
 from ..textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
@@ -135,4 +136,30 @@ class TextUI(object):
 		
 		# Re-enable console logging
 		L.enableScreenLogging = previousScreenLogging
-		return self.tuiApp.quitReason != ACMETuiQuitReason.quitAll	# False leads to ACME quit
+
+		result = self.tuiApp.quitReason != ACMETuiQuitReason.quitAll	# False leads to ACME quit
+		self.tuiApp = None
+		return result
+
+
+	#########################################################################
+
+	def scriptPrint(self, scriptName:str, msg:str) -> None:
+		"""	Print a line to the script output.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptPrint(scriptName, msg)
+	
+
+	def scriptLog(self, scriptName:str, msg:str) -> None:
+		"""	Print a line to the script log output.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptLog(scriptName, msg)
+	
+
+	def scriptLogError(self, scriptName:str, msg:str) -> None:
+		"""	Print a line to the script log output.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptLogError(scriptName, msg)

@@ -110,10 +110,6 @@ class Importer(object):
 			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
-		# if not os.path.exists(path):
-		# 	L.isWarn and L.logWarn(f'Import directory does not exist: {path}')
-		# 	return False
-
 		self._prepareImporting()
 		try:
 			L.isInfo and L.log(f'Importing scripts from directory(s): {path}')

@@ -106,7 +106,7 @@ class ACMEContainerConfigurations(Container):
 	def compose(self) -> ComposeResult:
 		with Vertical():
 			yield self.configurationsTree
-			with Vertical(id = 'configs-documentaion-view'):
+			with Vertical(id = 'configs-documentation-view'):
 				yield self.documentationView
 
 

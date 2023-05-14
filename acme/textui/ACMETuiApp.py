@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from enum import IntEnum, auto
+import textual.app as _app
 from textual.app import App, ComposeResult
 from textual.widgets import Tabs, Tab, Footer, ContentSwitcher, TabbedContent, TabPane, Static
 from textual.binding import Binding
@@ -21,6 +22,7 @@ from ..textui.ACMEContainerInfo import ACMEContainerInfo, tabInfo
 from ..textui.ACMEContainerTree import ACMEContainerTree, idTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRegs
 from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
+from ..textui.ACMEContainerTools import ACMEContainerTools, idTools
 
 
 
@@ -28,6 +30,7 @@ tabResources = 'tab-resources'
 tabRequests = 'tab-requests'
 tabRegistrations = 'tab-registrations'
 tabConfigurations = 'tab-configurations'
+tabTools = 'tab-tools'
 tabAbout = 'tab-about'
 
 # AYU theme (see https://github.com/Textualize/textual/discussions/1407)
@@ -88,6 +91,7 @@ class ACMETuiApp(App):
 		self.dark = self.textUI.theme == 'dark'
 		self.quitReason = ACMETuiQuitReason.undefined
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
+		# _app.DEFAULT_COLORS = CUSTOM_COLORS
 
 		self.tabs = TabbedContent()
 		self.containerTree = ACMEContainerTree()
@@ -95,6 +99,7 @@ class ACMETuiApp(App):
 		self.containerRegistrations = ACMEContainerRegistrations(self)
 		self.containerConfigs = ACMEContainerConfigurations(self)
 		self.containerInfo = ACMEContainerInfo(self)
+		self.containerTools = ACMEContainerTools(self)
 		self.containerAbout = ACMEContainerAbout()
 		self.debugConsole = Static('', id = 'debug-console')
 
@@ -111,14 +116,12 @@ class ACMETuiApp(App):
 				yield self.containerRequests
 			with TabPane('Registrations', id = tabRegistrations):
 				yield self.containerRegistrations
-
-			# TODO Tools: Scripts with meta tags are displayed here
-			# with TabPane('Infos', id = tabInfo):
-				# yield self.containerInfo
 			with TabPane('Infos', id = tabInfo):
 				yield self.containerInfo
 			with TabPane('Configurations', id = tabConfigurations):
 				yield self.containerConfigs
+			with TabPane('Tools', id = tabTools):
+				yield self.containerTools
 			with TabPane('About', id = tabAbout):
 				yield self.containerAbout
 		yield Footer()
@@ -155,6 +158,18 @@ class ACMETuiApp(App):
 	def logDebug(self, msg:str) -> None:
 		"""	Print debug msg """
 		self.debugConsole.update(msg)
+	
+	
+	def scriptPrint(self, scriptName:str, msg:str) -> None:
+		self.containerTools.scriptPrint(scriptName, msg)
+
+
+	def scriptLog(self, scriptName:str, msg:str) -> None:
+		self.containerTools.scriptLog(scriptName, msg)
+
+
+	def scriptLogError(self, scriptName:str, msg:str) -> None:
+		self.containerTools.scriptLogError(scriptName, msg)
 
 
 	#########################################################################
