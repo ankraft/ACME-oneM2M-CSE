@@ -297,11 +297,20 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.queueOn()	
 
 	# Send an event that the CSE startup finished
-	cseStatus = CSEStatus.RUNNING
 	event.cseStartup()	# type: ignore
 
+
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
-	BackgroundWorkerPool.newActor(lambda : (L.console('CSE started'), L.log('CSE started')) if cseStatus == CSEStatus.RUNNING else None, delay = 2.0 if isHeadless else 0.5, name = 'Delayed_startup_message' ).start()
+
+	def _startUpFinished() -> None:
+		"""	Internal function to print the CSE startup message after a delay
+		"""
+		global cseStatus
+		cseStatus = CSEStatus.RUNNING
+		L.console('CSE started')
+		L.log('CSE started')
+
+	BackgroundWorkerPool.newActor(_startUpFinished, delay = 2.0 if isHeadless else 0.5, name = 'Delayed_startup_message' ).start()
 	
 	return True
 
@@ -394,6 +403,7 @@ def resetCSE() -> None:
 		# a chance to finish
 		event.cseReset()	# type: ignore [attr-defined]   
 		if not importer.doImport():
+			textUI and textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 		remote.restart()
