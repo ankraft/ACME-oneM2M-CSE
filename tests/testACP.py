@@ -805,7 +805,6 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	addTest(suite, TestACP('test_retrieveACPwithoutRETRIEVEAccessFail'))
 
-	# addTest(suite, TestACP('test_deleteACP'))
 	addTest(suite, TestACP('test_createACPWithWrongTyFail'))
 	addTest(suite, TestACP('test_createACPWithTy'))
 
