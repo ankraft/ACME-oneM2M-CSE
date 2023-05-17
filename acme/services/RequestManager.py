@@ -934,8 +934,8 @@ class RequestManager(object):
 			# Some adjustments to the originat request
 			_request = request.convertToR1Target(rvi) 
 			_request.rvi = rvi
+			_request.ot = request.ot if request.ot is not None else getResourceDate()
 			_request.originator = requestOriginator
-
 			# Send the request via a PCH, if present
 			if pch:
 				_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
@@ -1528,14 +1528,17 @@ class RequestManager(object):
 		
 		request.fillOriginalRequest(update = True)
 
+
 		CSE.storage.addRequest(request.op,
 							   request.id, 
 							   srn,
 							   request.originator,
 							   request._outgoing,
+							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
 							   request.originalRequest,
 							   { 'rsc': result.rsc,
 							   	 'pc': pc,
-								 'dbg': result.dbg
+								 'dbg': result.dbg,
+								 'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
 							   })
 	

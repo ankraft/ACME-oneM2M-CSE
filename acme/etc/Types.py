@@ -17,6 +17,7 @@ from enum import auto
 from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.DateUtils import utcTime
 
 
 #
@@ -1848,6 +1849,11 @@ class CSERequest:
 	""" Whether this is a request sent by the CSE. """
 
 	_directURL:str = None
+	""" The direct URL of the request. """
+
+	_ot:float = utcTime()
+	""" The timestamp when this request object was created. """
+
 
 
 	def fillOriginalRequest(self, update:bool = False) -> None:

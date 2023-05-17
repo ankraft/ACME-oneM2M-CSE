@@ -541,6 +541,7 @@ class Storage(object):
 						 srn:str, 
 						 originator:str, 
 						 outgoing:bool, 
+						 ot:str,
 						 request:JSON, 
 						 response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
@@ -551,16 +552,17 @@ class Storage(object):
 				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
 				outgoing: If true, then this is a request sent by the CSE.
+				ot: Request creation time.
 				request: The request to store.
 				response: The response to store.
 			
 			Return:
 				Boolean value to indicate success or failure.
 			"""
-		return self.db.insertRequest(op, ri, srn, originator, outgoing, request, response)
+		return self.db.insertRequest(op, ri, srn, originator, outgoing, ot, request, response)
 
 
-	def getRequests(self, ri:Optional[str] = None) -> list[Document]:
+	def getRequests(self, ri:Optional[str] = None, sortedByOt:bool = False) -> list[Document]:
 		"""	Get requests for a resource ID, or all requests.
 		
 			Args:
@@ -569,6 +571,9 @@ class Storage(object):
 			Return:
 				List of *Documents*. May be empty.
 		"""
+
+		if sortedByOt:
+			return sorted(self.db.getRequests(ri), key = lambda x: x['ot'])
 		return self.db.getRequests(ri)
 	
 
@@ -1174,6 +1179,7 @@ class TinyDBBinding(object):
 							srn:str, 
 							originator:str, 
 							outgoing:bool, 
+							ot: str,
 							request:JSON, 
 							response:JSON) -> bool:
 		"""	Add a request to the *requests* database.
@@ -1184,6 +1190,7 @@ class TinyDBBinding(object):
 				srn: Structured resource ID of a request's target resource.
 				originator: Request originator.
 				outgoing: If true, then this is a request sent by the CSE.
+				ot: Request creation timestamp.
 				request: The request to store.
 				response: The response to store.
 			
@@ -1212,6 +1219,7 @@ class TinyDBBinding(object):
 						 'op': op,
 						 'rsc': rsc,
 						 'out': outgoing,
+						 'ot': ot,
 						 'req': { k: v for k, v in request.items() if v is not None }, 
 						 'rsp': { k: v for k, v in response.items() if v is not None }
 					   }
