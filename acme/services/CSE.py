@@ -19,6 +19,7 @@ from threading import Lock
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.DateUtils import waitFor
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
 from ..services.ActionManager import ActionManager
 from ..services.Configuration import Configuration
@@ -171,6 +172,7 @@ cseStatus:CSEStatus								= CSEStatus.STOPPED
 _cseResetLock									= Lock()	# lock for resetting the CSE
 """ Internal CSE's lock when resetting. """
 
+_cseStartupDelay:float							= 2.0		# delay for CSE startup
 
 ##############################################################################
 
@@ -251,8 +253,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceLatency = Configuration.get('cse.operation.jobs.balanceLatency'),
 										balanceReduceFactor = Configuration.get('cse.operation.jobs.balanceReduceFactor'))
 
-	console = Console()						# Start the console
 	textUI = TextUI()						# Start the textUI
+	console = Console()						# Start the console
 
 	storage = Storage()						# Initialize the resource storage
 	statistics = Statistics()				# Initialize the statistics system
@@ -310,7 +312,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.console('CSE started')
 		L.log('CSE started')
 
-	BackgroundWorkerPool.newActor(_startUpFinished, delay = 2.0 if isHeadless else 0.5, name = 'Delayed_startup_message' ).start()
+	BackgroundWorkerPool.newActor(_startUpFinished, delay = _cseStartupDelay if isHeadless else _cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
 	
 	return True
 
@@ -423,4 +425,7 @@ def resetCSE() -> None:
 def run() -> None:
 	"""	Run the CSE.
 	"""
-	console.run()
+	if waitFor(_cseStartupDelay * 3, lambda: cseStatus == CSEStatus.RUNNING):
+		console.run()
+	else:
+		raise TimeoutError(L.logErr('CSE did not start within 10 seconds'))
