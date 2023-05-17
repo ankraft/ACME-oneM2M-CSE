@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Tuple, cast, Optional
+from typing import Any, Callable, Tuple, cast, Optional, Generator
 import random, string, sys, re, threading
 import traceback
 from distutils.util import strtobool
@@ -774,6 +774,7 @@ def strToBool(value:str) -> bool:
 	"""
 	return bool(strtobool(str(value)))
 
+
 ##############################################################################
 #
 #	Threads
@@ -849,3 +850,8 @@ def runsInIPython() -> bool:
 		if each.filename.startswith('<ipython'):
 			return True
 	return False
+
+
+def reverseEnumerate(data:list) -> Generator[Tuple[int, Any], None, None]:
+	for i in range(len(data)-1, -1, -1):
+		yield (i, data[i])
