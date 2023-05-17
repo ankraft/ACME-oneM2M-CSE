@@ -1726,6 +1726,12 @@ class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
 	"""
 
+	def __post_init__(self) -> None:
+		"""	Post initialization actions.
+		"""
+		self._ot = utcTime()	# This must be done here because this is dynamic hand has to be done after the object is created, and not during the class initialization
+		
+
 	fc:FilterCriteria = field(default_factory = FilterCriteria)
 	""" Filter Criteria complex structure. """
 	
@@ -1851,7 +1857,7 @@ class CSERequest:
 	_directURL:str = None
 	""" The direct URL of the request. """
 
-	_ot:float = utcTime()
+	_ot:float = None
 	""" The timestamp when this request object was created. """
 
 
