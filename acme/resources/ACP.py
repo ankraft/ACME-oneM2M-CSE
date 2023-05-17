@@ -180,9 +180,9 @@ class ACP(AnnounceableResource):
 						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int
 							continue										# for CREATE: type not in chty
 					else:
-						if ty not in eachAcod.get('ty'):
+						if ty is not None and ty != eachAcod.get('ty'):
 							continue								# any other Permission type: ty not in chty
-					break # found one
+					break # found one, so apply the next checks further down
 				else:
 					continue	# NOT found, so continue the overall search
 

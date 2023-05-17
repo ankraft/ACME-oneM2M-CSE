@@ -7,7 +7,7 @@
 #	Configurations for unit tests
 #
 
-BINDING						= 'mqtt'	# possible values: http, https, mqtt
+BINDING						= 'http'	# possible values: http, https, mqtt
 
 if BINDING == 'mqtt':
 	PROTOCOL				= 'mqtt'	

@@ -665,6 +665,83 @@ class TestACP(unittest.TestCase):
 
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPWithWrongTyFail(self) -> None:
+		"""	Create <ACP> AE originator and wrong acod.ty -> Fail"""
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.CREATE,
+							"acod": [ {
+								"ty": [ T.CIN ],	# acr is only for CIN. Wrong because not a list
+								"chty": [ T.CNT ]	# Allow only a CNT to be created
+							} ]
+						}]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(cseURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPWithTy(self) -> None:
+		"""	Create <ACP> AE originator and acod.ty"""
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.RETRIEVE + Permission.CREATE,
+							"acod": [ {
+								"ty": T.CNT,	# acr is only for CNT
+								"chty": [ T.CNT ]	# Allow only a CNT to be created
+							} ]
+						}]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(cseURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'))
+		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'), list)
+		self.assertTrue(T.CNT in findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'))
+		TestACP.acp = r
+
+		# Just delete the CNT
+		DELETE(cntURL, TestACP.originator)
+
+		# Add a container with the acpi set to the ACP
+		dct = { "m2m:cnt": { 
+					"rn": cntRN,
+					"acpi": [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
+			} }
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# Try to create a CIN -> Fail
+		dct = { "m2m:cin": { "con": "test" } }
+		r, rsc = CREATE(cntURL, TestACP.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+
+		# try to retrieve the CNT -> Fail
+		r, rsc = RETRIEVE(cntURL, TestACP.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+
 
 
 # TODO reference a non-acp resource in acpi
@@ -727,6 +804,9 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestACP('test_discoverCINwithDifferentAEWithAcpi'))
 
 	addTest(suite, TestACP('test_retrieveACPwithoutRETRIEVEAccessFail'))
+
+	addTest(suite, TestACP('test_createACPWithWrongTyFail'))
+	addTest(suite, TestACP('test_createACPWithTy'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
