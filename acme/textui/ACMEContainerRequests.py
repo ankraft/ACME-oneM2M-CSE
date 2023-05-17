@@ -190,7 +190,7 @@ class ACMEViewRequests(Vertical):
 		self.requestListRequest.update()
 		self.requestListResponse.update()
 
-		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI))
+		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI, sortedByOt = True))
 
 
 		for i, r in enumerate(self._currentRequests):

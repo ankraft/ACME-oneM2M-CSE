@@ -31,6 +31,7 @@ class ACMEContainerInfo(Container):
 		with Vertical(id = 'stats-view'):
 			yield self.statsView
 
+
 	def on_mount(self) -> None:
 		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
 		self._statsUpdate(True)	# Update once at the beginning

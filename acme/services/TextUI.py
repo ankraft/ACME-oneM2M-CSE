@@ -89,7 +89,7 @@ class TextUI(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the manager.
 		"""
-		self.startWithTUI = Configuration.get('extui.startWithTUI')
+		self.startWithTUI = Configuration.get('textui.startWithTUI')
 		self.theme = Configuration.get('textui.theme')
 		self.refreshInterval = Configuration.get('textui.refreshInterval')
 	
@@ -124,7 +124,6 @@ class TextUI(object):
 		# Disable console logging
 		previousScreenLogging = L.enableScreenLogging
 		L.enableScreenLogging = False
-
 		while True and CSE.cseStatus == CSEStatus.RUNNING:
 			self.tuiApp = ACMETuiApp(self)
 			try:
@@ -139,7 +138,7 @@ class TextUI(object):
 		# Re-enable console logging
 		L.enableScreenLogging = previousScreenLogging
 
-		result = self.tuiApp.quitReason != ACMETuiQuitReason.quitAll	# False leads to ACME quit
+		result = self.tuiApp is not None and self.tuiApp.quitReason != ACMETuiQuitReason.quitAll	# False leads to ACME quit
 		self.tuiApp = None
 		return result
 
@@ -165,3 +164,10 @@ class TextUI(object):
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptLogError(scriptName, msg)
+	
+
+	def scriptClearConsole(self, scriptName:str) -> None:
+		"""	Clear the script console.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptClearConsole(scriptName)

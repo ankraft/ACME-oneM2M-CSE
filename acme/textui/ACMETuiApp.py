@@ -89,8 +89,6 @@ class ACMETuiApp(App):
 		self.debugging = False
 
 		self.textUI = textUI	# Keep backward link to the textUI manager
-		self.dark = self.textUI.theme == 'dark'
-		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMappings()
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
@@ -107,8 +105,7 @@ class ACMETuiApp(App):
 		self.debugConsole = Static('', id = 'debug-console')
 
 	def compose(self) -> ComposeResult:
-		"""Create child widgets for the app."""
-
+		"""Build the Main UI."""
 		yield ACMEHeader(show_clock = True)
 		if self.debugging:
 			yield self.debugConsole
@@ -130,11 +127,11 @@ class ACMETuiApp(App):
 		yield Footer()
 
 
-	def on_mount(self) -> None:
-		#self.design = CUSTOM_COLORS
-		#self.refresh_css()
-		...
-	
+	def on_load(self) -> None:
+		self.dark = self.textUI.theme == 'dark'
+		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
+		# self.design = CUSTOM_COLORS
+		# self.refresh_css()
 
 	async def action_quit_tui(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitTUI
@@ -174,6 +171,10 @@ class ACMETuiApp(App):
 
 	def scriptLogError(self, scriptName:str, msg:str) -> None:
 		self.containerTools.scriptLogError(scriptName, msg)
+	
+
+	def scriptClearConsole(self, scriptName:str) -> None:
+		self.containerTools.scriptClearConsole(scriptName)
 
 
 	#########################################################################

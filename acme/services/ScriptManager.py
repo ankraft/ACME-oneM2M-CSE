@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, Union, Any, Tuple, cast, Optional
+from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
 
 from pathlib import Path
 import json, os, fnmatch
@@ -18,13 +18,13 @@ from decimal import Decimal
 from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
 from ..etc.ResponseStatusCodes import ResponseException
+from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate
+from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
 from .Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
-from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
-from ..etc.DateUtils import cronMatchesTimestamp
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
@@ -87,6 +87,7 @@ class ACMEPContext(PContext):
 	__slots__ = (
 		'scriptFilename',
 		'fileMtime',
+		'nextScript',
 	)
 	""" Slots of class attributes. """
 
@@ -125,7 +126,6 @@ class ACMEPContext(PContext):
 										'http':					self.doHttp,
 										'import-raw':			self.doImportRaw,
 										'include-script':		lambda p, a: self.doRunScript(p, a, isInclude = True),
-										'is-ipython':			self.doIsIPython,
 										'log-divider':			self.doLogDivider,
 										'print-json':			self.doPrintJSON,
 										'put-storage':			self.doPutStorage,
@@ -134,9 +134,12 @@ class ACMEPContext(PContext):
 										'reset-cse':			self.doReset,
 							 			'retrieve-resource':	self.doRetrieveResource,
 										'run-script':			self.doRunScript,
+										'runs-in-ipython':		self.doRunsInIPython,
+										'runs-in-tui':			self.doRunsInTUI,
 							 			'send-notification':	self.doNotify,
 										'set-config':			self.doSetConfig,
 										'set-console-logging':	self.doSetLogging,
+										'schedule-next-script':	self.doScheduleNextScript,
 							 			'update-resource':		self.doUpdateResource,
 						  			},
 						 logFunc = self.log, 
@@ -152,6 +155,8 @@ class ACMEPContext(PContext):
 
 		self.scriptFilename = filename if filename else None
 		self.fileMtime = os.stat(filename).st_mtime if filename else None
+		self.nextScript:Tuple[PContext, List[str]] = None	# Script to be started after another script ended
+
 		self._validate()	# May change the state to indicate an error
 
 
@@ -182,7 +187,7 @@ class ACMEPContext(PContext):
 		if CSE.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLog(pcontext.name, line)	# Additionally print to the text UI script console
+			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isDebug and L.logDebug(msg, stackOffset=1)
 
 
@@ -197,7 +202,7 @@ class ACMEPContext(PContext):
 		if CSE.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLogError(pcontext.name, line)	# Additionally print to the text UI script console
+			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isWarn and L.logWarn(msg, stackOffset=1)
 
 
@@ -211,8 +216,10 @@ class ACMEPContext(PContext):
 		if CSE.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptPrint(pcontext.name, line)	# Additionally print to the text UI script console
-			L.console(line, nl = not len(line))
+			if CSE.textUI.tuiApp:
+				CSE.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			else:
+				L.console(line, nl = not len(line))
 	
 	
 	@property
@@ -268,6 +275,7 @@ class ACMEPContext(PContext):
 		"""
 		pcontext.assertSymbol(symbol, 1)
 		if not CSE.isHeadless:
+			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
 		return pcontext
 
@@ -585,25 +593,6 @@ class ACMEPContext(PContext):
 		return pcontext.setResult(SSymbol(jsn = resource.asDict()))
 
 
-	def doIsIPython(self, pcontext:PContext, symbol:SSymbol) -> PContext:
-		"""	Determine whether the CSE currently runs in an IPython environment, such as Jupyter Notebooks.
-		
-			Example:
-				::
-
-					(is-ipython)
-
-			Args:
-				pcontext: `PContext` object of the running script.
-				symbol: The symbol to execute.
-
-			Return:
-				The updated `PContext` object with the operation result, ie. a boolean value.
-		"""
-		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(boolean = runsInIPython()))
-
-
 	def doLogDivider(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Print a divider line to the log (on DEBUG level).
 			
@@ -822,6 +811,67 @@ class ACMEPContext(PContext):
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.RETRIEVE)
 	
 
+	def doRunsInIPython(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Determine whether the CSE currently runs in an IPython environment, such as Jupyter Notebooks.
+		
+			Example:
+				::
+
+					(runs-in-ipython)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. a boolean value.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(boolean = runsInIPython()))
+
+
+	def doRunsInTUI(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Determine whether the CSE currently runs in Text UI mode.
+		
+			Example:
+				::
+
+					(runs-in-tui)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result, ie. a boolean value.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(boolean = CSE.textUI.tuiApp is not None))
+
+
+	def doScheduleNextScript(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		pcontext.assertSymbol(symbol, minLength = 2)
+
+		# script name
+		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# arguments
+		arguments:list[str] = []
+		if symbol.length > 2:
+			for idx in range(2, symbol.length):
+				pcontext, value = pcontext.valueFromArgument(symbol, idx)
+				arguments.append(str(value))
+
+		# find script
+		if len(scripts := CSE.script.findScripts(name = name)) == 0:
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'script: "{name}" not found'))
+		
+		# Add to the next-run queue
+		cast(ACMEPContext, pcontext).nextScript = (scripts[0], arguments)
+
+		return pcontext
+
+
 	def doRunScript(self, pcontext:PContext, symbol:SSymbol, isInclude:bool = False) -> PContext:
 		"""	Run another script. 
 		
@@ -863,7 +913,7 @@ class ACMEPContext(PContext):
 		# run script
 		script = scripts[0]
 		if not CSE.script.runScript(script, arguments = arguments, background = False):
-			raise PRuntimeError(pcontext.setError(PError.runtime, f'Error in running script: {script.name}: {script.error.message}'))
+			raise PRuntimeError(pcontext.setError(PError.runtime, f'Error in running script: {script.scriptName}: {script.error.message}'))
 		
 		if isInclude:
 			# Copy newly defined functions
@@ -1028,7 +1078,7 @@ class ACMEPContext(PContext):
 		# Construct response
 		responseStatus = SSymbol(number = Decimal(res.rsc.value))
 		try:
-			if not res.dbg:
+			if res.dbg:
 				# L.isDebug and L.logDebug(f'Request response: {res.dbg}')
 				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
@@ -1091,6 +1141,7 @@ class ACMEPContext(PContext):
 				'to': target, 
 				'rvi': CSE.releaseVersion,
 				'rqi': uniqueRI(), 
+				'ot': getResourceDate(),
 			}
 		
 		# Transform the extra request attributes set by the script
@@ -1129,17 +1180,20 @@ class ACMEPContext(PContext):
 		if isURL(target):
 			if operation == Operation.RETRIEVE:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+						   									   ot = getResourceDate(),
 															   to = target, 
 															   originator = originator)
 												   )[0].result	# there should be at least one result
 
 			elif operation == Operation.DELETE:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+						   									   ot = getResourceDate(),
 															   to = target, 
 															   originator = originator)
 												   )[0].result	# there should be at least one result
 			elif operation == Operation.CREATE:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
+						   									   ot = getResourceDate(),
 															   to = target, 
 															   originator = originator, 
 															   ty = ty,
@@ -1147,12 +1201,14 @@ class ACMEPContext(PContext):
 												   )[0].result	# there should be at least one result
 			elif operation == Operation.UPDATE:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
+						   									   ot = getResourceDate(),
 															   to = target, 
 															   originator = originator, 
 															   pc = request.pc)
 												   )[0].result	# there should be at least one result
 			elif operation == Operation.NOTIFY:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+						   									   ot = getResourceDate(),
 															   to = target, 
 															   originator = originator, 
 															   pc = request.pc)
@@ -1200,8 +1256,8 @@ class ScriptManager(object):
 		"""	Initializer for the ScriptManager class.
 		"""
 
-		self.scripts:Dict[str,ACMEPContext] = {}			# The managed scripts
-		self.storage:Dict[str, SSymbol] = {}				# storage for global values
+		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
+		self.storage:Dict[str, SSymbol] = {}					# storage for global values
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
@@ -1368,7 +1424,7 @@ class ScriptManager(object):
 			Return:
 				Boolean. Usually *True* to continue with monitoring.
 		"""
-		for eachName, eachScript in list(self.scripts.items()):
+		for eachName, eachScript in list(self.scripts.items()):	# don't remove the `list(...). The dict is modified in the loop
 			try:
 				if eachScript.fileMtime < os.stat(eachScript.scriptFilename).st_mtime:
 					L.isDebug and L.logDebug(f'Reloading script: {eachScript.scriptFilename}')
@@ -1572,34 +1628,60 @@ class ScriptManager(object):
 					pcontext: The script context to run.
 					arguments: Arguments to the script. These are available to the script via the *argv* macro.
 			"""
-			pcontext.run(verbose = self.verbose, arguments = arguments)
-			if pcontext.state == PState.terminatedWithResult:
-				L.logDebug(f'Script terminated with result: {pcontext.result}')
-			if pcontext.state == PState.terminatedWithError:
-				L.logWarn(f'Script terminated with error: {pcontext.error.message}')
+			while True:
+				result = pcontext.run(verbose = self.verbose, arguments = arguments)
+				if pcontext.state == PState.terminatedWithResult:
+					L.logDebug(f'Script terminated with result: {pcontext.result}')
+				if pcontext.state == PState.terminatedWithError:
+					L.logWarn(f'Script terminated with error: {pcontext.error.message}')
+
+				if not result or not cast(ACMEPContext, pcontext).nextScript:	
+					return
+			
+				# Run next script, also in the background
+				_p = pcontext
+				pcontext, arguments = cast(ACMEPContext, pcontext).nextScript
+				cast(ACMEPContext, _p).nextScript = None	# Clear next script
+				L.isDebug and L.logDebug(f'Running next script: {pcontext.scriptName}')
 
 
-		if pcontext.state == PState.running:
-			L.isWarn and L.logWarn(f'Script "{pcontext.name}" is already running')
-			# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
-			return False
+
+		while True:
+			L.isDebug and L.logDebug(f'Running script: {pcontext.scriptName}, Background: {background}')
+			if pcontext.state == PState.running:
+				L.isWarn and L.logWarn(f'Script "{pcontext.scriptName}" is already running')
+				# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
+				return False
+			
+			# Set environemt
+			pcontext.setEnvironment(environment)
+
+			# Handle arguments
+			_arguments:Optional[list[str]] = []
+			if arguments:
+				_arguments = cast(str, arguments).split() if isinstance(arguments, str) else arguments
+			_arguments.insert(0, pcontext.scriptName)
+
+			# Run in background or direct
+			if background:
+				BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{uniqueID()}', 
+													finished = finished).start(pcontext = pcontext, arguments = _arguments)
+				return True	# Always return True when running in Background
 		
-		# Set environemt
-		pcontext.setEnvironment(environment)
+			result = pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
 
-		# Handle arguments
-		_arguments:Optional[list[str]] = []
-		if arguments:
-			_arguments = cast(str, arguments).split() if isinstance(arguments, str) else arguments
-		_arguments.insert(0, pcontext.name)
+			if not result or not cast(ACMEPContext, pcontext).nextScript:
+				return result
+			
+			# Run next script
+			_p = pcontext
+			pcontext, arguments = cast(ACMEPContext, pcontext).nextScript
+			cast(ACMEPContext, _p).nextScript = None	# Clear next script
+			L.isDebug and L.logDebug(f'Running next script: {pcontext.scriptName}')
+	
 
-		# Run in background or direct
-		if background:
-			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{uniqueID()}', 
-												 finished = finished).start(pcontext = pcontext, arguments = _arguments)
-			return True	# Always return True when running in Background
 
-		return pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
+		# return pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
 	
 
 	def run(self, scriptName:str, 

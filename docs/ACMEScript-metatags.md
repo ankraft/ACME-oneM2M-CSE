@@ -9,25 +9,26 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 
 <a name="top"></a>
 
-| Meta Tag                                | Description                                                                                    |
-|-----------------------------------------|------------------------------------------------------------------------------------------------|
-| [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval                                     |
-| [@category](#meta_category)             | Add a category to the script                                                                   |
-| [@description](#meta_description)       | Provide a one-line script description                                                          |
-| [@filename](#meta_filename)             | Contains a script's filename (internal only)                                                   |
-| [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog                                                |
-| [@init](#init)                          | Run a script to initialize the CSE during startup and restart                                  |
-| [@name](#meta_name)                     | Assign a name to a script                                                                      |
-| [@onKe](#meta_onkey)                    | Run a script when a specified key is pressed                                                   |
-| [@onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE                                    |
-| [@onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                                                      |
-| [@onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                                                    |
-| [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                                                        |
-| [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run                                             |
-| [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped                                          |
-| [@tool](#meta_tool)                     | Tag a script for listing in the text UI's *Tools* section.                                     |
+| Meta Tag                                | Description                                                  |
+| --------------------------------------- | ------------------------------------------------------------ |
+| [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval   |
+| [@category](#meta_category)             | Add a category to the script                                 |
+| [@description](#meta_description)       | Provide a one-line script description                        |
+| [@filename](#meta_filename)             | Contains a script's filename (internal only)                 |
+| [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog              |
+| [@init](#init)                          | Run a script to initialize the CSE during startup and restart |
+| [@name](#meta_name)                     | Assign a name to a script                                    |
+| [@onKe](#meta_onkey)                    | Run a script when a specified key is pressed                 |
+| [@onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE  |
+| [@onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                    |
+| [@onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                  |
+| [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                      |
+| [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run           |
+| [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped        |
+| [@tuiNoExecute](#meta_tuiNoExecute)     | Disable the `Execute` button for this script in the Text UI's *Tools* section |
+| [@tuiTool](#meta_tuiTool)               | Tag a script for listing in the Text UI's *Tools* section.   |
 | [@uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [@usage](#meta_usage)                   | Provide a short usage help                                                                     |
+| [@usage](#meta_usage)                   | Provide a short usage help                                   |
 
 ## Accessing Meta Tags
 Meta tags are added as constants to the script's environment, prefixed with "meta.".
@@ -101,11 +102,15 @@ Example:
 
 A short one-line description of a script's purpose. This is used, for example, for the console's script catalog.
 
+A description must be a single line, but may include line breaks (in the form of \n characters). A description may also be formatted as markdown. This is then correctly displayed in the Text UI.
+
 See also: [@usage](#meta_usage)
 
 Example:
 ```lisp
 @description The purpose of this script is to demonstrate the @description meta tag
+
+@description # Markdown header\n\nFormatted **Markdown** text.
 ```
 
 [top](#top)
@@ -335,18 +340,36 @@ Example:
 
 ---
 
-<a name="meta_tool"></a>
+<a name="meta_tuiNoExecute"></a>
 
-### @tool
+### @tuiNoExecute
 
-`@tool`
+`@tuiNoExecute`
 
-This meta tag categorizes a script as a tool. Scripts marked as *tools* are listed in the text UI's *Tools*
+This meta tag disables the `Execute` button for this script in the Text UI's *Tools* section.
+
+Example:
+
+```lisp
+@tuiNoExecute
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiTool"></a>
+
+### @tuiTool
+
+`@tuiTool`
+
+This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
 section.
 
 Example:
 ```lisp
-@tool
+@tuiTool
 ```
 
 [top](#top)

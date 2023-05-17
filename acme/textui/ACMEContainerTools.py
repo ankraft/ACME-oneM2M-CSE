@@ -27,7 +27,6 @@ idTools = 'tools'
 class ACMEToolsTree(TextualTree):
 
 	def on_mount(self) -> None:
-
 		self.parentContainer = cast(ACMEContainerTools, self.parent.parent)
 		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
 		self.allLogs = False
@@ -36,9 +35,10 @@ class ACMEToolsTree(TextualTree):
 		self.auto_expand = False
 		root = self.root
 
-		scripts = CSE.script.scripts
-		for name, context in scripts.items():
-			if 'tool' in context.meta:	# Only add scripts marked as tools
+
+		for name, context in dict(sorted(CSE.script.scripts.items())).items():
+		# for name, context in CSE.script.scripts.items():
+			if 'tuiTool' in context.meta:	# Only add scripts marked as tools
 				_n = root	# Fallback: add to root
 				if (category := context.meta.get('category')):
 					for c in root.children:
@@ -82,7 +82,16 @@ class ACMEToolsTree(TextualTree):
 
 {description}
 """)
+
+			# configure the button according to the meta tag "tuiExecuteButton"
 			self.parentContainer.toolsExecButton.styles.visibility = 'visible'
+			self.parentContainer.toolsExecButton.label = 'Execute'
+			if ctx.hasMeta('tuiExecuteButton'):
+				if (_b := ctx.getMeta('tuiExecuteButton')):
+					self.parentContainer.toolsExecButton.label = _b
+				else:
+					self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
+
 			self.parentContainer.toolsLog.clear()
 			self.printLogs()
 
@@ -175,7 +184,9 @@ class ACMEContainerTools(Container):
 	def _logMessage(self, scriptName:str, msg:str, prefix:str) -> None:
 
 		# Prepare the message
-		_s = f'[dim]{datetime.now(tz = timezone.utc).strftime("%H:%M:%S")} -[/dim] {msg}'
+		_s = msg if msg else ' '
+
+		# _s = msg if prefix == ' ' else f'[dim]{datetime.now(tz = timezone.utc).strftime("%H:%M:%S")} -[/dim] {msg}'
 		# Add to the log
 		if (_l := self.toolsTree.logs.get(scriptName)) is not None:
 			_l.append(f'{prefix}{_s}')
@@ -212,7 +223,18 @@ class ACMEContainerTools(Container):
 				msg: The message to print.	
 		"""
 		self._logMessage(scriptName, f'[red1]{msg}[/red1]', 'E')
+	
 
+	def scriptClearConsole(self, scriptName:str) -> None:
+		""" Clears the console for a script.
+
+			Args:
+				scriptName: The name of the script.
+		"""
+		if (_l := self.toolsTree.logs.get(scriptName)) is not None:
+			_l.clear()
+		if str(self.toolsTree.cursor_node.label) == scriptName:
+			self.toolsLog.clear()
 
 
 def _getContext(name:str) -> Optional[PContext]:

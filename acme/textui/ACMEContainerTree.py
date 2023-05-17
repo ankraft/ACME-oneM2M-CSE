@@ -32,6 +32,7 @@ class ACMEResourceTree(TextualTree):
 	def _update_tree(self) -> None:
 		self.clear()
 		self.auto_expand = False
+		self.select_node(None)
 		for r in self._retrieve_resource_children(CSE.cseRi):
 			self.root.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
 		self._update_content(self.cursor_node.data)
@@ -55,7 +56,12 @@ class ACMEResourceTree(TextualTree):
 
 
 	def _update_content(self, ri:str) -> None:
-		resource = CSE.dispatcher.retrieveLocalResource(ri)
+		try:
+			resource = CSE.dispatcher.retrieveLocalResource(ri)
+		except ResponseException as e:
+			self._update_tree()
+			return
+		
 		# Add attribute explanations
 		jsns = commentJson(resource.asDict(sort = True), 
 		     			   explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]

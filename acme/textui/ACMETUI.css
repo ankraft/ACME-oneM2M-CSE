@@ -190,7 +190,7 @@ ListView > ListItem.--outgoing.--highlight {
 	min-width: 100%;
 	margin: 0 0 0 0;
 
-	height: 2fr;
+	height: 3fr;
  }
 
  #tools-arguments-view {
@@ -204,7 +204,7 @@ ListView > ListItem.--outgoing.--highlight {
  #tools-log-view {
 	display: block;
 	overflow: auto auto;
-	height: 4fr;
+	height: 3fr;
 	padding: 0 0 0 1;
 	border-top: $panel;
  }

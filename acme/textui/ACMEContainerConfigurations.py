@@ -26,7 +26,6 @@ class ACMEConfigurationTree(TextualTree):
 	parentContainer:ACMEContainerConfigurations = None
 
 	def on_mount(self) -> None:
-
 		self.parentContainer = cast(ACMEContainerConfigurations, self.parent.parent)
 
 		# Build the resource tree
