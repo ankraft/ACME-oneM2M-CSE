@@ -622,7 +622,7 @@ class PState(IntEnum):
 	terminatedWithError 	= auto()
 	""" Script terminated with an error. """
 	returning				= auto()
-	"""	script is returning from a scope. """
+	"""	script is returning from a call. """
 
 	def isEndscriptState(self) -> bool:
 		"""	Check whether the end of a script has been reached.
@@ -669,17 +669,15 @@ class PError(IntEnum):
 
 
 @dataclass
-class PScope():
-	"""	A dataclass that holds scope-specific attributes.
+class PCall():
+	"""	A dataclass that holds call-specific attributes.
 
 		Attributes:
-			name: Scope name, e.g. the name of another script.
-			arguments: Dictionary of arguments (name -> `SSymbol`) for a scope.
-			result: The result or return value of a scope.
+			name: Function name.
+			arguments: Dictionary of arguments (name -> `SSymbol`) for a call.
 	"""
 	name:str						= None
 	arguments:dict[str, SSymbol]	= field(default_factory = dict)
-	result:str						= None
 
 
 class PContext():
@@ -708,7 +706,7 @@ class PContext():
 			variables: Dictionary of variables.
 			verbose: Whether verbosity is turned on for a script run.
 			_maxRTimestamp: The max timestamp until the script may run (internal).
-			_scopeStack: The internal scopy stack (interna9).
+			_callStack: The internal call stack (internal).
 			_symbolds: Dictionary with all build-in and provided functions (internal).
 	"""
 
@@ -738,7 +736,7 @@ class PContext():
 		'verbose',
 		'evaluateInline',
 		'_maxRTimestamp',
-		'_scopeStack',
+		'_callStack',
 		'_symbolds',
 	)
 	""" Slots of class attributes. """
@@ -808,7 +806,7 @@ class PContext():
 
 		# Internal attributes that should not be accessed from extern
 		self._maxRTimestamp:float = None
-		self._scopeStack:list[PScope] = [PScope()]
+		self._callStack:list[PCall] = [PCall()]
 		self._symbolds:PSymbolDict = None		# builtins + provided commands
 
 		# Add new commands
@@ -855,8 +853,8 @@ class PContext():
 		"""
 		self.error = PErrorState(PError.noError, 0, '', None)
 		self.variables.clear()
-		self._scopeStack.clear()
-		self.saveScope(name = self.meta.get('name'))
+		self._callStack.clear()
+		self.pushCall(name = self.meta.get('name'))
 		self.state = PState.ready
 
 
@@ -911,71 +909,70 @@ class PContext():
 		return self
 
 
-	def saveScope(self, name:Optional[str] = None) -> None:
-		"""	Save the current program counter and other information to the scope stack. 
-			This creates a new scope.
+	def pushCall(self, name:Optional[str] = None) -> None:
+		"""	Save tinformation to the call stack. 
+			This creates a new PCall object.
 
 			Args:
-				name: Name of the scope. Relevant for functions.
+				name: Name of the function. 
 		"""
-		if len(self._scopeStack) == _maxRecursionDepth:
+		if len(self._callStack) == _maxRecursionDepth:
 			raise PRuntimeError(self.setError(PError.maxRecursionDepth, f'Max level of function calls exceeded'))
-		pscope = PScope()
-		pscope.name = name
-		self._scopeStack.append(pscope)
+		call = PCall()
+		call.name = name
+		self._callStack.append(call)
 	
 
-	def restoreScope(self) -> None:
-		"""	Restore the program counter and other information from the scope stack.
-			This removes the current scope and replaces it with the previous scope.
+	def popCall(self) -> None:
+		"""	Remove a call from the stack..
 		"""
-		if not len(self._scopeStack):
-			raise PRuntimeError(self.setError(PError.invalid, f'No scope to restore'))
-		self.scope.result = self._scopeStack.pop().result	# assign the old scope the result from the previous scope
+		if not len(self._callStack):
+			raise PRuntimeError(self.setError(PError.invalid, f'No call call to restore'))
+		self._callStack.pop()
 
 
 	@property
-	def scope(self) -> Optional[PScope]:
-		"""	Get the current scope as a `PScope` object.
+	def call(self) -> Optional[PCall]:
+		"""	Get the current call as a `PCall` object.
 
 			Return:
-				`PScope` object, the current scope, or None.
+				`PCall` object, or None.
 		"""
-		if not self._scopeStack:
+		if not self._callStack:
 			return None
-		return self._scopeStack[-1]
+		return self._callStack[-1]
 
 
-	@property
-	def name(self) -> str:
-		"""	The name of the current scope. This could be the name
-			of the current script (from the meta data) or the name of the 
-			current function.
+	# @property
+	# def name(self) -> str:
+	# 	"""	The name of the current scope. This could be the name
+	# 		of the current script (from the meta data) or the name of the 
+	# 		current function.
 
-			Returns:
-				The name of the current scope, or None.
-		"""
-		return self.scope.name if self.scope and self.scope.name else self.scriptName
+	# 		Returns:
+	# 			The name of the current scope, or None.
+	# 	"""
+	# 	return self.scope.name if self.scope and self.scope.name else self.scriptName
 
 
 	@property
 	def arguments(self) -> dict[str, SSymbol]:
-		"""	Return the arguments of the current scope.
+		"""	Return the arguments of the current call stack.
 
 			Returns:
-				The arguments of the current scope.
+				The arguments of the current call stack.
 		"""
-		return self.scope.arguments
+		return self.call.arguments
 	
 
 	@arguments.setter
 	def arguments(self, value:dict[str, SSymbol]) -> None:
-		"""	Set the arguments for the current scope.
+		"""	Set the arguments for the current call scope.
 
 			Args:
-				value: The arguments for the current scope.
+				value: The arguments for the current call scope.
 		"""
-		self.scope.arguments = value
+		self.call.arguments = value
 
 
 	def getVariables(self, expression:str) -> list[Tuple[str, SSymbol]]:
@@ -1079,18 +1076,29 @@ class PContext():
 		self.meta['name'] = name
 
 
-	def getMeta(self, key:str) -> str:
+	def getMeta(self, key:str, default:Optional[str] = '') -> str:
 		"""	Return the argument of meta data, or an empty string.
+
+			Args:
+				key: Key of the meta data to look for.
+				default: Default value to return if the key is not found.
+
+			Return:
+				String, value or the default value.
+		"""
+		return self.meta.get(key, default)
+
+
+	def hasMeta(self, key:str) -> bool:
+		"""	Check if a meta data key exists.
 
 			Args:
 				key: Key of the meta data to look for.
 
 			Return:
-				String, value or empty string.
+				True if the key exists, False otherwise.
 		"""
-		if v := self.meta.get(key):
-			return v
-		return ''
+		return key in self.meta
 
 
 	def getArgument(self, symbol:SSymbol, 
@@ -1381,8 +1389,8 @@ class PContext():
 				if self.monitorFunc:
 					self.monitorFunc(self, firstSymbol)
 				return _cb(self, symbol)
-			elif _s in self.scope.arguments:
-				self.result = deepcopy(self.scope.arguments[_s])
+			elif _s in self.call.arguments:
+				self.result = deepcopy(self.call.arguments[_s])
 				return self
 			elif _s in self.variables:
 				self.result = deepcopy(self.variables[_s])
@@ -1492,12 +1500,12 @@ class PContext():
 				_args[_argNames[i-1]] = self._executeExpression(symbol[i], symbol).result	# type:ignore [index]
 
 		# Assign arguments to new scope
-		self.saveScope(functionName)
-		self.scope.arguments = _args
+		self.pushCall(functionName)
+		self.call.arguments = _args
 
 		# execute the code
 		self._executeExpression(_code, symbol)
-		self.restoreScope()
+		self.popCall()
 		return self
 
 
