@@ -19,6 +19,7 @@ from rich.syntax import Syntax
 from ..etc.Types import JSONLIST, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
+from ..etc.Utils import reverseEnumerate
 from ..services import CSE
 from ..helpers.TextTools import commentJson
 
@@ -52,6 +53,7 @@ class ACMEListItem(ListItem):
 	def __init__(self, *children: Widget, name: str | None = None, id: str | None = None, classes: str | None = None, disabled: bool = False) -> None:
 		super().__init__(*children, name=name, id=id, classes=classes, disabled=disabled)
 		self._data:Any = None
+	
 
 
 
@@ -183,7 +185,8 @@ class ACMEViewRequests(Vertical):
 
 		def rscFmt(rsc:int) -> str:
 			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
-			_c = 'green1' if isSuccessRSC(_rsc) else 'red'
+			# _c = 'green1' if isSuccessRSC(_rsc) else 'red'
+			_c = 'dark_green' if isSuccessRSC(_rsc) else 'red'
 			return f'[{_c}]{_rsc.name}[/{_c}]'
 
 		self.requestList.clear()
@@ -192,8 +195,8 @@ class ACMEViewRequests(Vertical):
 
 		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI, sortedByOt = True))
 
-
-		for i, r in enumerate(self._currentRequests):
+		# Add the requests to the list in reverse order
+		for i, r in reverseEnumerate(self._currentRequests):
 			_ts = toISO8601Date(r["ts"], readable = True).split('T')
 			_out = r['out']
 			if _out:
@@ -208,9 +211,8 @@ class ACMEViewRequests(Vertical):
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')
-		if len(self._currentRequests):
-			self.setIndex(0)
-	
+
+
 	
 	def deleteRequests(self) -> None:
 		CSE.storage.deleteRequests(self._currentRI)

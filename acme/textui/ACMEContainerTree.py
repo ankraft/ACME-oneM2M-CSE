@@ -129,19 +129,14 @@ class ACMEContainerTree(Container):
 
 	def on_show(self) -> None:
 		self.resourceTree.focus()
-		self.resourceTree._update_tree()
-		self._update_requests()
+		# self.resourceTree._update_tree()
+		# self._update_requests()
 
 
 	def action_refresh_resources(self) -> None:
 		self.resourceTree._update_tree()
 
 	
-	# async def onShow(self) -> None:
-	# 	self.resourceTree.focus()
-	# 	self._update_requests()
-
-
 	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
 	#async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
 		"""Handle TabActivated message sent by Tabs."""
