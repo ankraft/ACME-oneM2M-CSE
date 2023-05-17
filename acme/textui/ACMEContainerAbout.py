@@ -8,15 +8,18 @@
 """
 
 from rich.text import Text
+import webbrowser
 from textual.app import ComposeResult
 from textual.containers import Container, Center, Vertical
-from textual.widgets import Label
+from textual.widgets import Label, Button
+from textual.binding import Binding
 from ..etc.Constants import Constants
 
 
-idAbout = 'about'
-
 class ACMEContainerAbout(Container):
+
+	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
+
 
 # 	logo = \
 # f"""\
@@ -69,6 +72,22 @@ Available under the BSD 3-Clause License"""
 ▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀\
 """
 
+
+	def __init__(self) -> None:
+		super().__init__(id = 'about')
+
+		# HACK The following is a hack to get the focus on this page.
+		# Otherwise, without an interactive element, the focus would not be on this page at all,
+		# and the Bindings would not be shown.
+		self.button = Button('hidden')
+		self.button.styles.visibility = 'hidden'
+
+	
+	def on_show(self) -> None:
+		self.button.focus()
+
+
+
 	def compose(self) -> ComposeResult:
 		with Vertical(id = 'about-view'):
 			with (_c := Center()):
@@ -84,3 +103,8 @@ Available under the BSD 3-Clause License"""
 			with (_c := Center()):
 				_c.styles.padding = (8, 0, 0, 0)
 				yield Label(self.qrcode)
+				yield self.button
+
+
+	def action_goto_repo(self) -> None:
+		webbrowser.open('https://github.com/ankraft/ACME-oneM2M-CSE')

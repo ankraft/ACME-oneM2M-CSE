@@ -16,7 +16,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.design import ColorSystem
 from ..textui.ACMEHeader import ACMEHeader
-from ..textui.ACMEContainerAbout import ACMEContainerAbout, idAbout
+from ..textui.ACMEContainerAbout import ACMEContainerAbout
 from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations, idConfigs
 from ..textui.ACMEContainerInfo import ACMEContainerInfo, tabInfo
 from ..textui.ACMEContainerTree import ACMEContainerTree, idTree
