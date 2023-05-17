@@ -50,6 +50,12 @@ Thanks to KyeongHo!
 - [HTTP] Removed support for http path mappings to oneM2M requests.
 
 
+## [0.11.3] - 2023-05-17
+
+### Fixed
+- [CSE] Fixed a crash when checking permissions and the ACP has a `acod.ty` attribute set. See #112. Thanks to [samuelbles07](https://github.com/samuelbles07).
+
+
 ## [0.11.2] - 2023-01-23
 
 ### Fixed
