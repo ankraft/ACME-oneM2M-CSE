@@ -1289,7 +1289,6 @@ class PContext():
 			else:
 				pcontext.state = PState.terminatedWithError
 
-
 		if not self.validate():
 			return self
 		if not isSubCall:
@@ -1422,7 +1421,7 @@ class PContext():
 
 		elif firstSymbol.type == SType.tJson:
 			return self.checkInStringExpressions(symbol)
-
+	
 		raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
 
 
@@ -2089,7 +2088,7 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	elif symbol.length == 4:
 		_p = pcontext._executeExpression(symbol[3], symbol)
 	else:
-		_p = _e
+		_p = pcontext
 	return _p
 
 
