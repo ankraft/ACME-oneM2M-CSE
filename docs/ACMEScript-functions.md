@@ -69,7 +69,6 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [get-storage](#get-storage)                             | Retrieve a value from the CSE's internal script-data storage |
 |                            | [has-config](#has-config)                               | Determine the existence of a CSE's configuration setting     |
 |                            | [has-storage](#has-storage)                             | Determine the existence of a key/value in the CSE's internal script-data storage |
-|                            | [http](#http)                                           | Send http requests                                           |
 |                            | [log-divider](#log-divider)                             | Add a line to the DEBUG log                                  |
 |                            | [print-json](#print-json)                               | Print a JSON structure to the console                        |
 |                            | [put-storage](#put-storage)                             | Store a symbol in the CSE's internal script-data storage     |
@@ -77,7 +76,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [reset-cse](#reset-cse)                                 | Initiate a CSE reset                                         |
 |                            | [run-script](#run-script)                               | Removes a key/value pair from the CSE's internal script-data storage |
 |                            | [runs-in-ipython](#runs-in-ipython)                     | Determine whether the CSE runs in an iPython environment     |
-|                            | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode               |
+| | [schedule-next-script](#schedule-next-script) | Schedule the nest running script and its arguments |
 |                            | [set-config](#set-config)                               | Set a CSE's configuation setting                             |
 |                            | [set-console-logging](#set-console-logging)             | Switch on or off console logging                             |
 | [oneM2M](#_onem2m)         | [create-resource](#create-resource)                     | Send a oneM2M CREATE request                                 |
@@ -87,6 +86,10 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [retrieve-resource](#retrieve-resource)                 | Send a oneM2M RETRIEVE request                               |
 |                            | [send-notification](#send-notification)                 | Send a oneM2M NOTIFY request                                 |
 |                            | [update-resource](#update-resource)                     | Send a oneM2M UPDATE request                                 |
+| [Text UI](#_textui)                    | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode               |
+|                            | [tui-visual-bell](#tui-visual-bell) | Shortly flashes the script's entry in the scripts list |
+| [Network](#_network) | [http](#http) | Send http requests |
+|  | [ping-tcp-service](#ping-tcp-service)                   | Check the availability of a network service via TCP          |
 | [Variables](#_variables)   | [argc](#argc)                                           | Get number of arguments                                      |
 |                            | [event.data](#var_event_data)                           | For event handlers: An event's payload data                  |
 |                            | [event.type](#var_event_type)                           | For event handlers: An event's event type                    |
@@ -1482,54 +1485,6 @@ Examples:
 
 ---
 
-<a name="http"></a>
-
-### http
-
-`(http <operation:quoted symbol> <url:string> [<headers:JSON or nil)] [<body:string or JSON>])`
-
-The `http` function sends an http request to an http server.
-
-The function has the following arguments:
-
-- *operation* of the request. This is one of the following supported quoted symbols: get, post, put, delete, patch
-
-- The target server's *url*. This is a string with a valid URL.
-
-- Optional: A JSON structure of header fields. Each header field is a JSON attribute with the name of the header field and its value. If the optional *body* argument is present then this argument must be present as well, ie. with at least an empty JSON structure or the *nil* symbol.
-  
-- Optional: The http request's body, which could be a string or a JSON structure. 
-
-The function returns a list:
-
-`(<http status:number> <response body:JSON> <response headers:list of header fields)`
-
-- *http status* is the htttp status code for the request
-
-- *response body* is the response content
-
-- *response headers* is a list of header fields. The format of these header fields is the same as in the request above.
-
-Examples:
-
-```lisp
-;; Retrieve a web page
-(http 'get "https://www.onem2m.org")
-
-;; Send a oneM2M CREATE request manually
-(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
-	  { "X-M2M-RI":"1234",                   ;; Header fields
-        "X-M2M-RVI": "4",
-        "X-M2M-Origin": "CAdmin",
-		"Content-type": "application/json;ty=3" }
-      { "m2m:cnt": {                         ;; Body
-          "rn": "myCnt"}})
-```
-
-[top](#top)
-
----
-
 <a name="include-script"></a>
 
 ### include-script
@@ -1540,7 +1495,7 @@ The `include-script` function runs another ACMEScript script by its *script name
 
 The function returns the result of the finished script.
 
-See also: [run-script](#run-script)
+See also: [run-script](#run-script). [schedule-next-script](#schedule-next-script)
 
 Example:
 
@@ -1659,7 +1614,7 @@ The `run-script` function runs another ACMEScript script by its *script name* in
 
 The function returns the result of the finished script.
 
-See also: [include-script](#include-script)
+See also: [include-script](#include-script), [schedule-next-script](#schedule-next-script)
 
 Example:
 
@@ -1689,18 +1644,22 @@ Examples:
 
 ---
 
-<a name="runs-in-tui"></a>
+<a name="schedule-next-script"></a>
 
-### runs-in-tui
+### schedule-next-script
 
-`(runs-in-tui)`
+`(schedule-next-script <scriptName:string> <argument:any>*)`
 
-The `runs-in-tui` function determines whether the CSE currently runs in Text UI mode
+The `schedule-next-script` function schedules the next script that is run after the current script finished. 
+
+This is different from [include-script](#include-script) and [run-script](#run-script) in so far that the context of the current running script is finished and may be called again. This means that a script can schedule itself, which would not be possible otherwise because scripts can only be run one at a time.
+
+See also: [include-script](#include-script), [run-script](#run-script)
 
 Examples:
 
 ```lisp
-(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+(schedule-next-script "scriptName" "anArgument")  ;; Schedule a script with an argument
 ```
 
 [top](#top)
@@ -2027,6 +1986,127 @@ Examples:
 (update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }} { "rvi": "3"})  
 ;; Provide requestVersionIndicator
 ;; Returns ( 2004 { "m2m:cnt" ... } )
+```
+
+[top](#top)
+
+---
+
+<a name="_textui"></a>
+
+## Text UI
+
+---
+
+<a name="runs-in-tui"></a>
+
+### runs-in-tui
+
+`(runs-in-tui)`
+
+The `runs-in-tui` function determines whether the CSE currently runs in Text UI mode.
+
+Examples:
+
+```lisp
+(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+```
+
+[top](#top)
+
+---
+
+<a name="tui-visual-bell"></a>
+
+### tui-visual-bell
+
+`(tui-visual-bell)`
+
+The `tui-visual-bell` function shortly flashes the script's entry in the scripts' list/tree.
+
+Examples:
+
+```lisp
+(tui-visual-bell)  ;; Flashes the script's name
+```
+
+[top](#top)
+
+---
+
+<a name="_network"></a>
+
+## Network
+
+<a name="http"></a>
+
+### http
+
+`(http <operation:quoted symbol> <url:string> [<headers:JSON or nil>] [<body:string or JSON>])`
+
+The `http` function sends an http request to an http server.
+
+The function has the following arguments:
+
+- *operation* of the request. This is one of the following supported quoted symbols: get, post, put, delete, patch
+
+- The target server's *url*. This is a string with a valid URL.
+
+- Optional: A JSON structure of header fields. Each header field is a JSON attribute with the name of the header field and its value. If the optional *body* argument is present then this argument must be present as well, ie. with at least an empty JSON structure or the *nil* symbol.
+
+- Optional: The http request's body, which could be a string or a JSON structure. 
+
+The function returns a list:
+
+`(<http status:number> <response body:JSON> <response headers:list of header fields)`
+
+- *http status* is the htttp status code for the request
+
+- *response body* is the response content
+
+- *response headers* is a list of header fields. The format of these header fields is the same as in the request above.
+
+Examples:
+
+```lisp
+;; Retrieve a web page
+(http 'get "https://www.onem2m.org")
+
+;; Send a oneM2M CREATE request manually
+(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
+	  { "X-M2M-RI":"1234",                   ;; Header fields
+        "X-M2M-RVI": "4",
+        "X-M2M-Origin": "CAdmin",
+		"Content-type": "application/json;ty=3" }
+      { "m2m:cnt": {                         ;; Body
+          "rn": "myCnt"}})
+```
+
+[top](#top)
+
+---
+
+<a name="ping-tcp-service"></a>
+
+### ping-tcp-service
+
+`(ping-tcp-server <hostname:string> <port:number> [<timeout:number>])`
+
+The `ping-tcp-service`function tests the availability and reachability of a TCP-based network service.
+
+It has the following arguments:
+
+- The *hostname* of the target service. This can be a hostname or an IP address.
+- The *port* of the target service. This is a number.
+- Optional: The request *timeout* in seconds. The default is 5 seconds.
+
+The function returns a boolean value.
+
+Examples:
+
+```lisp
+(ping-tcp-service "localhost" 8080 2)  
+;; Returns true if the service is reachable. Timeout after 2 seconds.
 ```
 
 [top](#top)

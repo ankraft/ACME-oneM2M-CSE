@@ -1271,7 +1271,7 @@ The default value is an empty string.
 # scripting.verbose
 
 This setting enables or disables the CSE's script engine's verbose mode. 
-Script execution details are logged.
+Script execution details are logged much more verbosely.
 
 The default value is `False`.
 

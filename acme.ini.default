@@ -487,7 +487,6 @@ confirmQuit=False
 theme=dark
 
 
-
 ;
 ;   Text UI settings
 ;
@@ -510,9 +509,9 @@ refreshInterval=2.0
 ; Must be a comma-separated list.
 ; Default: not set
 scriptDirectories=
-; Enable debug output during script execution, such as the current executed line.
+; Enable verbose bug output during script execution, such as the current executed line.
 ; Default: False
-verbose=false
+verbose=False
 ; Set the interval to check for new files in the script (init) directory.
 ; 0 means disable monitoring.
 ; Default: 2.0 seconds

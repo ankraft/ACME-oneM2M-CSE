@@ -9,26 +9,26 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 
 <a name="top"></a>
 
-| Meta Tag                                | Description                                                  |
-| --------------------------------------- | ------------------------------------------------------------ |
-| [@at](#meta_at)                         | Schedule scripts to run at a certain time or time interval   |
-| [@category](#meta_category)             | Add a category to the script                                 |
-| [@description](#meta_description)       | Provide a one-line script description                        |
-| [@filename](#meta_filename)             | Contains a script's filename (internal only)                 |
-| [@hidden](#meta_hidden)                 | Hide a script from the console's script catalog              |
-| [@init](#init)                          | Run a script to initialize the CSE during startup and restart |
-| [@name](#meta_name)                     | Assign a name to a script                                    |
-| [@onKe](#meta_onkey)                    | Run a script when a specified key is pressed                 |
-| [@onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE  |
-| [@onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                    |
-| [@onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                  |
-| [@onStartup](#meta_onstartup)           | Run a script just after the CSE started                      |
-| [@prompt](#meta_prompt)                 | Prompt the user for input before the script is run           |
-| [@timeout](#meta_timeout)               | Set a timeout after which script execution is stopped        |
-| [@tuiNoExecute](#meta_tuiNoExecute)     | Disable the `Execute` button for this script in the Text UI's *Tools* section |
-| [@tuiTool](#meta_tuiTool)               | Tag a script for listing in the Text UI's *Tools* section.   |
-| [@uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [@usage](#meta_usage)                   | Provide a short usage help                                   |
+| Type                | Meta Tag                                    | Description                                                  |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| [Basic](#_basic)    | [@at](#meta_at)                             | Schedule scripts to run at a certain time or time interval   |
+|                     | [@description](#meta_description)           | Provide a one-line script description                        |
+|                     | [@filename](#meta_filename)                 | Contains a script's filename (internal only)                 |
+|                     | [@hidden](#meta_hidden)                     | Hide a script from the console's script catalog              |
+|                     | [@init](#init)                              | Run a script to initialize the CSE during startup and restart |
+|                     | [@name](#meta_name)                         | Assign a name to a script                                    |
+|                     | [@onKey](#meta_onkey)                       | Run a script when the specified key is pressed               |
+|                     | [@onNotification](#meta_onnotification)     | Run a script as a receiver of a NOTIFY request from the CSE  |
+|                     | [@onRestart](#meta_onrestart)               | Run a script just after the CSE restarted                    |
+|                     | [@onShutdown](#meta_onshutdown)             | Run a script just before the CSE shuts down                  |
+|                     | [@onStartup](#meta_onstartup)               | Run a script just after the CSE started                      |
+|                     | [@prompt](#meta_prompt)                     | Prompt the user for input before the script is run           |
+|                     | [@timeout](#meta_timeout)                   | Set a timeout after which script execution is stopped        |
+|                     | [@uppertester](#meta_uppertester)           | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
+| [Text UI](#_textui) | [@category](#meta_category)                 | Add a category to the script for the text UI's *Tools* section |
+|                     | [@tuiAutoRun](#meta_tuiAutoRun)             | Automatically run scripts when selecting them, and optionally repeat |
+|                     | [@tuiExecuteButton](#meta_tuiExecuteButton) | Configure the script's `Execute` button in the text UI       |
+|                     | [@tuiTool](#meta_tuiTool)                   | Tag a script for listing in the text UI's *Tools* section    |
 
 ## Accessing Meta Tags
 Meta tags are added as constants to the script's environment, prefixed with "meta.".
@@ -41,7 +41,9 @@ They can be accessed like any other environment variable, for example:
 
 ---
 
-## Meta Tags
+<a name="_basic"></a>
+
+## Basic
 
 <a name="meta_at"></a>
 
@@ -71,26 +73,6 @@ Example:
 ```
 
 [top](#top)
-
----
-
-<a name="meta_category"></a>
-
-### @category
-
-`@category <string>`
-
-A category name for the script. This is used, for example, in the text UI tools to group scripts.
-
-See also: [@name](#meta_name), [@tool](#meta_tool)
-
-Example:
-```lisp
-@categoy System
-```
-
-[top](#top)
-
 
 ---
 
@@ -358,24 +340,6 @@ Example:
 
 ---
 
-<a name="meta_tuiTool"></a>
-
-### @tuiTool
-
-`@tuiTool`
-
-This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
-section.
-
-Example:
-```lisp
-@tuiTool
-```
-
-[top](#top)
-
----
-
 <a name="meta_uppertester"></a>
 
 ### @uppertester
@@ -412,6 +376,97 @@ Example:
 @usage exampleScript <a parameter> <another parameter>
 ```
 
+[top](#top)
+
+---
+
+<a name="_textui"></a>
+
+## Text UI
+
+<a name="meta_category"></a>
+
+### @category
+
+`@category <string>`
+
+A category name for the script. This is used, for example, in the text UI tools to group scripts.
+
+See also: [@name](#meta_name), [@tool](#meta_tool)
+
+Example:
+
+```lisp
+@categoy System
+```
+
+[top](#top)
+
+
+---
+
+<a name="meta_tuiAutoRun"></a>
+
+### @tuiAutoRun
+
+`@tuiAutoRun [<interval:positive float>] `
+
+This meta tag, when present, configures a script that it is run automatically when it is selected in the *Tools* overview in the text UI.
+
+Without the optional *interval* argument the script runs only once when it is selected.
+
+When the *interval* argument is present it must be a positive float number that specifies the interval, in seconds, after which the script is repeatedly run again.
+
+Example:
+
+```lisp
+@tuiAutoRun 10
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiExecuteButton"></a>
+
+### @tuiExecuteButton
+
+`@tuiExecuteButton [<label:string>] `
+
+This meta tag configures the script's `Execute` button of the text UI. The following configurations are possible
+
+- Not present in a script: The button displays the default text "Execute".
+- Present in a script with an argument: The argument is used for the button's label.
+- Present in a script with no argument: The button is hidden.
+
+Example:
+
+```lisp
+@tuiExecuteButton A Label
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiTool"></a>
+
+### @tuiTool
+
+`@tuiTool`
+
+This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
+section.
+
+Example:
+
+```lisp
+@tuiTool
+```
+
+[top](#top)
+
+---
 
 [← ACMEScript](ACMEScript.md)  
 [← README](../README.md) 
