@@ -32,8 +32,36 @@
 		"api" : "NdemoLightbulb",
 		"rr" : true,
 		"rn" : "CDemoLightbulb",
-		"srv" : [ "4" ]
+		"srv" : [ "4" ],
+		"poa" : [ "acme://demo-lightbulb/lightswitch" ]
+
 	}})
+
+;;	Create access control policy to allow notification access to the lightswitch container
+
+(create-resource "CDemoLightbulb" "${(cseRN)}/CDemoLightbulb" 
+	{ "m2m:acp" : {
+		"rn" : "accessControlPolicy",
+		"pv": {
+			"acr": [ {
+				;; Allow CDemoLightbulb only to retrieve					
+				"acor": [ "CDemoLightswitch"	],
+				"acop": 16	;; NOTIFY
+			} , {
+				;; Allow CDemoLightswitch all access
+				"acor": [ "CDemoLightbulb" ],
+				"acop": 63	;; ALL
+			}]
+		},
+		"pvs": {
+			"acr": [ {
+				;; Allow CDemoLightSwitch all access to the accessControlPolicy resource
+				"acor": [ "CDemoLightbulb" ],
+				"acop": 63	;; ALL
+			} ]
+		}
+	}})
+
 
 ;;
 ;;	Create lightswitch resources
@@ -90,13 +118,11 @@
 (create-resource "CDemoLightswitch" "${(cseRN)}/CDemoLightswitch/switchContainer" 
 	{ "m2m:sub" : {
 		"rn" : "switchSubscription",
-		"nu" : ["acme://demo-lightbulb/lightswitch"],	;; Direct URI, no access control
+		"nu" : ["CDemoLightbulb"],	;; Direct URI, no access control
 		"enc": {
 			"net": [ 3 ]								;; Create of direct child resources
 		}
 	}})
-
-
 
 
 

@@ -31,14 +31,13 @@
 
 
 (defun set-lightswitch-status (st)
-	(	(create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
+	(	(print "Toggle Lightswitch to [b u]${(st)}[/b u]")
+		(create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
 			{ "m2m:cin": {
 				"con" : "${(st)}"
 			}})))
 
 
 (case (get-lightswitch-status)
-	("on" 	(	(set-lightswitch-status "off")
-				(print "Toggle Lightswitch to [b u]off[/b u]")))
-	("off"	(	(set-lightswitch-status "on")
-				(print "Toggle Lightswitch to [b u]on[/b u]"))))
+	("on" 	(set-lightswitch-status "off"))
+	("off"	(set-lightswitch-status "on")))
