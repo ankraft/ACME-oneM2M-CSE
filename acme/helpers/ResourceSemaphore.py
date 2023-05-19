@@ -120,7 +120,7 @@ class CriticalSection(object):
 		"""	Initialization of the context manager.
 		
 			Args:
-				id: Resource ID of the resource to be monitored.
+				id: Resource ID of the resource to be monitored. This may also be any other ID in cases where the critical section is not a resource.
 				state: State of the resource.
 		"""
 		self.id = id
