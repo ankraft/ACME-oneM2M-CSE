@@ -253,7 +253,7 @@ class SSymbol(object):
 				raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
 		# Assign known types
-		if string:
+		if string is not None:	# could be empty string
 			self.type = SType.tString
 			self.value = string
 			self.length = len(self.value)
@@ -633,6 +633,15 @@ class PState(IntEnum):
 		return self.value in  [ self.canceled, self.terminated, self.terminatedWithResult, self.terminatedWithError, self.returning ]
 
 
+	def isRunningState(self) -> bool:
+		"""	Check whether the script is running.
+		
+			Return:
+				True if the script is running.
+		"""
+		return self.value in [ self.running, self.returning ]
+
+
 class PError(IntEnum): 
 	"""	Error codes.
 	"""
@@ -704,7 +713,6 @@ class PContext():
 			state: The internal state of a script.
 			symbols: A dictionary of new symbols / functions to add to the interpreter.
 			variables: Dictionary of variables.
-			verbose: Whether verbosity is turned on for a script run.
 			_maxRTimestamp: The max timestamp until the script may run (internal).
 			_callStack: The internal call stack (internal).
 			_symbolds: Dictionary with all build-in and provided functions (internal).
@@ -713,6 +721,7 @@ class PContext():
 	__slots__ = (
 		'script',
 		'symbols',
+		'debugExecutedSymbols',
 		'logFunc',
 		'logErrorFunc',
 		'printFunc',
@@ -733,8 +742,8 @@ class PContext():
 		'functions',
 		'environment',
 		'argv',
-		'verbose',
 		'evaluateInline',
+		'verbose',
 		'_maxRTimestamp',
 		'_callStack',
 		'_symbolds',
@@ -757,7 +766,8 @@ class PContext():
 				 maxRuntime:float					= None,
 				 fallbackFunc:PSymbolCallable		= None,
 				 monitorFunc:PSymbolCallable		= None,
-				 allowBrackets:bool					= False) -> None:
+				 allowBrackets:bool					= False,
+				 verbose:bool						= False) -> None:
 		"""	Initialization of a `PContext` object.
 
 			Args:
@@ -774,6 +784,7 @@ class PContext():
 				fallbackFunc: An optional function to retrieve unknown symbols from the caller.
 				monitorFunc: An optional function to monitor function calls, e.g. to forbid them during particular executions.
 				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
+				verbose: Print more debug messages.
 		"""
 
 		# Extra parameters that can be provided
@@ -794,6 +805,7 @@ class PContext():
 		# State, result and error attributes	
 		self.ast:list[SSymbol] = None
 		self.result:SSymbol = None
+		self.verbose:bool = verbose
 		self.state:PState = PState.created
 		self.error:PErrorState = PErrorState(PError.noError, 0, '', None )
 		self.meta:Dict[str, str] = {}
@@ -801,7 +813,6 @@ class PContext():
 		self.functions:dict[str, FunctionDefinition] = {}
 		self.environment:Dict[str,SSymbol] = {}		# Similar to variables, but not cleared
 		self.argv:list[str] = []
-		self.verbose:bool = None		# Store the runtime verbosity of the run() function
 		self.evaluateInline = True		# check and execute inline expressions
 
 		# Internal attributes that should not be accessed from extern
@@ -907,6 +918,16 @@ class PContext():
 		"""
 		self.result = symbol
 		return self
+
+
+	def logSymbol(self, symbol:SSymbol) -> None:
+		"""	Log a symbol in verbose mode.
+
+			Args:
+				symbol: The `SSymbol` object to log.
+		"""
+		if self.verbose and self.logFunc:
+			self.logFunc(self, f'Executed symbol: {symbol}')
 
 
 	def pushCall(self, name:Optional[str] = None) -> None:
@@ -1202,7 +1223,7 @@ class PContext():
 		if not self.validate():
 			raise PInvalidArgumentError(self)
 		self.result = None
-		self.run(arguments = self.argv, verbose = self.verbose, isSubCall = True)	# might throw exception
+		self.run(arguments = self.argv, isSubCall = True)	# might throw exception
 		self.ast = _ast
 		self.script = _script
 		return self
@@ -1236,13 +1257,11 @@ class PContext():
 
 	def run(self,
 			arguments:List[str] = [], 
-			verbose:Optional[bool] = False, 
-			isSubCall:bool = False) -> PContext:
+			isSubCall:Optional[bool] = False) -> PContext:
 		"""	Run the script in the `PContext` instance.
 
 			Args:
 				arguments: Optional list of string arguments to the script. They are available to the script via the *argv* function.
-				verbose: Optional indicator whether the interpreter runs the script in verbose mode.
 				isSubCall: Optional indicator whether the script is called from another script.
 			
 			Return:
@@ -1298,7 +1317,6 @@ class PContext():
 		# so "argv" couldn't just be a variable.
 		self.argv = arguments	
 		self.environment['argc'] = SSymbol(number = Decimal(len(self.argv)))
-		self.verbose = verbose
 
 		# Call Pre-Function
 		if self.preFunc:
@@ -1362,8 +1380,11 @@ class PContext():
 		# Check for timeout
 		self._checkTimeout()
 
+		# Log current symbol etc
+		self.logSymbol(symbol)
+		
 		# First resolve the S-Expression
-		if not symbol.length:
+		if not symbol.length and symbol.type != SType.tString:
 			return self.setResult(SSymbol())
 		firstSymbol = symbol[0] if symbol.length and symbol.type == SType.tList else symbol
 
