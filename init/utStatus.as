@@ -5,7 +5,7 @@
 ;;
 
 @name Status
-@description Return the CSE status
+@description Print and return the CSE status.
 @usage Status
 @uppertester
 @tuiTool
