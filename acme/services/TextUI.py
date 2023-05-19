@@ -132,6 +132,8 @@ class TextUI(object):
 				L.console('Press # to return to UI')
 			except Exception as e:
 				L.logErr(str(e), exc = e)
+			finally:
+				self.tuiApp.cleanUp()
 			if self.tuiApp.quitReason != ACMETuiQuitReason.restart:
 				break
 		
@@ -171,3 +173,10 @@ class TextUI(object):
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptClearConsole(scriptName)
+	
+
+	def scriptVisualBell(self, scriptName:str) -> None:
+		"""	Visual bell.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptVisualBell(scriptName)
