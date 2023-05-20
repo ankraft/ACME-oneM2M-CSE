@@ -485,6 +485,9 @@ confirmQuit=False
 ; Set the color theme for the console. Allowed values are "dark" and "light".
 ; Default: dark
 theme=dark
+; Run the CSE in headless mode, i.e. without a console and without screen logging.
+; Default: False
+headless=False
 
 
 ;

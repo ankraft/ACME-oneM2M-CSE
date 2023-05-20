@@ -431,14 +431,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[console] - Console Settings
 
-| Setting                     | Description                                                                                                                                                                                   | Configuration Name                      |
-|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------|
-| refreshInterval             | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                                             | console.refreshInterval             |
-| hideResources               | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                                                    | console.hideResources               |
-| treeMode                    | Set the mode how resources and their content are presented in the console's and structure endpoint's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | console.treeMode                    |
-| treeIncludeVirtualResources | Show virtual resources in the console's and structure endpoint's tree view..<br/>Default: False                                                                                               | console.treeIncludeVirtualResources |
+| Setting                     | Description                                                                                                                                                                                   | Configuration Name                  |
+|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------|
 | confirmQuit                 | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                                                       | console.confirmQuit                 |
+| headless                    | Run the CSE in headless mode, i.e. without a console and without screen logging.<br />Default: False                                                                                          | console.headless                    |
+| hideResources               | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                                                    | console.hideResources               |
+| refreshInterval             | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                                             | console.refreshInterval             |
 | theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | console.theme                       |
+| treeIncludeVirtualResources | Show virtual resources in the console's and structure endpoint's tree view..<br/>Default: False                                                                                               | console.treeIncludeVirtualResources |
+| treeMode                    | Set the mode how resources and their content are presented in the console's and structure endpoint's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | console.treeMode                    |
 
 [top](#sections)
 

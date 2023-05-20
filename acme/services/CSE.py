@@ -206,7 +206,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
-	isHeadless = args.headless
 
 	event = EventManager()					# Initialize the event manager before anything else
 
@@ -230,6 +229,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 	releaseVersion 			 = Configuration.get('cse.releaseVersion')
+	isHeadless				 = Configuration.get('console.headless')
 
 	# Set the CSE's point-of-access
 	csePOA					 = [ Configuration.get('http.address') ]
