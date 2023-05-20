@@ -122,12 +122,12 @@ class ACMETuiApp(App):
 				yield self.containerRequests
 			with TabPane('Registrations', id = tabRegistrations):
 				yield self.containerRegistrations
+			with TabPane('Tools', id = tabTools):
+				yield self.containerTools
 			with TabPane('Infos', id = tabInfo):
 				yield self.containerInfo
 			with TabPane('Configurations', id = tabConfigurations):
 				yield self.containerConfigs
-			with TabPane('Tools', id = tabTools):
-				yield self.containerTools
 			with TabPane('About', id = tabAbout):
 				yield self.containerAbout
 		yield Footer()
