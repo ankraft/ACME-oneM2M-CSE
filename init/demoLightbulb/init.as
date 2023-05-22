@@ -18,6 +18,15 @@
 ;;	Include some helper functions
 (print "Init Lightbulb Demo")
 
+;;	Provide a description for the category. This is displayed in the Text UI
+(set-category-description "Lightbulb Demo" 
+"This demo is a simulation that implements a *lightbulb* that is controlled by a *lightswitch*. 
+
+Both the *lightbulb* and the *lightswitch* are implemented as Application Entities (AEs). 
+
+The *lightbulb* AE is subscribed to the *lightswitch*'s container, and receives notifications whenever new
+`<ContentInstance>` resources are created for the *lightswitch*.")
+
 ;;	Get the CSE's resource name
 (setq cseRN (get-config "cse.resourceName"))
 
