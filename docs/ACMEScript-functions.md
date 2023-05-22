@@ -86,7 +86,8 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [retrieve-resource](#retrieve-resource)                 | Send a oneM2M RETRIEVE request                               |
 |                            | [send-notification](#send-notification)                 | Send a oneM2M NOTIFY request                                 |
 |                            | [update-resource](#update-resource)                     | Send a oneM2M UPDATE request                                 |
-| [Text UI](#_textui)                    | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode               |
+| [Text UI](#_textui)                    | [set-category-description](#set-category-description)   | Set the description for a whole category of scripts          |
+|  | [runs-in-tui](#runs-in-tui) | Determine whether the CSE runs in Text UI mode |
 |                            | [tui-visual-bell](#tui-visual-bell) | Shortly flashes the script's entry in the scripts list |
 | [Network](#_network) | [http](#http) | Send http requests |
 |  | [ping-tcp-service](#ping-tcp-service)                   | Check the availability of a network service via TCP          |
@@ -1995,6 +1996,27 @@ Examples:
 <a name="_textui"></a>
 
 ## Text UI
+
+---
+
+<a name="set-category-description"></a>
+
+### set-category-description
+
+`(set-category-description <category:string> <description:string>)`
+
+The `set-category-description` function sets the description for a whole category in the CSE's Text UI.
+
+The description may contain Markdown formatting.
+
+Examples:
+
+```lisp
+;; Sets the description for the category "myCategory"
+(set-category-description "myCategory" "My category description")
+```
+
+[top](#top)
 
 ---
 

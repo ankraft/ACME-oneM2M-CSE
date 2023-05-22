@@ -75,8 +75,8 @@ class ACMEViewRequests(Vertical):
 		self.requestList = ListView(id = 'request-list-list')
 
 		# Request view: request + response
-		self.requestListRequest = Static(id = 'request-list-request', expand = True)
-		self.requestListResponse = Static(id = 'request-list-response', expand = True)
+		self.requestListRequest = Static(id = 'request-list-request')
+		self.requestListResponse = Static(id = 'request-list-response')
 		
 	
 	@property

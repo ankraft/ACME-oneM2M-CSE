@@ -11,17 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added support for &lt;action> and &lt;dependency> resource types
+- [CSE] Added recording of received and sent requests to support request debugging.
 - [CSE] Improved validation of complex types and mandatory attributes.
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
-- [CSE] Added recording of received and sent requests to support request debugging.
-- [CSE] Added support for &lt;action> and &lt;dependency> resource types
 - [CSE] Cleaned up and removed some obsolete code.
+- [CSE] Added *[console].headless* configuration (in addition to the --headless command line argument).
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
 - [LOGGING] Allow to exclude log messages from external libraries and components.
 - [TUI] Added text UI.
+- [TUI] Added views for resources, requests, registrations, configurations, statistics, and scripts.
 - [SCRIPTS] Added *category* and *tool* meta-tags for scripts to allow for better categorization and filtering in the text UI.
+- [SCRIPTS] Added Text UI meta tags: @tuiAutoRun, @tuiExecuteButton, @tuiTool.
 
 ### Experimental
 - [CSE] Added experimental *subi* attribute support to &lt;CNT> only. Other resource types may follow.

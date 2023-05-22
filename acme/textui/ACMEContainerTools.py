@@ -89,8 +89,8 @@ class ACMEToolsTree(TextualTree):
 		self.stopAutoRunScript(str(node.label))
 
 		if node.children:	
-			# This is a category node, so clear the description, button etc.
-			self.parentContainer.toolsHeader.update(f'## {node.label}')
+			# This is a category node, so set the description, clear the button etc.
+			self.parentContainer.toolsHeader.update(f'## {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
 			self.parentContainer.toolsLog.clear()
 
@@ -101,7 +101,10 @@ class ACMEToolsTree(TextualTree):
 			description = description.replace('\n', '\n\n') if description is not None else ''
 
 			# Update the header and the button
-			self.parentContainer.toolsHeader.update(f"""\
+			if description.startswith('#'):
+				self.parentContainer.toolsHeader.update(description)
+			else:    
+				self.parentContainer.toolsHeader.update(f"""\
 ## {node.label}
 
 {description}

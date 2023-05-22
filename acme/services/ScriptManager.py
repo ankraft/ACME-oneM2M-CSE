@@ -118,34 +118,35 @@ class ACMEPContext(PContext):
 
 						# !!! Always use lower case when adding new macros and commands below
 						 symbols = {	
-							 			'clear-console':		self.doClearConsole,
-							 			'create-resource':		self.doCreateResource,
-										'cse-status':			self.doCseStatus,
-							 			'delete-resource':		self.doDeleteResource,
-										'get-config':			self.doGetConfiguration,
-										'get-storage':			self.doGetStorage,
-										'has-config':			self.doHasConfiguration,
-										'has-storage':			self.doHasStorage,
-										'http':					self.doHttp,
-										'import-raw':			self.doImportRaw,
-										'include-script':		lambda p, a: self.doRunScript(p, a, isInclude = True),
-										'log-divider':			self.doLogDivider,
-										'ping-tcp-service':		self.doPingTcpService,
-										'print-json':			self.doPrintJSON,
-										'put-storage':			self.doPutStorage,
-										'query-resource':		self.doQueryResource,
-						 				'remove-storage':		self.doRemoveStorage,
-										'reset-cse':			self.doReset,
-							 			'retrieve-resource':	self.doRetrieveResource,
-										'run-script':			self.doRunScript,
-										'runs-in-ipython':		self.doRunsInIPython,
-										'runs-in-tui':			self.doRunsInTUI,
-							 			'send-notification':	self.doNotify,
-										'set-config':			self.doSetConfig,
-										'set-console-logging':	self.doSetLogging,
-										'schedule-next-script':	self.doScheduleNextScript,
-										'tui-visual-bell':		self.doTuiVisualBell,
-							 			'update-resource':		self.doUpdateResource,
+							 			'clear-console':			self.doClearConsole,
+							 			'create-resource':			self.doCreateResource,
+										'cse-status':				self.doCseStatus,
+							 			'delete-resource':			self.doDeleteResource,
+										'get-config':				self.doGetConfiguration,
+										'get-storage':				self.doGetStorage,
+										'has-config':				self.doHasConfiguration,
+										'has-storage':				self.doHasStorage,
+										'http':						self.doHttp,
+										'import-raw':				self.doImportRaw,
+										'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
+										'log-divider':				self.doLogDivider,
+										'ping-tcp-service':			self.doPingTcpService,
+										'print-json':				self.doPrintJSON,
+										'put-storage':				self.doPutStorage,
+										'query-resource':			self.doQueryResource,
+						 				'remove-storage':			self.doRemoveStorage,
+										'reset-cse':				self.doReset,
+							 			'retrieve-resource':		self.doRetrieveResource,
+										'run-script':				self.doRunScript,
+										'runs-in-ipython':			self.doRunsInIPython,
+										'runs-in-tui':				self.doRunsInTUI,
+							 			'send-notification':		self.doNotify,
+										'set-category-description':	self.doSetCategoryDescription,
+										'set-config':				self.doSetConfig,
+										'set-console-logging':		self.doSetLogging,
+										'schedule-next-script':		self.doScheduleNextScript,
+										'tui-visual-bell':			self.doTuiVisualBell,
+							 			'update-resource':			self.doUpdateResource,
 						  			},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
@@ -975,6 +976,35 @@ class ACMEPContext(PContext):
 		return pcontext.setResult(script.result)
 
 
+	def doSetCategoryDescription(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Set the description of a category.
+		
+			Example:
+				::
+
+					(set-category-description "myCategory" "My category description")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated PContext object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 3)
+
+		# category
+		pcontext, _category = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# description
+		pcontext, _description = pcontext.valueFromArgument(symbol, 2, SType.tString)
+
+		# Set the description
+		CSE.script.categoryDescriptions[_category] = _description
+		return pcontext
+	
+
+
 	def doSetConfig(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Set a CSE configuration. The configuration must be an existing configuration. No
 			new configurations can be created this way.
@@ -1301,9 +1331,10 @@ class ScriptManager(object):
 		'scriptUpdatesMonitor',
 		'scriptCronWorker',
 
-		'verbose',
-		'scriptMonitorInterval',
+		'categoryDescriptions',
 		'scriptDirectories',
+		'scriptMonitorInterval',
+		'verbose',
 	)
 	""" Slots of class attributes. """
 
@@ -1312,6 +1343,7 @@ class ScriptManager(object):
 		"""
 
 		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
+		self.categoryDescriptions:Dict[str,str] = {}			# The category descriptions
 		self.storage:Dict[str, SSymbol] = {}					# storage for global values
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
@@ -1400,12 +1432,16 @@ class ScriptManager(object):
 			Start a background worker to monitor directories for scripts.
 		"""
 		# Add a worker to monitor changes in the scripts
-		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor')
+		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, 
+							     								   self.checkScriptUpdates, 
+																   'scriptUpdatesMonitor')
 		if self.scriptMonitorInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
 		# Add a worker to check scheduled script, fixed every minute
-		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
+		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, 
+							 								   self.cronMonitor, 
+															   'scriptCronMonitor').start()
 
 		# Look for the startup script(s) and run them. 
 		self.runEventScripts(_metaOnStartup)
