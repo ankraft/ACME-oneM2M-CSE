@@ -14,6 +14,14 @@ from typing import Optional
 import ipaddress, re, socket, contextlib
 
 def isValidateIpAddress(ip:str) -> bool:
+	"""	Validate an IP address.
+	
+		Args:
+			ip: The IP address to validate.
+		
+		Return:
+			True or False.
+	"""
 	try:
 		ipaddress.ip_address(ip)
 	except Exception:

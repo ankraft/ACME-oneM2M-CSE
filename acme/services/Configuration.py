@@ -589,9 +589,11 @@ class Configuration(object):
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
 
-		# check the csi format
+		# check the csi format and value
 		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
+		if Configuration._configuration['cse.cseID'][1:] == Configuration._configuration['cse.resourceName']:
+			return False, f'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
 
 		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.cseID']:
 			if not isValidCSI(val:=Configuration._configuration['cse.registrar.cseID']):

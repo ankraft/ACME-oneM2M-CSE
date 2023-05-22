@@ -484,7 +484,7 @@ treeIncludeVirtualResources=False
 confirmQuit=False
 ; Set the color theme for the console. Allowed values are "dark" and "light".
 ; Default: dark
-theme=dark
+theme=${basic.config:consoleTheme}
 ; Run the CSE in headless mode, i.e. without a console and without screen logging.
 ; Default: False
 headless=False
@@ -506,7 +506,6 @@ refreshInterval=2.0
 ;
 ;	Scripting settings
 ;
-
 [scripting]
 ; Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory.
 ; Must be a comma-separated list.
