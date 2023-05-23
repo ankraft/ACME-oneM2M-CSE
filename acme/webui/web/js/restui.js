@@ -271,7 +271,6 @@ tplNode = {
     "m2m:nod": {
 		"acpi": [ "==> fill or remove <==" ],
         "ni": "==> fill <==",
-        "nid": "==> fill <==",
         "rn": "==> fill <=="
     }
 }
