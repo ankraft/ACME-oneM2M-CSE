@@ -100,7 +100,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 							message = 'Select the target environment:',
 							choices = [	Choice(name = 'Development  - Enable development, testing, and debugging support', 
 								   			  value = 'Development'),
-										Choice(name = 'Introduction - Introduction to oneM2M: install extra demo resources and scripts',
+										Choice(name = 'Introduction - Install extra demo resources, documentation, and scripts',
 											   value = 'Introduction'),
 										Choice(name = 'Regular      - Disable development features',
 											   value = 'Regular'),

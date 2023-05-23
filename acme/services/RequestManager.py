@@ -26,6 +26,7 @@ from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitF
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
 from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
 from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
+from ..etc.Utils import isStructured, structuredPathFromRI
 from ..helpers.TextTools import setXPath
 from ..services.Configuration import Configuration
 from ..services import CSE
@@ -936,6 +937,8 @@ class RequestManager(object):
 			_request.rvi = rvi
 			_request.ot = request.ot if request.ot is not None else getResourceDate()
 			_request.originator = requestOriginator
+			if _request.id is None:
+				_request.id = to
 			# Send the request via a PCH, if present
 			if pch:
 				_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
@@ -1525,6 +1528,8 @@ class RequestManager(object):
 			pc = None
 		if not (srn := request.srn):
 			srn = request.id if request.id else request.to
+			if not isStructured(srn):
+				srn = structuredPathFromRI(srn)
 		
 		request.fillOriginalRequest(update = True)
 

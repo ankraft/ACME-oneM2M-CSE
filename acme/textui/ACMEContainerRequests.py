@@ -16,7 +16,7 @@ from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
 from rich.pretty import Pretty
 from rich.syntax import Syntax
-from ..etc.Types import JSONLIST, JSON
+from ..etc.Types import JSONLIST, JSON, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
@@ -207,7 +207,7 @@ class ACMEViewRequests(Vertical):
 			_srn = r.get('srn', '')
 			# _srn = _srn if _srn else ''
 			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {r["op"].name:10.10}   {str(r.get("org", "")):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
+				Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')

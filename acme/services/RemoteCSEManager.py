@@ -225,7 +225,10 @@ class RemoteCSEManager(object):
 			L.isInfo and L.log(f'De-registered from registrar CSE: {self.registrarCSI}')
 		if len(resources := self._retrieveLocalCSRResources(includeRegistrarCSR = True)):	# retrieve local CSR of the registrar
 			L.isDebug and L.logDebug('Deleting local registrar CSR ')
-			self._deleteRegistreeCSR(resources[0])		# delete local CSR of the registrar
+			try:
+				self._deleteRegistreeCSR(resources[0])		# delete local CSR of the registrar
+			except:
+				pass
 	
 
 	def connectionMonitorWorker(self) -> bool:
