@@ -557,6 +557,15 @@ The default value is `False`.
 
 
 
+# console.headless
+
+This setting enables or disables the CSE's headless mode. When enabled, the CSE's console,
+text UI and screen logging are disabled, and only minimal screen output is generated.
+
+The default value is `False`.
+
+
+
 # console.hideResources
 
 This setting specifies a comma-separated list of resource identifiers that should be hidden in the CSE's console, for example the resource tree command.
@@ -1271,7 +1280,7 @@ The default value is an empty string.
 # scripting.verbose
 
 This setting enables or disables the CSE's script engine's verbose mode. 
-Script execution details are logged.
+Script execution details are logged much more verbosely.
 
 The default value is `False`.
 

@@ -14,6 +14,14 @@ from typing import Optional
 import ipaddress, re, socket, contextlib
 
 def isValidateIpAddress(ip:str) -> bool:
+	"""	Validate an IP address.
+	
+		Args:
+			ip: The IP address to validate.
+		
+		Return:
+			True or False.
+	"""
 	try:
 		ipaddress.ip_address(ip)
 	except Exception:
@@ -73,3 +81,26 @@ def getIPAddress(hostname:Optional[str] = None) -> str:
 		return ip
 	except Exception:
 		return ''
+
+
+def pingTCPServer(server:str, port:int, timeout:float = 3.0) -> bool:
+	"""	Ping a TCP server on a specific port.
+	
+		Args:
+			server: The server to ping.
+			port: The port to ping.
+			timeout: The timeout in seconds.
+
+		Return:
+			True or False
+	"""
+	
+	try:
+		socket.setdefaulttimeout(timeout)
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.connect((server, port))
+	except OSError as error:
+		return False
+	else:
+		s.close()
+		return True

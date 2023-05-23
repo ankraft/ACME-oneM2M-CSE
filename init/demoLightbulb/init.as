@@ -18,6 +18,15 @@
 ;;	Include some helper functions
 (print "Init Lightbulb Demo")
 
+;;	Provide a description for the category. This is displayed in the Text UI
+(set-category-description "Lightbulb Demo" 
+"This demo is a simulation that implements a *lightbulb* that is controlled by a *lightswitch*. 
+
+Both the *lightbulb* and the *lightswitch* are implemented as Application Entities (AEs). 
+
+The *lightbulb* AE is subscribed to the *lightswitch*'s container, and receives notifications whenever new
+`<ContentInstance>` resources are created for the *lightswitch*.")
+
 ;;	Get the CSE's resource name
 (setq cseRN (get-config "cse.resourceName"))
 
@@ -32,8 +41,36 @@
 		"api" : "NdemoLightbulb",
 		"rr" : true,
 		"rn" : "CDemoLightbulb",
-		"srv" : [ "4" ]
+		"srv" : [ "4" ],
+		"poa" : [ "acme://demo-lightbulb/lightswitch" ]
+
 	}})
+
+;;	Create access control policy to allow notification access to the lightswitch container
+
+(create-resource "CDemoLightbulb" "${(cseRN)}/CDemoLightbulb" 
+	{ "m2m:acp" : {
+		"rn" : "accessControlPolicy",
+		"pv": {
+			"acr": [ {
+				;; Allow CDemoLightbulb only to retrieve					
+				"acor": [ "CDemoLightswitch"	],
+				"acop": 16	;; NOTIFY
+			} , {
+				;; Allow CDemoLightswitch all access
+				"acor": [ "CDemoLightbulb" ],
+				"acop": 63	;; ALL
+			}]
+		},
+		"pvs": {
+			"acr": [ {
+				;; Allow CDemoLightSwitch all access to the accessControlPolicy resource
+				"acor": [ "CDemoLightbulb" ],
+				"acop": 63	;; ALL
+			} ]
+		}
+	}})
+
 
 ;;
 ;;	Create lightswitch resources
@@ -90,13 +127,11 @@
 (create-resource "CDemoLightswitch" "${(cseRN)}/CDemoLightswitch/switchContainer" 
 	{ "m2m:sub" : {
 		"rn" : "switchSubscription",
-		"nu" : ["acme://demo-lightbulb/lightswitch"],	;; Direct URI, no access control
+		"nu" : ["CDemoLightbulb"],	;; Direct URI, no access control
 		"enc": {
 			"net": [ 3 ]								;; Create of direct child resources
 		}
 	}})
-
-
 
 
 

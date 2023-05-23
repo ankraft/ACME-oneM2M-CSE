@@ -75,8 +75,8 @@ class ACMEViewRequests(Vertical):
 		self.requestList = ListView(id = 'request-list-list')
 
 		# Request view: request + response
-		self.requestListRequest = Static(id = 'request-list-request', expand = True)
-		self.requestListResponse = Static(id = 'request-list-response', expand = True)
+		self.requestListRequest = Static(id = 'request-list-request')
+		self.requestListResponse = Static(id = 'request-list-response')
 		
 	
 	@property
@@ -186,7 +186,7 @@ class ACMEViewRequests(Vertical):
 		def rscFmt(rsc:int) -> str:
 			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
 			# _c = 'green1' if isSuccessRSC(_rsc) else 'red'
-			_c = 'dark_green' if isSuccessRSC(_rsc) else 'red'
+			_c = 'green3' if isSuccessRSC(_rsc) else 'red'
 			return f'[{_c}]{_rsc.name}[/{_c}]'
 
 		self.requestList.clear()

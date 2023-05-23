@@ -274,6 +274,7 @@ class Configuration(object):
 				#
 
 				'console.confirmQuit'					: config.getboolean('console', 'confirmQuit', 						fallback = False),
+				'console.headless'						: config.getboolean('console', 'headless', 							fallback = False),
 				'console.hideResources'					: config.getlist('console', 'hideResources', 						fallback = []),		# type: ignore[attr-defined]
 				'console.refreshInterval'				: config.getfloat('console', 'refreshInterval', 					fallback = 2.0),
 				'console.theme'							: config.get('console', 'theme', 									fallback = 'dark'),
@@ -500,7 +501,7 @@ class Configuration(object):
 		if (queueSize := Configuration._configuration['logging.queueSize']) < 0:
 			return False, f'Configuration Error: \[logging]:queueSize must be 0 or greater'
 
-
+		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					Configuration._configuration['database.resetOnStartup'] = True									# Override DB reset from command line
 		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['database.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
 		if Configuration._argsHttpAddress is not None:			Configuration._configuration['http.address'] = Configuration._argsHttpAddress								# Override server http address
@@ -513,8 +514,8 @@ class Configuration(object):
 		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
 		if Configuration._argsTextUI is not None:				Configuration._configuration['cse.textui.startWithTUI'] = Configuration._argsTextUI
 		
-		if Configuration._argsHeadless:
-			Configuration._configuration['logging.enableScreenLogging'] = False
+		if Configuration._argsHeadless is True:
+			Configuration._configuration['console.headless'] = True
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = normalizeURL(Configuration._configuration['cse.registrar.address'])
@@ -588,9 +589,11 @@ class Configuration(object):
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
 
-		# check the csi format
+		# check the csi format and value
 		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
+		if Configuration._configuration['cse.cseID'][1:] == Configuration._configuration['cse.resourceName']:
+			return False, f'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
 
 		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.cseID']:
 			if not isValidCSI(val:=Configuration._configuration['cse.registrar.cseID']):
@@ -635,6 +638,10 @@ class Configuration(object):
 		Configuration._configuration['console.theme'] = (theme := Configuration._configuration['console.theme'].lower())
 		if theme not in [ 'dark', 'light' ]:
 			return False, f'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"'
+
+		if Configuration._configuration['console.headless']:
+			Configuration._configuration['logging.enableScreenLogging'] = False
+			Configuration._configuration['textui.startWithTUI'] = False
 
 
 		# Script settings

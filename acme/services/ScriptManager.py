@@ -14,6 +14,8 @@ from pathlib import Path
 import json, os, fnmatch
 import requests
 from decimal import Decimal
+from rich.text import Text
+
 
 from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
@@ -25,7 +27,8 @@ from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PErr
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
-from ..helpers.TextTools import findXPath, setXPath
+from ..helpers.TextTools import setXPath
+from ..helpers.NetworkTools import pingTCPServer, isValidPort
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..services import CSE
@@ -115,32 +118,35 @@ class ACMEPContext(PContext):
 
 						# !!! Always use lower case when adding new macros and commands below
 						 symbols = {	
-							 			'clear-console':		self.doClearConsole,
-							 			'create-resource':		self.doCreateResource,
-										'cse-status':			self.doCseStatus,
-							 			'delete-resource':		self.doDeleteResource,
-										'get-config':			self.doGetConfiguration,
-										'get-storage':			self.doGetStorage,
-										'has-config':			self.doHasConfiguration,
-										'has-storage':			self.doHasStorage,
-										'http':					self.doHttp,
-										'import-raw':			self.doImportRaw,
-										'include-script':		lambda p, a: self.doRunScript(p, a, isInclude = True),
-										'log-divider':			self.doLogDivider,
-										'print-json':			self.doPrintJSON,
-										'put-storage':			self.doPutStorage,
-										'query-resource':		self.doQueryResource,
-						 				'remove-storage':		self.doRemoveStorage,
-										'reset-cse':			self.doReset,
-							 			'retrieve-resource':	self.doRetrieveResource,
-										'run-script':			self.doRunScript,
-										'runs-in-ipython':		self.doRunsInIPython,
-										'runs-in-tui':			self.doRunsInTUI,
-							 			'send-notification':	self.doNotify,
-										'set-config':			self.doSetConfig,
-										'set-console-logging':	self.doSetLogging,
-										'schedule-next-script':	self.doScheduleNextScript,
-							 			'update-resource':		self.doUpdateResource,
+							 			'clear-console':			self.doClearConsole,
+							 			'create-resource':			self.doCreateResource,
+										'cse-status':				self.doCseStatus,
+							 			'delete-resource':			self.doDeleteResource,
+										'get-config':				self.doGetConfiguration,
+										'get-storage':				self.doGetStorage,
+										'has-config':				self.doHasConfiguration,
+										'has-storage':				self.doHasStorage,
+										'http':						self.doHttp,
+										'import-raw':				self.doImportRaw,
+										'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
+										'log-divider':				self.doLogDivider,
+										'ping-tcp-service':			self.doPingTcpService,
+										'print-json':				self.doPrintJSON,
+										'put-storage':				self.doPutStorage,
+										'query-resource':			self.doQueryResource,
+						 				'remove-storage':			self.doRemoveStorage,
+										'reset-cse':				self.doReset,
+							 			'retrieve-resource':		self.doRetrieveResource,
+										'run-script':				self.doRunScript,
+										'runs-in-ipython':			self.doRunsInIPython,
+										'runs-in-tui':				self.doRunsInTUI,
+							 			'send-notification':		self.doNotify,
+										'set-category-description':	self.doSetCategoryDescription,
+										'set-config':				self.doSetConfig,
+										'set-console-logging':		self.doSetLogging,
+										'schedule-next-script':		self.doScheduleNextScript,
+										'tui-visual-bell':			self.doTuiVisualBell,
+							 			'update-resource':			self.doUpdateResource,
 						  			},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
@@ -151,7 +157,8 @@ class ACMEPContext(PContext):
 						 errorFunc = errorFunc,
 						 fallbackFunc = fallbackFunc,
 						 monitorFunc = monitorFunc,
-						 allowBrackets = allowBrackets)
+						 allowBrackets = allowBrackets,
+						 verbose = CSE.script.verbose)
 
 		self.scriptFilename = filename if filename else None
 		self.fileMtime = os.stat(filename).st_mtime if filename else None
@@ -219,7 +226,8 @@ class ACMEPContext(PContext):
 			if CSE.textUI.tuiApp:
 				CSE.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			else:
-				L.console(line, nl = not len(line))
+				# L.console(line, nl = not len(line))
+				L.console(Text.from_markup(line))
 	
 	
 	@property
@@ -277,7 +285,7 @@ class ACMEPContext(PContext):
 		if not CSE.isHeadless:
 			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
-		return pcontext
+		return pcontext.setResult(SSymbol())
 
 
 	def doCreateResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -652,6 +660,50 @@ class ACMEPContext(PContext):
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.NOTIFY)
 
 
+	def doPingTcpService(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Ping a TCP service (server) to check if it is available and reachable.
+		
+			The function has the following arguments:
+
+				- server name or IP address.
+				- port number.
+				- Optional: timeout in seconds (default: 10).
+			
+			The function returns a boolean as a result, indicating if the 
+			service is reachable.
+
+			Example:
+				::
+
+					(ping-service <server> <port> [<timeout>]) -> boolean
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+			
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 4)
+
+		# server
+		pcontext, _server = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# port
+		pcontext, _port = pcontext.valueFromArgument(symbol, 2, SType.tNumber)
+		if not isValidPort(_port):
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'Invalid port number: {_port}'))
+
+		# timeout
+		_timeout = 10
+		if symbol.length == 4:
+			pcontext, _timeout = pcontext.valueFromArgument(symbol, 3, SType.tNumber)
+			if _timeout <= 0.0:
+				raise PInvalidArgumentError(self.setError(PError.invalid, f'Invalid timeout: {_timeout}. Must be greater than 0.0'))
+
+		return pcontext.setResult(SSymbol(boolean = pingTCPServer(_server, int(_port), float(_timeout))))
+
+
 	def doPrintJSON(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Print a beautified JSON to the console.
 
@@ -706,7 +758,6 @@ class ACMEPContext(PContext):
 
 		CSE.script.storagePut(_key, _value)
 		return pcontext
-
 
 	def doQueryResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Run a comparison query against a JSON structure. This compares to the oneM2M advanced
@@ -779,7 +830,7 @@ class ACMEPContext(PContext):
 		"""
 		pcontext.assertSymbol(symbol, 1)
 		CSE.resetCSE()
-		return pcontext
+		return pcontext.setResult(SSymbol())
 	
 
 	def doRetrieveResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -866,9 +917,8 @@ class ACMEPContext(PContext):
 		if len(scripts := CSE.script.findScripts(name = name)) == 0:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'script: "{name}" not found'))
 		
-		# Add to the next-run queue
+		# Set the next-running script and its arguments
 		cast(ACMEPContext, pcontext).nextScript = (scripts[0], arguments)
-
 		return pcontext
 
 
@@ -924,6 +974,35 @@ class ACMEPContext(PContext):
 										 if k not in ['argc'] } )
 
 		return pcontext.setResult(script.result)
+
+
+	def doSetCategoryDescription(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Set the description of a category.
+		
+			Example:
+				::
+
+					(set-category-description "myCategory" "My category description")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated PContext object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 3)
+
+		# category
+		pcontext, _category = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# description
+		pcontext, _description = pcontext.valueFromArgument(symbol, 2, SType.tString)
+
+		# Set the description
+		CSE.script.categoryDescriptions[_category] = _description
+		return pcontext
+	
 
 
 	def doSetConfig(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1026,6 +1105,12 @@ class ACMEPContext(PContext):
 		# Value
 		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 		L.enableScreenLogging = cast(bool, value)
+		return pcontext.setResult(SSymbol())
+
+
+	def doTuiVisualBell(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		pcontext.assertSymbol(symbol, 1)
+		CSE.textUI.scriptVisualBell(pcontext.scriptName)
 		return pcontext
 
 
@@ -1246,9 +1331,10 @@ class ScriptManager(object):
 		'scriptUpdatesMonitor',
 		'scriptCronWorker',
 
-		'verbose',
-		'scriptMonitorInterval',
+		'categoryDescriptions',
 		'scriptDirectories',
+		'scriptMonitorInterval',
+		'verbose',
 	)
 	""" Slots of class attributes. """
 
@@ -1257,6 +1343,7 @@ class ScriptManager(object):
 		"""
 
 		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
+		self.categoryDescriptions:Dict[str,str] = {}			# The category descriptions
 		self.storage:Dict[str, SSymbol] = {}					# storage for global values
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
@@ -1319,7 +1406,8 @@ class ScriptManager(object):
 		"""
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
-						'scripting.scriptDirectories']:
+						'scripting.scriptDirectories'
+					  ]:
 			return
 
 		# assign new values
@@ -1344,12 +1432,16 @@ class ScriptManager(object):
 			Start a background worker to monitor directories for scripts.
 		"""
 		# Add a worker to monitor changes in the scripts
-		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor')
+		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, 
+							     								   self.checkScriptUpdates, 
+																   'scriptUpdatesMonitor')
 		if self.scriptMonitorInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
 		# Add a worker to check scheduled script, fixed every minute
-		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
+		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, 
+							 								   self.cronMonitor, 
+															   'scriptCronMonitor').start()
 
 		# Look for the startup script(s) and run them. 
 		self.runEventScripts(_metaOnStartup)
@@ -1621,6 +1713,7 @@ class ScriptManager(object):
 			Return:
 				Boolean that indicates the successful running of the script. A background script always returns *True*.
 		"""
+
 		def runCB(pcontext:PContext, arguments:list[str]) -> None:
 			"""	Actually run the script.
 
@@ -1629,7 +1722,7 @@ class ScriptManager(object):
 					arguments: Arguments to the script. These are available to the script via the *argv* macro.
 			"""
 			while True:
-				result = pcontext.run(verbose = self.verbose, arguments = arguments)
+				result = pcontext.run(arguments = arguments)
 				if pcontext.state == PState.terminatedWithResult:
 					L.logDebug(f'Script terminated with result: {pcontext.result}')
 				if pcontext.state == PState.terminatedWithError:
@@ -1668,7 +1761,7 @@ class ScriptManager(object):
 													finished = finished).start(pcontext = pcontext, arguments = _arguments)
 				return True	# Always return True when running in Background
 		
-			result = pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
+			result = pcontext.run(arguments = cast(list, _arguments)).state != PState.terminatedWithError
 
 			if not result or not cast(ACMEPContext, pcontext).nextScript:
 				return result
@@ -1681,7 +1774,7 @@ class ScriptManager(object):
 	
 
 
-		# return pcontext.run(verbose = self.verbose, arguments = cast(list, _arguments)).state != PState.terminatedWithError
+		# return pcontext.run(arguments = cast(list, _arguments)).state != PState.terminatedWithError
 	
 
 	def run(self, scriptName:str, 

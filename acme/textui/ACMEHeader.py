@@ -47,6 +47,7 @@ class ACMEHeaderTitle(HeaderTitle):
 class ACMEHeader(Header):
 
 	def compose(self) -> ComposeResult:
+		self.tall = True
 		yield HeaderIcon()
 		yield ACMEHeaderTitle()
 		yield ACMEHeaderClock() if self._show_clock else HeaderClockSpace()

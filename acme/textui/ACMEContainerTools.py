@@ -9,16 +9,18 @@
 
 from __future__ import annotations
 from typing import cast, Optional, List
-from datetime import datetime, timezone
+from time import sleep
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, Center, Middle
 from textual.widgets import Button, Tree as TextualTree, Markdown, TextLog, Static, ContentSwitcher
 from textual.widgets.tree import TreeNode
-from rich.text import Text
 from ..services import CSE
 from ..services.ScriptManager import PContext
+from ..helpers.ResourceSemaphore import CriticalSection
+from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from ..helpers.Interpreter import PState
 
 # TODO Add editing of configuration values
 
@@ -30,11 +32,13 @@ class ACMEToolsTree(TextualTree):
 		self.parentContainer = cast(ACMEContainerTools, self.parent.parent)
 		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
 		self.allLogs = False
+		self.nodes:dict[str, TreeNode] = {}
+		self.autoRunWorker:BackgroundWorker = None
+		self.autoRunName:str = None
 
 		# Build the resource tree
 		self.auto_expand = False
 		root = self.root
-
 
 		for name, context in dict(sorted(CSE.script.scripts.items())).items():
 		# for name, context in CSE.script.scripts.items():
@@ -49,35 +53,58 @@ class ACMEToolsTree(TextualTree):
 						# Add new node to the tree for the category
 						_n = root.add(category, allow_expand = False, expand = True)
 				# Add the script to a category or to the root
-				_n.add(f'[{CSE.textUI.objectColor}]{name}[/]', allow_expand = False)
+				_nn = _n.add(f'[{CSE.textUI.objectColor}]{name}[/]', allow_expand = False)
+				self.nodes[name] = _nn
 				self.logs[name] = []	# Create a log for each script
 
 		# Expand the root element, but the others
 		self.root.expand()
 	
+
 	def on_show(self) -> None:
+		# self.app.bell()
 		node = self.cursor_node
 		self._showTool(node)
-
+	
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
+		"""	Show the tool description when a node is highlighted.
+		
+			Args:
+				node: The highlighted node.
+		"""
 		self._showTool(node.node)
 	
 
 	def _showTool(self, node:TreeNode) -> None:
-		# Get the description from the meta data and format it for Markdown
-		if node.children:	# This is a category
-			self.parentContainer.toolsHeader.update(f'## {node.label}')
+		"""	Show the script's description when a node is highlighted.
+
+			Also start the autorun worker if the meta tag "tuiAutoRun" is set.
+
+			Args:
+				node: The highlighted node.
+		"""
+		# Stop a currently running autorun worker when the node is different 
+		# from the previous autorun node
+		self.stopAutoRunScript(str(node.label))
+
+		if node.children:	
+			# This is a category node, so set the description, clear the button etc.
+			self.parentContainer.toolsHeader.update(f'## {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
 			self.parentContainer.toolsLog.clear()
 
 
 		elif (ctx := _getContext(str(node.label))):
+			# Get the description from the meta data and format it for Markdown
 			description = ctx.meta.get('description')
 			description = description.replace('\n', '\n\n') if description is not None else ''
 
 			# Update the header and the button
-			self.parentContainer.toolsHeader.update(f"""\
+			if description.startswith('#'):
+				self.parentContainer.toolsHeader.update(description)
+			else:    
+				self.parentContainer.toolsHeader.update(f"""\
 ## {node.label}
 
 {description}
@@ -95,13 +122,35 @@ class ACMEToolsTree(TextualTree):
 			self.parentContainer.toolsLog.clear()
 			self.printLogs()
 
+			# Autorun the script if the meta tag "tuiAutoRun" is set
+			if ctx.hasMeta('tuiAutoRun'):
+				if (_i := ctx.getMeta('tuiAutoRun')):
+					# Run the script periodically
+					self.stopAutoRunScript()
+					try:
+						_interval = float(_i)
+						if _interval <= 0.0:
+							raise Exception('tuiAutoRun interval must be >= 0')
+						self.autoRunWorker = BackgroundWorkerPool.newWorker(_interval, 
+				     														lambda:_executeScript(ctx.scriptName), 
+													   						f'ts_{ctx.scriptName}').start()
+						self.autoRunName = ctx.scriptName
+					except Exception as e:
+						self.parentContainer.scriptLogError(ctx.scriptName, f'Invalid interval for autorun: {e}')
+						pass
+				else:
+					# Run the script once
+					_executeScript(ctx.scriptName)
+
 		else:
 			self.parentContainer.toolsHeader.update('')
 			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
 		
 	
-
 	def printLogs(self) -> None:
+		"""	Print the logs of the selected node to the log widget.
+			The output depends on the value of self.allLogs.
+		"""
 		# Print the logs, but only those that are selected:
 		# - If a line starts with a space, it is console output
 		# - Otherwise (L, E) its a log entry
@@ -109,6 +158,21 @@ class ACMEToolsTree(TextualTree):
 			[l[1:] 
     		 for l in self.logs[str(self.cursor_node.label)]
 			 if l[0] == ' ' or self.allLogs]))
+
+
+	def stopAutoRunScript(self, name:Optional[str] = None) -> None:
+		"""	Stop the autorun worker if it is running and the node is different 
+			from the previous autorun node.
+		
+			Args:
+				name: The name of the script to stop. If None, the current autorun
+					  script is stopped, independent of its name.
+		"""
+		if name == None or name != self.autoRunName:
+			if self.autoRunWorker:
+				self.autoRunWorker.stop()
+				self.autoRunWorker = None
+				self.autoRunName = None
 
 
 
@@ -152,10 +216,13 @@ class ACMEContainerTools(Container):
 		self.toolsTree.focus()
 
 	
+	def leaving_tab(self) -> None:
+		self.toolsTree.stopAutoRunScript()
+
+	
 	@on(Button.Pressed, '#tool-execute')
 	def buttonExecute(self) -> None:
-		if (ctx := _getContext(str(self.toolsTree.cursor_node.label))):
-			CSE.script.runScript(ctx)
+		_executeScript(str(self.toolsTree.cursor_node.label))
 	
 
 	def action_clear_log(self) -> None:
@@ -176,9 +243,14 @@ class ACMEContainerTools(Container):
 		self.toolsTree.printLogs()
 	
 
+	def cleanUp(self) -> None:
+		"""	Clean up the tools tree and stop the autorun script if any
+		"""
+		self.toolsTree.stopAutoRunScript()
+
 	#################################################################
 	#
-	# Logging
+	# Logging and other scripting stuff
 	#
 
 	def _logMessage(self, scriptName:str, msg:str, prefix:str) -> None:
@@ -186,10 +258,10 @@ class ACMEContainerTools(Container):
 		# Prepare the message
 		_s = msg if msg else ' '
 
-		# _s = msg if prefix == ' ' else f'[dim]{datetime.now(tz = timezone.utc).strftime("%H:%M:%S")} -[/dim] {msg}'
 		# Add to the log
 		if (_l := self.toolsTree.logs.get(scriptName)) is not None:
 			_l.append(f'{prefix}{_s}')
+
 		# If this is the current script, add to the log view but only if the log mode matches
 		if str(self.toolsTree.cursor_node.label) == scriptName and (self.toolsTree.allLogs or prefix == ' '):
 			self.toolsLog.write(_s)
@@ -212,6 +284,8 @@ class ACMEContainerTools(Container):
 				scriptName: The name of the script.
 				msg: The message to print.
 		"""
+		# Escape "["" in log messages.
+		msg = msg.replace('[', '\[')
 		self._logMessage(scriptName, f'[dim]{msg}[/dim]', 'L')
 
 
@@ -222,6 +296,7 @@ class ACMEContainerTools(Container):
 				scriptName: The name of the script.
 				msg: The message to print.	
 		"""
+		msg = msg.replace('[', '\[')
 		self._logMessage(scriptName, f'[red1]{msg}[/red1]', 'E')
 	
 
@@ -237,12 +312,47 @@ class ACMEContainerTools(Container):
 			self.toolsLog.clear()
 
 
+	def scriptVisualBell(self, scriptName:str) -> None:
+		""" Visual bell for a script. The script name in the tree
+		 	will have a reverse appearance for a short time.
+
+			Args:
+				scriptName: The name of the script.
+		"""
+		with CriticalSection(scriptName):
+			oldLabel = self.toolsTree.nodes[scriptName]._label
+			self.toolsTree.nodes[scriptName].set_label(f'[reverse {CSE.textUI.objectColor}]{oldLabel}')
+			self.toolsTree.refresh()
+			sleep(0.3)
+			self.toolsTree.nodes[scriptName].set_label(oldLabel)
+			self.toolsTree.refresh()
+
+
+
 def _getContext(name:str) -> Optional[PContext]:
 	"""	Returns the context for the given script name or None if not found. 
+
+		Args:
+			name: The name of the script.
+	
+		Return:
+			The context for the given script name or None if not found.
 	"""
 	if (res := CSE.script.findScripts(name)):
 		return res[0]
 	return None
+
+
+def _executeScript(name:str, button:Optional[Button] = None) -> bool:
+	""" Executes the given script context.
+
+		Args:
+			name: The name of the script.
+	"""
+	if (ctx := _getContext(str(name))) and not ctx.state.isRunningState():
+		return CSE.script.runScript(ctx, background = True)
+	return False
+
 
 
 # TODO add input field for arguments

@@ -13,14 +13,17 @@
 @category Lightbulb Demo
 @tuiTool
 @onNotification acme://demo-lightbulb/lightswitch
-@description # Lightbulb Demo - Lightbulb\n\nThis page displays the status of the lightbulb.\n\nThe state changes automatically when notifications from the lightswitch are received.\n\nPress the *Refresh* button to refresh the status manually.
+@description ## Lightbulb Demo - Lightbulb\n\nThis page displays the status of the *lightbulb*.\n\nThe state changes automatically when notifications from the *lightswitch* are received.\n\nPress the **Refresh** button to refresh the status manually.
 @tuiExecuteButton Refresh
 
 
 ;; Check if the CSE is running and quit if not.
-;;	Prevents the script from running when the CSE is starting or restarting.
+;; sPrevents the script from running when the CSE is starting or restarting.
 (if (!= (cse-status) "RUNNING")
 	(quit "CSE not running"))
+
+;; Set the json path to the content attribute of the notification
+(setq contentPath "m2m:sgn/nev/rep/m2m:cin/con")
 
 ;; Include some helper functions
 (include-script "functions")
@@ -40,9 +43,9 @@
 ;; This function prints the lightbulb status to the console.
 (defun print-light (state)
 	(	(case state
-			("on" (setq color "dark_green"))
-			("off" (setq color "red"))
-			(otherwise (setq color "yellow")))
+			("on" (setq color "gold1"))
+			("off" (setq color "grey27"))
+			(otherwise (setq color "red")))
 		
 		;; Different output for TUI and console
 		(if (runs-in-tui)			
@@ -65,17 +68,18 @@
 
 
 ;; Check if the notification contains the content attribute and print the lightbulb state if it does
-(if (is-defined "notification.resource")
+(if (is-defined 'notification.resource)
 
-	(	;; Set the json path to the content attribute of the notification
-		(setq contentPath "m2m:sgn/nev/rep/m2m:cin/con")
-
+	(	;; Show a visual notification
+		(tui-visual-bell)
+		
 		;; Get the status change from the notification
 		(if (has-json-attribute notification.resource contentPath)
 			(print-light (get-json-attribute notification.resource contentPath))))
 
 	;; Otherwise retrieve the status from the lightswitch directly
 	;; This is only necessary if the script is executed manually
-	( (print-light (get-lightswitch-status)	))) 
+	(	(print-light (get-lightswitch-status)))) 
+
 
 

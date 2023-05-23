@@ -2402,7 +2402,7 @@
 	"pvs": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "privileges",
+			"lname": "selfPrivileges",
 			"ns": "m2m",
 			"type": "m2m:setOfAcrs",
 			"car": "1",

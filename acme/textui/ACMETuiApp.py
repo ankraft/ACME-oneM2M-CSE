@@ -9,8 +9,9 @@
 
 from __future__ import annotations
 from enum import IntEnum, auto
-import textual.app as _app
 from textual.app import App, ComposeResult
+from textual import on
+from textual.widget import Widget
 from textual.widgets import Tabs, Tab, Footer, ContentSwitcher, TabbedContent, TabPane, Static
 from textual.binding import Binding
 from textual.containers import Container
@@ -24,6 +25,7 @@ from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRe
 from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools, idTools
 from ..services import CSE
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 
@@ -91,6 +93,10 @@ class ACMETuiApp(App):
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMappings()
+		# This is used to keep track of the current tab.
+		# This is a bit different from the actual current tab from the self.tabs
+		# attribute because at one point it is used to determine the previous tab.
+		self.currentTab:Tab = None	
 		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
 		# _app.DEFAULT_COLORS = CUSTOM_COLORS
 
@@ -116,12 +122,12 @@ class ACMETuiApp(App):
 				yield self.containerRequests
 			with TabPane('Registrations', id = tabRegistrations):
 				yield self.containerRegistrations
+			with TabPane('Tools', id = tabTools):
+				yield self.containerTools
 			with TabPane('Infos', id = tabInfo):
 				yield self.containerInfo
 			with TabPane('Configurations', id = tabConfigurations):
 				yield self.containerConfigs
-			with TabPane('Tools', id = tabTools):
-				yield self.containerTools
 			with TabPane('About', id = tabAbout):
 				yield self.containerAbout
 		yield Footer()
@@ -132,6 +138,19 @@ class ACMETuiApp(App):
 		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		# self.design = CUSTOM_COLORS
 		# self.refresh_css()
+
+	
+	@on(TabbedContent.TabActivated)
+	def tabChanged(self, tab:TabbedContent.TabActivated) -> None:
+		# Use the self.currentTab shortly to determine where we come from and call a 
+		if self.currentTab is not None and self.currentTab.id == tabTools:
+			self.containerTools.leaving_tab()
+			# if callable(_f := getattr(_c, "leaving_tab", None)):
+			# 	_f()
+		# Set self.currenTab to the new tab.
+		self.currentTab = tab.tab
+
+
 
 	async def action_quit_tui(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitTUI
@@ -175,6 +194,11 @@ class ACMETuiApp(App):
 
 	def scriptClearConsole(self, scriptName:str) -> None:
 		self.containerTools.scriptClearConsole(scriptName)
+	
+
+	def scriptVisualBell(self, scriptName:str) -> None:
+		BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
+		# self.containerTools.scriptVisualBell(scriptName)
 
 
 	#########################################################################
@@ -184,6 +208,10 @@ class ACMETuiApp(App):
 		self.exit()
 
 
+	def cleanUp(self) -> None:
+		"""	Clean up the UI before exiting.
+		"""
+		self.containerTools.cleanUp()
 
 
 #

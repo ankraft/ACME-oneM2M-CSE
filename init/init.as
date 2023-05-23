@@ -10,6 +10,16 @@
 @description This script is run to initialize the CSE structure
 @hidden
 
+;;	Provide a description for the categories. These are displayed in the Text UI
+(set-category-description "CSE Operation" 
+"Scripts under this category are used to perform CSE operations. 
+
+These scripts are not exposed to oneM2M AEs.
+They can usually only be executed from the console or text UI, or the Upper Tester API.")
+
+
+
+
 ;;
 ;;	Create the CSEBase
 ;;

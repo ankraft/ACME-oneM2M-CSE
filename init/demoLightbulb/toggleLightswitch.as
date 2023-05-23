@@ -12,7 +12,7 @@
 @category Lightbulb Demo
 @name Toggle Lightswitch
 @tuiTool
-@description # Lightbulb Demo - Toggle Switch\n\nThis tool is used to toggle the status of the lightswitch from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\n\nPress the **Toggle** Button to toggle the lightswitch status.\n\nSwitch to the **Lightbulb** tool to see the effect.\n\n
+@description ## Lightbulb Demo - Toggle Switch\n\nThis page is used to toggle the status of the *Lightswitch* from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\nPress the **Toggle** button to toggle the *Lightswitch* status.\nSwitch to the *Lightbulb* tool to see the effect.\n\n
 @tuiExecuteButton Toggle
 
 ;; Include some helper functions
@@ -31,14 +31,13 @@
 
 
 (defun set-lightswitch-status (st)
-	(	(create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
+	(	(print "Toggle Lightswitch to [b u]${(st)}[/b u]")
+		(create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
 			{ "m2m:cin": {
 				"con" : "${(st)}"
 			}})))
 
 
 (case (get-lightswitch-status)
-	("on" 	(	(set-lightswitch-status "off")
-				(print "Toggle Lightswitch to [b u]off[/b u]")))
-	("off"	(	(set-lightswitch-status "on")
-				(print "Toggle Lightswitch to [b u]on[/b u]"))))
+	("on" 	(set-lightswitch-status "off"))
+	("off"	(set-lightswitch-status "on")))
