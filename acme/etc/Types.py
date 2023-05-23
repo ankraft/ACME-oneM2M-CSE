@@ -401,7 +401,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True, fullName = 'Action Announced'),
 	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True, fullName = 'Application Entity'),
 	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'Application Entity Announced'),
-	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, ),
+	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='Content Instance'),
 	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='Content Instance Announced'),
 	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, fullName='Container'),
 	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, fullName='Container Announced'),
