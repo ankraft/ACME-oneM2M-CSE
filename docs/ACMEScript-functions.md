@@ -7,96 +7,97 @@
 
 The following built-in functions and variables are provided by the ACMEScript interpreter.
 
-| Type                       | Function                                                | Description                                                  |
-| -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
-| [Basic](#_basic)           | [.](#concat)                                            | Return a string of concatenated symbols                      |
-|                            | [argv](#argv)                                           | Get script arguments                                         |
-|                            | [assert](#assert)                                       | Assert a condition                                           |
-|                            | [base64-encode](#base64-encode)                         | Base64-encode a string                                       |
-|                            | [car](#car)                                             | Return the first element from a list                         |
-|                            | [case](#case)                                           | Conditional execution depending on an input value            |
-|                            | [cdr](#cdr)                                             | Return a list with elements from a list, except the first element |
-|                            | [cons](#cons)                                           | Construct a new list                                         |
-|                            | [datetime](#datetime)                                   | Return a timestamp                                           |
-|                            | [defun](#defun)                                         | Define a function                                            |
-|                            | [dec](#dec)                                             | Decrement a variable                                         |
-|                            | [eval](#eval)                                           | Evaluate and execute a quoted list                           |
-|                            | [evaluate-inline](#evaluate-inline)                     | Enable and disable inline string evaluation                  |
-|                            | [get-json-attribute](#get-json-attribute)               | Get a JSON attribute from a JSON structure                   |
-|                            | [has-json-attribute](#has-json-attribute)               | Determine the existence of a JSON attribute in a JSON structure |
-|                            | [if](#if)                                               | Conditional execution                                        |
+| Type                       | Function                                                | Description                                                                      |
+|----------------------------|---------------------------------------------------------|----------------------------------------------------------------------------------|
+| [Basic](#_basic)           | [.](#concat)                                            | Return a string of concatenated symbols                                          |
+|                            | [argv](#argv)                                           | Get script arguments                                                             |
+|                            | [assert](#assert)                                       | Assert a condition                                                               |
+|                            | [base64-encode](#base64-encode)                         | Base64-encode a string                                                           |
+|                            | [car](#car)                                             | Return the first element from a list                                             |
+|                            | [case](#case)                                           | Conditional execution depending on an input value                                |
+|                            | [cdr](#cdr)                                             | Return a list with elements from a list, except the first element                |
+|                            | [cons](#cons)                                           | Construct a new list                                                             |
+|                            | [datetime](#datetime)                                   | Return a timestamp                                                               |
+|                            | [defun](#defun)                                         | Define a function                                                                |
+|                            | [dec](#dec)                                             | Decrement a variable                                                             |
+|                            | [eval](#eval)                                           | Evaluate and execute a quoted list                                               |
+|                            | [evaluate-inline](#evaluate-inline)                     | Enable and disable inline string evaluation                                      |
+|                            | [get-json-attribute](#get-json-attribute)               | Get a JSON attribute from a JSON structure                                       |
+|                            | [has-json-attribute](#has-json-attribute)               | Determine the existence of a JSON attribute in a JSON structure                  |
+|                            | [if](#if)                                               | Conditional execution                                                            |
 |                            | [in](#in)                                               | Determine whether a symbol is contained in a list, or a string in another string |
-|                            | [inc](#inc)                                             | Increment a variable                                         |
-|                            | [index-of](#index-of)                                   | Determine the position of a value in a list,  or string in another string |
-|                            | [is-defined](#is-defined)                               | Test whether a symbol has been defined                       |
-|                            | [json-to-string](#json-to-string)                       | Convert a JSON structure to a string                         |
-|                            | [jsonify](#jsonify)                                     | Escape characters that would otherwise break a JSON structure |
-|                            | [lambda](#lambda)                                       | Define a nameless function                                   |
-|                            | [length](#length)                                       | Returns length of a string or a list                         |
-|                            | [let\*](#let-star)                                      | Handles multiple variable assignments sequentially           |
-|                            | [list](#list)                                           | Returns a list from its arguments                            |
-|                            | [log](#log)                                             | Print symbols to the log console (log-level *debug*)         |
-|                            | [log-error](#log-error)                                 | Print symbols to the log console (log-level *warning*)       |
-|                            | [lower](#lower)                                         | Returns a lower case copy of a string                        |
-|                            | [match](#match)                                         | Determines whether a string matches a regex                  |
-|                            | [nl](#nl)                                               | Returns a newline character                                  |
-|                            | [nth](#nth)                                             | Returns the n-th element from a list, or the n-th character from a string |
-|                            | [print](#print)                                         | Print symbols to the console                                 |
-|                            | [progn](#progn)                                         | Evaluate and execute symbols and lists                       |
-|                            | [quit](#quit)                                           | Ends the running script and returns a result                 |
-|                            | [quit-with-error](#quit-with-error)                     | Ends the running script with an error status and returns a result |
-|                            | [quote](#quote)                                         | Return a quoted version of an s-expression                   |
-|                            | [random](#random)                                       | Generate a random number                                     |
-|                            | [return](#return)                                       | Early return from a function or while loop                   |
-|                            | [round](#round)                                         | Return a round number                                        |
-|                            | [set-json-attribute](#set-json-attribute)               | Set a JSON attribute in a JSON structure to a new value      |
-|                            | [setq](#setq)                                           | Assigns a value to a variable                                |
-|                            | [sleep](#sleep)                                         | Sleep during script exection                                 |
-|                            | [slice](#slice)                                         | Returns the slice of a list or string                        |
-|                            | [sp](#sp)                                               | Returns a space character                                    |
-|                            | [string-to-json](#string-to-json)                       | Convert a string to a JSON structure                         |
-|                            | [to-number](#to-number)                                 | Converts a string to a number                                |
-|                            | [to-string](#to-string)                                 | Returns a string representation of a symbol                  |
-|                            | [upper](#upper)                                         | Returns an upper case copy of a string                       |
-|                            | [url-encode](#url-encode)                               | URL-encode a string                                          |
-|                            | [while](#while)                                         | Evaluate an s-expression in a loop                           |
-| [Operations](#_operations) | [Comparison Operations](#comparison-operations)         | List of supported comparison operations                      |
-|                            | [Logical Operations](#logical-operations)               | List of supported logical operations                         |
-|                            | [Mathematical Operations](#mathematical-operations)     | List of supported mathematical operations                    |
-| [CSE](#_cse)               | [clear-console](#clear-console)                         | Clear the console screen                                     |
-|                            | [cse-status](#cse-status)                               | Return the CSE's current status                              |
-|                            | [get-config](#get-config)                               | Retrieve a CSE's configuration setting                       |
-|                            | [get-storage](#get-storage)                             | Retrieve a value from the CSE's internal script-data storage |
-|                            | [has-config](#has-config)                               | Determine the existence of a CSE's configuration setting     |
+|                            | [inc](#inc)                                             | Increment a variable                                                             |
+|                            | [index-of](#index-of)                                   | Determine the position of a value in a list,  or string in another string        |
+|                            | [is-defined](#is-defined)                               | Test whether a symbol has been defined                                           |
+|                            | [json-to-string](#json-to-string)                       | Convert a JSON structure to a string                                             |
+|                            | [jsonify](#jsonify)                                     | Escape characters that would otherwise break a JSON structure                    |
+|                            | [lambda](#lambda)                                       | Define a nameless function                                                       |
+|                            | [length](#length)                                       | Returns length of a string or a list                                             |
+|                            | [let\*](#let-star)                                      | Handles multiple variable assignments sequentially                               |
+|                            | [list](#list)                                           | Returns a list from its arguments                                                |
+|                            | [log](#log)                                             | Print symbols to the log console (log-level *debug*)                             |
+|                            | [log-error](#log-error)                                 | Print symbols to the log console (log-level *warning*)                           |
+|                            | [lower](#lower)                                         | Returns a lower case copy of a string                                            |
+|                            | [match](#match)                                         | Determines whether a string matches a regex                                      |
+|                            | [nl](#nl)                                               | Returns a newline character                                                      |
+|                            | [nth](#nth)                                             | Returns the n-th element from a list, or the n-th character from a string        |
+|                            | [print](#print)                                         | Print symbols to the console                                                     |
+|                            | [progn](#progn)                                         | Evaluate and execute symbols and lists                                           |
+|                            | [quit](#quit)                                           | Ends the running script and returns a result                                     |
+|                            | [quit-with-error](#quit-with-error)                     | Ends the running script with an error status and returns a result                |
+|                            | [quote](#quote)                                         | Return a quoted version of an s-expression                                       |
+|                            | [random](#random)                                       | Generate a random number                                                         |
+|                            | [return](#return)                                       | Early return from a function or while loop                                       |
+|                            | [round](#round)                                         | Return a round number                                                            |
+|                            | [set-json-attribute](#set-json-attribute)               | Set a JSON attribute in a JSON structure to a new value                          |
+|                            | [setq](#setq)                                           | Assigns a value to a variable                                                    |
+|                            | [sleep](#sleep)                                         | Sleep during script exection                                                     |
+|                            | [slice](#slice)                                         | Returns the slice of a list or string                                            |
+|                            | [sp](#sp)                                               | Returns a space character                                                        |
+|                            | [string-to-json](#string-to-json)                       | Convert a string to a JSON structure                                             |
+|                            | [to-number](#to-number)                                 | Converts a string to a number                                                    |
+|                            | [to-string](#to-string)                                 | Returns a string representation of a symbol                                      |
+|                            | [upper](#upper)                                         | Returns an upper case copy of a string                                           |
+|                            | [url-encode](#url-encode)                               | URL-encode a string                                                              |
+|                            | [while](#while)                                         | Evaluate an s-expression in a loop                                               |
+| [Operations](#_operations) | [Comparison Operations](#comparison-operations)         | List of supported comparison operations                                          |
+|                            | [Logical Operations](#logical-operations)               | List of supported logical operations                                             |
+|                            | [Mathematical Operations](#mathematical-operations)     | List of supported mathematical operations                                        |
+| [CSE](#_cse)               | [clear-console](#clear-console)                         | Clear the console screen                                                         |
+|                            | [cse-status](#cse-status)                               | Return the CSE's current status                                                  |
+|                            | [get-config](#get-config)                               | Retrieve a CSE's configuration setting                                           |
+|                            | [get-storage](#get-storage)                             | Retrieve a value from the CSE's internal script-data storage                     |
+|                            | [has-config](#has-config)                               | Determine the existence of a CSE's configuration setting                         |
 |                            | [has-storage](#has-storage)                             | Determine the existence of a key/value in the CSE's internal script-data storage |
-|                            | [log-divider](#log-divider)                             | Add a line to the DEBUG log                                  |
-|                            | [print-json](#print-json)                               | Print a JSON structure to the console                        |
-|                            | [put-storage](#put-storage)                             | Store a symbol in the CSE's internal script-data storage     |
-|                            | [removes-storage](#removes-storage)                     | Removes a key/value pair from the CSE's internal script-data storage |
-|                            | [reset-cse](#reset-cse)                                 | Initiate a CSE reset                                         |
-|                            | [run-script](#run-script)                               | Removes a key/value pair from the CSE's internal script-data storage |
-|                            | [runs-in-ipython](#runs-in-ipython)                     | Determine whether the CSE runs in an iPython environment     |
-| | [schedule-next-script](#schedule-next-script) | Schedule the nest running script and its arguments |
-|                            | [set-config](#set-config)                               | Set a CSE's configuation setting                             |
-|                            | [set-console-logging](#set-console-logging)             | Switch on or off console logging                             |
-| [oneM2M](#_onem2m)         | [create-resource](#create-resource)                     | Send a oneM2M CREATE request                                 |
-|                            | [delete-resource](#delete-resource)                     | Send a oneM2M DELETE request                                 |
-|                            | [import-raw](#import-raw)                               | Directly create a resource in the CSE's resource tree        |
-|                            | [query-resource](#query-resource)                       | Evaluate an advanced query on a oneM2M resource              |
-|                            | [retrieve-resource](#retrieve-resource)                 | Send a oneM2M RETRIEVE request                               |
-|                            | [send-notification](#send-notification)                 | Send a oneM2M NOTIFY request                                 |
-|                            | [update-resource](#update-resource)                     | Send a oneM2M UPDATE request                                 |
-| [Text UI](#_textui)                    | [set-category-description](#set-category-description)   | Set the description for a whole category of scripts          |
-|  | [runs-in-tui](#runs-in-tui) | Determine whether the CSE runs in Text UI mode |
-|                            | [tui-visual-bell](#tui-visual-bell) | Shortly flashes the script's entry in the scripts list |
-| [Network](#_network) | [http](#http) | Send http requests |
-|  | [ping-tcp-service](#ping-tcp-service)                   | Check the availability of a network service via TCP          |
-| [Variables](#_variables)   | [argc](#argc)                                           | Get number of arguments                                      |
-|                            | [event.data](#var_event_data)                           | For event handlers: An event's payload data                  |
-|                            | [event.type](#var_event_type)                           | For event handlers: An event's event type                    |
-|                            | [notification.originator](#var_notification_originator) | For notification handlers: A notification's originator       |
-|                            | [notification.resource](#var_notification_resource)     | For notification handlers: A notification's body             |
-|                            | [notification.uri](#var_notification_uri)               | For notification handlers: A notification's target URI       |
+|                            | [log-divider](#log-divider)                             | Add a line to the DEBUG log                                                      |
+|                            | [print-json](#print-json)                               | Print a JSON structure to the console                                            |
+|                            | [put-storage](#put-storage)                             | Store a symbol in the CSE's internal script-data storage                         |
+|                            | [removes-storage](#removes-storage)                     | Removes a key/value pair from the CSE's internal script-data storage             |
+|                            | [reset-cse](#reset-cse)                                 | Initiate a CSE reset                                                             |
+|                            | [run-script](#run-script)                               | Removes a key/value pair from the CSE's internal script-data storage             |
+|                            | [runs-in-ipython](#runs-in-ipython)                     | Determine whether the CSE runs in an iPython environment                         |
+|                            | [schedule-next-script](#schedule-next-script)           | Schedule the nest running script and its arguments                               |
+|                            | [set-config](#set-config)                               | Set a CSE's configuation setting                                                 |
+|                            | [set-console-logging](#set-console-logging)             | Switch on or off console logging                                                 |
+| [oneM2M](#_onem2m)         | [create-resource](#create-resource)                     | Send a oneM2M CREATE request                                                     |
+|                            | [delete-resource](#delete-resource)                     | Send a oneM2M DELETE request                                                     |
+|                            | [import-raw](#import-raw)                               | Directly create a resource in the CSE's resource tree                            |
+|                            | [query-resource](#query-resource)                       | Evaluate an advanced query on a oneM2M resource                                  |
+|                            | [retrieve-resource](#retrieve-resource)                 | Send a oneM2M RETRIEVE request                                                   |
+|                            | [send-notification](#send-notification)                 | Send a oneM2M NOTIFY request                                                     |
+|                            | [update-resource](#update-resource)                     | Send a oneM2M UPDATE request                                                     |
+| [Text UI](#_textui)        | [open-web-browser](#open-web-browser)                   | Open a web page in the default browser                                           |
+|                            | [set-category-description](#set-category-description)   | Set the description for a whole category of scripts                              |
+|                            | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode                                   |
+|                            | [tui-visual-bell](#tui-visual-bell)                     | Shortly flashes the script's entry in the scripts list                           |
+| [Network](#_network)       | [http](#http)                                           | Send http requests                                                               |
+|                            | [ping-tcp-service](#ping-tcp-service)                   | Check the availability of a network service via TCP                              |
+| [Variables](#_variables)   | [argc](#argc)                                           | Get number of arguments                                                          |
+|                            | [event.data](#var_event_data)                           | For event handlers: An event's payload data                                      |
+|                            | [event.type](#var_event_type)                           | For event handlers: An event's event type                                        |
+|                            | [notification.originator](#var_notification_originator) | For notification handlers: A notification's originator                           |
+|                            | [notification.resource](#var_notification_resource)     | For notification handlers: A notification's body                                 |
+|                            | [notification.uri](#var_notification_uri)               | For notification handlers: A notification's target URI                           |
 
 **ASFunctions.as**
 
@@ -1996,6 +1997,25 @@ Examples:
 <a name="_textui"></a>
 
 ## Text UI
+
+---
+
+<a name="open-web-browser"></a>
+
+### open-web-browser
+
+`(open-web-browser <url:string>)`
+
+The `open-web-browser` function opens a web browser with the given URL.
+
+Examples:
+
+```lisp
+;; Opens the web browser with the URL "http://www.onem2m.org"
+(open-web-browser "http://www.onem2m.org")  
+```
+
+[top](#top)
 
 ---
 

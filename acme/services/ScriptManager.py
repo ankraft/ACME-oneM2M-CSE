@@ -12,7 +12,7 @@ from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
 
 from pathlib import Path
 import json, os, fnmatch
-import requests
+import requests, webbrowser
 from decimal import Decimal
 from rich.text import Text
 
@@ -130,6 +130,7 @@ class ACMEPContext(PContext):
 										'import-raw':				self.doImportRaw,
 										'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
 										'log-divider':				self.doLogDivider,
+										'open-web-browser':			self.doOpenWebBrowser,
 										'ping-tcp-service':			self.doPingTcpService,
 										'print-json':				self.doPrintJSON,
 										'put-storage':				self.doPutStorage,
@@ -659,6 +660,41 @@ class ACMEPContext(PContext):
 		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.NOTIFY)
 
+
+	def doOpenWebBrowser(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Open a web browser with the given URL.
+		
+			The function has the following arguments:
+
+				- URL to open in the browser.
+			
+			The function returns a boolean as a result, indicating if the 
+			browser could be opened.
+
+			Example:
+				::
+
+					(open-web-browser <url>) -> boolean
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+			
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 2)
+
+		# URL
+		pcontext, _url = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# Open the browser
+		try:
+			webbrowser.open(_url)
+			return pcontext.setResult(SSymbol(boolean = True))
+		except Exception as e:
+			return pcontext.setResult(SSymbol(boolean = False))
+		
 
 	def doPingTcpService(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Ping a TCP service (server) to check if it is available and reachable.
