@@ -20,7 +20,7 @@ from ..services import CSE
 from ..services.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..helpers.Interpreter import PState
+from ..helpers.Interpreter import PState, SSymbol
 
 # TODO Add editing of configuration values
 
@@ -129,6 +129,7 @@ class ACMEToolsTree(TextualTree):
 
 			# Autorun the script if the meta tag "tuiAutoRun" is set
 			if ctx.hasMeta('tuiAutoRun'):
+				# check if the autorun interval is set
 				if (_i := ctx.getMeta('tuiAutoRun')):
 					# Run the script periodically
 					self.stopAutoRunScript()
@@ -137,7 +138,7 @@ class ACMEToolsTree(TextualTree):
 						if _interval <= 0.0:
 							raise Exception('tuiAutoRun interval must be >= 0')
 						self.autoRunWorker = BackgroundWorkerPool.newWorker(_interval, 
-				     														lambda:_executeScript(ctx.scriptName), 
+				     														lambda:_executeScript(ctx.scriptName, autoRun = True), 
 													   						f'ts_{ctx.scriptName}').start()
 						self.autoRunName = ctx.scriptName
 					except Exception as e:
@@ -145,7 +146,7 @@ class ACMEToolsTree(TextualTree):
 						pass
 				else:
 					# Run the script once
-					_executeScript(ctx.scriptName)
+					_executeScript(ctx.scriptName, autoRun = True)
 
 		else:
 			self.parentContainer.toolsHeader.update('')
@@ -161,7 +162,7 @@ class ACMEToolsTree(TextualTree):
 		# - Otherwise (L, E) its a log entry
 		self.parentContainer.toolsLog.write('\n'.join(
 			[l[1:] 
-    		 for l in self.logs[str(self.cursor_node.label)]
+    		 for l in self.logs.get(str(self.cursor_node.label), [])
 			 if l[0] == ' ' or self.allLogs]))
 
 
@@ -348,14 +349,17 @@ def _getContext(name:str) -> Optional[PContext]:
 	return None
 
 
-def _executeScript(name:str, button:Optional[Button] = None) -> bool:
+def _executeScript(name:str, button:Optional[Button] = None, autoRun:Optional[bool] = False) -> bool:
 	""" Executes the given script context.
 
 		Args:
 			name: The name of the script.
 	"""
 	if (ctx := _getContext(str(name))) and not ctx.state.isRunningState():
-		return CSE.script.runScript(ctx, background = True)
+		return CSE.script.runScript(ctx,
+			      					background = True,
+									environment = { 'is-autorun': SSymbol(boolean = autoRun) }
+									)
 	return False
 
 

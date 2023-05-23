@@ -1330,7 +1330,10 @@ class PContext():
 		if self.maxRuntime is not None:	# set max runtime
 			self._maxRTimestamp = _utcTimestamp() + self.maxRuntime
 		if (scriptName := self.scriptName) and not isSubCall:
-			self.logFunc(self, f'Running script: {scriptName}, arguments: {arguments}')
+			if self.verbose:
+				self.logFunc(self, f'Running script: {scriptName}, arguments: {arguments}, environment: {self.environment}')
+			else:
+				self.logFunc(self, f'Running script: {scriptName}, arguments: {arguments}')
 
 		# execute all top level S-expressions
 		for symbol in self.ast:
