@@ -51,18 +51,18 @@
 		(if (runs-in-tui)			
 			(	(clear-console)
 				(print "
-[b]The lightbulb is [u]${(state)}[/u][/b]
 
 
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
-       [${(color)}]████████████████████[/${(color)}]
+       [${(color)}]   ..---..    [/${(color)}]
+       [${(color)}]  /       \   [/${(color)}]
+       [${(color)}] |         |  [/${(color)}]
+       [${(color)}] :  +^^^+  ;  [/${(color)}]
+       [${(color)}]  \  \~/  /   [/${(color)}]
+       [${(color)}]   `, Y ,'    [/${(color)}]
+       [${(color)}]    |_|_|     [/${(color)}]
+       [${(color)}]    |===|     [/${(color)}]
+       [${(color)}]    |===|     [/${(color)}]
+       [${(color)}]     \_/      [/${(color)}]
 "))
 			(	(print "The lightbulb status is ${(state)}")))))
 

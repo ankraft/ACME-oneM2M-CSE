@@ -24,8 +24,9 @@
 
 Both the *lightbulb* and the *lightswitch* are implemented as Application Entities (AEs). 
 
-The *lightbulb* AE is subscribed to the *lightswitch*'s container, and receives notifications whenever new
-`<ContentInstance>` resources are created for the *lightswitch*.")
+The *lightbulb* AE subscribes to the *lightswitch*'s container and receives notifications whenever new
+`<ContentInstance>` resources are created for the *lightswitch*. It then can react to the new status of 
+the *lightswitch*.")
 
 ;;	Get the CSE's resource name
 (setq cseRN (get-config "cse.resourceName"))
