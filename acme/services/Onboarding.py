@@ -358,7 +358,7 @@ startWithTUI=true
 enable=true
 
 [scripting]
-scriptDirectories=${cse:resourcesPath}/demoLightbulb
+scriptDirectories=${cse:resourcesPath}/demoLightbulb,${cse:resourcesPath}/demoDocumentationTutorials
 """
 
 		cnfHeadless = \
