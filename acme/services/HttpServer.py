@@ -517,7 +517,7 @@ class HttpServer(object):
 			try:
 				# Add Originating Timestamp if present in request
 				if (ot := r.headers.get(Constants().hfOT)):
-					isodate.parse_date(ot)
+					isodate.parse_date(ot) # Check if valid ISO 8601 date, may raise exception
 					resp.ot = ot
 			except Exception as ee:
 				raise BAD_REQUEST(L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
@@ -768,6 +768,8 @@ class HttpServer(object):
 		# do validation and copying of attributes of the whole request
 		try:
 			CSE.request.fillAndValidateCSERequest(cseRequest)
+		except REQUEST_TIMEOUT as e:
+			raise e
 		except ResponseException as e:
 			e.dbg = f'invalid arguments/attributes: {e.dbg}'
 			raise e

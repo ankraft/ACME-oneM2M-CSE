@@ -67,8 +67,8 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 	"""
 	try:
 		if not withMicroseconds:
-			return isodate.parse_datetime(absRelTimestamp).replace(microsecond = 0).timestamp()
-		return isodate.parse_datetime(absRelTimestamp).timestamp()
+			return isodate.parse_datetime(absRelTimestamp).replace(microsecond = 0, tzinfo = timezone.utc).timestamp()
+		return isodate.parse_datetime(absRelTimestamp).replace(tzinfo = timezone.utc).timestamp()
 		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
 		try:
@@ -176,7 +176,7 @@ def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> Optional[float]
 	if now is None:
 		now = utcTime()
 	try:
-		return now - isodate.parse_datetime(isoDateTime).timestamp()
+		return now - isodate.parse_datetime(isoDateTime).replace(tzinfo = timezone.utc).timestamp()
 	except Exception as e:
 		return None
 

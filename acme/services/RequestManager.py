@@ -1135,7 +1135,7 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Request Expiration Timestamp'), data = cseRequest)
 				else:
 					if _ts < utcTime():
-						raise REQUEST_TIMEOUT(L.logDebug('request timeout'), data = cseRequest)
+						raise REQUEST_TIMEOUT(L.logDebug(f'request timeout: rqet {_ts} < {utcTime()}'), data = cseRequest)
 					else:
 						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
 						cseRequest.rqet = toISO8601Date(_ts)
