@@ -118,6 +118,7 @@ class ACMEToolsTree(TextualTree):
 					self.parentContainer.toolsExecButton.label = _b
 				else:
 					self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
+			self.parentContainer.toolsExecButton.styles.width = len(self.parentContainer.toolsExecButton.label) + 4
 
 			self.parentContainer.toolsLog.clear()
 			self.printLogs()
@@ -190,7 +191,7 @@ class ACMEContainerTools(Container):
 
 		self.toolsHeader = Markdown('')
 
-		self.toolsTree = ACMEToolsTree('Commands', id = 'tree-view')
+		self.toolsTree = ACMEToolsTree('Tools & Commands', id = 'tree-view')
 		self.toolsTree.parentContainer = self
 		
 		self.toolsExecButton = Button('Execute', id = 'tool-execute', variant = 'primary')
