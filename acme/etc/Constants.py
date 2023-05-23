@@ -20,6 +20,9 @@ class Constants(object):
 	textLogo = f'[dim][[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
 
+	copyright = '(c) 2023 by Andreas Kraft'
+	"""	ACME's copyright """
+
 	#
 	#	Configuration files
 	#

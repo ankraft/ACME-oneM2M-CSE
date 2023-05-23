@@ -43,7 +43,7 @@ f"""\
 
 An open source CSE Middleware for Education
 
-(c) 2022 by Andreas Kraft
+{Constants.copyright}
 
 Available under the BSD 3-Clause License"""
 
@@ -101,7 +101,7 @@ Available under the BSD 3-Clause License"""
 				_c.styles.padding = (1, 0, 0, 0)
 				yield Label(self.socialLink)
 			with (_c := Center()):
-				_c.styles.padding = (8, 0, 0, 0)
+				_c.styles.padding = (7, 0, 0, 0)
 				yield Label(self.qrcode)
 				yield self.button
 
