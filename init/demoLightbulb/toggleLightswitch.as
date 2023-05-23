@@ -12,8 +12,8 @@
 @category Lightbulb Demo
 @name Toggle Lightswitch
 @tuiTool
-@description ## Lightbulb Demo - Toggle Switch\n\nThis page is used to toggle the status of the *Lightswitch* from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\nPress the **Toggle** button to toggle the *Lightswitch* status.\nSwitch to the *Lightbulb* tool to see the effect.\n\n
-@tuiExecuteButton Toggle
+@description ## Lightbulb Demo - Toggle Switch\n\nThis page is used to toggle the status of the *Lightswitch* from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\nPress the **Toggle Lightswitch** button to toggle the *Lightswitch* status.\nSwitch to the *Lightbulb* tool to see the effect.\n\n
+@tuiExecuteButton Toggle Lightswitch
 
 ;; Include some helper functions
 (include-script "functions")

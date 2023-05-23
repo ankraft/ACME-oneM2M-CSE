@@ -14,7 +14,7 @@
 @tuiTool
 @onNotification acme://demo-lightbulb/lightswitch
 @description ## Lightbulb Demo - Lightbulb\n\nThis page displays the status of the *lightbulb*.\n\nThe state changes automatically when notifications from the *lightswitch* are received.\n\nPress the **Refresh** button to refresh the status manually.
-@tuiExecuteButton Refresh
+@tuiExecuteButton Refresh Lightbulb
 
 
 ;; Check if the CSE is running and quit if not.
