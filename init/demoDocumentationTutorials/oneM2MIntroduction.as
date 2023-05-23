@@ -10,7 +10,7 @@
 ;;
 
 @name Using oneM2M
-@category Documentation and Tutorials
+@category oneM2M Documentation and Tutorials
 @tuiTool
 @tuiSortOrder 20
 @description ## oneM2M Home Page - Using oneM2M\nThis section of oneM2M's home page offers various introductions:\n- Benefits of oneM2M\n- Develop with oneM2M\n- Deploy wih oneM2M\n- List of deployments\nThe **Open...** button opens a web browser and launches the "Using oneM2M" page.
