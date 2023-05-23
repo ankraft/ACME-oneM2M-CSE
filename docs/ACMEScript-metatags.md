@@ -9,26 +9,27 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 
 <a name="top"></a>
 
-| Type                | Meta Tag                                    | Description                                                  |
-| ------------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| [Basic](#_basic)    | [@at](#meta_at)                             | Schedule scripts to run at a certain time or time interval   |
-|                     | [@description](#meta_description)           | Provide a one-line script description                        |
-|                     | [@filename](#meta_filename)                 | Contains a script's filename (internal only)                 |
-|                     | [@hidden](#meta_hidden)                     | Hide a script from the console's script catalog              |
-|                     | [@init](#init)                              | Run a script to initialize the CSE during startup and restart |
-|                     | [@name](#meta_name)                         | Assign a name to a script                                    |
-|                     | [@onKey](#meta_onkey)                       | Run a script when the specified key is pressed               |
-|                     | [@onNotification](#meta_onnotification)     | Run a script as a receiver of a NOTIFY request from the CSE  |
-|                     | [@onRestart](#meta_onrestart)               | Run a script just after the CSE restarted                    |
-|                     | [@onShutdown](#meta_onshutdown)             | Run a script just before the CSE shuts down                  |
-|                     | [@onStartup](#meta_onstartup)               | Run a script just after the CSE started                      |
-|                     | [@prompt](#meta_prompt)                     | Prompt the user for input before the script is run           |
-|                     | [@timeout](#meta_timeout)                   | Set a timeout after which script execution is stopped        |
+| Type                | Meta Tag                                    | Description                                                                                    |
+|---------------------|---------------------------------------------|------------------------------------------------------------------------------------------------|
+| [Basic](#_basic)    | [@at](#meta_at)                             | Schedule scripts to run at a certain time or time interval                                     |
+|                     | [@description](#meta_description)           | Provide a one-line script description                                                          |
+|                     | [@filename](#meta_filename)                 | Contains a script's filename (internal only)                                                   |
+|                     | [@hidden](#meta_hidden)                     | Hide a script from the console's script catalog                                                |
+|                     | [@init](#init)                              | Run a script to initialize the CSE during startup and restart                                  |
+|                     | [@name](#meta_name)                         | Assign a name to a script                                                                      |
+|                     | [@onKey](#meta_onkey)                       | Run a script when the specified key is pressed                                                 |
+|                     | [@onNotification](#meta_onnotification)     | Run a script as a receiver of a NOTIFY request from the CSE                                    |
+|                     | [@onRestart](#meta_onrestart)               | Run a script just after the CSE restarted                                                      |
+|                     | [@onShutdown](#meta_onshutdown)             | Run a script just before the CSE shuts down                                                    |
+|                     | [@onStartup](#meta_onstartup)               | Run a script just after the CSE started                                                        |
+|                     | [@prompt](#meta_prompt)                     | Prompt the user for input before the script is run                                             |
+|                     | [@timeout](#meta_timeout)                   | Set a timeout after which script execution is stopped                                          |
 |                     | [@uppertester](#meta_uppertester)           | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [Text UI](#_textui) | [@category](#meta_category)                 | Add a category to the script for the text UI's *Tools* section |
-|                     | [@tuiAutoRun](#meta_tuiAutoRun)             | Automatically run scripts when selecting them, and optionally repeat |
-|                     | [@tuiExecuteButton](#meta_tuiExecuteButton) | Configure the script's `Execute` button in the text UI       |
-|                     | [@tuiTool](#meta_tuiTool)                   | Tag a script for listing in the text UI's *Tools* section    |
+| [Text UI](#_textui) | [@category](#meta_category)                 | Add a category to the script for the text UI's *Tools* section                                 |
+|                     | [@tuiAutoRun](#meta_tuiAutoRun)             | Automatically run scripts when selecting them, and optionally repeat                           |
+|                     | [@tuiExecuteButton](#meta_tuiExecuteButton) | Configure the script's `Execute` button in the text UI                                         |
+|                     | [@tuiSortOrder](#meta_tuiSortOrder)         | Specify the sort order for scripts in a category in the text UI's *Tools* section              |
+|                     | [@tuiTool](#meta_tuiTool)                   | Tag a script for listing in the text UI's *Tools* section                                      |
 
 ## Accessing Meta Tags
 Meta tags are added as constants to the script's environment, prefixed with "meta.".
@@ -462,6 +463,27 @@ Example:
 
 ```lisp
 @tuiTool
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiSortOrder"></a>
+
+### @tuiSortOrder
+
+`@tuiSortOrder <priority:number>`
+
+With this meta tag one can specify the sort order of a script in the Text UI's *Tools* section. 
+
+The default sort order is 500. Scripts with a lower priority number are listed first. 
+Scripts with the same priority are sorted alphabetically.
+
+Example:
+
+```lisp
+@tuiSortOrder 100
 ```
 
 [top](#top)

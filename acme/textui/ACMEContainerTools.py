@@ -40,7 +40,11 @@ class ACMEToolsTree(TextualTree):
 		self.auto_expand = False
 		root = self.root
 
-		for name, context in dict(sorted(CSE.script.scripts.items())).items():
+		# def _sortTools(item) -> bool:
+		# 	return item[1].meta.get('tuiSortOrder', 999)
+
+		# Iterate over all scripts and add them to the tree. Sort them by the meta tag "tuiSortOrder" and then by name.
+		for name, context in dict( sorted(CSE.script.scripts.items(), key = lambda x: (x[1].meta.get('tuiSortOrder', '999'), x[1].scriptName)) ).items():
 		# for name, context in CSE.script.scripts.items():
 			if 'tuiTool' in context.meta:	# Only add scripts marked as tools
 				_n = root	# Fallback: add to root
