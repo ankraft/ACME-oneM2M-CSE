@@ -65,8 +65,8 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRET(self) -> None:
 		"""	Check Request Expiration Timeout in request"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

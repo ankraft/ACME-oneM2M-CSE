@@ -144,9 +144,9 @@ class TestREQ(unittest.TestCase):
 		# Immediately retrieve <request>
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:req/rs'))
-		self.assertEqual(findXPath(r, 'm2m:req/rs'), RequestStatus.PENDING)
-		self.assertIsNone(findXPath(r, 'm2m:req/ors'))
+		self.assertIsNotNone(findXPath(r, 'm2m:req/rs'), r)
+		self.assertEqual(findXPath(r, 'm2m:req/rs'), RequestStatus.PENDING, r)
+		self.assertIsNone(findXPath(r, 'm2m:req/ors'), r)
 
 		# get and check <request> after a delay to give the operation time to run
 		testSleep(requestCheckDelay * 2)

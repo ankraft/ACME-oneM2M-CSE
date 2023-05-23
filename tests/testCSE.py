@@ -102,7 +102,7 @@ class TestCSE(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/ctm'), r)
 		self.assertIsInstance(findXPath(r, 'm2m:cb/ctm'), str, r)
 		try:
-			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))
+			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))	# check if valid ISO8601, throws exception if not
 		except Exception as e:
 			self.fail(str(e))
 
