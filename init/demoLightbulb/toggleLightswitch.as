@@ -79,8 +79,8 @@
 
 
 ;; Check if this script is executed by the autorun mechanism. If so, just set the lightswitch status and quit.
-(if (is-defined 'is-autorun)
-	(if (== is-autorun true)
+(if (is-defined 'tui.autorun)
+	(if (== tui.autorun true)
 		(	(print-lightswitch (get-lightswitch-status))
 			(quit))))
 

@@ -98,6 +98,8 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [notification.originator](#var_notification_originator) | For notification handlers: A notification's originator                           |
 |                            | [notification.resource](#var_notification_resource)     | For notification handlers: A notification's body                                 |
 |                            | [notification.uri](#var_notification_uri)               | For notification handlers: A notification's target URI                           |
+|                            | [tui.autorun](#var_tui_autorun)                         | Set if autorun from the text UI                                                  |
+|                            | [tui.theme](#var_tui_theme)                             | Set to the current text UI theme                                                 |
 
 **ASFunctions.as**
 
@@ -2276,6 +2278,51 @@ Example:
 
 ```lisp
 (print notification.uri)
+```
+
+[top](#top)
+
+---
+
+<a name="var_tui_autorun"></a>
+
+### tui.autorun
+
+`tui.autorun`
+
+Evaluates to *true* if the script was started as an "autorun" script. This is the case when the `@tuiAutoRun` meta tag is set
+in a script.
+
+
+See also: [@tuiAutoRun](ACMEScript-metatags.md#meta_tuiAutoRun)
+
+Note: This variable is only set when the script is run from the text UI.
+
+Example:
+
+```lisp
+(if (is-defined 'tui.autorun)     ;; If the variable is defined
+	(if (== tui.autorun true)     ;; If the script is an autorun script
+        (print "Autorun: True")))  ;; Print a message
+```
+
+[top](#top)
+
+---
+
+<a name="var_tui_theme"></a>
+
+### tui.theme
+
+`tui.theme`
+
+Evaluates to the state of the current theme of the text UI. This can be either *light* or *dark*.
+
+
+Example:
+
+```lisp
+(print "Theme: " tui.theme)  ;; Print the theme name
 ```
 
 [top](#top)

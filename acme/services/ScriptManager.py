@@ -1783,6 +1783,7 @@ class ScriptManager(object):
 				return False
 			
 			# Set environemt
+			environment['tui.theme'] = SSymbol(string = CSE.textUI.theme)
 			pcontext.setEnvironment(environment)
 
 			# Handle arguments
@@ -1990,6 +1991,7 @@ class ScriptManager(object):
 			return r
 
 		environment['event.type'] = SSymbol(string = _metaOnKey)
+		
 		if eventData:
 			environment['event.data'] = SSymbol(string = cast(FunctionKey, eventData).name if isinstance(eventData, FunctionKey) else eventData)
 

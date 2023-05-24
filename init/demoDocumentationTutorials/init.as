@@ -16,8 +16,8 @@
 @hidden
 
 ;;	Provide a description for the category. This is displayed in the Text UI
-(set-category-description "Documentation and Tutorials" 
+(set-category-description "oneM2M Resources and Tutorials" 
 "The following pages provide links to external tutorials and documentation resources.
 
-Note, that the pages in this category are not part of the CSE, but are provied by external sources.")
+Note, that the pages in this category are not part of the CSE, but redirect to external sources.")
 

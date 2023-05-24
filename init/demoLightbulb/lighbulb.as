@@ -43,7 +43,9 @@
 ;; This function prints the lightbulb status to the console.
 (defun print-light (state)
 	(	(case state
-			("on" (setq color "dark_orange"))
+			("on" (setq color (if (== tui.theme "light")
+									("dark_orange")
+									("gold1"))))
 			("off" (setq color "grey27"))
 			(otherwise (setq color "red")))
 		

@@ -418,7 +418,7 @@ Without the optional *interval* argument the script runs only once when it is se
 
 When the *interval* argument is present it must be a positive float number that specifies the interval, in seconds, after which the script is repeatedly run again.
 
-If this meta tag is present, with or without the *interval* argument, the environment variable `is-autorun` is set to *true* when the script is run.
+If this meta tag is present, with or without the *interval* argument, the environment variable `tui.autorun` is set to *true* when the script is run.
 
 Example:
 

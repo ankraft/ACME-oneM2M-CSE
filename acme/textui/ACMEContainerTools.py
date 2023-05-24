@@ -349,7 +349,7 @@ def _getContext(name:str) -> Optional[PContext]:
 	return None
 
 
-def _executeScript(name:str, button:Optional[Button] = None, autoRun:Optional[bool] = False) -> bool:
+def _executeScript(name:str, autoRun:Optional[bool] = False) -> bool:
 	""" Executes the given script context.
 
 		Args:
@@ -358,7 +358,8 @@ def _executeScript(name:str, button:Optional[Button] = None, autoRun:Optional[bo
 	if (ctx := _getContext(str(name))) and not ctx.state.isRunningState():
 		return CSE.script.runScript(ctx,
 			      					background = True,
-									environment = { 'is-autorun': SSymbol(boolean = autoRun) }
+									environment = { 'tui.autorun': SSymbol(boolean = autoRun),
+												  }
 									)
 	return False
 
