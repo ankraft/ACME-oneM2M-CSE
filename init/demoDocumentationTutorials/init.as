@@ -12,7 +12,7 @@
 @name Init Documentation Tutorials
 @onStartup
 @onRestart
-@category oneM2M Documentation and Tutorials
+@category oneM2M Resources and Tutorials
 @hidden
 
 ;;	Provide a description for the category. This is displayed in the Text UI

@@ -18,7 +18,7 @@
 
 
 ;; Check if the CSE is running and quit if not.
-;; sPrevents the script from running when the CSE is starting or restarting.
+;; Prevents the script from continuing when the CSE is starting or restarting.
 (if (!= (cse-status) "RUNNING")
 	(quit "CSE not running"))
 
@@ -43,7 +43,7 @@
 ;; This function prints the lightbulb status to the console.
 (defun print-light (state)
 	(	(case state
-			("on" (setq color "gold1"))
+			("on" (setq color "dark_orange"))
 			("off" (setq color "grey27"))
 			(otherwise (setq color "red")))
 		
@@ -64,15 +64,16 @@
        [${(color)}]    |===|     [/${(color)}]
        [${(color)}]     \_/      [/${(color)}]
 "))
+
+			;; For the console, just print the status
 			(	(print "The lightbulb status is ${(state)}")))))
 
 
 ;; Check if the notification contains the content attribute and print the lightbulb state if it does
 (if (is-defined 'notification.resource)
-
 	(	;; Show a visual notification
 		(tui-visual-bell)
-		
+
 		;; Get the status change from the notification
 		(if (has-json-attribute notification.resource contentPath)
 			(print-light (get-json-attribute notification.resource contentPath))))
