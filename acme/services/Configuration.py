@@ -205,7 +205,7 @@ class Configuration(object):
 				'cse.resourceName'						: config.get('cse', 'resourceName',									fallback = 'cse-in'),
 				'cse.sendToFromInResponses'				: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
 				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
-				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
+				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4', '5']), # type: ignore [attr-defined]
 				'cse.serviceProviderID'					: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
 				'cse.type'								: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
 

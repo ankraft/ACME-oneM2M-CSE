@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
 - [CSE] Cleaned up and removed some obsolete code.
 - [CSE] Added *[console].headless* configuration (in addition to the --headless command line argument).
+- [CSE] Allow "5" as a valid release version.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TUI] Added views for resources, requests, registrations, configurations, statistics, and scripts.
 - [SCRIPTS] Added *category* and *tool* meta-tags for scripts to allow for better categorization and filtering in the text UI.
 - [SCRIPTS] Added Text UI meta tags: @tuiAutoRun, @tuiExecuteButton, @tuiTool.
+- [SCRIPTS] Added script for oneM2M introductional links.
 
 ### Experimental
 - [CSE] Added experimental *subi* attribute support to &lt;CNT> only. Other resource types may follow.
