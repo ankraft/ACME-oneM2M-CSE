@@ -1542,7 +1542,7 @@ class RequestManager(object):
 				srn = structuredPathFromRI(srn)
 		
 		# Map virtual resource names 
-		if srn.endswith( ('/la', '/ol', '/pcu', '/fopt') ):
+		if srn and srn.endswith( ('/la', '/ol', '/pcu', '/fopt') ):
 			rid = self._virtualResourceNameMappings.get(srn[-2:], srn)
 		else:
 			rid = request.id
