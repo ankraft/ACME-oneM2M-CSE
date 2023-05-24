@@ -33,6 +33,8 @@ except ImportError as e:
 		m = re.search("'(.+?)'", e.msg)
 		package = f' ({m.group(1)}) ' if m else ' '
 		print(f'\nOne or more required packages{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+	else:
+		print(f'\nError during import: {e.msg}\n')
 
 	quit(1)
 
