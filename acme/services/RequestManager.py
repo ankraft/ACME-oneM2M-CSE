@@ -1511,6 +1511,14 @@ class RequestManager(object):
 #	Requests recording
 #
 
+	_virtualResourceNameMappings = { 
+		# The following mappings only use the last two characters of the virtual resource name
+		'la':	'<latest>',
+		'ol':	'<oldest>',
+		'cu':	'<pollingChannelURI>',
+		'pt':	'<fanoutPoint>',
+	}
+
 	def recordRequest(self, request:CSERequest, result:Result) -> None:
 
 		# Recoding enabled or disabled?
@@ -1526,16 +1534,25 @@ class RequestManager(object):
 			pc = result.data # type:ignore
 		else:
 			pc = None
+		
+		# Determine the structure address
 		if not (srn := request.srn):
 			srn = request.id if request.id else request.to
 			if not isStructured(srn):
 				srn = structuredPathFromRI(srn)
 		
+		# Map virtual resource names 
+		if srn.endswith( ('/la', '/ol', '/pcu', '/fopt') ):
+			rid = self._virtualResourceNameMappings.get(srn[-2:], srn)
+		else:
+			rid = request.id
+
+		
 		request.fillOriginalRequest(update = True)
 
 
 		CSE.storage.addRequest(request.op,
-							   request.id, 
+							   rid, 
 							   srn,
 							   request.originator,
 							   request._outgoing,
