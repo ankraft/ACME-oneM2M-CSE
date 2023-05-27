@@ -212,11 +212,6 @@ class ACP(AnnounceableResource):
 			if self._checkAcor(acr['acor'], originator):
 				return True
 
-
-			# if 'all' in acr['acor'] or originator in acr['acor'] or requestedPermission == Permission.NOTIFY:
-			# 	return True
-			# if any([ simpleMatch(originator, a) for a in acr['acor'] ]):	# check whether there is a wildcard match
-			# 	return True
 		return False
 
 
@@ -239,10 +234,6 @@ class ACP(AnnounceableResource):
 			if self._checkAcor(p['acor'], originator):
 				return True
 
-			# if 'all' in p['acor'] or originator in p['acor']:
-			# 	return True
-			# if any([ simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
-			# 	return True
 		return False
 
 
@@ -258,14 +249,14 @@ class ACP(AnnounceableResource):
 		_riTypes = self.attribute(ACP._riTyMapping)
 		for a in acor:
 
-			# Check for group. If the originator is a member of the group, then the originator has access
+			# Check for group. If the originator is a member of a group, then the originator has access
 			if _riTypes.get(a) == ResourceTypes.GRP:
 				try:
 					if originator in CSE.dispatcher.retrieveResource(a).mid:
 						L.isDebug and L.logDebug(f'Originator found in group member')
 						return True
 				except Exception as e:
-					L.logErr(f'GRP resource not found for ACP check: {a}')
+					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
 					continue # Not much that we can do here
 
 			# Otherwise Check for wildcard match
