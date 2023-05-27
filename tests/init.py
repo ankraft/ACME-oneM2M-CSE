@@ -1095,7 +1095,7 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 if UPPERTESTERENABLED:
 	try:
-		if requests.post(UTURL, headers = { UTCMD: f'Status'}).status_code == 501:
+		if requests.post(UTURL, headers = { UTCMD: f'Status'}).status_code != 200:
 			console.print('[red]Upper Tester Interface not enabeled in CSE')
 			console.print('Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
 			quit(-1)
