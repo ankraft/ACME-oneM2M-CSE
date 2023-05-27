@@ -97,7 +97,7 @@ class ACMEViewRequests(Vertical):
 
 		# Requests List Header
 		with Horizontal(id = 'request-list-header'):
-			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                  [u b]Target[/u b]                      [u b]Response Status[/u b]')
+			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]')
 
 		# Request List
 		yield self.requestList
@@ -207,7 +207,7 @@ class ACMEViewRequests(Vertical):
 			_srn = r.get('srn', '')
 			# _srn = _srn if _srn else ''
 			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):25.25}   {str(_to):25.25}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
+				Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                 [dim]{_srn}[/dim]')))
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')

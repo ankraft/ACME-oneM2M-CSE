@@ -1061,6 +1061,35 @@ class RequestManager(object):
 
 		try:
 
+			# FR - originator 
+			# if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
+			# 	raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
+			# else:
+			# 	cseRequest.originator = fr
+			cseRequest.originator = gget(cseRequest.originalRequest, 'fr', greedy = False)
+
+			# TO - target
+			if not (to := gget(cseRequest.originalRequest, 'to', greedy = False)) and not isResponse:
+				raise BAD_REQUEST(L.logDebug('to/target parameter is mandatory in request'), data = cseRequest)
+			else:
+				cseRequest.to = to
+				if to:
+					# A response doesn't need to have a 'to' parameter.
+					# But if it has then it must only be an originator, ie. an AE-ID or a CSE-ID
+					if isResponse:
+						if isValidCSI(to) or isValidAEI(to):
+							cseRequest.id = to
+							cseRequest.csi = to
+							cseRequest.srn = None
+						else:
+							raise BAD_REQUEST(L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. '),
+											  data = cseRequest)
+					else:
+						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = retrieveIDFromPath(to)
+						if dbg:
+							raise BAD_REQUEST(dbg, data = cseRequest)
+
+
 			# RQI - requestIdentifier
 			# Check as early as possible
 			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
@@ -1094,32 +1123,9 @@ class RequestManager(object):
 				else:
 					raise BAD_REQUEST(L.logDebug(f'unknown/unsupported resource type: {ty}'), data = cseRequest)
 
-			# FR - originator 
-			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
+			# Late check for Originator happens here, because we need to know the resource type and operation
+			if not cseRequest.originator and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
 				raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
-			else:
-				cseRequest.originator = fr
-
-			# TO - target
-			if not (to := gget(cseRequest.originalRequest, 'to', greedy = False)) and not isResponse:
-				raise BAD_REQUEST(L.logDebug('to/target parameter is mandatory in request'), data = cseRequest)
-			else:
-				cseRequest.to = to
-				if to:
-					# A response doesn't need to have a 'to' parameter.
-					# But if it has then it must only be an originator, ie. an AE-ID or a CSE-ID
-					if isResponse:
-						if isValidCSI(to) or isValidAEI(to):
-							cseRequest.id = to
-							cseRequest.csi = to
-							cseRequest.srn = None
-						else:
-							raise BAD_REQUEST(L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. '),
-											  data = cseRequest)
-					else:
-						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = retrieveIDFromPath(to)
-						if dbg:
-							raise BAD_REQUEST(dbg, data = cseRequest)
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
@@ -1511,14 +1517,6 @@ class RequestManager(object):
 #	Requests recording
 #
 
-	_virtualResourceNameMappings = { 
-		# The following mappings only use the last two characters of the virtual resource name
-		'la':	'<latest>',
-		'ol':	'<oldest>',
-		'cu':	'<pollingChannelURI>',
-		'pt':	'<fanoutPoint>',
-	}
-
 	def recordRequest(self, request:CSERequest, result:Result) -> None:
 
 		# Recoding enabled or disabled?
@@ -1542,19 +1540,19 @@ class RequestManager(object):
 				srn = structuredPathFromRI(srn)
 		
 		# Map virtual resource names 
-		if srn and srn.endswith( ('/la', '/ol', '/pcu', '/fopt') ):
-			rid = self._virtualResourceNameMappings.get(srn[-2:], srn)
-		else:
+		if srn and srn.endswith( ('/la', '/ol', '/pcu', '/fopt') ) and isinstance(result.resource, Resource):
+			rid = f'{result.resource.pi}/{srn.rsplit("/", 1)[1]}'
+		elif request.id:
 			rid = request.id
-
+		else:
+			rid = 'unknown'
 		
 		request.fillOriginalRequest(update = True)
-
 
 		CSE.storage.addRequest(request.op,
 							   rid, 
 							   srn,
-							   request.originator,
+							   request.originator if request.originator else 'unknown',
 							   request._outgoing,
 							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
 							   request.originalRequest,

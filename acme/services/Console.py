@@ -465,19 +465,6 @@ Available under the BSD 3-Clause License
 		"""
 		L.console('Configuration', isHeader = True)
 		L.console(self.getConfigurationRich())
-		# conf = Configuration.print().split('\n')
-		# conf.sort()
-		#	
-		# table = Table(row_styles = [ '', L.tableRowStyle])
-		# table.add_column('Key', no_wrap=True)
-		# table.add_column('Value', no_wrap=False)
-		# for c in conf:
-		# 	if c.startswith('Configuration:'):
-		# 		continue
-		# 	kv = c.split(' = ', 1)
-		# 	if len(kv) == 2:
-		# 		table.add_row(kv[0].strip(), kv[1])
-		# L.console(table, nl = True)
 
 
 	def clearScreen(self, key:str) -> None:
@@ -1513,14 +1500,25 @@ skinparam BoxPadding 60
 		participants = OrderedSet()
 		targets = OrderedSet()
 		seqs = ''
+		origPrefix = '<originator>\\n'
 
-		for r in CSE.storage.getRequests(id):
+		for r in CSE.storage.getRequests(id, sortedByOt = True):
 			req = r['req']
 			op = req['op']
+
 			ri = r.get('ri', '(unknown)')
+			if op == Operation.NOTIFY:
+				ri = f'"{origPrefix}{ri}"'
+			else:
+				ri = f'"{ri}"'
+
 			org = r['org']
+			if org == CSE.cseCsi:
+				participants.add(orig := f'"{org[1:]}"')	# CSI without the leading /
+			else:
+				participants.add(orig := f'"{origPrefix}{org}"')
 			
-			participants.add(f'"<originator>\\n{org}"')
+
 			ty = req.get('ty') if op == 1 else None
 
 			if id:
@@ -1537,15 +1535,16 @@ skinparam BoxPadding 60
 							Pretty(req, indent_size = 2),
 							Pretty(r['rsp'], indent_size = 2))
 			
-			targets.add(ri)
+			if ri not in participants:
+				targets.add(ri)
 			tyn = ResourceTypes(ty).name if ResourceTypes.has(ty) else f'UNKNOWN_TYPE_{ty}'
-			seqs += f'"<originator>\\n{org}" -> "{ri}": {Operation(op).name} {"<" + tyn + ">" if ty else ""} \n'
-			seqs += f'"<originator>\\n{org}" <- "{ri}": RSC: {r["rsp"]["rsc"]} \n'
+			seqs += f'{orig} -> {ri}: {Operation(op).name} {"<" + tyn + ">" if ty else ""} \n'
+			seqs += f'{orig} <- {ri}: RSC: {r["rsp"]["rsc"]} \n'
 		
 
 		uml += '\n'.join([f'participant {p}' for p in participants]) + '\n'
 		uml += f'box "CSE {CSE.cseCsi}" #f8f8f8\n'
-		uml += '\n'.join([f'participant "{p}"' for p in targets]) + '\n'
+		uml += '\n'.join([f'participant {p}' for p in targets]) + '\n'
 		uml += 'end box\n'
 		uml += seqs
 		uml += '@enduml\n'
