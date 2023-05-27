@@ -115,6 +115,10 @@ class Constants(object):
 	attrOlRi = '__olri__'
 	""" Constant: Name of the 'Resource internal *__olri__* attribute. This attribute holds the resourceID's of the *oldest* child-resource for some resource types. """
 
+	attrRiTyMapping = '__riTyMapping__'
+	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
+
+
 	#
 	#	Supported URL schemes
 	#

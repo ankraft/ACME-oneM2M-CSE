@@ -19,6 +19,7 @@ ae1URL = f'{cseURL}/{ae1RN}'
 ae2RN = f'{aeRN}2'
 ae2URL = f'{cseURL}/{ae2RN}'
 cnt2URL = f'{ae2URL}/{cntRN}'
+grp2URL = f'{cseURL}/{grpRN}'
 
 
 class TestACP(unittest.TestCase):
@@ -37,6 +38,7 @@ class TestACP(unittest.TestCase):
 	ae 				= None
 	originator 		= None
 	acp 			= None
+	grp 			= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -56,6 +58,8 @@ class TestACP(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(ae1URL, ORIGINATOR)
 		DELETE(ae2URL, ORIGINATOR)
+		DELETE(grp2URL, ORIGINATOR)
+		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		testCaseEnd('TearDown TestACP')
 
 
@@ -741,6 +745,91 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 
 
+#
+#	Test ACP with acor & Groups
+#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testACPacorGRP(self) -> None:
+		"""	Test when GRP is a member of ACP.acor"""
+
+		#
+		#	CSEBase                             
+		#    ├─ae                       
+		#    ├─grp                       
+		#    ├─acp                       
+		#    └─cnt                      
+
+		DELETE(aeURL, ORIGINATOR)
+		DELETE(acpURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		# grp with AE as member
+		dct = 	{ 'm2m:grp' : { 
+					'rn' : grpRN,
+					'mt' : T.MIXED,
+					'mnm': 1,
+					'mid': [ findXPath(TestACP.ae, 'm2m:ae/ri') ]
+				}}
+		TestACP.grp, rsc = CREATE(cseURL, ORIGINATOR, T.GRP, dct)
+		grpRi = findXPath(TestACP.grp, 'm2m:grp/ri')
+		self.assertEqual(rsc, RC.CREATED)
+
+		# ACP with pv/acr/acor to the grp
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ {
+							"acor": [ grpRi ],
+							"acop": Permission.RETRIEVE + Permission.CREATE,
+						}]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# CNT with acpi to the ACP
+		dct = 	{ "m2m:cnt": {
+					"rn": cntRN,
+					"acpi": [ acpRi ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Create a CIN under the CNT with the AE as originator -> OK
+		dct = 	{ "m2m:cin": {
+					"con": "test"
+				}}
+		r, rsc = CREATE(f'{cseURL}/{cntRN}', TestACP.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Create a CIN under the CNT with unknown originator -> Fail
+		dct = 	{ "m2m:cin": {
+					"con": "test"
+				}}
+		r, rsc = CREATE(f'{cseURL}/{cntRN}', 'wrong', T.CIN, dct)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# cleanup
+		DELETE(aeURL, ORIGINATOR)
+		DELETE(acpURL, ORIGINATOR)
+		DELETE(grp2URL, ORIGINATOR)
+		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
 # TODO reference a non-acp resource in acpi
 # TODO acod/specialization
@@ -806,6 +895,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestACP('test_createACPWithWrongTyFail'))
 	addTest(suite, TestACP('test_createACPWithTy'))
 
+	# ACPT with GRP tests
+	addTest(suite, TestACP('test_testACPacorGRP'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

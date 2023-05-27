@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Cleaned up and removed some obsolete code.
 - [CSE] Added *[console].headless* configuration (in addition to the --headless command line argument).
 - [CSE] Allow "5" as a valid release version.
+- [CSE] Added support for referencing members of a &lt;Group> in &lt;ACP>'s *acor* attribute. Thanks to @samuelbles07 for the contribution.
 - [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
 - [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
 - [TESTS] Added http keep-alive to tests.
