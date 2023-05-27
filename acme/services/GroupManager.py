@@ -21,6 +21,7 @@ from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
+from ..resources.GRP import GRP
 from ..resources.Factory import resourceFromDict
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -175,9 +176,9 @@ class GroupManager(object):
 
 		# ^^^ for end
 
-		group['mid'] = midsList				# replace with a cleaned up mid
-		group['cnm'] = len(midsList)
-		group['mtv'] = True
+		group.setAttribute('mid', midsList)				# replace with a cleaned up mid
+		group.setAttribute('cnm', len(midsList))
+		group.setAttribute('mtv', True)
 
 
 	def foptRequest(self, operation:Operation, 
