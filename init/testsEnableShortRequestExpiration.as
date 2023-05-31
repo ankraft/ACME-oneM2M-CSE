@@ -15,7 +15,6 @@
 
 (include-script "functions")
 
-(set-and-store-config-value "cse.requestExpirationDelta" (to-number (argv 1)))
-
-;; return the original expiration delta
-(quit (get-storage "cse.requestExpirationDelta"))
+;; Set a new value and return the original expiration delta
+(quit 
+	(set-and-store-config-value "cse.requestExpirationDelta" (to-number (argv 1))))

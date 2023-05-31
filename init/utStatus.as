@@ -14,7 +14,7 @@
 @category CSE Operation
 
 (if (> argc 1)
-	(quit-with-error "\"Status\" script has no arguments"))
+  (quit-with-error "\"Status\" script has no arguments"))
 (print (cse-status))
 	
 (quit (cse-status))

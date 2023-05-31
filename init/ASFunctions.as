@@ -23,15 +23,19 @@
 ;;
 
 ;; Store the original value and then update the CSE's configuration
+;; Return the value
 (defun set-and-store-config-value (key value)
-	(	(put-storage key (get-config key))
-		(set-config key value)))
+	(	(setq _previousValue (get-config key))
+		(put-storage "previousConfigs" key _previousValue)
+		(set-config key value)
+		(_previousValue)))
 
 ;; Restore the CSE's previous configuration
 (defun restore-config-value (key)
-	(if (has-storage key)
-		(	(set-config key (get-storage key))
-			(remove-storage key))))
+	(if (has-storage "previousConfigs" key)
+		(	(set-config key 
+					    (get-storage "previousConfigs" key))
+			(remove-storage "previousConfigs" key))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -40,8 +44,8 @@
 
 ;; Return the response status
 (defun get-response-status (response) 
-	(car response))
+  (car response))
 
 ;; Return the response resource
 (defun get-response-resource (response) 
-	(cadr response))
+  (cadr response))

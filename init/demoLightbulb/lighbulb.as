@@ -20,7 +20,7 @@
 ;; Check if the CSE is running and quit if not.
 ;; Prevents the script from continuing when the CSE is starting or restarting.
 (if (!= (cse-status) "RUNNING")
-	(quit "CSE not running"))
+  (quit "CSE not running"))
 
 ;; Set the json path to the content attribute of the notification
 (setq contentPath "m2m:sgn/nev/rep/m2m:cin/con")
@@ -31,28 +31,28 @@
 ;; Define the lightswitch status retrieval function.
 ;; This function retrieves the latest ContentInstance wih the content attribute indicating the lightswitch status.
 (defun get-lightswitch-status ()
-	(	(setq response (retrieve-resource "CDemoLightbulb" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer/la"))
-		(if (== (get-response-status response) 2000)
-			(	(setq cin (get-response-resource response))
-				(if (has-json-attribute cin "m2m:cin/con")
-					(get-json-attribute cin "m2m:cin/con")))
-			("unknown"))))	;;Fallback is always off for all errors
+  ((setq response (retrieve-resource "CDemoLightbulb" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer/la"))
+   (if (== (get-response-status response) 2000)
+     ((setq cin (get-response-resource response))
+      (if (has-json-attribute cin "m2m:cin/con")
+        (get-json-attribute cin "m2m:cin/con")))
+     ("unknown"))))	;;Fallback is always off for all errors
 
 
 ;; Define the lightbulb printing function.
 ;; This function prints the lightbulb status to the console.
 (defun print-light (state)
-	(	(case state
-			("on" (setq color (if (== tui.theme "light")
-									("dark_orange")
-									("gold1"))))
-			("off" (setq color "grey27"))
-			(otherwise (setq color "red")))
-		
-		;; Different output for TUI and console
-		(if (runs-in-tui)			
-			(	(clear-console)
-				(print "
+  ((case state
+     ("on"  (setq color (if (== tui.theme "light")
+                          ("dark_orange")
+                          ("gold1"))))
+     ("off" (setq color "grey27"))
+     (otherwise (setq color "red")))
+        
+   ;; Different output for TUI and console
+   (if (runs-in-tui)			
+     ((clear-console)
+      (print "
 
 
        [${(color)}]   ..---..    [/${(color)}]
@@ -67,22 +67,22 @@
        [${(color)}]     \_/      [/${(color)}]
 "))
 
-			;; For the console, just print the status
-			(	(print "The lightbulb status is ${(state)}")))))
+     ;; For the console, just print the status
+     ((print "The lightbulb status is ${(state)}")))))
 
 
 ;; Check if the notification contains the content attribute and print the lightbulb state if it does
 (if (is-defined 'notification.resource)
-	(	;; Show a visual notification
-		(tui-visual-bell)
+  (;; Show a visual notification
+   (tui-visual-bell)
 
-		;; Get the status change from the notification
-		(if (has-json-attribute notification.resource contentPath)
-			(print-light (get-json-attribute notification.resource contentPath))))
+   ;; Get the status change from the notification
+   (if (has-json-attribute notification.resource contentPath)
+     (print-light (get-json-attribute notification.resource contentPath))))
 
-	;; Otherwise retrieve the status from the lightswitch directly
-	;; This is only necessary if the script is executed manually
-	(	(print-light (get-lightswitch-status)))) 
+  ;; Otherwise retrieve the status from the lightswitch directly
+  ;; This is only necessary if the script is executed manually
+  (print-light (get-lightswitch-status)))
 
 
 

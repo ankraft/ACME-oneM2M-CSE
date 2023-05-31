@@ -17,6 +17,6 @@
 (reset-cse)
 
 (if (runs-in-tui)
-	(print "[green3 b]CSE Reset Complete")
-	(print "CSE Reset Complete"))
+  (print "[green3 b]CSE Reset Complete")
+  (print "CSE Reset Complete"))
 
