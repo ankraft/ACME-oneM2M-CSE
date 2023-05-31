@@ -5,8 +5,9 @@
 ## Network
 
 1. **How can I access the CSE from remote/another computer on my network?**  
-   By default the CSE binds to the *localhost* interface. To make it accessible from a remote machine you need to bind the CSE's http server to another network interface, or address. This can be done in the *[server.http]* and *[client.mqtt]* sections of the configuration file. 
-   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.
+   By default the CSE binds to the *localhost/loopback* interface, meaning it **will not** be able to receive requests from remote machines. To make it accessible from a remote machine you need to bind the CSE's http server or MQTT client to another network interface, or address. This can be done in the *[http]* and *[mqtt]* sections of the configuration file. 
+   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.  
+   The reason for this default setting is security: making the CSE accessible from remote machines should be a conscious decision and not the default.
 
 
 ## Database
@@ -34,9 +35,9 @@
    original hosting web server. This could be useful, for example, to allow a web UI that is hosted on 
    one web server to access oneM2M resources that are hosted on external CSE(s).  
    ACME's http binding implementation supports CORS. This feature is disabled by default and can be 
-   enabled by setting the configuration setting *[server.http.cors].enable* to *true*. CORS access is granted
+   enabled by setting the configuration setting *[http.cors].enable* to *true*. CORS access is granted
    by default to all HTTP resources. This can be limited by specifying the resource paths in the 
-   configuration setting *[server.http.cors].resources*.  
+   configuration setting *[http.cors].resources*.  
    **Note**: Most modern web browsers don't allow unsecured (http) access via CORS. This means that the
    CSE must be configured to run the http server with TLS support enabled (https).
 
