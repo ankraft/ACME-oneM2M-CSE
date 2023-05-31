@@ -574,7 +574,7 @@ class NotificationManager(object):
 				data: List of unique resource IDs.
 				crsRi: The resource ID of the <crs> resource for the window.
 				subCount: Maximum number of expected resource IDs in *data*.
-				twi: How to tread the notifications (all, some, none)
+				eem: EventEvaluationMode.
 		"""
 		
 		# First make sure that the list in 'data' only contains unique resource IDs

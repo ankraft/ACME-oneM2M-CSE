@@ -80,10 +80,9 @@ class ACMEPContext(PContext):
 	"""	Child class of the `PContext` context class that adds further functions and details.
 
 		Attributes:
-			filename: Script filename.
+			scriptFilename: Script filename.
 			fileMtime: The script file's latest modified timestamp.
-			maxRuntime: The maximum runtime (in seconds) for a script.
-			requestParameters: Dictionary with additional request parameters.
+			nextScript: The next script to be executed. Used for chaining scripts.
 
 	"""
 
@@ -960,6 +959,21 @@ class ACMEPContext(PContext):
 
 
 	def doScheduleNextScript(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Schedule the next script to run after the current script has finished.
+
+			Example:
+				::
+
+					(schedule-next-script "scriptName" "arg1" "arg2" ...)
+					(schedule-next-script "scriptName")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object.
+		"""
 		pcontext.assertSymbol(symbol, minLength = 2)
 
 		# script name
@@ -1168,6 +1182,20 @@ class ACMEPContext(PContext):
 
 
 	def doTuiVisualBell(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Execute a TUI visual bell. This shortly flashes the script's menu entry.
+
+			Example:
+				::
+
+					(tui-visual-bell)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+			
+			Return:
+				The updated `PContext` object.
+		"""
 		pcontext.assertSymbol(symbol, 1)
 		CSE.textUI.scriptVisualBell(pcontext.scriptName)
 		return pcontext
@@ -1972,6 +2000,7 @@ class ScriptManager(object):
 		"""	Remove a key/value pair from the persistent storage.
 		
 			Args:
+				storage: Name or ID of the storage.
 				key: Key where to store the value.
 		"""
 		_storage:Dict[str, SSymbol] = self.storage.get(storage, {})
@@ -1981,10 +2010,10 @@ class ScriptManager(object):
 
 
 	def storageRemoveStorage(self, storage:str) -> None:
-		"""	Remove all key/value pairs from the persistent storage *storageID.
+		"""	Remove all key/value pairs from the persistent *storage*.
 		
 			Args:
-				key: Key where to store the value.
+				storage: Name or ID of the storage.
 		"""
 		if storage in self.storage:
 			del self.storage[storage]

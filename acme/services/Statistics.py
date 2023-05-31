@@ -7,6 +7,8 @@
 #	Statistics Module
 #
 
+"""	Statistics Module for internal statistics.
+"""
 from __future__ import annotations
 from typing import Dict, Union, Optional
 
@@ -26,47 +28,88 @@ from ..services.Logging import Logging as L
 
 
 deletedResources	= 'rmRes'
+""" Attribute name for number of deleted resources in the storage. """
 createdResources	= 'crRes'
+""" Attribute name for number of created resources in the storage. """
 updatedResources	= 'upRes'
+""" Attribute name for number of updated resources in the storage. """
 expiredResources 	= 'exRes'
+""" Attribute name for number of expired resources in the storage. """
 httpRetrieves		= 'htRet'
+""" Attribute name for number of HTTP RETRIEVE requests. """
 httpCreates			= 'htCre'
+""" Attribute name for number of HTTP CREATE requests. """
 httpUpdates			= 'htUpd'
+""" Attribute name for number of HTTP UPDATE requests. """
 httpDeletes			= 'htDel'
+""" Attribute name for number of HTTP DELETE requests. """
 httpNotifies		= 'htNot'
+""" Attribute name for number of HTTP NOTIFY requests. """
 httpSendRetrieves	= 'htSRt'
+""" Attribute name for number of HTTP SEND RETRIEVE requests. """
 httpSendCreates		= 'htSCr'
+""" Attribute name for number of HTTP SEND CREATE requests. """
 httpSendUpdates		= 'htSUp'
+""" Attribute name for number of HTTP SEND UPDATE requests. """
 httpSendDeletes		= 'htSDl'
+""" Attribute name for number of HTTP SEND DELETE requests. """
 httpSendNotifies	= 'htSNo'
+""" Attribute name for number of HTTP SEND NOTIFY requests. """
 mqttRetrieves		= 'mqRet'
+""" Attribute name for number of MQTT RETRIEVE requests. """
 mqttCreates			= 'mqCre'
+""" Attribute name for number of MQTT CREATE requests. """
 mqttUpdates			= 'mqUpd'
+""" Attribute name for number of MQTT UPDATE requests. """
 mqttDeletes			= 'mqDel'
+""" Attribute name for number of MQTT DELETE requests. """
 mqttNotifies		= 'mqNot'
+""" Attribute name for number of MQTT NOTIFY requests. """
 mqttSendRetrieves	= 'mqSRt'
+""" Attribute name for number of MQTT SEND RETRIEVE requests. """
 mqttSendCreates		= 'mqSCr'
+""" Attribute name for number of MQTT SEND CREATE requests. """
 mqttSendUpdates		= 'mqSUp'
+""" Attribute name for number of MQTT SEND UPDATE requests. """
 mqttSendDeletes		= 'mqSDl'
+""" Attribute name for number of MQTT SEND DELETE requests. """
 mqttSendNotifies	= 'mqSNo'
+""" Attribute name for number of MQTT SEND NOTIFY requests. """
 notifications		= 'notif'
+""" Attribute name for number of notifications. """
 logErrors			= 'lgErr'
+""" Attribute name for number of log errors. """
 logWarnings			= 'lgWrn'
+""" Attribute name for number of log warnings. """
 cseStartUpTime		= 'cseSU'
+""" Attribute name for CSE startup time. """
 cseUpTime			= 'cseUT'
+""" Attribute name for CSE uptime. """
 resourceCount		= 'ctRes'
+""" Attribute name for number of resources in the storage. """
 
 # TODO  restartcount, 
 
 StatsT = Dict[str, Union[str, int, float]]
+""" Type for statistics records. """
 
 class Statistics(object):
+	"""	Statistics class. Handles all internal statistics.
+
+		Attributes:
+			statisticsEnabled:		Flag whether statistics are enabled.
+			statLock:				Internal lock for statistic handling.
+			stats:					Statistics records
+	"""
 
 	__slots__ = (
 		'statisticsEnabled',
 		'statLock',
 		'stats',
 	)
+	""" Slots of class attributes. """
+
+
 	def __init__(self) -> None:
 		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
@@ -121,6 +164,9 @@ class Statistics(object):
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the statistics service.
+
+			Return:
+				True if shutdown was successful, False otherwise.
 		"""
 		if self.statisticsEnabled:
 			# Stop the worker
@@ -136,6 +182,9 @@ class Statistics(object):
 	
 	def restart(self, name:str) -> None:
 		"""	Restart the statistics service.
+
+			Args:
+				name:	The name of the event that triggered the restart.
 		"""
 		self.purgeDBStatistics()
 		self.stats = self.setupStats()
@@ -144,6 +193,11 @@ class Statistics(object):
 
 
 	def setupStats(self) -> StatsT:
+		"""	Setup the statistics dictionary.
+
+			Return:
+				The statistics dictionary.
+		"""
 		if (stats := self.retrieveDBStatistics()):
 			return stats
 		return {
@@ -180,7 +234,12 @@ class Statistics(object):
 
 
 	# Return stats
-	def getStats(self) -> StatsT:			
+	def getStats(self) -> StatsT:
+		"""	Return the current statistics.
+
+			Return:
+				The statistics dictionary.
+		"""
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
@@ -198,6 +257,9 @@ class Statistics(object):
 
 	def _handleStatsEvent(self, eventType:str) -> None:
 		"""	Generic handling of statist events.
+
+			Args:
+				eventType:	The type of event that occurred.
 		"""
 		try:
 			with self.statLock:
@@ -211,6 +273,9 @@ class Statistics(object):
 
 	def handleCseStartup(self, name:str) -> None:
 		"""	Assign the CSE's startup time.
+
+			Args:
+				name:	The name of the event that triggered function.
 		"""
 		with self.statLock:
 			# self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
@@ -223,6 +288,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
+		"""	Background worker to write statistics to the database.
+
+			Return:
+				True if the statistics were written successfully, False otherwise. True continous the worker.
+		"""
 		# L.isDebug and L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
@@ -233,17 +303,29 @@ class Statistics(object):
 
 
 	def retrieveDBStatistics(self) -> StatsT:
+		"""	Retrieve statistics data.
+
+			Return:
+				The retrieved statistics dictionary.
+		"""
+		
 		with self.statLock:
 			return CSE.storage.getStatistics()
 
 
 	def storeDBStatistics(self) -> bool:
-		"""	Store statistics data"""
+		"""	Store statistics data.
+
+			Return:
+				True if the statistics were stored successfully, False otherwise.
+		"""
 		with self.statLock:
 			return CSE.storage.updateStatistics(self.stats)
 	
 
 	def purgeDBStatistics(self) -> None:
+		"""	Purge statistics data.
+		"""
 		with self.statLock:
 			CSE.storage.purgeStatistics()
 
@@ -258,6 +340,14 @@ class Statistics(object):
 				- The CSE's resource tree
 				- The Registrar CSE (if any)
 				- A list of descendant CSE's (if any)
+			
+			This function calls itself recursively to generate the tree structure.
+			
+			Args:
+				maxLevel:	The maximum level of the tree to print. 0 means all levels.
+			
+			Return:
+				The PlanUML graph as a string.
 		"""
 
 		def getChildren(res:Resource, level:int) -> str:
