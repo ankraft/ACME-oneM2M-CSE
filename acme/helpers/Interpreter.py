@@ -1248,7 +1248,7 @@ class PContext():
 		if symbol.type != SType.tList:
 			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong expression format: {symbol}'))
 		if length is not None and symbol.length != length:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments: {symbol.length} for expression: {symbol} must be {length}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments: {symbol.length - 1} for expression: {symbol} must be {length - 1}'))
 		if minLength is not None and symbol.length < minLength:
 			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression: {symbol}'))
 		if maxLength is not None and symbol.length > maxLength:
@@ -1987,7 +1987,7 @@ def _doEval(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.assertSymbol(symbol, 2)
 
 	# get and evaluate symbol or list
-	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote))
+	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote, SType.tString, SType.tSymbol))
 	_s = deepcopy(result)
 	_s.type = _s.type.unquote()
 	return pcontext._executeExpression(_s, symbol)
@@ -1999,7 +1999,7 @@ def _doEvaluateInline(pcontext:PContext, symbol:SSymbol) -> PContext:
 		Example:
 			::
 
-				(evaluate-line false) ;; Disable inline evaluation
+				(evaluate-inline false) ;; Disable inline evaluation
 
 		Args:
 			pcontext: Current `PContext` for the script.
@@ -2663,6 +2663,38 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 	return pcontext.setResult(r1)
 
 
+def _doParseString(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Parse a string as executable code and return it for evaluation.
+
+		Example:
+			::
+
+				(eval (parse-string "(print \"hello, world\")")) -> prints "hello, world"
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The `PContext` object with the new symbol as result.
+	"""
+	pcontext.assertSymbol(symbol, 2)
+
+	# get string
+	pcontext, _string = pcontext.valueFromArgument(symbol, 1, SType.tString)
+	# replace escaped quotes
+	_string = _string.replace('\\"', '"')
+	parser = SExprParser()
+	try:
+		# parse string
+		_lst = parser.ast(removeCommentsFromJSON(_string), allowBrackets = pcontext.allowBrackets)
+		# return result as quoted list
+		return pcontext.setResult(SSymbol(lstQuote = _lst))
+	except ValueError as e:
+		pcontext.setError(PError.invalid, str(e), expression = parser.errorExpression)
+		return pcontext
+
+
 def _doPrint(pcontext:PContext, symbol:SSymbol) -> PContext:
 	""" Print the arguments to the console
 	
@@ -3129,6 +3161,35 @@ def _doToString(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext
 
 
+def _doToSymbol(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Convert a string to a symbol. 
+	
+		Example:
+			::
+
+					(to-symbol "aSymbol") -> aSymbol
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the operation result.
+		
+		Raises:
+			`PInvalidArgumentError`: In case the input cannot be converted.
+	"""
+	pcontext.assertSymbol(symbol, 2)
+
+	# string
+	pcontext, _string = pcontext.valueFromArgument(symbol, 1, SType.tString)
+	try:
+		pcontext = pcontext.setResult(SSymbol(symbol = _string))
+	except Exception as e:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable string, is: {_string}'))
+	return pcontext
+
+
 def _doURLEncode(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	URL-Encode a string.
 
@@ -3242,6 +3303,7 @@ _builtinCommands:PSymbolDict = {
 	'log-error':			lambda p, a : _doLog(p, a, isError = True),
 	'match':				_doMatch,
 	'nth':					_doNth,
+	'parse-string':			_doParseString,
 	'print': 				_doPrint,
 	'progn':				_doProgn,
 	'quit':					_doQuit,
@@ -3257,6 +3319,7 @@ _builtinCommands:PSymbolDict = {
 	'string-to-json':		_doStringToJson,
 	'to-number':			_doToNumber,
 	'to-string':			_doToString,
+	'to-symbol':			_doToSymbol,
 	'true':					lambda p, a: _doBoolean(p, a, True),
 	'upper':				lambda p, a: _doLowerUpper(p, a, False),
 	'url-encode':			_doURLEncode,

@@ -400,12 +400,12 @@ class ACMEPContext(PContext):
 
 
 	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
-		"""	Retrieve a value from the persistent storage.
+		"""	Retrieve a value for *key* from the persistent storage *storage*.
 
 			Example:
 				::
 
-					(get-storage "aKey") -> value
+					(get-storage "aStorageID" "aKey") -> value
 
 			Args:
 				pcontext: PContext object of the running script.
@@ -417,12 +417,15 @@ class ACMEPContext(PContext):
 			Raises:
 				`PUndefinedError`: If the key is undefined in the persistent storage.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		pcontext.assertSymbol(symbol, 3)
+
+		# get storage
+		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# get key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
-		if (_val := CSE.script.storageGet(_key)) is None:
+		if (_val := CSE.script.storageGet(_storage, _key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'Undefined storage key: {_key}'))
 		
 		return pcontext.setResult(_val)
@@ -457,7 +460,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(has-storage "aKey")
+					(has-storage "aStorageID" "aKey")
 
 			Args:
 				pcontext: PContext object of the running script.
@@ -466,12 +469,15 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		pcontext.assertSymbol(symbol, 3)
+
+		# extract storage
+		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# extract key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
-		return pcontext.setResult(SSymbol(boolean = CSE.script.storageHas(_key)))
+		return pcontext.setResult(SSymbol(boolean = CSE.script.storageHas(_storage, _key)))
 
 
 	def doHttp(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -775,7 +781,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(put-storage "aKey" "Hello, World")
+					(put-storage "storageID" "aKey" "Hello, World")
 
 			Args:
 				pcontext: `PContext` object of the running script.
@@ -784,16 +790,21 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		pcontext.assertSymbol(symbol, 4)
+
+
+		# get storage
+		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# get key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
 		# get value
-		pcontext, _value = pcontext.resultFromArgument(symbol, 2, _storageTypes)
+		pcontext, _value = pcontext.resultFromArgument(symbol, 3, _storageTypes)
 
-		CSE.script.storagePut(_key, _value)
+		CSE.script.storagePut(_storage, _key, _value)
 		return pcontext
+
 
 	def doQueryResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Run a comparison query against a JSON structure. This compares to the oneM2M advanced
@@ -826,12 +837,14 @@ class ACMEPContext(PContext):
 
 
 	def doRemoveStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
-		"""	Remove a value from the persistent storage.
+		"""	Either remove a value from the persistent storage, or remove all values from the storage with 
+			a given storage ID.
 
 			Example:
 				::
 
-					(storage-remove "aKey")
+					(storage-remove "aStorageID" "aKey")
+					(storage-remove "aStorageID")
 
 			Args:
 				pcontext: `PContext` object of the running script.
@@ -840,12 +853,22 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		pcontext.assertSymbol(symbol, minLength = 2, maxLength = 3)
+
+		if symbol.length == 2:
+
+			# get storage
+			pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+			CSE.script.storageRemoveStorage(_storage)
+			return pcontext
+		
+		# get storage
+		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
 
 		# get key
-		pcontext, key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
-		CSE.script.storageRemove(cast(str, key))
+		CSE.script.storageRemove(_storage, _key)
 		return pcontext
 
 
@@ -1380,7 +1403,7 @@ class ScriptManager(object):
 
 		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
 		self.categoryDescriptions:Dict[str,str] = {}			# The category descriptions
-		self.storage:Dict[str, SSymbol] = {}					# storage for global values
+		self.storage:Dict[str, Dict[str, SSymbol]] = {}			# storage for global values
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
@@ -1904,50 +1927,67 @@ class ScriptManager(object):
 	#	Storage handlers
 	#
 
-	def storageGet(self, key:str) -> Optional[SSymbol]:
-		"""	Retrieve a key/value pair from the persistent storage. 
+	def storageGet(self, storage:str, key:str) -> Optional[SSymbol]:
+		"""	Retrieve a key/value pair from the persistent storage *storage*. 
 		
 			Args:
+				storage: Name or ID of the storage.
 				key: Key for the value to retrieve.
 
 			Return:
 				Previously stored value for the key, or *None*.
 		"""
-		if key in self.storage:
-			return self.storage[key]
-		return None
+		_storage:Dict[str, SSymbol] = self.storage.get(storage, {})
+		return _storage.get(key, None)
 
 
-	def storageHas(self, key:str) -> bool:
-		"""	Test whether a key exists in the persistent storage. 
+	def storageHas(self, storage:str, key:str) -> bool:
+		"""	Test whether a key exists in the persistent storage *storageID*. 
 		
 			Args:
+				storage: Name or ID of the storage.
 				key: Key to check.
 
 			Return:
 				Boolean result.
 		"""
-		return key in self.storage
+		return key in self.storage.get(storage, {})
 
 
-	def storagePut(self, key:str, value:SSymbol) -> None:
-		"""	Store a key/value pair in the persistent storage. Existing values will be overwritten.
+	def storagePut(self, storage: str, key:str, value:SSymbol) -> None:
+		"""	Store a key/value pair in the persistent storage identified by *storage*.
+		Existing values will be overwritten.
 		
 			Args:
+				storage: Name or ID of the storage.
 				key: Key where to store the value.
 				value: Value to store.
 		"""
-		self.storage[key] = value
+		_storage:Dict[str, SSymbol] = self.storage.get(storage, {})
+		_storage[key] = value
+		self.storage[storage] = _storage
 
 
-	def storageRemove(self, key:str) -> None:
+	def storageRemove(self, storage:str, key:str) -> None:
 		"""	Remove a key/value pair from the persistent storage.
 		
 			Args:
 				key: Key where to store the value.
 		"""
-		if key in self.storage:
-			del self.storage[key]
+		_storage:Dict[str, SSymbol] = self.storage.get(storage, {})
+		if key in _storage:
+			del _storage[key]
+			self.storage[storage] = _storage
+
+
+	def storageRemoveStorage(self, storage:str) -> None:
+		"""	Remove all key/value pairs from the persistent storage *storageID.
+		
+			Args:
+				key: Key where to store the value.
+		"""
+		if storage in self.storage:
+			del self.storage[storage]
 
 
 	##########################################################################
