@@ -59,16 +59,22 @@
 ;; status change. To emulate a real device, we use the storage here.
 (defun get-lightswitch-status ()
   ((if (has-storage "lightswitchDemo" "status")
+     ;; If the status is available in the storage, retrieve it from there
      (get-storage "lightswitchDemo" "status")
+     ;; If the status is not available in the storage, retrieve it from the CSE
      ((setq response (retrieve-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer/la"))
+	  ;; 
       (if (== (get-response-status response) 2000)
+	    ;; If the retrieval was successful, retrieve the status from the ContentInstance
         ((setq cin (get-response-resource response))
          (if (has-json-attribute cin "m2m:cin/con")
            (get-json-attribute cin "m2m:cin/con")))
-        ("off"))) )))	;;Fallback is always off for all errors
+		;; If the retrieval was not successful, return "off"
+        ("off"))) )))	;; Fallback is always off for all errors
 
 
 (defun print-lightswitch (st)
+  ;; Clear the console
   ((clear-console)
    ;; Print the lightswitch status as ASCII art. Transform the value of "st" to a symbol,
    ;; ie. the value "on" or "off", evaluate it as a symbol (ie as a variable) and print its value.
@@ -79,10 +85,12 @@
 ;; This function sets the lightswitch status in the storage and creates a new ContentInstance in the CSE.
 (defun set-lightswitch-status (st)
   ((print-lightswitch st)
+   ;; Create a new ContentInstance in the CSE
    (create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
       { "m2m:cin": {
           "con" : "${(st)}"
       }})
+   ;; Store the lightswitch status in the internal storage
    (put-storage "lightswitchDemo" "status" st)))
 
 
