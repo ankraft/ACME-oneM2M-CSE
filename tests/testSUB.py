@@ -1580,6 +1580,38 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:sub/nse'), r)
 		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
+#
+#	Misc tests
+#
+
+	def test_deleteNuAttributeFail(self) -> None:
+		"""	Delete "nu" attribute from SUB -> Fail """
+		clearLastNotification()	# clear the notification first
+		self.assertIsNotNone(TestSUB.aePoa)
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		dct = 	{ 'm2m:sub' : { 
+					'nu' : None
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{subRN}', TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
+	
+
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -1690,7 +1722,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# TODO blocking RETRIEVE tests when official
 
-	# # NotificationStats tests
+	# NotificationStats tests
 	addTest(suite, TestSUB('test_createSUBForNotificationStats'))
 	addTest(suite, TestSUB('test_updateAECheckStats'))
 	addTest(suite, TestSUB('test_updateSUBNSEFalse'))
@@ -1699,6 +1731,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestSUB('test_updateSUBcountBatchNotifications'))
 	addTest(suite, TestSUB('test_updateSUBDeleteNSE'))
 
+	# Misc tests
+	addTest(suite, TestSUB('test_deleteNuAttributeFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

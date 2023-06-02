@@ -84,7 +84,7 @@ class Validator(object):
 			Return:
 				None
 		"""
-		if resource.tpe not in dct and resource.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+		if resource.tpe not in dct and resource.ty not in (ResourceTypes.FCNTAnnc):	# Don't check announced versions of announced FCNT
 			raise CONTENTS_UNACCEPTABLE(L.logWarn(f"Update type doesn't match target (expected: {resource.tpe}, is: {list(dct.keys())[0]})"))
 		# validate the attributes
 		if doValidateAttributes:
@@ -147,7 +147,7 @@ class Validator(object):
 		# If this is a flexContainer then add the additional attributePolicies.
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
-		if ty in [ ResourceTypes.FCNT, ResourceTypes.FCI ] and tpe:
+		if ty in ( ResourceTypes.FCNT, ResourceTypes.FCI ) and tpe:
 			if (fca := flexContainerAttributes.get(tpe)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
@@ -184,12 +184,12 @@ class Validator(object):
 					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute: {attributeName}'))
 
 				if attributeName in pureResDict:
-					if policy.cardinality == Cardinality.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
+					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
 						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
 
-				if policyOptional in [ RequestOptionality.NP, RequestOptionality.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
+				if policyOptional in ( RequestOptionality.NP, RequestOptionality.O ):		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
@@ -540,12 +540,12 @@ class Validator(object):
 
 		# convert some types if necessary
 		if convert:
-			if dataType in [ BasicType.positiveInteger, 
+			if dataType in ( BasicType.positiveInteger, 
 							 BasicType.nonNegInteger, 
 							 BasicType.unsignedInt, 
 							 BasicType.unsignedLong, 
 							 BasicType.integer, 
-							 BasicType.enum ] and isinstance(value, str):
+							 BasicType.enum ) and isinstance(value, str):
 				try:
 					value = int(value)
 				except Exception as e:
@@ -584,7 +584,7 @@ class Validator(object):
 				raise BAD_REQUEST('value must be >= 0')
 			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
-		if dataType in [ BasicType.unsignedInt, BasicType.unsignedLong ]:
+		if dataType in ( BasicType.unsignedInt, BasicType.unsignedLong ):
 			if isinstance(value, int):
 				return (dataType, value)
 			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
@@ -607,10 +607,10 @@ class Validator(object):
 				raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
 			return (dataType, value)		# int/long is ok
 
-		if dataType in [ BasicType.string, BasicType.anyURI ] and isinstance(value, str):
+		if dataType in ( BasicType.string, BasicType.anyURI ) and isinstance(value, str):
 			return (dataType, value)
 
-		if dataType in [ BasicType.list, BasicType.listNE ] and isinstance(value, list):
+		if dataType in ( BasicType.list, BasicType.listNE ) and isinstance(value, list):
 			if dataType == BasicType.listNE and len(value) == 0:
 				raise BAD_REQUEST('empty list is not allowed')
 			if policy is not None and policy.ltype is not None:
