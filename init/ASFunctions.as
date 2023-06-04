@@ -10,11 +10,11 @@
 
 ;; Return the second element of a list
 (defun cadr (l)
-	(car (cdr l)))
+  (car (cdr l)))
 
 ;; Return the third element of a list
 (defun caddr (l)
-	(car (cdr (cdr l))))
+  (car (cdr (cdr l))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
