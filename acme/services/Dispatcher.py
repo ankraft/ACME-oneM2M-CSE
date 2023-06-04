@@ -1067,6 +1067,9 @@ class Dispatcher(object):
 			# Retrieve the resource
 			resource = self.retrieveLocalResource(rID, originator = originator)
 			
+			if id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
+				raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
+
 			# Check Permission
 			if not CSE.security.hasAccess(originator, resource, Permission.DELETE):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no DELETE access to: {resource.ri}'))
