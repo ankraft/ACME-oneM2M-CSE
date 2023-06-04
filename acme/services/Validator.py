@@ -84,7 +84,7 @@ class Validator(object):
 			Return:
 				None
 		"""
-		if resource.tpe not in dct and resource.ty not in (ResourceTypes.FCNTAnnc):	# Don't check announced versions of announced FCNT
+		if resource.tpe not in dct and resource.ty != ResourceTypes.FCNTAnnc:	# Don't check announced versions of announced FCNT
 			raise CONTENTS_UNACCEPTABLE(L.logWarn(f"Update type doesn't match target (expected: {resource.tpe}, is: {list(dct.keys())[0]})"))
 		# validate the attributes
 		if doValidateAttributes:

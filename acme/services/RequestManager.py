@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Any, List, Tuple, cast, Dict, Optional
+from typing import Any, List, Tuple, cast, Dict, Optional, Union
 
 import urllib.parse
 from copy import deepcopy
@@ -217,7 +217,7 @@ class RequestManager(object):
 	# 	Incoming Requests
 	#
 
-	def handleRequest(self, request:CSERequest) -> Result:
+	def handleRequest(self, request:Union[CSERequest, JSON]) -> Result:
 		"""	Calls the fitting request handler for an operation and let that handle the request.
 
 			Before the request is processed it will be determined whether it is blocking or
@@ -228,6 +228,11 @@ class RequestManager(object):
 			Return:
 				Request result.
 		"""
+		# Convert JSON to CSERequest
+		if isinstance(request, dict):
+			request = CSE.request.fillAndValidateCSERequest(request)
+
+		# Send event
 		self._eventRequestReceived(request)
 
 		# Validate partial RETRIEVE first
@@ -379,7 +384,7 @@ class RequestManager(object):
 
 		# Don't delete the CSEBase
 		if request.id == CSE.cseRi:
-			raise OPERATION_NOT_ALLOWED(dbg = 'operation not allowed for CSEBase')
+			raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
 
 		if request.rt == ResponseType.blockingRequest or (request.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
 			return CSE.dispatcher.processDeleteRequest(request, request.originator)
@@ -1015,7 +1020,8 @@ class RequestManager(object):
 		return (dct, ct)
 
 
-	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool = False) -> CSERequest:
+	def fillAndValidateCSERequest(self, cseRequest:Union[CSERequest, JSON], 
+			       						isResponse:Optional[bool] = False) -> CSERequest:
 		"""	Fill a *cseRequest* object according to its request structure in the *Result.request* attribute.
 		"""
 		# ! Cannot be in RequestUtils bc to prevent circular import of CSE and validator
@@ -1058,6 +1064,9 @@ class RequestManager(object):
 
 				return newValue
 			return default
+
+		if isinstance(cseRequest, dict):
+			cseRequest = CSERequest(originalRequest = cseRequest, pc = cseRequest.get('pc'))
 
 		try:
 
@@ -1276,7 +1285,7 @@ class RequestManager(object):
 
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
-			if not (pc := cseRequest.originalRequest.get('pc')):
+			if not cseRequest.originalRequest.get('pc'):
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
 					raise BAD_REQUEST(L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'), data = cseRequest)
 			else:
@@ -1475,7 +1484,7 @@ class RequestManager(object):
 				return []
 
 		# Check requestReachability
-		# If the target is NOT reachable then try to retrieve a potential
+		# If the target is NOT reachable then try to retrieve a pollingChannel
 		pollingChannelResources = []
 		if targetResource.rr == False:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')

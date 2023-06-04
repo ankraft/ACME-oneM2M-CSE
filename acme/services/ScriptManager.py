@@ -1295,7 +1295,7 @@ class ACMEPContext(PContext):
 		pcontext, target = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
 		# Get Content
-		content = None
+		content:JSON = None
 		if operation in [Operation.CREATE, Operation.UPDATE, Operation.NOTIFY]:
 			pcontext, content = pcontext.valueFromArgument(symbol, 3, SType.tJson)
 			idx = 4
@@ -1323,7 +1323,6 @@ class ACMEPContext(PContext):
 				setXPath(req, key, attributes[key])
 
 		# Get the resource for some operations
-		dct:JSON = None
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			# Add type when CREATE
 			if operation == Operation.CREATE:
@@ -1338,17 +1337,13 @@ class ACMEPContext(PContext):
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'{operation.name} request shall have no content'))
 
 		# Prepare request
-		request 					= CSERequest()
-		request.originalRequest 	= req
-		request.pc 					= dct
-
 		try:
-			resReq = CSE.request.fillAndValidateCSERequest(request)
+			request = CSE.request.fillAndValidateCSERequest(req)
 		except ResponseException as e:
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}'))
 		
 		# Send request
-		L.isDebug and L.logDebug(f'Sending request from script: {resReq.originalRequest} to: {target}')
+		L.isDebug and L.logDebug(f'Sending request from script: {request.originalRequest} to: {target}')
 		if isURL(target):
 			if operation == Operation.RETRIEVE:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
