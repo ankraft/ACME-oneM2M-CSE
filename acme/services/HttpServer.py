@@ -437,7 +437,10 @@ class HttpServer(object):
 				'cache-control'	: 'no-cache',
 		}
 		hds[Constants.hfOrigin]	= toSPRelative(request.originator)
-		hds[Constants.hfRI]		= request.rqi if request.rqi else uniqueRI()
+		if not request.rqi:
+			request.rqi = uniqueRI()
+		hds[Constants.hfRI]		= request.rqi
+		# hds[Constants.hfRI]		= request.rqi if request.rqi else uniqueRI()
 		if request.rvi != '1':
 			hds[Constants.hfRVI]= request.rvi if request.rvi is not None else CSE.releaseVersion
 		hds[Constants.hfOT]		= request.ot if request.ot else getResourceDate()
