@@ -231,6 +231,7 @@ class RequestManager(object):
 		# Convert JSON to CSERequest
 		if isinstance(request, dict):
 			request = CSE.request.fillAndValidateCSERequest(request)
+		# L.logDebug(f'Handling request: {request}')
 
 		# Send event
 		self._eventRequestReceived(request)
@@ -383,7 +384,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't delete the CSEBase
-		if request.id == CSE.cseRi:
+		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
 			raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
 
 		if request.rt == ResponseType.blockingRequest or (request.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):

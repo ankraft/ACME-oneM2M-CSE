@@ -125,7 +125,7 @@ class Dispatcher(object):
 		# Handle PollingChannelURI RETRIEVE
 		if (pollingChannelURIRsrc := self._getPollingChannelURIResource(srn)):		# We need to check the srn here
 			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIRsrc):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has not RETRIEVE privileges to <pollingChannelURI>: {id}'))
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIRsrc.getSrn()}')
 			return pollingChannelURIRsrc.handleRetrieveRequest(request, id, originator)
 
@@ -182,7 +182,7 @@ class Dispatcher(object):
 				resource = self.retrieveResource(id, originator, request)
 
 				if not CSE.security.hasAccess(originator, resource, permission):
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {permission}')
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
 
 				# if rcn == "attributes" then we can return here, whatever the result is
 				if rcn == ResultContentType.attributes:
@@ -586,7 +586,7 @@ class Dispatcher(object):
 			if ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
-				raise ORIGINATOR_HAS_NO_PRIVILEGE('originator has no privileges for CREATE')
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 		# Check for virtual resource
 		if parentResource.isVirtual():
@@ -672,7 +672,7 @@ class Dispatcher(object):
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no CREATE access to: {parentResource.ri}'))
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
 			createdResource = self.createLocalResource(resource, parentResource, originator = originator)
@@ -816,7 +816,8 @@ class Dispatcher(object):
 		#	If this is an 'acpi' update?
 		if not CSE.security.checkAcpiUpdatePermission(request, resource, originator):	#  == False indicates that this is NOT an ACPI update. In this case we need a normal permission check
 			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE('originator has no privileges for UPDATE')
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
+
 
 		# Check for virtual resource
 		if resource.isVirtual():
@@ -899,7 +900,7 @@ class Dispatcher(object):
 			
 			# Check Permission
 			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no UPDATE access to: {resource.ri}'))
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 			# Update it locally
 			updatedResource = self.updateLocalResource(resource, dct, originator = originator)
@@ -969,7 +970,7 @@ class Dispatcher(object):
 		resource = self.retrieveResource(id)
 
 		if not CSE.security.hasAccess(originator, resource, Permission.DELETE):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE('originator has no privileges for DELETE')
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
 
 		# Check for virtual resource
 		if resource.isVirtual():
