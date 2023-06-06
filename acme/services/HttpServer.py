@@ -466,7 +466,7 @@ class HttpServer(object):
 
 		# Add filterCriteria arguments
 		if fc := request.fc:
-			fc.mapAttributes(lambda k, v: arguments.append(f'{k}={v}'), False)
+			fc.mapAttributes(lambda k, v: arguments.append(f'{k}={v}'), True)
 
 		# Add further non-filterCriteria arguments
 		if request.sqi:
