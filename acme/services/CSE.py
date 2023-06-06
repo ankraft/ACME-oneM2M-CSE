@@ -298,9 +298,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# Enable log queuing
 	L.queueOn()	
 
-	# Send an event that the CSE startup finished
-	event.cseStartup()	# type: ignore
-
 
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
 
@@ -309,6 +306,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		"""
 		global cseStatus
 		cseStatus = CSEStatus.RUNNING
+		# Send an event that the CSE startup finished
+		event.cseStartup()	# type: ignore
+
 		L.console('CSE started')
 		L.log('CSE started')
 
@@ -428,4 +428,4 @@ def run() -> None:
 	if waitFor(_cseStartupDelay * 3, lambda: cseStatus == CSEStatus.RUNNING):
 		console.run()
 	else:
-		raise TimeoutError(L.logErr('CSE did not start within 10 seconds'))
+		raise TimeoutError(L.logErr(f'CSE did not start within {_cseStartupDelay * 3} seconds'))
