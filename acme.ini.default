@@ -333,7 +333,7 @@ enableBindingsLogging=False
 ; Default: 5000 entries
 queueSize=5000
 ; List of component names to exclude from logging
-filter=werkzeug,markdown_it
+filter=werkzeug,markdown_it,asyncio
 
 
 ;
