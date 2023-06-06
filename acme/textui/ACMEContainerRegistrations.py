@@ -20,6 +20,14 @@ class ACMEContainerRegistrations(Container):
 
 	from ..textui import ACMETuiApp
 
+	DEFAULT_CSS = '''
+#regs-view {
+	display: block;
+	overflow: auto auto;  
+	min-width: 100%;
+}
+'''
+
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
 		super().__init__(id = idRegs)
 		self.tuiApp = tuiApp

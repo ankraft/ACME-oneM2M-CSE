@@ -14,13 +14,13 @@ from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, Center, Middle
-from textual.widgets import Button, Tree as TextualTree, Markdown, TextLog, Static, ContentSwitcher
+from textual.widgets import Button, Tree as TextualTree, Markdown, TextLog
 from textual.widgets.tree import TreeNode
 from ..services import CSE
 from ..services.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..helpers.Interpreter import PState, SSymbol
+from ..helpers.Interpreter import SSymbol
 
 # TODO Add editing of configuration values
 
@@ -28,13 +28,17 @@ idTools = 'tools'
 
 class ACMEToolsTree(TextualTree):
 
-	def on_mount(self) -> None:
-		self.parentContainer = cast(ACMEContainerTools, self.parent.parent)
-		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
+	def __init__(self, *args, **kwargs) -> None:	# type: ignore[no-untyped-def]
+		super().__init__(*args, **kwargs)
 		self.allLogs = False
+		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
 		self.nodes:dict[str, TreeNode] = {}
 		self.autoRunWorker:BackgroundWorker = None
 		self.autoRunName:str = None
+
+		
+	def on_mount(self) -> None:
+		self.parentContainer = cast(ACMEContainerTools, self.parent.parent)
 
 		# Build the resource tree
 		self.auto_expand = False
@@ -189,6 +193,63 @@ class ACMEContainerTools(Container):
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
 
+	DEFAULT_CSS = '''
+
+#tools-top-view {
+	display: block;
+	overflow: auto auto;
+	min-width: 100%;
+	margin: 0 0 0 0;
+	height: 3fr;
+}
+
+#tools-arguments-view {
+	display: block;
+	overflow: auto auto;
+	min-width: 100%;
+	height: 1fr;
+	margin: 0 0 0 0;
+}
+
+
+#tools-arguments-view {
+	display: block;
+	overflow: auto auto;
+	min-width: 100%;
+	height: 1fr;
+	margin: 0 0 0 0;
+}
+
+#tools-log-view {
+	display: block;
+	overflow: auto auto;
+	height: 3fr;
+	padding: 0 0 0 1;
+	border-top: $panel;
+}
+
+#tools-run-button {
+	background: red;
+}
+
+#tools-argument-view {
+	display: block;
+	overflow: auto auto;  
+	margin: 0 4 1 4;
+	layout: vertical;
+	height: 1fr;
+}
+
+#tool-log {
+	display: block;
+	min-width: 100%;
+	overflow: auto auto;  
+	margin: 0 0 0 0;
+	padding: 1 0 1 1;
+	border-top: $panel;
+}
+ 
+'''
 
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
 		super().__init__(id = idTools)
@@ -260,7 +321,7 @@ class ACMEContainerTools(Container):
 	#
 
 	def _logMessage(self, scriptName:str, msg:str, prefix:str) -> None:
-
+		
 		# Prepare the message
 		_s = msg if msg else ' '
 
@@ -269,7 +330,7 @@ class ACMEContainerTools(Container):
 			_l.append(f'{prefix}{_s}')
 
 		# If this is the current script, add to the log view but only if the log mode matches
-		if str(self.toolsTree.cursor_node.label) == scriptName and (self.toolsTree.allLogs or prefix == ' '):
+		if self.toolsTree.cursor_node and str(self.toolsTree.cursor_node.label) == scriptName and (self.toolsTree.allLogs or prefix == ' '):
 			self.toolsLog.write(_s)
 
 

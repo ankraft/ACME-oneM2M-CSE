@@ -64,6 +64,65 @@ class ACMEViewRequests(Vertical):
 				  Binding('e', 'enable_requests', '')
 				]
 
+	DEFAULT_CSS = """
+#requests-view {
+	overflow: auto auto;  
+	width: 1fr;
+	height: 1fr;
+	/* background:red; */
+}
+
+#request-list-view {
+	/* overflow: auto scroll; */
+	width: 1fr;
+	height: 1fr;
+	/* background:red; */
+}
+
+#request-list-header {
+	/* overflow: auto hidden; */
+	width: 1fr;
+	height: 3;
+	align-vertical: middle;
+	background: $panel;
+}
+
+#request-list-list {
+	overflow: auto auto;  
+	min-width: 100%;
+	height: 2fr;
+}
+
+#request-list-details-header {
+	overflow: auto;
+	height: 3;
+	align-vertical: middle;
+	background: $panel;
+}
+
+#request-list-details {
+	overflow: auto scroll;
+	height: 3fr;
+}	
+
+#request-list-request {
+	overflow: auto;  
+	width: 1fr;
+	min-height: 100%;
+	padding: 1 1;
+}
+
+#request-list-response {
+	overflow: auto;  
+	width: 1fr;
+	min-height: 100%;
+	border-left: $panel;
+	padding: 1 1;
+}
+
+
+"""
+
 
 	def __init__(self) -> None:
 		super().__init__(id = 'request-list-view')
@@ -213,7 +272,6 @@ class ACMEViewRequests(Vertical):
 				_l.set_class(True, '--outgoing')
 
 
-	
 	def deleteRequests(self) -> None:
 		CSE.storage.deleteRequests(self._currentRI)
 		self.updateRequests()

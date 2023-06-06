@@ -11,19 +11,17 @@ from __future__ import annotations
 from enum import IntEnum, auto
 from textual.app import App, ComposeResult
 from textual import on
-from textual.widget import Widget
-from textual.widgets import Tabs, Tab, Footer, ContentSwitcher, TabbedContent, TabPane, Static
+from textual.widgets import Tab, Footer, TabbedContent, TabPane, Static
 from textual.binding import Binding
-from textual.containers import Container
 from textual.design import ColorSystem
 from ..textui.ACMEHeader import ACMEHeader
 from ..textui.ACMEContainerAbout import ACMEContainerAbout
-from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations, idConfigs
+from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations
 from ..textui.ACMEContainerInfo import ACMEContainerInfo, tabInfo
-from ..textui.ACMEContainerTree import ACMEContainerTree, idTree
-from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations, idRegs
-from ..textui.ACMEContainerRequests import ACMEContainerRequests, idRequests
-from ..textui.ACMEContainerTools import ACMEContainerTools, idTools
+from ..textui.ACMEContainerTree import ACMEContainerTree
+from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
+from ..textui.ACMEContainerRequests import ACMEContainerRequests
+from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..services import CSE
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -151,7 +149,6 @@ class ACMETuiApp(App):
 		self.currentTab = tab.tab
 
 
-
 	async def action_quit_tui(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitTUI
 		self.exit()
@@ -200,6 +197,8 @@ class ACMETuiApp(App):
 		BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
 		# self.containerTools.scriptVisualBell(scriptName)
 
+	def refreshResources(self) -> None:
+		self.containerTree.update()
 
 	#########################################################################
 

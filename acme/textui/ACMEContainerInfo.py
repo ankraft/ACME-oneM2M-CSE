@@ -8,7 +8,6 @@
 """
 
 from __future__ import annotations
-from textual import events
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.widgets import Static
@@ -19,6 +18,13 @@ tabInfo = 'tab-info'
 
 class ACMEContainerInfo(Container):
 
+	DEFAULT_CSS = '''
+#stats-view {
+	display: block;
+	overflow: auto auto;  
+	min-width: 100%;
+}
+'''
 	from ..textui import ACMETuiApp
 
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:

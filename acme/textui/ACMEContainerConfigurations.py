@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import cast
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
-from textual.widgets import Static, Tree as TextualTree, Markdown
+from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..services import CSE
 from ..services.Configuration import Configuration
@@ -91,6 +91,14 @@ class ACMEConfigurationTree(TextualTree):
 
 
 class ACMEContainerConfigurations(Container):
+
+
+	DEFAULT_CSS = '''
+#configs-documentation-view {
+	display: block;
+	overflow: auto auto;  
+}
+'''
 
 	from ..textui import ACMETuiApp
 

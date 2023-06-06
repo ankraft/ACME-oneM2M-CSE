@@ -10,8 +10,9 @@ from datetime import datetime, timezone
 
 from rich.text import Text
 from textual.app import ComposeResult, RenderResult
-from textual.widgets import Header
-from textual.widgets._header import HeaderIcon, HeaderClock, HeaderClockSpace, HeaderTitle
+from textual.widgets import Header, Label
+from textual.widgets._header import HeaderClock, HeaderClockSpace, HeaderTitle
+from textual.containers import Horizontal
 
 from ..services import CSE
 from ..etc.Constants import Constants
@@ -23,10 +24,14 @@ class ACMEHeaderClock(HeaderClock):
 	  	with working with oneM2M timestamps, which are all UTC based."""
 	
 	DEFAULT_CSS = """
-	HeaderClockSpace {
-		width: 25;
-	}
-	"""
+ACMEHeaderClock {
+	background: transparent;
+}
+
+HeaderClockSpace {
+	width: 25;
+}
+"""
 	
 	def render(self) -> RenderResult:
 		"""Render the header clock.
@@ -46,9 +51,16 @@ class ACMEHeaderTitle(HeaderTitle):
 
 class ACMEHeader(Header):
 
+	DEFAULT_CSS = '''
+ACMEHeader {
+	height: 3;
+}
+'''
+
 	def compose(self) -> ComposeResult:
 		self.tall = True
-		yield HeaderIcon()
-		yield ACMEHeaderTitle()
+		with Horizontal():
+			yield Label(' ' * 13)	# to align the title and the extra space of the clock
+			yield ACMEHeaderTitle()
 		yield ACMEHeaderClock() if self._show_clock else HeaderClockSpace()
 

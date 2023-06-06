@@ -20,6 +20,14 @@ class ACMEContainerAbout(Container):
 
 	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
 
+	DEFAULT_CSS = """
+#about-view {
+	display: block;
+	overflow: auto auto;  
+	min-width: 100%;
+}
+"""
+
 
 # 	logo = \
 # f"""\
