@@ -147,7 +147,9 @@ class Configuration(object):
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
-											converters={'list': lambda x: [i.strip() for i in x.split(',')]},	# Convert csv to list
+											
+											# Convert csv to list, ignore empty elements
+											converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
 		config.read_dict({ 'basic.config': {
 								'baseDirectory' 	: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent,	# points to the acme module's parent directory
