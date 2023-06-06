@@ -145,6 +145,7 @@ class ACMEPContext(PContext):
 										'set-config':				self.doSetConfig,
 										'set-console-logging':		self.doSetLogging,
 										'schedule-next-script':		self.doScheduleNextScript,
+										'tui-refresh-resources':	self.doTuiRefreshResources,
 										'tui-visual-bell':			self.doTuiVisualBell,
 							 			'update-resource':			self.doUpdateResource,
 						  			},
@@ -1179,6 +1180,27 @@ class ACMEPContext(PContext):
 		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 		L.enableScreenLogging = cast(bool, value)
 		return pcontext.setResult(SSymbol())
+
+
+	def doTuiRefreshResources(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Refresh the TUI resources. This will update the resource Tree and the resource
+			details.
+
+			Example:
+				::
+
+					(tui-refresh-resources)
+			
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		CSE.textUI.refreshResources()
+		return pcontext
 
 
 	def doTuiVisualBell(self, pcontext:PContext, symbol:SSymbol) -> PContext:

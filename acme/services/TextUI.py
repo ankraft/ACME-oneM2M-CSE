@@ -147,6 +147,12 @@ class TextUI(object):
 
 	#########################################################################
 
+
+	def refreshResources(self) -> None:
+		"""	Refresh the resources.
+		"""
+		if self.tuiApp:
+			self.tuiApp.refreshResources()
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
 		"""	Print a line to the script output.
 		"""

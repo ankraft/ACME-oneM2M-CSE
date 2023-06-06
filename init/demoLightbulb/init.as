@@ -149,3 +149,5 @@ the *lightswitch*.")
   }})
 
 
+;; force a refresh of the resource tree in the Text UI
+(tui-refresh-resources)
