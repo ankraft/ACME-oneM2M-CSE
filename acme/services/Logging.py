@@ -80,6 +80,29 @@ class LogLevel(ACMEIntEnum):
 		}[self]
 
 
+class LogFilter(logging.Filter):
+	"""	Filter for the logging system. It removes all log messages that
+		originate from the given sources.
+	"""
+
+	def __init__(self, sources:tuple[str, ...]) -> None:
+		"""	Initialize the filter with the given sources. If the sources
+			are empty, no filtering is done.
+			
+			Args:
+				sources: A tuple of sources to filter out.
+		"""
+		super().__init__()
+		self.sources = sources
+
+
+	def filter(self, record:LogRecord) -> bool:
+		# filter out unwanted debug messages's loggings
+		if not self.sources:
+			return True
+		return not record.name.startswith(self.sources)
+
+
 class Logging:
 	""" Wrapper class for the logging subsystem. This class wraps the 
 		initialization of the logging subsystem and provides convenience 
@@ -141,6 +164,9 @@ class Logging:
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
 
+		# Add logging filter
+		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
+
 		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
 		# Add logging queue
@@ -163,6 +189,7 @@ class Logging:
 														 backupCount = Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
+			logfp.addFilter(LogFilter(Logging.filterSources))
 			Logging.logger.addHandler(logfp) 
 			Logging._handlers.append(logfp)
 
@@ -667,8 +694,6 @@ class ACMERichLogHandler(RichHandler):
 		"""	Invoked by logging. """
 		# if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
 		if not Logging.enableScreenLogging:
-			return
-		if record.name.startswith(Logging.filterSources): # filter out unwanted debug messages's loggings
 			return
 		#path = Path(record.pathname).name
 		
