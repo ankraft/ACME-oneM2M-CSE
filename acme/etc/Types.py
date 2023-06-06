@@ -1546,7 +1546,7 @@ class FilterCriteria:
 	"""
 
 	# Result handling
-	fu:FilterUsage = FilterUsage.conditionalRetrieval
+	fu:FilterUsage = None
 	""" Filter usage. Default: conditional retrieval. """
 
 	fo:FilterOperation = None
