@@ -791,11 +791,11 @@
 			"car": "01"
 		}
 	],
-	"acre": [	// TODO preliminary bv not yet defined in TS-0004
+	"aclr": [	// TODO preliminary bv not yet defined in TS-0004
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "accessControlContexts",
-			"lname": "accessControlLocationRegions",
+			"lname": "accessControlLocationRegion",
 			"ns": "m2m",
 			"type": "m2m:locationRegion", 
 			"car": "01"
@@ -908,8 +908,9 @@
 			"ctype": "m2m:accessControlRule",
 			"lname": "accessControlContexts",
 			"ns": "m2m",
-			"type": "accessControlContexts", // Actually an internal sub-structure, not a complex type, but we need to tread it as one
-			"car": "01"
+			"type": "list",
+			"ltype": "accessControlContexts", // Actually an internal sub-structure, not a complex type, but we need to tread it as one
+			"car": "01L"
 		}
 	],
 	"acaf": [
