@@ -96,6 +96,20 @@
 			"annc": "NA"
 		}
 	],
+	"ctm": [
+		{
+			"rtypes": [ "CSEBase" ],
+			"lname": "currentTime",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+
 	"et": [
 		{
 			"rtypes": [ "ALL" ], 
@@ -138,7 +152,7 @@
 	"st": [
 		{
 			"rtypes": [ "ALL" ], 
-			"lname": "creationTime",
+			"lname": "stateTag",
 			"ns": "m2m",
 			"type": "nonNegInteger",
 			"car": "1",
