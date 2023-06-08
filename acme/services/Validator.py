@@ -15,10 +15,10 @@ import re
 import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
-from ..etc.Types import RequestOptionality, Announced, AttributePolicy
+from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
-from ..etc.Types import Result, ResourceTypes
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, NotificationContentType, NotificationEventType
+from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -52,6 +52,21 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 
 complexTypeAttributes:dict[str, list[str]] = {}
 # TODO doc
+
+
+_valueNameMappings = {
+	'acop': lambda v: '+'.join([ p.name for p in Permission.fromBitfield(int(v))]),
+	'chty': lambda v: ResourceTypes.fullname(int(v)),
+	'cst': lambda v: CSEType(int(v)).name,
+	'nct': lambda v: NotificationContentType(int(v)).name,
+	'net': lambda v: NotificationEventType(int(v)).name,
+	'op': lambda v: Operation(int(v)).name,
+	'rcn': lambda v: ResultContentType(int(v)).name,
+	'rsc': lambda v: ResponseStatusCode(int(v)).name,
+	'srt': lambda v: ResourceTypes.fullname(int(v)),
+	'ty': lambda v: ResourceTypes.fullname(int(v)),
+}
+
 
 class Validator(object):
 
@@ -502,7 +517,7 @@ class Validator(object):
 		attributePolicies.clear()
 
 
-	def getShortnameLongNameMappings(self) -> dict[str, str]:
+	def getShortnameLongNameMapping(self) -> dict[str, str]:
 		"""	Return the shortname to longname mappings.
 
 			Return:
@@ -512,6 +527,26 @@ class Validator(object):
 		for a in attributePolicies.values():
 			result[a.sname] = a.lname
 		return result
+
+
+	def getAttributeValueName(self, key:str, value:str) -> str:
+		"""	Return the name of an attribute value. This is usually used for
+			enumerations, where the value is a number and the name is a string.
+
+			Args:
+				key: String, attribute name.
+				value: String, attribute value.	
+			
+			Return:
+				String, name of the attribute value.
+		"""
+		try:
+			if key in _valueNameMappings:
+				return _valueNameMappings[key](value) # type: ignore [no-untyped-call]
+		except Exception as e:
+			return str(e)
+		return ''
+	
 
 	#
 	#	Internals.

@@ -90,7 +90,7 @@ class ACMETuiApp(App):
 
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.quitReason = ACMETuiQuitReason.undefined
-		self.attributeExplanations = CSE.validator.getShortnameLongNameMappings()
+		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
 		# This is used to keep track of the current tab.
 		# This is a bit different from the actual current tab from the self.tabs
 		# attribute because at one point it is used to determine the previous tab.

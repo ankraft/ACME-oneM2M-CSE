@@ -197,13 +197,19 @@ class ACMEViewRequests(Vertical):
 		"""
 		# Get the request's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName,	# type: ignore [attr-defined]
+					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+		
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
-					explanations = self.app.attributeExplanations)	# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName, 	# type: ignore [attr-defined]
+					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 

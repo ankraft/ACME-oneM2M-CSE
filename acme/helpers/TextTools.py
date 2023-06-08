@@ -10,7 +10,7 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional, Any, Dict, Union, Callable
+from typing import Optional, Any, Dict, Union, Callable, List
 
 import base64, binascii, re, json
 
@@ -49,13 +49,17 @@ def removeCommentsFromJSON(data:str) -> str:
 	return _commentRegex.sub(_replacer, data)
 
 
-def commentJson(data:Union[str, dict], explanations:Dict[str,str], getAttributeValueName:Optional[Callable] = lambda k, v: '') -> str:
+def commentJson(data:Union[str, dict], 
+				explanations:Dict[str,str], 
+				getAttributeValueName:Optional[Callable] = lambda k, v: '',
+				width:Optional[int] = None) -> str:
 	"""	Add explanations for JSON attributes as comments to the end of the line.
 
 		Args:
 			data: The JSON string or as a dictionary.
 			explanations: A dictionary with the explanations. The keys must match the JSON keys.
 			getAttributeValueNae: A function that returns the named value of an attribute. 
+			width: Optional width of the output. If greater then the comment is put above the line.
 		
 		Return:
 			The JSON string with comments.
@@ -75,6 +79,7 @@ def commentJson(data:Union[str, dict], explanations:Dict[str,str], getAttributeV
 	_valueStripChars = ', []{}"'
 	previousKey:Optional[str] = None
 	key:str = ''
+	maxLength:int = 0
 	for line in data.splitlines():
 		# Find the key
 		if len(_sp := line.strip().split(':')) == 1:
@@ -90,13 +95,37 @@ def commentJson(data:Union[str, dict], explanations:Dict[str,str], getAttributeV
 			value = getAttributeValueName(key, value) if value else ''
 
 		if key and key in explanations:
-			lines.append(f'{line.ljust(maxLineLength)}    // {explanations[key]}{(": " + value) if value else ""}')
-		elif previousKey and value: # when the value is on the next line, w/o a key
-			lines.append(f'{line.ljust(maxLineLength)}    // {value}')
-		else:
+			lines.append(f'// {explanations[key]}{(": " + value) if value else ""}')
 			lines.append(line)
+			_m = len(lines[-2]) + maxLineLength
+			maxLength = _m if _m > maxLength else maxLength
+
 	
-	return '\n'.join(lines)
+		elif previousKey and value: # when the value is on the next line, w/o a key
+			lines.append(f'// {value}')
+			lines.append(line)
+			_m = len(lines[-2]) + maxLineLength
+			maxLength = _m if _m > maxLength else maxLength
+	
+		else:
+			lines.append('') # comment
+			lines.append(line)
+			maxLength = maxLineLength if maxLineLength > maxLength else maxLength
+
+	# Build the result depending on the width of lines and comments
+	maxLength += 2 	# Add 2 spaces for the comment
+	result:List[str] = []
+	for comment, line in zip(lines[0::2], lines[1::2]):
+		if comment == '':	# skip empty comments
+			result.append(line)
+		else:
+			if width is not None and maxLength > width:	# Put comment above line
+				result.append(f'{" " * (len(line) - len(line.lstrip()))}{comment}')
+				result.append(line)
+			else:
+				result.append(f'{line.ljust(maxLineLength)}  {comment}')
+
+	return '\n'.join(result)
 	
 	
 

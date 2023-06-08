@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type
 from enum import auto
 from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
@@ -2060,6 +2060,7 @@ class AttributePolicy:
 	ltype:BasicType				= None	# sub-type of a list
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
 	evalues:list[Any]			= None 	# List of enum values
+	ptype:Type					= None	# Implementation type of the enum values
 
 	# TODO support annnouncedSyncType
 

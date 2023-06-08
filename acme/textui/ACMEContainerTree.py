@@ -19,7 +19,7 @@ from ..services import CSE
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.Types import ResourceTypes, Permission, CSEType, NotificationEventType, NotificationContentType
+from ..etc.Types import ResourceTypes
 from ..helpers.TextTools import commentJson
 from .ACMEContainerDelete import ACMEContainerDelete
 
@@ -192,7 +192,8 @@ class ACMEContainerTree(Container):
 		# Add attribute explanations
 		jsns = commentJson(resource.asDict(sort = True), 
 			 			   explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-						   getAttributeValueName = self._getAttributeValue)		# type: ignore [attr-defined]
+						   getAttributeValueName = CSE.validator.getAttributeValueName,		# type: ignore [attr-defined]
+						   width = self.resourceView.size[0] - 2)		# type: ignore [attr-defined]
 
 		# Add syntax highlighting and add to the view
 		self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
@@ -226,25 +227,6 @@ class ACMEContainerTree(Container):
 			self.requestView.updateRequests()
 			self.requestView.requestList.focus()
 	
-
-	_values = {
-		'acop': lambda v: '+'.join([ p.name for p in Permission.fromBitfield(int(v))]),
-		'chty': lambda v: ResourceTypes.fullname(int(v)),
-		'cst': lambda v: CSEType(int(v)).name,
-		'nct': lambda v: NotificationContentType(int(v)).name,
-		'net': lambda v: NotificationEventType(int(v)).name,
-		'srt': lambda v: ResourceTypes.fullname(int(v)),
-		'ty': lambda v: ResourceTypes.fullname(int(v)),
-	}
-
-	def _getAttributeValue(self, key:str, value:str) -> str:
-		try:
-			if key in self._values:
-				return self._values[key](value)
-		except Exception as e:
-			return str(e)
-		return ''
-
 
 # TODO move the following to a more generic dialog module
 class ACMEDialog(ModalScreen):

@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 from typing import Optional, Any, Type
-from traceback import print_stack
 from http import HTTPStatus
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 
