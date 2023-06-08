@@ -102,7 +102,7 @@ class SUB(Resource):
 			if net[0] in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, 
 						   NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild, 
 						   NotificationEventType.retrieveCNTNoChild ]:
-				self.setAttribute('nct', NotificationContentType.all, overwrite = False)
+				self.setAttribute('nct', NotificationContentType.allAttributes, overwrite = False)
 			elif net[0] in [ NotificationEventType.triggerReceivedForAE ]:
 				self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite = False)
 			elif net[0] in [ NotificationEventType.blockingUpdate ]:

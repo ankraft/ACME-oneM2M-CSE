@@ -10,7 +10,7 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional, Any, Dict, Union
+from typing import Optional, Any, Dict, Union, Callable
 
 import base64, binascii, re, json
 
@@ -49,12 +49,13 @@ def removeCommentsFromJSON(data:str) -> str:
 	return _commentRegex.sub(_replacer, data)
 
 
-def commentJson(data:Union[str, dict], explanations:Dict[str,str]) -> str:
+def commentJson(data:Union[str, dict], explanations:Dict[str,str], getAttributeValueName:Optional[Callable] = lambda k, v: '') -> str:
 	"""	Add explanations for JSON attributes as comments to the end of the line.
 
 		Args:
 			data: The JSON string or as a dictionary.
 			explanations: A dictionary with the explanations. The keys must match the JSON keys.
+			getAttributeValueNae: A function that returns the named value of an attribute. 
 		
 		Return:
 			The JSON string with comments.
@@ -71,14 +72,27 @@ def commentJson(data:Union[str, dict], explanations:Dict[str,str]) -> str:
 	
 	# Add comments to each line
 	lines = []
+	_valueStripChars = ', []{}"'
+	previousKey:Optional[str] = None
+	key:str = ''
 	for line in data.splitlines():
-		if line.strip().startswith('"'):
-			# Find the key
-			key = line.strip().split(':')[0].strip('"')
-			if key in explanations:
-				lines.append(f'{line.ljust(maxLineLength)}    // {explanations[key]}')
-			else:
-				lines.append(line)
+		# Find the key
+		if len(_sp := line.strip().split(':')) == 1:
+			if key:
+				previousKey = key
+				key = ''
+			value = _sp[0].strip(_valueStripChars)
+			value = getAttributeValueName(previousKey, value) if value else ''
+		else:
+			previousKey = None
+			key = _sp[0].strip('"')
+			value = _sp[1].strip(_valueStripChars)
+			value = getAttributeValueName(key, value) if value else ''
+
+		if key and key in explanations:
+			lines.append(f'{line.ljust(maxLineLength)}    // {explanations[key]}{(": " + value) if value else ""}')
+		elif previousKey and value: # when the value is on the next line, w/o a key
+			lines.append(f'{line.ljust(maxLineLength)}    // {value}')
 		else:
 			lines.append(line)
 	

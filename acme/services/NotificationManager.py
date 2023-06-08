@@ -1090,7 +1090,7 @@ class NotificationManager(object):
 			creator = sub.get('cr')	# creator, might be None
 			# switch to populate data
 			data = None
-			nct == NotificationContentType.all						and (data := resource.asDict())
+			nct == NotificationContentType.allAttributes						and (data := resource.asDict())
 			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
 			nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
 			nct == NotificationContentType.timeSeriesNotification	and (data := { 'm2m:tsn' : missingData.asDict() })

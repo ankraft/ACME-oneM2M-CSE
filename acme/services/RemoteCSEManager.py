@@ -432,7 +432,7 @@ class RemoteCSEManager(object):
 
 			# No CSR on registrar CSE found, try to register
 			except Exception as e:
-				L.logErr(str(e), exc = e)
+				# L.logErr(str(e), exc = e)
 				L.isDebug and L.logDebug('CSR not found on registrar CSE')
 				# Potential disconnect
 				try:

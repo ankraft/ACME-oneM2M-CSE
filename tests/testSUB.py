@@ -1339,7 +1339,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'net':  [ NET.blockingUpdate ],
 					},
-					'nct': NotificationContentType.all,
+					'nct': NotificationContentType.allAttributes,
 				}}
 		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
