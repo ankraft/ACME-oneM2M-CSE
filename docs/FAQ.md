@@ -61,7 +61,7 @@
 
 ## CSE Registrations
 
-1. **Why does my CSE cannot register to another CSE or announce resources?**  
+1. **Why does my CSE not register to another CSE or announce resources?**  
    One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's
    CSE-ID (**without a leading slash!**) to this configuration section to allow access for this originator.  
    
@@ -85,7 +85,7 @@
 ## Performance
 
 1. **How to increase the performance of ACME CSE?**  
-   The log output provides useful information to analyze the flows of requests inside the CSE. However, it reduces the performance of the CSE a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file, or by pressing *L* on the console to change the logging level to the desired value.  
+   The log output provides useful information to analyze the flows of requests inside the CSE. However, it reduces the performance of the CSE by a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file, or by pressing *L* on the console to change the logging level to the desired value.  
    Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means that all data will be lost when the CSE terminates!
 
 1. **Increase database performance with *disk* mode**  
