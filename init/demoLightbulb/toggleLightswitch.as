@@ -71,7 +71,7 @@
          (if (has-json-attribute cin "m2m:cin/con")
            (get-json-attribute cin "m2m:cin/con")))
 		;; If the retrieval was not successful, return "off"
-        ("off"))) )))	;; Fallback is always off for all errors
+        "off")) )))	;; Fallback is always off for all errors
 
 
 (defun print-lightswitch (st)
@@ -97,12 +97,13 @@
 
 ;; Check if this script is executed by the autorun mechanism. If so, just set the lightswitch status and quit.
 (if (is-defined 'tui.autorun)
-  (if (== tui.autorun true)
-    ((print-lightswitch (get-lightswitch-status))
+  (if tui.autorun
+    ((print-lightswitch get-lightswitch-status)
      (quit))))
 
 
 ;; Toggle the lightswitch status
-(case (get-lightswitch-status)
-  ("on"   (set-lightswitch-status "off"))
-  ("off"  (set-lightswitch-status "on")))
+(set-lightswitch-status 
+	(case get-lightswitch-status
+	  ("on"   "off")
+	  ("off"  "on")))
