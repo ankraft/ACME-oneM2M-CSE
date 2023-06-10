@@ -1217,6 +1217,11 @@ class PContext():
 			Raises:
 				`PInvalidArgumentError`: In case of an error.
 		"""
+		# check if expression is an s-expression. If not, add parentheses to make it one.
+		expression = expression.strip()
+		if not (expression.startswith('(') and expression.endswith(')')):
+			expression = f'({expression})'
+			
 		_ast = self.ast
 		_script = self.script
 		self.script = expression
@@ -1987,7 +1992,7 @@ def _doEval(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.assertSymbol(symbol, 2)
 
 	# get and evaluate symbol or list
-	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote, SType.tString, SType.tSymbol))
+	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote, SType.tString, SType.tSymbol, SType.tNIL))
 	_s = deepcopy(result)
 	_s.type = _s.type.unquote()
 	return pcontext._executeExpression(_s, symbol)
