@@ -73,6 +73,9 @@ defaultSerialization=json
 ; Enable or disable asynchronous notification for normal runtime subscription notifications.
 ; Default: true
 asyncSubscriptionNotifications=true
+; Enable or disable verification requests when creating a new subscription.
+; Default: true
+enableSubscriptionVerificationRequests=true
 ; Indicate whether the optional "to" and "from" parameters shall be sent in responses.
 ; Default: true
 sendToFromInResponses=true

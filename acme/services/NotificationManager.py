@@ -50,7 +50,9 @@ class NotificationManager(object):
 	__slots__ = (
 		'lockBatchNotification',
 		'lockNotificationEventStats',
+
 		'asyncSubscriptionNotifications',
+		'enableSubscriptionVerificationRequests',
 
 		'_eventNotification',
 	)
@@ -89,6 +91,9 @@ class NotificationManager(object):
 
 	def restart(self, name:str) -> None:
 		"""	Restart the NotificationManager service.
+
+			Args:
+				name: The name of the event.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
 
@@ -104,15 +109,23 @@ class NotificationManager(object):
 
 
 	def _assignConfig(self) -> None:
+		"""	Assign configuration settings.
+		"""
 		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
+		self.enableSubscriptionVerificationRequests	= Configuration.get('cse.enableSubscriptionVerificationRequests')
 
 
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
+
+			Args:
+				name: The name of the event.
+				key: The configuration key that has changed.
+				value: The new value of the configuration key.
 		"""
-		if key not in [ 'cse.asyncSubscriptionNotifications' ]:
+		if key not in ( 'cse.asyncSubscriptionNotifications', 'cse.enableSubscriptionVerificationRequests' ):
 			return
 		self._assignConfig()
 
@@ -974,14 +987,23 @@ class NotificationManager(object):
 									  ri:str, 
 									  originator:Optional[str] = None) -> bool:
 		""""	Define the callback function for verification notifications and send
-				the notification.
+				the notification. 
+
+				Args:
+					uri: The URI to send the verification request to. This may be a list of URI's. Each URI could be a direct URL, or an entity.
+					ri: The resource ID of the subscription.
+					originator: The originator on which behalf to send the notification.
 		"""
-		# TODO doc
+
+		# Skip verification requests if disabled
+		if not self.enableSubscriptionVerificationRequests:
+			L.isDebug and L.logDebug('Skipping verification request (disabled)')
+			return True
 
 		def sender(uri:str) -> bool:
 			# Skip verification requests to acme: receivers
 			if isAcmeUrl(uri):
-				L.isDebug and L.logDebug(f'Skip verification request to internal target: {uri}')
+				L.isDebug and L.logDebug(f'Skipping verification request to internal target: {uri}')
 				return True
 
 			L.isDebug and L.logDebug(f'Sending verification request to: {uri}')
