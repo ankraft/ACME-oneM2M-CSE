@@ -50,8 +50,12 @@
   (cadr response))
 
 ;; Run a command if the resource exists and can be retrieved
+;; Otherwise run the "else-cmd" command.
+;; If found, the resource is stored in the "_resource" variable
+;; that can be used in the "cmd" command.
 (defun eval-if-resource-exists (originator id cmd else-cmd)
-  ((setq response (retrieve-resource originator id))
-   (if (== (get-response-status response) 2000)
-     (eval cmd)
-	 (eval else-cmd))))
+  ( (setq response (retrieve-resource originator id))
+    (if (== (get-response-status response) 2000)
+      ( (setq _resource (get-response-resource response))
+	    (eval cmd))
+	  (eval else-cmd))))
