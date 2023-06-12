@@ -128,6 +128,13 @@ This setting enable or disables resource expiration. If set to `disabled` resour
 The default value is `True`.
 
 
+# cse.enableSubscriptionVerificationRequests
+
+This setting enables or disables subscription verification requests. Verification requests are optional requests sent by the CSE to the subscriber to verify the subscriber's reachability.
+
+The default value is `True`.
+
+
 
 # cse.flexBlockingPreference
 

@@ -191,25 +191,26 @@ class Configuration(object):
 				#	CSE
 				#
 
-				'cse.asyncSubscriptionNotifications'	: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
-				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',					fallback = 60),		# Seconds
-				'cse.cseID'								: config.get('cse', 'cseID',										fallback = '/id-in'),
-				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',							fallback = 'json'),
-				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 						fallback = True),
-				'cse.enableResourceExpiration'			: config.getboolean('cse', 'enableResourceExpiration', 				fallback = True),
-				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
-				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
-				'cse.originator'						: config.get('cse', 'originator',									fallback = 'CAdmin'),
-				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',								fallback = '4'),
-				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
-				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 								fallback = './init'),
-				'cse.resourceID'						: config.get('cse', 'resourceID',									fallback = 'id-in'),
-				'cse.resourceName'						: config.get('cse', 'resourceName',									fallback = 'cse-in'),
-				'cse.sendToFromInResponses'				: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
-				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
-				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4', '5']), # type: ignore [attr-defined]
-				'cse.serviceProviderID'					: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
-				'cse.type'								: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
+				'cse.asyncSubscriptionNotifications'			: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
+				'cse.checkExpirationsInterval'					: config.getint('cse', 'checkExpirationsInterval',					fallback = 60),		# Seconds
+				'cse.cseID'										: config.get('cse', 'cseID',										fallback = '/id-in'),
+				'cse.defaultSerialization'						: config.get('cse', 'defaultSerialization',							fallback = 'json'),
+				'cse.enableRemoteCSE'							: config.getboolean('cse', 'enableRemoteCSE', 						fallback = True),
+				'cse.enableResourceExpiration'					: config.getboolean('cse', 'enableResourceExpiration', 				fallback = True),
+				'cse.enableSubscriptionVerificationRequests'	: config.getboolean('cse', 'enableSubscriptionVerificationRequests',fallback = True),
+				'cse.flexBlockingPreference'					: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
+				'cse.maxExpirationDelta'						: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
+				'cse.originator'								: config.get('cse', 'originator',									fallback = 'CAdmin'),
+				'cse.releaseVersion'							: config.get('cse', 'releaseVersion',								fallback = '4'),
+				'cse.requestExpirationDelta'					: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
+				'cse.resourcesPath'								: config.get('cse', 'resourcesPath', 								fallback = './init'),
+				'cse.resourceID'								: config.get('cse', 'resourceID',									fallback = 'id-in'),
+				'cse.resourceName'								: config.get('cse', 'resourceName',									fallback = 'cse-in'),
+				'cse.sendToFromInResponses'						: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
+				'cse.sortDiscoveredResources'					: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
+				'cse.supportedReleaseVersions'					: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4', '5']), # type: ignore [attr-defined]
+				'cse.serviceProviderID'							: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
+				'cse.type'										: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
 
 				#
 				#	Announcements
