@@ -62,7 +62,8 @@ class CSEBase(AnnounceableResource):
 			'srv': None,
 			'cst': None,
 			'csi': None,
-			'csz': None
+			'csz': None,
+			'ctm': None,
 	}
 
 
