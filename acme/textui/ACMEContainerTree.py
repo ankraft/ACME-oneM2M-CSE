@@ -74,11 +74,8 @@ class ACMEResourceTree(TextualTree):
 			if (_params := self._virtualResourcesParameter.get(resource.ty)):
 				if (_r := CSE.dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
 					resource = _r
-		
-					# Update the header
-					self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}')
 				else:
-					resource = ''
+					resource = None
 		except ResponseException as e:
 			self._update_tree()
 			return
@@ -86,10 +83,14 @@ class ACMEResourceTree(TextualTree):
 		# Update the resource view and other views
 		self.parentContainer.updateResource(resource)
 
+		# Update the header
+		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}' if resource else '## &nbsp;')
+
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
 		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
+		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		for r in chs:
 			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri)  ]) > 0))
@@ -204,11 +205,11 @@ class ACMEContainerTree(Container):
 		self.resourceTree._update_tree()
 
 
-	def updateResource(self, resource:Resource) -> None:
+	def updateResource(self, resource:Optional[Resource] = None) -> None:
 		self.resource = resource
 
 		# Add attribute explanations
-		if isinstance(resource, Resource):
+		if resource:
 			jsns = commentJson(resource.asDict(sort = True), 
 							explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
 							getAttributeValueName = CSE.validator.getAttributeValueName,		# type: ignore [attr-defined]
@@ -222,7 +223,7 @@ class ACMEContainerTree(Container):
 			self.deleteView.disabled = False
 
 		else:
-			jsns = resource
+			jsns = ''
 
 			# Disable the delete view
 			self.deleteView.disabled = True
