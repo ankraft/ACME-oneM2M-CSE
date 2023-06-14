@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<diagram program="umlet" version="15.0.0">
+<diagram program="umlet" version="15.1">
   <zoom_level>9</zoom_level>
   <element>
     <id>UMLClass</id>
@@ -1533,8 +1533,7 @@ lt=..</panel_attributes>
       <w>45</w>
       <h>27</h>
     </coordinates>
-    <panel_attributes>DEPR
-fg=#aaaaaa</panel_attributes>
+    <panel_attributes>DEPR</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -1578,8 +1577,7 @@ fg=#aaaaaa</panel_attributes>
       <w>72</w>
       <h>27</h>
     </coordinates>
-    <panel_attributes>DEPRAnnc
-fg=#aaaaaa</panel_attributes>
+    <panel_attributes>DEPRAnnc</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
