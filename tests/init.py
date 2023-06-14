@@ -423,8 +423,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 				sendData = data
 			# data = cbor2.dumps(data)	# TODO use CBOR as well
 		r = method(url, data=sendData, headers=hds, verify=verifyCertificate, timeout=timeout)
+		# print(f'HTTP request sent: {r.status_code}')
 	except Exception as e:
-		#print(f'Failed to send request: {str(e)}')
+		# print(f'Failed to send request: {str(e)}')
 		return None, 5103
 	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
 

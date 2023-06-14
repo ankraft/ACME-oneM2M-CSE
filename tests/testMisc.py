@@ -37,6 +37,8 @@ class TestMisc(unittest.TestCase):
 			return
 		testCaseStart('TearDown TestMisc')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+
 		# Stop notification server
 		stopNotificationServer()
 		testCaseEnd('TearDown TestMisc')
@@ -317,7 +319,32 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSEBaseROAttribute(self) -> None:
+		""" Partial RETRIEVE of CSEBase with single RO attribute ctm (http only)"""
+		r, rsc = RETRIEVE(f'{cseURL}?atrl=ctm', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.OK, r)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveCSingleOptionalAttribute(self) -> None:
+		""" Partial RETRIEVE of a CNT optional attribute (http only)"""
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, cnt)
+
+		# RETRIEVE with single optional attribute
+		r, rsc = RETRIEVE(f'{cseURL}/{cntRN}?atrl=mni', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.OK, r)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+# TODO test partial RETRIEVE of <CIN> with missing optional attribute
 
 
 # TODO test for creating a resource with missing type parameter
@@ -353,6 +380,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestMisc('test_partialDeleteCSEBaseFail'))
 	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongRcnFail'))
 	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongAttributeFail'))
+	addTest(suite, TestMisc('test_partialRetrieveCSEBaseROAttribute'))
+	addTest(suite, TestMisc('test_partialRetrieveCSingleOptionalAttribute'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
