@@ -57,9 +57,28 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.header.update('## Resources')
 
 
+	_virtualResourcesParameter = {
+		ResourceTypes.CNT_LA: (ResourceTypes.CIN, False),
+		ResourceTypes.CNT_OL: (ResourceTypes.CIN, True),
+		ResourceTypes.FCNT_LA: (ResourceTypes.FCI, False),
+		ResourceTypes.FCNT_OL: (ResourceTypes.FCI, True),
+		ResourceTypes.TS_OL: (ResourceTypes.TSI, True),
+		ResourceTypes.TS_LA: (ResourceTypes.TSI, False),
+	}
+
 	def _update_content(self, ri:str) -> None:
 		try:
 			resource = CSE.dispatcher.retrieveLocalResource(ri)
+
+			# retrieve the latest/oldest instance of some virtual resources
+			if (_params := self._virtualResourcesParameter.get(resource.ty)):
+				if (_r := CSE.dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
+					resource = _r
+		
+					# Update the header
+					self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}')
+				else:
+					resource = ''
 		except ResponseException as e:
 			self._update_tree()
 			return
@@ -67,15 +86,14 @@ class ACMEResourceTree(TextualTree):
 		# Update the resource view and other views
 		self.parentContainer.updateResource(resource)
 
-		# Update the header
-		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}')
-
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
-		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
+		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
+		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		for r in chs:
-			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
+			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri)  ]) > 0))
+			# result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
 		return result
 
 
@@ -190,19 +208,31 @@ class ACMEContainerTree(Container):
 		self.resource = resource
 
 		# Add attribute explanations
-		jsns = commentJson(resource.asDict(sort = True), 
-			 			   explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-						   getAttributeValueName = CSE.validator.getAttributeValueName,		# type: ignore [attr-defined]
-						   width = self.resourceView.size[0] - 2)		# type: ignore [attr-defined]
+		if isinstance(resource, Resource):
+			jsns = commentJson(resource.asDict(sort = True), 
+							explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
+							getAttributeValueName = CSE.validator.getAttributeValueName,		# type: ignore [attr-defined]
+							width = (self.resourceView.size[0] - 2) if self.resourceView.size[0] > 0 else 9999)		# type: ignore [attr-defined]
+			
+			# Update the requests view
+			self._update_requests(resource.ri)
 
+			# Update DELETE view
+			self.deleteView.updateResource(resource)
+			self.deleteView.disabled = False
+
+		else:
+			jsns = resource
+
+			# Disable the delete view
+			self.deleteView.disabled = True
+
+			# Update the requests view with an empty string
+			self._update_requests('')
+			
 		# Add syntax highlighting and add to the view
 		self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
 
-		# Update the requests view
-		self._update_requests(resource.ri)
-
-		# Update DELETE view
-		self.deleteView.updateResource(resource)
 
 		# TODO update the create, retrieve, update, delete views
 

@@ -18,7 +18,7 @@ from textual import on
 idFieldOriginator = 'field-originator'
 
 def validateOriginator(value: str) -> bool:
-	return len(value) > 1 and value.startswith('C')
+	return value is not None and len(value) > 1 and value.startswith('C')
 
 class ACMEFieldOriginator(Container):
 	
