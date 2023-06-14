@@ -289,11 +289,13 @@ class RequestManager(object):
 			raise BAD_REQUEST(L.logDebug(f'Missing content/request in notification'))
 
 		# Forward the notification as received to the target
-		return self.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-												 to = id, 
-												 originator = originator, 
-												 pc = request.originalRequest)
-									 )[0].result	# there should be at least one result
+		#return self.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+		#										 to = id,
+		#										 originator = originator,
+		#										 pc = request.originalRequest)
+		#							 )[0].result	# there should be at least one result
+
+		return self.handleSendRequest(request)[0].result  # there should be at least one result
 
 
 	#########################################################################
@@ -952,7 +954,8 @@ class RequestManager(object):
 																			content = request.pc,
 																			ec = _request.ec,
 																			originator = _request.originator,
-																			rvi = _request.rvi))
+																			rvi = _request.rvi,
+																			request = request))
 				results.append( RequestResponse(_request, _result) )
 				continue
 
