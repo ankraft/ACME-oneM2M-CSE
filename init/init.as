@@ -27,13 +27,13 @@ They can usually only be executed from the console or text UI, or the Upper Test
 (import-raw 
 	(get-config "cse.originator") 
 	{"m2m:cb": {
-		"ri":   "${ (get-config \"cse.resourceID\") }",
-		"rn":   "${ (get-config \"cse.resourceName\") }",
-		"csi":  "${ (get-config \"cse.cseID\") }",
+		"ri":   "${get-config \"cse.resourceID\"}",
+		"rn":   "${get-config \"cse.resourceName\"}",
+		"csi":  "${get-config \"cse.cseID\"}",
 		"rr":   true,
 		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${ (get-config \"cse.cseID\") }/acpCreateACPs" ],
-		"poa":  [ "${ (get-config \"http.address\") }" ]
+		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ],
+		"poa":  [ "${get-config \"http.address\"}" ]
 		;; "poa":  [ "mqtt://mqtt" ]
 	}})
 
@@ -46,7 +46,7 @@ They can usually only be executed from the console or text UI, or the Upper Test
 	{ "m2m:acp": {
 		"rn": "acpCreateACPs",
 		"ri": "acpCreateACPs",
-		"pi": "${ (get-config \"cse.resourceID\") }",
+		"pi": "${get-config \"cse.resourceID\"}",
 		"pv": {
 			"acr": [ {
 				"acor": [ "all"	],
@@ -56,7 +56,7 @@ They can usually only be executed from the console or text UI, or the Upper Test
 		},
 		"pvs": {
 			"acr": [ {
-				"acor": [ "${ (get-config \"cse.originator\") }" ],
+				"acor": [ "${get-config \"cse.originator\"}" ],
 				"acop": 63
 			} ]
 		}
@@ -69,12 +69,12 @@ They can usually only be executed from the console or text UI, or the Upper Test
 (import-raw 
 	(get-config "cse.originator")
 	{ "m2m:ae": {
-		"ri":  "${ (get-config \"cse.originator\") }",
-		"rn":  "${ (get-config \"cse.originator\") }",
-		"pi":  "${ (get-config \"cse.resourceID\") }",
+		"ri":  "${get-config \"cse.originator\"}",
+		"rn":  "${get-config \"cse.originator\"}",
+		"pi":  "${get-config \"cse.resourceID\"}",
 		"rr":  true,
-		"api": "N${ (get-config \"cse.originator\") }",
-		"aei": "${ (get-config \"cse.originator\") }",
+		"api": "N${get-config \"cse.originator\"}",
+		"aei": "${get-config \"cse.originator\"}",
 		"csz": [ "application/json", "application/cbor" ]
 	}})
 

@@ -63,7 +63,7 @@
      ;; If the status is available in the storage, retrieve it from there
      (get-storage "lightswitchDemo" "status")
      ;; If the status is not available in the storage, retrieve it from the CSE
-     ((setq response (retrieve-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer/la"))
+     ((setq response (retrieve-resource "CDemoLightswitch" "${get-config \"cse.resourceName\"}/CDemoLightswitch/switchContainer/la"))
 	  ;; 
       (if (== (get-response-status response) 2000)
 	    ;; If the retrieval was successful, retrieve the status from the ContentInstance
@@ -87,9 +87,9 @@
 (defun set-lightswitch-status (st)
   ((print-lightswitch st)
    ;; Create a new ContentInstance in the CSE
-   (create-resource "CDemoLightswitch" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer" 
+   (create-resource "CDemoLightswitch" "${get-config \"cse.resourceName\"}/CDemoLightswitch/switchContainer" 
       { "m2m:cin": {
-          "con" : "${(st)}"
+          "con" : "${st}"
       }})
    ;; Store the lightswitch status in the internal storage
    (put-storage "lightswitchDemo" "status" st)))

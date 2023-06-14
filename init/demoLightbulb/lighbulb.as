@@ -31,7 +31,7 @@
 ;; Define the lightswitch status retrieval function.
 ;; This function retrieves the latest ContentInstance wih the content attribute indicating the lightswitch status.
 (defun get-lightswitch-status ()
-  ((setq response (retrieve-resource "CDemoLightbulb" "${(get-config \"cse.resourceName\")}/CDemoLightswitch/switchContainer/la"))
+  ((setq response (retrieve-resource "CDemoLightbulb" "${get-config \"cse.resourceName\"}/CDemoLightswitch/switchContainer/la"))
    (if (== (get-response-status response) 2000)
      ;; If the response is OK, get the content attribute
      ((setq cin (get-response-resource response))
@@ -71,7 +71,7 @@
 "))
 
      ;; For the console, just print the status
-     ((print "The lightbulb status is ${(state)}")))))
+     ((print "The lightbulb status is ${state}")))))
 
 
 ;; Check if the notification contains the content attribute and print the lightbulb state if it does
