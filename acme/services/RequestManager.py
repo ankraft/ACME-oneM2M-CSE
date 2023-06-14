@@ -846,6 +846,14 @@ class RequestManager(object):
 				 				 pc = content,
 								 # Copy additional parameter attributes
 								 ec = ec)
+		else:
+			# If the request has no rqi, then create one
+			if not request.rqi:
+				request.rqi = uniqueRI()
+			# If the request has no id, then use the to field
+			if not request.id:
+				request.id = request.to
+			L.logErr(f'Internal error. {request}')
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
@@ -1452,6 +1460,7 @@ class RequestManager(object):
 		# It may be an AE, CSE, CSR.
 		targetResource = None
 		targetResourceType:ResourceTypes = ResourceTypes.UNKNOWN
+		isForwardedRequest = False
 
 		if isSPRelative(uri) or isAbsolute(uri):
 			if (ri := localResourceID(uri)) is not None:	# If this the local CSE
@@ -1468,9 +1477,12 @@ class RequestManager(object):
 					targetResource = getCSE()			# for all other resources without a poa is the CSE responsible
 			elif (t := CSE.remote.getCSRFromPath(uri)): # target is a registering CSE
 				targetResource, _ = t
+				isForwardedRequest = True
 			elif CSE.remote.registrarCSE:	# just send it up to the registrar CSE, if any
 				targetResource = CSE.remote.registrarCSE
+				isForwardedRequest = True
 
+		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarded request to: {uri}')
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri)):
@@ -1483,7 +1495,7 @@ class RequestManager(object):
 			if originator == CSE.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
 			# TODO DELETEME elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
-			elif not CSE.security.hasAccess(originator, targetResource, permission):
+			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 				return []
 

@@ -100,7 +100,7 @@ class PCH_PCU(VirtualResource):
 		CSE.validator.validatePrimitiveContent(request.pc)
 
 		if (innerPC := cast(JSON, request.pc.get('m2m:rsp'))) is None:
-			raise BAD_REQUEST(L.logDebug(f'Noification to PCU must contain a Response (m2m:rsp)'))
+			raise BAD_REQUEST(L.logDebug(f'Notification to PCU must contain a Response (m2m:rsp)'))
 		
 		if not innerPC.get('fr'):
 			L.isDebug and L.logDebug(f'Adding originator: {request.originator} to request')
@@ -111,7 +111,7 @@ class PCH_PCU(VirtualResource):
 		nrequest.pc = innerPC.get('pc')
 
 		response = CSE.request.fillAndValidateCSERequest(nrequest, isResponse = True)
-		# L.logWarn(res.request)
+		# L.logWarn(response)
 		# L.logWarn(innerPC)
 
 		# Enqueue the reqeust

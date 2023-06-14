@@ -223,6 +223,8 @@ class RegistrationManager(object):
 	def handleAERegistration(self, ae:Resource, originator:str, parentResource:Resource) -> str:
 		""" This method creates a new originator for the AE registration, depending on the method choosen."""
 
+		L.isDebug and L.logDebug(f'handle AE registration for: {ae.ri} with originator: {originator}')
+
 		# check for empty originator and assign something
 		if not originator:
 			originator = 'C'
