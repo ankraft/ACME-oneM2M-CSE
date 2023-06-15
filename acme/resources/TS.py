@@ -205,7 +205,11 @@ class TS(AnnounceableResource):
 			if self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
 				raise BAD_REQUEST(L.logDebug('mdt must be > peid'))
 		
-		self._validateChildren()
+		# Remove the mdlt if it is empty. It will be created later on demand
+		if self.mdlt is not None and len(self.mdlt) == 0:
+			self.delAttribute('mdlt')
+			
+		self._validateChildren()	# dbupdate() happens here
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
@@ -367,6 +371,7 @@ class TS(AnnounceableResource):
 
 	def _clearMdlt(self, overwrite:Optional[bool] = True) -> None:
 		"""	Clear the missingDataList and missingDataCurrentNr attributes.
+			Actually, this attribute will create a new mdlt and set mdc to 0 if they have not been created before.
 
 			Args:
 				overwrite: Force overwrite.

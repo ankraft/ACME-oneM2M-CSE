@@ -2328,7 +2328,7 @@
 			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}

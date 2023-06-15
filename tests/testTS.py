@@ -90,7 +90,7 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 5000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
-		#self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), 5001)
@@ -473,8 +473,9 @@ class TestTS(unittest.TestCase):
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		# set mdd to False again (mdlt, mdc stay in the resource)
 		dct2 = {	'm2m:ts': {
@@ -484,8 +485,9 @@ class TestTS(unittest.TestCase):
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 
 

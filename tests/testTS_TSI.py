@@ -102,10 +102,9 @@ class TestTS_TSI(unittest.TestCase):
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')), 0, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -386,9 +385,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/pei'), pei, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
 		self.assertTrue(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
-		# TODO Discussion whether mdlt is always present
-		# self.assertIsNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)	# empty mdlt is not created by default
-		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)
+		self.assertIsNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)	# empty mdlt is not created by default
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), TestTS_TSI.ts)
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), 0, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdt'), TestTS_TSI.ts)
@@ -517,9 +514,9 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), mdt, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		_pei = findXPath(r, 'm2m:ts/pei') / 1000.0
 		_mdt = findXPath(r, 'm2m:ts/mdt') / 1000.0 
@@ -574,8 +571,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')),  0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self._startMonitoring()
 
 
@@ -663,8 +659,9 @@ class TestTS_TSI(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestTS_TSI.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		# Add some TSI
 		for i in range(0, 5):
