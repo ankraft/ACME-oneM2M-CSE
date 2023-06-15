@@ -1752,6 +1752,13 @@ class FilterCriteria:
 		result = {}
 
 		def _fill(k:str, v:Any) -> None:
+			"""	Callback function to fill the dictionary. 
+				Filter Usage and Filter Operation are not included if they are set to their default values.
+
+				Args:
+					k: Key of the attribute.
+					v: Value of the attribute.
+			"""
 			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
 				return
 			if k == 'fo' and int(v) == FilterOperation.AND:
@@ -1787,6 +1794,14 @@ class FilterCriteria:
 				continue
 			if v is None:
 				continue
+
+			# skip default values
+			# TODO combine this with the default handling in fillCriteriaAttributes()
+			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
+				continue
+			if k == 'fo' and int(v) == FilterOperation.AND:
+				continue
+
 			if isinstance(v, list) and flattenList:
 				for e in v:
 					cb(k, _getValue(e))

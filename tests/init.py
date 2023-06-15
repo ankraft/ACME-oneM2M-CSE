@@ -807,6 +807,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			# 	setLastNotification(post_data.decode('utf-8'))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
+		setLastNotificationArguments(parse_qs(urlparse(self.path).query))	# make a dict out of the query arguments
 
 		# Verbose output
 		if verboseRequests and self.headers.get(C.hfOrigin):
@@ -868,6 +869,7 @@ def isNotificationServerRunning() -> bool:
 
 lastNotification:JSON						= None
 lastNotificationHeaders:Parameters 			= {}
+lastNotificationArguments:Parameters 		= {}
 nextNotificationResult:ResponseStatusCode	= ResponseStatusCode.OK
 
 def setLastNotification(notification:JSON) -> None:
@@ -884,9 +886,10 @@ def getLastNotification(clear:bool = False, wait:float = 0.0) -> JSON:
 
 
 def clearLastNotification(nextResult:ResponseStatusCode = ResponseStatusCode.OK) -> None:
-	global lastNotification, lastNotificationHeaders, nextNotificationResult
+	global lastNotification, lastNotificationHeaders, lastNotificationArguments, nextNotificationResult
 	lastNotification = None
 	lastNotificationHeaders = None
+	lastNotificationArguments = None
 	nextNotificationResult = nextResult
 
 
@@ -897,6 +900,15 @@ def setLastNotificationHeaders(headers:Parameters) -> None:
 
 def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
+
+
+def setLastNotificationArguments(arguments:Parameters) -> None:
+	global lastNotificationArguments
+	lastNotificationArguments = arguments
+
+
+def getLastNotificationArguments() -> Parameters:
+	return lastNotificationArguments
 
 
 _sleepTimeCount:float = 0.0

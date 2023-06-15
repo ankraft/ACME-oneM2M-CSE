@@ -347,6 +347,49 @@ class TestMisc(unittest.TestCase):
 # TODO test partial RETRIEVE of <CIN> with missing optional attribute
 
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_notifyAE(self) -> None:
+		"""	NOTIFY an <AE>. Test forn non-arguments in the notification POST request """
+		clearLastNotification()
+
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': APPID,
+				 	'rr': True,
+				 	'srv': [ '2' ],
+					'poa': [ NOTIFICATIONSERVER ]
+				}}
+		ae, rsc = CREATE(cseURL, 'Carguments', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED, ae)
+
+		# Send a notification to the AE. Content is not important here
+		dct = 	{	'm2m:sgn' : {
+					'nev' : {
+						'rep' : {},
+						'net' : NotificationEventType.resourceUpdate
+					},
+				}
+			}
+
+		r, rsc = NOTIFY(aeURL, 'Carguments', data = dct)
+		self.assertEqual(rsc, RC.OK, r)
+
+		notification = getLastNotification(wait = notificationDelay)
+		notificationHeaders = getLastNotificationHeaders()
+		notificationArgs = getLastNotificationArguments()
+
+		self.assertIsNotNone(notification, r)
+		self.assertIsNotNone(notificationHeaders, r)
+		self.assertEqual(len(notificationArgs), 0, notificationArgs)
+
+		# Remove AE
+		r, rsc = DELETE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
 # TODO test for ISO8601 format validation
@@ -383,8 +426,11 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestMisc('test_partialRetrieveCSEBaseROAttribute'))
 	addTest(suite, TestMisc('test_partialRetrieveCSingleOptionalAttribute'))
 
+	# send NOTIFY requests
+	addTest(suite, TestMisc('test_notifyAE'))
+	
 
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
