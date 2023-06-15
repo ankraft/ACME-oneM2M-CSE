@@ -798,6 +798,79 @@ class TestDiscovery(unittest.TestCase):
 			self.assertEqual(lastHeaders()['Content-Location'], findXPath(r, 'm2m:rce/uri'))
 
 
+	#
+	#	Retrieve empty childResource sets
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveUnderCNTRCN8(self) -> None:
+		""" Retrieve everything under <CNT> & rcn=8 """
+
+		# create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}rcn8',
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+
+		# retrieve <CNT> with rcn=8
+		r, rsc = RETRIEVE(f'{cntURL}rcn8?rcn={int(RCN.childResources)}', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
+		self.assertEqual(len(findXPath(r, 'm2m:cnt')), 0)
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}rcn8', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	# childResourceReferences
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveUnderCNTRCN6(self) -> None:
+		""" Retrieve everything under <CNT> & rcn=6 """
+
+		# create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}rcn6',
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+
+		# retrieve <CNT> with rcn=6
+		r, rsc = RETRIEVE(f'{cntURL}rcn6?rcn={int(RCN.childResourceReferences)}', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 0, r)
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}rcn6', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	# attributesAndChildResourceReferences
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveUnderCNTRCN5(self) -> None:
+		""" Retrieve everything under <CNT> & rcn=5 """
+
+		# create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}rcn5',
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+
+		# retrieve <CNT> with rcn=5
+		r, rsc = RETRIEVE(f'{cntURL}rcn5?rcn={int(RCN.attributesAndChildResourceReferences)}', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/ch'))
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/ch')), 0, r)
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}rcn5', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 		
@@ -855,6 +928,11 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestDiscovery('test_retrieveCINmatchLabel'))
 	addTest(suite, TestDiscovery('test_createCNTwithRCN2'))
 	addTest(suite, TestDiscovery('test_createCNTwithRCN3'))
+
+	# Retrieve under CNT and expect empty results
+	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN8'))
+	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN6'))
+	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN5'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
