@@ -205,10 +205,6 @@ class TS(AnnounceableResource):
 			if self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
 				raise BAD_REQUEST(L.logDebug('mdt must be > peid'))
 		
-		# Remove the mdlt if it is empty. It will be created later on demand
-		if self.mdlt is not None and len(self.mdlt) == 0:
-			self.delAttribute('mdlt')
-			
 		self._validateChildren()	# dbupdate() happens here
 
 
@@ -361,8 +357,8 @@ class TS(AnnounceableResource):
 		# 		if newMdt is None and CSE.timeSeries.isMonitored(self.ri):				# it is in the update, but set to None, meaning remove the mdt from the TS
 		# 			CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
-		# Always set the mdc to the length of mdlt
-		if self.hasAttribute('mdlt'):
+		# Always set the mdc to the length of mdlt if present
+		if self.mdlt is not None:
 			self.setAttribute('mdc', len(self.mdlt))
 
 		# Save changes
@@ -378,6 +374,12 @@ class TS(AnnounceableResource):
 		"""
 		self.setAttribute('mdlt', [], overwrite)
 		self.setAttribute('mdc', 0, overwrite)
+
+		# Remove the mdlt if it is empty. It will be created later on demand
+		if self.mdlt is not None and len(self.mdlt) == 0:
+			self.delAttribute('mdlt')
+			self.delAttribute('mdc')
+			L.isDebug and L.logDebug('mdlt was empty and was removed, together with mdc')
 
 
 	def timeSeriesInstances(self) -> list[Resource]:

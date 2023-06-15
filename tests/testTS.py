@@ -134,7 +134,7 @@ class TestTS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSpei(self) -> None:
+	def test_updateTSpeiFail(self) -> None:
 		""" Update <TS> pei -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
@@ -145,7 +145,7 @@ class TestTS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSpeid(self) -> None:
+	def test_updateTSpeidFail(self) -> None:
 		""" Update <TS> peid -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
@@ -490,6 +490,31 @@ class TestTS(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updatePeiCheckPeid(self) -> None:
+		""" UPDATE <TS> with pei -> check peid """
+		self.assertIsNotNone(TestTS.ae)
+
+		# create <TS> with pei
+		dct = {	'm2m:ts': {
+					'rn':'TimeSeries3',
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# update pei
+		dct2 = {	'm2m:ts': {
+					'pei': 1000,                          # milliseconds
+			}}
+		r, rsc = UPDATE(f'{aeURL}/TimeSeries3', TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/peid'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
@@ -499,8 +524,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestTS('test_createTSunderTS'))
 	addTest(suite, TestTS('test_updateTSmni'))
 	addTest(suite, TestTS('test_updateTSmbs'))
-	addTest(suite, TestTS('test_updateTSpei'))
-	addTest(suite, TestTS('test_updateTSpeid'))
+	addTest(suite, TestTS('test_updateTSpeiFail'))
+	addTest(suite, TestTS('test_updateTSpeidFail'))
 
 	addTest(suite, TestTS('test_updateTSmddTrue'))
 	addTest(suite, TestTS('test_updateTSmddTrueAndMdtFail'))
@@ -533,6 +558,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	addTest(suite, TestTS('test_deleteTS'))
 	addTest(suite, TestTS('test_MddMdltMdcHandling'))
+
+	addTest(suite, TestTS('test_updatePeiCheckPeid'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
