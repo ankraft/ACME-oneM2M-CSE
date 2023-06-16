@@ -504,6 +504,7 @@ class TestTS(unittest.TestCase):
 			}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/peid'), r)
 
 		# update pei
 		dct2 = {	'm2m:ts': {
