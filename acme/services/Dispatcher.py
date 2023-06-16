@@ -1008,9 +1008,9 @@ class Dispatcher(object):
 		elif request.rcn == ResultContentType.childResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
 			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
+			childResourcesRef = self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
 			resultContent = childResourcesRef
-
+			
 		# TODO RCN.discoveryResultReferences
 		else:
 			raise BAD_REQUEST('wrong rcn for DELETE')
