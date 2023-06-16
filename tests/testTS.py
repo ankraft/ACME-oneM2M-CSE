@@ -350,7 +350,7 @@ class TestTS(unittest.TestCase):
 		# self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
 		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
@@ -452,7 +452,8 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 		# set mdd to False
 		dct2 = {	'm2m:ts': {
@@ -463,7 +464,8 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 		# add mdd with True
 		dct2 = {	'm2m:ts': {
@@ -512,7 +514,8 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/peid'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500, r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 
 

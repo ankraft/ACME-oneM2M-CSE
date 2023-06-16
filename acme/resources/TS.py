@@ -82,6 +82,7 @@ class TS(AnnounceableResource):
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
+		self.setAttribute('mdc', 0, overwrite = False)
 		if Configuration.get('resource.ts.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('resource.ts.mni'), overwrite = False)
 			self.setAttribute('mbs', Configuration.get('resource.ts.mbs'), overwrite = False)
@@ -378,9 +379,8 @@ class TS(AnnounceableResource):
 		# Remove the mdlt if it is empty. It will be created later on demand
 		if self.mdlt is not None and len(self.mdlt) == 0:
 			self.delAttribute('mdlt')
-			self.delAttribute('mdc')
-			L.isDebug and L.logDebug('mdlt was empty and was removed, together with mdc')
-
+			L.isDebug and L.logDebug('mdlt empty and is removed')
+		
 
 	def timeSeriesInstances(self) -> list[Resource]:
 		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
@@ -391,11 +391,13 @@ class TS(AnnounceableResource):
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:
 		"""	Add a dataGenerationTime *dgtToAdd* to the mdlt of this resource.
 		"""
-		self._clearMdlt(False)												# Add to mdlt, just in case it hasn't created before
+		self.setAttribute('mdlt', [], False)								# Add mdlt, just in case it hasn't created before
 		self.mdlt.append(toISO8601Date(dgtToAdd))							# Add missing dgt to TS.mdlt
+		self.setAttribute('mdc', len(self.mdlt), overwrite = True)			# Set the mdc
+
 		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
 				self.setAttribute('mdlt', self.mdlt[1:], overwrite = True)	# Shorten the mdlt
 			self.setAttribute('mdc', len(self.mdlt), overwrite = True)		# Set the mdc
-			self.dbUpdate(True)													# Update in DB
+		self.dbUpdate(True)													# Update in DB
 
