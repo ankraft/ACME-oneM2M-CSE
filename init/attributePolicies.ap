@@ -2325,7 +2325,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "periodicIntervalDelta",
 			"ns": "m2m",
-			"type": "positiveInteger",	// non-enum
+			"type": "nonNegInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
