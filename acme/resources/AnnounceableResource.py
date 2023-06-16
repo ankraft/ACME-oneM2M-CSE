@@ -189,6 +189,9 @@ class AnnounceableResource(Resource):
 				remoteRI: ri of the announced resource on the remote CSE
 		"""
 
+		if not csi or not remoteRI:
+			raise ValueError('csi and remoteRI must be provided')
+		
 		# Set the internal __announcedTo__ attribute
 		ats = self.getAnnouncedTo()
 		ats.append((csi, remoteRI))

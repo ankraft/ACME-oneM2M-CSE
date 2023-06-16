@@ -318,9 +318,8 @@ class AnnouncementManager(object):
 														   pc = dct)
 											   )[0].result	# there should be at least one result
 		except ResponseException as e:
-			if e.rsc != ResponseStatusCode.CONFLICT:	# assume that it is ok if the remote resource already exists 
-				e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
-				raise e
+			e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
+			raise e
 
 		resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
 		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
