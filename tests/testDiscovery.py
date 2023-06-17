@@ -825,7 +825,7 @@ class TestDiscovery(unittest.TestCase):
 	# childResourceReferences
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnderCNTRCN6(self) -> None:
-		""" Retrieve everything under <CNT> & rcn=6 """
+		""" RETRIEVE everything under <CNT> & rcn=6. Also DELETE with rcn=6 """
 
 		# create <CNT>
 		dct = 	{ 'm2m:cnt' : { 
@@ -842,8 +842,11 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 0, r)
 
 		# cleanup
-		_, rsc = DELETE(f'{cntURL}rcn6', TestDiscovery.originator) # cleanup
+		r, rsc = DELETE(f'{cntURL}rcn6?rcn={RCN.childResourceReferences.value}', TestDiscovery.originator) # cleanup
 		self.assertEqual(rsc, RC.DELETED)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 0, r)
 
 
 	# attributesAndChildResourceReferences

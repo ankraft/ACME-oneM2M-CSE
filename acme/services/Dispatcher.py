@@ -251,9 +251,6 @@ class Dispatcher(object):
 			return Result(rsc = ResponseStatusCode.OK, resource = resource)
 
 		elif rcn == ResultContentType.childResourceReferences: 
-			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.drt, 'm2m:rrl')
-			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
 			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
 			return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
 
@@ -1007,8 +1004,7 @@ class Dispatcher(object):
 
 		elif request.rcn == ResultContentType.childResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			childResourcesRef = self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.drt, 'm2m:rrl')
+			childResourcesRef = self._resourceTreeReferences(children, None, request.drt, 'm2m:rrl')
 			resultContent = childResourcesRef
 			
 		# TODO RCN.discoveryResultReferences
