@@ -944,7 +944,7 @@ class RequestManager(object):
 		# Determine all the details for one or multiple targets
 		if not (resolved := self.determineTargetDetails(request)):	# empty list?
 			raise BAD_REQUEST(L.logWarn('cannot determine target details for the request'))
-
+			
 		results:RequestResponseList = []
 		for url, csz, rvi, pch, requestOriginator, to, targetType in resolved:
 
@@ -1082,6 +1082,8 @@ class RequestManager(object):
 
 		try:
 
+			earlyError:str = None
+
 			# FR - originator 
 			# if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
 			# 	raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
@@ -1089,9 +1091,16 @@ class RequestManager(object):
 			# 	cseRequest.originator = fr
 			cseRequest.originator = gget(cseRequest.originalRequest, 'fr', greedy = False)
 
+			# RQI - requestIdentifier
+			# Check as early as possible
+			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
+				cseRequest.rqi = rqi
+			else:
+				earlyError = L.logDebug('request identifier parameter is mandatory in request')
+
 			# TO - target
 			if not (to := gget(cseRequest.originalRequest, 'to', greedy = False)) and not isResponse:
-				raise BAD_REQUEST(L.logDebug('to/target parameter is mandatory in request'), data = cseRequest)
+				earlyError = L.logDebug('to/target parameter is mandatory in request')
 			else:
 				cseRequest.to = to
 				if to:
@@ -1103,20 +1112,15 @@ class RequestManager(object):
 							cseRequest.csi = to
 							cseRequest.srn = None
 						else:
-							raise BAD_REQUEST(L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. '),
-											  data = cseRequest)
+							earlyError = L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. ')
 					else:
 						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = retrieveIDFromPath(to)
 						if dbg:
 							raise BAD_REQUEST(dbg, data = cseRequest)
 
+			if earlyError:
+				raise BAD_REQUEST(earlyError, data = cseRequest)
 
-			# RQI - requestIdentifier
-			# Check as early as possible
-			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
-				cseRequest.rqi = rqi
-			else:
-				raise BAD_REQUEST(L.logDebug('request identifier parameter is mandatory in request'), data = cseRequest)
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):

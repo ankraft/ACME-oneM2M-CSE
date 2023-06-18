@@ -821,7 +821,16 @@ class RemoteCSEManager(object):
 
 
 	def getRemoteCSEBaseAddress(self, csi:str) -> Optional[str]:
-		# TODO doc
+		"""	Get the SP-relative */csi/ri* resource ID  of a remote CSE from its CSI.
+			The searched for remote CSE must be registered either directly, or
+			be a descendant CSE.
+
+			Args:
+				csi: The CSI of the remote CSE.
+
+			Return:
+				The SP-relative */csi/ri* resource ID of the remote CSE, or *None* if not found.
+		"""
 		if csi == CSE.cseCsi:
 			return f'{CSE.cseCsi}/{CSE.cseRi}'
 		if (csr := CSE.remote.getCSRFromPath(csi))[0] is None:

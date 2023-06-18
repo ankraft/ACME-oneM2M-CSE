@@ -590,6 +590,8 @@ class HttpServer(object):
 			headers[Constants().hfRSC] = f'{int(result.rsc)}'				# set the response status code
 		if rqi := findXPath(cast(JSON, outResult.data), 'rqi'):
 			headers[Constants().hfRI] = rqi
+		else:
+			headers[Constants().hfRI] = result.request.rqi
 		if rvi := findXPath(cast(JSON, outResult.data), 'rvi'):
 			headers[Constants().hfRVI] = rvi
 		if vsi := findXPath(cast(JSON, outResult.data), 'vsi'):
@@ -687,6 +689,8 @@ class HttpServer(object):
 		if f := _headers.get(Constants.hfOT):
 			req['ot'] = f
 
+		cseRequest.originalRequest = req 	# Already store now the incompliete request to save the header data
+	
 		# parse and extract content-type header
 		if contentType := request.content_type:
 			if not contentType.startswith(tuple(ContentSerializationType.supportedContentSerializations())):
@@ -766,7 +770,7 @@ class HttpServer(object):
 			req['pc'] = pc		# The actual content
 			cseRequest.ct = ct	# The conten serialization type
 
-		cseRequest.originalRequest	= req									# finally store the oneM2M request object in the cseRequest
+		cseRequest.originalRequest	= req	# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request
 		try:
