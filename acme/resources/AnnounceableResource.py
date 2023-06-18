@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Tuple
 
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
@@ -18,6 +18,8 @@ from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
 from .Resource import Resource
+
+_announcedTo = Constants.attrAnnouncedTo
 
 class AnnounceableResource(Resource):
 
@@ -30,7 +32,10 @@ class AnnounceableResource(Resource):
 					   readOnly:Optional[bool] = False, 
 					   rn:Optional[str] = None) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
+		
+		self._addToInternalAttributes(_announcedTo) # add announcedTo to internal attributes
 		self._origAA = None	# hold original announceableAttributes when doing an update
+		self.setAttribute(_announcedTo, [], overwrite = False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -253,3 +258,20 @@ class AnnounceableResource(Resource):
 
 		return mandatory + optional
 
+
+	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
+		"""	Return the internal *announcedTo* list attribute of a resource.
+
+			Return:
+				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
+		"""
+		return self[_announcedTo]
+	
+
+	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
+		"""	Set the internal *announcedTo* list attribute of a resource.
+
+			Args:
+				announcedTo: The list of *announcedTo* tupples (csi, remote resource ID) to assign to a resource.
+		"""
+		self.setAttribute(_announcedTo, announcedTo)

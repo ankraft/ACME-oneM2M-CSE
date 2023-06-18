@@ -35,7 +35,6 @@ _srn = Constants.attrSrn
 _node = Constants.attrNode
 _createdInternallyRI = Constants.attrCreatedInternallyRI
 _imported = Constants.attrImported
-_announcedTo = Constants.attrAnnouncedTo
 _isInstantiated = Constants.attrIsInstantiated
 _originator = Constants.attrOriginator
 _modified = Constants.attrModified
@@ -65,7 +64,7 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
-							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi]
+							_isInstantiated, _originator, _modified, _remoteID, _rvi]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
@@ -158,7 +157,6 @@ class Resource(object):
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 		self.setAttribute(_rtype, self.tpe)
-		self.setAttribute(_announcedTo, [], overwrite = False)
 
 
 	# Default encoding implementation. Overwrite in subclasses
@@ -1016,25 +1014,6 @@ class Resource(object):
 		"""
 		self.setAttribute(_originator, originator)
 	
-
-
-	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
-		"""	Return the internal *announcedTo* list attribute of a resource.
-
-			Return:
-				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
-		"""
-		return self[_announcedTo]
-	
-
-	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
-		"""	Set the internal *announcedTo* list attribute of a resource.
-
-			Args:
-				announcedTo: The list of *announcedTo* tupples (csi, remote resource ID) to assign to a resource.
-		"""
-		self.setAttribute(_announcedTo, announcedTo)
-
 	
 	def setResourceName(self, rn:str) -> None:
 		"""	Set the resource name. 
