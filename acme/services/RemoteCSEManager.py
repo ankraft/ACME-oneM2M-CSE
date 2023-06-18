@@ -330,7 +330,11 @@ class RemoteCSEManager(object):
 		
 		# Update the registrar CSE with the new values
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
-			self._updateCSRonRegistrarCSE()
+			try:
+				self._updateCSRonRegistrarCSE()
+			except NOT_FOUND as e:
+				L.isDebug and L.logDebug(e.dbg)
+				return
 		
 		# Send another event when the own CSE has fully registered
 		CSE.event.registeredToRemoteCSE(registreeCSR)	# type: ignore
@@ -544,7 +548,7 @@ class RemoteCSEManager(object):
 
 		# add local CSR and ACP's
 		try:
-			CSE.dispatcher.createLocalResource(csrResource, localCSE)
+			CSE.dispatcher.createLocalResource(csrResource, localCSE, originator = remoteCSE.csi)
 			CSE.registration.handleCSRRegistration(csrResource, remoteCSE.csi)
 		except ResponseException as e:
 			raise BAD_REQUEST(f'cannot register CSR: {e.dbg}')
