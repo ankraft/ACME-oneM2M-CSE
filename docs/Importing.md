@@ -1,6 +1,6 @@
 [← README](../README.md) 
 
-# Importing
+# CSE Startup, Importing Resources and Other Settings
 
 [Resources](#resources)  
 [Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
@@ -37,14 +37,13 @@ The following example shows the initial *CSEBase* resource definition from the *
 (import-raw 
 	(get-config "cse.originator") 
 	{"m2m:cb": {
-		"ri":   "${ (get-config \"cse.resourceID\") }",
-		"rn":   "${ (get-config \"cse.resourceName\") }",
-		"csi":  "${ (get-config \"cse.cseID\") }",
+		"ri":   "${ get-config \"cse.resourceID\" }",
+		"rn":   "${ get-config \"cse.resourceName\" }",
+		"csi":  "${ get-config \"cse.cseID\" }",
 		"rr":   true,
 		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${ (get-config \"cse.cseID\") }/acpCreateACPs" ],
-		"poa":  [ "${ (get-config \"http.address\") }" ]
-		;; "poa":  [ "mqtt://mqtt" ]
+		"acpi": [ "${ get-config \"cse.cseID\" }/acpCreateACPs" ],
+		"poa":  [ "${ get-config \"http.address\" }" ]
 	}})
 ```
 

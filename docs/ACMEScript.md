@@ -169,13 +169,13 @@ S-expressions that are enclosed in the pattern `${..}` in a string or JSON struc
 In the following example the s-expression `(+ 1 2)` is evaluated when the string is processed:
 
 ```lisp
-(print "1 + 2 = ${ (+ 1 2) }")  ;; Prints "1 + 2 = 3"
+(print "1 + 2 = ${ + 1 2 }")  ;; Prints "1 + 2 = 3"
 ```
 
 Evaluation can be locally disabled by escaping the opening part:
 
 ```lisp
- (print "1 + 2 = \\${ (+ 1 2) }")  ;; Prints "1 + 2 = [(+ 1 2)]"
+ (print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = [(+ 1 2)]"
 ```
 
 Evaluation can also be disabled and enabled by using the [evaluate-inline](ACMEScript-functions.md#evaluate-inline) function.

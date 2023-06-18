@@ -7,14 +7,14 @@
 - [CSE] Add support for CoAP, and WebSocket bindings
 - [CSE] Improve ACP resource and conditions 
 - [CSE] Improve notifications (like pendingNotifications etc)
+- [CSE] Further add functionalities to the text UI
 - 
 
 ## Far Future
-- [CSE] Add Support for actions
 - [CSE] Add Support for primitive profiles
 - [CSE] Support more resource types when necessary
 - [CSE] Support for Process Management
-- [CSE] Support for TimeBeacon
+- [CSE] Improve Support for TimeSyncBeacon
 
 
 ## Sometimes

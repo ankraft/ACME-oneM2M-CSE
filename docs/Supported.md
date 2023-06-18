@@ -30,7 +30,7 @@ The ACME CSE supports the following oneM2M resource types:
 
 | Resource Type                   | Supported | Remarks & Limitations                                                                                                                                                                                             |
 |:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Access Control Policy (ACP)     |  &check;  |                                                                                                                                                                                                                   |
+| Access Control Policy (ACP)     |  &check;  | Attribute-based access control is yet not supported                                                                                                                                                               |
 | Action (ACTR)                   |  &check;  | No support for the `input` attribute.                                                                                                                                                                             |
 | Application Entity (AE)         |  &check;  |                                                                                                                                                                                                                   |
 | Container (CNT)                 |  &check;  |                                                                                                                                                                                                                   |
@@ -88,6 +88,7 @@ The following table presents the supported management object specifications.
 | Partial Retrieve              |  &check;  | Support for partial retrieve of individual resource attributes.                           |
 | Remote CSE registration       |  &check;  |                                                                                           |
 | Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
+| Request forwarding            |  &check;  | Forwarding requests from one CSE to another.                                              |
 | Request parameter validations |  &check;  |                                                                                           |
 | Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.  |
 | Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                  |
@@ -98,19 +99,18 @@ The following table presents the supported management object specifications.
 | Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                      |
 | Time Synchronization          |  &check;  |                                                                                           |
 | TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
-| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                              |
 
 
 ### Additional CSE Features
 | Functionality         | Remark                                                                                                    |
 |:----------------------|:----------------------------------------------------------------------------------------------------------|
-| Web UI                |                                                                                                           |
 | HTTP CORS			    | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                 | 
 | Text Console          | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
 | Test UI               | Text-based UI to inspect resources and requests, configurations, stats, and more                          |
 | Testing: Upper Tester | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
 | Request Recording     | Record requests to and from the CSE to learn and debug requests over Mca and Mcc.                         |
 | Script Interpreter    | Lisp-based scripting support to extent functionalities, implement simple AEs, prototypes, test, ...       |
+| Web UI                |                                                                                                           |
 
 
 ### Experimental CSE Features
