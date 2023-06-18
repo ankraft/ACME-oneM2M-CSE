@@ -807,7 +807,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			# 	setLastNotification(post_data.decode('utf-8'))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
-		setLastNotificationArguments(parse_qs(urlparse(self.path).query))	# make a dict out of the query arguments
+		# make a dict out of the query arguments 
+		setLastNotificationArguments(parse_qs(urlparse(self.path).query))	# type:ignore[arg-type] 
 
 		# Verbose output
 		if verboseRequests and self.headers.get(C.hfOrigin):
