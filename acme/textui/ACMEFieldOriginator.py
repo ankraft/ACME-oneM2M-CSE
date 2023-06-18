@@ -18,7 +18,7 @@ from textual import on
 idFieldOriginator = 'field-originator'
 
 def validateOriginator(value: str) -> bool:
-	return value is not None and len(value) > 1 and value.startswith('C')
+	return value is not None and len(value) > 1 and value.startswith(('C', 'S', '/'))
 
 class ACMEFieldOriginator(Container):
 	
@@ -61,7 +61,7 @@ class ACMEFieldOriginator(Container):
 		self.input = Input(str(self.suggestions), 
 						   placeholder = 'Originator',
 						   suggester = SuggestFromList(self.suggestions),
-						   validators = Function(validateOriginator, 'Wrong originator format: Must start with "C" and have length > 1.'),
+						   validators = Function(validateOriginator, 'Wrong originator format: Must start with "C", "S" or "/", and have length > 1.'),
 						   id = 'field-originator-input')
 		self.msg = Label('jjj', id = 'field-originator-pretty')
 
