@@ -227,8 +227,13 @@ class AnnouncementManager(object):
 				# This is done by discovering a CSEBaseAnnc resource with a link to our CSE.
 
 				# Get the remote CSE's resource ID
-				if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
-					raise BAD_REQUEST(f'cannot find CSR for csi: {csi}')
+
+				# We don't know the name of the remote CSEBase, so we have to use the CSI + '-'
+				to = f'{csi}/-'
+				
+				# Here, it is actually important NOT to get the next CSE, but to check whether
+				# there is a remots CSEBase with that ID. Only THEN we can send the request and
+				# continue with the announcement.
 
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 															   to = to,
@@ -303,27 +308,30 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		if targetID:
-			csrID = targetID if isSPRelative(targetID) else f'{csi}/{targetID}'
+			to = targetID if isSPRelative(targetID) else f'{csi}/{targetID}'
 		else:
-			if (to := CSE.remote.getRemoteCSEBaseAddress(csi)) is None:
-				raise BAD_REQUEST(f'cannot find CSR for csi: {csi}')
-			csrID = to
+			# We don't know the name of the remote CSEBase, so we have to use the CSI + '-'
+			to = f'{csi}/-'
 
 		L.isDebug and L.logDebug(f'creating announced resource at: {csrID}')
 		try:
 			res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
-						  								   to = csrID, 
+						  								   to = to, 
 														   originator = CSE.cseCsi, 
 														   ty = tyAnnc, 
 														   pc = dct)
 											   )[0].result	# there should be at least one result
+			if res.rsc == ResponseStatusCode.CREATED:
+				resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
+				L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
+				resource.dbUpdate()
+			else:
+				L.isWarn and L.logWarn(f'Announced resource could not be created at: {csrID} ({res.rsc})')
+
 		except ResponseException as e:
 			e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
 			raise e
 
-		resource.addAnnouncementToResource(csi, findXPath(cast(JSON, res.data), '{*}/ri'))
-		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
-		resource.dbUpdate()
 
 
 	#
