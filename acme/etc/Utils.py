@@ -178,15 +178,32 @@ def localResourceID(ri:str) -> Optional[str]:
 			If the ID targets a local resource then the CSE-relative form of the resource ID
 			is returned, or None otherwise.
 	"""
+	
+	def _checkDash(ri:str) -> str:
+		"""	Handle the special case of '-'.
+
+			Args:
+				ri: The resource ID to check
+			
+			Return:
+				The resource ID with the special case handled.
+		"""
+		if ri.startswith('-/'):
+			return f'{CSE.cseRn}{ri[1:]}'
+		if ri == '-':
+			return CSE.cseRn
+		return ri
+
+
 	if ri == CSE.cseCsi:
 		return CSE.cseRn
 	if isAbsolute(ri):
 		if ri.startswith(CSE.cseAbsoluteSlash):
-			return ri[len(CSE.cseAbsoluteSlash):]
+			return _checkDash(ri[len(CSE.cseAbsoluteSlash):])
 		return None
 	elif isSPRelative(ri):
 		if ri.startswith(CSE.cseCsiSlash):
-			return ri[len(CSE.cseCsiSlash):]
+			return _checkDash(ri[len(CSE.cseCsiSlash):])
 		return None
 	return ri
 	
