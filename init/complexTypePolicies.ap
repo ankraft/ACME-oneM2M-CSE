@@ -1142,8 +1142,9 @@
 			"ctype": "m2m:eventNotificationCriteria",
 			"lname": "operationMonitor",
 			"ns": "m2m",
-			"type": "m2m:operationMonitor",
-			"car": "01L"
+			"type": "list",
+			"etype": "m2m:operationMonitor",
+			"car": "01"
 		}
 	],
 	"net": [
