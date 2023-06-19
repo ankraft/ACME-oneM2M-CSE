@@ -313,7 +313,7 @@ class AnnouncementManager(object):
 			# We don't know the name of the remote CSEBase, so we have to use the CSI + '-'
 			to = f'{csi}/-'
 
-		L.isDebug and L.logDebug(f'creating announced resource at: {csrID}')
+		L.isDebug and L.logDebug(f'creating announced resource at: {to}')
 		try:
 			res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
 						  								   to = to, 
@@ -326,7 +326,7 @@ class AnnouncementManager(object):
 				L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 				resource.dbUpdate()
 			else:
-				L.isWarn and L.logWarn(f'Announced resource could not be created at: {csrID} ({res.rsc})')
+				L.isWarn and L.logWarn(f'Announced resource could not be created at: {to} ({res.rsc})')
 
 		except ResponseException as e:
 			e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')

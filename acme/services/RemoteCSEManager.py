@@ -770,6 +770,9 @@ class RemoteCSEManager(object):
 													   to = id, 
 													   originator = originator)
 											)[0].result		# there should be at least one result
+		if res.rsc != ResponseStatusCode.OK:
+			raise exceptionFromRSC(res.rsc)
+		
 		# assign the remote ID to the resource's dictionary
 		_, tpe, _ = pureResource(cast(JSON, res.data))
 		setXPath(cast(JSON, res.data), f'{tpe}/{Constants.attrRemoteID}', id)
