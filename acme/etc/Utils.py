@@ -375,7 +375,7 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
 			ri = ids[0]
 		else:									# structured
-			if ids[0] == '-':					# replace placeholder "-"
+			if ids[0] == '-':					# replace placeholder "-". Always convert in CSE-relative
 				ids[0] = CSE.cseRn
 			srn = '/'.join(ids)
 	
@@ -393,7 +393,9 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		# 	# ri = ids[0]
 		# 	return None, None, None, 'ID too short'
 		#elif idsLen > 1:
-		if ids[1] == '-':						# replace placeholder "-"
+		
+		# replace placeholder "-", convert in CSE-relative when the target is this CSE
+		if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
 			ids[1] = CSE.cseRn
 		if ids[1] == CSE.cseRn:					# structured
 			srn = '/'.join(ids[1:])				# remove the csi part
@@ -418,7 +420,9 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		# if idsLen == 2:
 		# 	ri = ids[1]
 		# elif idsLen > 2:
-		if ids[2] == '-':						# replace placeholder "-"
+
+		# replace placeholder "-", convert in absolute when the target is this CSE
+		if ids[2] == '-' and ids[1] == CSE.cseCsiSlashLess:	
 			ids[2] = CSE.cseRn
 		if ids[2] == CSE.cseRn:					# structured
 			srn = '/'.join(ids[2:])
