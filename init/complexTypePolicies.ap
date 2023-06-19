@@ -1143,7 +1143,7 @@
 			"lname": "operationMonitor",
 			"ns": "m2m",
 			"type": "list",
-			"etype": "m2m:operationMonitor",
+			"ltype": "m2m:operationMonitor",
 			"car": "01"
 		}
 	],
