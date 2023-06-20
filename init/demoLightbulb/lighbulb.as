@@ -51,11 +51,8 @@
                       "gold1"))
       ("off"     "grey27")
       (otherwise "red")))
-       
-   ;; Different output for TUI and console
-   (if (runs-in-tui)			
-     ((clear-console)
-      (print "
+   (clear-console)
+   (print "
 
 
        [${(color)}]   ..---..    [/${(color)}]
@@ -68,10 +65,7 @@
        [${(color)}]    |===|     [/${(color)}]
        [${(color)}]    |===|     [/${(color)}]
        [${(color)}]     \_/      [/${(color)}]
-"))
-
-     ;; For the console, just print the status
-     ((print "The lightbulb status is ${state}")))))
+")))
 
 
 ;; Check if the notification contains the content attribute and print the lightbulb state if it does
