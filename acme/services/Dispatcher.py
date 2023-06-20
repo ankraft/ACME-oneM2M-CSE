@@ -201,7 +201,10 @@ class Dispatcher(object):
 
 					# Retrieve and check the linked-to request
 					linkedResource = self.retrieveResource(lnk, originator, request)
-					linkedResource.willBeRetrieved(originator, request)	# resource instance may be changed in this call
+					
+					# Normally, we would do some checks here and call "willBeRetrieved", 
+					# but we don't have to, because the resource is already checked during the
+					# retrieveResource call by the hosting CSE
 
 					# partial retrieve?
 					return self._partialFromResource(linkedResource, attributeList)
