@@ -195,8 +195,12 @@ class TS(AnnounceableResource):
 			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
 				raise BAD_REQUEST(L.logDebug('peid must be <= pei/2'))
 		elif self.pei is not None:	# pei is an int
-			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
-		
+			if self.mdt is not None:
+				if self.mdt <= self.pei/2:
+					self.setAttribute('peid', int(self.mdt/2), False)	# CSE internal policy
+				elif self.mdt > self.pei/2:
+					self.setAttribute('peid', int(self.pei / 2), False)  # CSE internal policy
+
 		# Checks for MDT
 		if self.mdd: # present and True
 			# Add mdlt and mdc, if not already added ( No overwrite !)
