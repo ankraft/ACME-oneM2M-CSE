@@ -1581,6 +1581,26 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
 #
+#	Test defaults
+#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBnoNCTwrongNETFail(self) -> None:
+		""" CREATE <sub> with no NCT and conflicting NCT -> Fail """
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.resourceUpdate, NET.blockingUpdate ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+					'nse': True
+				}}
+		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+	
+
+#
 #	Misc tests
 #
 
@@ -1730,6 +1750,9 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestSUB('test_updateSUBNSETrueAgain'))
 	addTest(suite, TestSUB('test_updateSUBcountBatchNotifications'))
 	addTest(suite, TestSUB('test_updateSUBDeleteNSE'))
+
+	# Test defaults
+	addTest(suite, TestSUB('test_createSUBnoNCTwrongNETFail'))
 
 	# Misc tests
 	addTest(suite, TestSUB('test_deleteNuAttributeFail'))
