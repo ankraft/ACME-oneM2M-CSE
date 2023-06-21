@@ -515,8 +515,7 @@ class Configuration(object):
 		if Configuration._argsRemoteCSEEnabled is not None:		Configuration._configuration['cse.enableRemoteCSE'] = Configuration._argsRemoteCSEEnabled					# Override remote CSE enablement
 		if Configuration._argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = Configuration._argsRunAsHttps						# Override useTLS
 		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
-		if Configuration._argsTextUI is not None:				Configuration._configuration['cse.textui.startWithTUI'] = Configuration._argsTextUI
-		
+		if Configuration._argsTextUI is not None:				Configuration._configuration['textui.startWithTUI'] = Configuration._argsTextUI
 		if Configuration._argsHeadless is True:
 			Configuration._configuration['console.headless'] = True
 

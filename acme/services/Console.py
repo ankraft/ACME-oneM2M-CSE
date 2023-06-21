@@ -145,7 +145,6 @@ class Console(object):
 		'treeIncludeVirtualResources',
 		'confirmQuit',
 		'theme',
-		'startWithTUI',
 
 		'_eventKeyboard',
 		'_exitFromTUI',
