@@ -1246,7 +1246,7 @@ class ConsistencyStrategy(ACMEIntEnum):
 
 class NotificationContentType(ACMEIntEnum):
 	"""	Notification Content Types """
-	allAttributes						= 1
+	allAttributes			= 1
 	modifiedAttributes		= 2
 	ri 						= 3
 	triggerPayload			= 4
@@ -1269,6 +1269,14 @@ class NotificationEventType(ACMEIntEnum):
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
+		"""	Return True if the NotificationEventType is allowed for the NotificationContentType.
+
+			Args:
+				nct: the NotificationContentType
+			
+			Return:
+				True if the NotificationEventType is allowed for the NotificationContentType.
+		"""
 		if nct == NotificationContentType.allAttributes:
 			return self.value in [ NotificationEventType.resourceUpdate, 
 								   NotificationEventType.resourceDelete, 
@@ -1288,6 +1296,25 @@ class NotificationEventType(ACMEIntEnum):
 			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
 
+	def defaultNCT(self) -> NotificationContentType:
+		"""	Return the default NotificationContentType for this NotificationEventType.
+
+			Return:
+				NotificationContentType.
+		"""
+		return _defaultNCT.get(self)
+
+
+_defaultNCT = {
+	NotificationEventType.resourceUpdate:						NotificationContentType.allAttributes,
+	NotificationEventType.resourceDelete:						NotificationContentType.allAttributes,
+	NotificationEventType.createDirectChild:					NotificationContentType.allAttributes,
+	NotificationEventType.deleteDirectChild:					NotificationContentType.allAttributes,
+	NotificationEventType.retrieveCNTNoChild:					NotificationContentType.allAttributes,
+	NotificationEventType.triggerReceivedForAE:					NotificationContentType.triggerPayload,
+	NotificationEventType.blockingUpdate:						NotificationContentType.modifiedAttributes,
+	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
+}
 
 ##############################################################################
 #

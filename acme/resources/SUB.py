@@ -254,6 +254,11 @@ class SUB(Resource):
 						raise BAD_REQUEST(L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
 					CSE.validator.validateAttribute('num', md.get('num'))
 					CSE.validator.validateAttribute('dur', md.get('dur'))
+		
+		# if nct is not provided, check that net contains only event types that have the same default nct
+		if nct is None and net is not None:
+			if len(set([ NotificationEventType(t).defaultNCT() for t in net ])) > 1:
+				raise BAD_REQUEST(L.logDebug(f'nct is not provided, and enc/net contains multiple NotificationEventTypes with different default NotificationContentType'))
 
 		# check other attributes
 		self._normalizeURIAttribute('nfu')
