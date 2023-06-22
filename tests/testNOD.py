@@ -46,6 +46,9 @@ class TestNOD(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
+		DELETE(f'{cseURL}/Ctest', ORIGINATOR)
+		DELETE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+
 		testCaseEnd('TearDown TestNOD')
 
 
@@ -236,6 +239,47 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createNODDoubleHael(self) -> None:
+		""" Create <NOD> with a pre-set hael list, add <AE> with nl attribute"""
+		self.assertIsNotNone(TestNOD.cse)
+		dct = 	{ 'm2m:nod' : { 
+					'rn' 	: f'{nodRN}2',
+					'ni'	: nodeID,
+					'hael'	: [ 'Ctest']
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:nod/hael'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:nod/hael')), 1, r)
+		_nlri = findXPath(r, 'm2m:nod/ri')
+
+		# Register AE
+		dct2 = 	{ 'm2m:ae' : {
+			'rn'	: 'Ctest', 
+			'api'	: APPID,
+		 	'rr'	: False,
+		 	'srv'	: [ RELEASEVERSION ],
+		 	'nl' 	: _nlri
+		}}
+		r2, rsc = CREATE(cseURL, 'Ctest', T.AE, dct2)
+		self.assertEqual(rsc, RC.CREATED)
+		_aeri = findXPath(r2, 'm2m:ae/ri')
+
+		# Check NOD
+		nod, rsc = RETRIEVE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(nod, 'm2m:nod/hael'))
+		self.assertEqual(len(findXPath(nod, 'm2m:nod/hael')), 1)
+		self.assertIn(_aeri, findXPath(nod, 'm2m:nod/hael'))
+
+		# Delete AE and NOD
+		_, rsc = DELETE(f'{cseURL}/Ctest', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+		_, rsc = DELETE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 			
@@ -251,6 +295,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestNOD('test_deleteNOD2'))
 	addTest(suite, TestNOD('test_deleteNOD'))
 	addTest(suite, TestNOD('test_createNODEmptyHael'))
+	addTest(suite, TestNOD('test_createNODDoubleHael'))
 	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

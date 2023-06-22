@@ -125,7 +125,7 @@ class AE(AnnounceableResource):
 					if not (hael := node.hael):
 						node['hael'] = [ ri ]
 					else:
-						if isinstance(hael, list):
+						if isinstance(hael, list) and ri not in hael:
 							hael.append(ri)
 							node['hael'] = hael
 					node.dbUpdate(True)
