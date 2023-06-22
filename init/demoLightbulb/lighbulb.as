@@ -51,7 +51,11 @@
                       "gold1"))
       ("off"     "grey27")
       (otherwise "red")))
-   (clear-console)
+
+   ;; Clear the console if the script is executed in the TUI
+   (if (runs-in-tui)
+     (clear-console))
+	 
    (print "
 
 
