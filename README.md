@@ -64,9 +64,7 @@ See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/12
 
 ## Acknowledgements
 
-Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code.
-
-Please see [Acknowledgements](docs/Contributing.md#acknowledgements).
+Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](docs/Contributing.md#acknowledgements) for the list of contributors.
 
 
 ## License
