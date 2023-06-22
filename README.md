@@ -19,7 +19,7 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 - [Configuration](docs/Configuration.md)
 - [Running](docs/Running.md)
 	- [Console](docs/Console.md)
-	- [Text UI](docs/TextUI.md) TODO
+	- [Text UI](docs/TextUI.md)
 	- [Docker](docs/Docker.md)
 	- [Notification Server](tools/notificationServer/README.md)
     - [Web & Rest UI](docs/WebUI.md)
@@ -60,7 +60,7 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### What to expect in the next release
 
-See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/110) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/120) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 
