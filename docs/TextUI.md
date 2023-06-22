@@ -10,7 +10,7 @@ The text UI started automatically in some [configuration modes](Running.md#first
 
 You can also start the text UI directly by providing the `--textui` command line argument when starting the CSE.
 
-![](images/textui.png)
+![](images/textUI.png)
 
 ## UI Sections
 The different sections of the text UI are described below. They can be selected by going to the corresponding tab.
