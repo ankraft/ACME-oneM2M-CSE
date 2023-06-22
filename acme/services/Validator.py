@@ -24,6 +24,7 @@ from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
+from ..resources.BAT import BatteryStatus
 from ..services.Logging import Logging as L
 
 
@@ -54,8 +55,10 @@ complexTypeAttributes:dict[str, list[str]] = {}
 # TODO doc
 
 
+# TODO make this more generic!
 _valueNameMappings = {
 	'acop': lambda v: '+'.join([ p.name for p in Permission.fromBitfield(int(v))]),
+	'bts': lambda v: BatteryStatus(int(v)).name,
 	'chty': lambda v: ResourceTypes.fullname(int(v)),
 	'cst': lambda v: CSEType(int(v)).name,
 	'nct': lambda v: NotificationContentType(int(v)).name,

@@ -8,9 +8,21 @@
 #
 """ [Battery] (BAT) management object specialization """
 from typing import Optional
+from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
+
+class BatteryStatus(ACMEIntEnum):
+	NORMAL = 1
+	CHARGING =  2
+	CHARGING_COMPLETE = 3
+	DAMAGED = 4
+	LOW_BATTERY = 5
+	NOT_INSTALLED = 6
+	UNKNOWN = 7
+	
+	
 class BAT(MgmtObj):
 	""" [battery] (bat) management object specialization """
 
