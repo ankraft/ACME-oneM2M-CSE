@@ -8,6 +8,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.12.0] - 2023-06-24
+
+### Added
+- [CSE] Added support for &lt;action> and &lt;dependency> resource types
+- [CSE] Added recording of received and sent requests to support request debugging.
+- [CSE] Improved validation of complex types and mandatory attributes.
+- [CSE] Added support for partial RETRIEVE (ie. only selected attributes are returned in a RETRIEVE request).
+- [CSE] Cleaned up and removed some obsolete code.
+- [CSE] Added *[console].headless* configuration (in addition to the --headless command line argument).
+- [CSE] Allow "5" as a valid release version.
+- [CSE] Added support for referencing members of a &lt;Group> in &lt;ACP>'s *acor* attribute. Thanks to @samuelbles07 for the contribution.
+- [CSE] Added support for disabling sending the optional &lt;subscription>'s verification request.
+- [DATABASE] Added *TinyDBBufferedStorage* to greatly improve buffered writes to disk.
+- [DATABASE] Added *TinyDBBetterTable* that supports only string document keys. This improves overall update performance of TinyDB.
+- [TESTS] Added http keep-alive to tests.
+- [LOGGING] Allow to exclude log messages from external libraries and components.
+- [TUI] Added text UI.
+- [TUI] Added views for resources, requests, registrations, configurations, statistics, and scripts.
+- [SCRIPTS] Added *category* and *tool* meta-tags for scripts to allow for better categorization and filtering in the text UI.
+- [SCRIPTS] Added Text UI meta tags: @tuiAutoRun, @tuiExecuteButton, @tuiTool.
+- [SCRIPTS] Added script for oneM2M introductional links.
+
+### Experimental
+- [CSE] Added experimental *subi* attribute support to &lt;CNT> only. Other resource types may follow.
+- [CSE] Added first experimental support for advanced queries via the `aq` request parameter. This is probably subject to change.
+- [CSE] Added experimental *eventEvaluationMode* support to &lt;CRS>.
+
+### Changed
+- [SCRIPTS] Changed the script interpreter from a batch-based to a lisp-based language.  
+**NOTE, that scripts in the old format are not supported anymore and need to be converted manually.**
+- [CSE] Lots of small runtime optimizations.
+- [CSE] Moved current configuration settings for *cse.operation* to *cse.operation.jobs.
+- [CSE] Refactored the internal error and failure handling to using exceptions (Python's EAFP).
+- [CSE] Refactored and simplified the internal request sending procedures.
+- [CSE] Renamed configuration setting "cse.csi" (to "cse.cseID"), "cse.ri" (to "cse.resourceID"), "cse.ri" (to "cse.resourceName").
+- [CSE] Moved resource, console, http, db, scripting configuration settings to their own namespaces in the configuration files.
+- [DATABASE] Big speed improvements for most "search" and "get" operations by adding primary keys to the DB schemas.  
+**This is a non-backward compatible change due to the DB schema changes.**
+- [CONSOLE] Re-implemented some console services to make them reusable for the text UI.
+
+### Fixed
+- [CSE] *expirationTimestamp* is corrected if it is later than its parent resource.
+- [HTTP] Fixed a bug when sending a CREATE request and the *Content-Type* header contains spaces before the *ty* argument.  
+Thanks to KyeongHo!  
+
+### Removed
+- [HTTP] Removed support for http path mappings to oneM2M requests.
+
 
 ## [0.11.3] - 2023-05-17
 

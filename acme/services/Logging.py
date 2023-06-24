@@ -57,7 +57,7 @@ tableRowColorDark		= 'grey15'
 
 terminalColorLight		= '#137E6D'
 terminalColorErrorLight	= '#FF073A'
-tableRowColorLight		= 'grey93'
+tableRowColorLight		= 'grey89'
 
 
 class LogLevel(ACMEIntEnum):
@@ -78,6 +78,29 @@ class LogLevel(ACMEIntEnum):
 			LogLevel.ERROR:		LogLevel.OFF,
 			LogLevel.OFF:		LogLevel.DEBUG,
 		}[self]
+
+
+class LogFilter(logging.Filter):
+	"""	Filter for the logging system. It removes all log messages that
+		originate from the given sources.
+	"""
+
+	def __init__(self, sources:tuple[str, ...]) -> None:
+		"""	Initialize the filter with the given sources. If the sources
+			are empty, no filtering is done.
+			
+			Args:
+				sources: A tuple of sources to filter out.
+		"""
+		super().__init__()
+		self.sources = sources
+
+
+	def filter(self, record:LogRecord) -> bool:
+		# filter out unwanted debug messages's loggings
+		if not self.sources:
+			return True
+		return not record.name.startswith(self.sources)
 
 
 class Logging:
@@ -102,11 +125,16 @@ class Logging:
 	queue:Queue						= None
 	enableQueue						= False		# Can be used to enable/disable the logging queue 
 	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
+	filterSources:tuple[str, ...]	= ()		# List of log sources that will be removed while processing the log messages
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
 	_handlers:List[Any] 			= None
 	_logWorker:BackgroundWorker		= None
+	_basenames:dict[str, str]		= {}
+
+	_eventLogError					= None
+	_eventLogWarning				= None
 
 	terminalStyle:Style				= Style(color = terminalColorDark)
 	terminalStyleRGBTupple			= (0,0,0)
@@ -127,13 +155,17 @@ class Logging:
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
 		Logging.queueSize				= Configuration.get('logging.queueSize')
+		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
 
-		Logging._configureColors(Configuration.get('cse.console.theme'))
+		Logging._configureColors(Configuration.get('console.theme'))
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
+
+		# Add logging filter
+		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
 
 		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
@@ -157,6 +189,7 @@ class Logging:
 														 backupCount = Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
+			logfp.addFilter(LogFilter(Logging.filterSources))
 			Logging.logger.addHandler(logfp) 
 			Logging._handlers.append(logfp)
 
@@ -174,6 +207,10 @@ class Logging:
 		if not CSE.event.hasHandler(CSE.event.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
 			CSE.event.addHandler(CSE.event.configUpdate, Logging.configUpdate)			# type: ignore
 
+		# Optimized eventing
+		Logging._eventLogError = CSE.event.logError	# type: ignore
+		Logging._eventLogWarning = CSE.event.logWarning 	# type: ignore
+
 
 	@staticmethod
 	def _configureColors(theme:str) -> None:
@@ -184,7 +221,9 @@ class Logging:
 
 
 	@staticmethod
-	def configUpdate(key:Optional[str] = None, value:Optional[Any] = None) -> None:
+	def configUpdate(name:str, 
+					 key:Optional[str] = None, 
+					 value:Optional[Any] = None) -> None:
 		"""	Handle configuration update.
 		"""
 		restartNeeded = False
@@ -230,7 +269,13 @@ class Logging:
 	@staticmethod
 	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, thread:threading.Thread) -> None:
 		if isinstance(msg, str):
-			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}\x04{caller.lineno}\x04{thread.name:<10.10}\x04{str(msg)}')
+			
+			# optimize determining the source file's basename
+			if not (basename := Logging._basenames.get(caller.filename)):
+				basename = os.path.basename(caller.filename)
+				Logging._basenames[caller.filename] = basename
+
+			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{thread.name:<10.10}\x04{msg}')
 		else:
 			try:
 				richInspect(msg, private = True, docs = False, dunder = False)
@@ -297,7 +342,8 @@ class Logging:
 		"""
 		from ..services import CSE
 		# raise logError event
-		CSE.event.logError()	# type: ignore
+		Logging._eventLogError()
+
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
 			return Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset = stackOffset)
@@ -320,7 +366,7 @@ class Logging:
 		"""
 		from ..services import CSE as CSE
 		# raise logWarning event
-		CSE.event.logWarning() 	# type: ignore
+		Logging._eventLogWarning()
 		return Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
 
 
@@ -409,7 +455,7 @@ class Logging:
 		if nlb:	# Empty line before
 			Logging._console.print()
 		if isinstance(msg, str):
-			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end)
+			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end, highlight = False)
 		elif isinstance(msg, dict):
 			Logging._console.print(msg, style = style, end = end)
 		elif isinstance(msg, (Tree, Table, Text)):
@@ -526,6 +572,16 @@ class Logging:
 	
 
 	@staticmethod
+	def setEnableScreenLogging(value:bool) -> None:
+		"""	Set the `enableScreenLogging` attribute via a method call.
+		
+			Args:
+				value: New value for `enableScreenLogging`.
+		"""
+		Logging.enableScreenLogging = value
+
+
+	@staticmethod
 	def setLogLevel(logLevel:LogLevel) -> None:
 		"""	Set a new log level to the logging system.
 
@@ -563,6 +619,11 @@ class Logging:
 
 class ACMERichLogHandler(RichHandler):
 
+	__slots__ = (
+		'_fromtimestamp',
+	)
+
+
 	def __init__(self, level: int = logging.NOTSET) -> None:
 
 		# Add own styles to the default styles and create a new theme for the console
@@ -573,9 +634,10 @@ class ACMERichLogHandler(RichHandler):
 			'repr.id'				: Style(color = 'light_sky_blue1'),
 			'repr.url'				: Style(color = 'sandy_brown', underline = True),
 			'repr.start'			: Style(color = 'orange1'),
-			'logging.level.debug'	: Style(color = 'grey50'),
-			'logging.level.warning'	: Style(color = 'orange3'),
-			'logging.level.error'	: Style(color = 'red', reverse = True),
+			'DEBUG'					: Style(color = 'grey50'),
+			'WARNING'				: Style(color = 'orange3'),
+			'ERROR'					: Style(color = 'red', reverse = True),
+			'INFO'					: Style(color = 'blue'),
 			'logging.console'		: Style(color = 'spring_green2'),
 		}
 		_styles = DEFAULT_STYLES.copy()
@@ -623,12 +685,15 @@ class ACMERichLogHandler(RichHandler):
 			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID
 
 		]
+
+		# small optimized calls
+		self._fromtimestamp = datetime.datetime.fromtimestamp
+
 		
 	def emit(self, record:LogRecord) -> None:
 		"""	Invoked by logging. """
-		if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
-			return
-		if record.name == 'werkzeug':	# filter out werkzeug's loggings
+		# if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
+		if not Logging.enableScreenLogging:
 			return
 		#path = Path(record.pathname).name
 		
@@ -647,10 +712,11 @@ class ACMERichLogHandler(RichHandler):
 			self._log_render(
 				self.console,
 				[ self.highlighter(Text(f'{threadID} - {message}')) ],
-				log_time	= datetime.datetime.fromtimestamp(record.created),
+				log_time	= self._fromtimestamp(record.created),
 				# time_format	= None if self.formatter is None else self.formatter.datefmt,
 				time_format	= self.formatter.datefmt,
-				level		= Text(f'{record.levelname:<7}', style=f'logging.level.{record.levelname.lower()}'),
+				#level		= Text(f'{record.levelname:<7}', style=f'logging.level.{record.levelname.lower()}'),
+				level		= Text(f'{record.levelname:<7}', style=record.levelname),
 				path		= path,
 				line_no		= lineno,
 			)

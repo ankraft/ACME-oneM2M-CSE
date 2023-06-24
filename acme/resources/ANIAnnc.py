@@ -6,6 +6,9 @@
 #
 #	ANI : Announceable variant
 #
+
+""" [AreaNwkInfo] announced (ANIA) `MgmtObjAnnc` specialization. """
+
 from __future__ import annotations
 from typing import Optional
 
@@ -13,6 +16,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 class ANIAnnc(MgmtObjAnnc):
+	""" [AreaNwkInfo] announced (ANIA) `MgmtObjAnnc` specialization. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

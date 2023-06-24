@@ -7,6 +7,8 @@
 #	ANDI : Announceable variant
 #
 
+""" [AreaNwkDeviceInfo] announced (ANDIA) `MgmtObjAnnc` specialization. """
+
 from __future__ import annotations
 from typing import Optional
 
@@ -16,6 +18,7 @@ from ..resources.MgmtObjAnnc import MgmtObjAnnc
 # TODO resourceMappingRules, announceSyncType, owner
 
 class ANDIAnnc(MgmtObjAnnc):
+	""" [AreaNwkDeviceInfo] announced (ANDIA) `MgmtObjAnnc` specialization. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.9.0
+// oneM2M Release: 4.12.0
 // Domain:         org.onem2m.health
 [
 
@@ -19,10 +19,9 @@
             "cod:bat", 
             "cod:binSh", 
             "hed:suDCf"
+            ,"hed:dBPMrInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceBloodPressureMonitorAnnc
     {
@@ -44,6 +43,19 @@
             "hed:suDCf", 
             "hed:suDCfAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceBloodPressureMonitorInst
+    {
+        "type"      : "hed:dBPMrInst",
+        "lname"     : "deviceBloodPressureMonitorInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitorInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceGlucosemeter
@@ -61,10 +73,9 @@
         "children"  : [
             "cod:glucr", 
             "cod:bat"
+            ,"hed:devGrInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceGlucosemeterAnnc
     {
@@ -84,6 +95,19 @@
             "cod:bat", 
             "cod:batAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceGlucosemeterInst
+    {
+        "type"      : "hed:devGrInst",
+        "lname"     : "deviceGlucosemeterInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeterInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceHeartRateMonitor
@@ -101,10 +125,9 @@
         "children"  : [
             "cod:pulsr", 
             "cod:bat"
+            ,"hed:dHRMrInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceHeartRateMonitorAnnc
     {
@@ -124,6 +147,19 @@
             "cod:bat", 
             "cod:batAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceHeartRateMonitorInst
+    {
+        "type"      : "hed:dHRMrInst",
+        "lname"     : "deviceHeartRateMonitorInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitorInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: devicePulseOximeter
@@ -142,10 +178,9 @@
             "cod:pulsr", 
             "cod:oximr", 
             "cod:bat"
+            ,"hed:dePOrInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: devicePulseOximeterAnnc
     {
@@ -167,6 +202,19 @@
             "cod:bat", 
             "cod:batAnnc"
         ]
+    },
+    // DeviceClass Instance: devicePulseOximeterInst
+    {
+        "type"      : "hed:dePOrInst",
+        "lname"     : "devicePulseOximeterInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeterInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceWeightScaleAndBodyCompositionAnalyser
@@ -186,10 +234,9 @@
             "cod:boCAr", 
             "cod:bEIAs", 
             "cod:bat"
+            ,"hed:dWSABInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceWeightScaleAndBodyCompositionAnalyserAnnc
     {
@@ -212,6 +259,19 @@
             "cod:bEIAsAnnc", 
             "cod:bat", 
             "cod:batAnnc"
+        ]
+    },
+    // DeviceClass Instance: deviceWeightScaleAndBodyCompositionAnalyserInst
+    {
+        "type"      : "hed:dWSABInst",
+        "lname"     : "deviceWeightScaleAndBodyCompositionAnalyserInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyserInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ]
     }
 

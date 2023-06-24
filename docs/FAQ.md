@@ -5,8 +5,9 @@
 ## Network
 
 1. **How can I access the CSE from remote/another computer on my network?**  
-   By default the CSE binds to the *localhost* interface. To make it accessible from a remote machine you need to bind the CSE's http server to another network interface, or address. This can be done in the *[server.http]* and *[client.mqtt]* sections of the configuration file. 
-   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.
+   By default the CSE binds to the *localhost/loopback* interface, meaning it **will not** be able to receive requests from remote machines. To make it accessible from a remote machine you need to bind the CSE's http server or MQTT client to another network interface, or address. This can be done in the *[http]* and *[mqtt]* sections of the configuration file. 
+   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.  
+   The reason for this default setting is security: making the CSE accessible from remote machines should be a conscious decision and not the default.
 
 
 ## Database
@@ -34,9 +35,9 @@
    original hosting web server. This could be useful, for example, to allow a web UI that is hosted on 
    one web server to access oneM2M resources that are hosted on external CSE(s).  
    ACME's http binding implementation supports CORS. This feature is disabled by default and can be 
-   enabled by setting the configuration setting *[server.http.cors].enable* to *true*. CORS access is granted
+   enabled by setting the configuration setting *[http.cors].enable* to *true*. CORS access is granted
    by default to all HTTP resources. This can be limited by specifying the resource paths in the 
-   configuration setting *[server.http.cors].resources*.  
+   configuration setting *[http.cors].resources*.  
    **Note**: Most modern web browsers don't allow unsecured (http) access via CORS. This means that the
    CSE must be configured to run the http server with TLS support enabled (https).
 
@@ -60,7 +61,7 @@
 
 ## CSE Registrations
 
-1. **Why does my CSE cannot register to another CSE or announce resources?**  
+1. **Why does my CSE not register to another CSE or announce resources?**  
    One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's
    CSE-ID (**without a leading slash!**) to this configuration section to allow access for this originator.  
    
@@ -79,14 +80,23 @@
 	[cse.registration]
 	allowedCSROriginators=id-in
 	```
-
   
 
 ## Performance
 
 1. **How to increase the performance of ACME CSE?**  
-   The log output provides useful information to analyze the flows of requests inside the CSE. However, it reduces the performance of the CSE a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file, or by pressing *L* on the console to change the logging level to the desired value.  
-   Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means that all  data will be lost when the CSE terminates!
+   The log output provides useful information to analyze the flows of requests inside the CSE. However, it reduces the performance of the CSE by a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file, or by pressing *L* on the console to change the logging level to the desired value.  
+   Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means that all data will be lost when the CSE terminates!  
+   Lastly, the ACME CSE can be run with Python 3.11, which is way faster than previous versions of Python.
+
+1. **Increase database performance with *disk* mode**  
+   When running the CSE with the database mode set to *disk* (ie. store the database on disk rather then in memory) one can improve the performance by increasing the time before data is actually written to disk. The default is 1 second, but it can be increased as necessary.  
+   Be aware, though, that the risk of losing data increases with higher delays in case of a crash or when the CSE shutdown is interrupted.
+
+	```ini
+	[database]
+	writeDelay=10
+	```
 
 ## Web UI
 

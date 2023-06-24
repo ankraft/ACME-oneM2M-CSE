@@ -62,9 +62,9 @@ checkExpirationsInterval=60
 ; Default: blocking
 flexBlockingPreference=blocking
 ; A comma-separated list of supported release versions. This list can contain a single or multiple values.
-; Default: 2a,3,4
-supportedReleaseVersions=2a,3,4
-; The release version indicator for requests. Allowed values: 2a,3,4.
+; Default: 2a,3,4,5
+supportedReleaseVersions=2a,3,4,5
+; The release version indicator for requests. Allowed values: 2a,3,4,5.
 ; Default: 4
 releaseVersion=4
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
@@ -73,6 +73,12 @@ defaultSerialization=json
 ; Enable or disable asynchronous notification for normal runtime subscription notifications.
 ; Default: true
 asyncSubscriptionNotifications=true
+; Enable or disable verification requests when creating a new subscription.
+; Default: true
+enableSubscriptionVerificationRequests=true
+; Indicate whether the optional "to" and "from" parameters shall be sent in responses.
+; Default: true
+sendToFromInResponses=true
 
 
 ;
@@ -92,25 +98,38 @@ fullAccessAdmin=True
 ;	Settings for CSE operation
 ;
 
-[cse.operation]
+[cse.operation.jobs]
 ; Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).
 ; Default: 3.0
-jobBalanceTarget=3.0
+balanceTarget=3.0
 ; Thread Pool Management: Number of get / create requests for a new thread before performing a balance check.
 ; A latency of 0 disables the thread pool balancing.
 ; Default: 1000
-jobBalanceLatency=1000
+balanceLatency=1000
 ; Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.
 ; Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.
 ; Default: 2.0
-jobBalanceReduceFactor=2.0
+balanceReduceFactor=2.0
+
+
+;
+;	Settings for CSE requests recording
+;
+
+[cse.operation.requests]
+; Enable request recording.
+; Default: False
+enable=false
+; Max number requests to record. Oldest requests will be deleted when this threshold is reached.
+; Default: 200
+size=200
 
 
 ;
 ;	HTTP Server settings
 ;
 
-[server.http]
+[http]
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
@@ -124,7 +143,7 @@ root=/
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
 ; passwords, and is a security risk.
-; See also the [cse.console].hideResources setting to hide resources
+; See also the [console].hideResources setting to hide resources
 ; from the tree.
 ; Default: False
 enableStructureEndpoint=false
@@ -147,7 +166,7 @@ timeout=${cse:requestExpirationDelta}
 ;	HTTP security settings
 ;
 
-[server.http.security]
+[http.security]
 ; Enable TLS for communications.
 ; See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 ; Default: False
@@ -165,7 +184,7 @@ caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
 caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
 
 
-[server.http.cors]
+[http.cors]
 ; Enable CORS support for the HTTP binding.
 ; Default: false
 enable=false
@@ -178,7 +197,7 @@ resources=/*
 ;	MQTT client settings
 ;
 
-[client.mqtt]
+[mqtt]
 ; Enable the MQTT binding.
 ; Default: false
 enable=false
@@ -206,13 +225,13 @@ timeout=${cse:requestExpirationDelta}
 ;	MQTT security settings
 ;
 
-[client.mqtt.security]
+[mqtt.security]
 ; The username for MQTT broker authentication if required by the broker.
-; Default: None
-username=username
+; Default: empty string
+username=
 ; The password for MQTT broker authentication if required by the broker.
-; Default: None
-password=password
+; Default: empty string
+password=
 ; Enable TLS for communications with the MQTT broker.
 ; Default: False
 useTLS=False
@@ -227,8 +246,6 @@ caCertificateFile=${basic.config:dataDirectory}/certs/m2mqtt_ca.crt
 ; This is a comma-separated list. Wildcards (* and ?) are supported.
 ; Default: empty list
 allowedCredentialIDs=
-
-
 
 
 ;
@@ -246,7 +263,10 @@ cacheSize=0
 ; Reset the databases on startup. See also command line argument --db-reset
 ; Default: False
 resetOnStartup=false
-
+; Delay in seconds before new data is written to disk to avoid trashing.
+; Must be full seconds.
+; Default: 1 seconds
+writeDelay=1
 
 ;
 ;	Settings for self-registrations of some resources
@@ -315,6 +335,8 @@ enableBindingsLogging=False
 ; A queue size of 0 means disabling the queue.
 ; Default: 5000 entries
 queueSize=5000
+; List of component names to exclude from logging
+filter=werkzeug,markdown_it,asyncio
 
 
 ;
@@ -323,11 +345,15 @@ queueSize=5000
 
 [cse.announcements]
 ; Wait n seconds between tries to to announce resources to registered remote CSE.
-; Default: 10
+; Default: 10 seconds
 checkInterval=10
 ; Allow resource announcements to the own hosting CSE.
 ; Default: True
 allowAnnouncementsToHostingCSE=True
+; Specify a short delay in seconds before start announcing resources after a CSE
+; has registered at the CSE.
+; Default: 3 seconds
+delayAfterRegistration=3
 
 
 ;
@@ -345,18 +371,32 @@ writeInterval=60
 ;	Resource defaults: ACP
 ;
 
-[cse.resource.acp]
-; Default permission when creating an ACP resource. Default: 63
-permission=63
-; Default selfPermission when creating an ACP resource. Default: 51
+[resource.acp]
+; Default selfPermission when internally creating an ACP resource.
+; Default: 51
 selfPermission=51
+
+
+;
+;	Resource defaults: Action
+;
+
+[resource.actr]
+; Default for the evalControlParam attribute, when the evalMode is "continuous".
+; The unit is number.
+; Default: 1000
+ecpContinuous=1000
+; Default for the evalControlParam attribute, when the evalMode is "periodic".
+; The unit is milliseconds.
+; Default: 10000 ms = 10 s
+ecpPeriodic=10000
 
 
 ;
 ;	Resource defaults: Container
 ;
 
-[cse.resource.cnt]
+[resource.cnt]
 ; Enable/disable the default limits. Default: False
 enableLimits=False
 ; Default for maxNrOfInstances. Default: 10
@@ -369,7 +409,7 @@ mbs=10000
 ;	Resource defaults: TimeSeries
 ;
 
-[cse.resource.ts]
+[resource.ts]
 ; Enable/disable the default limits. Default: False
 enableLimits=False
 ; Default for maxNrOfInstances. Default: 10
@@ -381,16 +421,16 @@ mdn=10
 
 
 ;
-;	Resurce defaults: TimeSyncBeacon
+;	Resource defaults: TimeSyncBeacon
 ;
 
-[cse.resource.tsb]
+[resource.tsb]
 ; Default timeSyncBeacon interval. This is the duration between to beacon notifications sent by the CSE
 ; to an AE or CSE. The format must be an ISO8601 duration.
 ; Default: PT1H = 1 hour
 bcni=PT1H
-; Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications
-; is sent to an AE or CSE.
+; Default timeSyncBeacon difference threshold. When this time threshold is reached then a beacon notifications
+; is sent to an AE or CSE target.
 ; Default: 10.0 seconds
 bcnt=10.0
 
@@ -399,18 +439,16 @@ bcnt=10.0
 ;	Resource defaults: Request
 ;
 
-[cse.resource.req]
-; A <request> resource's minimum expiration time in seconds. Must be >0. Default: 60 
-minimumExpirationTime=60
-; A <request> resource's maximum expiration time in seconds. Must be >0. Default: 180
-maximumExpirationTime=180
+[resource.req]
+; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
+expirationTime=60
 
 
 ;
 ;	Resource defaults: Subscription
 ;
 
-[cse.resource.sub]
+[resource.sub]
 ; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
 batchNotifyDuration=60
 
@@ -419,9 +457,7 @@ batchNotifyDuration=60
 ;	Web UI settings
 ;
 
-[cse.webui]
-; Enable the web UI. Default: True
-enable=true
+[webui]
 ; Root path of the web UI. Default: /webui
 root=/webui
 
@@ -430,7 +466,7 @@ root=/webui
 ;   Console settings
 ;
 
-[cse.console]
+[console]
 ; Interval for continuously refreshing information displays. Must be > 0.0. 
 ; Default: 2.0 seconds.
 refreshInterval=2.0
@@ -451,43 +487,39 @@ treeIncludeVirtualResources=False
 confirmQuit=False
 ; Set the color theme for the console. Allowed values are "dark" and "light".
 ; Default: dark
-theme=dark
+theme=${basic.config:consoleTheme}
+; Run the CSE in headless mode, i.e. without a console and without screen logging.
+; Default: False
+headless=False
 
+
+;
+;   Text UI settings
+;
+[textui]
+; Start directly with the TUI
+startWithTUI=True
+; Set the color theme for the text UI. Allowed values are "dark" and "light".
+; Default: same as [console].theme
+theme=${console:theme}
+; Interval for refreshing various views in the text UI.
+; Default: 2.0
+refreshInterval=2.0
 
 ;
 ;	Scripting settings
 ;
-
-[cse.scripting]
+[scripting]
 ; Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory.
 ; Must be a comma-separated list.
 ; Default: not set
 scriptDirectories=
-; Enable debug output during script execution, such as the current executed line.
+; Enable verbose bug output during script execution, such as the current executed line.
 ; Default: False
-verbose=false
+verbose=False
 ; Set the interval to check for new files in the script (init) directory.
 ; 0 means disable monitoring.
 ; Default: 2.0 seconds
 fileMonitoringInterval=2.0
-
-
-;
-;	ID Mappings
-;	This section defines mappings for URI paths to IDs in the CSE. Mappings
-;	can be used to provide a more convenient way to access the CSE's resources.
-;	Each line specifies a mapping, where the key specifies a new path,
-;	and the value represents the mapping to a request (including optional arguments).
-;	The http server redirects (307) a request to one of the new paths to the
-;	respective request mapping.
-;	Please note, that the "root" path in [server.http] prefixes both the new
-;	path and the mapping.
-;
-
-[server.http.mappings]
-/access/v1/devices=/cse-mn?ty=14&fu=1&fo=2&rcn=8
-/access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
-/access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
-
 
 

@@ -41,6 +41,7 @@ const types = {
 	30 : "TimeSeriesInstance",
 	48 : "CrossResourceSubscription",
     58 : "FlexContainerInstance",
+	65 : "Action",
 
     10001 : "ACPAnnc",
     10002 : "AEAnnc",
@@ -55,7 +56,8 @@ const types = {
     10028 : "FlexContainerAnnc",
 	10029 : "TimeSeriesAnnc",
 	10030 : "TimeSeriesInstanceAnnc",
-    10058 : "FlexContainerInstanceAnnc" 
+    10058 : "FlexContainerInstanceAnnc",
+    10065 : "ActionAnnc"
 
 }
 
@@ -77,6 +79,7 @@ const shortTypes = {
 	30 : "TSI",
 	48 : "CRS",
     58 : "FCI",
+    65 : "ACTR",
 
     10001 : "ACPAnnc",
     10002 : "AEAnnc",
@@ -91,7 +94,8 @@ const shortTypes = {
     10028 : "FCNTAnnc",
 	10029 : "TSAnnc",
 	10030 : "TSIAnnc",
-    10058 : "FCIAnnc" 
+    10058 : "FCIAnnc",
+    10065 : "ACTRAnnc" 
 }
 
 const mgdTypes = {

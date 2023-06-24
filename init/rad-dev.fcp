@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.9.0
+// oneM2M Release: 4.12.0
 // Domain:         org.onem2m.railway
 [
 
@@ -27,10 +27,9 @@
             "cod:pusBn", 
             "cod:runSe", 
             "cod:sigSh"
+            ,"rad:dHPTTInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceHandheldPTTTerminalAnnc
     {
@@ -68,6 +67,19 @@
             "cod:sigSh", 
             "cod:sigShAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceHandheldPTTTerminalInst
+    {
+        "type"      : "rad:dHPTTInst",
+        "lname"     : "deviceHandheldPTTTerminalInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceTrainborneTerminal
@@ -95,10 +107,9 @@
             "cod:sigSh", 
             "rad:baTMe", 
             "cod:conny"
+            ,"rad:deTTlInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceTrainborneTerminalAnnc
     {
@@ -138,6 +149,19 @@
             "cod:conny", 
             "cod:connyAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceTrainborneTerminalInst
+    {
+        "type"      : "rad:deTTlInst",
+        "lname"     : "deviceTrainborneTerminalInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceCardRechargingMachine
@@ -168,10 +192,9 @@
             "cod:conny", 
             "cod:runSe", 
             "cod:lock"
+            ,"rad:dCRMeInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceCardRechargingMachineAnnc
     {
@@ -217,6 +240,19 @@
             "cod:lock", 
             "cod:lockAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceCardRechargingMachineInst
+    {
+        "type"      : "rad:dCRMeInst",
+        "lname"     : "deviceCardRechargingMachineInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachineInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceSmartGate
@@ -246,10 +282,9 @@
             "cod:colSn", 
             "cod:brigs", 
             "cod:croBr"
+            ,"rad:deSGeInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceSmartGateAnnc
     {
@@ -293,6 +328,19 @@
             "cod:croBr", 
             "cod:croBrAnnc"
         ]
+    },
+    // DeviceClass Instance: deviceSmartGateInst
+    {
+        "type"      : "rad:deSGeInst",
+        "lname"     : "deviceSmartGateInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartGateInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
     }, 
 
     // DeviceClass: deviceSmartScreenDoor
@@ -319,10 +367,9 @@
             "cod:dirPl", 
             "cod:colSn", 
             "cod:brigs"
+            ,"rad:dSSDrInst"
         ]
     },        
-
-
 
     // DeviceClass Announced: deviceSmartScreenDoorAnnc
     {
@@ -359,6 +406,19 @@
             "cod:colSnAnnc", 
             "cod:brigs", 
             "cod:brigsAnnc"
+        ]
+    },
+    // DeviceClass Instance: deviceSmartScreenDoorInst
+    {
+        "type"      : "rad:dSSDrInst",
+        "lname"     : "deviceSmartScreenDoorInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoorInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ]
     }
 

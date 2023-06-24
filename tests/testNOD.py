@@ -46,6 +46,9 @@ class TestNOD(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
+		DELETE(f'{cseURL}/Ctest', ORIGINATOR)
+		DELETE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+
 		testCaseEnd('TearDown TestNOD')
 
 
@@ -69,7 +72,7 @@ class TestNOD(unittest.TestCase):
 					'ni'	: nodeID
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ri'))
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
 
@@ -85,7 +88,7 @@ class TestNOD(unittest.TestCase):
 	def test_retrieveNODWithWrongOriginator(self) -> None:
 		""" Retrieve <NOD> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(nodURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -110,7 +113,7 @@ class TestNOD(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/lbl'))
@@ -126,7 +129,7 @@ class TestNOD(unittest.TestCase):
 					'unknown' : 'unknown'
 				}}
 		_, rsc = UPDATE(nodURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -140,7 +143,7 @@ class TestNOD(unittest.TestCase):
 		 	'nl' 	: TestNOD.nodeRI
 		}}
 		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/ri'))
@@ -158,7 +161,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteAEForNOD(self) -> None:
 		""" Delete <AE> for <NOD> & test link """
 		_, rsc = DELETE(aeURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 		nod, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
@@ -177,7 +180,7 @@ class TestNOD(unittest.TestCase):
 			'ni'	: 'second'
 		}}
 		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
 		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)
 		node2RI = findXPath(nod2, 'm2m:nod/ri')
@@ -187,7 +190,7 @@ class TestNOD(unittest.TestCase):
 			'nl' : node2RI
 		}}
 		r, rsc = UPDATE(aeURL, TestNOD.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/nl'), node2RI)
 
@@ -208,7 +211,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteNOD2(self) -> None:
 		""" Delete second <NOD> """
 		_, rsc = DELETE(nod2URL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 		# Check AE
 		ae, rsc = RETRIEVE(aeURL, ORIGINATOR)
@@ -220,7 +223,7 @@ class TestNOD(unittest.TestCase):
 	def test_deleteNOD(self) -> None:
 		""" Delete <NOD> """
 		_, rsc = DELETE(nodURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -233,7 +236,48 @@ class TestNOD(unittest.TestCase):
 					'hael'	: []
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createNODDoubleHael(self) -> None:
+		""" Create <NOD> with a pre-set hael list, add <AE> with nl attribute"""
+		self.assertIsNotNone(TestNOD.cse)
+		dct = 	{ 'm2m:nod' : { 
+					'rn' 	: f'{nodRN}2',
+					'ni'	: nodeID,
+					'hael'	: [ 'Ctest']
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:nod/hael'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:nod/hael')), 1, r)
+		_nlri = findXPath(r, 'm2m:nod/ri')
+
+		# Register AE
+		dct2 = 	{ 'm2m:ae' : {
+			'rn'	: 'Ctest', 
+			'api'	: APPID,
+		 	'rr'	: False,
+		 	'srv'	: [ RELEASEVERSION ],
+		 	'nl' 	: _nlri
+		}}
+		r2, rsc = CREATE(cseURL, 'Ctest', T.AE, dct2)
+		self.assertEqual(rsc, RC.CREATED)
+		_aeri = findXPath(r2, 'm2m:ae/ri')
+
+		# Check NOD
+		nod, rsc = RETRIEVE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(nod, 'm2m:nod/hael'))
+		self.assertEqual(len(findXPath(nod, 'm2m:nod/hael')), 1)
+		self.assertIn(_aeri, findXPath(nod, 'm2m:nod/hael'))
+
+		# Delete AE and NOD
+		_, rsc = DELETE(f'{cseURL}/Ctest', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+		_, rsc = DELETE(f'{cseURL}/{nodRN}2', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -251,6 +295,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestNOD('test_deleteNOD2'))
 	addTest(suite, TestNOD('test_deleteNOD'))
 	addTest(suite, TestNOD('test_createNODEmptyHael'))
+	addTest(suite, TestNOD('test_createNODDoubleHael'))
 	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

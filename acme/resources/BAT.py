@@ -8,17 +8,21 @@
 #
 """ [Battery] (BAT) management object specialization """
 from typing import Optional
+from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.MgmtObj import MgmtObj
 
 
-defaultBatteryLevel  = 100
-"""	Constant - Default battery level """
-
-defaultBatteryStatus = 7 # unknown
-"""	Constant - Default battery status (UNKNOWN) """
-
-
+class BatteryStatus(ACMEIntEnum):
+	NORMAL = 1
+	CHARGING =  2
+	CHARGING_COMPLETE = 3
+	DAMAGED = 4
+	LOW_BATTERY = 5
+	NOT_INSTALLED = 6
+	UNKNOWN = 7
+	
+	
 class BAT(MgmtObj):
 	""" [battery] (bat) management object specialization """
 
@@ -60,7 +64,4 @@ class BAT(MgmtObj):
 					   pi:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.BAT, create = create)
-
-		self.setAttribute('btl', defaultBatteryLevel, overwrite = False)
-		self.setAttribute('bts', defaultBatteryStatus, overwrite = False)
 

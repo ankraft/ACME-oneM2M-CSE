@@ -4,13 +4,15 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" Application Entity (AE) resource type """
+""" Application Entity (AE) resource type. """
 
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, ResponseStatusCode, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.Utils import uniqueAEI
+from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -82,33 +84,26 @@ class AE(AnnounceableResource):
 		self.setAttribute('rr', False, overwrite = False)
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
 		# Inherited
-		if not (res := super().childWillBeAdded(childResource, originator)).status:
-			return res
+		super().childWillBeAdded(childResource, originator)
 
 		# Perform checks for <PCH>	
 		if childResource.ty == ResourceTypes.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
-				L.logDebug(dbg := f'Originator must be the parent <AE>')
-				return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator must be the parent <AE>'))
 
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
-				return Result.errorResult(dbg = 'Only one PCH per AE is allowed')
-
-		return Result.successResult()
+				raise BAD_REQUEST('only one PCH per AE is allowed')
 
 
 	def validate(self, originator:Optional[str] = None,
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
-
+		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')
 
 		# Update the nl attribute in the hosting node (similar to csebase) in case 
@@ -123,42 +118,40 @@ class AE(AnnounceableResource):
 				# Remove from old node first
 				if _nl_:
 					self._removeAEfromNOD(_nl_)
-				self[Resource._node] = nl
+				self[Constants.attrNode] = nl
 
 				# Add to new node
-				if node := CSE.dispatcher.retrieveResource(nl).resource:	# new node
+				if node := CSE.dispatcher.retrieveResource(nl):	# new node
 					if not (hael := node.hael):
 						node['hael'] = [ ri ]
 					else:
-						if isinstance(hael, list):
+						if isinstance(hael, list) and ri not in hael:
 							hael.append(ri)
 							node['hael'] = hael
-					node.dbUpdate()
-			self[Resource._node] = nl
+					node.dbUpdate(True)
+			self[Constants.attrNode] = nl
 		
 		# check csz attribute
 		if csz := self.csz:
 			for c in csz:
 				if c not in ContentSerializationType.supportedContentSerializations():
-					return Result.errorResult(dbg  = 'unsupported content serialization: {c}')
+					raise BAD_REQUEST('unsupported content serialization: {c}')
 		
 		# check api attribute
 		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char
-			return Result.errorResult(dbg = 'missing or empty attribute: "api"')
+			raise BAD_REQUEST('missing or empty attribute: "api"')
 		if api.startswith('N'):
 			pass # simple format
 		elif api.startswith('R'):
 			if len(api.split('.')) < 3:
-				return Result.errorResult(dbg = 'wrong format for registered ID in attribute "api": to few elements')
+				raise BAD_REQUEST('wrong format for registered ID in attribute "api": to few elements')
 
 		# api must normally begin with a lower-case "r", but it is allowed for release 2a and 3
 		elif api.startswith('r'):
 			if (rvi := self.getRVI()) is not None and rvi not in ['2a', '3']:
-				return Result.errorResult(dbg = L.logWarn('lower case "r" is only allowed for release versions "2a" and "3"'))
+				raise BAD_REQUEST(L.logWarn('lower case "r" is only allowed for release versions "2a" and "3"'))
 		else:
-			return Result.errorResult(dbg = L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
-
-		return Result.successResult()
+			raise BAD_REQUEST(L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
 
 
 	def deactivate(self, originator:str) -> None:
@@ -182,13 +175,12 @@ class AE(AnnounceableResource):
 				nodeRi: The hosting node's resource ID.
 		"""
 		ri = self.ri
-		if node := CSE.dispatcher.retrieveResource(nodeRi).resource:
+		if node := CSE.dispatcher.retrieveResource(nodeRi):
 			if (hael := node.hael) and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:
 					node.delAttribute('hael')
 				else:
 					node['hael'] = hael
-				node.dbUpdate()
-
+				node.dbUpdate(True)
 

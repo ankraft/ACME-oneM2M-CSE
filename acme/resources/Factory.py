@@ -11,18 +11,21 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
-from ..etc.Types import ResponseStatusCode
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import Result, JSON
-from ..etc import Utils
+from ..etc.Utils import pureResource
+from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 
 
+from ..resources.Resource import Resource
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
-from ..resources.ACTR import ACTR				# TODO ANNC
+from ..resources.ACTR import ACTR
+from ..resources.ACTRAnnc import ACTRAnnc
 from ..resources.AE import AE
 from ..resources.AEAnnc import AEAnnc
 from ..resources.CIN import CIN
@@ -36,6 +39,8 @@ from ..resources.CSEBaseAnnc import CSEBaseAnnc
 from ..resources.CRS import CRS
 from ..resources.CSR import CSR
 from ..resources.CSRAnnc import CSRAnnc
+from ..resources.DEPR import DEPR
+from ..resources.DEPRAnnc import DEPRAnnc
 from ..resources.FCI import FCI
 from ..resources.FCNT import FCNT
 from ..resources.FCNTAnnc import FCNTAnnc
@@ -90,14 +95,12 @@ from ..resources.SWRAnnc import SWRAnnc
 from ..resources.WIFIC import WIFIC
 from ..resources.WIFICAnnc import WIFICAnnc
 
-from ..resources.Resource import Resource
-
 
 # Adding factory callbacks to regular resource type details
 addResourceFactoryCallback(ResourceTypes.ACP, 			ACP,			lambda dct, tpe, pi, create : ACP(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.ACPAnnc,		ACPAnnc,		lambda dct, tpe, pi, create : ACPAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.ACTR, 			ACTR,			lambda dct, tpe, pi, create : ACTR(dct, pi = pi, create = create)) 
-# TODO ACTRAnnc
+addResourceFactoryCallback(ResourceTypes.ACTRAnnc, 		ACTRAnnc,		lambda dct, tpe, pi, create : ACTRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.AE, 			AE,				lambda dct, tpe, pi, create : AE(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.AEAnnc,		AEAnnc,			lambda dct, tpe, pi, create : AEAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.CIN, 			CIN,			lambda dct, tpe, pi, create : CIN(dct, pi = pi, create = create)) 
@@ -111,6 +114,8 @@ addResourceFactoryCallback(ResourceTypes.CSEBaseAnnc,	CSEBaseAnnc,	lambda dct, t
 addResourceFactoryCallback(ResourceTypes.CRS,			CRS,			lambda dct, tpe, pi, create : CRS(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.CSR,			CSR,			lambda dct, tpe, pi, create : CSR(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.CSRAnnc,		CSRAnnc,		lambda dct, tpe, pi, create : CSRAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.DEPR,			DEPR,			lambda dct, tpe, pi, create : DEPR(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.DEPRAnnc,		DEPRAnnc,		lambda dct, tpe, pi, create : DEPRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCI,			FCI,			lambda dct, tpe, pi, create : FCI(dct, pi = pi, fcntType = tpe, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNT,			FCNT,			lambda dct, tpe, pi, create : FCNT(dct, pi = pi, fcntType = tpe, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNTAnnc,		FCNTAnnc,		lambda dct, tpe, pi, create : FCNTAnnc(dct, pi = pi, create = create)) 
@@ -177,7 +182,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 					 pi:Optional[str] = None, 
 					 ty:Optional[ResourceTypes] = None, 
 					 create:Optional[bool] = False, 
-					 isImported:Optional[bool] = False) -> Result:
+					 isImported:Optional[bool] = False) -> Resource:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
@@ -189,34 +194,35 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			ty: The resource type of the resource that shall be created.
 			create: The resource will be newly created.
 			isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
+
 		Return:
 			`Result` object with the *resource* attribute set to the created resource object.
 
 	"""
-	resDict, tpe, _attr = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+	resDict, tpe, _attr = pureResource(resDict)	# remove optional "m2m:xxx" level
 	
 	# Check resouce type name (tpe), especially in FCT resources
 	if tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
-		return Result.errorResult(dbg = L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
+		raise BAD_REQUEST(L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
 
 	# Determine type
 	typ = ResourceTypes(resDict['ty']) if 'ty' in resDict else ty
 	if typ is None and (typ := ResourceTypes.fromTPE(tpe)) is None:
-		return Result.errorResult(dbg = L.logWarn(f'Cannot determine type for creating the resource: {tpe}'))
+		raise BAD_REQUEST(L.logWarn(f'Cannot determine type for creating the resource: {tpe}'))
 
 	if ty is not None:
 		if typ is not None and typ != ty:
-			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type ({typ}) mismatch'))
+			raise BAD_REQUEST(L.logWarn(f'Parameter type ({ty}) and resource type ({typ}) mismatch'))
 		if tpe is not None and ty.tpe() != tpe and ty not in _specResources:
-			return Result.errorResult(dbg = L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
+			raise BAD_REQUEST(L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# Check for Parent
 	if pi is None and typ != ResourceTypes.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
-		return Result.errorResult(dbg = L.logWarn(f'pi missing in resource: {tpe}'))
+		raise BAD_REQUEST(L.logWarn(f'pi missing in resource: {tpe}'))
 
 	# store the import status in the original resDict
 	if isImported:
-		resDict[Resource._imported] = True	# Indicate that this is an imported resource
+		resDict[Constants.attrImported] = True	# Indicate that this is an imported resource
 
 	# Determine a factory and call it
 	factory:FactoryCallableT = None
@@ -230,8 +236,8 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	else:
 		factory = typ.resourceFactory()
 	if factory:
-		return Result(status = True, rsc = ResponseStatusCode.OK, resource = factory(resDict, tpe, pi, create))
+		return cast(Resource, factory(resDict, tpe, pi, create))
 
-	return Result(status = True, rsc = ResponseStatusCode.OK, resource = Unknown(resDict, tpe, pi = pi, create = create))	# Capture-All resource
+	return  Unknown(resDict, tpe, pi = pi, create = create)	# Capture-All resource
 
 

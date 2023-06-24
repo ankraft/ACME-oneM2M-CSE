@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from typing import Callable, List, Dict, Any, Tuple, Optional
 from .TextTools import simpleMatch
-import random, sys, heapq, datetime, traceback, time
+import random, sys, heapq, traceback, time
+from datetime import datetime, timezone
 from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
 import logging
 
@@ -24,16 +25,38 @@ def _utcTime() -> float:
 		Return:
 			Float UTC-based timestamp
 	"""
-	return datetime.datetime.utcnow().timestamp()
+	return datetime.now(tz = timezone.utc).timestamp()
 
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
 	"""
 
+	__slots__ = (
+		'interval',
+		'runOnTime',
+		'runPastEvents',
+		'nextRunTime',
+		'callback',
+		'running',
+		'executing',
+		'name',
+		'startWithDelay',
+		'maxCount',
+		'numberOfRuns',
+		'dispose',
+		'finished',
+		'ignoreException',
+		'id',
+		'data',
+		'args',
+	)
+
 	# Holds a reference to an specific logging function.
 	# This must have the same signature as the `logging.log` method.
 	_logger:Callable[[int, str], None] = logging.log
+
+
 
 
 	def __init__(self,
@@ -258,6 +281,13 @@ class Job(Thread):
 		only destroyed when the pressure on the pool was low for a certain time.
 	"""
 
+	__slots__ = (
+		'pauseFlag',
+		'activeFlag',
+		'Callable',
+		'finished',
+	)
+
 	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
 
 	# Paused and running job lists
@@ -326,7 +356,7 @@ class Job(Thread):
 			if self in Job.runningJobs:
 				Job.runningJobs.remove(self)
 			Job.pausedJobs.append(self)
-		self.pauseFlag.clear() # Block the thread
+			self.pauseFlag.clear() # Block the thread
 		return self
 
 
@@ -341,7 +371,7 @@ class Job(Thread):
 			if self in Job.pausedJobs:
 				Job.pausedJobs.remove(self)
 			Job.runningJobs.append(self)
-		self.pauseFlag.set() # Stop blocking
+			self.pauseFlag.set() # Stop blocking
 		return self
 
 
@@ -431,9 +461,16 @@ class Job(Thread):
 
 
 class WorkerEntry(object):
-	timestamp:float = 0.0
-	workerID:int = None
-	workerName:str = None
+
+	__slots__ = (
+		'timestamp',
+		'workerID',
+		'workerName',
+	)
+
+	# timestamp:float = 0.0
+	# workerID:int = None
+	# workerName:str = None
 
 	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
 		self.timestamp = timestamp

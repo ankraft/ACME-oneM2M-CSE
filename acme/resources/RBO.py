@@ -13,9 +13,8 @@ from typing import Optional
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
-from ..etc import Utils
-
-# TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..helpers.TextTools import findXPath
 
 class RBO(MgmtObj):
 
@@ -67,23 +66,20 @@ class RBO(MgmtObj):
 	#
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
+					   parentResource:Optional[Resource] = None) -> None:
+		super().validate(originator, dct, parentResource)
 		self.setAttribute('rbo', False, overwrite = True)	# always set (back) to False
 		self.setAttribute('far', False, overwrite = True)	# always set (back) to False
-		return Result.successResult()
 
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		# Check for rbo & far updates 
-		rbo = Utils.findXPath(dct, '{*}/rbo')
-		far = Utils.findXPath(dct, '{*}/far')
+		rbo = findXPath(dct, '{*}/rbo')
+		far = findXPath(dct, '{*}/far')
 		if rbo and far:
-			return Result.errorResult(dbg = 'update both rbo and far to True is not allowed')
+			raise BAD_REQUEST('update both rbo and far to True is not allowed')
 
-		return super().update(dct, originator)
+		super().update(dct, originator, doValidateAttributes)

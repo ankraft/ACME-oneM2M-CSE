@@ -7,6 +7,8 @@
 #	Statistics Module
 #
 
+"""	Statistics Module for internal statistics.
+"""
 from __future__ import annotations
 from typing import Dict, Union, Optional
 
@@ -16,50 +18,97 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Types import CSEType, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.DateUtils import utcTime, toISO8601Date
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
+from ..resources.CSEBase import getCSE
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..services.Logging import Logging as L
 
 
 deletedResources	= 'rmRes'
+""" Attribute name for number of deleted resources in the storage. """
 createdResources	= 'crRes'
+""" Attribute name for number of created resources in the storage. """
 updatedResources	= 'upRes'
+""" Attribute name for number of updated resources in the storage. """
 expiredResources 	= 'exRes'
+""" Attribute name for number of expired resources in the storage. """
 httpRetrieves		= 'htRet'
+""" Attribute name for number of HTTP RETRIEVE requests. """
 httpCreates			= 'htCre'
+""" Attribute name for number of HTTP CREATE requests. """
 httpUpdates			= 'htUpd'
+""" Attribute name for number of HTTP UPDATE requests. """
 httpDeletes			= 'htDel'
+""" Attribute name for number of HTTP DELETE requests. """
 httpNotifies		= 'htNot'
+""" Attribute name for number of HTTP NOTIFY requests. """
 httpSendRetrieves	= 'htSRt'
+""" Attribute name for number of HTTP SEND RETRIEVE requests. """
 httpSendCreates		= 'htSCr'
+""" Attribute name for number of HTTP SEND CREATE requests. """
 httpSendUpdates		= 'htSUp'
+""" Attribute name for number of HTTP SEND UPDATE requests. """
 httpSendDeletes		= 'htSDl'
+""" Attribute name for number of HTTP SEND DELETE requests. """
 httpSendNotifies	= 'htSNo'
+""" Attribute name for number of HTTP SEND NOTIFY requests. """
 mqttRetrieves		= 'mqRet'
+""" Attribute name for number of MQTT RETRIEVE requests. """
 mqttCreates			= 'mqCre'
+""" Attribute name for number of MQTT CREATE requests. """
 mqttUpdates			= 'mqUpd'
+""" Attribute name for number of MQTT UPDATE requests. """
 mqttDeletes			= 'mqDel'
+""" Attribute name for number of MQTT DELETE requests. """
 mqttNotifies		= 'mqNot'
+""" Attribute name for number of MQTT NOTIFY requests. """
 mqttSendRetrieves	= 'mqSRt'
+""" Attribute name for number of MQTT SEND RETRIEVE requests. """
 mqttSendCreates		= 'mqSCr'
+""" Attribute name for number of MQTT SEND CREATE requests. """
 mqttSendUpdates		= 'mqSUp'
+""" Attribute name for number of MQTT SEND UPDATE requests. """
 mqttSendDeletes		= 'mqSDl'
+""" Attribute name for number of MQTT SEND DELETE requests. """
 mqttSendNotifies	= 'mqSNo'
+""" Attribute name for number of MQTT SEND NOTIFY requests. """
 notifications		= 'notif'
+""" Attribute name for number of notifications. """
 logErrors			= 'lgErr'
+""" Attribute name for number of log errors. """
 logWarnings			= 'lgWrn'
+""" Attribute name for number of log warnings. """
 cseStartUpTime		= 'cseSU'
+""" Attribute name for CSE startup time. """
 cseUpTime			= 'cseUT'
+""" Attribute name for CSE uptime. """
 resourceCount		= 'ctRes'
+""" Attribute name for number of resources in the storage. """
 
 # TODO  restartcount, 
 
 StatsT = Dict[str, Union[str, int, float]]
+""" Type for statistics records. """
 
 class Statistics(object):
+	"""	Statistics class. Handles all internal statistics.
+
+		Attributes:
+			statisticsEnabled:		Flag whether statistics are enabled.
+			statLock:				Internal lock for statistic handling.
+			stats:					Statistics records
+	"""
+
+	__slots__ = (
+		'statisticsEnabled',
+		'statLock',
+		'stats',
+	)
+	""" Slots of class attributes. """
+
 
 	def __init__(self) -> None:
 		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
@@ -78,34 +127,34 @@ class Statistics(object):
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			CSE.event.addHandler(CSE.event.createResource, lambda _: self._handleStatsEvent(createdResources)) 	# type: ignore
-			CSE.event.addHandler(CSE.event.updateResource, lambda _: self._handleStatsEvent(updatedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.deleteResource, lambda _: self._handleStatsEvent(deletedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.expireResource, lambda _: self._handleStatsEvent(expiredResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpRetrieve, lambda: self._handleStatsEvent(httpRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.httpCreate, lambda: self._handleStatsEvent(httpCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpUpdate, lambda: self._handleStatsEvent(httpUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpDelete, lambda: self._handleStatsEvent(httpDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpNotify, lambda: self._handleStatsEvent(httpNotifies))			# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendCreate, lambda: self._handleStatsEvent(httpSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda: self._handleStatsEvent(httpSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendDelete, lambda: self._handleStatsEvent(httpSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendNotify, lambda: self._handleStatsEvent(httpSendNotifies))	# type: ignore
-			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda: self._handleStatsEvent(mqttRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.mqttCreate, lambda: self._handleStatsEvent(mqttCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttUpdate, lambda: self._handleStatsEvent(mqttUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttDelete, lambda: self._handleStatsEvent(mqttDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttNotify, lambda: self._handleStatsEvent(mqttNotifies))			# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda: self._handleStatsEvent(mqttSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
-			CSE.event.addHandler(CSE.event.notification, lambda: self._handleStatsEvent(notifications))			# type: ignore
+			CSE.event.addHandler(CSE.event.createResource, lambda n, _: self._handleStatsEvent(createdResources)) 	# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, lambda n: self._handleStatsEvent(httpRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, lambda n: self._handleStatsEvent(httpDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda n: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendCreate, lambda n: self._handleStatsEvent(httpSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda n: self._handleStatsEvent(httpSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendDelete, lambda n: self._handleStatsEvent(httpSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda n: self._handleStatsEvent(mqttRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttCreate, lambda n: self._handleStatsEvent(mqttCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttUpdate, lambda n: self._handleStatsEvent(mqttUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttDelete, lambda n: self._handleStatsEvent(mqttDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda n: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda n: self._handleStatsEvent(mqttSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda n: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda n: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))			# type: ignore
 			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)									# type: ignore
-			CSE.event.addHandler(CSE.event.logError, lambda: self._handleStatsEvent(logErrors))					# type: ignore
-			CSE.event.addHandler(CSE.event.logWarning, lambda: self._handleStatsEvent(logWarnings))				# type: ignore
+			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))					# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))				# type: ignore
 
 			# Also do some internal handling
 			CSE.event.addHandler(CSE.event.cseReset, self.restart)												# type: ignore
@@ -115,6 +164,9 @@ class Statistics(object):
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the statistics service.
+
+			Return:
+				True if shutdown was successful, False otherwise.
 		"""
 		if self.statisticsEnabled:
 			# Stop the worker
@@ -128,16 +180,24 @@ class Statistics(object):
 		return True
 	
 	
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the statistics service.
+
+			Args:
+				name:	The name of the event that triggered the restart.
 		"""
 		self.purgeDBStatistics()
 		self.stats = self.setupStats()
-		self.handleCseStartup()
+		self.handleCseStartup(None)
 		L.isDebug and L.logDebug('Statistics restarted')
 
 
 	def setupStats(self) -> StatsT:
+		"""	Setup the statistics dictionary.
+
+			Return:
+				The statistics dictionary.
+		"""
 		if (stats := self.retrieveDBStatistics()):
 			return stats
 		return {
@@ -174,13 +234,18 @@ class Statistics(object):
 
 
 	# Return stats
-	def getStats(self) -> StatsT:			
+	def getStats(self) -> StatsT:
+		"""	Return the current statistics.
+
+			Return:
+				The statistics dictionary.
+		"""
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
 		# s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(DateUtils.utcTime() - int(s[cseStartUpTime]))))
-		s[cseStartUpTime] = DateUtils.toISO8601Date(float(s[cseStartUpTime]))
+		s[cseUpTime] = str(datetime.timedelta(seconds=int(utcTime() - int(s[cseStartUpTime]))))
+		s[cseStartUpTime] = toISO8601Date(float(s[cseStartUpTime]))
 		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
 
@@ -192,6 +257,9 @@ class Statistics(object):
 
 	def _handleStatsEvent(self, eventType:str) -> None:
 		"""	Generic handling of statist events.
+
+			Args:
+				eventType:	The type of event that occurred.
 		"""
 		try:
 			with self.statLock:
@@ -203,12 +271,15 @@ class Statistics(object):
 				self.stats[eventType] = 1		# type: ignore
 
 
-	def handleCseStartup(self) -> None:
+	def handleCseStartup(self, name:str) -> None:
 		"""	Assign the CSE's startup time.
+
+			Args:
+				name:	The name of the event that triggered function.
 		"""
 		with self.statLock:
 			# self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
-			self.stats[cseStartUpTime] = DateUtils.utcTime()
+			self.stats[cseStartUpTime] = utcTime()
 
 
 	#########################################################################
@@ -217,6 +288,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
+		"""	Background worker to write statistics to the database.
+
+			Return:
+				True if the statistics were written successfully, False otherwise. True continous the worker.
+		"""
 		# L.isDebug and L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
@@ -227,17 +303,29 @@ class Statistics(object):
 
 
 	def retrieveDBStatistics(self) -> StatsT:
+		"""	Retrieve statistics data.
+
+			Return:
+				The retrieved statistics dictionary.
+		"""
+		
 		with self.statLock:
 			return CSE.storage.getStatistics()
 
 
 	def storeDBStatistics(self) -> bool:
-		"""	Store statistics data"""
+		"""	Store statistics data.
+
+			Return:
+				True if the statistics were stored successfully, False otherwise.
+		"""
 		with self.statLock:
 			return CSE.storage.updateStatistics(self.stats)
 	
 
 	def purgeDBStatistics(self) -> None:
+		"""	Purge statistics data.
+		"""
 		with self.statLock:
 			CSE.storage.purgeStatistics()
 
@@ -252,6 +340,14 @@ class Statistics(object):
 				- The CSE's resource tree
 				- The Registrar CSE (if any)
 				- A list of descendant CSE's (if any)
+			
+			This function calls itself recursively to generate the tree structure.
+			
+			Args:
+				maxLevel:	The maximum level of the tree to print. 0 means all levels.
+			
+			Return:
+				The PlanUML graph as a string.
 		"""
 
 		def getChildren(res:Resource, level:int) -> str:
@@ -294,7 +390,7 @@ skinparam rectangle {
 		# Build Resource Tree
 		result += 'note right of CSE\n'
 		result += '**Resource Tree**\n\n'
-		cse = Utils.getCSE().resource
+		cse = getCSE()
 		result += f'{cse.rn}\n'
 		result += getChildren(cse, 0)
 		result += 'end note\n'

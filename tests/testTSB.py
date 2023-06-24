@@ -38,7 +38,7 @@ class TestTSB(unittest.TestCase):
 			 		'poa' : [ ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		# Start notification server
@@ -80,13 +80,13 @@ class TestTSB(unittest.TestCase):
         			'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/ri'))
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcnc'))
 		self.assertEqual(findXPath(r, 'm2m:tsb/bcnc'), BeaconCriteria.PERIODIC)
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -98,7 +98,7 @@ class TestTSB(unittest.TestCase):
         			'bcnu'	: [  ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -113,7 +113,7 @@ class TestTSB(unittest.TestCase):
 
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -126,7 +126,7 @@ class TestTSB(unittest.TestCase):
         			'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -139,7 +139,7 @@ class TestTSB(unittest.TestCase):
         			'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -151,13 +151,13 @@ class TestTSB(unittest.TestCase):
 					'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNone(findXPath(r, 'm2m:tsb/bcnt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcni'), r)
 		self.assertIsInstance(findXPath(r, 'm2m:tsb/bcni'), str, r)
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -170,13 +170,13 @@ class TestTSB(unittest.TestCase):
 					'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNone(findXPath(r, 'm2m:tsb/bcni'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcnt'), r)
 		self.assertGreater(findXPath(r, 'm2m:tsb/bcnt'), 0, r)
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -190,7 +190,7 @@ class TestTSB(unittest.TestCase):
         			'bcnu'	: [ NOTIFICATIONSERVER ]
 				}}
 		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/ri'))
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcnc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcni'))
@@ -215,7 +215,7 @@ class TestTSB(unittest.TestCase):
 
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

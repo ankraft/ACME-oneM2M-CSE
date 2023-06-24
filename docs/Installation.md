@@ -77,6 +77,7 @@ The following third-party components are used by the ACME CSE.
 - [rdflib](https://github.com/RDFLib/rdflib) is a Python library for working with RDF. BSD 3-Clause License.
 - The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http. Apache2 License
 - The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output. MIT License 
+- [Textual](https://github.com/textualize/textual) is a Rapid Application Development framework for to build textual user interfaces in Python. MIT License
 - To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. MIT License
 
 

@@ -17,9 +17,15 @@ import sys, copy
 from threading import Lock, current_thread
 
 import isodate
-from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
-from ..etc.Types import ResponseStatusCode, EventCategory, JSON, JSONLIST, ResourceTypes
-from ..etc import Utils, DateUtils
+from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, EventEvaluationMode
+from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
+from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
+from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY
+from ..etc.DateUtils import fromDuration, getResourceDate
+from ..etc.Utils import toSPRelative, pureResource, isAcmeUrl, compareIDs
+from ..helpers.TextTools import setXPath, findXPath
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -41,6 +47,16 @@ class NotificationManager(object):
 			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
 	"""
 
+	__slots__ = (
+		'lockBatchNotification',
+		'lockNotificationEventStats',
+
+		'asyncSubscriptionNotifications',
+		'enableSubscriptionVerificationRequests',
+
+		'_eventNotification',
+	)
+
 
 	def __init__(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
@@ -52,10 +68,14 @@ class NotificationManager(object):
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
-		self.lockBatchNotification = Lock()			# Lock for batchNotifications
-		self.lockNotificationEventStats = Lock()	# Lock for notificationEventStats
+		self.lockBatchNotification = Lock()					# Lock for batchNotifications
+		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
 
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
+		
+		# Optimize event handling
+		self._eventNotification = CSE.event.notification	# type: ignore
+
 		L.isInfo and L.log('NotificationManager initialized')
 
 
@@ -69,8 +89,11 @@ class NotificationManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the NotificationManager service.
+
+			Args:
+				name: The name of the event.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
 
@@ -86,14 +109,23 @@ class NotificationManager(object):
 
 
 	def _assignConfig(self) -> None:
+		"""	Assign configuration settings.
+		"""
 		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
+		self.enableSubscriptionVerificationRequests	= Configuration.get('cse.enableSubscriptionVerificationRequests')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
+
+			Args:
+				name: The name of the event.
+				key: The configuration key that has changed.
+				value: The new value of the configuration key.
 		"""
-		if key not in [ 'cse.asyncSubscriptionNotifications' ]:
+		if key not in ( 'cse.asyncSubscriptionNotifications', 'cse.enableSubscriptionVerificationRequests' ):
 			return
 		self._assignConfig()
 
@@ -103,7 +135,7 @@ class NotificationManager(object):
 	#	Subscriptions
 	#
 
-	def addSubscription(self, subscription:SUB, originator:str) -> Result:
+	def addSubscription(self, subscription:SUB, originator:str) -> None:
 		"""	Add a new subscription. 
 
 			Check each receipient with verification requests.
@@ -112,17 +144,17 @@ class NotificationManager(object):
 				subscription: The new <sub> resource.
 				originator: The request originator.
 			
-			Return:
-				Result object.
+			Raises:
+				`INTERNAL_SERVER_ERROR`: In case there is an internal DB error.
 		"""
 		L.isDebug and L.logDebug('Adding subscription')
-		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
-			return res
-		return Result.successResult() if CSE.storage.addSubscription(subscription) \
-									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot add subscription to database')
+		self._verifyNusInSubscription(subscription, originator = originator)	# verification requests happen here
+		
+		if not CSE.storage.addSubscription(subscription):
+			raise INTERNAL_SERVER_ERROR('cannot add subscription to database')
 
 
-	def removeSubscription(self, subscription:SUB|CRS, originator:str) -> Result:
+	def removeSubscription(self, subscription:SUB|CRS, originator:str) -> None:
 		""" Remove a subscription. 
 
 			Send the deletion notifications, if possible.
@@ -147,11 +179,11 @@ class NotificationManager(object):
 			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
-		return Result.successResult() if CSE.storage.removeSubscription(subscription) \
-									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot remove subscription from database')
+		if not CSE.storage.removeSubscription(subscription):
+			raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
 
 
-	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> Result:
+	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> None:
 		"""	Update a subscription.
 
 			This method indirectly updates or rebuild the *notificationStatsInfo* attribute. It should be called
@@ -166,10 +198,9 @@ class NotificationManager(object):
 				Result object.
 			"""
 		L.isDebug and L.logDebug('Updating subscription')
-		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
-			return res
-		return Result.successResult() if CSE.storage.updateSubscription(subscription) \
-									  else Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'cannot update subscription in database')
+		self._verifyNusInSubscription(subscription, previousNus, originator = originator)	# verification requests happen here
+		if not CSE.storage.updateSubscription(subscription):
+			raise INTERNAL_SERVER_ERROR('cannot update subscription in database')
 
 
 	def getSubscriptionsByNetChty(self, ri:str, 
@@ -318,7 +349,7 @@ class NotificationManager(object):
 	def checkPerformBlockingUpdate(self, resource:Resource, 
 										 originator:str, 
 										 updatedAttributes:JSON, 
-										 finished:Optional[Callable] = None) -> Result:
+										 finished:Optional[Callable] = None) -> None:
 		"""	Check for and perform a *blocking update* request for resource updates that have this event type 
 			configured.
 
@@ -327,8 +358,6 @@ class NotificationManager(object):
 				originator: The originator of the original request.
 				updatedAttributes: A structure of all the updated attributes.
 				finished: Callable that is called when the notifications were successfully sent and a response was received.
-			Returns:
-				Result instance indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Looking for blocking UPDATE')
 
@@ -345,13 +374,13 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : NotificationEventType.blockingUpdate.value
 					},
-					'sur' : Utils.toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])
 				}
 			}
 
 			# Check attributes in enc
 			if atr := eachSub['atr']:
-				jsn, _, _ = Utils.pureResource(updatedAttributes)
+				jsn, _, _ = pureResource(updatedAttributes)
 				if len(set(jsn.keys()).intersection(atr)) == 0:	# if the intersection between updatedAttributes and the enc/atr contains is empty, then continue
 					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')
 					continue
@@ -359,44 +388,41 @@ class NotificationManager(object):
 			# Don't include virtual resources
 			if not resource.isVirtual():
 				# Add representation
-				Utils.setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
+				setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
 				
 
 			# Send notification and handle possible negative response status codes
-			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
-														 originator = CSE.cseCsi,
-														 content = notification)).status:
-				return res	# Something else went wrong
-			if res.rsc == ResponseStatusCode.OK:
-				if finished:
-					finished()
-				continue
-
-			# Modify the result status code for some failure response status codes
-			if res.rsc == ResponseStatusCode.targetNotReachable:
-				res.dbg = L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}')
-				res.rsc = ResponseStatusCode.remoteEntityNotReachable
-				res.status = False
-				return res
-			elif res.rsc == ResponseStatusCode.operationNotAllowed:
-				res.dbg = L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}')
-				res.rsc = ResponseStatusCode.operationDeniedByRemoteEntity
-				res.status = False
-				return res
+			try:
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+															   to = eachSub['nus'][0],
+															   originator = originator,
+															   pc = notification)
+												   )[0].result	# there should be at least one result
+				if res.rsc == ResponseStatusCode.OK:
+					if finished:
+						finished()
+					continue
 			
-			# General negative response status code
-			res.status = False
-			return res
+				# "Forward" an exception
+				raise exceptionFromRSC(res.rsc)
+				
+			# Modify the result status code for some failure response status codes
+			except TARGET_NOT_REACHABLE:
+				raise REMOTE_ENTITY_NOT_REACHABLE(L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}'))
+			except OPERATION_NOT_ALLOWED:
+				raise OPERATION_DENIED_BY_REMOTE_ENTITY(L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}'))
+			except:
+					# General negative response status code
+				raise
+			
 
 		# TODO 5) Allow all other UPDATE request primitives for this target resource.
-
-		return Result.successResult()
 
 
 	def checkPerformBlockingRetrieve(self, 
 									 resource:Resource, 
 									 request:CSERequest, 
-									 finished:Optional[Callable] = None) -> Result:
+									 finished:Optional[Callable] = None) -> None:
 		"""	Perform a blocking RETRIEVE. If this notification event type is configured a RETRIEVE operation to
 			a resource causes a notification to a target. It is expected that the target is updating the resource
 			**before** responding to the notification.
@@ -418,7 +444,6 @@ class NotificationManager(object):
 		# TODO check notify permission for originator
 		# TODO prevent second notification to same 
 		# EXPERIMENTAL
-		
 		L.isDebug and L.logDebug('Looking for blocking RETRIEVE')
 
 		# Get blockingRetrieve <sub> for this resource , if any
@@ -434,25 +459,15 @@ class NotificationManager(object):
 			maxAgeSubscription:float = None
 
 			# Check for maxAge attribute provided in the request
-			if (maxAgeS := request.fc.attributes.get('ma')) is not None:	# TODO attribute name
-				try:
-					maxAgeRequest = DateUtils.fromDuration(maxAgeS)
-				except Exception as e:
-					L.logWarn(dbg := f'error when parsing maxAge in request: {str(e)}')
-					return Result.errorResult(dbg = dbg)
+			maxAgeRequest = request._ma
 
 			# Check for maxAge attribute provided in the subscription
-			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL blocking retrieve
-				try:
-					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
-				except Exception as e:
-					L.logWarn(dbg := f'error when parsing maxAge in subscription: {str(e)}')
-					return Result.errorResult(dbg = dbg)
+			maxAgeSubscription = eachSub['ma']	# EXPERIMENTAL blocking retrieve
 				
 			# Return if neither the request nor the subscription have a maxAge set
 			if maxAgeRequest is None and maxAgeSubscription is None:
 				L.isDebug and L.logDebug(f'no maxAge configured, blocking RETRIEVE notification not necessary')
-				return Result.successResult()
+				return
 
 
 			# Is either "maxAge" of the request or the subscription reached?
@@ -460,7 +475,7 @@ class NotificationManager(object):
 			maxAgeSubscription = maxAgeSubscription if maxAgeSubscription is not None else sys.float_info.max
 			maxAgeRequest = maxAgeRequest if maxAgeRequest is not None else sys.float_info.max
 
-			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
+			if resource.lt > getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
 				# To early for this subscription
 				continue
 			L.isDebug and L.logDebug(f'blocking RETRIEVE notification necessary')
@@ -470,33 +485,32 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : eachSub['net'][0],	# Add the first and hopefully only NET to the notification
 					},
-					'sur' : Utils.toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])
 				}
 			}
 			# Add creator of the subscription!
-			(subOriginator := eachSub['originator']) is not None and Utils.setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
+			(subOriginator := eachSub['org']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
 
 			# Add representation, but don't include virtual resources
 			if not resource.isVirtual():
-				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
+				setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			countNotifications += 1
-			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
-														 originator = subOriginator,
-														 content = notification)).status:
-				# TODO: correct RSC according to 7.3.2.9 - see above!
-				return res
+			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+													 to = eachSub['nus'][0], 
+													 originator = subOriginator,
+										  			 pc = notification))
+			# TODO: correct RSC according to 7.3.2.9 - see above!
 		
 		if countNotifications == 0:
 			L.isDebug and L.logDebug(f'No blocking <sub> or too early, no blocking RETRIEVE notification necessary')
-			return Result.successResult()
+			return
 		
 		# else
 		L.isDebug and L.logDebug(f'Sent {countNotifications} notification(s) for blocking RETRIEVE')
 		if finished:
 			finished()
 
-		return Result.successResult()
 
 
 	###########################################################################
@@ -504,7 +518,7 @@ class NotificationManager(object):
 	#	CrossResourceSubscriptions
 	#
 
-	def addCrossResourceSubscription(self, crs:CRS, originator:str) -> Result:
+	def addCrossResourceSubscription(self, crs:CRS, originator:str) -> None:
 		"""	Add a new crossResourceSubscription. 
 		
 			Check each receipient in the *nu* attribute with verification requests. 
@@ -517,12 +531,10 @@ class NotificationManager(object):
 				Result object.
 		"""
 		L.isDebug and L.logDebug('Adding crossResourceSubscription')
-		if not (res := self._verifyNusInSubscription(crs, originator = originator)).status:	# verification requests happen here
-			return res
-		return Result.successResult()
+		self._verifyNusInSubscription(crs, originator = originator)	# verification requests happen here
 
 
-	def updateCrossResourceSubscription(self, crs:CRS, previousNus:list[str], originator:str) -> Result:
+	def updateCrossResourceSubscription(self, crs:CRS, previousNus:list[str], originator:str) -> None:
 		"""	Update a crossResourcesubscription. 
 		
 			Check each new receipient in the *nu* attribute with verification requests. 
@@ -540,12 +552,10 @@ class NotificationManager(object):
 				Result object.
 		"""
 		L.isDebug and L.logDebug('Updating crossResourceSubscription')
-		if not (res := self._verifyNusInSubscription(crs, previousNus, originator = originator)).status:	# verification requests happen here
-			return res
-		return Result.successResult()
+		self._verifyNusInSubscription(crs, previousNus, originator = originator)	# verification requests happen here
 
 
-	def removeCrossResourceSubscription(self, crs:CRS) -> Result:
+	def removeCrossResourceSubscription(self, crs:CRS) -> None:
 		"""	Remove a crossResourcesubscription. 
 		
 			Send a deletion request to the *subscriberURI* target.
@@ -562,11 +572,13 @@ class NotificationManager(object):
 		if (su := crs.su):
 			if not self.sendDeletionNotification(su, crs.ri):
 				L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
-		return Result.successResult()
 
 
 
-	def _crsCheckForNotification(self, data:list[str], crsRi:str, subCount:int) -> None:
+	def _crsCheckForNotification(self, data:list[str], 
+			      					   crsRi:str, 
+									   subCount:int, 
+									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
 		"""	Test whether a notification must be sent for a a <crs> window.
 
 			This method also sends the notification(s) if the window requirements are met.
@@ -575,20 +587,36 @@ class NotificationManager(object):
 				data: List of unique resource IDs.
 				crsRi: The resource ID of the <crs> resource for the window.
 				subCount: Maximum number of expected resource IDs in *data*.
+				eem: EventEvaluationMode.
 		"""
-		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, expected count: {subCount}')
-		if len(data) == subCount:
+		
+		# First make sure that the list in 'data' only contains unique resource IDs
+		data = list(set(data))
+
+		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, eem: {eem}')
+
+		# Test for conditions
+		if	(eem == EventEvaluationMode.ALL_EVENTS_PRESENT and len(data) == subCount) or \
+			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
+			(eem == EventEvaluationMode.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
+			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
+			(eem == EventEvaluationMode.ALL_EVENTS_MISSING and len(data) == 0):
+
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
-			if not (res := CSE.dispatcher.retrieveResource(crsRi)).status:
-				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}')	# Not much we can do here
+			
+			try:
+				resource = CSE.dispatcher.retrieveResource(crsRi)
+			except ResponseException as e:
+				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
 				data.clear()
 				return
-			crs = cast(CRS, res.resource)
+
+			crs = cast(CRS, resource)
 
 			# Send the notification directly. Handle the counting of sent notifications and received responses
 			# in pre and post functions for the notifications of each target
 			dct:JSON = { 'm2m:sgn' : {
-					'sur' : Utils.toSPRelative(crs.ri)
+					'sur' : toSPRelative(crs.ri)
 				}
 			}
 			self.sendNotificationWithDict(dct, 
@@ -605,11 +633,13 @@ class NotificationManager(object):
 				exc -= 1
 				crs.setAttribute('exc', exc)
 				L.isDebug and L.logDebug(f'Reducing <crs> expiration counter to {exc}')
-				crs.dbUpdate()
+				crs.dbUpdate(True)
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
 					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
+		else:
+			L.isDebug and L.logDebug(f'No notification sent')
 		data.clear()
 
 
@@ -627,17 +657,20 @@ class NotificationManager(object):
 		return f'crsPeriodic_{ri}'
 
 
-	def startCRSPeriodicWindow(self, crsRi:str, tws:str, expectedCount:int) -> None:
+	def startCRSPeriodicWindow(self, crsRi:str, 
+			    					 tws:str, 
+									 expectedCount:int,
+									 eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
 
-		crsTws = DateUtils.fromDuration(tws)
-		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
+		crsTws = fromDuration(tws)
+		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {eem}')
 
 		# Start a background worker. "data", which will contain the RI's later is empty
 		BackgroundWorkerPool.newWorker(crsTws, 
 									   self._crsPeriodicWindowMonitor, 
 									   name = self._getPeriodicWorkerName(crsRi), 
 									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, expectedCount = expectedCount)
+									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, eem = eem)
 
 
 	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
@@ -645,9 +678,12 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
 
 
-	def _crsPeriodicWindowMonitor(self, _data:list[str], crsRi:str, expectedCount:int) -> bool: 
+	def _crsPeriodicWindowMonitor(self, _data:list[str], 
+			       						crsRi:str, 
+										expectedCount:int,
+										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, expectedCount)
+		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
 		return True
 
 
@@ -665,15 +701,19 @@ class NotificationManager(object):
 		return f'crsSliding_{ri}'
 
 
-	def startCRSSlidingWindow(self, crsRi:str, tws:str, sur:str, subCount:int) -> BackgroundWorker:
-		crsTws = DateUtils.fromDuration(tws)
+	def startCRSSlidingWindow(self, crsRi:str,
+			   						tws:str, 
+									sur:str, 
+									subCount:int,
+									eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
+		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
 											 crsTws,
 											 name = self._getSlidingWorkerName(crsRi), 
-											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount)
+											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount, eem = eem)
 
 
 	def stopCRSSlidingWindow(self, crsRi:str) -> None:
@@ -681,9 +721,12 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any, crsRi:str, subCount:int) -> bool:
+	def _crsSlidingWindowMonitor(self, _data:Any, 
+			      					   crsRi:str, 
+									   subCount:int, 
+									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, subCount)
+		self._crsCheckForNotification(_data, crsRi, subCount, eem)
 		return True
 
 
@@ -700,7 +743,7 @@ class NotificationManager(object):
 				if sur not in workers[0].data:
 					workers[0].data.append(sur)
 			else:
-				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions()) ]	# sur is added automatically when creating actor
+				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
 		elif crsTwt == TimeWindowType.PERIODICWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
 				if sur not in workers[0].data:
@@ -743,7 +786,10 @@ class NotificationManager(object):
 		def _sender(nu: str, originator:str, content:JSON) -> bool:
 			if preFunc:
 				preFunc(nu)
-			CSE.request.sendNotifyRequest(nu, originator = originator, content = content)
+			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+													 to = nu, 
+													 originator = originator, 
+													 pc = content))
 			if postFunc:
 				postFunc(nu)
 			return True
@@ -830,7 +876,7 @@ class NotificationManager(object):
 				if each['tg'] == target:
 					each[activeField] += count
 					break
-			sub.dbUpdate()
+			sub.dbUpdate(True)
 
 
 	def countNotificationEvents(self, ri:str, 
@@ -844,9 +890,11 @@ class NotificationManager(object):
 				ri: Resource ID of a \<sub> or \<csr> resource to handle.
 		"""
 		if sub is None:
-			if not (res := CSE.dispatcher.retrieveLocalResource(ri)).status:
+			try:
+				sub = CSE.dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
+				# TODO check resource type?
+			except ResponseException as e:
 				return
-			sub = res.resource
 		if not sub.nse:	# Don't count if disabled
 			return
 		
@@ -858,7 +906,7 @@ class NotificationManager(object):
 			sub.dbReloadDict()	# get a fresh copy of the subscription
 			for each in sub.nsi:
 				each['noec'] += 1
-			sub.dbUpdate()
+			sub.dbUpdate(True)
 
 
 	def updateOfNSEAttribute(self, sub:CRS|SUB, newNse:bool) -> None:
@@ -898,7 +946,7 @@ class NotificationManager(object):
 
 	def _verifyNusInSubscription(self, subscription:SUB|CRS, 
 									   previousNus:Optional[list[str]] = None, 
-									   originator:Optional[str] = None) -> Result:
+									   originator:Optional[str] = None) -> None:
 		"""	Check all the notification URI's in a subscription. 
 		
 			A verification request is sent to new URI's. 
@@ -910,8 +958,9 @@ class NotificationManager(object):
 				subscription: <sub> or <crs> resource.
 				previousNus: The list of previous NUs.
 				originator: The originator on which behalf to send the notification. 
-			Return:
-				Result object with the overall result of the test.
+			
+			Raises:
+				`SUBSCRIPTION_VERIFICATION_INITIATION_FAILED`: In case a subscription verification fails.
 		"""
 		if (nus := subscription.nu):
 			ri = subscription.ri
@@ -919,17 +968,16 @@ class NotificationManager(object):
 			for nu in nus:
 				if not previousNus or (nu not in previousNus):	# send only to new entries in nu
 					# Skip notifications to originator
-					if nu == originator or Utils.compareIDs(nu, originator):
+					if nu == originator or compareIDs(nu, originator):
 						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
 					if not self.sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
-						return Result.errorResult(rsc = ResponseStatusCode	.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
+						raise SUBSCRIPTION_VERIFICATION_INITIATION_FAILED(f'Verification request failed for: {nu}')
 
 		# Add/Update NotificationStatsInfo structure
 		self.validateAndConstructNotificationStatsInfo(subscription)
-		return Result.successResult()
 
 
 	#########################################################################
@@ -939,31 +987,43 @@ class NotificationManager(object):
 									  ri:str, 
 									  originator:Optional[str] = None) -> bool:
 		""""	Define the callback function for verification notifications and send
-				the notification.
+				the notification. 
+
+				Args:
+					uri: The URI to send the verification request to. This may be a list of URI's. Each URI could be a direct URL, or an entity.
+					ri: The resource ID of the subscription.
+					originator: The originator on which behalf to send the notification.
 		"""
-		# TODO doc
+
+		# Skip verification requests if disabled
+		if not self.enableSubscriptionVerificationRequests:
+			L.isDebug and L.logDebug('Skipping verification request (disabled)')
+			return True
 
 		def sender(uri:str) -> bool:
 			# Skip verification requests to acme: receivers
-			if Utils.isAcmeUrl(uri):
-				L.isDebug and L.logDebug(f'Skip verification request to internal target: {uri}')
+			if isAcmeUrl(uri):
+				L.isDebug and L.logDebug(f'Skipping verification request to internal target: {uri}')
 				return True
 
 			L.isDebug and L.logDebug(f'Sending verification request to: {uri}')
 			verificationRequest:JSON = {
 				'm2m:sgn' : {
 					'vrq' : True,
-					'sur' : Utils.toSPRelative(ri)
+					'sur' : toSPRelative(ri)
 				}
 			}
 			# Set the creator attribute if there is an originator for the subscription
-			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
+			originator and setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
-			if not (res := CSE.request.sendNotifyRequest(uri, 
-														 originator = CSE.cseCsi,
-														 content = verificationRequest, 
-														 noAccessIsError = True)).status:
-				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {res.dbg}')
+			try:
+				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+															   to = uri, 
+															   originator = CSE.cseCsi,
+															   pc = verificationRequest)
+												   )[0].result	# there should be at least one result
+			except ResponseException as e:
+				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {e.dbg}')
 				return False
 			if res.rsc != ResponseStatusCode.OK:
 				L.isDebug and L.logDebug(f'Verification notification response if not OK: {res.rsc} for: {uri}: {res.dbg}')
@@ -989,14 +1049,17 @@ class NotificationManager(object):
 			deletionNotification:JSON = {
 				'm2m:sgn' : {
 					'sud' : True,
-					'sur' : Utils.toSPRelative(ri)
+					'sur' : toSPRelative(ri)
 				}
 			}
 
-			if not (res := CSE.request.sendNotifyRequest(uri, 
+			try:
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = uri, 
 														 originator = CSE.cseCsi,
-														 content = deletionNotification)).status:
-				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {res.dbg}')
+											  			 pc = deletionNotification))
+			except ResponseException as e:
+				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {e.dbg}')
 				return False
 			return True
 
@@ -1017,10 +1080,13 @@ class NotificationManager(object):
 
 
 		def _sendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
-			if not CSE.request.sendNotifyRequest(uri, 
-												originator = CSE.cseCsi,
-												content = notificationRequest).status:
-				L.isDebug and L.logDebug(f'Notification failed for: {uri}')
+			try:
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = uri, 
+											  			 originator = CSE.cseCsi,
+											  			 pc = notificationRequest))
+			except ResponseException as e:
+				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
 				return False
 			self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
 			return True
@@ -1036,7 +1102,7 @@ class NotificationManager(object):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
-					'sur' : Utils.toSPRelative(sub['ri'])
+					'sur' : toSPRelative(sub['ri'])
 				}
 			}
 
@@ -1046,16 +1112,16 @@ class NotificationManager(object):
 			creator = sub.get('cr')	# creator, might be None
 			# switch to populate data
 			data = None
-			nct == NotificationContentType.all						and (data := resource.asDict())
+			nct == NotificationContentType.allAttributes						and (data := resource.asDict())
 			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
 			nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
 			nct == NotificationContentType.timeSeriesNotification	and (data := { 'm2m:tsn' : missingData.asDict() })
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some values to the notification
-			notificationEventType is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
-			data is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
-			creator is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
+			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
+			data is not None and setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
+			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
 			# Check for batch notifications
 			if sub['bn']:
@@ -1064,10 +1130,11 @@ class NotificationManager(object):
 				# If nse is set to True then count this notification request
 				subscription = None
 				if sub['nse']:
-					if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
-						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
+					try:
+						subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+					except ResponseException as e:
+						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 						return False
-					subscription = res.resource
 					self.countSentReceivedNotification(subscription, uri)	# count sent notification
 				
 				# Send the notification
@@ -1095,13 +1162,13 @@ class NotificationManager(object):
 			L.isDebug and L.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
 
 			exc -= 1
-			subResource = CSE.storage.retrieveResource(ri=sub['ri']).resource
+			subResource = CSE.storage.retrieveResource(ri=sub['ri'])
 			if exc < 1:
 				L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
 				CSE.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
-				subResource.dbUpdate()						# Update the real subscription
+				subResource.dbUpdate(True)						# Update the real subscription
 				CSE.storage.updateSubscription(subResource)	# Also update the internal sub
 		return result								
 
@@ -1119,7 +1186,7 @@ class NotificationManager(object):
 				Returns *True*, even when nothing was sent, and *False* when any *senderFunction* returned False. 
 		"""
 		#	Event when notification is happening, not sent
-		CSE.event.notification() # type: ignore
+		self._eventNotification()
 
 		if isinstance(uris, str):
 			return senderFunction(uris)
@@ -1169,7 +1236,7 @@ class NotificationManager(object):
 
 		#  Check for actions
 		ln = sub['ln'] if 'ln' in sub else False
-		if (num := Utils.findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+		if (num := findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
@@ -1178,7 +1245,7 @@ class NotificationManager(object):
 		# Check / start Timer worker to guard the batch notification duration
 		else:
 			try:
-				dur = isodate.parse_duration(Utils.findXPath(sub, 'bn/dur')).total_seconds()
+				dur = isodate.parse_duration(findXPath(sub, 'bn/dur')).total_seconds()
 			except Exception:
 				return False
 			self._startNewBatchNotificationWorker(ri, nu, ln, sub, dur)
@@ -1206,17 +1273,17 @@ class NotificationManager(object):
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
-				if n := Utils.findXPath(notification['request'], 'sgn'):
+				if n := findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
 			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
 			parameters:CSERequest = None
+			ec:EventCategory = None
 			if ln:
 				notifications = notifications[-1:]
 				# Add event category
-				parameters = CSERequest()
-				parameters.ec = EventCategory.Latest.value
+				ec = EventCategory.Latest
 
 			# Aggregate and send
 			notificationRequest:JSON = {
@@ -1234,18 +1301,22 @@ class NotificationManager(object):
 			subscription = None
 			nse = sub['nse']
 			if nse:
-				if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
-					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
+				try:
+					subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+				except ResponseException as e:
+					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 					return False
-				subscription = res.resource
 				self.countSentReceivedNotification(subscription, nu, count = notificationCount)	# count sent notification
 				
 			# Send the request
-			if not CSE.request.sendNotifyRequest(nu, 
-												 originator = CSE.cseCsi,
-												 content = notificationRequest,
-												 parameters = parameters).status:
-				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
+			try:
+				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+														 to = nu, 
+														 originator = CSE.cseCsi,
+														 pc = notificationRequest,
+														 ec = ec))
+			except ResponseException as e:
+				L.isWarn and L.logWarn(f'Error sending aggregated batch notifications: {e.dbg}')
 				return False
 			if nse:
 				self.countSentReceivedNotification(subscription, nu, isResponse = True, count = notificationCount) # count received notification

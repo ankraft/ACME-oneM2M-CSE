@@ -10,13 +10,14 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Any
 
 import ssl
 
-from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest, ResponseStatusCode
-from ..etc import Utils
-from ..helpers import TextTools
+from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
+from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..helpers.TextTools import findXPath, simpleMatch
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -32,16 +33,50 @@ class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
 
+	__slots__ = (
+		'enableACPChecks',
+		'fullAccessAdmin',
+		'useTLSHttp',
+		'verifyCertificateHttp',
+		'tlsVersionHttp',
+		'caCertificateFileHttp',
+		'caPrivateKeyFileHttp',
+		'useTlsMqtt',
+		'verifyCertificateMqtt',
+		'caCertificateFileMqtt',
+		'usernameMqtt',
+		'passwordMqtt',
+		'allowedCredentialIDsMqtt',
+	)
+
+
 	def __init__(self) -> None:
-		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
-		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
+
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if self.enableACPChecks:
 			L.isInfo and L.log('ACP checking ENABLED')
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
-		
+
+
+	def shutdown(self) -> bool:
+		L.isInfo and L.log('SecurityManager shut down')
+		return True
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign configurations.
+		"""
+
+		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
+		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
+
 		# TLS configurations (http)
 		self.useTLSHttp 				= Configuration.get('http.security.useTLS')
 		self.verifyCertificateHttp		= Configuration.get('http.security.verifyCertificate')
@@ -56,12 +91,32 @@ class SecurityManager(object):
 		self.usernameMqtt				= Configuration.get('mqtt.security.username')
 		self.passwordMqtt				= Configuration.get('mqtt.security.password')
 		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
-		
 
 
-	def shutdown(self) -> bool:
-		L.isInfo and L.log('SecurityManager shut down')
-		return True
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None,
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key not in [ 'cse.security.enableACPChecks', 
+						'cse.security.fullAccessAdmin',
+						'http.security.useTLS',
+						'http.security.verifyCertificate',
+						'http.security.tlsVersion',
+						'http.security.caCertificateFile',
+						'http.security.caPrivateKeyFile',
+						'mqtt.security.useTLS',
+						'mqtt.security.verifyCertificate',
+						'mqtt.security.caCertificateFile',
+						'mqtt.security.username',
+						'mqtt.security.password',
+						'mqtt.security.allowedCredentialIDs',
+					  ]:
+			return
+		self._assignConfig()
+		return
+
+	###############################################################################################
 
 
 	def hasAccess(self, originator:str, 
@@ -92,9 +147,9 @@ class SecurityManager(object):
 			return True
 		
 		# Remove CSE-ID if this is the same CSE
-		if Utils.isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
+		if isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
 			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting to CSE-Relative format.')
-			originator = Utils.toCSERelative(originator)
+			originator = toCSERelative(originator)
 			L.isDebug and L.logDebug(f'Converted originator: {originator}')
 	
 		if ty is not None:	# ty is an int
@@ -115,7 +170,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
 				else:
-					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{Utils.getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
+					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
 					return False
 
 			if ty.isAnnounced():
@@ -125,7 +180,7 @@ class SecurityManager(object):
 				else:
 					L.isWarn and L.logWarn('Originator for Announcement not found.')
 					return False
-			
+		
 		# Check for resource == None
 		if not resource:
 			L.logErr('Resource must not be None')
@@ -148,9 +203,12 @@ class SecurityManager(object):
 		if resource.ty == ResourceTypes.CSEBase and requestedPermission & Permission.RETRIEVE:
 
 			# Allow registered AEs to RETRIEVE the CSEBase
-			if CSE.storage.retrieveResource(aei = originator).resource:
-				L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
-				return True
+			try:
+				if CSE.storage.retrieveResource(aei = originator):
+					L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
+					return True
+			except NOT_FOUND:
+				pass # NOT Found is expected
 			
 			# Allow remote CSE to RETRIEVE the CSEBase
 
@@ -185,7 +243,7 @@ class SecurityManager(object):
 			
 			else: # handle the permission checks here
 				for a in macp:
-					if not (acp := CSE.dispatcher.retrieveResource(a).resource):
+					if not (acp := CSE.dispatcher.retrieveResource(a)):
 						L.isDebug and L.logDebug(f'ACP resource not found: {a}')
 						continue
 					else:
@@ -247,7 +305,7 @@ class SecurityManager(object):
 				if resource.inheritACP:
 					L.isDebug and L.logDebug('Checking parent\'s permission')
 					if not parentResource:
-						parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
+						parentResource = CSE.dispatcher.retrieveResource(resource.pi)
 					return self.hasAccess(originator, parentResource, requestedPermission, ty)
 
 			L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
@@ -255,7 +313,7 @@ class SecurityManager(object):
 
 		# Finally check the acpi
 		for a in acpi:
-			if not (acp := CSE.dispatcher.retrieveResource(a).resource):
+			if not (acp := CSE.dispatcher.retrieveResource(a)):
 				L.isDebug and L.logDebug(f'ACP resource not found: {a}')
 				continue
 			# if checkSelf:	# forced check for self permissions
@@ -278,53 +336,73 @@ class SecurityManager(object):
 		return False
 
 
-	def hasAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> Result:
+	def checkAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> bool:
 		"""	Check whether this is actually a correct update of the acpi attribute, and whether this is actually allowed.
+
+			Args:
+				request: The original request.
+				targetResource: The request target.
+				originator: The request originator.
+			
+			Return:
+				Boolean value. *True* indicates that this is an ACPI update. *False* indicates that this NOT an ACPI update.
+			
+			Raises
+				`BAD_REQUEST`: If the *acpi* attribute is not the only attribute in an UPDATE request.
+				`ORIGINATOR_HAS_NO_PRIVILEGE`: If the originator has no access.
 		"""
-		updatedAttributes = Utils.findXPath(request.pc, '{*}')
+		updatedAttributes = findXPath(request.pc, '{*}')
 
 		# Check that acpi, if present, is the only attribute
 		if 'acpi' in updatedAttributes:
 			if len(updatedAttributes) > 1:
-				L.logDebug(dbg := '"acpi" must be the only attribute in update')
-				return Result.errorResult(dbg = dbg)
+				raise BAD_REQUEST(L.logDebug('"acpi" must be the only attribute in update'))
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
 			if not targetResource.acpi:
 				if originator != targetResource.getOriginator():
-					L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
-					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'No access to update acpi for originator: {originator}'))
 				else:
 					pass	# allowed for creating originator
 			else:
 				# test the current acpi whether the originator is allowed to update the acpi
 				for ri in targetResource.acpi:
-					if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
+					if not (acp := CSE.dispatcher.retrieveResource(ri)):
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
 						continue
 					if acp.checkSelfPermission(originator, Permission.UPDATE):
 						break
 				else:
-					L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
-					return Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, dbg = dbg)
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}'))
 
-			return Result(status = True, data = True)	# hack: data=True indicates that this is an ACPI update after all
-
-		return Result.successResult()
+			return True # True indicates that this is an ACPI update
+		return False	# False indicates that this NOT an ACPI update
 
 
 	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
-		""" Check whether an Originator is in the provided list of allowed 
-			originators. This list may contain regex.
-		"""
-		_originator = Utils.getIdFromOriginator(originator)
-		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
+		""" Check whether an Originator is in the provided list of allowed originators. This list may contain regex.
+			
+			The hosting CSE has always access.
 
+			Args:
+				originator: The request originator.
+				allowedOriginators: A list of allowed originators, which may include regex.
+			
+			Return:
+				Boolean value indicating the result.
+		"""
 		if not originator or not allowedOriginators:
 			return False
 
+		_originator = getIdFromOriginator(originator)
+		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
+		
+		# Always allow for the hosting CSE
+		if originator in [CSE.cseCsi, CSE.cseSPRelative] :
+			return True
+
 		for ao in allowedOriginators:
-			if TextTools.simpleMatch(_originator, ao):
+			if simpleMatch(_originator, ao):
 				return True
 		return False
 
@@ -337,6 +415,7 @@ class SecurityManager(object):
 			Args:
 				originator: The request originator
 				resource: Either a PCH or PCU resource
+
 			Return:
 				Boolean indicating the result.
 		"""
@@ -350,13 +429,14 @@ class SecurityManager(object):
 			Args:
 				originator: ID of the originator.
 				permission: The operation permission to filter for.
+
 			Return:
 				List of <ACP> resources. This list might be empty.
 		"""
 		origs = [ originator, 'all' ]
 
 		def filter(doc:JSON) -> bool:
-			if (acr := Utils.findXPath(doc, 'pv/acr')):
+			if (acr := findXPath(doc, 'pv/acr')):
 				for each in acr:
 					if (acop := each.get('acop')) is None or acop & permission == 0:
 						continue
@@ -376,6 +456,9 @@ class SecurityManager(object):
 	def getSSLContext(self) -> ssl.SSLContext:
 		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
 			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
+
+			Return:
+				SSL / TLD context.
 		"""
 		context = None
 		if self.useTLSHttp:

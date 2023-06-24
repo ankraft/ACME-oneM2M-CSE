@@ -34,6 +34,7 @@ In additions, you can provide additional command line arguments that will overri
 | --mqtt, --no-mqtt                                 | Enable or disable the MQTT binding.<br />This overrides MQTT's [enable](Configuration.md#client_mqtt) configuration setting.                                    |
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statistics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                               |
+| --textui                                          | Run the CSE's text UI after startup.                                                                                                                           |
 
 
 
@@ -47,7 +48,7 @@ Please see [Development - Debug Mode](Development.md#debug-mode) how to enable t
 The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **once** on the command line. [^1]
 
 [^1]: You can configure this behavior with the [\[cse.console\].confirmQuit](Configuration.md#console) configuration setting.
- 
+
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
 **Being impatient and hitting *CTRL-C* twice might lead to data corruption.**

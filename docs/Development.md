@@ -21,10 +21,23 @@
 
 ![](images/resources_uml.png)
 
+### Database Schemas
+
+![](images/db_schemas.png)
+
+If not hold in memory the database files are stored in the ["data"](../data) sub-directory. 
+
+The database used by the CSE is [TinyDB](https://github.com/msiemens/tinydb) which uses plain JSON files for storing the data. Some files only contain a single data table while other contain multiple tables.
+
+The filenames include the *CSE-ID* of the running CSE, so if multiple CSEs are running and are using the same data directory then they won't interfere with each other. The database files are copied to a *backup* directory at CSE startup.
+
+Some database tables duplicate attributes from actual resources, e.g. in the *subscription* database. This is mainly done for optimization reasons in order to prevent a retrieval and instantiation of a full resource when only a few attributes are needed.
+
+
 <a name="integration"></a>
 ## Integration Into Other Applications
 
-It is possible to integrate the CSE into other applications, e.g. a Jupyter Notebook. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
+It is possible to integrate the CSE into other applications. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
 
 You might want to get the example from the starter file [acme.py](acme.py) where you could replace the line:
 
@@ -42,6 +55,25 @@ Please note that in case you provide the arguments directly the first argument n
 
 The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
 
+### Jupyter Notebooks
+
+Since ACME CSE is written in pure Python it can be run in a Jupyter Notebook. The following code could be copied to a notebook to run the CSE.
+
+```python
+# Increase the width of the notebook to accommodate the log output
+from IPython.display import display, HTML
+display(HTML("<style>.container { width:100% !important; }</style>"))
+
+# Change to the CSE's directory and start the CSE
+# Ignore the error from the %cd command
+%cd -q tools/ACME   # adopt this to the location of the ACME CSE
+%run -m acme -- --headless
+```
+
+- The CSE should be run in *headless* mode to avoid too much output to the notebook.
+- Once executed the notebook cell will not finish its execution. It is therefore recommended to run the CSE in a separate notebook.
+- The CSE can only be stopped by stopping or restarting the notebook's Python kernel.
+
 <a name="unit_tests"></a>
 
 ## Unit Tests
@@ -58,7 +90,7 @@ One can also provide OAuth2 settings in case the CSE under test is behind an OAu
 
 #### Enable Remote Configuration (Upper Tester)
 
-The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
+The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [http.enableUpperTesterEndpoint](Configuration.md#server_http) in the [configuration file](../acme.ini.default).
 
 > **Note**
 >
@@ -196,6 +228,12 @@ It is also possible  to run individual test cases from test suites. This is done
 $ python runTests.py testSUB --run-tests test_createCNTforEXC
 ```
 
+If test cases appear more than once one can specify the order in which the test cases are run. Example:
+
+- Order of test cases in the test suite: A, B, A, C
+- Desired test cases and order to run: B, A
+- Option: `--run-tests B A`
+
 > **Note**
 >
 > Most test cases in a test suite depend on each other (created resources, subscriptions, etc). Just running a single test case will most likely fail. 
@@ -205,7 +243,7 @@ $ python runTests.py testSUB --run-tests test_createCNTforEXC
 >```
 >$ python runTests.py testSUB --disable-teardown
 >...
->$ python runTests.py testSUB --disable-teardown --run-tests >test_createCNTforEXC
+>$ python runTests.py testSUB --disable-teardown --run-tests test_createCNTforEXC
 >```
 
 To list the available test cases one can use the `--list-tests` (list in the order the test cases have been defined in the test suite) and the `--list-tests-sorted` (list alphabetically) options.
@@ -214,7 +252,7 @@ To list the available test cases one can use the `--list-tests` (list in the ord
 
 Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of a test run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE), or by running the test suit with the `--run-teardown` option. The later runs only the tear-down  functions for the specified test suites and then exits.
 
-However, sometimes it would be useful to keep the resources created by the tests for further investigations. In this case specifyng the `--disable-teardown` option can help. It disables the execution of the tear-down functions after successful or unsuccessful execution.
+However, sometimes it would be useful to keep the resources created by the tests for further investigations. In this case specifying the `--disable-teardown` option can help. It disables the execution of the tear-down functions after successful or unsuccessful execution.
 
 
 ### Dependencies

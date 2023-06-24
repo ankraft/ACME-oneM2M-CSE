@@ -7,7 +7,7 @@
 #	Unit tests for timeSeriean & timeSeries functionality
 #
 
-import unittest, sys, datetime
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -48,14 +48,14 @@ class TestTS_TSI(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		dct = 	{ 'm2m:ts' : { 
 					'rn'  : tsRN,
 					'mni' : 3
 				}}
 		cls.ts, rsc = CREATE(aeURL, cls.originator, T.TS, dct)
-		assert rsc == RC.created, 'cannot create <timeSeries>'
+		assert rsc == RC.CREATED, 'cannot create <timeSeries>'
 		assert findXPath(cls.ts, 'm2m:ts/mni') == 3, 'mni is not correct'
 		testCaseEnd('Setup TestTS_TSI')
 
@@ -90,7 +90,7 @@ class TestTS_TSI(unittest.TestCase):
 			'mdd' : False
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertFalse(findXPath(r, 'm2m:ts/mdd'), r)
 	
 	
@@ -100,12 +100,11 @@ class TestTS_TSI(unittest.TestCase):
 			'mdd' : True	# Start monitoring
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')), 0, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -118,7 +117,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'aValue',
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsi/ri'), r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/con'), 'aValue', r)
@@ -144,7 +143,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'bValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/con'), 'bValue', r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/dgt'), date, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/cs'), 6, r)
@@ -161,7 +160,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'cValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/con'), 'cValue', r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/dgt'), date, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/cs'), 6, r)
@@ -178,7 +177,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'dValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/con'), 'dValue', r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/dgt'), date, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/cs'), 6, r)
@@ -218,7 +217,7 @@ class TestTS_TSI(unittest.TestCase):
 					'mni' : 1
  				}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(r, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mni'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mni'), 1, r)
@@ -243,7 +242,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_deleteTS(self) -> None:
 		"""	DELETE <TS> """
 		r, rsc = DELETE(tsURL, TestTS_TSI.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -254,7 +253,7 @@ class TestTS_TSI(unittest.TestCase):
 					'mbs' : maxBS
 				}}
 		TestTS_TSI.ts, rsc = CREATE(aeURL, TestTS_TSI.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, TestTS_TSI.ts)
+		self.assertEqual(rsc, RC.CREATED, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mbs'), TestTS_TSI.ts)
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/mbs'), maxBS, TestTS_TSI.ts)
 
@@ -267,7 +266,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'x' * maxBS
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertEqual(findXPath(r, 'm2m:tsi/cs'), maxBS, r)
 
 
@@ -279,7 +278,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'x' * (maxBS + 1)
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.notAcceptable, r)
+		self.assertEqual(rsc, RC.NOT_ACCEPTABLE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -292,7 +291,7 @@ class TestTS_TSI(unittest.TestCase):
 						'con' : 'x' * int(maxBS / 3)
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 		
 		# Test latest TSI for x
 		r, rsc = RETRIEVE(f'{tsURL}/la', TestTS_TSI.originator)
@@ -307,7 +306,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'y' * int(maxBS / 3)
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		# Test latest TSI for y
 		r, rsc = RETRIEVE(f'{tsURL}/la', TestTS_TSI.originator)
@@ -332,7 +331,7 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'wrong'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -343,13 +342,13 @@ class TestTS_TSI(unittest.TestCase):
 					'con' : 'first'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : date,	# same date
 					'con' : 'second'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.conflict, r)	# CONFLICTs
+		self.assertEqual(rsc, RC.CONFLICT, r)	# CONFLICTs
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -361,7 +360,7 @@ class TestTS_TSI(unittest.TestCase):
 					'snr' : 1
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 		r, rsc = RETRIEVE(f'{tsURL}/la', TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
@@ -381,14 +380,12 @@ class TestTS_TSI(unittest.TestCase):
 
 				}}
 		TestTS_TSI.ts, rsc = CREATE(aeURL, TestTS_TSI.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, TestTS_TSI.ts)
+		self.assertEqual(rsc, RC.CREATED, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/pei'), TestTS_TSI.ts)
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/pei'), pei, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
 		self.assertTrue(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
-		# TODO Discussion whether mdlt is always present
-		# self.assertIsNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)	# empty mdlt is not created by default
-		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)
+		self.assertIsNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)	# empty mdlt is not created by default
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), TestTS_TSI.ts)
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), 0, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdt'), TestTS_TSI.ts)
@@ -401,7 +398,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		date = datetime.datetime.utcnow().timestamp()
+		date = utcTimestamp()
 		for i in range(3):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(date),
@@ -409,9 +406,9 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			# testSleep(pei / 1000)
-			testSleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
+			testSleep(timeSeriesInterval - (utcTimestamp() - date)) # == pei
 			date += timeSeriesInterval
 
 		# Check TS for missing TSI
@@ -429,7 +426,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp() - timeSeriesInterval
+		dgt = utcTimestamp() - timeSeriesInterval
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -437,7 +434,7 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(timeSeriesInterval) # == pei
 			dgt += timeSeriesInterval
 
@@ -458,7 +455,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp()
+		dgt = utcTimestamp()
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -466,7 +463,7 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(timeSeriesInterval) # == pei
 			dgt += timeSeriesInterval * 2	# too late
 
@@ -485,7 +482,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		dgt = datetime.datetime.utcnow().timestamp()
+		dgt = utcTimestamp()
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
 						'dgt' : toISO8601Date(dgt),
@@ -493,7 +490,7 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(timeSeriesInterval) # == pei
 			dgt += 1	# minimal different
 
@@ -514,12 +511,12 @@ class TestTS_TSI(unittest.TestCase):
 			'mdd' : True	# Start monitoring
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), mdt, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		_pei = findXPath(r, 'm2m:ts/pei') / 1000.0
 		_mdt = findXPath(r, 'm2m:ts/mdt') / 1000.0 
@@ -530,7 +527,7 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, tsidct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(_pei + (_mdt * 2.0))
 
 			# r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
@@ -569,13 +566,12 @@ class TestTS_TSI(unittest.TestCase):
 			'mdd' : True
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')),  0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self._startMonitoring()
 
 
@@ -596,7 +592,7 @@ class TestTS_TSI(unittest.TestCase):
 			'nu': [ NOTIFICATIONSERVER ]
 		}}
 		TestTS_TSI.sub, rsc = CREATE(tsURL, TestTS_TSI.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(TestTS_TSI.sub, 'm2m:sub/ri')))
@@ -608,14 +604,14 @@ class TestTS_TSI(unittest.TestCase):
 		clearLastNotification()
 
 		# Start the timeSeries monitoring
-		dgt = datetime.datetime.utcnow().timestamp() 
+		dgt = utcTimestamp() 
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : toISO8601Date(dgt),
 					'con' : 'aValue',
 					'snr' : 0
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		testSleep(timeSeriesInterval) # == pei
 		# testSleep(timeSeriesInterval + 0.1) # == pei + a short offset
 		start = time.time()
@@ -629,7 +625,7 @@ class TestTS_TSI(unittest.TestCase):
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(timeSeriesInterval - (time.time() - start) ) # == pei - processing time
 			start = time.time()
 			dgt += timeSeriesInterval
@@ -648,7 +644,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_deleteMissingDataSubUnderTS(self) -> None:
 		"""	DELETE <sub> for missing data monitoring """
 		r, rsc = DELETE(f'{tsURL}/{subRN}', TestTS_TSI.originator)
-		self.assertEqual(rsc, RC.deleted, r)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -662,19 +658,20 @@ class TestTS_TSI(unittest.TestCase):
 					'mdt' : mdt,
 				}}
 		r, rsc = CREATE(aeURL, TestTS_TSI.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		# Add some TSI
 		for i in range(0, 5):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : toISO8601Date(datetime.datetime.utcnow().timestamp()),
+						'dgt' : toISO8601Date(utcTimestamp()),
 						'con' : 'aValue',
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			testSleep(0.5)
 		testSleep(timeSeriesInterval * 2)
 
@@ -691,7 +688,7 @@ class TestTS_TSI(unittest.TestCase):
 					'mdd' : False,
 				}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/cni'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertGreater(findXPath(r, 'm2m:ts/mdc'), 0, r)

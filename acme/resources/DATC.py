@@ -11,7 +11,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
-from ..etc import Utils
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..helpers.TextTools import findXPath
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
@@ -62,25 +63,20 @@ class DATC(MgmtObj):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+		super().validate(originator, dct, parentResource)
 
 		# Test for unique occurence of either rpsc and rpil		
-		rpscNew = Utils.findXPath(dct, '{*}/rpsc')
-		rpilNew = Utils.findXPath(dct, '{*}/rpil')
+		rpscNew = findXPath(dct, '{*}/rpsc')
+		rpilNew = findXPath(dct, '{*}/rpil')
 		if (rpscNew or self.rpsc) and (rpilNew or self.rpil):
-			return Result.errorResult(dbg = L.logDebug(f'rpsc and rpil shall not be set together'))
+			raise BAD_REQUEST(L.logDebug(f'rpsc and rpil shall not be set together'))
 
 		# Test for unique occurence of either mesc and meil
-		mescNew = Utils.findXPath(dct, '{*}/mesc')		
-		meilNew = Utils.findXPath(dct, '{*}/meil')		
+		mescNew = findXPath(dct, '{*}/mesc')		
+		meilNew = findXPath(dct, '{*}/meil')		
 		if (mescNew or self.mesc) and (meilNew or self.meil):
-			return Result.errorResult(dbg = L.logDebug(f'mesc and meil shall not be set together'))
-		
-		return Result.successResult()
-
-
+			raise BAD_REQUEST(L.logDebug(f'mesc and meil shall not be set together'))
+	

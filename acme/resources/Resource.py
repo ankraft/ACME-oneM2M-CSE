@@ -10,21 +10,36 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, cast, Optional
+from typing import Any, Tuple, cast, Optional, List, overload
 
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes, Result, NotificationEventType, ResponseStatusCode, CSERequest, JSON
-from ..etc import Utils
-from ..etc import DateUtils
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
+from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL, pureResource
+from ..helpers.TextTools import findXPath, setXPath
+from ..etc.DateUtils import getResourceDate
 from ..services.Logging import Logging as L
 from ..services import CSE
+from ..etc.Constants import Constants
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
 # TODO _remodeID - is anybody using that one??
 
 
+
+# Optimize access to names of internal attributes (fewer look-up)
+_rtype = Constants.attrRtype
+_srn = Constants.attrSrn
+_node = Constants.attrNode
+_createdInternallyRI = Constants.attrCreatedInternallyRI
+_imported = Constants.attrImported
+_isInstantiated = Constants.attrIsInstantiated
+_originator = Constants.attrOriginator
+_modified = Constants.attrModified
+_remoteID = Constants.attrRemoteID
+_rvi = Constants.attrRvi
 
 
 class Resource(object):
@@ -34,46 +49,22 @@ class Resource(object):
 
 	"""
 
-	# Contstants for internal attributes
-	_rtype 				= '__rtype__'
-	"""	Constant: Name of the internal *__rtype__* attribute. This attribute holds the resource type name, e.g. "m2m:cnt". """
-
-	_srn				= '__srn__'
-	"""	Constant: Name of the internal *__srn__* attribute. This attribute holds the resource's structured resource name. """
-
-	_node				= '__node__'
-	"""	Constant: Name of the internal __node__ attribute. This attribute is used in some resource types to hold a reference to the hosting <node> resource. """
-
-	_createdInternally	= '__createdInternally__'	# TODO better name. This is actually an RI
-	""" Constant: Name of the *__createdInternally__* attribute. This attribute indicates whether a resource was created internally or by an external request. """
-
-	_imported			= '__imported__'
-	""" Constant: Name of the *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
-
-	_announcedTo 		= '__announcedTo__'			# List
-	""" Constant: Name of the *__announcedTo__* attribute. This attribute holds internal announcement information. """
-
-	_isInstantiated		= '__isInstantiated__'
-	""" Constant: Name of the *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
-
-	_originator			= '__originator__'			# Or creator
-	""" Constant: Name of the *__originator__* attribute. This attribute holds the original creator of a resource."""
-
-	_modified			= '__modified__'
-	""" Constant: Name of the *__modified__* attribute. This attribute holds the resource's precise modification timestamp. """
-
-	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
-	""" Constant: Name of the *__remoteID__* attribute. This attribute holds a list of the resource's announced variants. """
-
-	_rvi				= '__rvi__'					# Request version indicator when created
-	""" Constant: Name of the *__remoteID__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
+	__slots__ = (
+		'tpe',
+		'readOnly',
+		'inheritACP',
+		'dict',
+		'isImported',
+		'_originalDict',
+	)
 
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	"""	Resource attributes that are excluded when updating the resource """
 
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, 
-							_isInstantiated, _originator, _announcedTo, _modified, _remoteID, _rvi ]
+
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
+							_isInstantiated, _originator, _modified, _remoteID, _rvi]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
@@ -116,20 +107,20 @@ class Resource(object):
 			self.tpe = ty.tpe() if not tpe else tpe
 
 		if dct is not None: 
-			self.isImported = dct.get(self._imported)	# might be None, or boolean
+			self.isImported = dct.get(_imported)	# might be None, or boolean
 			self.dict = deepcopy(dct.get(self.tpe))
 			if not self.dict:
 				self.dict = deepcopy(dct)
 			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
-			self.setAttribute(self._isInstantiated, True)
+			self.setAttribute(_isInstantiated, True)
 
 		# if self.dict is not None:
 		if not self.tpe: 
 			self.tpe = self.__rtype__
 		if not self.hasAttribute('ri'):
-			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite = False)
+			self.setAttribute('ri', uniqueRI(self.tpe), overwrite = False)
 		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
 			self.setAttribute('pi', pi)
 
@@ -139,23 +130,21 @@ class Resource(object):
 
 		# Create an RN if there is none (not given, none in the resource)
 		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
-			self.setResourceName(Utils.uniqueRN(self.tpe))
+			self.setResourceName(uniqueRN(self.tpe))
 
 		# Check uniqueness of ri. otherwise generate a new one. Only when creating
 		if create:
-			while not Utils.isUniqueRI(ri := self.ri):
+			while not isUniqueRI(ri := self.ri):
 				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-				self['ri'] = Utils.uniqueRI(self.tpe)
+				self['ri'] = uniqueRI(self.tpe)
 
 		# Set some more attributes
 		if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
-			ts = DateUtils.getResourceDate()
+			ts = getResourceDate()
 			self.setAttribute('ct', ts, overwrite = False)
 			self.setAttribute('lt', ts, overwrite = False)
 
 		# Handle resource type
-		if ty not in [ ResourceTypes.CSEBase ] and not self.hasAttribute('et'):
-			self.setAttribute('et', DateUtils.getResourceDate(CSE.request.maxExpirationDelta), overwrite = False) 
 		if ty is not None:
 			self.setAttribute('ty', int(ty))
 
@@ -165,16 +154,16 @@ class Resource(object):
 
 		# Remove empty / null attributes from dict
 		# But see also the comment in update() !!!
-		self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
+		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
-		self[self._rtype] = self.tpe
-		self.setAttribute(self._announcedTo, [], overwrite = False)
+		self.setAttribute(_rtype, self.tpe)
 
 
 	# Default encoding implementation. Overwrite in subclasses
 	def asDict(self, embedded:Optional[bool] = True, 
 					 update:Optional[bool] = False, 
-					 noACP:Optional[bool] = False) -> JSON:
+					 noACP:Optional[bool] = False,
+					 sort:bool = False) -> JSON:
 		"""	Get the JSON resource representation.
 		
 			Args:
@@ -191,11 +180,12 @@ class Resource(object):
 					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
 					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
 				}
-
+		if sort:
+			dct = dict(sorted(dct.items())) # sort the dictionary by key
 		return { self.tpe : dct } if embedded else dct
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> None:
 		"""	This method is called to activate a resource, usually in a CREATE request.
 
 			This is not always the case, e.g. when a resource object is just used temporarly.
@@ -206,8 +196,9 @@ class Resource(object):
 			Args:
 				parentResource: The resource's parent resource.
 				originator: The request's originator.
-			Return:
-				Result object indicating success or failure.
+
+			Raises:
+				`BAD_REQUEST`: In case of an invalid attribute.
 		"""
 		# TODO check whether 				CR is set in RegistrationManager
 		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
@@ -215,13 +206,17 @@ class Resource(object):
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
-		if not self[self._isInstantiated] and not self.isVirtual() :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self._attributes, isImported = self.isImported, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
-				return res
+		if not self[_isInstantiated] and not self.isVirtual() :
+			CSE.validator.validateAttributes(self._originalDict, 
+											 self.tpe, 
+											 self.ty, 
+											 self._attributes, 
+											 isImported = self.isImported, 
+											 createdInternally = self.isCreatedInternally(), 
+											 isAnnounced = self.isAnnounced())
 
 		# validate the resource logic
-		if not (res := self.validate(originator, create = True, parentResource = parentResource)).status:
-			return res
+		self.validate(originator, parentResource = parentResource)
 		self.dbUpdate()
 		
 		# Various ACPI handling
@@ -229,16 +224,11 @@ class Resource(object):
 		if self.acpi is not None and not self.isAnnounced():
 			# Test wether an empty array is provided				
 			if len(self.acpi) == 0:
-				return Result.errorResult(dbg = 'acpi must not be an empty list')
-			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
-				return res
-			self.setAttribute('acpi', res.data)
+				raise BAD_REQUEST('acpi must not be an empty list')
+			self.setAttribute('acpi', self._checkAndFixACPIreferences(self.acpi))
 
-		self.setAttribute(self._originator, originator, overwrite = False)
-		self.setAttribute(self._rtype, self.tpe, overwrite = False) 
-
-		# return Result(status = True, rsc = RC.OK)
-		return Result.successResult()
+		self.setAttribute(_originator, originator, overwrite = False)
+		self.setAttribute(_rtype, self.tpe, overwrite = False) 
 
 
 	def deactivate(self, originator:str) -> None:
@@ -266,70 +256,80 @@ class Resource(object):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
 
 			This method is implemented in sub-classes as well.
 
+			Note:
+				This method updates the resource in the database. It should be called only after all other checks where performed.
+
 			Args:
 				dct: An optional JSON dictionary with the attributes to be updated.
 				originator: The optional requests originator that let to the update of the resource.
 				doValidateAttributes: If *True* optionally call the resource's `validate()` method.
 
-			Return:
-				Result object indicating success or failure.
+			Raises:
+				`CONTENTS_UNACCEPTABLE`: In case of a resource mismatch.
+				`BAD_REQUEST`: In case of an invalid attribute.
+				`INTERNAL_SERVER_ERROR`: In case the parent resource coudln't be retrieved.
 		"""
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
-		updatedAttributes = None
+		updatedAttributes:dict[str, Any] = None
 		if dct:
-			if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
-				L.isWarn and L.logWarn("Update type doesn't match target")
-				return Result.errorResult(rsc = ResponseStatusCode.contentsUnacceptable, dbg = 'resource types mismatch')
+			CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+			# if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+			# 	L.isWarn and L.logWarn("Update type doesn't match target")
+			# 	raise CONTENTS_UNACCEPTABLE('resource types mismatch')
 
-			# validate the attributes
-			if doValidateAttributes and not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
-				return res
+			# # validate the attributes
+			# if doValidateAttributes:
+			# 	CSE.validator.validateAttributes(dct, 
+			# 									 self.tpe, 
+			# 									 self.ty, 
+			# 									 self._attributes, 
+			# 									 create = False, 
+			# 									 createdInternally = 
+			# 									 self.isCreatedInternally(), 
+			# 									 isAnnounced = self.isAnnounced())
 
 			if self.ty not in [ResourceTypes.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
 			else:
-				updatedAttributes = Utils.findXPath(dct, '{*}')
+				updatedAttributes = findXPath(dct, '{*}')
 
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
-																						# Removing acpi by setting it to None is handled in the else:
-																						# acpi can be None! Therefore the complicated test
-				# Test wether an empty array is provided				
-				if len(ua := updatedAttributes['acpi']) == 0:
-					return Result.errorResult(dbg = 'acpi must not be an empty list')
-				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
-				if not (res := self._checkAndFixACPIreferences(ua)).status:
-					return res
+			if 'acpi' in updatedAttributes and (ua := updatedAttributes['acpi']) is not None:	
 				
-				self.setAttribute('acpi', res.data, overwrite = True) # copy new value or add new attributes
+				# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
+				# Removing acpi by setting it to None is handled in the else:
+				# acpi can be None! Therefore the complicated test
+
+				# Test wether an empty array is provided				
+				if len(ua) == 0:
+					raise BAD_REQUEST('acpi must not be an empty list')
+
+				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
+				self.setAttribute('acpi', self._checkAndFixACPIreferences(ua), overwrite = True) # copy new value or add new attributes
 
 			else:
 
 				# Update other  attributes
-				for key in updatedAttributes:
+				for key, value in updatedAttributes.items():
 					# Leave out some attributes
 					if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 						continue
-					value = updatedAttributes[key]
-
-					# Special handling for et when deleted/set to Null: set a new et
-					if key == 'et' and not value:
-						self['et'] = DateUtils.getResourceDate(CSE.request.maxExpirationDelta)
-						continue
-					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
+					# copy new value or add new attributes.
+					# Also setting it to Null/None would later remove it
+					self.setAttribute(key, value, overwrite = True) 
 			
 
 		# Update lt for those resources that have these attributes
 		if 'lt' in self.dict:	# Update the lastModifiedTime
-			self['lt'] = DateUtils.getResourceDate()
+			self['lt'] = getResourceDate()
 
 		# Remove empty / null attributes from dict
 		# 2020-08-10 : 	TinyDB doesn't overwrite the whole document but makes an attribute-by-attribute 
@@ -337,31 +337,30 @@ class Resource(object):
 		#				procedure in the Storage component that removes nulled attributes as well.
 		#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 
+		# Retrieve the parent resource for validation
+		if not (parentResource := cast(Resource, self.retrieveParentResource())):
+			raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent resource'))
+
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator, dct = dct)).status:
-			return res
+		self.validate(originator, dct = dct, parentResource = parentResource)
 
 		# store last modified attributes
-		self[self._modified] = Utils.resourceDiff(dictOrg, self.dict, updatedAttributes)
+		self[_modified] = resourceDiff(dictOrg, self.dict, updatedAttributes)
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[self._modified])
+		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[_modified])
 		self.dbUpdate()
 
 		# Check Attribute Trigger
-		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[self._modified])
+		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[_modified])
 
 		# Notify parent that a child has been updated
-		if not (parent := cast(Resource, self.retrieveParentResource())):
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
-		parent.childUpdated(self, updatedAttributes, originator)
-
-		return Result.successResult()
+		parentResource.childUpdated(self, updatedAttributes, originator)
 
 
 	def willBeUpdated(self, dct:Optional[JSON] = None, 
 							originator:Optional[str] = None, 
-							subCheck:Optional[bool] = True) -> Result:
+							subCheck:Optional[bool] = True) -> None:
 		""" This method is called before a resource will be updated and before calling the `update()` method.
 			
 			This method is implemented in some sub-classes.
@@ -370,14 +369,9 @@ class Resource(object):
 				dct: `JSON` dictionary with the attributes that will be updated.
 				originator: The request originator.
 				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
-
-			Return:
-				Result object indicating success or failure.
 		"""
 		# Perform BlockingUpdate check, and reload resource if necessary
-		if not (res := CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())).status:
-			return res
-		return Result.successResult()
+		CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())
 
 
 	def updated(self, dct:Optional[JSON] = None, 
@@ -392,12 +386,12 @@ class Resource(object):
 				dct: Optional JSON dictionary with the updated attributes.
 				originator: The optional request originator.
 		"""
-		pass
+		...
 
 
 	def willBeRetrieved(self, originator:str, 
 							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> Result:
+							  subCheck:Optional[bool] = True) -> None:
 		""" This method is called before a resource will be send back in a RETRIEVE response.
 			
 			This method is implemented in some sub-classes.
@@ -406,17 +400,13 @@ class Resource(object):
 				originator: The request originator.
 				request: The RETRIEVE request.
 				subCheck: Optional indicator that a blocking Retrieve shall be performed, if configured.
-			Return:
-				Result object indicating success or failure.
 		"""
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
-			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())).status:
-				return res
-		return Result.successResult()
+			CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
 		""" Called before a child will be added to a resource.
 			
 			This method is implemented in some sub-classes.
@@ -424,10 +414,9 @@ class Resource(object):
 			Args:
 				childResource: Resource that will be added as a child to the resource.
 				originator: The request originator.
-			Return:
-				A Result object with status True, or False (in which case the adding will be rejected), and an error code.
+
 		"""
-		return Result.successResult()
+		...
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
@@ -453,7 +442,7 @@ class Resource(object):
 				updatedAttributes: JSON dictionary with the updated attributes.
 				originator: The request originator.
 		"""
-		pass
+		...
 
 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
@@ -481,9 +470,8 @@ class Resource(object):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		""" Validate a resource. 
 		
 			Usually called within `activate()` or `update()` methods.
@@ -492,43 +480,45 @@ class Resource(object):
 
 			Args:
 				originator: Optional request originator
-				create: Optional indicator whether this is CREATE request
 				dct: Updated attributes to validate
 				parentResource: The parent resource
-			Return:
-				A Result object with status True, or False (in which case the request will be rejected), and an error code.
+
+			Raises
+				`BAD_REQUEST`: In case of a validation error.
 		"""
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
-		if not ( Utils.isValidID(self.ri) and
-				 Utils.isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
-				 Utils.isValidID(self.rn)):
-			return Result.errorResult(rsc = ResponseStatusCode.badRequest, dbg = L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
+		if not ( isValidID(self.ri) and
+				 isValidID(self.pi, allowEmpty = self.ty == ResourceTypes.CSEBase) and # pi is empty for CSEBase
+				 isValidID(self.rn)):
+			raise BAD_REQUEST(L.logDebug(f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})'))
 
-		# expirationTime handling
+		# expirationTimestamp handling
 		if et := self.et:
 			if self.ty == ResourceTypes.CSEBase:
-				return Result.errorResult(dbg = L.logWarn('expirationTime is not allowed in CSEBase'))
-			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
-				return Result.errorResult(dbg = L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
-			if et > (etMax := DateUtils.getResourceDate(CSE.request.maxExpirationDelta)):
-				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
-				self['et'] = etMax
-		return Result.successResult()
+				raise BAD_REQUEST(L.logWarn('expirationTime is not allowed in CSEBase'))
+			
+			# In the past?
+			if len(et) > 0 and et < (etNow := getResourceDate()):
+				raise BAD_REQUEST(L.logWarn(f'expirationTime is in the past: {et} < {etNow}'))
+
+			# Check if the et is later than the parent's et
+			if parentResource and parentResource.ty != ResourceTypes.CSEBase and et > parentResource.et:
+				L.isDebug and L.logDebug(f'et is later than the parent\'s et. Correcting.')
+				self.setAttribute('et', parentResource.et)
+
+			# Maximum Expiration time
+			if et > (etMax := getResourceDate(CSE.request.maxExpirationDelta)):
+				L.isWarn and L.logWarn(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
+				self.setAttribute('et', etMax)
+
+		else:	# set et to the parents et if not in the resource yet
+			if self.ty != ResourceTypes.CSEBase:	# Only when not CSEBase
+				if not (et := parentResource.et):
+					et = getResourceDate(CSE.request.maxExpirationDelta)
+				self.setAttribute('et', et)
 
 
 	#########################################################################
-
-	def createdInternally(self) -> str:
-		""" Return the resource.ri for which a resource was created.
-
-			This is done in case a resource must be created as a side-effect when another resource
-			is, for example, created.
-		
-			Return:
-				Resource ID of the resource for which this resource has been created, or None.
-		"""
-		return str(self[self._createdInternally])
-
 
 	def isCreatedInternally(self) -> bool:
 		""" Test whether a resource has been created for another resource.
@@ -536,7 +526,7 @@ class Resource(object):
 			Return:
 				True if this resource has been created for another resource.
 		"""
-		return self[self._createdInternally] is not None
+		return self[_createdInternallyRI] is not None
 
 
 	def setCreatedInternally(self, ri:str) -> None:
@@ -548,7 +538,7 @@ class Resource(object):
 				ri: Resource ID of the resource for which this resource has been created for.
 
 		"""
-		self[self._createdInternally] = ri
+		self[_createdInternallyRI] = ri
 
 
 	def isAnnounced(self) -> bool:
@@ -573,6 +563,7 @@ class Resource(object):
 	#
 	#	request handler stubs for virtual resources
 	#
+
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
 									id:Optional[str] = None,
@@ -651,11 +642,11 @@ class Resource(object):
 			If the attribute doesn't exist then it is created.
 		
 			Args:
-				key: The resource attribute's name. This can be a path (see `etc.Utils.setXPath`).
+				key: The resource attribute's name. This can be a path (see `setXPath`).
 				value: Value to assign to the attribute.
 				overwrite: Overwrite the value if already set.
 		"""
-		Utils.setXPath(self.dict, key, value, overwrite)
+		setXPath(self.dict, key, value, overwrite)
 
 
 	def attribute(self, key:str, 
@@ -663,12 +654,12 @@ class Resource(object):
 		"""	Return the value of an attribute.
 		
 			Args:
-				key: Resource attribute name to look for. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to look for. This can be a path (see `findXPath`).
 				default: A default value to return if the attribute is not set.
 			Return:
 				The attribute's value, the *default* value, or None
 		"""
-		return Utils.findXPath(self.dict, key, default)
+		return findXPath(self.dict, key, default)
 
 
 	def hasAttribute(self, key:str) -> bool:
@@ -698,6 +689,23 @@ class Resource(object):
 				self.dict[key] = None
 			else:
 				del self.dict[key]
+	
+
+	def getFinalResourceAttribute(self, key:str, dct:Optional[JSON]) -> Any:
+		"""	Determine and return the final value of an attribute during an update.
+		
+			Args:
+				key: Attribute name.
+				dct: The dictionary with updated attributes.
+			
+			Return:
+				The either updated attribute, or old value if the attribute is not updated. The methon returns *None* if the attribute does not exists.
+		"""
+		value = self.attribute(key)	# old value
+		if dct is not None:
+			newValue = findXPath(dct, f'{self.tpe}/{key}')
+			value = newValue if newValue is not None else value
+		return value
 
 
 	def __setitem__(self, key:str, value:Any) -> None:
@@ -706,7 +714,7 @@ class Resource(object):
 			It maps to the `setAttribute()` method, and always overwrites existing values.
 
 			Args:
-				key: The resource attribute's name. This can be a path (see `etc.Utils.setXPath`).
+				key: The resource attribute's name. This can be a path (see `setXPath`).
 				value: Value to assign to the attribute.
 		"""
 		self.setAttribute(key, value)
@@ -718,7 +726,7 @@ class Resource(object):
 			It maps to the `attribute()` method, but there is no default value.
 
 			Args:
-				key: Resource attribute name to look for. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to look for. This can be a path (see `findXPath`).
 			Return:
 				The attribute's value, or None
 		"""
@@ -731,7 +739,7 @@ class Resource(object):
 			It maps to the `delAttribute()` method, with *setNone* implicitly set to the default.
 
 			Args:
-				key: Resource attribute name to delete. This can be a path (see `etc.Utils.findXPath`).
+				key: Resource attribute name to delete. This can be a path (see `findXPath`).
 		"""
 		self.delAttribute(key)
 
@@ -780,33 +788,35 @@ class Resource(object):
 		"""
 		if uris := self[attributeName]:
 			if isinstance(uris, list):	# list of uris
-				self[attributeName] = [ Utils.normalizeURL(uri) for uri in uris ] 
+				self[attributeName] = [ normalizeURL(uri) for uri in uris ] 
 			else: 							# single uri
-				self[attributeName] = Utils.normalizeURL(uris)
+				self[attributeName] = normalizeURL(uris)
 
 
-	def _checkAndFixACPIreferences(self, acpi:list[str]) -> Result:
+	def _checkAndFixACPIreferences(self, acpi:list[str]) -> List[str]:
 		""" Check whether a referenced `ACP` resoure exists, and if yes, change the ID in the list to CSE relative unstructured format.
 
 			Args:
 				acpi: List if resource IDs to `ACP` resources.
+
 			Return:
-				Result instance. If fully successful (ie. all `ACP` resources exist), then a new list with all IDs converted is returned in *Result.data*.
+				If fully successful (ie. all `ACP` resources exist), then a new list with all IDs converted is returned.
 		"""
-		newACPIList =[]
+
+		newACPIList:List[str] = []
 		for ri in acpi:
 			if not CSE.importer.isImporting:
-
-				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
-					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-					return Result.errorResult(dbg = dbg)
+				try:
+					acp = CSE.dispatcher.retrieveResource(ri)
+				except ResponseException as e:
+					raise BAD_REQUEST(L.logDebug(f'Referenced <ACP> resource not found: {ri} : {e.dbg}'))
 
 					# TODO CHECK TYPE + TEST
 
 				newACPIList.append(acp.ri)
 			else:
 				newACPIList.append(ri)
-		return Result(status = True, data = newACPIList)
+		return newACPIList
 	
 
 	def _addToInternalAttributes(self, name:str) -> None:
@@ -822,7 +832,7 @@ class Resource(object):
 
 
 	def hasAttributeDefined(self, name:str) -> bool:
-		"""	Test wether a resource supports the specified attribute.
+		"""	Test whether a resource supports the specified attribute.
 		
 			Args:
 				name: Attribute to test.
@@ -837,25 +847,34 @@ class Resource(object):
 	#	Database functions
 	#
 
-	def dbDelete(self) -> Result:
+	def dbDelete(self) -> None:
 		""" Delete the resource from the database.
 		
 			Return:
 				Result object indicating success or failure.
 		 """
-		return CSE.storage.deleteResource(self)
+		CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self) -> Result:
-		""" Update the resource in the database. 
+	def dbUpdate(self, finalize:bool = False) -> Resource:
+		""" Update the resource in the database.
+
+			This also raises a CSE internal *updateResource* event.
+
+			Args:
+				finalize: Treat this database write as a final update to the resource. Only then an event is raised.
 
 			Return:
 				Result object indicating success or failure.
 		"""
-		return CSE.storage.updateResource(self)
+		CSE.storage.updateResource(self)
+		# L.logWarn(f'{finalize} - {self.ri}')
+		if finalize and not self.isVirtual():
+				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
+		return self
 
 
-	def dbCreate(self, overwrite:Optional[bool] = False) -> Result:
+	def dbCreate(self, overwrite:Optional[bool] = False) -> None:
 		"""	Add the resource to the database.
 		
 			Args:
@@ -863,33 +882,34 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		return CSE.storage.createResource(self, overwrite)
+		CSE.storage.createResource(self, overwrite)
 
 
-	def dbReload(self) -> Result:
-		""" Load a new copy of the same resource from the database. 
+	def dbReload(self) -> Resource:
+		""" Load a **new** copy of the same resource from the database. 
 			
 			The current resource is NOT changed. 
 			
 			Note:
 				The version of the resource in the database might be different, e.g. when the resource instance has been modified but not updated in the database.
+
 			Return:
-				Result object indicating success or failure. The resource is returned in the *Result.resource* attribute.		
+				Resource instance.	
 			"""
 		return CSE.storage.retrieveResource(ri = self.ri)
 
 
-	def dbReloadDict(self) -> Result:
+	def dbReloadDict(self) -> Resource:
 		"""	Reload the resource instance from the database.
 		
 			The current resource's internal attributes are updated with the versions from the database.
 
 			Return:
-				Result object indicating success or failure. The resource is returned as well in the *Result.resource* attribute.		
+				Updated Resource instance.	
 		 """
-		if (res := CSE.storage.retrieveResource(ri = self.ri)).status:
-			self.dict = res.resource.dict
-		return res
+		resource = CSE.storage.retrieveResource(ri = self.ri)
+		self.dict = resource.dict
+		return self
 
 	#########################################################################
 	#
@@ -925,6 +945,27 @@ class Resource(object):
 		return isinstance(other, Resource) and self.ri == other.ri
 
 
+	def structuredPath(self) -> Optional[str]:
+		""" Determine the structured path of a resource.
+
+			Return:
+				Structured path of the resource or None
+		"""
+		rn:str = self.rn
+		if self.ty == ResourceTypes.CSEBase: # if CSE
+			return rn
+
+		# retrieve identifier record of the parent
+		if not (pi := self.pi):
+			# L.logErr('PI is None')
+			return rn
+		if len(rpi := CSE.storage.identifier(pi)) == 1:
+			return cast(str, f'{rpi[0]["srn"]}/{rn}')
+		# L.logErr(traceback.format_stack())
+		L.logErr(f'Parent {pi} not found in DB')
+		return rn # fallback
+
+
 	def isModifiedAfter(self, otherResource:Resource) -> bool:
 		"""	Test whether this resource has been modified after another resource.
 
@@ -942,7 +983,7 @@ class Resource(object):
 			Return:
 				The parent Resource of the resource.
 		"""
-		return CSE.dispatcher.retrieveLocalResource(self.pi).resource	#type:ignore[no-any-return]
+		return CSE.dispatcher.retrieveLocalResource(self.pi)	#type:ignore[no-any-return]
 
 
 	def retrieveParentResourceRaw(self) -> JSON:
@@ -951,7 +992,7 @@ class Resource(object):
 			Return:
 				Document of the parent resource
 		"""
-		return CSE.storage.retrieveResourceRaw(self.pi).resource
+		return CSE.storage.retrieveResourceRaw(self.pi)
 
 
 	def getOriginator(self) -> str:
@@ -960,7 +1001,7 @@ class Resource(object):
 			Return:
 				The resource's originator.
 		"""
-		return self[self._originator]
+		return self[_originator]
 	
 
 	def setOriginator(self, originator:str) -> None:
@@ -971,18 +1012,8 @@ class Resource(object):
 			Args:
 				originator: The originator to assign to a resource.
 		"""
-		self.setAttribute(self._originator, originator, overwrite = True)
+		self.setAttribute(_originator, originator)
 	
-
-
-	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
-		"""	Return the internal *announcedTo* list attribute of a resource.
-
-			Return:
-				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
-		"""
-		return self[self._announcedTo]
-
 	
 	def setResourceName(self, rn:str) -> None:
 		"""	Set the resource name. 
@@ -996,8 +1027,8 @@ class Resource(object):
 
 		# determine and add the srn, only when this is a local resource, otherwise we don't need this information
 		# It is *not* a remote resource when the __remoteID__ is set
-		if not self[self._remoteID]:
-			self.setSrn(Utils.structuredPath(self))
+		if not self[_remoteID]:
+			self.setSrn(self.structuredPath())
 
 
 	def getSrn(self) -> str:
@@ -1006,7 +1037,7 @@ class Resource(object):
 			Return:
 				The resource's full structured resource name.
 		"""
-		return self[self._srn]
+		return self[_srn]
 	
 
 	def setSrn(self, srn:str) -> None:
@@ -1015,7 +1046,7 @@ class Resource(object):
 			Args:
 				srn: The full structured resource name to assign to a resource.
 		"""
-		self.setAttribute(self._srn, srn, overwrite = True)
+		self.setAttribute(_srn, srn)
 
 
 	def getRVI(self) -> str:
@@ -1024,7 +1055,7 @@ class Resource(object):
 			Return:
 				The resource's *rvi*.
 		"""
-		return self[self._rvi]
+		return self[_rvi]
 	
 
 	def setRVI(self, rvi:str) -> None:
@@ -1035,4 +1066,4 @@ class Resource(object):
 			Args:
 				rvi: Original CREATE request's *rvi*.
 		"""
-		self.setAttribute(self._rvi, rvi, overwrite = True)
+		self.setAttribute(_rvi, rvi)

@@ -33,7 +33,7 @@ class TestTS(unittest.TestCase):
 			 		'poa' : [ NOTIFICATIONSERVER ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		testCaseEnd('Setup TestTS')
 
@@ -72,7 +72,7 @@ class TestTS(unittest.TestCase):
 					'cnf'	: 'text/plain:0'
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -90,7 +90,7 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 5000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
-		#self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), 5001)
@@ -104,7 +104,7 @@ class TestTS(unittest.TestCase):
 					'rn'	: tsRN,
 				}}
 		r, rsc = CREATE(tsURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType, r)
+		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -115,7 +115,7 @@ class TestTS(unittest.TestCase):
 					'mni'	: 10
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mni'), 10)
 
@@ -128,31 +128,31 @@ class TestTS(unittest.TestCase):
 					'mbs'	: 1000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mbs'), 1000)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSpei(self) -> None:
+	def test_updateTSpeiFail(self) -> None:
 		""" Update <TS> pei -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'pei'	: 1000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSpeid(self) -> None:
+	def test_updateTSpeidFail(self) -> None:
 		""" Update <TS> peid -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'peid'	: 1000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -163,7 +163,7 @@ class TestTS(unittest.TestCase):
 					'mdd'	: True,
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -174,7 +174,7 @@ class TestTS(unittest.TestCase):
 					'mdn'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -185,7 +185,7 @@ class TestTS(unittest.TestCase):
 					'mdn'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -196,7 +196,7 @@ class TestTS(unittest.TestCase):
 					'mdn'	: None
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -207,7 +207,7 @@ class TestTS(unittest.TestCase):
 					'pei'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -218,7 +218,7 @@ class TestTS(unittest.TestCase):
 					'pei'	: 200
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -229,7 +229,7 @@ class TestTS(unittest.TestCase):
 					'mdd'	: False
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -241,7 +241,7 @@ class TestTS(unittest.TestCase):
 					'mdt'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -253,7 +253,7 @@ class TestTS(unittest.TestCase):
 					'mdn'	: 10
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -265,7 +265,7 @@ class TestTS(unittest.TestCase):
 					'pei'	: 1000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -277,7 +277,7 @@ class TestTS(unittest.TestCase):
 					'peid'	: 200
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -289,7 +289,7 @@ class TestTS(unittest.TestCase):
 					'peid'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -300,7 +300,7 @@ class TestTS(unittest.TestCase):
 					'mdn'	: 5
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 5)
 
 
@@ -312,7 +312,7 @@ class TestTS(unittest.TestCase):
 					'mdc'	: 5
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -323,7 +323,7 @@ class TestTS(unittest.TestCase):
 					'mdlt'	: [ ]
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -334,7 +334,7 @@ class TestTS(unittest.TestCase):
 					'cnf'	: 'application/wrong'
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -345,12 +345,12 @@ class TestTS(unittest.TestCase):
 					'mdn'	: None
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		# self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
 		# self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
 		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
@@ -358,7 +358,7 @@ class TestTS(unittest.TestCase):
 	def test_deleteTS(self) -> None:
 		"""	Delete <TS> """
 		_, rsc = DELETE(tsURL, TestTS.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -369,7 +369,7 @@ class TestTS(unittest.TestCase):
 					'rn'	: tsRN,
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertFalse(findXPath(r, 'm2m:ts/mdd'), r)
 		#TODO after discussion with Bob. Decide whether to have or don't have initial
@@ -385,7 +385,7 @@ class TestTS(unittest.TestCase):
 					'mdd'	: True
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -397,7 +397,7 @@ class TestTS(unittest.TestCase):
 					'peid'	: 500,
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -409,7 +409,7 @@ class TestTS(unittest.TestCase):
 					'peid'	: 501,
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -420,7 +420,7 @@ class TestTS(unittest.TestCase):
 					'cnf'	: 'wrong',
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -436,7 +436,7 @@ class TestTS(unittest.TestCase):
 				}
 			}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -449,10 +449,11 @@ class TestTS(unittest.TestCase):
 				}
 			}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 		# set mdd to False
 		dct2 = {	'm2m:ts': {
@@ -460,10 +461,11 @@ class TestTS(unittest.TestCase):
 				}
 			}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 		# add mdd with True
 		dct2 = {	'm2m:ts': {
@@ -471,10 +473,11 @@ class TestTS(unittest.TestCase):
 				}
 			}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 
 		# set mdd to False again (mdlt, mdc stay in the resource)
 		dct2 = {	'm2m:ts': {
@@ -482,10 +485,38 @@ class TestTS(unittest.TestCase):
 				}
 			}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updatePeiCheckPeid(self) -> None:
+		""" UPDATE <TS> with pei -> check peid """
+		self.assertIsNotNone(TestTS.ae)
+
+		# create <TS> with pei
+		dct = {	'm2m:ts': {
+					'rn':'TimeSeries3',
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/peid'), r)
+
+		# update pei
+		dct2 = {	'm2m:ts': {
+					'pei': 1000,                          # milliseconds
+			}}
+		r, rsc = UPDATE(f'{aeURL}/TimeSeries3', TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/peid'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
 
 
@@ -497,8 +528,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestTS('test_createTSunderTS'))
 	addTest(suite, TestTS('test_updateTSmni'))
 	addTest(suite, TestTS('test_updateTSmbs'))
-	addTest(suite, TestTS('test_updateTSpei'))
-	addTest(suite, TestTS('test_updateTSpeid'))
+	addTest(suite, TestTS('test_updateTSpeiFail'))
+	addTest(suite, TestTS('test_updateTSpeidFail'))
 
 	addTest(suite, TestTS('test_updateTSmddTrue'))
 	addTest(suite, TestTS('test_updateTSmddTrueAndMdtFail'))
@@ -531,6 +562,8 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	addTest(suite, TestTS('test_deleteTS'))
 	addTest(suite, TestTS('test_MddMdltMdcHandling'))
+
+	addTest(suite, TestTS('test_updatePeiCheckPeid'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

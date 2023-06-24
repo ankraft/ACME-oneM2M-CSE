@@ -75,7 +75,7 @@ class TestLoad(unittest.TestCase):
 						'srv': [ RELEASEVERSION ]
 					}}
 			r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			ri = findXPath(r, 'm2m:ae/ri')
 			rn = findXPath(r, 'm2m:ae/rn')
 			aes.append((ri, rn))
@@ -101,7 +101,7 @@ class TestLoad(unittest.TestCase):
 		self.assertEqual(len(aes), count)
 		for ae in list(aes):
 			r, rsc = DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
-			self.assertEqual(rsc, RC.deleted, r)
+			self.assertEqual(rsc, RC.DELETED, r)
 			aes.remove(ae)
 		self.assertEqual(len(aes), 0)
 
@@ -115,7 +115,7 @@ class TestLoad(unittest.TestCase):
 					'mni': mni
 				}}
 			r, rsc = CREATE(f'{cseURL}/{aern}',  originator, T.CNT, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			ri = findXPath(r, 'm2m:cnt/ri')
 			rn = findXPath(r, 'm2m:cnt/rn')
 			cnts.append((ri, rn))
@@ -132,7 +132,7 @@ class TestLoad(unittest.TestCase):
 					'con': 'Hello, world'
 				}}
 			r, rsc = CREATE(f'{cseURL}/{aern}/{cntrn}',  originator, T.CIN, dct)
-			self.assertEqual(rsc, RC.created, r)
+			self.assertEqual(rsc, RC.CREATED, r)
 			ri = findXPath(r, 'm2m:cnt/ri')
 			rn = findXPath(r, 'm2m:cin/rn')
 			cins.append((ri, rn))

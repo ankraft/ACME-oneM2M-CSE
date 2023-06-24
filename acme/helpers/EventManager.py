@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional, cast
 
-from ..etc import Utils
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
@@ -49,17 +48,28 @@ class Event(list):	# type:ignore[type-arg]
 	Attributes:
 		runInBackground: Indicator whether an event should be handled in a separate thread.
 		manager: The responsible `EventManager` to handle an event.
+		name: The event name.
 	"""
 
-	def __init__(self, runInBackground:Optional[bool] = True, manager:Optional[EventManager] = None):
+	__slots__ = (
+		'runInBackground',
+		'manager',
+		'name',
+	)
+
+	def __init__(self,  runInBackground:Optional[bool] = True, 
+						manager:Optional[EventManager] = None,
+						name:Optional[str] = None):
 		"""	Event initialization.
 
 			Args:
 				runInBackground: Indicator whether an event should be handled in a separate thread.
 				manager: The responsible `EventManager` to handle an event.
+				name: The event name.
 		"""
 		self.runInBackground = runInBackground
 		self.manager = manager
+		self.name = name
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
@@ -74,7 +84,7 @@ class Event(list):	# type:ignore[type-arg]
 				kwargs: Keyword function arguments.
 		"""
 
-		def _runner(*args:Any, **kwargs:Any) -> None:
+		def _runner(name:str, *args:Any, **kwargs:Any) -> None:
 			"""	Call all registered function for this event object. Pass on any argument.
 	
 				Args:
@@ -82,15 +92,20 @@ class Event(list):	# type:ignore[type-arg]
 					kwargs: Keyword function arguments.
 			"""
 			for function in self:
-				function(*args, **kwargs)
+				# if self.runInBackground:
+				# 	x = BackgroundWorkerPool.runJob(lambda name = name, args = args, kwargs = kwargs: function(name, *args, **kwargs))
+				# else:
+				# 	function(name, *args, **kwargs)
+				function(name, *args, **kwargs)
 
 		if not self.manager._running:
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(*args, **kwargs))
+			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = self.name)
 		else:
-			_runner(*args, **kwargs)
+			_runner(self.name, *args, **kwargs)
+		# _runner(self.name, *args, **kwargs)
 
 
 	def __repr__(self) -> str:
@@ -121,6 +136,11 @@ class EventManager(object):
 			_running: Internal Running indicator for the manager instance.
 	"""
 
+	__slots__ = (
+		'_running',
+	)
+
+
 	def __init__(self) -> None:
 		"""	EventManager initialization.
 		"""
@@ -148,7 +168,7 @@ class EventManager(object):
 				The created `Event`.
 		"""
 		if not hasattr(self, name):
-			setattr(self, name, Event(runInBackground = runInBackground, manager = self))
+			setattr(self, name, Event(runInBackground = runInBackground, manager = self, name = name))
 		return cast(Event, getattr(self, name))
 
 

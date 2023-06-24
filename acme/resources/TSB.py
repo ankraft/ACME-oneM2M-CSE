@@ -11,7 +11,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, Result, JSON
-from ..etc import DateUtils
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.DateUtils import fromDuration
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services import CSE
@@ -84,19 +85,17 @@ class TSB(AnnounceableResource):
 # TODO update:
 # TODO deactivate
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
-		return CSE.time.addTimeSyncBeacon(self)
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
+		CSE.time.addTimeSyncBeacon(self)
 	
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		originalBcnc = self.bcnc
-		if not (res := super().update(dct, originator)).status:
-			return res
-		return CSE.time.updateTimeSyncBeacon(self, originalBcnc)
+		super().update(dct, originator, doValidateAttributes)
+		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
 	
 
 	def deactivate(self, originator: str) -> None:
@@ -105,44 +104,39 @@ class TSB(AnnounceableResource):
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating timeSeriesBeacon: {self.ri}')
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+		super().validate(originator, dct, parentResource)
 		
 		# Check length of beaconNotificationURI
 		if len(self.bcnu) == 0:
-			L.logWarn(dbg := f'beaconNotificationURI attribute shall shall contain at least one URI')
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'beaconNotificationURI attribute shall shall contain at least one URI')
 
 		# Check beaconInterval
 		if self.hasAttribute('bcni') and self.bcnc != BeaconCriteria.PERIODIC:
-			return Result.errorResult(dbg = L.logWarn(f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC'))
+			raise BAD_REQUEST(L.logWarn(f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC'))
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
-			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
+			self.setAttribute('bcni', Configuration.get('resource.tsb.bcni'))
 		if self.hasAttribute('bcni'):
-			self.setAttribute(self._bcni, DateUtils.fromDuration(self.bcni))
+			self.setAttribute(self._bcni, fromDuration(self.bcni))
 		
 		# Check beaconThreshold
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
-			return Result.errorResult(dbg = L.logWarn(f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
+			raise BAD_REQUEST(L.logWarn(f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
-			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
+			self.setAttribute('bcnt', Configuration.get('resource.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
-			self.setAttribute(self._bcnt, DateUtils.fromDuration(self.bcnt))
+			self.setAttribute(self._bcnt, fromDuration(self.bcnt))
 		
 		# Check beaconRequester
 		if self.hasAttribute('bcnr'):
 			if self.bcnc == BeaconCriteria.PERIODIC:
-				return Result.errorResult(dbg = L.logWarn(f'beaconRequester attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
+				raise BAD_REQUEST(L.logWarn(f'beaconRequester attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		else:
 			if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
-				return Result.errorResult(dbg = L.logWarn(f'beaconRequester attribute shall be present when beaconCriteria is PERIODIC'))
+				raise BAD_REQUEST(L.logWarn(f'beaconRequester attribute shall be present when beaconCriteria is PERIODIC'))
 
-		return Result.successResult()
-		
 
 	def getInterval(self) -> float:
 		"""	Return the real beacon interval in seconds instead of the ISO period.

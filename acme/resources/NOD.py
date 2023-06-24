@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..etc import Utils as Utils
+from ..etc.Utils import uniqueID
 from ..services import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -64,7 +64,7 @@ class NOD(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.NOD, dct, pi, create = create)
-		self.setAttribute('ni', Utils.uniqueID(), overwrite = False)
+		self.setAttribute('ni', uniqueID(), overwrite = False)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -80,8 +80,8 @@ class NOD(AnnounceableResource):
 
 	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
 		""" Remove NOD.ri from AE node link. """
-		if aeResource := CSE.dispatcher.retrieveResource(aeRI).resource:
+		if aeResource := CSE.dispatcher.retrieveResource(aeRI):
 			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
-				aeResource.dbUpdate()
+				aeResource.dbUpdate(True)
 

@@ -27,7 +27,6 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('httpDelete')
 		self.addEvent('httpUpdate')
 		self.addEvent('httpNotify')
-		self.addEvent('httpRedirect')
 		self.addEvent('httpSendRetrieve')
 		self.addEvent('httpSendCreate')
 		self.addEvent('httpSendUpdate')
@@ -37,13 +36,13 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
 		self.addEvent('expireResource')
+		self.addEvent('changeResource')	# whenever a resource is updated or changed in any way
 		self.addEvent('createChildResource')
 		self.addEvent('mqttRetrieve')
 		self.addEvent('mqttCreate')
 		self.addEvent('mqttDelete')
 		self.addEvent('mqttUpdate')
 		self.addEvent('mqttNotify')
-		self.addEvent('mqttRedirect')
 		self.addEvent('mqttSendRetrieve')
 		self.addEvent('mqttSendCreate')
 		self.addEvent('mqttSendUpdate')
@@ -62,6 +61,9 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('registreeCSEHasRegistered')
 		self.addEvent('registreeCSEUpdate')
 		self.addEvent('registreeCSEHasDeregistered')
+		self.addEvent('registeredToRemoteCSE')							# After this CSE has also registered to the registering remote CSE
+		self.addEvent('aeHasRegistered')								# AE has registered
+		self.addEvent('aeHasDeregistered')								# AE has dereigistered
 		self.addEvent('notification')
 		self.addEvent('configUpdate', runInBackground = False)
 		self.addEvent('keyboard', runInBackground = False)

@@ -8,14 +8,16 @@
 #
 
 from __future__ import annotations
+from typing import Any, Callable, Tuple, cast, Optional
+
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
 
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
+from datetime import datetime, timezone
 import cbor2
-from typing import Any, Callable, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
@@ -23,21 +25,20 @@ import cbor2
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
+from acme.etc import RequestUtils, DateUtils
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.helpers.OAuth as OAuth
-from acme.etc import RequestUtils, DateUtils
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
 from config import *
 
 
-verifyCertificate			= False	# verify the certificate when using https?
-oauthToken					= None	# current OAuth Token
-verboseRequests				= False	# Print requests and responses
-testCaseNames:list[str]		= []	# List of test cases to run
-enableTearDown:bool			= True  # Run or don't run TearDownClass test case methods
-
-initialRequestTimeout		= 10.0	# Timeout in s for the initial connectivity test.
+verifyCertificate = False					# verify the certificate when using https?
+oauthToken = None							# current OAuth Token
+verboseRequests = False						# Print requests and responses
+testCaseNames:Optional[list[str]] = None	# List of test cases to run
+enableTearDown:bool = True  				# Run or don't run TearDownClass test case methods
+initialRequestTimeout = 10.0				# Timeout in s for the initial connectivity test.
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -65,8 +66,12 @@ tsbPeriodicInterval			= 1.0
 # crossResourceSubscription Time Window Size (s)
 crsTimeWindowSize			= 4.0
 
+# actionPeriod
+actionPeriod				= 1 * 1000 # seconds
+
 # Test Suite Verbosity (0-2)
 testVerbosity				= 2
+
 
 
 
@@ -181,6 +186,10 @@ class MQTTClientHandler(MQTTHandler):
 mqttClient:MQTTConnection = None
 mqttHandler:MQTTClientHandler = None
 
+
+# HTTP Session
+httpSession:requests.Session = None
+
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
 # already as year 10000 (and this hits the limit of the isodate module implementation)
@@ -212,6 +221,7 @@ cinRN	= 'testCIN'
 cntRN	= 'testCNT'
 crsRN	= 'testCRS'
 csrRN	= 'testCSR'
+deprRN	= 'testDEPR'
 grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
@@ -243,7 +253,8 @@ smdURL 	= f'{aeURL}/{smdRN}'	# under the <ae>
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
 tsBURL 	= f'{aeURL}/{tsbRN}'
-actrURL = f'{aeURL}/{actrRN}'
+actrURL = f'{cntURL}/{actrRN}'
+deprURL = f'{actrURL}/{deprRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
@@ -307,19 +318,33 @@ def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]
 def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	"""	Send a request. Call the appropriate framework, depending on the protocol.
 	"""
-	global requestCount
+	global requestCount, httpSession
 	requestCount += 1
 	if url.startswith(('http', 'https')):
+		if not httpSession:
+			httpSession = requests.Session()
+
+
+		# if operation == Operation.CREATE:
+		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.RETRIEVE:
+		# 	return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.UPDATE:
+		# 	return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.DELETE:
+		# 	return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		# elif operation == Operation.NOTIFY:
+		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		if operation == Operation.CREATE:
-			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.RETRIEVE:
-			return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.UPDATE:
-			return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.DELETE:
-			return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.NOTIFY:
-			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 	elif url.startswith('mqtt'):
 		if operation == Operation.CREATE:
 			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
@@ -337,7 +362,7 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 
 
 def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
-	global oauthToken
+	global oauthToken, httpSession
 
 	# correct url
 	url = RequestUtils.toHttpUrl(url)
@@ -398,8 +423,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 				sendData = data
 			# data = cbor2.dumps(data)	# TODO use CBOR as well
 		r = method(url, data=sendData, headers=hds, verify=verifyCertificate, timeout=timeout)
+		# print(f'HTTP request sent: {r.status_code}')
 	except Exception as e:
-		#print(f'Failed to send request: {str(e)}')
+		# print(f'Failed to send request: {str(e)}')
 		return None, 5103
 	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
 
@@ -427,7 +453,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 
 	urlComponents:ParseResult = urlparse(url)
 	urlquery = parse_qs(urlComponents.query)
-	# print(urlquery)
+	#print(urlquery)
 
 	req:dict	= dict()
 	fc:dict		= dict()
@@ -452,9 +478,12 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		req['rp'] = rp[0]	# only first rp
 		del urlquery['rp']
 	if (rp := urlquery.get('drt')):
-		req['drt'] = int(rp[0])	# only first rp
+		req['drt'] = int(rp[0])	# only first drt
 		del urlquery['drt']
-	
+	if (sqi := urlquery.get('sqi')):
+		req['sqi'] = sqi[0]	# only first sqi
+		del urlquery['sqi']
+
 	# FilterCriteria
 	if (fu := urlquery.get('fu')):
 		fc['fu'] = int(fu[0])
@@ -468,6 +497,15 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	if (cty := urlquery.get('cty')):
 		fc['cty'] = [ tt for t in cty for tt in t.split(' ') ]	# s.a.
 		del urlquery['cty']
+
+	# add some attributes to CONTENT
+	if (atrl := urlquery.get('atrl')):
+		if data is not None:
+			return ('data must be not set when using "atrl"', 5000)
+		data = dict()
+		data['m2m:atrl'] =  [ tt for t in atrl for tt in t.split(' ') ]
+		# Add CONTENT
+		del urlquery['atrl']
 
 	# add remaining arguments as attributes to filterCriteria
 	for k in urlquery.keys():	
@@ -769,6 +807,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			# 	setLastNotification(post_data.decode('utf-8'))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
+		# make a dict out of the query arguments 
+		setLastNotificationArguments(parse_qs(urlparse(self.path).query))	# type:ignore[arg-type] 
 
 		# Verbose output
 		if verboseRequests and self.headers.get(C.hfOrigin):
@@ -830,6 +870,7 @@ def isNotificationServerRunning() -> bool:
 
 lastNotification:JSON						= None
 lastNotificationHeaders:Parameters 			= {}
+lastNotificationArguments:Parameters 		= {}
 nextNotificationResult:ResponseStatusCode	= ResponseStatusCode.OK
 
 def setLastNotification(notification:JSON) -> None:
@@ -846,9 +887,10 @@ def getLastNotification(clear:bool = False, wait:float = 0.0) -> JSON:
 
 
 def clearLastNotification(nextResult:ResponseStatusCode = ResponseStatusCode.OK) -> None:
-	global lastNotification, lastNotificationHeaders, nextNotificationResult
+	global lastNotification, lastNotificationHeaders, lastNotificationArguments, nextNotificationResult
 	lastNotification = None
 	lastNotificationHeaders = None
+	lastNotificationArguments = None
 	nextNotificationResult = nextResult
 
 
@@ -859,6 +901,15 @@ def setLastNotificationHeaders(headers:Parameters) -> None:
 
 def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
+
+
+def setLastNotificationArguments(arguments:Parameters) -> None:
+	global lastNotificationArguments
+	lastNotificationArguments = arguments
+
+
+def getLastNotificationArguments() -> Parameters:
+	return lastNotificationArguments
 
 
 _sleepTimeCount:float = 0.0
@@ -877,6 +928,23 @@ def clearSleepTimeCount() -> None:
 def getSleepTimeCount() -> float:
 	return _sleepTimeCount
 
+
+def utcNow() -> datetime:
+	"""	Return the current time, but relative to UTC.
+
+		Return:
+			Datetime UTC-based timestamp
+	"""
+	return datetime.now(tz = timezone.utc)
+
+
+def utcTimestamp() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+
+		Return:
+			Float UTC-based timestamp
+	"""
+	return utcNow().timestamp()
 
 
 #
@@ -938,7 +1006,12 @@ def isSPRelative(uri:str) -> bool:
 
 
 def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
-	if not testCaseNames or case._testMethodName in testCaseNames:
+	global testCaseNames
+
+	if testCaseNames is None:
+		suite.addTest(case)
+	elif testCaseNames and case._testMethodName == testCaseNames[0]:
+		testCaseNames = testCaseNames[1:]
 		suite.addTest(case)
 
 
@@ -1036,9 +1109,9 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 if UPPERTESTERENABLED:
 	try:
-		if requests.post(UTURL, headers = { UTCMD: f'status'}).status_code == 501:
+		if requests.post(UTURL, headers = { UTCMD: f'Status'}).status_code != 200:
 			console.print('[red]Upper Tester Interface not enabeled in CSE')
-			console.print('Enable with configuration setting: "\[server.http]:enableUpperTesterEndpoint=True"')
+			console.print('Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
 			quit(-1)
 	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')

@@ -9,17 +9,72 @@
 
 
 from __future__ import annotations
-from typing import Any, Dict, Tuple, List, cast, Optional
+from typing import Any, Dict, Tuple, Optional
 
-import configparser, argparse, os, os.path, pathlib, ipaddress, re
-from datetime import datetime
+import configparser, argparse, os, os.path, pathlib
 import isodate
-from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
-from InquirerPy import prompt, inquirer
+
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
+from ..services import Onboarding
+
+
+documentationLinks = {
+	'cse': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#general',
+	'cse.announcements': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#announcements',
+	'cse.operation.jobs': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#operation_jobs',
+	'cse.operation.requests': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#operation_requests',
+	'cse.registrar': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#registrar',
+	'cse.registration': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#cse_registration',
+	'cse.security': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#security',
+	'cse.statistics': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#statistics',
+	'console': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#console',
+	'database': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#database',
+	'http': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#server_http',
+	'http.cors': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#http_cors',
+	'http.security': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#security_http',
+	'logging': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#logging',
+	'mqtt': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#client_mqtt',
+	'mqtt.security': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#security_mqtt',
+	'resource.acp.pv': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_acp',
+	'resource.acp.pvs': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_acp',
+	'resource.actr.ecp': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_actr',
+	'resource.cnt': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_cnt',
+	'resource.req': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_req',
+	'resource.sub': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_sub',
+	'resource.ts': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_ts',
+	'resource.tsb': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#resource_tsb',
+	'scripting': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#scripting',
+	'server.http': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#id_mappings',	# TODO remove later
+	'textui': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#textui',
+	'webui': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#webui',
+}
+
+#
+#	Deprecated secttions
+#
+
+_deprecatedSections = (
+	('server.http', 'http'),
+    ('server.http.security', 'http.security'),
+    ('server.http.cors', 'http.cors'), 
+    ('client.mqtt', 'mqtt'),
+    ('client.mqtt.security', 'mqtt.security'),
+    ('cse.resource.acp', 'resource.acp'),
+    ('cse.resource.actr', 'resource.actr'),
+    ('cse.resource.cnt', 'resource.cnt'),
+    ('cse.resource.ts', 'resource.ts'),
+    ('cse.resource.tsb', 'resource.tsb'),
+    ('cse.resource.req', 'resource.req'),
+    ('cse.resource.sub', 'resource.sub'),
+    ('cse.webui', 'webui'),
+    ('cse.console', 'console'),
+    ('cse.textui', 'textui'),
+    ('cse.scripting', 'scripting')
+)
+
 
 
 class Configuration(object):
@@ -27,22 +82,24 @@ class Configuration(object):
 		method init(). Access to configuration valus is done by calling Configuration.get(<key>).
 	"""
 	_configuration: Dict[str, Any] = {}
+	_configurationDocs: Dict[str, str] = {}
 
-	_defaultConfigFile:str 			= None
+	_defaultConfigFile:str = None
 
-	_argsConfigfile:str 			= None
-	_argsLoglevel:str				= None
-	_argsDBReset:bool				= None
-	_argsDBStorageMode:str			= None
-	_argsHeadless:bool				= None
-	_argsHttpAddress:str			= None
-	_argsHttpPort:int				= None
-	_argsImportDirectory:str		= None
-	_argsListenIF:str				= None
-	_argsMqttEnabled:bool			= None
-	_argsRemoteCSEEnabled:bool		= None
-	_argsRunAsHttps:bool			= None
-	_argsStatisticsEnabled:bool		= None
+	_argsConfigfile:str = None
+	_argsLoglevel:str = None
+	_argsDBReset:bool = None
+	_argsDBStorageMode:str = None
+	_argsHeadless:bool = None
+	_argsHttpAddress:str = None
+	_argsHttpPort:int = None
+	_argsImportDirectory:str = None
+	_argsListenIF:str = None
+	_argsMqttEnabled:bool = None
+	_argsRemoteCSEEnabled:bool = None
+	_argsRunAsHttps:bool = None
+	_argsStatisticsEnabled:bool = None
+	_argsTextUI:bool = None
 
 
 	# Internal print function that takes the headless setting into account
@@ -72,21 +129,27 @@ class Configuration(object):
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
 		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
+		Configuration._argsTextUI				= args.textui if args and 'textui' in args else None
 
 
 		# Create user config file if doesn't exist
 		if not os.path.exists(Configuration._argsConfigfile):
 			try:
-				if not Configuration._buildUserConfigFile(Configuration._argsConfigfile):
+				if Configuration._argsHeadless:
+					Console().print(f'[red]Configuration file: {Configuration._argsConfigfile} is missing and cannot be created in headless mode.\n')
+					return False
+				if not Onboarding.buildUserConfigFile(Configuration._argsConfigfile):
 					return False
 			except Exception as e:
-				print(e)
+				Console().print(e)
 				raise e
 
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
-											converters={'list': lambda x: [i.strip() for i in x.split(',')]},	# Convert csv to list
+											
+											# Convert csv to list, ignore empty elements
+											converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
 		config.read_dict({ 'basic.config': {
 								'baseDirectory' 	: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent,	# points to the acme module's parent directory
@@ -104,6 +167,15 @@ class Configuration(object):
 			Configuration._print('[red]Error in configuration file')
 			Configuration._print(str(e))
 			return False
+	
+		#
+		#	Look for deprecated and renamed sections
+		#
+
+		for o, n in _deprecatedSections:
+			if config.has_section(o):
+				Configuration._print(f'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
+				return False
 
 		#
 		#	Retrieve configuration values
@@ -119,126 +191,61 @@ class Configuration(object):
 				#	CSE
 				#
 
-				'cse.type'								: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
-				'cse.spid'								: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
-				'cse.csi'								: config.get('cse', 'cseID',										fallback = '/id-in'),
-				'cse.ri'								: config.get('cse', 'resourceID',									fallback = 'id-in'),
-				'cse.rn'								: config.get('cse', 'resourceName',									fallback = 'cse-in'),
-				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 								fallback = './init'),
-				'cse.enableResourceExpiration'			: config.getboolean('cse', 'enableResourceExpiration', 				fallback = True),
-				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
-				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
-				'cse.originator'						: config.get('cse', 'originator',									fallback = 'CAdmin'),
-				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 						fallback = True),
-				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
-				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',					fallback = 60),		# Seconds
-				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
-				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
-				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',								fallback = '3'),
-				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',							fallback = 'json'),
-				'cse.asyncSubscriptionNotifications'	: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
+				'cse.asyncSubscriptionNotifications'			: config.getboolean('cse', 'asyncSubscriptionNotifications',		fallback = True),
+				'cse.checkExpirationsInterval'					: config.getint('cse', 'checkExpirationsInterval',					fallback = 60),		# Seconds
+				'cse.cseID'										: config.get('cse', 'cseID',										fallback = '/id-in'),
+				'cse.defaultSerialization'						: config.get('cse', 'defaultSerialization',							fallback = 'json'),
+				'cse.enableRemoteCSE'							: config.getboolean('cse', 'enableRemoteCSE', 						fallback = True),
+				'cse.enableResourceExpiration'					: config.getboolean('cse', 'enableResourceExpiration', 				fallback = True),
+				'cse.enableSubscriptionVerificationRequests'	: config.getboolean('cse', 'enableSubscriptionVerificationRequests',fallback = True),
+				'cse.flexBlockingPreference'					: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
+				'cse.maxExpirationDelta'						: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
+				'cse.originator'								: config.get('cse', 'originator',									fallback = 'CAdmin'),
+				'cse.releaseVersion'							: config.get('cse', 'releaseVersion',								fallback = '4'),
+				'cse.requestExpirationDelta'					: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
+				'cse.resourcesPath'								: config.get('cse', 'resourcesPath', 								fallback = './init'),
+				'cse.resourceID'								: config.get('cse', 'resourceID',									fallback = 'id-in'),
+				'cse.resourceName'								: config.get('cse', 'resourceName',									fallback = 'cse-in'),
+				'cse.sendToFromInResponses'						: config.getboolean('cse', 'sendToFromInResponses',					fallback = True),
+				'cse.sortDiscoveredResources'					: config.getboolean('cse', 'sortDiscoveredResources',				fallback = True),
+				'cse.supportedReleaseVersions'					: config.getlist('cse', 'supportedReleaseVersions',					fallback = ['2a', '3', '4', '5']), # type: ignore [attr-defined]
+				'cse.serviceProviderID'							: config.get('cse', 'serviceProviderID',							fallback = 'acme.example.com'),
+				'cse.type'										: config.get('cse', 'type',											fallback = 'IN'),		# IN, MN, ASN
 
 				#
-				#	CSE Security
+				#	Announcements
 				#
 
-				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks',			 	fallback = True),
-				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin',			 	fallback = True),
+				'cse.announcements.allowAnnouncementsToHostingCSE'	: config.getboolean('cse.announcements', 'allowAnnouncementsToHostingCSE',	fallback = True),
+				'cse.announcements.checkInterval'					: config.getint('cse.announcements', 'checkInterval',						fallback = 10),
+				'cse.announcements.delayAfterRegistration'			: config.getfloat('cse.announcements', 'delayAfterRegistration',			fallback = 3.0),
+
 
 				#
-				#	CSE Operation
+				#	CSE Operation : Jobs
 				#
 
-				'cse.operation.jobBalanceTarget'		: config.getfloat('cse.operation', 'jobBalanceTarget',			 	fallback = 3.0),
-				'cse.operation.jobBalanceLatency'		: config.getint('cse.operation', 'jobBalanceLatency', 				fallback = 1000),
-				'cse.operation.jobBalanceReduceFactor'	: config.getfloat('cse.operation', 'jobBalanceReduceFactor', 		fallback = 2.0),
+				'cse.operation.jobs.balanceLatency'		: config.getint('cse.operation.jobs', 'jobBalanceLatency', 			fallback = 1000),
+				'cse.operation.jobs.balanceReduceFactor': config.getfloat('cse.operation.jobs', 'jobBalanceReduceFactor', 	fallback = 2.0),
+				'cse.operation.jobs.balanceTarget'		: config.getfloat('cse.operation.jobs', 'jobBalanceTarget',			fallback = 3.0),
 
 				#
-				#	HTTP Server
+				#	CSE Operation : Requests
 				#
 
-				'http.listenIF'							: config.get('server.http', 'listenIF', 							fallback = '127.0.0.1'),
-				'http.port' 							: config.getint('server.http', 'port', 								fallback = 8080),
-				'http.root'								: config.get('server.http', 'root', 								fallback = ''),
-				'http.address'							: config.get('server.http', 'address', 								fallback = 'http://127.0.0.1:8080'),
-				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', 		fallback = False),
-				'http.enableUpperTesterEndpoint'		: config.getboolean('server.http', 'enableUpperTesterEndpoint', 	fallback = False),
-				'http.allowPatchForDelete'				: config.getboolean('server.http', 'allowPatchForDelete', 			fallback = False),
-				'http.timeout' 							: config.getfloat('server.http', 'timeout',							fallback = 10.0),
-
-				#
-				#	HTTP Server Security
-				#
-
-				'http.security.useTLS'					: config.getboolean('server.http.security', 'useTLS', 				fallback = False),
-				'http.security.tlsVersion'				: config.get('server.http.security', 'tlsVersion', 					fallback = 'auto'),
-				'http.security.verifyCertificate'		: config.getboolean('server.http.security', 'verifyCertificate',	fallback = False),
-				'http.security.caCertificateFile'		: config.get('server.http.security', 'caCertificateFile', 			fallback = None),
-				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 			fallback = None),
-
-				#
-				#	HTTP Server CORS
-				#
-
-				'http.cors.enable'						: config.getboolean('server.http.cors', 'enable', 					fallback = False),
-				'http.cors.resources'					: config.getlist('server.http.cors', 'resources', 					fallback = [ r'/*' ]),	# type: ignore [attr-defined]
-
-				#
-				#	MQTT Client
-				#
-
-				'mqtt.enable'							: config.getboolean('client.mqtt', 'enable', 						fallback = False),
-				'mqtt.address'							: config.get('client.mqtt', 'address', 								fallback = '127.0.0.1'),
-				'mqtt.port' 							: config.getint('client.mqtt', 'port', 								fallback = None),	# Default will be determined later (s.b.)
-				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',							fallback = 60),
-				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',								fallback = '127.0.0.1'),
-				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',							fallback = ''),
-				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',							fallback = 10.0),
-
-				#
-				#	MQTT Client Security
-				#
-
-				'mqtt.security.useTLS'					: config.getboolean('client.mqtt.security', 'useTLS', 				fallback = False),
-				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate', 	fallback = False),
-				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',			fallback = None),
-				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',					fallback = None),
-				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',					fallback = None),
-				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', 	fallback = []),	# type: ignore [attr-defined]
-
-				#
-				#	Database
-				#
-
-				'db.path'								: config.get('database', 'path', 									fallback = './data'),
-				'db.inMemory'							: config.getboolean('database', 'inMemory', 						fallback = False),
-				'db.cacheSize'							: config.getint('database', 'cacheSize', 							fallback = 0),		# Default: no caching
-				'db.resetOnStartup' 					: config.getboolean('database', 'resetOnStartup',					fallback = False),
-
-				#
-				#	Logging
-				#
-
-				'logging.enableFileLogging'				: config.getboolean('logging', 'enableFileLogging', 				fallback = False),
-				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 				fallback = True),
-				'logging.path'							: config.get('logging', 'path', 									fallback = './logs'),
-				'logging.level'							: config.get('logging', 'level', 									fallback = 'debug'),
-				'logging.size'							: config.getint('logging', 'size', 									fallback = 100000),
-				'logging.count'							: config.getint('logging', 'count', 								fallback = 10),		# Number of log files
-				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',					fallback = True),
-				'logging.enableBindingsLogging'			: config.getboolean('logging', 'enableBindingsLogging',				fallback = False),
-				'logging.queueSize'						: config.getint('logging', 'queueSize', 							fallback = 5000),	# Size of the log queue
+				'cse.operation.requests.enable'			: config.getboolean('cse.operation.requests', 'enable',				fallback = False),
+				'cse.operation.requests.size'			: config.getint('cse.operation.requests', 'size', 					fallback = 1000),
 
 				#
 				#	Registrar CSE
 				#
 
 				'cse.registrar.address'					: config.get('cse.registrar', 'address', 							fallback = None),
-				'cse.registrar.root'					: config.get('cse.registrar', 'root', 								fallback = ''),
-				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 								fallback = None),
-				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 						fallback = None),
 				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 					fallback = 30),		# Seconds
+				'cse.registrar.cseID'					: config.get('cse.registrar', 'cseID', 								fallback = None),
 				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',			fallback = []),		# type: ignore [attr-defined]
+				'cse.registrar.resourceName'						: config.get('cse.registrar', 'resourceName', 						fallback = None),
+				'cse.registrar.root'					: config.get('cse.registrar', 'root', 								fallback = ''),
 				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',						fallback = 'json'),
 
 				#
@@ -251,12 +258,11 @@ class Configuration(object):
 
 
 				#
-				#	Announcements
+				#	CSE Security
 				#
 
-				'cse.announcements.checkInterval'					: config.getint('cse.announcements', 'checkInterval',						fallback = 10),
-				'cse.announcements.allowAnnouncementsToHostingCSE'	: config.getboolean('cse.announcements', 'allowAnnouncementsToHostingCSE',	fallback = True),
-
+				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks',			 	fallback = True),
+				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin',			 	fallback = True),
 
 				#
 				#	Statistics
@@ -267,84 +273,175 @@ class Configuration(object):
 
 
 				#
+				#	Console
+				#
+
+				'console.confirmQuit'					: config.getboolean('console', 'confirmQuit', 						fallback = False),
+				'console.headless'						: config.getboolean('console', 'headless', 							fallback = False),
+				'console.hideResources'					: config.getlist('console', 'hideResources', 						fallback = []),		# type: ignore[attr-defined]
+				'console.refreshInterval'				: config.getfloat('console', 'refreshInterval', 					fallback = 2.0),
+				'console.theme'							: config.get('console', 'theme', 									fallback = 'dark'),
+				'console.treeIncludeVirtualResources'	: config.getboolean('console', 'treeIncludeVirtualResources',		fallback = False),
+				'console.treeMode'						: config.get('console', 'treeMode', 								fallback = 'normal'),
+
+				#
+				#	Database
+				#
+
+				'database.cacheSize'					: config.getint('database', 'cacheSize', 							fallback = 0),		# Default: no caching
+				'database.inMemory'						: config.getboolean('database', 'inMemory', 						fallback = False),
+				'database.path'							: config.get('database', 'path', 									fallback = './data'),
+				'database.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',					fallback = False),
+				'database.writeDelay'					: config.getint('database', 'writeDelay', 							fallback = 1),		# Default: 1 second
+
+				#
+				#	HTTP Server
+				#
+
+				'http.address'							: config.get('http', 'address', 									fallback = 'http://127.0.0.1:8080'),
+				'http.allowPatchForDelete'				: config.getboolean('http', 'allowPatchForDelete', 					fallback = False),
+				'http.enableStructureEndpoint'			: config.getboolean('http', 'enableStructureEndpoint', 				fallback = False),
+				'http.enableUpperTesterEndpoint'		: config.getboolean('http', 'enableUpperTesterEndpoint', 			fallback = False),
+				'http.listenIF'							: config.get('http', 'listenIF', 									fallback = '127.0.0.1'),
+				'http.port' 							: config.getint('http', 'port', 									fallback = 8080),
+				'http.root'								: config.get('http', 'root', 										fallback = ''),
+				'http.timeout' 							: config.getfloat('http', 'timeout',								fallback = 10.0),
+
+				#
+				#	HTTP Server CORS
+				#
+
+				'http.cors.enable'						: config.getboolean('http.cors', 'enable', 							fallback = False),
+				'http.cors.resources'					: config.getlist('http.cors', 'resources', 							fallback = [ r'/*' ]),	# type: ignore [attr-defined]
+
+				#
+				#	HTTP Server Security
+				#
+
+				'http.security.caCertificateFile'		: config.get('http.security', 'caCertificateFile', 					fallback = None),
+				'http.security.caPrivateKeyFile'		: config.get('http.security', 'caPrivateKeyFile', 					fallback = None),
+				'http.security.tlsVersion'				: config.get('http.security', 'tlsVersion', 						fallback = 'auto'),
+				'http.security.useTLS'					: config.getboolean('http.security', 'useTLS', 						fallback = False),
+				'http.security.verifyCertificate'		: config.getboolean('http.security', 'verifyCertificate',			fallback = False),
+
+				#
+				#	Logging
+				#
+
+				'logging.count'							: config.getint('logging', 'count', 								fallback = 10),		# Number of log files
+				'logging.enableBindingsLogging'			: config.getboolean('logging', 'enableBindingsLogging',				fallback = False),
+				'logging.enableFileLogging'				: config.getboolean('logging', 'enableFileLogging', 				fallback = False),
+				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 				fallback = True),
+				'logging.filter'						: config.getlist('logging', 'filter',								fallback = []),		# type: ignore [attr-defined]
+				'logging.level'							: config.get('logging', 'level', 									fallback = 'debug'),
+				'logging.path'							: config.get('logging', 'path', 									fallback = './logs'),
+				'logging.queueSize'						: config.getint('logging', 'queueSize', 							fallback = 5000),	# Size of the log queue
+				'logging.size'							: config.getint('logging', 'size', 									fallback = 100000),
+				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',					fallback = True),
+
+				#
+				#	MQTT Client
+				#
+
+				'mqtt.address'							: config.get('mqtt', 'address', 									fallback = '127.0.0.1'),
+				'mqtt.enable'							: config.getboolean('mqtt', 'enable', 								fallback = False),
+				'mqtt.keepalive' 						: config.getint('mqtt', 'keepalive',								fallback = 60),
+				'mqtt.listenIF' 						: config.get('mqtt', 'listenIF',									fallback = '127.0.0.1'),
+				'mqtt.port' 							: config.getint('mqtt', 'port', 									fallback = None),	# Default will be determined later (s.b.)
+				'mqtt.timeout' 							: config.getfloat('mqtt', 'timeout',								fallback = 10.0),
+				'mqtt.topicPrefix' 						: config.get('mqtt', 'topicPrefix',									fallback = ''),
+
+				#
+				#	MQTT Client Security
+				#
+
+				'mqtt.security.allowedCredentialIDs'	: config.getlist('mqtt.security', 'allowedCredentialIDs', 			fallback = []),	# type: ignore [attr-defined]
+				'mqtt.security.caCertificateFile'		: config.get('mqtt.security', 'caCertificateFile',					fallback = None),
+				'mqtt.security.password' 				: config.get('mqtt.security', 'password',							fallback = ''),
+				'mqtt.security.username'				: config.get('mqtt.security', 'username',							fallback = ''),
+				'mqtt.security.useTLS'					: config.getboolean('mqtt.security', 'useTLS', 						fallback = False),
+				'mqtt.security.verifyCertificate'		: config.getboolean('mqtt.security', 'verifyCertificate', 			fallback = False),
+
+
+				#
 				#	Defaults for Access Control Policies
 				#
 
-				'cse.acp.pv.acop'						: config.getint('cse.resource.acp', 'permission', 					fallback = Permission.ALL),
-				'cse.acp.pvs.acop'						: config.getint('cse.resource.acp', 'selfPermission', 				fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
+				'resource.acp.selfPermission'			: config.getint('resource.acp', 'selfPermission', 					fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
+
+
+				#
+				#	Defaults for Actions
+				#
+
+				'resource.actr.ecpContinuous'			: config.getint('resource.actr', 'ecpContinuous', 					fallback = 1000),
+				'resource.actr.ecpPeriodic'				: config.getint('resource.actr', 'ecpPeriodic', 					fallback = 10000),
 
 
 				#
 				#	Defaults for Container Resources
 				#
 
-				'cse.cnt.enableLimits'					: config.getboolean('cse.resource.cnt', 'enableLimits', 			fallback = False),
-				'cse.cnt.mni'							: config.getint('cse.resource.cnt', 'mni', 							fallback = 10),
-				'cse.cnt.mbs'							: config.getint('cse.resource.cnt', 'mbs', 							fallback = 10000),
+				'resource.cnt.enableLimits'				: config.getboolean('resource.cnt', 'enableLimits', 				fallback = False),
+				'resource.cnt.mni'						: config.getint('resource.cnt', 'mni', 								fallback = 10),
+				'resource.cnt.mbs'						: config.getint('resource.cnt', 'mbs', 								fallback = 10000),
 
 
 				#
 				#	Defaults for Request Resources
 				#
 
-				'cse.req.minet'							: config.getint('cse.resource.req', 'minimumExpirationTime', 		fallback = 60),
-				'cse.req.maxet'							: config.getint('cse.resource.req', 'maximumExpirationTime', 		fallback = 180),
+				'resource.req.et'						: config.getint('resource.req', 'expirationTime', 					fallback = 60),
 
 
 				#
 				#	Defaults for Subscription Resources
 				#
 
-				'cse.sub.dur'							: config.getint('cse.resource.sub', 'batchNotifyDuration', 			fallback = 60),	# seconds
+				'resource.sub.batchNotifyDuration'		: config.getint('resource.sub', 'batchNotifyDuration', 				fallback = 60),	# seconds
 
 
 				#
 				#	Defaults for timeSeries Resources
 				#
 
-				'cse.ts.enableLimits'					: config.getboolean('cse.resource.ts', 'enableLimits',				fallback = False),
-				'cse.ts.mni'							: config.getint('cse.resource.ts', 'mni', 							fallback = 10),
-				'cse.ts.mbs'							: config.getint('cse.resource.ts', 'mbs', 							fallback = 10000),
-				'cse.ts.mdn'							: config.getint('cse.resource.ts', 'mdn', 							fallback = 10),
+				'resource.ts.enableLimits'				: config.getboolean('resource.ts', 'enableLimits',					fallback = False),
+				'resource.ts.mbs'						: config.getint('resource.ts', 'mbs', 								fallback = 10000),
+				'resource.ts.mdn'						: config.getint('resource.ts', 'mdn', 								fallback = 10),
+				'resource.ts.mni'						: config.getint('resource.ts', 'mni', 								fallback = 10),
 
 
 				#
 				#	Defaults for TimeSyncBeacon Resources
 				#
 
-				'cse.tsb.bcni'							: config.get('cse.resource.tsb', 'bcni', 							fallback = 'PT1H'),	# duration
-				'cse.tsb.bcnt'							: config.getfloat('cse.resource.tsb', 'bcnt', 						fallback = 60.0),	# seconds
-
-
-				#
-				#	Web UI
-				#
-
-				'cse.webui.enable'						: config.getboolean('cse.webui', 'enable', 							fallback = True),
-				'cse.webui.root'						: config.get('cse.webui', 'root', 									fallback = '/webui'),
-
-
-				#
-				#	Console
-				#
-
-				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 				fallback = 2.0),
-				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 					fallback = []),		# type: ignore[attr-defined]
-				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 							fallback = 'normal'),
-				'cse.console.treeIncludeVirtualResources': config.getboolean('cse.console', 'treeIncludeVirtualResources',	fallback = False),
-				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 					fallback = False),
-				'cse.console.theme'						: config.get('cse.console', 'theme', 								fallback = 'dark'),
+				'resource.tsb.bcni'						: config.get('resource.tsb', 'bcni', 								fallback = 'PT1H'),	# duration
+				'resource.tsb.bcnt'						: config.getfloat('resource.tsb', 'bcnt', 							fallback = 60.0),	# seconds
 
 				#
 				#	Scripting
 				#
 
-				'cse.scripting.scriptDirectories'		: config.getlist('cse.scripting', 'scriptDirectories',				fallback = []),	# type: ignore[attr-defined]
-				'cse.scripting.verbose'					: config.getboolean('cse.scripting', 'verbose', 					fallback = False),
-				'cse.scripting.fileMonitoringInterval'	: config.getfloat('cse.scripting', 'fileMonitoringInterval',		fallback = 2.0),
+				'scripting.fileMonitoringInterval'		: config.getfloat('scripting', 'fileMonitoringInterval',			fallback = 2.0),
+				'scripting.scriptDirectories'			: config.getlist('scripting', 'scriptDirectories',					fallback = []),	# type: ignore[attr-defined]
+				'scripting.verbose'						: config.getboolean('scripting', 'verbose', 						fallback = False),
+
+				#
+				#	Text UI
+				#
+
+				'textui.refreshInterval'				: config.getfloat('textui', 'refreshInterval', 						fallback = 2.0),
+				'textui.startWithTUI'					: config.getboolean('textui', 'startWithTUI',						fallback = False),
+				'textui.theme'							: config.get('textui', 'theme', 									fallback = 'dark'),
+
+				#
+				#	Web UI
+				#
+
+				'webui.root'							: config.get('webui', 'root', 										fallback = '/webui'),
 
 			}
-
+		
 		except configparser.InterpolationMissingOptionError as e:
 			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
 			Configuration._print('\n[red]Please check the section [bold](basic.config)[/bold] in the configuration file.\n')
@@ -354,11 +451,6 @@ class Configuration(object):
 			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
 			return False
 
-		# Read id-mappings
-		if  config.has_section('server.http.mappings'):
-			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
-			# print(config.items('server.http.mappings'))
-		
 		if not (v := Configuration.validate(True))[0]:
 			Configuration._print(f'[red]{v[1]}')
 		return v[0]
@@ -368,7 +460,7 @@ class Configuration(object):
 	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
-		from ..etc import Utils	# cannot import at the top because of circel import
+		from ..etc.Utils import normalizeURL, isValidCSI	# cannot import at the top because of circel import
 
 		# CSE type
 		if isinstance(cseType := Configuration._configuration['cse.type'], str):
@@ -412,9 +504,9 @@ class Configuration(object):
 		if (queueSize := Configuration._configuration['logging.queueSize']) < 0:
 			return False, f'Configuration Error: \[logging]:queueSize must be 0 or greater'
 
-
-		if Configuration._argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
-		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		# Overwriting some configurations from command line
+		if Configuration._argsDBReset is True:					Configuration._configuration['database.resetOnStartup'] = True									# Override DB reset from command line
+		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['database.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
 		if Configuration._argsHttpAddress is not None:			Configuration._configuration['http.address'] = Configuration._argsHttpAddress								# Override server http address
 		if Configuration._argsHttpPort is not None:				Configuration._configuration['http.port'] = Configuration._argsHttpPort									# Override server http port
 		if Configuration._argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = Configuration._argsImportDirectory						# Override import directory from command line
@@ -423,20 +515,20 @@ class Configuration(object):
 		if Configuration._argsRemoteCSEEnabled is not None:		Configuration._configuration['cse.enableRemoteCSE'] = Configuration._argsRemoteCSEEnabled					# Override remote CSE enablement
 		if Configuration._argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = Configuration._argsRunAsHttps						# Override useTLS
 		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
-
-		if Configuration._argsHeadless:
-			Configuration._configuration['logging.enableScreenLogging'] = False
+		if Configuration._argsTextUI is not None:				Configuration._configuration['textui.startWithTUI'] = Configuration._argsTextUI
+		if Configuration._argsHeadless is True:
+			Configuration._configuration['console.headless'] = True
 
 		# Correct urls
-		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
-		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
-		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
-		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
+		Configuration._configuration['cse.registrar.address'] = normalizeURL(Configuration._configuration['cse.registrar.address'])
+		Configuration._configuration['http.address'] = normalizeURL(Configuration._configuration['http.address'])
+		Configuration._configuration['http.root'] = normalizeURL(Configuration._configuration['http.root'])
+		Configuration._configuration['cse.registrar.root'] = normalizeURL(Configuration._configuration['cse.registrar.root'])
 
 		# Just in case: check the URL's
 		if Configuration._configuration['http.security.useTLS']:
 			if Configuration._configuration['http.address'].startswith('http:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in [i]\[server.http]:address[/i]')
+				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
@@ -444,7 +536,7 @@ class Configuration(object):
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if Configuration._configuration['http.address'].startswith('https:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in [i]\[server.http]:address[/i]')
+				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
@@ -453,12 +545,12 @@ class Configuration(object):
 
 
 		# Operation
-		if Configuration._configuration['cse.operation.jobBalanceTarget'] <= 0.0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceTarget[/i] must be > 0.0'
-		if Configuration._configuration['cse.operation.jobBalanceLatency'] < 0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceLatency[/i] must be >= 0'
-		if Configuration._configuration['cse.operation.jobBalanceReduceFactor'] < 1.0:
-			return False, f'Configuration Error: [i]\[cse.operation]:jobBalanceReduceFactor[/i] must be >= 1.0'
+		if Configuration._configuration['cse.operation.jobs.balanceTarget'] <= 0.0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0'
+		if Configuration._configuration['cse.operation.jobs.balanceLatency'] < 0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0'
+		if Configuration._configuration['cse.operation.jobs.balanceReduceFactor'] < 1.0:
+			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0'
 
 
 		#
@@ -469,23 +561,23 @@ class Configuration(object):
 		if not Configuration._configuration['http.security.useTLS']:	# clear certificates configuration if not in use
 			Configuration._configuration['http.security.verifyCertificate'] = False
 			Configuration._configuration['http.security.tlsVersion'] = 'auto'
-			Configuration._configuration['http.security.caCertificateFile'] = None
-			Configuration._configuration['http.security.caPrivateKeyFile'] = None
+			Configuration._configuration['http.security.caCertificateFile'] = ''
+			Configuration._configuration['http.security.caPrivateKeyFile'] = ''
 		else:
 			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				return False, f'Configuration Error: Unknown value for [i]\[server.http.security]:tlsVersion[/i]: {val}'
+				return False, f'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}'
 			if not (val := Configuration._configuration['http.security.caCertificateFile']):
-				return False, 'Configuration Error: [i]\[server.http.security]:caCertificateFile[/i] must be set when TLS is enabled'
+				return False, 'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[server.http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
+				return False, f'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
 			if not (val := Configuration._configuration['http.security.caPrivateKeyFile']):
-				return False, 'Configuration Error: [i]\[server.http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
+				return False, 'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[server.http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
+				return False, f'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
 		
 		# HTTP CORS
 		if initial and Configuration._configuration['http.cors.enable'] and not Configuration._configuration['http.security.useTLS']:
-			Configuration._print('[orange3]Configuration Warning: [i]\[server.http.security].useTLS[/i] (https) should be enabled when [i]\[server.http.cors].enable[/i] is enabled.')
+			Configuration._print('[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
 
 		
 		#
@@ -499,19 +591,21 @@ class Configuration(object):
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
 
-		# check the csi format
-		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
+		# check the csi format and value
+		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
+		if Configuration._configuration['cse.cseID'][1:] == Configuration._configuration['cse.resourceName']:
+			return False, f'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
 
-		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
-			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
+		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.cseID']:
+			if not isValidCSI(val:=Configuration._configuration['cse.registrar.cseID']):
 				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
-			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
+			if len(Configuration._configuration['cse.registrar.cseID']) > 0 and len(Configuration._configuration['cse.registrar.resourceName']) == 0:
 				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
 
 		# Check default subscription duration
-		if Configuration._configuration['cse.sub.dur'] < 1:
-			return False, 'Configuration Error: [i]\[cse.resource.sub]:batchNotifyDuration[/i] must be > 0'
+		if Configuration._configuration['resource.sub.batchNotifyDuration'] < 1:
+			return False, 'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0'
 
 		# Check flexBlocking value
 		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
@@ -531,43 +625,47 @@ class Configuration(object):
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
 			return False, 'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0'
-		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
-			return False, 'Configuration Error: [i]\[cse.console]:refreshInterval[/i] must be > 0.0'
+		if Configuration._configuration['console.refreshInterval'] <= 0.0:
+			return False, 'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0'
 		if Configuration._configuration['cse.maxExpirationDelta'] <= 0:
 			return False, 'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
 
 		# Console settings
 		from ..services.Console import TreeMode
-		if isinstance(tm := Configuration._configuration['cse.console.treeMode'], str):
+		if isinstance(tm := Configuration._configuration['console.treeMode'], str):
 			if not (treeMode := TreeMode.to(tm)):
-				return False, f'Configuration Error: [i]\[cse.console]:treeMode[/i] must be one of {TreeMode.names()}'
-			Configuration._configuration['cse.console.treeMode'] = treeMode
+				return False, f'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}'
+			Configuration._configuration['console.treeMode'] = treeMode
 		
-		Configuration._configuration['cse.console.theme'] = (theme := Configuration._configuration['cse.console.theme'].lower())
+		Configuration._configuration['console.theme'] = (theme := Configuration._configuration['console.theme'].lower())
 		if theme not in [ 'dark', 'light' ]:
-			return False, f'Configuration Error: [i]\[cse.console]:theme[/i] must be "light" or "dark"'
+			return False, f'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"'
+
+		if Configuration._configuration['console.headless']:
+			Configuration._configuration['logging.enableScreenLogging'] = False
+			Configuration._configuration['textui.startWithTUI'] = False
 
 
 		# Script settings
-		if Configuration._configuration['cse.scripting.fileMonitoringInterval'] < 0.0:
-			return False, f'Configuration Error: [i]\[cse.scripting]:fileMonitoringInterval[/i] must be >= 0.0'
-		if (scriptDirs := Configuration._configuration['cse.scripting.scriptDirectories']):
+		if Configuration._configuration['scripting.fileMonitoringInterval'] < 0.0:
+			return False, f'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0'
+		if (scriptDirs := Configuration._configuration['scripting.scriptDirectories']):
 			lst = []
 			for each in scriptDirs:
 				if not each:
 					continue
 				if not os.path.isdir(each):
-					return False, f'Configuration Error: [i]\[cse.scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
+					return False, f'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
 				lst.append(each)
-			Configuration._configuration['cse.scripting.scriptDirectories'] = lst
+			Configuration._configuration['scripting.scriptDirectories'] = lst
 			
 
 		# TimeSyncBeacon defaults
-		bcni = Configuration._configuration['cse.tsb.bcni']
+		bcni = Configuration._configuration['resource.tsb.bcni']
 		try:
 			isodate.parse_duration(bcni)
 		except Exception as e:
-			return False, f'Configuration Error: [i]\[cse.resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
+			return False, f'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
 		
 		# Everything is fine
 		return True, None
@@ -591,6 +689,17 @@ class Configuration(object):
 		"""	Retrieve a configuration value or None if no configuration could be found for a key.
 		"""
 		return Configuration._configuration.get(key)
+	
+
+	@staticmethod
+	def addDoc(key: str, markdown:str) -> None:
+		if key:
+			Configuration._configurationDocs[key] = markdown
+
+	
+	@staticmethod
+	def getDoc(key:str) -> str|None:
+		return Configuration._configurationDocs.get(key)
 
 
 	@staticmethod
@@ -621,305 +730,4 @@ class Configuration(object):
 		"""	Check whether a configuration setting exsists.
 		"""
 		return key in Configuration._configuration
-
-
-	##########################################################################
-	#
-	#	Interactively create a new basic configuration file
-	#
-
-	iniValues = {
-		'IN' : { 
-			'cseID': 'id-in',
-			'cseName': 'cse-in',
-			'adminID': 'CAdmin',
-			'dataDirectory': '${baseDirectory}',
-			'networkInterface': '127.0.0.1',
-			'cseHost': '127.0.0.1',
-			'httpPort': '8080',
-			'logLevel': 'debug',
-			'databaseInMemory': 'False',
-		},
-		'MN' : { 
-			'cseID': 'id-mn',
-			'cseName': 'cse-mn',
-			'adminID': 'CAdmin',
-			'dataDirectory': '${baseDirectory}',
-			'networkInterface': '127.0.0.1',
-			'cseHost': '127.0.0.1',
-			'httpPort': '8081',
-			'logLevel': 'debug',
-			'databaseInMemory': 'False',
-			'registrarCseHost': '127.0.0.1',
-			'registrarCsePort': '8080',
-			'registrarCseID': 'id-in',
-			'registrarCseName': 'cse-in',
-
-		},
-		'ASN' : { 
-			'cseID': 'id-asn',
-			'cseName': 'cse-asn',
-			'adminID': 'CAdmin',
-			'dataDirectory': '${baseDirectory}',
-			'networkInterface': '127.0.0.1',
-			'cseHost': '127.0.0.1',
-			'httpPort': '8082',
-			'logLevel': 'debug',
-			'databaseInMemory': 'False',
-			'registrarCseHost': '127.0.0.1',
-			'registrarCsePort': '8081',
-			'registrarCseID': 'id-mn',
-			'registrarCseName': 'cse-mn',
-		}		
-	}
-
-
-	@staticmethod
-	def _buildUserConfigFile(configFile:str) -> bool:
-		from ..etc import Utils
-
-		cseType = 'IN'
-		cseEnvironment = 'Development'
-
-		def _isValidateIpAddress(ip:str) -> bool:
-			try:
-				ipaddress.ip_address(ip)
-			except Exception:
-				return False
-			return True
-		
-
-		def _isValidateHostname(hostname:str) -> bool:
-			if len(hostname) > 255:
-				return False
-			if hostname[-1] == '.':
-				hostname = hostname[:-1] # strip exactly one dot from the right, if present
-			allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-			return all(allowed.match(x) for x in hostname.split("."))
-
-
-		def _isValidPort(port:str) -> bool:
-			try:
-				_port = int(port)
-			except ValueError:
-				return False
-			return 0 < _port <= 65535
-
-
-		def basicConfig() -> InquirerPySessionResult:
-			Configuration._print('\n[b]Basic configuration\n')
-			return prompt(
-				[
-					{	'type': 'input',
-						'message': 'CSE-ID:',
-						'long_instruction': 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
-						'default': Configuration.iniValues[cseType]['cseID'],
-						'validate': lambda result: Utils.isValidID(result),
-						'name': 'cseID',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Name of the CSE:',
-						'long_instruction': 'This is the resource name of the CSEBase.',
-						'default': Configuration.iniValues[cseType]['cseName'],
-						'validate': lambda result: Utils.isValidID(result),
-						'name': 'cseName',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Admin Originator:',
-						'long_instruction': 'The originator who has admin access rights to the CSE and the CSE\'s resources.',
-						'default': Configuration.iniValues[cseType]['adminID'],
-						'validate': lambda result: Utils.isValidID(result),
-						'name': 'adminID',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Data root directory:',
-						'long_instruction': 'The directory under which the "data", "init" and "log" directories are located.',
-						'default': Configuration.iniValues[cseType]['dataDirectory'],
-						'name': 'dataDirectory',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Network interface to bind to (IP address):',
-						'long_instruction': 'The network interface to listen for requests. Use "0.0.0.0" for all interfaces.',
-						'validate': _isValidateIpAddress,
-						'default': Configuration.iniValues[cseType]['networkInterface'],
-						'name': 'networkInterface',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'CSE host address (IP address or host name):',
-						'long_instruction': 'IP address or host name at which the CSE is reachable for requests.',
-						'validate': lambda result: _isValidateIpAddress(result) or _isValidateHostname(result),
-						'default': Configuration.iniValues[cseType]['cseHost'],
-						'name': 'cseHost',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'CSE host http port:',
-						'long_instruction': 'TCP port at which the CSE is reachable for requests.',
-						'validate': _isValidPort,
-						'default': Configuration.iniValues[cseType]['httpPort'],
-						'name': 'httpPort',
-						'amark': '✓',
-					},
-					{	'type': 'rawlist',
-						'message': 'Log level:',
-						'long_instruction': 'Set the logging verbosity',
-						"choices": lambda _: [ 'debug', 'info', 'warning', 'error', 'off' ],
-						'default': 1 if cseEnvironment == 'Development' else 3,
-						'name': 'logLevel',
-						'amark': '✓',
-					},
-					{	'type': 'rawlist',
-						'message': 'Database location:',
-						'long_instruction': 'Store data in memory (volatile) or on disk (persistent).',
-						"choices": lambda _: [ 'memory', 'disk' ],
-						'default': 1 if cseEnvironment == 'Development' else 2,
-						"filter": lambda result: str(result == 'memory'),
-						'name': 'databaseInMemory',
-						'amark': '✓',
-					},
-				],
-			)
-
-
-		def registrarConfig() -> InquirerPySessionResult:
-			Configuration._print('\n[b]Registrar configuration\n')
-			return prompt(
-				[
-					{	'type': 'input',
-						'message': 'Registrar CSE-ID:',
-						'long_instruction': 'The CSE-ID of the remote (registrar) CSE.',
-						'default': Configuration.iniValues[cseType]['registrarCseID'],
-						'validate': lambda result: Utils.isValidID(result),
-						'name': 'registrarCseID',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Name of the Registrar CSE:',
-						'long_instruction': 'The resource name of the remote (registrar) CSE.',
-						'default': Configuration.iniValues[cseType]['registrarCseName'],
-						'validate': lambda result: Utils.isValidID(result),
-						'name': 'registrarCseName',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Registrar CSE IP address / host name:',
-						'long_instruction': 'The IP address or host name of the remote (registrar) CSE.',
-						'default': Configuration.iniValues[cseType]['registrarCseHost'],
-						'validate': lambda result: _isValidateIpAddress(result) or _isValidateHostname(result),
-						'name': 'registrarCseHost',
-						'amark': '✓',
-					},
-					{	'type': 'input',
-						'message': 'Registrar CSE host http port:',
-						'long_instruction': 'The TCP port of the remote (registrar) CSE.',
-						'validate': _isValidPort,
-						'default': Configuration.iniValues[cseType]['registrarCsePort'],
-						'name': 'registrarCsePort',
-						'amark': '✓',
-					},
-				]
-			)
-
-		Console().clear()
-		cnf:List[str] = []
-
-		try:
-			Configuration._print(f'[b]Creating a new [/b]{C.textLogo}[b] configuration file\n')
-
-			# Get the CSE Type first
-			questionsStart = [
-				{	"type": "rawlist",
-					"message": "What type of CSE do you want to run:",
-					'long_instruction': 'Type of CSE to run: Infrastructure, Middle, or Application Service Node.',
-					"default": 1,
-					"choices": lambda _: [ 'IN', 'MN', 'ASN' ],
-					"name": "cseType",
-					'amark': '✓',
-				},
-				{	"type": "rawlist",
-					"message": "Target environment:",
-					'long_instruction': 'Run the CSE for development and testing, or a demonstration.',
-					"default": 1,
-					"choices": lambda _: [ 'Development', 'Demonstration' ],
-					"name": "cseEnvironment",
-					'amark': '✓',
-				}
-			]
-			t = prompt(questionsStart)
-			cseType = cast(str, t['cseType'])
-			cseEnvironment = cast(str, t['cseEnvironment'])
-			cnf.append(f'cseType={cseType}')
-		
-			# Prompt for the basic configuration
-			for each in (bc := basicConfig()):
-				cnf.append(f'{each}={bc[each]}')
-			
-			# Prompt for registrar configuration
-			if cseType in [ 'MN', 'ASN' ]:
-				for each in (bc := registrarConfig()):
-					cnf.append(f'{each}={bc[each]}')
-
-			# Header for the configuration
-			# Split it into a header and configuration. 
-			# Also easier to print with rich and the [...]'s
-			cnfHeader = [
-					f'; {configFile}',
-					';',
-					'; Simplified configuration file for the [ACME] CSE',
-					';',
-					f'; created: {datetime.now().isoformat(" ", "seconds")}',
-					';',
-					f'; CSE type: {cseType}',
-					f'; Environment: {cseEnvironment}',
-					';',
-					'',
-					'',
-			]
-
-			# Footer for configuration
-			# Some extra configurations added at the end
-			cnfAppend = [
-					'',
-					# Add basic registration configuration
-					'[cse.registration]',
-					'allowedCSROriginators=id-in,id-mn,id-asn'
-			]
-		
-			# Construct the configuration
-			jcnf = '[basic.config]\n' + '\n'.join(cnf)
-			if cseEnvironment == 'Development':	# add more configurations for development
-				jcnf += '\n\n'\
-						'[server.http]\n'\
-						'enableUpperTesterEndpoint=true\n'\
-						'enableStructureEndpoint=true\n'
-			
-			# Show configuration and confirm write
-			Configuration._print('\n[b]Save configuration\n')
-			_jcnf = jcnf.replace("[", "\[")
-			Configuration._print(f'[dim]{_jcnf}\n')
-
-			if not inquirer.confirm(message = f'Write configuration to file {configFile}?', amark = '✓', default = True).execute():
-				Configuration._print('\n[red]Configuration canceled\n')
-				return False
-	
-		except KeyboardInterrupt:
-			Configuration._print('\n[red]Configuration canceled\n')
-			return False
-
-		try:
-			with open(configFile, 'w') as file:
-				file.write('\n'.join(cnfHeader))
-				file.write(jcnf)
-				file.write('\n'.join(cnfAppend))
-		except Exception as e:
-			Configuration._print(str(e))
-			return False
-
-		Configuration._print(f'\n[spring_green2]New {cseType}-CSE configuration created.\n')
-		return True
 

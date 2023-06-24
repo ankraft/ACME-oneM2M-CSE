@@ -10,7 +10,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
 
 
@@ -47,6 +48,6 @@ class FCI(Resource):
 	# Forbidd updating
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None,
-					 doValidateAttributes:Optional[bool] = True) -> Result:
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'updating FCIN is forbidden')
+					 doValidateAttributes:Optional[bool] = True) -> None:
+		raise OPERATION_NOT_ALLOWED('updating FCIN is forbidden')
 

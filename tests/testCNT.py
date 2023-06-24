@@ -31,7 +31,7 @@ class TestCNT(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		testCaseEnd('Setup testCNT')
 
@@ -67,7 +67,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -81,7 +81,7 @@ class TestCNT(unittest.TestCase):
 	def test_retrieveCNTWithWrongOriginator(self) -> None:
 		"""	Retrieve <CNT> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -111,7 +111,7 @@ class TestCNT(unittest.TestCase):
 					'mbs' : 9999
  				}}
 		cnt, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		cnt, rsc = RETRIEVE(cntURL, TestCNT.originator)		# retrieve cnt again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/lbl'))
@@ -136,7 +136,7 @@ class TestCNT(unittest.TestCase):
 					'ty' : T.CSEBase
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -146,7 +146,7 @@ class TestCNT(unittest.TestCase):
 					'pi' : 'wrongID'
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -156,7 +156,7 @@ class TestCNT(unittest.TestCase):
 					'unknown' : 'unknown'
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -166,7 +166,7 @@ class TestCNT(unittest.TestCase):
 					'mni' : -1
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -175,7 +175,7 @@ class TestCNT(unittest.TestCase):
 		dct:JSON = { 'm2m:cnt' : {
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
 
 
@@ -186,7 +186,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(cntURL, TestCNT.originator, T.CNT, dct) 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -200,7 +200,7 @@ class TestCNT(unittest.TestCase):
 	def test_deleteCNTUnderCNT(self) -> None:
 		"""	Delete <CNT> under <CNT> """
 		_, rsc = DELETE(f'{cntURL}/{cntRN}', TestCNT.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -210,7 +210,7 @@ class TestCNT(unittest.TestCase):
 					'cr' : 'wrong'
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 				# Not allowed
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -220,7 +220,7 @@ class TestCNT(unittest.TestCase):
 					'cr' : None
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator, r)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE
@@ -233,14 +233,14 @@ class TestCNT(unittest.TestCase):
 	def test_deleteCNTByUnknownOriginator(self) -> None:
 		"""	Delete <CNT> with wrong originator -> Fail """
 		_, rsc = DELETE(cntURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTByAssignedOriginator(self) -> None:
 		"""	Delete <CNT> with correct originator """
 		_, rsc = DELETE(cntURL, TestCNT.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -250,7 +250,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # With Admin originator !!
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -264,7 +264,7 @@ class TestCNT(unittest.TestCase):
 	def test_deleteCNTUnderCSE(self) -> None:
 		"""	Delete <CNT> under <CB> with admin Originator"""
 		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -275,7 +275,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(cseURL, None, T.CNT, dct) # Without originator !!
-		self.assertNotEqual(rsc, RC.created)
+		self.assertNotEqual(rsc, RC.CREATED)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTwithWrongTPE(self) -> None:
@@ -284,7 +284,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # Without originator !!
-		self.assertNotEqual(rsc, RC.created)
+		self.assertNotEqual(rsc, RC.CREATED)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

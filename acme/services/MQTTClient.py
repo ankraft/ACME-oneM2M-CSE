@@ -8,15 +8,16 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, cast, Dict, Optional, Any
+from typing import Tuple, cast, Dict, Optional, Any, Union
 
 from urllib.parse import urlparse
 from threading import Lock
 
 from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
+from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import requestFromResult, serializeData
 from ..etc.DateUtils import getResourceDate, waitFor
-from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread
+from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread, csiFromSPRelative, getIdFromOriginator
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..services.Configuration import Configuration
@@ -60,11 +61,12 @@ class MQTTClientHandler(MQTTHandler):
 		self._eventMqttNotify =  CSE.event.mqttNotify				# type: ignore [attr-defined]
 
 		self.operationEvents = {
-			Operation.CREATE:	[self._eventMqttCreate, 'MQCR'],
-			Operation.RETRIEVE: [self._eventMqttRetrieve, 'MQRE'],
-			Operation.UPDATE:	[self._eventMqttUpdate, 'MQUP'],
-			Operation.DELETE:	[self._eventMqttDelete, 'MQDE'],
-			Operation.NOTIFY:	[self._eventMqttNotify, 'MQNO'],
+			Operation.CREATE:		[self._eventMqttCreate, 'MQCR'],
+			Operation.RETRIEVE: 	[self._eventMqttRetrieve, 'MQRE'],
+			Operation.UPDATE:		[self._eventMqttUpdate, 'MQUP'],
+			Operation.DELETE:		[self._eventMqttDelete, 'MQDE'],
+			Operation.NOTIFY:		[self._eventMqttNotify, 'MQNO'],
+			Operation.DISCOVERY:	[self._eventMqttRetrieve, 'MQDI'],
 		}
 
 
@@ -151,9 +153,11 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# Dissect Body
 		contentType:str = ts[-1]
-		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType, isResponse=True)).status:
-			L.isWarn and L.logWarn(f'Error receiving MQTT response: {dissectResult.dbg}')
-			return
+		try:
+			dissectResult = CSE.request.dissectRequestFromBytes(data, contentType, isResponse = True)
+		except ResponseException as e:
+			e.dbg = L.logWarn(f'Error receiving MQTT response: {e.dbg}')
+			raise e
 		
 		# Add it to a response queue in the manager
 		dissectResult.request.requestType = RequestType.RESPONSE
@@ -172,19 +176,19 @@ class MQTTClientHandler(MQTTHandler):
 		def _sendResponse(result:Result) -> None:
 			"""	Send a response for a request.
 			"""
-			if (response := prepareMqttRequest(result, isResponse = True)).status:
-				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
-				logRequest(response, topic, isResponse=True, isIncoming=False)
-				if isinstance(cast(Tuple, response.data)[1], bytes):
-					connection.publish(topic, cast(Tuple, response.data)[1])
-				else:
-					connection.publish(topic, cast(str, cast(Tuple, response.data)[1]).encode())
+			response = prepareMqttRequest(result, isResponse = True)	# may throw an exception
+			topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
+			logRequest(response, topic, isResponse=True, isIncoming=False)
+			if isinstance(cast(Tuple, response.data)[1], bytes):
+				connection.publish(topic, cast(Tuple, response.data)[1])
+			else:
+				connection.publish(topic, cast(str, cast(Tuple, response.data)[1]).encode())
 		
 
 		def _logRequest(result:Result) -> None:
 			"""	Log request.
 			"""
-			L.isDebug and L.logDebug(f'Operation: {result.request.op.name if result.request.op else "(unknown)"}')
+			L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
 			if contentType == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
@@ -212,46 +216,62 @@ class MQTTClientHandler(MQTTHandler):
 			# sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
 			return
 
-		# dissect and validate request
-		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType)).status:
+		# dissect and validate request (calls: fillAndValidateCSERequest())
+		try:
+			dissectResult = CSE.request.dissectRequestFromBytes(data, contentType)
+			request = dissectResult.request
+		except ResponseException as e:
 			# something went wrong during dissection
+			dissectResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+			CSE.request.recordRequest(dissectResult.request, dissectResult)
 			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
 			return
-		request = dissectResult.request
 
 		if isRegistration:
 			# Check access in case of a registration
 			if CSE.security.allowedCredentialIDsMqtt:
-				L.logWarn(CSE.security.allowedCredentialIDsMqtt)
+				#L.logWarn(CSE.security.allowedCredentialIDsMqtt)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
 				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
+					CSE.request.recordRequest(dissectResult.request, dissectResult)
 					_logRequest(dissectResult)
-					_sendResponse(Result.errorResult(rsc = ResponseStatusCode.originatorHasNoPrivilege, request = request, dbg = f'Invalid credential ID: {requestOriginator}'))
+					_sendResponse(Result(rsc = ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
+										 request = request, 
+										 dbg = f'Invalid credential ID: {requestOriginator}'))
 					return
 			
-			if dissectResult.request.op != Operation.CREATE:
+			# TODO Is it necessary to check here the originator for None, empty, C, S?
+			# TODO is the following necessary or isn't this been handled in the Registration Manager?
+
+			if request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
+				CSE.request.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
-				_sendResponse(Result.errorResult(request = request, dbg = L.logWarn(f'Invalid operation for registration: {request.op.name}')))
+				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
+									 request = request, 
+									 dbg = L.logWarn(f'Invalid operation for registration: {request.op.name}')))
 				return
 
 			if request.ty not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
+				CSE.request.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
-				_sendResponse(Result.errorResult(request = request, dbg = L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
+				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
+									 request = request, 
+									 dbg = L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
 				return
 			
-			# TODO Is it necessary to check here the originator for None, empty, C, S?
-
-
 		_logRequest(dissectResult)
 
-		# handle request
+		# server stopped
 		if self.mqttClient.isStopped:
-			_sendResponse(Result.errorResult(rsc = ResponseStatusCode.internalServerError, request = dissectResult.request, dbg = 'mqtt server not running'))
+			_sendResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+								 request = dissectResult.request, 
+								 dbg = 'mqtt server not running'))
 			return
 
+		# Handle the request
 
 		# send events for the MQTT operations
 		_t = self.operationEvents[request.op]
@@ -357,11 +377,13 @@ class MQTTClient(object):
 		self.requestTimeout = Configuration.get('mqtt.timeout')
 
 
-	def configUpdate(self, key:Optional[str] = None, 
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
+				name: Event name.
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
@@ -452,26 +474,17 @@ class MQTTClient(object):
 
 
 	#########################################################################
-
 	#
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self,
-						operation:Operation,
-						url:str, originator:str,
-						to:str = None,
-						ty:ResourceTypes = None, 
-						content:JSON = None,
-						parameters:CSERequest = None, 
-						ct:ContentSerializationType = None, 
-						rvi:str = None,
-						raw:bool = False) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, request:CSERequest, url:str) -> Result:
 		"""	Sending a request via MQTT.
 		"""
 
 		if self.isStopped:
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'MQTT client is not running')
+			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+						  dbg = 'MQTT client is not running')
 
 		# deconstruct URL
 		u = urlparse(url)
@@ -485,41 +498,39 @@ class MQTTClient(object):
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
-		req 					= Result(request = CSERequest())
-		req.request.id			= u.path[1:] if u.path[1:] else to
-		req.request.op			= operation
-		req.resource			= content
-		req.request.originator	= originator
+
+		req 					= Result(request = request)
+		req.request.id			= u.path[1:] if u.path[1:] else req.request.to
+		req.resource			= req.request.pc
 		req.request.rqi			= uniqueRI()
-		if rvi != '1':
-			req.request.rvi			= rvi if rvi is not None else CSE.releaseVersion
+		if req.request.rvi != '1':
+			req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
 		req.request.ot			= getResourceDate()
 		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-		req.request.ct			= ct if ct else CSE.defaultSerialization 	# get the serialization
-
-		# Add additional parameters. This is a CSERequest
-		if parameters:
-			req.request.ec = parameters.ec
+		req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
 
 		# construct the actual request and topic.
-		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw = raw)
+		# Some work is needed here because we take a normal URL for the address
+		preq = prepareMqttRequest(req)
 		topic = u.path
 		pathSplit = u.path.split('/')
-		ct = ct if ct else CSE.defaultSerialization
 
 		# Build the topic
 		if not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(to if to else originator))}/{ct.name.lower()}'
+			# Miguel's proposal
+			# topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = 'Cannot build topic')
+			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+						  dbg = 'Cannot build topic')
 
 		# Get the broker, or connect to a new MQTTBroker for this address
 		if not (mqttConnection := self.getMqttBroker(mqttHost, mqttPort)):
@@ -535,7 +546,8 @@ class MQTTClient(object):
 
 		# We are not connected, so -> fail
 		if not mqttConnection or not mqttConnection.isConnected:
-			return Result.errorResult(rsc = ResponseStatusCode.targetNotReachable, dbg = L.logWarn(f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}'))
+			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, 
+						  dbg = L.logWarn(f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}'))
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
@@ -572,7 +584,10 @@ class MQTTClient(object):
 			return False
 			
 		if not waitFor(timeOut, _receivedResponse):
-			return Result.errorResult(rsc = ResponseStatusCode.targetNotReachable, dbg = 'Target not reachable or timeout'), None
+			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, 
+						  dbg = 'Target not reachable or timeout'), None
+		resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
+													# TODO perhaps unify the use of response values throughout the CSE
 		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
 		return resp, topic
 
@@ -580,30 +595,25 @@ class MQTTClient(object):
 ##############################################################################
 
 
+# TODO check whether this still needs to be this complicated after we refactored request sending
 def prepareMqttRequest(inResult:Result, 
-					   originator:Optional[str] = None, 
-					   ty:Optional[ResourceTypes] = None, 
-					   op:Optional[Operation] = None, 
-					   isResponse:Optional[bool] = False, 
-					   raw:Optional[bool] = False) -> Result:
-	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
+					   isResponse:Optional[bool] = False,) -> Result:
+	"""	Prepare a new request for MQTT. 
 	
-		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
+		Attention:
+			Remember, a response is actually just a new request. This takes care of the fact that in MQTT
+			a response is very similar to a response.
+	
+		Args:
+			inResult: A `Result` object, that contains a request in its *request* attribute.
+			isResponse: Indicater whether the `Result` object is actually a response or a request.
+
+		Return:
+			The constructed and serialized content is returned in a tuple in the `Result.data` attribute:
+		    the content as a dictionary and the serialized content.
 	"""
-	result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
-
-	# When raw: Replace the data with its own primitive content, and a couple of headers
-	if raw and (pc := cast(JSON, result.data).get('pc')):
-		result.data = pc
-		if 'rqi' in pc:
-			result.request.rqi = pc['rqi']
-		if 'ot' in pc:
-			result.request.ot = pc['ot']
-	
-	# Always add the original timestamp in a response
-	if not result.request.ot:
-		result.request.ot = getResourceDate()
-
+	# result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
+	result = requestFromResult(inResult, isResponse = isResponse)
 	result.data = (result.data, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 

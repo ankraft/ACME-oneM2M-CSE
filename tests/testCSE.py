@@ -59,7 +59,7 @@ class TestCSE(unittest.TestCase):
 	def test_retrieveCSEWithWrongOriginator(self) -> None:
 		""" Retrieve <CB> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(cseURL, 'CWrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -102,7 +102,7 @@ class TestCSE(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/ctm'), r)
 		self.assertIsInstance(findXPath(r, 'm2m:cb/ctm'), str, r)
 		try:
-			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))
+			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))	# check if valid ISO8601, throws exception if not
 		except Exception as e:
 			self.fail(str(e))
 
@@ -121,7 +121,7 @@ class TestCSE(unittest.TestCase):
 	def test_deleteCSEFail(self) -> None:
 		"""	Delete <CB> -> Fail """
 		_, rsc = DELETE(cseURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.operationNotAllowed)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -131,7 +131,7 @@ class TestCSE(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		_, rsc = UPDATE(cseURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

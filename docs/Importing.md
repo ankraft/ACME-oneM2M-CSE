@@ -1,64 +1,57 @@
 [← README](../README.md) 
 
-# Importing
+# CSE Startup, Importing Resources and Other Settings
 
 [Resources](#resources)  
-[Attribute and Hierarchy Policies for FlexContainers](#flexcontainers)  
-[Attribute Policies for Common Resources and Complex Types	](#attributes)
+[Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
+[Attribute Policies for Common Resources and Complex Types](#attributes)  
+[Help Documentation](#help-documentation)
 
 
 <a name="resources"></a>
 ## Resources
 
-During startup and CSE restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running the script *startup.as* from the
-[init](../init) directory.
-
-Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
+During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
 
 Not much validation, access control, or registration procedures are performed when importing resources this way.
 
-### Mandatory Resources to the CSE
+See also [@init meta tag](ACMEScript-metatags.md#meta_init)
 
-**Please note** that importing is required for creating the CSEBase, the administration AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree and the permissions for 
-the admin originator are created.
+**Mandatory Resources to the CSE**
 
+Please note that importing is required for creating the CSEBase, the administration AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree and the permissions for the admin originator are created.
 
-### Importing Other Resources
+**Other Resources**
 
-The script *startup.as* can be extended to import other resources as well, or it can call other scripts.
-
-Another option to import resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the [onStartup](ACMEScript-metatags.md#meta_onstartup) and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
+Another option to import more resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#meta_onstartup)* and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
 
 
 ### Referencing Configuration Settings
 
 By using macros the initial resources can be kept independent from individual settings. 
 Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism.
-For this a given macro name is enclosed by  ```[...]```, e.g. ```[cse.csi]```. 
+For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.cseID}```. 
 The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
-```jsonc
-importraw 
-{	
-	"m2m:cb" : {
-			"ri":   "[cse.ri]",
-			"rn":   "[cse.rn]",
-			"csi":  "[cse.csi]",
-			"rr":   true,
-			"csz":  \[ "application/json", "application/cbor" ],
-			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
-	}
-}
+```list
+(import-raw 
+	(get-config "cse.originator") 
+	{"m2m:cb": {
+		"ri":   "${ get-config \"cse.resourceID\" }",
+		"rn":   "${ get-config \"cse.resourceName\" }",
+		"csi":  "${ get-config \"cse.cseID\" }",
+		"rr":   true,
+		"csz":  [ "application/json", "application/cbor" ],
+		"acpi": [ "${ get-config \"cse.cseID\" }/acpCreateACPs" ],
+		"poa":  [ "${ get-config \"http.address\" }" ]
+	}})
 ```
-
-Please note, that normal opening square brackets, e.g. in JSON lists, must be escaped.
-
 
 See the [documentation for scripts](ACMEScript.md).
 
 
 <a name="flexcontainers"></a>
-## FlexContainer Attribute and Hierarchy Policies
+## FlexContainer Specializations Attribute and Hierarchy Policies
 
 The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
 But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
@@ -357,9 +350,38 @@ The following example show the definition for the enumeration data types used in
 		"evalues": [ "1..6" ]
 	},
 	"m2m:resourceType" : {
-		"evalues" : [ "1..5", 9, "13..17", 23, 24, "28..30", 48, 58, 60, 63, 
-					  "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ]
+		"evalues" : [ "1..5", 9, "13..17", 23, 24, "28..30", 48, 58, 60, 65, 
+					  "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10065 ]
 	}
 }
 ```
+
+
+<a name="help-documentation"></a>
+## Help Documentation
+
+Some CSE components provide a markdown documentation to the user, such as the Text UI. That documentation is imported from the 
+[init](../init) directory as well. The file extension for documentation files is ".docmd". 
+
+In the documentation file individual sections are separated by markdown level 1 headers where the header title is the help topic
+for the following section, which is a markdown text block with the help text.
+
+**Example**
+
+```markdown
+# Topic 1
+
+Some help text for topic 1.
+
+## Help sub section
+
+# Topic 2
+...
+```
+
+
+
+
+
+
 [← README](../README.md) 

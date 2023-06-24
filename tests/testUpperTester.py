@@ -53,7 +53,7 @@ class TestUpperTester(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkStatus(self) -> None:
 		""" Check CSE status via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'status'})
+		resp = requests.post(UTURL, headers = { UTCMD: f'Status'})
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')

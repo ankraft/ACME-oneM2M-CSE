@@ -4,6 +4,9 @@
 //	License: BSD 3-Clause License. See the LICENSE file for further details.
 //
 //	Definitions for oneM2M attributes.
+//
+//	Also see complexTypePolicies.ap for more attributes
+//
 
 {
 
@@ -11,20 +14,8 @@
 	// Common and Universal attributes
 	//
 
-	"ty": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "resourceType",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:resourceType",
-			"car": "1",
-			"oc": "NP",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
+	// ty : see complexTypePolicies.ap
+
 	"ri": [
 		{
 			"rtypes": [ "ALL" ],
@@ -105,6 +96,20 @@
 			"annc": "NA"
 		}
 	],
+	"ctm": [
+		{
+			"rtypes": [ "CSEBase" ],
+			"lname": "currentTime",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+
 	"et": [
 		{
 			"rtypes": [ "ALL" ], 
@@ -147,7 +152,7 @@
 	"st": [
 		{
 			"rtypes": [ "ALL" ], 
-			"lname": "creationTime",
+			"lname": "stateTag",
 			"ns": "m2m",
 			"type": "nonNegInteger",
 			"car": "1",
@@ -362,7 +367,7 @@
 	],
 	"air": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionResult",
 			"ns": "m2m",
 			"type": "adict",		// m2m:responsePrimitive, anonymous TODO
@@ -456,10 +461,10 @@
 	],
 	"apv": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionPrimitive",
 			"ns": "m2m",
-			"type": "adict",	// m2m:requestPrimitive TODO
+			"type": "m2m:requestPrimitive",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -469,11 +474,25 @@
 	],
 	"apy": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "actionPriority",
 			"ns": "m2m",
 			"type": "positiveInteger",	// non-enum
 			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"atrl": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "attributeList",
+			"ns": "m2m",
+			"type": "listne", 	// m2m:attributeList
+			"ltype": "string",
+			"car": "01L",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
@@ -1001,7 +1020,7 @@
 	],
 	"dep": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "dependencies",
 			"ns": "m2m",
 			"type": "list",
@@ -1156,7 +1175,7 @@
 	],
 	"ecp": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": ["ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "evalControlParam",
 			"ns": "m2m",
 			"type": "positiveInteger",		// non-enum
@@ -1167,6 +1186,23 @@
 			"annc": "OA"
 		}
 	],
+
+	// EXPERIMENTAL
+	"eem": [
+		{
+			"rtypes": [ "CRS", "REQRESP" ],
+			"lname": "eventEvaluationMode",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:eventEvaluationMode",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+
 	"egid": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1234,7 +1270,7 @@
 	],
 	"evc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "DEPRAnnc", "REQRESP" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
 			"type": "m2m:evalCriteria",
@@ -1247,10 +1283,11 @@
 	],
 	"evm": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "evalMode",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",
+			"etype": "m2m:evalMode",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1293,19 +1330,6 @@
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"fr": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "from",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "01",
-			"oc": "M",
-			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -1444,7 +1468,7 @@
 	],
 	"ipu": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "input",
 			"ns": "m2m",
 			"type": "m2m:actionInput",
@@ -1580,8 +1604,8 @@
 	],
 	"lnk": [
 		{
-			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
-						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
+			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
+						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
@@ -2217,19 +2241,6 @@
 			"annc": "OA"
 		}
 	],
-	"op": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "operation",
-			"ns": "m2m",
-			"type": "nonNegInteger",
-			"car": "1",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"or": [
 		{
 			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", 
@@ -2246,7 +2257,7 @@
 	],
 	"orc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "objectResourceID",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2296,32 +2307,6 @@
 			"annc": "OA"
 		}
 	],
-	"ot": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "originatingTimestamp",
-			"ns": "m2m",
-			"type": "timestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "OA"
-		}
-	],
-	"pc": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "primitiveContent",
-			"ns": "m2m",
-			"type": "adict",	// m2m:primitiveContent
-			"car": "01",
-			"oc": "O",
-			"ou": "NP",
-			"od": "O",
-			"annc": "OA"
-		}
-	],
 	"pei": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2340,10 +2325,10 @@
 			"rtypes": [ "ALL" ],
 			"lname": "periodicIntervalDelta",
 			"ns": "m2m",
-			"type": "positiveInteger",	// non-enum
+			"type": "nonNegInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}
@@ -2431,7 +2416,7 @@
 	"pvs": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "privileges",
+			"lname": "selfPrivileges",
 			"ns": "m2m",
 			"type": "m2m:setOfAcrs",
 			"car": "1",
@@ -2573,19 +2558,6 @@
 			"annc": "NA"
 		}
 	],
-	"rqi": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "requestIdentifier",
-			"ns": "m2m",
-			"type": "string",
-			"car": "01",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "OA"
-		}
-	],
 	"rr": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2625,6 +2597,19 @@
 			"ou": "NP",
 			"od": "NP",
 			"annc": "NA"
+		}
+	],
+	"rri": [
+		{
+			"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
+			"lname": "referencedResourceID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "MA"
 		}
 	],
 	"rs": [
@@ -2689,6 +2674,19 @@
 			"ltype": "string",	// m2m:sessionCapabilities
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"sfc": [
+		{
+			"rtypes": [ "DEPR", "DEPRAnnc", "REQRESP" ],
+			"lname": "sufficient",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "1",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -2827,7 +2825,7 @@
 	],
 	"sri": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
 			"lname": "subjectResourceID",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -3017,19 +3015,6 @@
 			"annc": "NA"
 		}
 	],
-	"to": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "to",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "01",
-			"oc": "M",
-			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"trdst": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
@@ -3097,7 +3082,7 @@
 	],
 	"tws": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "timeWindowSize",
 			"ns": "m2m",
 			"type": "duration",
@@ -3110,7 +3095,7 @@
 	],
 	"twt": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "timeWindowType",
 			"ns": "m2m",
 			"type": "enum",
@@ -3229,6 +3214,15 @@
 	//	Request Arguments, Filter Criteria etc
 	//
 
+	"aq": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "advancedQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
 	"cra": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -3266,6 +3260,19 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"dbg": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "debugInfo",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "NA"
 		}
 	],
@@ -3524,32 +3531,6 @@
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "resultPersistence",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"rqet": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "requestExpirationTimestamp",
-			"ns": "m2m",
-			"type": "absRelTimestamp",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"oet": [
-		{
-			"rtypes": [ "ALL", "REQRESP" ],
-			"lname": "operationExecutionTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
 			"car": "01",

@@ -10,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.11.0',
+    version='0.12.0',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
@@ -37,8 +37,8 @@ setup(
 		'rdflib',
 		'requests', 
 		'rich', 
+		'textual',
 		'tinydb',
-		#'package1 @ git+https://github.com/CITGuru/PyInquirer.git@9d598a53fd17a9bc42efff33183cd2d141a5c949'
 	],
     entry_points={
         'console_scripts': [

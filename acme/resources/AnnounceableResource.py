@@ -8,14 +8,18 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Tuple
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes, Result, JSON, AttributePolicyDict
+from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
 from ..etc.Types import Announced
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
 from .Resource import Resource
+
+_announcedTo = Constants.attrAnnouncedTo
 
 class AnnounceableResource(Resource):
 
@@ -28,18 +32,19 @@ class AnnounceableResource(Resource):
 					   readOnly:Optional[bool] = False, 
 					   rn:Optional[str] = None) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
+		
+		self._addToInternalAttributes(_announcedTo) # add announcedTo to internal attributes
 		self._origAA = None	# hold original announceableAttributes when doing an update
+		self.setAttribute(_announcedTo, [], overwrite = False)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> None:
 		# L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+		super().activate(parentResource, originator)
 
 		# Check announcements
 		if self.at:
-			return CSE.announce.announceResource(self)
-		return res
+			CSE.announce.announceResource(self)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -50,12 +55,13 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, dct:JSON = None, originator:Optional[str] = None, doValidateAttributes:Optional[bool] = True) -> Result:
+	def update(self, dct:JSON = None, 
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
-		if not (res := super().update(dct = dct, originator = originator)).status:
-			return res
+		super().update(dct, originator, doValidateAttributes)
 
 		# TODO handle update from announced resource. Check originator???
 
@@ -65,24 +71,20 @@ class AnnounceableResource(Resource):
 		else:
 			if self._origAT:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
-		return res
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
-		if (res := super().validate(originator, create, dct, parentResource)).status == False:
-			return res
+		super().validate(originator, dct, parentResource)
 
 		announceableAttributes = []
 		if self.aa:
 			# Check whether all the attributes in announcedAttributes are actually resource attributes
 			for aa in self.aa:
 				if not aa in self._attributes:
-					L.logDebug(dbg := f'Non-resource attribute in aa: {aa}')
-					return Result.errorResult(dbg = dbg)
+					raise BAD_REQUEST(L.logDebug(f'Non-resource attribute in aa: {aa}'))
 
 			# deep-copy the announcedAttributes
 			announceableAttributes = deepcopy(self.aa)
@@ -99,7 +101,6 @@ class AnnounceableResource(Resource):
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-		return Result.successResult()
 
 
 	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:
@@ -154,7 +155,7 @@ class AnnounceableResource(Resource):
 
 		else: # update. Works a bit different
 
-			if not (modifiedAttributes := self[self._modified]):
+			if not (modifiedAttributes := self[Constants.attrModified]):
 				return None
 
 			dct = { tpe : { } } # with the announced variant of the tpe
@@ -193,10 +194,13 @@ class AnnounceableResource(Resource):
 				remoteRI: ri of the announced resource on the remote CSE
 		"""
 
+		if not csi or not remoteRI:
+			raise ValueError('csi and remoteRI must be provided')
+		
 		# Set the internal __announcedTo__ attribute
 		ats = self.getAnnouncedTo()
 		ats.append((csi, remoteRI))
-		self.setAttribute(Resource._announcedTo, ats)	# TODO replacement as below?
+		self.setAnnouncedTo(ats)
 
 		# Modify the at attribute, if applicable
 		if 'at' in self._attributes:
@@ -209,7 +213,23 @@ class AnnounceableResource(Resource):
 			self.setAttribute('at', at)
 
 
-	# TODO add _removeAnnouncementFromResource() here
+	def removeAnnouncementFromResource(self, csi:str) -> Optional[str]:
+		"""	Remove anouncement information from the resource. These are a list of tuples of 
+			the csi to which the resource is registered and the CSE-relative ri of the 
+			resource on the remote CSE. Also, remove the reference from the at attribute.
+
+			Args:
+				csi: csi of the remote CSE
+		"""
+		ats = self.getAnnouncedTo()
+		remoteRI = None
+		for x in ats:
+			if x[0] == csi:
+				remoteRI = x[1]
+				ats.remove(x)
+				self.setAnnouncedTo(ats)
+				break
+		return remoteRI
 
 	
 	#########################################################################
@@ -238,3 +258,20 @@ class AnnounceableResource(Resource):
 
 		return mandatory + optional
 
+
+	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
+		"""	Return the internal *announcedTo* list attribute of a resource.
+
+			Return:
+				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
+		"""
+		return self[_announcedTo]
+	
+
+	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
+		"""	Set the internal *announcedTo* list attribute of a resource.
+
+			Args:
+				announcedTo: The list of *announcedTo* tupples (csi, remote resource ID) to assign to a resource.
+		"""
+		self.setAttribute(_announcedTo, announcedTo)

@@ -12,8 +12,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Tuple, cast, Optional
-import random, string, sys, re, threading, socket
+from typing import Any, Callable, Tuple, cast, Optional, Generator
+import random, string, sys, re, threading
 import traceback
 from distutils.util import strtobool
 
@@ -22,10 +22,11 @@ from .Constants import Constants
 from .Types import ResourceTypes, ResponseStatusCode
 from .Types import Result, JSON
 from ..services.Logging import Logging as L
-from ..resources.Resource import Resource
-from ..resources.PCH_PCU import PCH_PCU
 from ..services import CSE as CSE
 
+# Optimize access (fewer look-up)
+_maxIDLength = Constants.maxIDLength
+_attrType = Constants.attrRtype
 
 ##############################################################################
 #
@@ -78,17 +79,6 @@ def uniqueRN(prefix:str) -> str:
 	return f'{noNamespace(prefix)}_{_randomID()}'
 
 
-def announcedRN(resource:Resource) -> str:
-	""" Create the announced resource name for a resource.
-
-		Args:
-			resource: The Resource for which to generate the announced resource name
-		Return:
-			String with the announced resource name
-	"""
-	return f'{resource.rn}_Annc'
-
-
 # create a unique aei, M2M-SP type
 def uniqueAEI(prefix:Optional[str] = 'S') -> str:
 	"""	Create a new AE ID. An AE ID must always start with either "S" or "C".
@@ -124,8 +114,8 @@ def _randomID() -> str:
 			String with a random ID
 	"""
 	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = Constants.maxIDLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
+		result = ''.join(random.choices(_randomIDCharSet, k = _maxIDLength))
+		if 'fopt' not in result:	# prevent 'fopt' in ID
 			return result
 
 
@@ -188,13 +178,32 @@ def localResourceID(ri:str) -> Optional[str]:
 			If the ID targets a local resource then the CSE-relative form of the resource ID
 			is returned, or None otherwise.
 	"""
+	
+	def _checkDash(ri:str) -> str:
+		"""	Handle the special case of '-'.
+
+			Args:
+				ri: The resource ID to check
+			
+			Return:
+				The resource ID with the special case handled.
+		"""
+		if ri.startswith('-/'):
+			return f'{CSE.cseRn}{ri[1:]}'
+		if ri == '-':
+			return CSE.cseRn
+		return ri
+
+
+	if ri == CSE.cseCsi:
+		return CSE.cseRn
 	if isAbsolute(ri):
 		if ri.startswith(CSE.cseAbsoluteSlash):
-			return ri[len(CSE.cseAbsoluteSlash):]
+			return _checkDash(ri[len(CSE.cseAbsoluteSlash):])
 		return None
 	elif isSPRelative(ri):
 		if ri.startswith(CSE.cseCsiSlash):
-			return ri[len(CSE.cseCsiSlash):]
+			return _checkDash(ri[len(CSE.cseCsiSlash):])
 		return None
 	return ri
 	
@@ -238,6 +247,24 @@ def isValidCSI(csi:str) -> bool:
 	return re.fullmatch(_csiRx, csi) is not None
 
 
+_aeRx = re.compile('^[^/\s]+') # Must not start with a / and must not contain a further / or white space
+def isValidAEI(aei:str) -> bool:
+	"""	Test for valid AE-ID format. 
+
+		It takes SP-Relative AEI's into account.
+
+		Args:
+			aei: The AE-ID to check
+		Return:
+			Boolean
+	"""
+	if isSPRelative(aei):
+		ids = aei.split('/')
+		aei = ids[-1]
+
+	return re.fullmatch(_aeRx, aei) is not None
+
+
 def csiFromSPRelative(ri:str) -> Optional[str]:
 	"""	Return the csi from a SP-relative resource ID. It is assumed that
 		the passed *ri* is in SP-relative format.
@@ -250,29 +277,6 @@ def csiFromSPRelative(ri:str) -> Optional[str]:
 	ids = ri.split('/')
 	# return f'/{ids[0]}' if len(ids) > 0 else None
 	return f'/{ids[1]}' if len(ids) > 1 else None
-
-
-def structuredPath(resource:Resource) -> Optional[str]:
-	""" Determine the structured path of a resource.
-
-		Args:
-			resource: The resource for which to get the structured path
-		Return:
-			Structured path or None
-	"""
-	rn:str = resource.rn
-	if resource.ty == ResourceTypes.CSEBase: # if CSE
-		return rn
-
-	# retrieve identifier record of the parent
-	if not (pi := resource.pi):
-		# L.logErr('PI is None')
-		return rn
-	if len(rpi := CSE.storage.identifier(pi)) == 1:
-		return cast(str, f'{rpi[0]["srn"]}/{rn}')
-	# L.logErr(traceback.format_stack())
-	L.logErr(f'Parent {pi} not found in DB')
-	return rn # fallback
 
 
 def structuredPathFromRI(ri:str) -> Optional[str]:
@@ -388,7 +392,7 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
 			ri = ids[0]
 		else:									# structured
-			if ids[0] == '-':					# replace placeholder "-"
+			if ids[0] == '-':					# replace placeholder "-". Always convert in CSE-relative
 				ids[0] = CSE.cseRn
 			srn = '/'.join(ids)
 	
@@ -396,7 +400,7 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
 		if idsLen < 2:
-			return None, None, None, 'ID too short. Must be /<cseid>/<structured|unstructured>.'
+			return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
 		csi = ids[0]							# extract the csi
 		if csi != CSE.cseCsiSlashLess:			# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
@@ -406,7 +410,9 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		# 	# ri = ids[0]
 		# 	return None, None, None, 'ID too short'
 		#elif idsLen > 1:
-		if ids[1] == '-':						# replace placeholder "-"
+		
+		# replace placeholder "-", convert in CSE-relative when the target is this CSE
+		if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
 			ids[1] = CSE.cseRn
 		if ids[1] == CSE.cseRn:					# structured
 			srn = '/'.join(ids[1:])				# remove the csi part
@@ -431,7 +437,9 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		# if idsLen == 2:
 		# 	ri = ids[1]
 		# elif idsLen > 2:
-		if ids[2] == '-':						# replace placeholder "-"
+
+		# replace placeholder "-", convert in absolute when the target is this CSE
+		if ids[2] == '-' and ids[1] == CSE.cseCsiSlashLess:	
 			ids[2] = CSE.cseRn
 		if ids[2] == CSE.cseRn:					# structured
 			srn = '/'.join(ids[2:])
@@ -463,7 +471,7 @@ def riFromCSI(csi:str) -> Optional[str]:
 		Return:
 			The resource ID of the resource with the *csi*, or None in case of an error.
 	 """
-	if not (res := resourceFromCSI(csi).resource):
+	if not (res := resourceFromCSI(csi)):
 		return None
 	return cast(str, res.ri)
 
@@ -535,9 +543,22 @@ def compareIDs(id1:str, id2:str) -> bool:
 			ri2 = toSPRelative(id2)
 		return ri1 == ri2
 
-	ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
-	ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
-	return ri1 == ri2
+	return riFromID(id1) == riFromID(id2)
+	# ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
+	# ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
+	# return ri1 == ri2
+
+
+def riFromID(id:str) -> str:
+	"""	Return the unstructured resource ID from either an unstructured or structured resource ID.
+
+		Args:
+			id: Structured or unstructured Resource ID.
+		Return:
+			Unstructured resource ID.
+	"""
+	return riFromStructuredPath(id) if isStructured(id) else id
+
 
 
 
@@ -638,154 +659,7 @@ def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 	if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
 		return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
-	root = None
-	if Resource._rtype in dct:
-		root = dct[Resource._rtype]
-	return dct, root, rootKeys[0] if lrk > 0 else None
-
-
-
-_decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:JSON, key:str, default:Optional[Any] = None) -> Optional[Any]:
-	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
-		*default* is returned.
-
-		- It is possible to address a specific element in a list. This is done be
-			specifying the element as "{n}".
-
-		Example: 
-			findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
-
-		- If an element is specified as "{}" then all elements in that list are returned in
-			a list.
-
-		Example: 
-			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
-
-		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
-			jumped over. This can be used to skip, for example, unknown first elements in a structure. 
-			This is similar but not the same as "{0}" that works on lists.
-
-		Example: 
-			findXPath(resource, '{*}/rn') 
-		
-		Args:
-			dct: Dictionary to search.
-			key: Key with path to an attribute.
-			default: Optional return value if *key* is not found in *dct*
-		
-		Return:
-			Any found value for the key path, or *None* resp. the provided *default* value.
-	"""
-
-	if not key or not dct:
-		return default
-	if key in dct:
-		return dct[key]
-
-	paths = key.split("/")
-	data:Any = dct
-	for i in range(0,len(paths)):
-		if not data:
-			return default
-		pathElement = paths[i]
-		if len(pathElement) == 0:	# return if there is an empty path element
-			return default
-		elif (m := _decimalMatch.search(pathElement)) is not None:	# Match array index {i}
-			idx = int(m.group(1))
-			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
-				return default
-			if isinstance(data, dict):
-				data = data[list(data)[i]]
-			else:
-				data = data[idx]
-
-		elif pathElement == '{}':	# Match an array in general
-			if not isinstance(data, (list,dict)):	# not a list, return the default
-				return default
-			if i == len(paths)-1:	# if this is the last element and it is a list then return the data
-				return data
-			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
-
-		elif pathElement == '{*}':
-			if isinstance(data, dict):
-				if keys := list(data.keys()):
-					data = data[keys[0]]
-				else:
-					return default
-			else:
-				return default
-
-		elif pathElement not in data:	# if key not in dict
-			return default
-		else:
-			data = data[pathElement]	# found data for the next level down
-	return data
-
-
-
-def setXPath(dct:JSON, 
-			 key:str, 
-			 value:Optional[Any] = None, 
-			 overwrite:Optional[bool] = True, 
-			 delete:Optional[bool] = False) -> bool:
-	"""	Set a structured *key* and *value* in the dictionary *dict*.
-
-		Create the attribute if necessary, and observe the *overwrite* option (True overwrites an
-		existing key/value).
-
-		When the *delete* argument is set to *True* then the *key* attribute is deleted from the dictionary.
-
-		Examples:
-			setXPath(aDict, 'a/b/c', 'aValue)
-
-			setXPath(aDict, 'a/{2}/c', 'aValue)
-
-		Args:
-			dct: A dictionary in which to set or add the *key* and *value*.
-			key: The attribute's name to set in *dct*. This could by a path in *dct*, where the separator is a slash character (/). To address an element in a list, one can use the *{n}* operator in the path.
-			value: The value to set for the attribute. Could be left out when deleting an attribute or value.
-			overwrite: If True that overwrite an already existing value, otherwise skip.
-			delete: If True then remove the atribute or list attribute *key* from the dictionary.
-		
-		Retun:
-			Boolean indicating the success of the operation.
-	"""
-
-	paths = key.split("/")
-	ln1 = len(paths)-1
-	data = dct
-	if ln1 > 0:	# Small optimization. don't check if there is no extended path
-		for i in range(0, ln1):
-			_p = paths[i]
-			if isinstance(data, list):
-				if (m := _decimalMatch.search(_p)) is not None:
-					data = data[int(m.group(1))]
-			else:
-				if _p not in data:
-					data[_p] = {}
-				data = data[_p]
-	if isinstance(data, list):
-		if (m := _decimalMatch.search(paths[ln1])) is not None:
-			idx = int(m.group(1))
-			if not overwrite and idx < len(data): # test overwrite first, it's faster
-				return True # don't overwrite
-			if delete :
-				if idx < len(data):
-					del data[idx]
-				return True
-			else:
-				data[idx] = value
-			return True
-		return False
-	else:
-		if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
-			return True # don't overwrite
-		if delete:
-			del data[paths[ln1]]
-			return True
-		data[paths[ln1]] = value
-	return True
+	return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
 
 
 # def removeKeyFromDict(jsn:dict, keys:list[str]) -> Any:
@@ -864,93 +738,22 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
 
 
-def getCSE() -> Result:
-	"""	Return the <CSEBase> resource.
+def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
+	return { k: v 
+			 for k, v in dct.items() 
+			 if k in attributesToInclude }
+			 
 
-		Return:
-			<CSEBase> resource.
-	"""
-	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
-	return resourceFromCSI(CSE.cseCsi)
-
-
-def resourceFromCSI(csi:str) -> Result:
+def resourceFromCSI(csi:str) -> Any:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 
 		Args:
 			csi: *CSE-ID* of the <CSEBase> resource to retrieve.
+		
 		Return:
 			<CSEBase> resource.
 	"""
 	return CSE.storage.retrieveResource(csi = csi)
-
-	
-def fanoutPointResource(id:str) -> Optional[Resource]:
-	"""	Check whether the target resource contains a fanoutPoint along its path is a fanoutPoint.
-
-		Args:
-			id: the target's resource ID.
-		Return:
-			Return either the virtual fanoutPoint resource, or None in case of an error.
-	"""
-	# Convert to srn
-	if not isStructured(id):
-		if not (id := structuredPathFromRI(id)):
-			return None
-	# from here on id is a srn
-	nid = None
-	if id.endswith('/fopt'):
-		nid = id
-	else:
-		(head, found, _) = id.partition('/fopt/')
-		if found:
-			nid = head + '/fopt'
-
-	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
-		return cast(Resource, result.resource)
-	return None
-
-
-def pollingChannelURIResource(id:str) -> Optional[PCH_PCU]:
-	"""	Check whether the target is a PollingChannelURI resource and return it.
-
-		Args:
-			id: Target resource ID
-		Return:
-			Return either the virtual PollingChannelURI resource or None.
-	"""
-	if not id:
-		return None
-	if id.endswith('pcu'):
-		# Convert to srn
-		if not isStructured(id):
-			if not (id := structuredPathFromRI(id)):
-				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == ResourceTypes.PCH_PCU:
-			return cast(PCH_PCU, result.resource)
-		# Fallthrough
-	return None
-
-
-def latestOldestResource(id:str) -> Optional[Resource]:
-	"""	Check whether the target is a latest or oldest virtual resource and return it.
-
-		Args:
-			id: Target resource ID
-		Return:
-			Return either the virtual resource, or None in case of an error.
-	"""
-	if not id:
-		return None
-	if id.endswith(('la', 'ol')):
-		# Convert to srn
-		if not isStructured(id):
-			if not (id := structuredPathFromRI(id)):
-				return None
-		if (result := CSE.dispatcher.retrieveResource(id)).resource and ResourceTypes.isLatestOldestResource(result.resource.ty):
-			return result.resource
-		# Fallthrough
-	return None
 
 
 def getAttributeSize(attribute:Any) -> int:
@@ -992,14 +795,15 @@ def strToBool(value:str) -> bool:
 	"""
 	return bool(strtobool(str(value)))
 
+
 ##############################################################################
 #
 #	Threads
 #
 
-def renameThread(name:Optional[str] = None,
-				 thread:Optional[threading.Thread] = None,
-				 prefix:Optional[str] = None) -> None:
+def renameThread(prefix:Optional[str] = None,
+				 name:Optional[str] = None,
+				 thread:Optional[threading.Thread] = None) -> None:
 	"""	Rename a thread.
 
 		If *name* is provided then the thread is renamed to that name.
@@ -1034,37 +838,6 @@ def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
 	thread.name = str(thread.native_id)
 
 
-##############################################################################
-#
-#	Network
-
-
-def getIPAddress(hostname:Optional[str] = None) -> str:
-	"""	Lookup and return the IP address for a host name.
-	
-		Args:
-			hostname: The host name to look-up. If none is given, the own host name is tried.
-		Return:
-			IP address, or 127.0.0.1 as a last resort. *None* is returned in case of an error.
-	"""
-	if not hostname:
-		hostname = socket.gethostname()
-	
-	try:
-		ip = socket.gethostbyname(hostname)
-
-		#	Try to resolve a local address. For example, sometimes raspbian
-		#	need to add a 'local' ir 'lan' postfix, depending on the local 
-		#	device configuration
-		if ip.startswith('127.'):	# All local host addresses
-			for ext in ['.local', '.lan']:
-				try:
-					ip = socket.gethostbyname(hostname + ext)
-				except:
-					pass
-		return ip
-	except Exception:
-		return ''
 
 ##############################################################################
 #
@@ -1081,7 +854,7 @@ def exceptionToResult(e:Exception) -> Result:
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	return Result(rsc = ResponseStatusCode.internalServerError, dbg = f'encountered exception: {tbs}')
+	return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'encountered exception: {tbs}')
 
 
 
@@ -1098,3 +871,8 @@ def runsInIPython() -> bool:
 		if each.filename.startswith('<ipython'):
 			return True
 	return False
+
+
+def reverseEnumerate(data:list) -> Generator[Tuple[int, Any], None, None]:
+	for i in range(len(data)-1, -1, -1):
+		yield (i, data[i])

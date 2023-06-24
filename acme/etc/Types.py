@@ -10,179 +10,195 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional
-from enum import IntEnum,  auto
-from http import HTTPStatus
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type
+from enum import auto
 from collections import namedtuple
+from ..helpers.ACMEIntEnum import ACMEIntEnum
+from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.DateUtils import utcTime
 
-
-class ACMEIntEnum(IntEnum):
-	""" A base class for many oneM2M related enum types in ACME. It provides additional halper
-		methods to simplify working with *IntEnum* classes.
-	"""
-
-	@classmethod
-	def has(cls, value:int|str|List[int|str]|Tuple[int|str]) -> bool:
-		"""	Check whether the enum type has an entry with
-			either the given int value or string name. 
-
-			Args:
-				value: *value* can also be a tuple of values to test. 
-					In this case, all the values in the tuple must exist.
-			Return:
-				*True* if the value exists.
-		"""
-
-		def _check(value:int|str) -> bool:
-			if isinstance(value, int):
-				return value in cls.__members__.values()
-			else:
-				return value in cls.__members__
-
-		if isinstance(value, list):	# Checks if list
-			for v in cast(list, value):
-				if not _check(v):
-					return False
-			return True
-
-		if isinstance(value, tuple):	# Checks if tuple
-			for v in cast(tuple, value):
-				if not _check(v):
-					return False
-			return True
-
-		return _check(value)
-
-
-	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:Optional[bool]=False) -> Any:
-		# TODO docu
-		
-		def _to(name:str) -> Any:
-			try:
-				if insensitive:
-					_n = name.lower()
-					return next(v for n,v in cls.__members__.items() if n.lower() == _n)	# type: ignore
-				return next(v for n,v in cls.__members__.items() if n == name)	# type: ignore
-			except StopIteration:
-				return None
-
-		if isinstance(name, tuple):
-			result = []
-			for n in name:
-				if not (t := _to(n)):
-					return None			# Early return
-				result.append(t)
-			return result
-			
-		return _to(cast(str, name))
-
-
-	def __str__(self) -> str:
-		return self.name
-
-
-	def __repr__(self) -> str:
-		return self.__str__()
 
 #
 #	Resource Types
 #
 
 class ResourceTypes(ACMEIntEnum):
+	"""	oneM2M Resource types.
+
+		This includes Announced resouces, ManagementObject specifalizations, and CSE-internal resource types.
+	"""
 
 	UNKNOWN			= -1
+	""" Indicate an unknown type (internal). """
 	ALL 			= -2	# used to indicate that something applies to all resources
+	""" Indicate all supported resource types (internal). """
 	REQRESP			= -3
+	"""	Type for request / response structures (internal). """
 	COMPLEX			= -4
+	"""	Indicate a comples data structure (internal). """
 
 	# Resource Types
 	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
 
 	MIXED			=  0
+	"""	oneM2M *mixed* resource type (e.g. for groups). """
 	ACP 			=  1
+	"""	Access Control Policy resource type. """
 	AE				=  2
+	"""	Application Entity resource type. """
 	CNT				=  3
+	"""	Container resource type. """
 	CIN 			=  4
+	"""	ContentInstance resource type. """
 	CSEBase 		=  5
+	"""	CSEBase resource type. """
 	GRP 			=  9
+	"""	Group resouce type. """
 	MGMTOBJ			= 13
+	"""	ManagementObject resource type. """
 	NOD				= 14
+	"""	Node resource type. """
 	PCH 			= 15
+	"""	PollingChannel resource type. """
 	CSR				= 16
+	"""	Remote CSE resource type. """
 	REQ 			= 17
+	"""	Request resource type. """
 	SUB				= 23
+	"""	Subscription resource type. """
 	SMD				= 24
+	""" SemanticDescriptor resouce type. """
 	FCNT	 		= 28
+	"""	FlexContainer resource type. """
 	TS				= 29
+	"""	TimeSeries resource type. """
 	TSI   			= 30
+	"""	TimeSeriesInstance resource type. """
 	CRS				= 48
+	"""	CrossResourceSubscription resource type. """
 	FCI 			= 58
+	""" FlexContainerInstance resource type. """
 	TSB				= 60
-	ACTR			= 63
+	"""	TimeSyncBeacon resource type. """
+	ACTR			= 65
+	""" Action resource type. """
+	DEPR			= 66
+
 
 
 	# Virtual resources (some are proprietary resource types)
 
 	CNT_OL			=  20001	# actually a memberType
+	"""	Latest virtual resource type for Container. """
 	CNT_LA			=  20002	# actually a memberType
-
+	"""	Oldest virtual resource type for Container. """
 	GRP_FOPT		=  -20003
+	"""	Group FanOutPoint virtual resource type. """
 	FCNT_OL			=  -20004
+	"""	Latest virtual resource type for FlexContainer. """
 	FCNT_LA			=  -20005
+	"""	Oldest virtual resource type for FlexContainer. """
 	PCH_PCU			=  -20006
+	"""	PollingChannelURI virtual resource type. """
 	TS_OL			=  -20007
+	"""	Latest virtual resource type for TimeSeries. """
 	TS_LA			=  -20008
+	"""	Oldest virtual resource type for TimeSeries. """
+
 
 	# <mgmtObj> Specializations
 	# NOTE Always apply changes also to the m2m:mgmtDefinition in attributePolicies.ap etc
 
 	FWR				= 1001
+	"""	Firmware ManagementObject specialization. """
 	SWR				= 1002
+	"""	Software ManagementObject specialization. """
 	MEM				= 1003
+	"""	Memory ManagementObject specialization. """
 	ANI				= 1004
+	"""	AreaNetworkInfo ManagementObject specialization. """
 	ANDI			= 1005
+	"""	AreaNwkDeviceInfo ManagementObject specialization. """
 	BAT				= 1006
+	"""	Battery ManagementObject specialization. """
 	DVI 			= 1007
+	"""	DeviceInfo ManagementObject specialization. """
 	DVC 			= 1008
+	"""	DeviceCapability ManagementObject specialization. """
 	RBO 			= 1009
+	"""	Reboot ManagementObject specialization. """
 	EVL 			= 1010
+	"""	EventLog ManagementObject specialization. """
 	DATC			= 1021	# dataCollection
+	"""	DataCollection ManagementObject specialization. """
 	NYCFC			= 1023	# myCertFileCred
+	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
+	"""	WifiClient ManagementObject specialization. """
 
 	# Announced Resources
 
 	ACPAnnc 		= 10001
+	"""	Announced Access Control Policy resource type. """
 	AEAnnc 			= 10002	
+	"""	Announced Application Entity resource type. """
 	CNTAnnc 		= 10003
+	"""	Announced Container resource type. """
 	CINAnnc 		= 10004
+	"""	Announced ContentInstance resource type. """
 	CSEBaseAnnc 	= 10005
+	"""	Announced CSEBase resource type. """
 	GRPAnnc 		= 10009
+	"""	Announced Group resouce type. """
 	MGMTOBJAnnc 	= 10013
+	"""	Announced ManagementObject resource type. """
 	NODAnnc 		= 10014
+	"""	Announced Node resource type. """
 	CSRAnnc 		= 10016
+	"""	Announced Remote CSE resource type. """
 	SMDAnnc			= 10024
+	"""	Announced SemanticDescriptor resouce type. """
 	FCNTAnnc 		= 10028
+	"""	Announced FlexContainer resource type. """
 	TSAnnc			= 10029
+	"""	Announced TimeSeries resource type. """
 	TSIAnnc			= 10030
+	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
-	ACTRAnnc		= 10063
+	"""	Announced TimeSyncBeacon resource type. """
+	ACTRAnnc		= 10065
+	"""	Announced Action resource type. """
+	DEPRAnnc		= 10066
 
+	"""	Announced Dependency resource type. """
 	FWRAnnc			= -30001
+	"""	Announced Firmware ManagementObject specialization. """
 	SWRAnnc			= -30002
+	"""	Announced Softwware ManagementObject specialization. """
 	MEMAnnc			= -30003
+	"""	Announced Memory ManagementObject specialization. """
 	ANIAnnc			= -30004
+	"""	Announced AreaNetworkInfo ManagementObject specialization. """
 	ANDIAnnc		= -30005
+	"""	Announced AreaNwkDeviceInfo ManagementObject specialization. """
 	BATAnnc			= -30006
+	"""	Announced Battery ManagementObject specialization. """
 	DVIAnnc			= -30007
+	"""	Announced DeviceInfo ManagementObject specialization. """
 	DVCAnnc			= -30008
+	"""	Announced DeviceCapability ManagementObject specialization. """
 	RBOAnnc			= -30009
+	"""	Announced Reboot ManagementObject specialization. """
 	EVLAnnc			= -30010
+	"""	Announced EventLog ManagementObject specialization. """
 	DATCAnnc		= -30021
+	"""	Announced DataCollection ManagementObject specialization. """
 	NYCFCAnnc		= -30023
+	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
+	"""	Announced WifiClient ManagementObject specialization. """
 
 
 	def tpe(self) -> str:
@@ -248,7 +264,7 @@ class ResourceTypes(ACMEIntEnum):
 
 			Return:
 				The FactoryCallableT for the ResourceType.
-		"""		
+		"""	
 		return _ResourceTypeDetails.get(self).factory
 
 
@@ -326,7 +342,7 @@ class ResourceTypes(ACMEIntEnum):
 	@classmethod
 	def isNotificationEntity(cls, ty:ResourceTypes) -> bool:
 		"""	Test whether a resource type represents an entity that can be a notification target.
-			This is different from any resource, that can be a notification target as well.
+			This is different from any other resource type, that can be a notification target as well.
 		
 			Args:
 				ty: `ResourceTypes` value to test.
@@ -349,6 +365,18 @@ class ResourceTypes(ACMEIntEnum):
 		return ty in _ResourceTypesLatestOldest
 		
 
+	@classmethod
+	def fullname(cls, ty:int) -> str:
+		"""	Get the full name of a resource type.
+
+			Args:
+				ty: Type to get the full name for.
+			Return:
+				The full name of the resource type.
+		"""
+		return _ResourceTypeDetails.get(ResourceTypes(ty)).fullName
+
+
 @dataclass()
 class ResourceDescription():
 	typeName:str = None
@@ -362,81 +390,84 @@ class ResourceDescription():
 	factory:FactoryCallableT = None
 	isRequestCreatable:bool = True	# Can be created by a request
 	isNotificationEntity:bool = False	# Is a direct notification target
+	fullName:str = ''				# Full name of the resource type
 	
 _ResourceTypeDetails = {
 	
 	# Normal resource types
-	ResourceTypes.ACP 			: ResourceDescription(typeName = 'm2m:acp', announcedType = ResourceTypes.ACPAnnc),
-	ResourceTypes.ACPAnnc 		: ResourceDescription(typeName = 'm2m:acpA', isAnnouncedResource = True),
-	ResourceTypes.ACTR 			: ResourceDescription(typeName = 'm2m:actr', announcedType = ResourceTypes.ACTRAnnc),
-	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True),
-	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True),
-	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True),
-	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True),
-	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True),
-	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc),
-	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True),
-	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
-	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
-	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs'),
-	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True),
-	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True),
-	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True),
-	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True),
-	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False),					# not an official type name
-	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc), 	# not an official type name
-	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True),				# not an official type name
-	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
-	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
-	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc),
-	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True),
-	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt'),
-	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc),	# not an official type name
-	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True),				# not an official type name
-	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc),
-	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True),
-	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch'),
-	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu'),
-	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False),
-	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc),
-	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True),
-	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub'),
-	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc),
-	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True),
-	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la'),
-	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol'),
-	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True),
-	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True),
-	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc),
-	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True),
+	ResourceTypes.ACP 			: ResourceDescription(typeName = 'm2m:acp', announcedType = ResourceTypes.ACPAnnc, fullName = 'AccessControlPolicy'),
+	ResourceTypes.ACPAnnc 		: ResourceDescription(typeName = 'm2m:acpA', isAnnouncedResource = True, fullName = 'AccessControlPolicy Announced'),
+	ResourceTypes.ACTR 			: ResourceDescription(typeName = 'm2m:actr', announcedType = ResourceTypes.ACTRAnnc, fullName = 'Action'),
+	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True, fullName = 'Action Announced'),
+	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True, fullName = 'ApplicationEntity'),
+	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'ApplicationEntity Announced'),
+	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='ContentInstance'),
+	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
+	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, fullName='Container'),
+	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, fullName='Container Announced'),
+	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
+	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
+	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='Cross Resource Subscription'),
+	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True, fullName='CSEBase'),
+	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True, fullName='CSEBase Announced'),
+	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True, fullName='RemoteCSE'),
+	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True, fullName='RemoteCSE Announced'),
+	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc, fullName='Dependency'),
+	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
+	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
+	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, fullName='FlexContainer'), 	# not an official type name
+	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, fullName = 'FlexContainer Announced'),				# not an official type name
+	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),	# not an official type name
+	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),	# not an official type name
+	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
+	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
+	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', fullName='Fanout Point'),	# not an official type name
+	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
+	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
+	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
+	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
+	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
+	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
+	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
+	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc, fullName='SemanticDescriptor'),
+	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True, fullName='SemanticDescriptor Announced'),
+	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
+	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, fullName='TimeSeries'),
+	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, fullName='TimeSeries Announced'),
+	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
+	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
+	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
+	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True, fullName='TimeSeriesInstance Announced'),
+	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
+	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True, fullName='TimeSyncBeacon Announced'),
 
 	# ManagementObj Specializations
-	ResourceTypes.ANDI			: ResourceDescription(typeName = 'm2m:andi', announcedType = ResourceTypes.ANDIAnnc, isMgmtSpecialization = True),
-	ResourceTypes.ANDIAnnc		: ResourceDescription(typeName = 'm2m:andiA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.ANI			: ResourceDescription(typeName = 'm2m:ani', announcedType = ResourceTypes.ANIAnnc, isMgmtSpecialization = True),
-	ResourceTypes.ANIAnnc		: ResourceDescription(typeName = 'm2m:aniA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.BAT			: ResourceDescription(typeName = 'm2m:bat', announcedType = ResourceTypes.BATAnnc, isMgmtSpecialization = True),
-	ResourceTypes.BATAnnc		: ResourceDescription(typeName = 'm2m:batA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.DATC			: ResourceDescription(typeName = 'dcfg:datc', announcedType = ResourceTypes.DATCAnnc, isMgmtSpecialization = True),
-	ResourceTypes.DATCAnnc		: ResourceDescription(typeName = 'dcfg:datcA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.DVC			: ResourceDescription(typeName = 'm2m:dvc', announcedType = ResourceTypes.DVCAnnc, isMgmtSpecialization = True),
-	ResourceTypes.DVCAnnc		: ResourceDescription(typeName = 'm2m:dvcA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.DVI			: ResourceDescription(typeName = 'm2m:dvi', announcedType = ResourceTypes.DVIAnnc, isMgmtSpecialization = True),
-	ResourceTypes.DVIAnnc		: ResourceDescription(typeName = 'm2m:dviA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.EVL			: ResourceDescription(typeName = 'm2m:evl', announcedType = ResourceTypes.EVLAnnc, isMgmtSpecialization = True),
-	ResourceTypes.EVLAnnc		: ResourceDescription(typeName = 'm2m:evlA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.FWR			: ResourceDescription(typeName = 'm2m:fwr', announcedType = ResourceTypes.FWRAnnc, isMgmtSpecialization = True),
-	ResourceTypes.FWRAnnc		: ResourceDescription(typeName = 'm2m:fwrA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.MEM			: ResourceDescription(typeName = 'm2m:mem', announcedType = ResourceTypes.MEMAnnc, isMgmtSpecialization = True),
-	ResourceTypes.MEMAnnc		: ResourceDescription(typeName = 'm2m:memA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.NYCFC			: ResourceDescription(typeName = 'm2m:nycfc', announcedType = ResourceTypes.NYCFCAnnc, isMgmtSpecialization = True),
-	ResourceTypes.NYCFCAnnc		: ResourceDescription(typeName = 'm2m:nycfctA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.RBO			: ResourceDescription(typeName = 'm2m:rbo', announcedType = ResourceTypes.RBOAnnc, isMgmtSpecialization = True),
-	ResourceTypes.RBOAnnc		: ResourceDescription(typeName = 'm2m:rboA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.SWR			: ResourceDescription(typeName = 'm2m:swr', announcedType = ResourceTypes.SWRAnnc, isMgmtSpecialization = True),
-	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True),
-	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True),
-	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True),
+	ResourceTypes.ANDI			: ResourceDescription(typeName = 'm2m:andi', announcedType = ResourceTypes.ANDIAnnc, isMgmtSpecialization = True, fullName='AreaNetworkDeviceInfo'),
+	ResourceTypes.ANDIAnnc		: ResourceDescription(typeName = 'm2m:andiA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='AreaNetworkDeviceInfo Announced'),
+	ResourceTypes.ANI			: ResourceDescription(typeName = 'm2m:ani', announcedType = ResourceTypes.ANIAnnc, isMgmtSpecialization = True, fullName='AreaNetworkInfo'),
+	ResourceTypes.ANIAnnc		: ResourceDescription(typeName = 'm2m:aniA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='AreaNetworkInfo Announced'),
+	ResourceTypes.BAT			: ResourceDescription(typeName = 'm2m:bat', announcedType = ResourceTypes.BATAnnc, isMgmtSpecialization = True, fullName='Battery'),
+	ResourceTypes.BATAnnc		: ResourceDescription(typeName = 'm2m:batA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Battery Announced'),
+	ResourceTypes.DATC			: ResourceDescription(typeName = 'dcfg:datc', announcedType = ResourceTypes.DATCAnnc, isMgmtSpecialization = True, fullName='DataCollection'),
+	ResourceTypes.DATCAnnc		: ResourceDescription(typeName = 'dcfg:datcA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DataCollection Announced'),
+	ResourceTypes.DVC			: ResourceDescription(typeName = 'm2m:dvc', announcedType = ResourceTypes.DVCAnnc, isMgmtSpecialization = True, fullName='DeviceCapability'),
+	ResourceTypes.DVCAnnc		: ResourceDescription(typeName = 'm2m:dvcA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DeviceCapability Announced'),
+	ResourceTypes.DVI			: ResourceDescription(typeName = 'm2m:dvi', announcedType = ResourceTypes.DVIAnnc, isMgmtSpecialization = True, fullName='DeviceInfo'),
+	ResourceTypes.DVIAnnc		: ResourceDescription(typeName = 'm2m:dviA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DeviceInfo Announced'),
+	ResourceTypes.EVL			: ResourceDescription(typeName = 'm2m:evl', announcedType = ResourceTypes.EVLAnnc, isMgmtSpecialization = True, fullName='EventLog'),
+	ResourceTypes.EVLAnnc		: ResourceDescription(typeName = 'm2m:evlA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='EventLog Announced'),
+	ResourceTypes.FWR			: ResourceDescription(typeName = 'm2m:fwr', announcedType = ResourceTypes.FWRAnnc, isMgmtSpecialization = True, fullName='Firmware'),
+	ResourceTypes.FWRAnnc		: ResourceDescription(typeName = 'm2m:fwrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Firmware Announced'),
+	ResourceTypes.MEM			: ResourceDescription(typeName = 'm2m:mem', announcedType = ResourceTypes.MEMAnnc, isMgmtSpecialization = True, fullName='Memory'),
+	ResourceTypes.MEMAnnc		: ResourceDescription(typeName = 'm2m:memA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Memory Announced'),
+	ResourceTypes.NYCFC			: ResourceDescription(typeName = 'm2m:nycfc', announcedType = ResourceTypes.NYCFCAnnc, isMgmtSpecialization = True, fullName='myCertFileCred'),
+	ResourceTypes.NYCFCAnnc		: ResourceDescription(typeName = 'm2m:nycfctA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='myCertFileCred Announced'),
+	ResourceTypes.RBO			: ResourceDescription(typeName = 'm2m:rbo', announcedType = ResourceTypes.RBOAnnc, isMgmtSpecialization = True, fullName='Reboot'),
+	ResourceTypes.RBOAnnc		: ResourceDescription(typeName = 'm2m:rboA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Reboot Announced'),
+	ResourceTypes.SWR			: ResourceDescription(typeName = 'm2m:swr', announcedType = ResourceTypes.SWRAnnc, isMgmtSpecialization = True, fullName='Software'),
+	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Software Announced'),
+	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True, fullName='WiFi Client'),
+	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='WiFi Client Announced'),
 
 	# Internal resource types
 	ResourceTypes.UNKNOWN	: ResourceDescription(typeName = 'unknown', isInternalType = True),
@@ -593,19 +624,21 @@ class BasicType(ACMEIntEnum):
 
 class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities.
+		
+		Attributes:
+			CAR1: Mandatory.
+			CAR1L: Mandatory list.
+			CAR1LN: Mandatory list that shall not be empty.
+			CAR01: Optional.
+			CAR01L: Optional list.
+			CAR1N: Mandatory but may be Null/None.
 	"""
 	CAR1			= auto()
-	"""	Mandatory."""
 	CAR1L			= auto()
-	"""	Mandatory list. """
 	CAR1LN			= auto()
-	"""	Mandatory list that shall not be empty. """
 	CAR01			= auto()
-	""" Optional. """
 	CAR01L			= auto()
-	""" Optional list."""
 	CAR1N			= auto()
-	""" Mandatory but may be Null/None. """
 
 	@classmethod
 	def hasCar(cls, name:str) -> bool:
@@ -621,6 +654,18 @@ class Cardinality(ACMEIntEnum):
 		"""
 		return cls.has(f'CAR{name}')
 	
+
+	@classmethod
+	def isMandatory(cls, car:Cardinality) -> bool:
+		"""	Check whether a Cardinality is mandatory.
+		
+			Args:
+				car: Cardinality to check.
+			Return:
+				*True* if the Cardinality is of mandatory kind.
+		"""
+		return car in [ Cardinality.CAR1, Cardinality.CAR1L, Cardinality.CAR1LN, Cardinality.CAR1N ]
+
 	
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> Cardinality:
@@ -646,137 +691,36 @@ class Cardinality(ACMEIntEnum):
 
 class RequestOptionality(ACMEIntEnum):
 	""" Request optionality enum values.
+
+		Attributes:
+			NP: Not provided.
+			O: Optional.
+			M: Mandatory.
 	"""
 	NP				= auto()
-	""" Not provided. """
 	O 				= auto()
-	""" Optional. """
 	M 				= auto()
-	""" Mandatory. """
 
 
 class Announced(ACMEIntEnum):
 	""" Anouncement attribute enum values.
+
+		Attributes:
+			NA:	Not announced.
+			OA: Optionally announced.
+			MA: Mandatory announced.
 	"""
+
 	NA				= auto()
-	"""	Not announced. """
+	"""	Not announced """
 	OA				= auto()
-	""" Optionally announced. """
+	"""	Optionally announced """
 	MA				= auto()
-	"""	Mandatory announced. """
-
-
-##############################################################################
-#
-#	Response Codes
-#
-
-
-class ResponseStatusCode(ACMEIntEnum):
-	""" Response codes """
-	accepted									= 1000
-	acceptedNonBlockingRequestSynch				= 1001
-	acceptedNonBlockingRequestAsynch			= 1002
-	OK											= 2000
-	created 									= 2001
-	deleted 									= 2002
-	updated										= 2004
-	badRequest									= 4000
-	releaseVersionNotSupported					= 4001
-	notFound 									= 4004
-	operationNotAllowed							= 4005
-	requestTimeout 								= 4008
-	unsupportedMediaType						= 4015
-	subscriptionCreatorHasNoPrivilege			= 4101
-	contentsUnacceptable						= 4102
-	originatorHasNoPrivilege					= 4103
-	conflict									= 4105
-	securityAssociationRequired					= 4107
-	invalidChildResourceType					= 4108
-	groupMemberTypeInconsistent					= 4110
-	originatorHasAlreadyRegistered				= 4117
-	appRuleValidationFailed						= 4126
-	operationDeniedByRemoteEntity				= 4127
-	serviceSubscriptionNotEstablished			= 4128
-	invalidSPARQLQuery 							= 4143
-	internalServerError							= 5000
-	notImplemented								= 5001
-	targetNotReachable 							= 5103
-	receiverHasNoPrivileges						= 5105
-	alreadyExists								= 5106
-	remoteEntityNotReachable					= 5107
-	targetNotSubscribable						= 5203
-	subscriptionVerificationInitiationFailed	= 5204
-	subscriptionHostHasNoPrivilege				= 5205
-	notAcceptable 								= 5207
-	crossResourceOperationFailure 				= 5221
-	maxNumberOfMemberExceeded					= 6010
-	invalidArguments							= 6023
-	insufficientArguments						= 6024
-
-
-	UNKNOWN										= -1
-
-
-	def httpStatusCode(self) -> int:
-		""" Map the oneM2M RSC to an http status code. """
-		return _ResponseStatusCodeHttpStatusCodes[self]
-
-
-
-#
-#	Mapping of oneM2M return codes to http status codes
-#
-
-_ResponseStatusCodeHttpStatusCodes = {
-	ResponseStatusCode.OK 										: HTTPStatus.OK,						# OK
-	ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
-	ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
-	ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
-	ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
-	ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-	ResponseStatusCode.acceptedNonBlockingRequestAsynch 		: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-	ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
-	ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-	ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
-	ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-	ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
-	ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
-	ResponseStatusCode.invalidSPARQLQuery						: HTTPStatus.BAD_REQUEST,				# INVALID SPARQL QUERY
-	ResponseStatusCode.serviceSubscriptionNotEstablished		: HTTPStatus.FORBIDDEN,					# SERVICE SUBSCRIPTION NOT ESTABLISHED
-	ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
-	ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-	ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-	ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
-	ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
-	ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-	ResponseStatusCode.subscriptionCreatorHasNoPrivilege		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-	ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-	ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
-	ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-	ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
-	ResponseStatusCode.requestTimeout							: HTTPStatus.GATEWAY_TIMEOUT,			# REQUEST TIMEOUT
-	ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
-	ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
-	ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
-	ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-	ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
-	ResponseStatusCode.crossResourceOperationFailure			: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
-	ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
-	ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
-	ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
-	ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-	ResponseStatusCode.releaseVersionNotSupported				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-	ResponseStatusCode.notImplemented							: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
-	
-	ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
-
-}
-
+	"""	Mandatory announced """
 
 ##############################################################################
 #
-#	Gweneric Enums
+#	Evaluation Enums
 #
 
 class EvalCriteriaOperator(ACMEIntEnum):
@@ -799,6 +743,29 @@ class EvalCriteriaOperator(ACMEIntEnum):
 
 	lessThanEqual		= 6
 	""" Less than or equal. """
+
+	def isAllowedType(self, typ:BasicType) -> bool:
+		# Ordered types are allowed for all operators
+		if typ in [ BasicType.positiveInteger,
+					BasicType.nonNegInteger,
+					BasicType.unsignedInt,
+					BasicType.unsignedLong,
+					BasicType.timestamp,
+					BasicType.absRelTimestamp,
+					BasicType.float,
+					BasicType.integer,
+					BasicType.duration,
+					BasicType.enum,
+					BasicType.time,
+					BasicType.date ]:
+			return True
+		# Equal and unequal are the only operators allowed for all other types
+		if self.value in [ EvalCriteriaOperator.equal,
+						   EvalCriteriaOperator.notEqual ]:
+			return True
+		# Not allowed
+		return False
+
 
 
 class EvalMode(ACMEIntEnum):
@@ -826,19 +793,128 @@ class EvalMode(ACMEIntEnum):
 class Permission(ACMEIntEnum):
 	""" Permissions """
 	NONE				=  0
+	"""	No permission """
 	CREATE				=  1
+	"""	CREATE permission """
 	RETRIEVE			=  2
+	"""	RETRIEVE permission """
 	UPDATE				=  4
+	"""	UPDATE permission """
 	DELETE 				=  8
+	"""	DELETE permission """
 	NOTIFY 				= 16
+	"""	NOTIFY permission """
 	DISCOVERY			= 32
+	"""	DISCOVERY permission """
 	ALL					= 63
+	"""	ALL permission (includes all other permissions) """
 
 	@classmethod
 	def allExcept(cls, permission:Permission) -> int:
+		"""	Get a permission set without the specified permission(s).
+
+			Args:
+				permission: The permission(s) to remove from a permission.
+
+			Return:
+				The new permission without the specified *permission*, or *Permission.NONE* in case of an error. 
+		"""
 		p = Permission.ALL - permission
 		return p if Permission.NONE <= p <= Permission.ALL else Permission.NONE
 
+
+	@classmethod
+	def fromBitfield(cls, bitfield:int) -> List[Permission]:
+		""" Get a list of permissions from a bitfield.
+
+			Args:
+				bitfield: The bitfield to convert.
+
+			Return:
+				A list of permissions.
+		"""
+		if bitfield == Permission.ALL.value:
+			return [ Permission.ALL ]
+		return [ p for p in Permission if p != Permission.ALL and p & bitfield ]
+
+
+# #/usr/local/bin/python3 acop.py {query}
+# import sys
+
+# operations = [
+#     (32, 'DISCOVERY', 'i'),
+#     (16, 'NOTIFY', 'n'),
+#     ( 8, 'DELETE', 'd'),
+#     ( 4, 'UPDATE', 'u'),
+#     ( 2, 'RETRIEVE', 'r'),
+#     ( 1, 'CREATE', 'c')
+# ]
+
+# def bitfield(n, length = 6):
+#     r = [int(digit) for digit in bin(n)[2:]]
+#     while len(r) < length:
+#         r.insert(0, 0)
+#     return r
+
+
+# def opsBitfield(field):
+#     sm = []
+#     for i in range(len(field)-1, -1, -1):
+#         if field[i]:
+#             sm.append(operations[i][1])
+#     return ', '.join(sm)
+
+
+# def toBitfield(query):
+# 	r = []
+# 	for each in query.lower():
+# 		for op in operations:
+# 			if each == op[2]:
+# 				if op[0] not in r:
+# 					r.append(op[0])
+# 				break # break for if found
+# 		else:
+# 			return -1 # return error if for did not exit
+
+# 	return sum(r)
+
+
+
+
+# qu = sys.argv[1]
+# try:
+# 	query = int(qu)
+
+# except ValueError:
+# 	# Not a number, so try to calculate the reverse
+# 	result = toBitfield(qu)
+# 	if result > 0:
+# 		result = str(result)
+# 		print('<items><item arg="' + result + '">')
+# 		#print('<title>Access Control Operations</title>')
+# 		print('<title>' + qu + ' = ' + result + '</title>')
+# 		print('<text type="copy">' + result + '</text>')
+# 		print('<text type="largetype">' + result + '</text>')
+# 		print('</item></items>')
+
+# 	else:
+# 		error()
+
+# else:
+# 	# If no exception, ie. query is an integer
+# 	if 0 < query < 64:
+# 		result = 'ALL' if query == 63 else opsBitfield(bitfield(query))
+# 		print('<items><item arg="' + result + '">')
+# 		#print('<title>Access Control Operations</title>')
+# 		print('<title>' + qu + ' = ' + result + '</title>')
+# 		print('<text type="copy">' + result + '</text>')
+# 		print('<text type="largetype">' + result + '</text>')
+# 		print('</item></items>')
+# 	else:
+# 		error()
+
+
+		
 
 ##############################################################################
 #
@@ -846,28 +922,28 @@ class Permission(ACMEIntEnum):
 #
 
 class Operation(ACMEIntEnum):
+	""" Request operations. """
 	# Operations
 	CREATE 				= 1
+	"""	CREATE operation """
 	RETRIEVE			= 2
+	"""	RETRIEVE operation """
 	UPDATE				= 3
+	"""	UPDATE operation """
 	DELETE				= 4
+	"""	DELETE operation """
 	NOTIFY 				= 5
+	"""	NOTIFY operation """
 	DISCOVERY			= -2
+	"""	DISCOVERY operation (special form of a RETRIEVE operation) """
 	NA 					= -1
+	"""	Not applicable """
 
 
 	def permission(self) -> Permission:
 		""" Return the corresponding permission for an operation.
 		"""
 		return _OperationPermissionsMapping[self]
-
-
-	def __str__(self) -> str:
-		return self.name
-
-
-	def __repr__(self) -> str:
-		return self.__str__()
 
 
 	@classmethod
@@ -884,8 +960,7 @@ class Operation(ACMEIntEnum):
 		return Operation(v) if v is not None else None
 
 
-# Mapping between request operations and permissions
-_OperationPermissionsMapping =	{
+_OperationPermissionsMapping =	{	
 	Operation.RETRIEVE	: Permission.RETRIEVE,
 	Operation.CREATE 	: Permission.CREATE,
 	Operation.UPDATE 	: Permission.UPDATE,
@@ -893,6 +968,7 @@ _OperationPermissionsMapping =	{
 	Operation.NOTIFY 	: Permission.NOTIFY,
 	Operation.DISCOVERY : Permission.DISCOVERY,
 }
+"""	Mappings between request operations and permissions """
 
 ##############################################################################
 #
@@ -925,6 +1001,12 @@ class ResultContentType(ACMEIntEnum):
 		"""
 		return op in _ResultContentTypeForOperations and self.value in _ResultContentTypeForOperations[op] 
 
+	@classmethod
+	def default(cls, op:Operation) -> ResultContentType:
+		return _ResultContentTypeDefaults[op]
+	
+
+
 _ResultContentTypeForOperations = {
 	Operation.RETRIEVE:		[ ResultContentType.attributes, 					
 		   					  ResultContentType.attributesAndChildResources, 
@@ -950,6 +1032,15 @@ _ResultContentTypeForOperations = {
 							  ResultContentType.attributesAndChildResourceReferences,
 							  ResultContentType.childResourceReferences ],
 	Operation.NOTIFY:		[ ResultContentType.nothing ],
+}
+
+_ResultContentTypeDefaults = {
+	Operation.RETRIEVE:	ResultContentType.attributes, 					
+	Operation.DISCOVERY: ResultContentType.discoveryResultReferences,
+	Operation.CREATE: ResultContentType.attributes,
+	Operation.UPDATE: ResultContentType.attributes,
+	Operation.DELETE: ResultContentType.nothing,
+	Operation.NOTIFY: None,
 }
 
 
@@ -1004,7 +1095,7 @@ class CSEStatus(ACMEIntEnum):
 
 class ResponseType(ACMEIntEnum):
 	"""	Reponse Types enum values. """
-
+	
 	nonBlockingRequestSynch		= 1
 	""" Non-blocking synchronous. """
 
@@ -1155,7 +1246,7 @@ class ConsistencyStrategy(ACMEIntEnum):
 
 class NotificationContentType(ACMEIntEnum):
 	"""	Notification Content Types """
-	all						= 1
+	allAttributes			= 1
 	modifiedAttributes		= 2
 	ri 						= 3
 	triggerPayload			= 4
@@ -1178,7 +1269,15 @@ class NotificationEventType(ACMEIntEnum):
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
-		if nct == NotificationContentType.all:
+		"""	Return True if the NotificationEventType is allowed for the NotificationContentType.
+
+			Args:
+				nct: the NotificationContentType
+			
+			Return:
+				True if the NotificationEventType is allowed for the NotificationContentType.
+		"""
+		if nct == NotificationContentType.allAttributes:
 			return self.value in [ NotificationEventType.resourceUpdate, 
 								   NotificationEventType.resourceDelete, 
 								   NotificationEventType.createDirectChild, 
@@ -1197,6 +1296,25 @@ class NotificationEventType(ACMEIntEnum):
 			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
 
+	def defaultNCT(self) -> NotificationContentType:
+		"""	Return the default NotificationContentType for this NotificationEventType.
+
+			Return:
+				NotificationContentType.
+		"""
+		return _defaultNCT.get(self)
+
+
+_defaultNCT = {
+	NotificationEventType.resourceUpdate:						NotificationContentType.allAttributes,
+	NotificationEventType.resourceDelete:						NotificationContentType.allAttributes,
+	NotificationEventType.createDirectChild:					NotificationContentType.allAttributes,
+	NotificationEventType.deleteDirectChild:					NotificationContentType.allAttributes,
+	NotificationEventType.retrieveCNTNoChild:					NotificationContentType.allAttributes,
+	NotificationEventType.triggerReceivedForAE:					NotificationContentType.triggerPayload,
+	NotificationEventType.blockingUpdate:						NotificationContentType.modifiedAttributes,
+	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
+}
 
 ##############################################################################
 #
@@ -1233,7 +1351,7 @@ class MissingData:
 
 @dataclass
 class LastTSInstance:
-	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
+	"""	Data class for a single `TS`'s latest and next expected `TSI`.dgt (data generation time) attribute, and other information """
 
 	# runtime attributes
 	dgt:list[float]						= field(default_factory = lambda: [0])
@@ -1254,7 +1372,7 @@ class LastTSInstance:
 
 
 	def prepareNextDgt(self) -> None:
-		"""	Set the next expectedDgt.
+		"""	Set the next expected data generation time.
 		"""
 		self.expectedDgt += self.pei
 	
@@ -1298,7 +1416,9 @@ class LastTSInstance:
 class AnnounceSyncType(ACMEIntEnum):
 	""" Announce Sync Types """
 	UNI_DIRECTIONAL = 1
+	"""	Announcement shall be done uni-directional, ie. changes in the announced resource are not synced back."""
 	BI_DIRECTIONAL = 2
+	"""	Announcement shall be done bi-directional, ie. changes in the announced resource are synced back."""
 
 
 ##############################################################################
@@ -1329,6 +1449,60 @@ class TimeWindowType(ACMEIntEnum):
 	"""	Periodic Window (default)."""
 	SLIDINGWINDOW = 2
 	"""	Sliding Window. """
+
+
+# EXPERIMENTAL
+class EventEvaluationMode(ACMEIntEnum):
+	"""	Time Window Interpretation.
+		This determines how events received in a time window are to be interpreted.
+	"""
+	ALL_EVENTS_PRESENT = 1
+	"""	All events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window. This is the default. """
+	ALL_OR_SOME_EVENTS_PRESENT = 2
+	"""	All or some events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window."""
+	ALL_OR_SOME_EVENTS_MISSING = 3
+	"""	All or some events missing for a `PERIODICWINDOW` (only)."""
+	ALL_EVENTS_MISSING = 4
+	"""	All some events missing for a `PERIODICWINDOW` (only)."""
+	SOME_EVENTS_MISSING = 5
+	"""	Some events present for a `PERIODICWINDOW` or `SLIDINGWINDOW` window."""
+
+##############################################################################
+#
+#	MgmtObj related
+#
+
+class Status(ACMEIntEnum):
+	"""	Status of Firmware Update and Software Update.
+	"""
+	UNINITIALIZED = 0
+	"""	Uninitialized. """
+	SUCCESSFUL = 1
+	"""	Successful. """
+	FAILURE = 2
+	"""	Failure. """
+	IN_PROCESS = 3
+	"""	In process. """
+
+
+class WifiConnectionStatus(ACMEIntEnum):
+	"""	Wifi Connection Status.
+	"""
+	CONNECTED = 0
+	"""	Connected. """
+	DISCONNECTED = 1
+	"""	Disconnected. """
+	IDLE = 2
+	"""	Idle. """
+	NO_SSID_AVAILABLE = 3
+	"""	No SSID available. """
+	SCAN_COMPLETED = 4
+	"""	Scan completed. """
+	FAILED = 5
+	"""	Failed. """
+	LOST = 6
+	"""	Lost. """
+	
 
 ##############################################################################
 #
@@ -1381,47 +1555,36 @@ class Result:
 	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
 	rsc:ResponseStatusCode					= ResponseStatusCode.UNKNOWN	#	The responseStatusCode of a Result
-	dbg:str 								= None
-	request:CSERequest						= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 				= None		# May contain a request as a response, e.g. when polling
-	status:bool 							= None
+	dbg:Optional[str]						= None
+	request:Optional[CSERequest]			= None  	# may contain the processed incoming request object
+	embeddedRequest:Optional[CSERequest]	= None		# May contain a request as a response, e.g. when polling
 
 
-	def errorResultCopy(self) -> Result:
-		""" Copy only the rsc and dbg to a new result instance.
+	# def errorResultCopy(self) -> Result:
+	# 	""" Copy only the rsc and dbg to a new result instance.
 
-			Return:
-				Result instance.
-		"""
-		return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
+	# 		Return:
+	# 			Result instance.
+	# 	"""
+	# 	return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
 	
 
-	@classmethod
-	def errorResult(cls, rsc:Optional[ResponseStatusCode] = ResponseStatusCode.badRequest,
-						 dbg:Optional[str] = '', 
-						 request:Optional[CSERequest] = None,
-						 data:Optional[Any] = None) -> Result:
-		"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
-			message set.
+	# @classmethod
+	# def errorResult(cls, rsc:Optional[ResponseStatusCode] = ResponseStatusCode.BAD_REQUEST,
+	# 					 dbg:Optional[str] = '', 
+	# 					 request:Optional[CSERequest] = None,
+	# 					 data:Optional[Any] = None) -> Result:
+	# 	"""	Create and return a `Result` object with *status* set to *False* and `ResponseStatusCode` and debug
+	# 		message set.
 
-			Args:
-				rsc: `ResponseStatusCode` to return as an error.
-				dbg: String with the debug message.
-				request: `CSERequest` to return.
-			Return:
-				Error `Result` instance.
-		"""
-		return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
-
-
-	@classmethod
-	def successResult(cls) -> Result:
-		"""	Create and return a static `Result` object with *status* attribute set to *True*.
-
-			Return:
-				Success `Result` instance. This is always the same `Result` instance!
-		"""
-		return _successResult
+	# 		Args:
+	# 			rsc: `ResponseStatusCode` to return as an error.
+	# 			dbg: String with the debug message.
+	# 			request: `CSERequest` to return.
+	# 		Return:
+	# 			Error `Result` instance.
+	# 	"""
+	# 	return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
 
 
 	def toData(self, ct:Optional[ContentSerializationType] = None) -> str|bytes|JSON:
@@ -1473,7 +1636,7 @@ class Result:
 			
 
 # Result instance to be re-used all over the place
-_successResult = Result(status = True)
+# _successResult = Result(status = True)
 
 
 ##############################################################################
@@ -1503,7 +1666,7 @@ class FilterCriteria:
 	"""
 
 	# Result handling
-	fu:FilterUsage = FilterUsage.conditionalRetrieval
+	fu:FilterUsage = None
 	""" Filter usage. Default: conditional retrieval. """
 
 	fo:FilterOperation = None
@@ -1573,6 +1736,10 @@ class FilterCriteria:
 	lbl:list = None
 	""" List of labels. Default is *None*. """
 
+	aq:str = None
+	""" Advanced query. Default is *None*. """
+
+
 	# Other filter attributes
 	attributes:Parameters = field(default_factory = dict)
 	""" All other remaining filter resource attributes. """
@@ -1592,7 +1759,7 @@ class FilterCriteria:
 
 	def criteriaAttributes(self) -> dict:
 		"""	Return all the set Filter Criteria attributes, ie. that are not None.
-			The result doesn't include handling attributes, such as 'fu' or 'fo'.
+			The result doesn't include handling attributes, such as 'fu','lim' or 'fo' etc.
 			
 			Return:
 				Dictionary with set Filter Criteria attributes.
@@ -1601,6 +1768,81 @@ class FilterCriteria:
 				 for k, v in self.__dict__.items() 
 				 if k is not None and k not in [ 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes' ] and v is not None
 			   }
+
+
+	def fillCriteriaAttributes(self) -> dict:
+		"""	Create and return a dictionary with all (unfiltered) Filter Criteria attributes.
+		
+			Return:
+				Dictionary with all attributes.
+		"""
+		result = {}
+
+		def _fill(k:str, v:Any) -> None:
+			"""	Callback function to fill the dictionary. 
+				Filter Usage and Filter Operation are not included if they are set to their default values.
+
+				Args:
+					k: Key of the attribute.
+					v: Value of the attribute.
+			"""
+			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
+				return
+			if k == 'fo' and int(v) == FilterOperation.AND:
+				return
+			result[k] = v
+		
+		self.mapAttributes(_fill, False)
+		return result
+
+
+
+	def mapAttributes(self, cb:Callable, flattenList:bool) -> None:
+		"""	Map the standard and attribute Filter Criteria attributes.
+		 	
+			This method calls a callback or lambda function that can map the keys and attributes
+			further.
+			  
+			Args:
+				cb: Callback function that receives a key and its value.
+				flattenList: Separate a list in multiple values or keep the list
+		"""
+
+		def _getValue(v:Any) -> Any:
+			if isinstance(v, ACMEIntEnum):
+				return int(v)
+			return v
+
+
+		# Map only the attributes that are part of the Filter Criteria
+		 
+		for k, v in self.__dict__.items():
+			if k in [ 'attributes']:	# Handle "attributes" below
+				continue
+			if v is None:
+				continue
+
+			# skip default values
+			# TODO combine this with the default handling in fillCriteriaAttributes()
+			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
+				continue
+			if k == 'fo' and int(v) == FilterOperation.AND:
+				continue
+
+			if isinstance(v, list) and flattenList:
+				for e in v:
+					cb(k, _getValue(e))
+			else:
+				cb(k, _getValue(v))
+
+		# Also map free filter criteria attributes
+		if self.attributes:
+			for k, v in self.attributes.items():
+				if isinstance(v, list):
+					for e in v:
+						cb(k, e)
+				else:
+					cb(k, v)
 
 
 	def __str__(self) -> str:
@@ -1618,6 +1860,12 @@ class FilterCriteria:
 class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
 	"""
+
+	def __post_init__(self) -> None:
+		"""	Post initialization actions.
+		"""
+		self._ot = utcTime()	# This must be done here because this is dynamic hand has to be done after the object is created, and not during the class initialization
+		
 
 	fc:FilterCriteria = field(default_factory = FilterCriteria)
 	""" Filter Criteria complex structure. """
@@ -1657,7 +1905,8 @@ class CSERequest:
 	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
 	"""	Desired Indentifier Result Type (default: structured). """
 
-	rcn:ResultContentType = ResultContentType.discoveryResultReferences
+	_rcnDefault = ResultContentType.discoveryResultReferences
+	rcn:ResultContentType = None
 	""" Result Content Type. """
 
 	rt:ResponseType = ResponseType.blockingRequest
@@ -1693,11 +1942,17 @@ class CSERequest:
 	ct:ContentSerializationType = None
 	"""	Content Serialization Type. """
 
-	ec:int = None
+	ec:EventCategory = None
 	"""	Event Category. """
 
 	sqi:bool = None
 	""" Semantic Query Indicator """
+
+	ma:str = None
+	"""	maxAge """
+
+	_ma:float = None
+	""" maxAge duration converted """
 
 	pc:JSON = None
 	""" The request's primitive content as a dictionary. """
@@ -1727,6 +1982,98 @@ class CSERequest:
 	originalHttpArgs:Any 			= None
 	""" Original http request arguments. A MultiDict. """
 
+	#
+	#	Helpers
+	#
+
+	_outgoing:bool = False
+	""" Whether this is a request sent by the CSE. """
+
+	_directURL:str = None
+	""" The direct URL of the request. """
+
+	_ot:float = None
+	""" The timestamp when this request object was created. """
+
+
+
+	def fillOriginalRequest(self, update:bool = False) -> None:
+		"""	Create an originalRequest from at least some request attributes.
+			This overwrites the internal originalRequest attribute.
+		"""
+		if not update or not self.originalRequest:
+			self.originalRequest = {}
+
+		if self.op:
+			self.originalRequest['op'] = self.op.value
+		if self.to:
+			self.originalRequest['to'] = self.to
+		if self.rvi:
+			self.originalRequest['rvi'] = self.rvi
+		if self.rqi:
+			self.originalRequest['rqi'] = self.rqi
+		if self.ty:
+			self.originalRequest['ty'] = self.ty
+		if self.originator:
+			self.originalRequest['org'] = self.originator
+		if self.drt and int(self.drt) != DesiredIdentifierResultType.structured:
+			self.originalRequest['drt'] = self.drt
+		if self.rcn and int(self.rcn) != self._rcnDefault:
+			self.originalRequest['rcn'] = self.rcn
+		if self.rt and int(self.rt) != ResponseType.blockingRequest:
+			self.originalRequest['rt'] = self.rt
+		if self.rp:
+			self.originalRequest['rp'] = self.rp
+		if self.vsi:
+			self.originalRequest['vsi'] = self.vsi
+		if self.rqet:
+			self.originalRequest['rqet'] = self.rqet
+		if self.ot:
+			self.originalRequest['ot'] = self.ot
+		if self.oet:
+			self.originalRequest['oet'] = self.oet
+		if self.rset:
+			self.originalRequest['rset'] = self.rset
+		if self.rtu:
+			self.originalRequest['rtu'] = self.rtu
+		if self.rset:
+			self.originalRequest['rset'] = self.rset
+		# TODO is the content serialization type necessary to store? An "ct" is not the right shortname
+		# if self.ct:
+		# 	self.originalRequest['ct'] = self.ct
+		if self.ec:
+			self.originalRequest['ec'] = self.ec
+		if self.sqi:
+			self.originalRequest['sqi'] = self.sqi
+		if self.fc and (_fc := self.fc.fillCriteriaAttributes()):
+			self.originalRequest['fc'] = _fc
+		elif 'fc' in self.originalRequest:
+			del self.originalRequest['fc']
+		if self.pc:
+			self.originalRequest['pc'] = self.pc
+		
+
+	def convertToR1Target(self, targetRvi:str) -> CSERequest:
+		"""	Remove the *Release Version Indicator* and the *Vendor Information*
+			from a request if the request targets a target that only supports 
+			release 1.
+
+			Args:
+				targetRvi: The target's supported release version.
+			Return:
+				A deep copy of the request, with the fields removed or set to None.
+		"""
+		newRequest = deepcopy(self)
+		if targetRvi != '1':
+			return newRequest
+		if self.rvi:
+			newRequest.rvi = None
+		if self.vsi:
+			newRequest.vsi = None
+		return newRequest
+
+
+
 
 ##############################################################################
 #
@@ -1755,6 +2102,7 @@ class AttributePolicy:
 	ltype:BasicType				= None	# sub-type of a list
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
 	evalues:list[Any]			= None 	# List of enum values
+	ptype:Type					= None	# Implementation type of the enum values
 
 	# TODO support annnouncedSyncType
 
@@ -1792,9 +2140,12 @@ JSON = Dict[str, Any]
 JSONLIST = List[JSON]
 ReqResp = Dict[str, Union[int, str, List[str], JSON]]
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent')
 RequestHandler = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
+
+RequestResponse = namedtuple('RequestResponse', 'request result')
+RequestResponseList = List[RequestResponse]
 
 FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """

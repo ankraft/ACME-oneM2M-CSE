@@ -13,7 +13,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ResponseStatusCode, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
@@ -66,7 +67,7 @@ class TS_OL(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		raise OPERATION_NOT_ALLOWED('operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -80,7 +81,7 @@ class TS_OL(VirtualResource):
 			Return:
 				Fails with error code for this resource type. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		raise OPERATION_NOT_ALLOWED('operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
@@ -97,6 +98,7 @@ class TS_OL(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting oldest TSI from TS')
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI, oldest = True)):
-			return Result.errorResult(rsc = ResponseStatusCode.notFound, dbg = 'no instance for <oldest>')
-		return CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)
+		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI, oldest = True)):
+			raise NOT_FOUND('no instance for <oldest>')
+		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
+		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)

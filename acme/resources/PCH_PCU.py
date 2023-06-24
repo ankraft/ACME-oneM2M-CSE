@@ -10,11 +10,13 @@
 from __future__ import annotations
 from typing import cast, Optional
 
-from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes, ResponseStatusCode, JSON, CSERequest, Result
+from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes, JSON, CSERequest, Result
+from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
 from ..services.Logging import Logging as L
 from ..services import CSE
-from ..etc import DateUtils, Utils
+from ..etc.DateUtils import timeUntilTimestamp
+from ..etc.ResponseStatusCodes import ResponseStatusCode
 
 
 class PCH_PCU(VirtualResource):
@@ -63,24 +65,26 @@ class PCH_PCU(VirtualResource):
 
 		# A retrieve of PCU requires the original retrieve request
 		if not request:
-			return Result.errorResult(rsc = ResponseStatusCode.internalServerError, dbg = L.logErr('Missing request in call to PCU'))
+			raise INTERNAL_SERVER_ERROR(L.logErr('Missing request in call to PCU'))
 
 		# Determine the request's timeout
 		if request.rqet:
-			ret = DateUtils.timeUntilTimestamp(request._rqetUTCts)
+			ret = timeUntilTimestamp(request._rqetUTCts)
 			L.isDebug and L.logDebug(f'Polling timeout: {ret} seconds')
 		else:
 			ret = CSE.request.requestExpirationDelta
 			L.isDebug and L.logDebug(f'Polling timeout: indefinite')
 
 		# Return the response or time out
-		if not (r := CSE.request.waitForPollingRequest(originator, None, timeout = ret, aggregate = self.getAggregate())).status:
-			return Result.errorResult(rsc = ResponseStatusCode.requestTimeout, dbg = L.logWarn(f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}'))
+		try:
+			res = CSE.request.waitForPollingRequest(originator, None, timeout = ret, aggregate = self.getAggregate())
+		except REQUEST_TIMEOUT:
+			raise REQUEST_TIMEOUT(L.logWarn(f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}'))
 		
-		return Result(status = True, rsc = ResponseStatusCode.OK, resource = r.resource, request = request, embeddedRequest = r.request)
+		return Result(rsc = ResponseStatusCode.OK, resource = res.resource, request = request, embeddedRequest = res.request)
 
 
-	def handleNotifyRequest(self, request:CSERequest, originator:str) -> Result:
+	def handleNotifyRequest(self, request:CSERequest, originator:str) -> None:
 		"""	Handle a NOTIFY request to a PCU resource. At the PCU, only Responses are delivered. This method is called
 			when a notification is directed to a non-request-reachable target.
 		"""
@@ -90,16 +94,13 @@ class PCH_PCU(VirtualResource):
 
 		# Check content
 		if request.pc is None:
-			L.logDebug(dbg := f'Missing content/request in notification')
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'Missing content/request in notification')
 		
 		# Validate the response
-		if not (r := CSE.validator.validatePrimitiveContent(request.pc)).status:
-			L.isDebug and L.logDebug(r.dbg)
-			return r
+		CSE.validator.validatePrimitiveContent(request.pc)
 
-		if (innerPC := cast(JSON, Utils.findXPath(request.pc, 'm2m:rsp'))) is None:
-			return Result.errorResult(dbg = L.logDebug(f'Noification to PCU must contain a Response (m2m:rsp)'))
+		if (innerPC := cast(JSON, request.pc.get('m2m:rsp'))) is None:
+			raise BAD_REQUEST(L.logDebug(f'Notification to PCU must contain a Response (m2m:rsp)'))
 		
 		if not innerPC.get('fr'):
 			L.isDebug and L.logDebug(f'Adding originator: {request.originator} to request')
@@ -109,36 +110,33 @@ class PCH_PCU(VirtualResource):
 		nrequest.originalRequest = innerPC
 		nrequest.pc = innerPC.get('pc')
 
-		if not (res := CSE.request.fillAndValidateCSERequest(nrequest, isResponse = True)).status:
-			return res
-		# L.logWarn(res.request)
+		response = CSE.request.fillAndValidateCSERequest(nrequest, isResponse = True)
+		# L.logWarn(response)
 		# L.logWarn(innerPC)
 
 		# Enqueue the reqeust
 		CSE.request.queueRequestForPCH(operation = Operation.NOTIFY,
 									   pchOriginator = self.getOriginator(), 
-									   request = res.request, 
+									   request = response, 
 									   reqType = RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
 		
-		return Result(status = True, rsc = ResponseStatusCode.OK)
-
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'CREATE operation not allowed for <pollingChanelURI> resource type')
+		raise OPERATION_NOT_ALLOWED('CREATE operation not allowed for <pollingChanelURI> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle an UPDATE request. Fail with error code. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'UPDATE operation not allowed for <pollingChanelURI> resource type')
+		raise OPERATION_NOT_ALLOWED('UPDATE operation not allowed for <pollingChanelURI> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. 
 		"""
-		return Result.errorResult(rsc = ResponseStatusCode.operationNotAllowed, dbg = 'DELETE operation not allowed for <pollingChanelURI> resource type')
+		raise OPERATION_NOT_ALLOWED('DELETE operation not allowed for <pollingChanelURI> resource type')
 
 
 	def setAggregate(self, aggregate:bool) -> None:

@@ -12,7 +12,7 @@ from typing import Callable, Union, Tuple, Optional
 
 import time
 from email.utils import formatdate
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import isodate
 
 ##############################################################################
@@ -32,21 +32,18 @@ def getResourceDate(offset:Optional[int] = 0) -> str:
 	return toISO8601Date(utcTime() + offset)
 
 
-def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:Optional[bool] = True) -> str:
+def toISO8601Date(ts:Union[float, datetime], readable:Optional[bool] = False) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 
 		Args:
-			ts: Timestamp. Either a POSIX float timestamp, of a `datetime` object.
-			isUTCtimestamp: Boolean indicating whether the timestamp is UTC based.
+			ts: Timestamp. Either a POSIX float timestamp, of a *datetime* object.
+			readable: Optional boolean indicating whether the output should be in the format "YYYY-MM-DDThh:mm:ss,f
 		Return:
 			ISO 8601 datetime string.
 	"""
 	if isinstance(ts, float):
-		if isUTCtimestamp:
-			ts = datetime.fromtimestamp(ts)
-		else:
-			ts = datetime.utcfromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S,%f')
+		ts = datetime.fromtimestamp(ts, tz = timezone.utc)
+	return ts.strftime('%Y-%m-%dT%H:%M:%S,%f' if readable else '%Y%m%dT%H%M%S,%f')
 
 
 def fromAbsRelTimestamp(absRelTimestamp:str, 
@@ -54,7 +51,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 						withMicroseconds:Optional[bool] = True) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-based POSIX timestamp as a float.
 
-		If the *absRelTimestamp* is a period (relatice) timestamp (e.g. "PT2S"), then this function
+		If the *absRelTimestamp* is a period (relative) timestamp (e.g. "PT2S"), then this function
 		tries to convert it and return an absolute POSIX timestamp as a float, based on the current UTC time.
 
 		If the *absRelTimestamp* contains a stringified integer then it is treated as a relative offset in ms and
@@ -70,8 +67,8 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 	"""
 	try:
 		if not withMicroseconds:
-			return isodate.parse_datetime(absRelTimestamp).replace(microsecond = 0).timestamp()
-		return isodate.parse_datetime(absRelTimestamp).timestamp()
+			return isodate.parse_datetime(absRelTimestamp).replace(microsecond = 0, tzinfo = timezone.utc).timestamp()
+		return isodate.parse_datetime(absRelTimestamp).replace(tzinfo = timezone.utc).timestamp()
 		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
 		try:
@@ -134,7 +131,7 @@ def utcTime() -> float:
 		Returns:
 			Float with current UTC-based POSIX time.
 	"""
-	return datetime.utcnow().timestamp()
+	return datetime.now(tz = timezone.utc).timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
@@ -179,7 +176,7 @@ def isodateDelta(isoDateTime:str, now:Optional[float] = None) -> Optional[float]
 	if now is None:
 		now = utcTime()
 	try:
-		return now - isodate.parse_datetime(isoDateTime).timestamp()
+		return now - isodate.parse_datetime(isoDateTime).replace(tzinfo = timezone.utc).timestamp()
 	except Exception as e:
 		return None
 
@@ -204,14 +201,20 @@ def waitFor(timeout:float,
 	if timeout < 0.0:
 		return False
 	if not condition:
-		time.sleep(timeout)
+		try:
+			time.sleep(timeout)
+		except KeyboardInterrupt:
+			pass
 		return False
 	else:
 		if not callable(condition):
 			return False
 		toTs = time.time() + timeout
 		while not (res := condition()) and toTs > time.time():
-			time.sleep(latency)
+			try:
+				time.sleep(latency)
+			except KeyboardInterrupt:
+				return False
 		return res
 
 ##############################################################################
@@ -321,7 +324,7 @@ def cronMatchesTimestamp(cronPattern:Union[str,
 		return False
 
 	if ts is None:
-		ts = datetime.utcnow()
+		ts = datetime.now(tz = timezone.utc)
 	
 	cronElements = cronPattern.split() if isinstance(cronPattern, str) else cronPattern
 	if len(cronElements) != 5:
@@ -364,7 +367,7 @@ def cronInPeriod(cronPattern:Union[str,
 
 	# Fill in the default
 	if endTs is None:
-		endTs = datetime.utcnow()
+		endTs =  datetime.now(tz = timezone.utc)
 
 	# Check the validity of the range
 	if endTs < startTs:

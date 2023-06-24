@@ -34,7 +34,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'srv': [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		testCaseEnd('Setup TestFCNT_FCI')
 
@@ -75,7 +75,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni'	: 10
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.CREATED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -116,7 +116,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'curT0'	: 17.0,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
@@ -153,7 +153,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni':   1,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'cod:tempe/mni'), 1)
@@ -179,7 +179,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'lbl':	[ 'aLabel' ],
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIn('aLabel', findXPath(r, 'cod:tempe/lbl'))
 
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
@@ -201,7 +201,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni':	10,				# Increase mni again
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIn('aLabel', findXPath(r, 'cod:tempe/lbl'))
 		self.assertEqual(cni, findXPath(r, 'cod:tempe/cni'))
 
@@ -214,7 +214,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'curT0'	: 23.0,
 				}}
 		r, rsc = CREATE(fcntURL, TestFCNT_FCI.originator, T.FCI, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed, r)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -231,7 +231,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'curT0'	: 5.0,
 				}}
 		r, rsc = UPDATE(f'{fcntURL}/{findXPath(rla, "cod:tempe/rn")}', TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -241,24 +241,24 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni':   None,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'cod:tempe/mni'))
 		self.assertIsNone(findXPath(r, 'cod:tempe/cni'))
 
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
-		self.assertEqual(rsc, RC.notFound)
+		self.assertEqual(rsc, RC.NOT_FOUND)
 
 		rol, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
-		self.assertEqual(rsc, RC.notFound)
+		self.assertEqual(rsc, RC.NOT_FOUND)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self) -> None:
 		""" Delete <FCNT> """
 		_, rsc = DELETE(fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, RC.deleted)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 # TODO other FCNT controlling attributes

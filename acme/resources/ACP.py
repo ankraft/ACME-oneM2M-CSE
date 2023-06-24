@@ -4,14 +4,16 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" AccessControlPolicy (ACP) resource type """
+""" AccessControlPolicy (ACP) resource type. """
 
 from __future__ import annotations
 from typing import List, Optional
 
 from ..helpers.TextTools import simpleMatch
-from ..etc import Utils
+from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -20,6 +22,8 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
+
+	_riTyMapping = Constants.attrRiTyMapping
 
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
@@ -55,41 +59,57 @@ class ACP(AnnounceableResource):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
 
+		self._addToInternalAttributes(self._riTyMapping)
+
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
 
 
 	def validate(self, originator:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> Result:
+					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
-		if not (res := super().validate(originator, create, dct, parentResource)).status:
-			return res
+		super().validate(originator, dct, parentResource)
 		
-		if dct and (pvs := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
+		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
-				return Result.errorResult(dbg = 'pvs must not be empty')
+				raise BAD_REQUEST('pvs must not be empty')
 		if not self.pvs:
-			return Result.errorResult(dbg = 'pvs must not be empty')
+			raise BAD_REQUEST('pvs must not be empty')
 
 		# Check acod
-		def _checkAcod(acrs:list) -> Result:
-			if not acrs:
-				return Result.successResult()
-			for acr in acrs:
-				if (acod := acr.get('acod')):
-					for each in acod:
-						if not (chty := each.get('chty')) or not isinstance(chty, list):
-							return Result.errorResult(dbg = 'chty is mandatory in acod')
-			return Result.successResult()
+		# TODO Is this still necessary? Check in resource validation?
+		def _checkAcod(acrs:list) -> None:
+			if acrs:
+				for acr in acrs:
+					if (acod := acr.get('acod')):
+						for each in acod:
+							if not (chty := each.get('chty')) or not isinstance(chty, list):
+								raise BAD_REQUEST('chty is mandatory in acod')
 
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))).status:
-			return res
-		if not (res := _checkAcod(Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))).status:
-			return res
+		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))
+		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))
 
-		return Result.successResult()
+		# Get types for the acor members. Ignore if not found
+		# This is an optimization used later in case there is a group in acor
+		riTyDict = {}
+
+		def _getAcorTypes(pv:JSON) -> None:
+			if pv:
+				for acr in pv.get('acr', []):
+					if (acor := acr.get('acor')):
+						for o in acor:
+							try:
+								r = CSE.dispatcher.retrieveResource(o)
+								riTyDict[o] = r.ty		
+							except:
+								# ignore any errors here. The acor might not be a resource yet
+								continue
+
+		_getAcorTypes(self.getFinalResourceAttribute('pv', dct))
+		_getAcorTypes(self.getFinalResourceAttribute('pvs', dct))
+		self.setAttribute(ACP._riTyMapping, riTyDict)
+
 
 
 	def deactivate(self, originator:str) -> None:
@@ -108,7 +128,7 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
-		if acr := Utils.findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
+		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
 			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
@@ -189,10 +209,9 @@ class ACP(AnnounceableResource):
 				# TODO support acod/specialization
 
 			# Check originator
-			if 'all' in acr['acor'] or originator in acr['acor'] or requestedPermission == Permission.NOTIFY:
+			if self._checkAcor(acr['acor'], originator):
 				return True
-			if any([ simpleMatch(originator, a) for a in acr['acor'] ]):	# check whether there is a wildcard match
-				return True
+
 		return False
 
 
@@ -210,10 +229,38 @@ class ACP(AnnounceableResource):
 		for p in self['pvs/acr']:
 			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
 				continue
-			# TODO check acod in pvs
-			if 'all' in p['acor'] or originator in p['acor']:
+
+			# Check originator
+			if self._checkAcor(p['acor'], originator):
 				return True
-			if any([ simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
-				return True
+
 		return False
 
+
+	def _checkAcor(self, acor:list[str], originator:str) -> bool:
+
+		# Check originator
+		if 'all' in acor or \
+			originator in acor:
+			# or requestedPermission == Permission.NOTIFY:	# TODO not sure whether this is correct
+			return True
+		
+		# Iterrate over all acor entries for either a group check or a wildcard check
+		_riTypes = self.attribute(ACP._riTyMapping)
+		for a in acor:
+
+			# Check for group. If the originator is a member of a group, then the originator has access
+			if _riTypes.get(a) == ResourceTypes.GRP:
+				try:
+					if originator in CSE.dispatcher.retrieveResource(a).mid:
+						L.isDebug and L.logDebug(f'Originator found in group member')
+						return True
+				except Exception as e:
+					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
+					continue # Not much that we can do here
+
+			# Otherwise Check for wildcard match
+			if simpleMatch(originator, a):
+				return True
+		
+		return False

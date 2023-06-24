@@ -11,24 +11,10 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..resources.MgmtObj import MgmtObj
-from ..etc import Utils
-
-lgtSystem = 1
-lgtSecurity	= 2
-lgtEvent = 3
-lgtTrace = 4 
-lgTPanic = 5
-
-lgstStarted = 1
-lgstStopped = 2
-lgstUnknown = 3
-lgstNotPresent = 4
-lgstError = 5
-
-defaultLogTypeId = lgtSystem
-defaultLogStatus = lgstUnknown
-
+from ..resources.Resource import Resource
+from ..helpers.TextTools import findXPath
 
 class EVL(MgmtObj):
 
@@ -73,20 +59,17 @@ class EVL(MgmtObj):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(dct, pi, mgd = ResourceTypes.EVL, create = create)
 
-		self.setAttribute('lgt', defaultLogTypeId, overwrite = False)
-		self.setAttribute('lgd', '', overwrite = False)
-		self.setAttribute('lgst', defaultLogStatus, overwrite = False)
 		self.setAttribute('lga', True)
 		self.setAttribute('lgo', True)
-
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> Result:
+					 doValidateAttributes:Optional[bool] = True) -> None:
 		# Check for rbo & far updates 
-		if Utils.findXPath(dct, '{*}/lga') and Utils.findXPath(dct, '{*}/lgo'):
-			return Result.errorResult(dbg = 'update both lga and lgo to True at the same time is not allowed')
+		if findXPath(dct, '{*}/lga') and findXPath(dct, '{*}/lgo'):
+			raise BAD_REQUEST('update both lga and lgo to True at the same time is not allowed')
 
+		# Always overwrite with True
 		self.setAttribute('lga', True)
 		self.setAttribute('lgo', True)
-		return super().update(dct, originator)
+		super().update(dct, originator, doValidateAttributes)

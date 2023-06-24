@@ -13,7 +13,8 @@ from typing import cast, List, Tuple, Optional
 from ..resources.TSB import TSB
 from ..services import CSE
 from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes
-from ..etc import DateUtils
+from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.DateUtils import isodateDelta, toDuration, getResourceDate
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..services.Logging import Logging as L
 
@@ -23,6 +24,11 @@ from ..services.Logging import Logging as L
 # TODO add check to mqtt response handling
 
 class TimeManager(object):
+
+	__slots__ = (
+		'periodicTimeSyncBeacons',
+		'losTimeSyncBeacons',
+	)
 
 	def __init__(self) -> None:
 
@@ -57,7 +63,7 @@ class TimeManager(object):
 		return True
 
 
-	def restart(self) -> None:
+	def restart(self, name:str) -> None:
 		"""	Restart the time manager services.
 		"""
 		self._stopPeriodicBeacons()
@@ -72,11 +78,11 @@ class TimeManager(object):
 		self.periodicTimeSyncBeacons.clear()
 
 
-	def requestReveivedHandler(self, req:CSERequest) -> None:
+	def requestReveivedHandler(self, name:str, req:CSERequest) -> None:
 		# L.logErr(f'Received {req}')
 		...
 
-	def responseReveivedHandler(self, resp:CSERequest) -> None:
+	def responseReveivedHandler(self, name:str, resp:CSERequest) -> None:
 		# L.logErr(f'Received {resp}')
 		#L.logWarn(self.isLossOfSynchronization(resp))
 		...
@@ -91,15 +97,15 @@ class TimeManager(object):
 		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
-	def addTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO doc
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
-			return self.addPeriodicTimeSyncBeacon(tsb)
+			self.addPeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
-			return self.addLoSTimeSyncBeacon(tsb)
+			self.addLoSTimeSyncBeacon(tsb)
 
 
-	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
 		"""	Add a worker for a periodic timeSyncBeacon resource.
 		
 			Args:
@@ -130,22 +136,18 @@ class TimeManager(object):
 												f'tsbPeriodic_{ri}', 
 												startWithDelay = True).start()
 		self.periodicTimeSyncBeacons[ri] = worker
-		return Result.successResult()
 
 
-	def addLoSTimeSyncBeacon(self, tsb:TSB) -> Result:
+	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO doc
 		if not (bcnr := tsb.bcnr):
-			L.isWarn and L.logWarn(dbg := f'bcnr missing in TSB: {tsb.ri}')
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'bcnr missing in TSB: {tsb.ri}')
 		if bcnr in self.losTimeSyncBeacons: 
-			L.isDebug and L.logDebug(dbg := f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
-			return Result.errorResult(dbg = dbg)
+			raise BAD_REQUEST(f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
 		self.losTimeSyncBeacons[bcnr] = (tsb.bcnt, tsb.ri)
-		return Result.successResult()
 
 	
-	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> Result:
+	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> None:
 		# TODO
 		...
 	
@@ -180,15 +182,15 @@ class TimeManager(object):
 
 	def isLossOfSynchronization(self, req:CSERequest) -> Optional[str]:
 		if (tup := self.losTimeSyncBeacons.get(req.originator)) and (ot := req.ot):
-			tsd = abs(DateUtils.isodateDelta(ot))
+			tsd = abs(isodateDelta(ot))
 			L.logWarn(tsd)
 			if tsd is not None and tup[0] > tsd:
-				return DateUtils.toDuration(tsd)
+				return toDuration(tsd)
 			return None
 
 		#L.logWarn(req.originatingTimestamp)
-		if (tsd := DateUtils.isodateDelta(req.ot)) is not None:
-			#L.logWarn(DateUtils.toDuration(tsd))
+		if (tsd := isodateDelta(req.ot)) is not None:
+			#L.logWarn(toDuration(tsd))
 			return str(abs(tsd))	# EXPERIMENTAL
 
 		return None
@@ -200,6 +202,6 @@ class TimeManager(object):
 			Return:
 				ISO timestamp string
 		"""
-		return DateUtils.getResourceDate()
+		return getResourceDate()
 
 	

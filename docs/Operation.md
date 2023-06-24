@@ -41,16 +41,6 @@ ACME supports Mca and Mcc communication via MQTT. This binding must be enabled i
 ACME does not bring an own MQTT broker. Instead any MQTT broker that supports at least MQTT version 3.1.x can be used. This can be either be an own operated or a public broker installation (see, for example, [https://test.mosquitto.org](https://test.mosquitto.org)). The connection details need to be configured in the "[client.mqtt]" section as well.
 
 
-<a name="url_mappings"></a>
-## URL Mappings
-
-As a convenience to access resources on a CSE and to let requests look more like "normal" REST request you can define mappings. The format is a path that maps to another path and arguments. When issued a request to one of those mapped paths the http server issues a redirect to the other path.
-
-For example, the path */access/v1/devices* can be mapped to */cse-mn?ty=14&fu=1&fo=2&rcn=8* to easily retrieve all nodes from the CSE.
-
-See the [configuration](Configuration.md) for more examples.
-
-
 <a name="diagrams"></a>
 ## Resource Tree and Deployment Infrastructure Diagram
 
@@ -88,13 +78,14 @@ cse-in -> m2m:cb (csi=/id-in) | ri=id-in
 The CSE has limited support for the *Upper Tester* (UT) test protocol. This protocol is used to trigger a System Under 
 Test (SUT) to perform certain oneM2M operations and other actions. See oneM2M's TS-0019, *Abstract Test Suite and Implementation Information for Test* specification for further details.
 
-To support this feature an additional endpoint *\_\_UT\_\_* is available under the HTTP server's root. It can be enabled by setting the configuration *[http].enenableUpperTesterEndpoint* in the configuration file to True. See also [enableRemoteConfiguration](Configuration.md#server_http). 
+To support this feature an additional endpoint *\_\_UT\_\_* is available under the HTTP server's root. It can be enabled by setting the configuration *[http].enenableUpperTesterEndpoint* in the configuration file to True.
 
 **ATTENTION: Only use this feature in a controlled environment. Enabling it may lead to a total loss of data because several internal functions and resources are exposed or can be managed without added security.**
 
 ### Supported Functions
 
-The *Upper Tester* endpoint currently only supports a limited set of the functionality specified in TS-0019. 
+The *Upper Tester* endpoint currently only supports a limited set of the functionality specified in TS-0019,
+but offers additional functionality, such as sending commands with arguments and receiving return values. 
 The following sections present an overview.
 
 #### Header X-M2M-UTCMD : Run CSE Commands

@@ -19,7 +19,9 @@ from threading import Lock
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.DateUtils import waitFor
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
+from ..services.ActionManager import ActionManager
 from ..services.Configuration import Configuration
 from ..services.Console import Console
 from ..services.Dispatcher import Dispatcher
@@ -37,6 +39,7 @@ from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
 from ..services.Statistics import Statistics
 from ..services.Storage import Storage
+from ..services.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
@@ -47,6 +50,8 @@ from ..services.Logging import Logging as L
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
+action:ActionManager							= None
+"""	Runtime instance of the `ActionManager`. """
 announce:AnnouncementManager					= None
 """	Runtime instance of the `AnnouncementManager`. """
 
@@ -59,7 +64,7 @@ dispatcher:Dispatcher							= None
 event:EventManager								= None
 """	Runtime instance of the `EventManager`. """
 
-group:GroupManager								= None
+groupResource:GroupManager								= None
 """	Runtime instance of the `GroupManager`. """
 
 httpServer:HttpServer							= None
@@ -98,6 +103,9 @@ statistics:Statistics							= None
 storage:Storage									= None
 """	Runtime instance of the `Storage`. """
 
+textUI:TextUI								= None
+"""	Runtime instance of the `TextUI`. """
+
 time:TimeManager								= None
 """	Runtime instance of the `TimeManager`. """
 
@@ -122,11 +130,14 @@ cseCsi:str										= None
 cseCsiSlash:str  								= None
 """ The CSE-ID with an additional trailing /. """
 
-cseCsiSlashLess:str  								= None
+cseCsiSlashLess:str  							= None
 """ The CSE-ID without the leading /. """
 
 cseSpid:str										= None
 """ The Service Provider ID. """
+
+cseSPRelative:str								= None
+"""	The SP-Relative CSE-ID. """
 
 cseAbsolute:str									= None
 """ The CSE's Absolute prefix (SP-ID/CSE-ID). """
@@ -161,6 +172,7 @@ cseStatus:CSEStatus								= CSEStatus.STOPPED
 _cseResetLock									= Lock()	# lock for resetting the CSE
 """ Internal CSE's lock when resetting. """
 
+_cseStartupDelay:float							= 2.0		# delay for CSE startup
 
 ##############################################################################
 
@@ -174,11 +186,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
-	global remote, request, script, security, semantic, statistics, storage, time, timeSeries, validator
+	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, mqttClient, notification, registration
+	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
-	global cseSpid, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
+	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -194,7 +206,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
-	isHeadless = args.headless
 
 	event = EventManager()					# Initialize the event manager before anything else
 
@@ -205,18 +216,20 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# Initialize configurable constants
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
-	cseCsi					 = Configuration.get('cse.csi')
+	cseCsi					 = Configuration.get('cse.cseID')
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseCsiSlashLess			 = cseCsi[1:]
-	cseSpid					 = Configuration.get('cse.spid')
-	cseAbsolute				 = f'//{cseSpid}/{cseCsi}'
+	cseSpid					 = Configuration.get('cse.serviceProviderID')
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
-	cseRi					 = Configuration.get('cse.ri')
-	cseRn					 = Configuration.get('cse.rn')
+	cseRi					 = Configuration.get('cse.resourceID')
+	cseRn					 = Configuration.get('cse.resourceName')
 	cseOriginator			 = Configuration.get('cse.originator')
+	cseSPRelative			 = f'{cseCsi}/{cseRn}'
+	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 	releaseVersion 			 = Configuration.get('cse.releaseVersion')
+	isHeadless				 = Configuration.get('console.headless')
 
 	# Set the CSE's point-of-access
 	csePOA					 = [ Configuration.get('http.address') ]
@@ -236,13 +249,14 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
 	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
-	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.get('cse.operation.jobBalanceTarget'),
-										balanceLatency = Configuration.get('cse.operation.jobBalanceLatency'),
-										balanceReduceFactor = Configuration.get('cse.operation.jobBalanceReduceFactor'))
+	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.get('cse.operation.jobs.balanceTarget'),
+										balanceLatency = Configuration.get('cse.operation.jobs.balanceLatency'),
+										balanceReduceFactor = Configuration.get('cse.operation.jobs.balanceReduceFactor'))
 
+	textUI = TextUI()						# Start the textUI
 	console = Console()						# Start the console
 
-	storage = Storage()						# Initiatlize the resource storage
+	storage = Storage()						# Initialize the resource storage
 	statistics = Statistics()				# Initialize the statistics system
 	registration = RegistrationManager()	# Initialize the registration manager
 	validator = Validator()					# Initialize the resource validator
@@ -252,13 +266,14 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	httpServer = HttpServer()				# Initialize the HTTP server
 	mqttClient = MQTTClient()				# Initialize the MQTT client
 	notification = NotificationManager()	# Initialize the notification manager
-	group = GroupManager()					# Initialize the group manager
+	groupResource = GroupManager()					# Initialize the group manager
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
 	semantic = SemanticManager()			# Initialize the semantic manager
 	time = TimeManager()					# Initialize the time mamanger
 	script = ScriptManager()				# Initialize the script manager
+	action = ActionManager()				# Initialize the action manager
 
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 	# Import extra attribute policies for specializations first
@@ -269,23 +284,35 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		return False
 	
 	# Start the HTTP server
-	httpServer.run() 						# This does return (!)
+	if not httpServer.run(): 						# This does return (!)
+		L.logErr('Terminating', showStackTrace = False)
+		cseStatus = CSEStatus.STOPPED
+		return False 					
 
 	# Start the MQTT client
 	if not mqttClient.run():				# This does return
-		L.logErr('Terminating')
+		L.logErr('Terminating', showStackTrace = False)
 		cseStatus = CSEStatus.STOPPED
 		return False 					
 
 	# Enable log queuing
 	L.queueOn()	
 
-	# Send an event that the CSE startup finished
-	cseStatus = CSEStatus.RUNNING
-	event.cseStartup()	# type: ignore
 
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
-	BackgroundWorkerPool.newActor(lambda : (L.console('CSE started'), L.log('CSE started')) if cseStatus == CSEStatus.RUNNING else None, delay = 2.0 if isHeadless else 0.5, name = 'Delayed startup message' ).start()
+
+	def _startUpFinished() -> None:
+		"""	Internal function to print the CSE startup message after a delay
+		"""
+		global cseStatus
+		cseStatus = CSEStatus.RUNNING
+		# Send an event that the CSE startup finished
+		event.cseStartup()	# type: ignore
+
+		L.console('CSE started')
+		L.log('CSE started')
+
+	BackgroundWorkerPool.newActor(_startUpFinished, delay = _cseStartupDelay if isHeadless else _cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
 	
 	return True
 
@@ -328,6 +355,7 @@ def _shutdown() -> None:
 		event.cseShutdown() 	# type: ignore
 	
 	# shutdown the services
+	textUI and textUI.shutdown()
 	console and console.shutdown()
 	time and time.shutdown()
 	semantic and semantic.shutdown()
@@ -337,7 +365,7 @@ def _shutdown() -> None:
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
-	group  and group.shutdown()
+	groupResource  and groupResource.shutdown()
 	notification  and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()
@@ -377,6 +405,7 @@ def resetCSE() -> None:
 		# a chance to finish
 		event.cseReset()	# type: ignore [attr-defined]   
 		if not importer.doImport():
+			textUI and textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 		remote.restart()
@@ -396,4 +425,7 @@ def resetCSE() -> None:
 def run() -> None:
 	"""	Run the CSE.
 	"""
-	console.run()
+	if waitFor(_cseStartupDelay * 3, lambda: cseStatus == CSEStatus.RUNNING):
+		console.run()
+	else:
+		raise TimeoutError(L.logErr(f'CSE did not start within {_cseStartupDelay * 3} seconds'))

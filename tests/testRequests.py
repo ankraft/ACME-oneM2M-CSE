@@ -32,7 +32,7 @@ class TestRequests(unittest.TestCase):
 				 	'srv' : [ RELEASEVERSION ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create parent AE'
+		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		testCaseEnd('Setup TestRequests')
 
@@ -105,14 +105,14 @@ class TestRequests(unittest.TestCase):
 	def test_RETnow(self) -> None:
 		"""	RETRIEVE <AE> with RQET absolute now -> FAIL """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : DateUtils.getResourceDate()})
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_RETpast(self) -> None:
 		"""	RETRIEVE <AE> with RQET absolute in the past -> FAIL """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : DateUtils.getResourceDate(-10)})
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -126,7 +126,7 @@ class TestRequests(unittest.TestCase):
 	def test_RETpastSeconds(self) -> None:
 		"""	RETRIEVE <AE> with RQET seconds in the past """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{-expirationCheckDelay*1000}'})
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -147,7 +147,7 @@ class TestRequests(unittest.TestCase):
 	def test_OETRETfutureSecondsWrong(self) -> None:
 		"""	RETRIEVE <AE> with OET > RQET seconds in the future """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{expirationCheckDelay*1000/2}', C.hfOET : f'{expirationCheckDelay*1000}'})
-		self.assertEqual(rsc, RC.requestTimeout, r)
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:

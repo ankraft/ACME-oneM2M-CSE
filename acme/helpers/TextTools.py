@@ -10,11 +10,11 @@
 """ Utility functions for strings, JSON, and texts.
 """
 
-from typing import Optional
+from typing import Optional, Any, Dict, Union, Callable, List
 
-import base64, binascii, re
+import base64, binascii, re, json
 
-_commentRegex = re.compile(r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)',
+_commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
 """	Compiled regex expression of recognize comments. """
 
@@ -26,6 +26,7 @@ def removeCommentsFromJSON(data:str) -> str:
 		- \/\* multi-line comments \*\/
 		- \// single-line comments
 		- \# single-line comments
+		- ;; single-line comments
 		
 		It will **NOT** remove:
 		
@@ -46,6 +47,245 @@ def removeCommentsFromJSON(data:str) -> str:
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
 	return _commentRegex.sub(_replacer, data)
+
+
+def commentJson(data:Union[str, dict], 
+				explanations:Dict[str,str], 
+				getAttributeValueName:Optional[Callable] = lambda k, v: '',
+				width:Optional[int] = None) -> str:
+	"""	Add explanations for JSON attributes as comments to the end of the line.
+
+		Args:
+			data: The JSON string or as a dictionary.
+			explanations: A dictionary with the explanations. The keys must match the JSON keys.
+			getAttributeValueNae: A function that returns the named value of an attribute. 
+			width: Optional width of the output. If greater then the comment is put above the line.
+		
+		Return:
+			The JSON string with comments.
+	"""
+
+	if isinstance(data, dict):
+		data = json.dumps(data, indent=4, sort_keys=True)
+
+	# find longest line
+	maxLineLength = 0
+	for line in data.splitlines():
+		if len(line) > maxLineLength:
+			maxLineLength = len(line)
+	
+	# Add comments to each line
+	lines = []
+	_valueStripChars = ', []{}"'
+	previousKey:Optional[str] = None
+	key:str = ''
+	maxLength:int = 0
+	for line in data.splitlines():
+		# Find the key
+		if len(_sp := line.strip().split(':')) == 1:
+			if key:
+				previousKey = key
+				key = ''
+			value = _sp[0].strip(_valueStripChars)
+			value = getAttributeValueName(previousKey, value) if value else ''
+		else:
+			previousKey = None
+			key = _sp[0].strip('"')
+			value = _sp[1].strip(_valueStripChars)
+			value = getAttributeValueName(key, value) if value else ''
+
+		if key and key in explanations:
+			lines.append(f'// {explanations[key]}{(": " + value) if value else ""}')
+			lines.append(line)
+			_m = len(lines[-2]) + maxLineLength
+			maxLength = _m if _m > maxLength else maxLength
+
+	
+		elif previousKey and value: # when the value is on the next line, w/o a key
+			lines.append(f'// {value}')
+			lines.append(line)
+			_m = len(lines[-2]) + maxLineLength
+			maxLength = _m if _m > maxLength else maxLength
+	
+		else:
+			lines.append('') # comment
+			lines.append(line)
+			maxLength = maxLineLength if maxLineLength > maxLength else maxLength
+
+	# Build the result depending on the width of lines and comments
+	maxLength += 2 	# Add 2 spaces for the comment
+	result:List[str] = []
+	for comment, line in zip(lines[0::2], lines[1::2]):
+		if comment == '':	# skip empty comments
+			result.append(line)
+		else:
+			if width is not None and maxLength > width:	# Put comment above line
+				result.append(f'{" " * (len(line) - len(line.lstrip()))}{comment}')
+				result.append(line)
+			else:
+				result.append(f'{line.ljust(maxLineLength)}  {comment}')
+
+	return '\n'.join(result)
+	
+	
+
+_decimalMatch = re.compile(r'{(\d+)}')
+def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Optional[Any]:
+	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
+		*default* is returned.
+
+		- It is possible to address a specific element in a list. This is done be
+			specifying the element as "{n}".
+
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+
+		- If an element is specified as "{}" then all elements in that list are returned in
+			a list.
+
+		Example: 
+			findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
+		- If an element is specified as "{*}" and is targeting a dictionary then a single unknown key is
+			skipped in the path. This can be used to skip, for example, unknown first elements in a structure. 
+			This is similar but not the same as "{0}" that works on lists.
+
+		Example: 
+			findXPath(resource, '{*}/rn') 
+		
+		Args:
+			dct: Dictionary to search.
+			key: Key with path to an attribute.
+			default: Optional return value if *key* is not found in *dct*
+		
+		Return:
+			Any found value for the key path, or *None* resp. the provided *default* value.
+	"""
+
+	if not key or not dct:
+		return default
+	if key in dct:
+		return dct[key]
+
+	paths = key.split("/")
+	data:Any = dct
+	for i in range(0,len(paths)):
+		if not data or not (pathElement := paths[i]) : # if empty of key not in dict
+			return default
+		elif (m := _decimalMatch.search(pathElement)) is not None:	# Match array index {i}
+			idx = int(m.group(1))
+			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
+				return default
+			if isinstance(data, dict):
+				data = data[list(data)[i]]
+			else:
+				data = data[idx]
+
+		elif pathElement == '{}':	# Match an array in general
+			if not isinstance(data, (list,dict)):	# not a list, return the default
+				return default
+			if i == len(paths)-1:	# if this is the last element and it is a list then return the data
+				return data
+			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
+
+		elif pathElement == '{*}':
+			if isinstance(data, dict):
+				if keys := list(data.keys()):
+					data = data[keys[0]]
+				else:
+					return default
+			else:
+				return default
+
+		# Only now test whether this is an unknown path element
+		elif pathElement not in data:	# if key not in dict
+			return default
+		else:
+			data = data[pathElement]	# found data for the next level down
+	return data
+
+
+
+def setXPath(dct:Dict[str, Any], 
+			 key:str, 
+			 value:Optional[Any] = None, 
+			 overwrite:Optional[bool] = True, 
+			 delete:Optional[bool] = False) -> bool:
+	"""	Set a structured *key* and *value* in the dictionary *dict*.
+
+		Create the attribute if necessary, and observe the *overwrite* option (True overwrites an
+		existing key/value).
+
+		When the *delete* argument is set to *True* then the *key* attribute is deleted from the dictionary.
+
+		Examples:
+			setXPath(aDict, 'a/b/c', 'aValue)
+
+			setXPath(aDict, 'a/{2}/c', 'aValue)
+
+		Args:
+			dct: A dictionary in which to set or add the *key* and *value*.
+			key: The attribute's name to set in *dct*. This could by a path in *dct*, where the separator is a slash character (/). To address an element in a list, one can use the *{n}* operator in the path.
+			value: The value to set for the attribute. Could be left out when deleting an attribute or value.
+			overwrite: If True that overwrite an already existing value, otherwise skip.
+			delete: If True then remove the atribute or list attribute *key* from the dictionary.
+		
+		Retun:
+			Boolean indicating the success of the operation.
+	"""
+
+	paths = key.split("/")
+	ln1 = len(paths)-1
+	data = dct
+	if ln1 > 0:	# Small optimization. don't check if there is no extended path
+		for i in range(0, ln1):
+			_p = paths[i]
+			if isinstance(data, list):
+				if (m := _decimalMatch.search(_p)) is not None:
+					data = data[int(m.group(1))]
+			else:
+				if _p not in data:
+					data[_p] = {}
+				data = data[_p]
+	if isinstance(data, list):
+		if (m := _decimalMatch.search(paths[ln1])) is not None:
+			idx = int(m.group(1))
+			if not overwrite and idx < len(data): # test overwrite first, it's faster
+				return True # don't overwrite
+			if delete :
+				if idx < len(data):
+					del data[idx]
+				return True
+			else:
+				data[idx] = value
+			return True
+		return False
+	else:
+		if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
+			return True # don't overwrite
+		if delete:
+			del data[paths[ln1]]
+			return True
+		data[paths[ln1]] = value
+	return True
+
+
+def isNumber(string:Any) -> bool:
+	"""	Check whether a string contains a convertible number. This could be an integer or a float.
+	
+		Args:
+			string: The string or object to check.
+			
+		Return:
+			Boolean indicating the result of the test.
+	"""
+	if isinstance(string, bool):
+		return False
+	try:
+		float(string)
+	except:
+		return False
+	return True
 
 
 def toHex(bts:bytes, toBinary:Optional[bool] = False, withLength:Optional[bool] = False) -> str:

@@ -3,39 +3,59 @@
 
 # ACMEScript - Meta Tags
 
-Meta tags are special commands in a script that are not executed during the runtime of a script, but describe certain capabilities of the script or give, for example, instructions when a script should be executed. 
+Meta tags are special commands in a script that are not executed during the runtime of a script, but describe certain capabilities of the script or give, for example, the script a name or provide instructions when a script should be executed. 
 
-Meta tags are lines that start with an at-sign "@". They can appear anywhere in a script file, but it is recommend to collect them either at the start or the end of a script.
+Meta tags are keyword that start with an at-sign "@". They can appear anywhere in a script file on a single line, but it is recommend to collect them either at the start or the end of a script. Meta tags are case sensitive.
 
-| Meta Tag                               | Description                                                                                    |
-|----------------------------------------|------------------------------------------------------------------------------------------------|
-| [at](#meta_at)                         | Schedule scripts to run on a time interval                                                     |
-| [description](#meta_description)       | Provide a one-line script description                                                          |
-| [filename](#meta_filename)             | Contains a script's filename (internal only)                                                   |
-| [hidden](#meta_hidden)                 | Hide a script from the console's script catalog                                                |
-| [name](#meta_name)                     | Assign a name to a script                                                                      |
-| [onKey](#meta_onkey)                   | Run a script when a specified key is pressed                                                   |
-| [onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE                                    |
-| [onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                                                      |
-| [onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                                                    |
-| [onStartup](#meta_onstartup)           | Run a script just after the CSE started                                                        |
-| [prompt](#meta_prompt)                 | Prompt the user for input before the script is run                                             |
-| [timeout](#meta_timeout)               | Set a timeout after which script execution is stopped                                          |
-| [uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [usage](#meta_usage)                   | Provide a short usage help                                                                     |
+<a name="top"></a>
 
+| Type                | Meta Tag                                    | Description                                                                                    |
+|---------------------|---------------------------------------------|------------------------------------------------------------------------------------------------|
+| [Basic](#_basic)    | [@at](#meta_at)                             | Schedule scripts to run at a certain time or time interval                                     |
+|                     | [@description](#meta_description)           | Provide a one-line script description                                                          |
+|                     | [@filename](#meta_filename)                 | Contains a script's filename (internal only)                                                   |
+|                     | [@hidden](#meta_hidden)                     | Hide a script from the console's script catalog                                                |
+|                     | [@init](#init)                              | Run a script to initialize the CSE during startup and restart                                  |
+|                     | [@name](#meta_name)                         | Assign a name to a script                                                                      |
+|                     | [@onKey](#meta_onkey)                       | Run a script when the specified key is pressed                                                 |
+|                     | [@onNotification](#meta_onnotification)     | Run a script as a receiver of a NOTIFY request from the CSE                                    |
+|                     | [@onRestart](#meta_onrestart)               | Run a script just after the CSE restarted                                                      |
+|                     | [@onShutdown](#meta_onshutdown)             | Run a script just before the CSE shuts down                                                    |
+|                     | [@onStartup](#meta_onstartup)               | Run a script just after the CSE started                                                        |
+|                     | [@prompt](#meta_prompt)                     | Prompt the user for input before the script is run                                             |
+|                     | [@timeout](#meta_timeout)                   | Set a timeout after which script execution is stopped                                          |
+|                     | [@uppertester](#meta_uppertester)           | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
+| [Text UI](#_textui) | [@category](#meta_category)                 | Add a category to the script for the text UI's *Tools* section                                 |
+|                     | [@tuiAutoRun](#meta_tuiAutoRun)             | Automatically run scripts when selecting them, and optionally repeat                           |
+|                     | [@tuiExecuteButton](#meta_tuiExecuteButton) | Configure the script's `Execute` button in the text UI                                         |
+|                     | [@tuiSortOrder](#meta_tuiSortOrder)         | Specify the sort order for scripts in a category in the text UI's *Tools* section              |
+|                     | [@tuiTool](#meta_tuiTool)                   | Tag a script for listing in the text UI's *Tools* section                                      |
+
+## Accessing Meta Tags
+Meta tags are added as constants to the script's environment, prefixed with "meta.".
+They can be accessed like any other environment variable, for example:
+
+```lisp
+(if (is-defined 'meta.name)            ;; note the quote in front of meta.name
+	(print "Script name:" meta.name))  ;; prints the script's name
+```
+
+---
+
+<a name="_basic"></a>
+
+## Basic
 
 <a name="meta_at"></a>
+
 ### @at
 
-Usage:  
-@at &lt;cron pattern>
+`@at <cron pattern>`
 
-The `@at` meta tag specifies a time / date pattern when a script should be executed. This pattern follows the Unix 
-[crontab](https://crontab.guru/crontab.5.html) pattern. 
+The `@at` meta tag specifies a time / date pattern when a script should be executed. This pattern follows the Unix [crontab](https://crontab.guru/crontab.5.html) pattern. 
 
 A crontab pattern consists of the following five fields:  
-  
+
 `minute hour dayOfMonth month dayOfWeek`
 
 Each field is mandatory and must comply to the following values:
@@ -46,224 +66,431 @@ Each field is mandatory and must comply to the following values:
 - `value[,value]*` : value is either a number, a step, or a range
 
 Example:
-```text
-# Run a script every 5 minutes
+```lisp
+;; Run a script every 5 minutes
 @at */5 * * * *
-# Run a script every Friday at 2:30 am
+;; Run a script every Friday at 2:30 am
 @at 30 2 * * 4
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_description"></a>
+
 ### @description
 
-Usage:  
-@description &lt;string>
+`@description <string>`
 
-A short one-line description of a script's purpose. This is used, for example, for the script catalog of the console.
+A short one-line description of a script's purpose. This is used, for example, for the console's script catalog.
+
+A description must be a single line, but may include line breaks (in the form of \n characters). A description may also be formatted as markdown. This is then correctly displayed in the Text UI.
+
+See also: [@usage](#meta_usage)
 
 Example:
-```text
+```lisp
 @description The purpose of this script is to demonstrate the @description meta tag
+
+@description # Markdown header\n\nFormatted **Markdown** text.
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_filename"></a>
+
 ### @filename
 
-Usage:  
-@filename &lt;string>
+`@filename <string>`
 
 This meta tag is for internal use. It will be assigned the script's full filename when read by the script manager.
 
+[top](#top)
+
+---
 
 <a name="meta_hidden"></a>
+
 ### @hidden
 
-Usage:  
-@hidden
+`@hidden`
 
 This meta tag indicates that a script will not be listed in the console's script catalog.
 
 Example:
-```text
+```lisp
 @hidden
 ```
 
+[top](#top)
 
-<a name="meta_name"></a>
-### @name
+---
 
-Usage:  
-@name &lt;string>
+<a name="meta_init"></a>
 
-This meta tag assigns a name to a script. This name is used for identifying the script, for example when running
-a script from the console.
+### @init
+
+`@init`
+
+This meta tag indicates that the script will be executed during the CSE's startup and restart. It is used to initialize the CSE and creates the basic resources.
+
+Only one script can have this meta tag set.
+
+See also: [@onRestart](#meta_onrestart), [@onShutdown](#meta_onshutdown), [@startup](#meta_onstartup)
 
 Example:
+
 ```text
+@init
+```
+
+[top](#top)
+
+---
+
+<a name="meta_name"></a>
+
+### @name
+
+`@name <string>`
+
+This meta tag assigns a name to a script. This name is used for identifying the script, for example when running a script from the console.
+
+See also: [@uppertester](#meta_uppertester)
+
+Example:
+```lisp
 @name exampleScript
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_onkey"></a>
+
 ### @onKey
 
-Usage:  
-@onKey &lt;key>
+`@onKey <key>`
 
-With this meta tag a script registers for a key-press event of the console interface. If the key is pressed then the
-script is run. The event and the key are passed as the script arguments.
+With this meta tag a script registers to a key-press event of the console interface. If the key is pressed then the script is run. The event and the key are passed as the environment variables [event.type]() and [event.data](), respectively.
 
-The keys may be normal ASCII characters or a function key. Please consult the console's [supported function key table](Console.md#function_keys) for the function key's names. Please note, that not all function keys are available on all OS platforms.
+The keys may be normal ASCII characters or a function key. Please consult the console's [supported function key table](Console.md#function_keys) for the function key's names. Note, that not all function keys are available on all OS platforms.
 
-A script can only register for a single key.
+A script can only register for a single key event.
 
 Example:
-```text
-# Run the script when the '9' key is pressed
+```lisp
+;; Run the script when the '9' key is pressed
 @onkey F9
 
-print [argv]
-# -> onkey F9
+(print (event.data))
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_onnotification"></a>
+
 ### @onNotification
 
-Usage:  
-@onNotification &lt;URI: acme://someID>
+`@onNotification <URI: acme://someID>`
 
-With this meta tag a script acts as a receiver of a notification request from the CSE. 
-The ACME's own URL scheme "acme://&lt;identifier>" is used to define a URI that is
-targeting the script. Such a URI must be used in either the *notificationURI* attribute of a
-subscription resource, or the *pointOfAccess* of an AE.
+With this meta tag a script acts as a handler for a notification request from the CSE.
 
-When receiving a notification the following variables are set:
+The ACME URL scheme "acme://&lt;identifier>" is used to define a URI that is targeting the script. Such a URI must be used in either the *notificationURI* attribute of a subscription resource, or the *pointOfAccess* of an AE.
+
+When a notification is received and the handler script is run the following variables are set:
 
 
-- [notification.originator](ACMEScript-macros.md#macro_not_originator) : The notification's originator
-- [notification.resource](ACMEScript-macros.md#macro_not_resource) : The notification resource
-- [notification.uri](ACMEScript-macros.md#macro_not_uri) : The notification's target URI
+- [notification.originator](ACMEScript-functions.md#var_notification_originator) : The notification's originator
+- [notification.resource](ACMEScript-functions.md#var_notification_resource) : The notification's resource
+- [notification.uri](ACMEScript-functions.md#var_notification_uri) : The notification's target URI
 
 
 Example:
-```text
-# Run the script when the '9' key is pressed
+```lisp
+;; Run the script when the 'acme://aNotification' notificastion is received
 @onNotification acme://aNotification
 
-print [notification.resource]
-# -> The notification resource
+(print (notification.resource))
 ```
 
+[top](#top)
 
-<a name="meta_onRestart"></a>
+---
+
+<a name="meta_onrestart"></a>
+
 ### @onRestart
 
-Usage:  
-@onRestart
+`@onRestart`
 
-This meta tag indicates that the script will be run just after the CSE restarted, for example after a reset.
- If multiple scripts have this meta tag set then they will be run in random order.
+This meta tag indicates that the script will be executed just after the CSE restarted, for example after a reset.
+
+If multiple scripts have this meta tag set then they will run in random order.
+
+See also: [@init](#meta_init), [@onStartup](#meta_onstartup),  [@onShutdown](#meta_onshutdown)
 
 Example:
-```text
+```lisp
 @onRestart
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_onshutdown"></a>
+
 ### @onShutdown
 
-Usage:  
-@onShutdown
+`@onShutdown`
 
-This meta tag indicates that the script will be run just before the CSE shuts down. 
-If more than one script have this meta tag set then they will be run in random order.
+This meta tag indicates that the script will be executed just before the CSE shuts down.
+
+If more than one script have this meta tag set then they will run in random order.
+
+See also: [@init](#meta_init), [@onRestart](#meta_onrestart), [@onStartup](#meta_onstartup)
 
 Example:
-```text
+```lisp
 @onShutdown
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_onstartup"></a>
+
 ### @onStartup
 
-Usage:  
-@onStartup
+`@onStartup`
 
-This meta tag indicates that the script will be run just after the CSE started up. It will be run only after start up, but not
-when the CSE restarted. If more than one script have this meta tag set then they will be run in random order.
+This meta tag indicates that the script will be executed just after the CSE started. It will be run only after start up, but not when the CSE restarted. If more than one script have this meta tag set then they will be run in random order.
+
+See also: [@init](#meta_init), [@onRestart](#meta_onrestart), [@onShutdown](#meta_onshutdown)
 
 Example:
 ```text
 @onStartup
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_prompt"></a>
+
 ### @prompt
 
-Usage:  
-@prompt &lt;prompt text>
+`@prompt <prompt text>`
 
-A script with this meta tag will present a prompt before it is executed asking a user for input. The result is then passed on as
-the [script arguments](ACMEScript.md#arguments).
+A script with this meta tag will present a prompt before it is executed and ask a user for input. The result is then passed on as  [script arguments](ACMEScript.md#arguments).
 
-The meta tag should only be used when human interaction can be ensured. Running a script with this meta tag scheduled or and unattended
-will cause the script to wait for user input forever. 
+This meta tag should only be used when human interaction can be ensured. Running a script with this meta tag scheduled or  unattended will cause the script to wait forever for user input. 
 
 Example:
-```text
+```lisp
 @prompt Enter some arguments
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_timeout"></a>
+
 ### @timeout
 
-Usage:  
-@timeout &lt;seconds>
+`@timeout <seconds>`
 
-This meta tag sets a timeout after which the script execution is terminated with a *timeout* error.
+This meta tag sets a timeout after which the script execution is terminated with a *timeout* error
+
 Note, that the script may terminate some time after the timeout when a script command takes longer to run.
 
 Example:
-```text
+```lisp
 @timeout 10
 ```
 
+[top](#top)
 
-<a name="meta_uppertester"></a>
-### @uppertester
+---
 
-Usage:  
-@uppertester
+<a name="meta_tuiNoExecute"></a>
 
-This meta tag indicates that a script is runnable through the [Upper Tester Interface](Operation.md#upper_tester) interface.
-Scripts without this meta tag cannot be run through that interface.
+### @tuiNoExecute
+
+`@tuiNoExecute`
+
+This meta tag disables the `Execute` button for this script in the Text UI's *Tools* section.
 
 Example:
-```text
+
+```lisp
+@tuiNoExecute
+```
+
+[top](#top)
+
+---
+
+<a name="meta_uppertester"></a>
+
+### @uppertester
+
+`@uppertester`
+
+This meta tag indicates that a script is runnable through the [Upper Tester Interface](Operation.md#upper_tester) interface. In this case the script name specified by the  [@name](#meta_name) meta tag is used as the command name.
+
+Scripts without this meta tag cannot be run through the Upper Tester interface.
+
+See also: [@name](#meta_name)
+
+Example:
+```lisp
 @uppertester
 ```
 
+[top](#top)
+
+---
 
 <a name="meta_usage"></a>
+
 ### @usage
 
-Usage:  
-@usage &lt;string>
+`@usage <string>`
 
 This meta tag provides a short help message for a script's usage.
 
+See also: [@description](#meta_description)
+
 Example:
-```text
+```lisp
 @usage exampleScript <a parameter> <another parameter>
 ```
 
+[top](#top)
+
+---
+
+<a name="_textui"></a>
+
+## Text UI
+
+<a name="meta_category"></a>
+
+### @category
+
+`@category <string>`
+
+A category name for the script. This is used, for example, in the text UI tools to group scripts.
+
+See also: [@name](#meta_name), [@tool](#meta_tool)
+
+Example:
+
+```lisp
+@categoy System
+```
+
+[top](#top)
+
+
+---
+
+<a name="meta_tuiAutoRun"></a>
+
+### @tuiAutoRun
+
+`@tuiAutoRun [<interval:positive float>] `
+
+This meta tag, when present, configures a script that it is run automatically when it is selected in the *Tools* overview in the text UI.
+
+Without the optional *interval* argument the script runs only once when it is selected.
+
+When the *interval* argument is present it must be a positive float number that specifies the interval, in seconds, after which the script is repeatedly run again.
+
+If this meta tag is present, with or without the *interval* argument, the environment variable `tui.autorun` is set to *true* when the script is run.
+
+Example:
+
+```lisp
+@tuiAutoRun 10
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiExecuteButton"></a>
+
+### @tuiExecuteButton
+
+`@tuiExecuteButton [<label:string>] `
+
+This meta tag configures the script's `Execute` button of the text UI. The following configurations are possible
+
+- Not present in a script: The button displays the default text "Execute".
+- Present in a script with an argument: The argument is used for the button's label.
+- Present in a script with no argument: The button is hidden.
+
+Example:
+
+```lisp
+@tuiExecuteButton A Label
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiTool"></a>
+
+### @tuiTool
+
+`@tuiTool`
+
+This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
+section.
+
+Example:
+
+```lisp
+@tuiTool
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiSortOrder"></a>
+
+### @tuiSortOrder
+
+`@tuiSortOrder <priority:number>`
+
+With this meta tag one can specify the sort order of a script in the Text UI's *Tools* section. 
+
+The default sort order is 500. Scripts with a lower priority number are listed first. 
+Scripts with the same priority are sorted alphabetically.
+
+Example:
+
+```lisp
+@tuiSortOrder 100
+```
+
+[top](#top)
+
+---
 
 [← ACMEScript](ACMEScript.md)  
 [← README](../README.md) 

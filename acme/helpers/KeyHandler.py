@@ -394,7 +394,10 @@ def loop(commands:Commands,
 		 catchKeyboardInterrupt:Optional[bool] = False, 
 		 headless:Optional[bool] = False, 
 		 ignoreException:Optional[bool] = True,
-		 catchAll:Optional[Callable] = None) -> None:
+		 catchAll:Optional[Callable] = None,
+		 nextKey:Optional[str] = None,
+		 postCommandHandler:Optional[Callable] = None,
+		 exceptionHandler:Optional[Callable] = None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary *commands*).
 
@@ -410,31 +413,40 @@ def loop(commands:Commands,
 				ignore, or passed on otherwise.
 			catchAll: If this attribute is set to a callback function then this callback is called in case a pressed
 				key was not found in *commands*.
+			nextKey: A simulated key-press that is interpreted when first calling the function.
+			postCommandHandler: A handler callback that is called after running a command.
+			exceptionHandler: A handler callback that is called in case an exception happened during the execution of a command.
 	"""
 	
 	# main loop
 	ch:str = None
 	while True:	
 
-		# normal console operation: Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
 		if not headless:
-			try:
-				ch = getch() # this also returns the key pressed, if you want to store it
-				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
-					ch = ch.decode('utf-8') # type: ignore [attr-defined]
-			except KeyboardInterrupt as e:
-				flushInput()
-				if catchKeyboardInterrupt:
-					ch = '\x03'
-				else:
-					raise e 
-			except Exception:	# Exit the loop when there is any other problem
-				break
+			if nextKey is not None:
+				ch = nextKey
+				nextKey = None
+		
+		# normal console operation: Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
 
-			# handle "quit" key			
-			if quit is not None and ch == quit:
-				break
-			
+			else:		
+				try:
+					ch = getch() # this also returns the key pressed, if you want to store it
+					if isinstance(ch, bytes):	# Windows getch() returns a byte-string
+						ch = ch.decode('utf-8') # type: ignore [attr-defined]
+				except KeyboardInterrupt as e:
+					flushInput()
+					if catchKeyboardInterrupt:
+						ch = '\x03'
+					else:
+						raise e 
+				except Exception:	# Exit the loop when there is any other problem
+					break
+
+				# handle "quit" key			
+				if quit is not None and ch == quit:
+					break
+				
 		# When headless then look only for keyboard interrup
 		if _stopLoop:
 			break
@@ -455,9 +467,16 @@ def loop(commands:Commands,
 		if ch in commands:
 			try:
 				commands[ch](ch)
+				if postCommandHandler:
+					nextKey = postCommandHandler(ch)
 			except SystemExit:
 				raise
+			except KeyboardInterrupt:
+				if catchKeyboardInterrupt:
+					nextKey = '\x03'
 			except Exception as e:
+				if exceptionHandler:
+					exceptionHandler(ch)
 				if not ignoreException:
 					raise e
 		elif ch and catchAll:

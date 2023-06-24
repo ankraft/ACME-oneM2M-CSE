@@ -1,0 +1,81 @@
+/*
+ *	ACMETUI.css
+ *
+ *	(c) 2023 by Andreas Kraft
+ *	License: BSD 3-Clause License. See the LICENSE file for further details.
+ *
+ *	CSS file for the Text UI based on Textualize
+ */
+
+/*
+ *	Changes to Textualize default CSS
+ */
+
+Screen {
+	background: $surface;
+}
+
+TabbedContent ContentSwitcher {
+    height: 1fr;
+	width: 1fr;
+}
+
+TabPane {
+	padding: 0 0;
+}
+
+/* Additional CSS for highlight outgoing requests in ACMEListItem */
+ListItem.--outgoing {
+	color: $text;
+	height: auto;
+	background: $panel-lighten-1;
+	overflow: hidden hidden;
+}
+
+ListView:focus > ListItem.--outgoing {
+	background:  $panel-lighten-2;
+}
+
+ListView > ListItem.--outgoing.--highlight {
+	background: $accent;
+}
+
+/*
+ *	ACME TUI own components
+ */
+
+ #tree-view {
+	display: block; 
+	scrollbar-gutter: stable;
+	overflow: auto;    
+	width: auto;    
+	min-height: 1fr;            
+	dock: left;
+	max-width: 50%;  
+}
+
+
+/*
+ * Request dialog
+ *
+ * The background transparency only works if it is in the .css file, not in the DEFAULT_CSS.
+ */
+
+ACMEDialog {
+    align: center middle;
+	background: $surface 60%;
+}
+
+
+/* 
+ * Debug Console line
+ */
+
+#debug-console {
+	overflow: auto scroll;  
+	width: 1fr;
+	height: 3;
+	background:darkblue;
+	border: solid red;
+}
+
