@@ -82,7 +82,7 @@ def commentJson(data:Union[str, dict],
 	maxLength:int = 0
 	for line in data.splitlines():
 		# Find the key
-		if len(_sp := line.strip().split(':')) == 1:
+		if len(_sp := re.split(r':(?=\ )', line.strip())) == 1:
 			if key:
 				previousKey = key
 				key = ''
@@ -120,6 +120,7 @@ def commentJson(data:Union[str, dict],
 			result.append(line)
 		else:
 			if width is not None and maxLength > width:	# Put comment above line
+				result.append('')
 				result.append(f'{" " * (len(line) - len(line.lstrip()))}{comment}')
 				result.append(line)
 			else:
