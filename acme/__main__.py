@@ -33,6 +33,19 @@ except ImportError as e:
 		m = re.search("'(.+?)'", e.msg)
 		package = f' ({m.group(1)}) ' if m else ' '
 		print(f'\nOne or more required packages or modules{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+
+		# Ask if the user wants to install the missing packages
+		try:
+			if input('\nDo you want to install the missing packages now? [y/N] ') in ['y', 'Y']:
+				import os
+				os.system(f'{sys.executable} -m pip install -r requirements.txt')
+
+				# Ask if the user wants to start ACME
+				if input('\nDo you want to start ACME now? [Y/n] ') in ['y', 'Y', '']:
+					os.system(f'{sys.executable} -m acme {" ".join(sys.argv[1:])}')
+
+		except Exception as e2:
+			print(f'\nError during installation: {e2}\n')
 	else:
 		print(f'\nError during import: {e.msg}\n')
 
