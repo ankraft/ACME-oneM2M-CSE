@@ -1607,7 +1607,7 @@
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
+						"SCHAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
@@ -2044,6 +2044,32 @@
 			"annc": "OA"
 		}
 	],
+	"nco": [
+		{
+			"rtypes": [ "SCH", "SCHAnnc", "REQRESP" ],
+			"lname": "networkCoordinated",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"nct": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "notificationContentType",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"nec": [
 		{
 			"rtypes": [ "CRS" ],
@@ -2068,17 +2094,12 @@
 			"annc": "NA"
 		}
 	],
-	"nct": [
+	"nev": [
 		{
-			"rtypes": [ "ALL" ],
-			"lname": "notificationContentType",
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "notificationEvent",
 			"ns": "m2m",
-			"type": "nonNegInteger",
-			"car": "1",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
+			"type": "any"
 		}
 	],
 	"nfu": [
@@ -2479,6 +2500,14 @@
 			"annc": "OA"
 		}
 	],
+	"rep": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "representation",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
 	"rid": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -2671,9 +2700,22 @@
 			"lname": "sessionCapabilities",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",	// m2m:sessionCapabilities
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"se": [
+		{
+			"rtypes": [ "SCH", "SCHAnnc", "REQRESP" ],
+			"lname": "scheduleElement",
+			"ns": "m2m",
+			"type": "m2m:scheduleEntries",
+			"car": "1L",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -2690,6 +2732,14 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"m2m:sgn": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "notification",
+			"ns": "m2m",
+			"type": "any"
 		}
 	],
 	"sld": [
@@ -2915,6 +2965,14 @@
 			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"sur": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "subscriptionReference",
+			"ns": "m2m",
+			"type": "any"
 		}
 	],
 

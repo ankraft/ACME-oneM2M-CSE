@@ -1867,8 +1867,9 @@
 			"ctype": "m2m:scheduleEntries",
 			"lname": "scheduleEntry",
 			"ns": "m2m",
-			"type": "schedule",
-			"car": "01"
+			"type": "list",
+			"ltype": "schedule",
+			"car": "1LN"
 		}
 	],
 
