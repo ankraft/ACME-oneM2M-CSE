@@ -15,7 +15,7 @@ from typing import Optional, cast
 
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Types import Result, JSON
+from ..etc.Types import JSON
 from ..etc.Utils import pureResource
 from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
@@ -57,6 +57,8 @@ from ..resources.REQ import REQ
 from ..resources.SUB import SUB
 from ..resources.SMD import SMD
 from ..resources.SMDAnnc import SMDAnnc
+from ..resources.SCH import SCH
+from ..resources.SCHAnnc import SCHAnnc
 from ..resources.TS import TS
 from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
@@ -129,6 +131,8 @@ addResourceFactoryCallback(ResourceTypes.NODAnnc,		NODAnnc,		lambda dct, tpe, pi
 addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH_PCU,		PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.REQ,			REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.SCH,			SCH,			lambda dct, tpe, pi, create : SCH(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.SCHAnnc,		SCHAnnc,		lambda dct, tpe, pi, create : SCHAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.SMD,			SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SMDAnnc,		SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SUB,			SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)) 
