@@ -200,6 +200,7 @@ class ACMEViewRequests(Vertical):
 					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
 					getAttributeValueName = CSE.validator.getAttributeValueName,	# type: ignore [attr-defined]
 					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+		_l1 = jsns.count('\n')
 		
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
@@ -209,7 +210,13 @@ class ACMEViewRequests(Vertical):
 					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
 					getAttributeValueName = CSE.validator.getAttributeValueName, 	# type: ignore [attr-defined]
 					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+		_l2 = jsns.count('\n')
 
+		# Make sure the response has the same number of lines as the request
+		# (This is a hack to make sure the separator line covers the entire height of the view)
+		if _l1 > _l2:
+			jsns += '\n' * (_l1 - _l2)
+			
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
