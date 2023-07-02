@@ -29,7 +29,8 @@ from ..resources.Resource import Resource
 class SUB(Resource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH
+						   							 ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

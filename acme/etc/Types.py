@@ -66,6 +66,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Remote CSE resource type. """
 	REQ 			= 17
 	"""	Request resource type. """
+	SCH				= 18
+	"""	Schedule resource type. """
 	SUB				= 23
 	"""	Subscription resource type. """
 	SMD				= 24
@@ -158,6 +160,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced Node resource type. """
 	CSRAnnc 		= 10016
 	"""	Announced Remote CSE resource type. """
+	SCHAnnc 		= 10018
+	"""	Announced Schedule resource type. """
 	SMDAnnc			= 10024
 	"""	Announced SemanticDescriptor resouce type. """
 	FCNTAnnc 		= 10028
@@ -429,6 +433,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
+	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
+	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),
 	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc, fullName='SemanticDescriptor'),
 	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True, fullName='SemanticDescriptor Announced'),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),

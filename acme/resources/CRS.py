@@ -33,7 +33,7 @@ class CRS(Resource):
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
