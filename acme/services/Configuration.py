@@ -493,7 +493,7 @@ class Configuration(object):
 				Configuration._configuration['logging.level'] = LogLevel.OFF
 			elif logLevel == 'info':
 				Configuration._configuration['logging.level'] = LogLevel.INFO
-			elif logLevel == 'warn':
+			elif logLevel in [ 'warn', 'warning' ]:
 				Configuration._configuration['logging.level'] = LogLevel.WARNING
 			elif logLevel == 'error':
 				Configuration._configuration['logging.level'] = LogLevel.ERROR
