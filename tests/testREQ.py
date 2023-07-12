@@ -140,13 +140,19 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(rsc, RC.ACCEPTED_NON_BLOCKING_REQUEST_SYNC, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
+		rqi = lastRequestID()
 
 		# Immediately retrieve <request>
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/rs'), r)
 		self.assertEqual(findXPath(r, 'm2m:req/rs'), RequestStatus.PENDING, r)
-		self.assertIsNone(findXPath(r, 'm2m:req/ors'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rsc'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.ACCEPTED)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rqi'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rqi'), rqi)	# test the request ID from the original request
+
 
 		# get and check <request> after a delay to give the operation time to run
 		testSleep(requestCheckDelay * 2)

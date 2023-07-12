@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Experimental
 
 ### Changed
+- [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
 
 ### Fixed
 
