@@ -125,13 +125,22 @@ def rfc1123Date(timeval:Optional[float] = None) -> str:
 	return formatdate(timeval = timeval, localtime = False, usegmt = True)
 
 
+def utcDatetime() -> datetime:
+	"""	Return the current datetime, but relative to UTC.
+
+		Returns:
+			Datetime with current UTC-based time.
+	"""
+	return datetime.now(tz = timezone.utc)
+
+
 def utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 
 		Returns:
 			Float with current UTC-based POSIX time.
 	"""
-	return datetime.now(tz = timezone.utc).timestamp()
+	return utcDatetime().timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
@@ -222,14 +231,13 @@ def waitFor(timeout:float,
 #	Cron
 #
 
-def cronMatchesTimestamp(cronPattern:Union[str, 
-						 list[str]], 
+def cronMatchesTimestamp(cronPattern:Union[str, list[str]], 
 						 ts:Optional[datetime] = None) -> bool:
 	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
 
 		The cronPattern must follow the usual crontab pattern of 5 fields:
 	
-			minute hour dayOfMonth month dayOfWeek
+			second minute hour dayOfMonth month dayOfWeek year
 
 		which each must comply to the following patterns:
 
@@ -324,18 +332,20 @@ def cronMatchesTimestamp(cronPattern:Union[str,
 		return False
 
 	if ts is None:
-		ts = datetime.now(tz = timezone.utc)
+		ts = utcDatetime()
 	
 	cronElements = cronPattern.split() if isinstance(cronPattern, str) else cronPattern
-	if len(cronElements) != 5:
-		raise ValueError(f'Invalid or empty cron pattern: "{cronPattern}". Must have 5 elements.')
+	if len(cronElements) != 7:
+		raise ValueError(f'Invalid or empty cron pattern: "{cronPattern}". Must have 7 elements.')
 
 	weekday = ts.isoweekday()
-	return  _parseMatchCronArg(cronElements[0], ts.minute) \
-		and _parseMatchCronArg(cronElements[1], ts.hour) \
-		and _parseMatchCronArg(cronElements[2], ts.day) \
-		and _parseMatchCronArg(cronElements[3], ts.month) \
-		and _parseMatchCronArg(cronElements[4], 0 if weekday == 7 else weekday)
+	return  _parseMatchCronArg(cronElements[0], ts.second) \
+		and _parseMatchCronArg(cronElements[1], ts.minute) \
+		and _parseMatchCronArg(cronElements[2], ts.hour) \
+		and _parseMatchCronArg(cronElements[3], ts.day) \
+		and _parseMatchCronArg(cronElements[4], ts.month) \
+		and _parseMatchCronArg(cronElements[5], 0 if weekday == 7 else weekday) \
+		and _parseMatchCronArg(cronElements[6], ts.year)
 
 
 def cronInPeriod(cronPattern:Union[str, 
@@ -367,7 +377,7 @@ def cronInPeriod(cronPattern:Union[str,
 
 	# Fill in the default
 	if endTs is None:
-		endTs =  datetime.now(tz = timezone.utc)
+		endTs =  utcDatetime()
 
 	# Check the validity of the range
 	if endTs < startTs:
