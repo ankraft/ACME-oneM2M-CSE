@@ -20,7 +20,7 @@ from rich.text import Text
 from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate
+from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
 from .Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
@@ -541,7 +541,6 @@ class ACMEPContext(PContext):
 		except requests.exceptions.ConnectionError:
 			pcontext.variables['response.status'] = SSymbol()	# nil
 			return pcontext.setResult(SSymbol())
-		#print(response)
 
 		# parse response and assign to variables
 
@@ -1542,8 +1541,9 @@ class ScriptManager(object):
 		if self.scriptMonitorInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
-		# Add a worker to check scheduled script, fixed every minute
-		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, 
+		# Add a worker to check scheduled script, fixed every second
+		# TODO resolution
+		self.scriptCronWorker = BackgroundWorkerPool.newWorker(1, 
 							 								   self.cronMonitor, 
 															   'scriptCronMonitor').start()
 
@@ -1652,9 +1652,10 @@ class ScriptManager(object):
 				Boolean. Usually *True* to continue with monitoring.
 		"""
 		#L.isDebug and L.logDebug(f'Looking for scheduled scripts')
+		_ts = utcDatetime()
 		for each in self.findScripts(meta = _metaAt):
 			try:
-				if cronMatchesTimestamp(at := each.meta.get(_metaAt)):
+				if cronMatchesTimestamp(at := each.meta.get(_metaAt), _ts):
 					L.isDebug and L.logDebug(f'Running script: {each.scriptName} at: {at}')
 					self.runScript(each)
 			except ValueError as e:
