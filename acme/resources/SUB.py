@@ -267,6 +267,15 @@ class SUB(Resource):
 		self._normalizeURIAttribute('su')
 
 
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if (rn := childResource._originalDict.get('rn')) is None:
+				childResource.setResourceName('notificationSchedule')
+			elif rn != 'notificationSchedule':
+				raise BAD_REQUEST(L.logDebug(f'rn of <schedule> under <subscription> must be "notificationSchedule"'))
+
+
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[ResourceTypes]) -> None:
 		""" Check whether an observed child resource types are actually allowed by the parent. 
 		

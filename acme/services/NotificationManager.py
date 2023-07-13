@@ -22,8 +22,8 @@ from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
-from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY
-from ..etc.DateUtils import fromDuration, getResourceDate
+from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND
+from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
 from ..etc.Utils import toSPRelative, pureResource, isAcmeUrl, compareIDs
 from ..helpers.TextTools import setXPath, findXPath
 from ..services import CSE
@@ -179,8 +179,11 @@ class NotificationManager(object):
 			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
-		if not CSE.storage.removeSubscription(subscription):
-			raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
+		try:
+			if not CSE.storage.removeSubscription(subscription):
+				raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
+		except NOT_FOUND:
+			pass	# ignore, could be expected
 
 
 	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> None:
@@ -276,19 +279,29 @@ class NotificationManager(object):
 				# TODO ensure uniqueness
 				subs.append(sub)
 
-
-
-		# TODO: Add access control check here. Perhaps then the special subscription
-		#		DB data structure should go away and be replaced by the normal subscriptions
-
-
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			ri = sub['ri']
+
+			# Check the subscription's schedule, but only if it is not an immediate notification
+			if not ((nec := sub['nec']) and nec == EventCategory.Immediate):
+				if (_sc := CSE.storage.searchScheduleForTarget(ri)):
+					_ts = utcDatetime()
+
+					# Check whether the current time matches the schedule
+					for s in _sc:
+						if cronMatchesTimestamp(s, _ts):
+							break
+					else:
+						# No schedule matches the current time, so continue with the next subscription
+						continue
+
+			# Check whether reason is included in the subscription
 			if childResource and \
 				ri == childResource.ri and \
 				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
 					continue
+			
 			if reason not in sub['net']:	# check whether reason is actually included in the subscription
 				continue
 			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
@@ -604,6 +617,20 @@ class NotificationManager(object):
 
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
+			# Check the crossResourceSubscription's schedule, if there is one
+			if (_sc := CSE.storage.searchScheduleForTarget(crsRi)):
+				_ts = utcDatetime()
+
+				# Check whether the current time matches any schedule
+				for s in _sc:
+					if cronMatchesTimestamp(s, _ts):
+						break
+				else:
+					# No schedule matches the current time, so clear the data and just return
+					L.isDebug and L.logDebug(f'No matching schedule found for <crs>: {crsRi}')
+					data.clear()
+					return
+
 			try:
 				resource = CSE.dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
@@ -986,7 +1013,7 @@ class NotificationManager(object):
 	def sendVerificationRequest(self, uri:Union[str, list[str]], 
 									  ri:str, 
 									  originator:Optional[str] = None) -> bool:
-		""""	Define the callback function for verification notifications and send
+		"""	Define the callback function for verification notifications and send
 				the notification. 
 
 				Args:

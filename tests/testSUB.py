@@ -313,8 +313,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBByAssignedOriginator(self) -> None:
 		""" DELETE <SUB> with correct originator -> Succeed. Send deletion notification. """
-		_, rsc = DELETE(subURL, TestSUB.originator)
-		self.assertEqual(rsc, RC.DELETED)
+		r, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 
@@ -1596,8 +1596,8 @@ class TestSUB(unittest.TestCase):
 					'su': NOTIFICATIONSERVER,
 					'nse': True
 				}}
-		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 	
 
 #

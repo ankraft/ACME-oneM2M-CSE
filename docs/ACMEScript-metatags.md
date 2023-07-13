@@ -54,9 +54,9 @@ They can be accessed like any other environment variable, for example:
 
 The `@at` meta tag specifies a time / date pattern when a script should be executed. This pattern follows the Unix [crontab](https://crontab.guru/crontab.5.html) pattern. 
 
-A crontab pattern consists of the following five fields:  
+A crontab pattern consists of the following six fields:  
 
-`minute hour dayOfMonth month dayOfWeek`
+`second minute hour dayOfMonth month dayOfWeek year`
 
 Each field is mandatory and must comply to the following values:
 
@@ -68,9 +68,9 @@ Each field is mandatory and must comply to the following values:
 Example:
 ```lisp
 ;; Run a script every 5 minutes
-@at */5 * * * *
+@at 0 */5 * * * * *
 ;; Run a script every Friday at 2:30 am
-@at 30 2 * * 4
+@at 0 30 2 * * 4 *
 ```
 
 [top](#top)

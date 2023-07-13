@@ -169,6 +169,9 @@ isHeadless 										= False
 cseStatus:CSEStatus								= CSEStatus.STOPPED
 """ The CSE's internal runtime status. """
 
+cseActiveSchedule:list[str]						= []
+""" List of active schedules when the CSE is active and will process requests. """
+
 _cseResetLock									= Lock()	# lock for resetting the CSE
 """ Internal CSE's lock when resetting. """
 
