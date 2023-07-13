@@ -365,6 +365,8 @@ class TS(AnnounceableResource):
 		# Always set the mdc to the length of mdlt if present
 		if self.mdlt is not None:
 			self.setAttribute('mdc', len(self.mdlt))
+		else:
+			self.setAttribute('mdc', 0)
 
 		# Save changes
 		self.dbUpdate(True)
