@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Optional, cast
 
 from copy import deepcopy
+
 from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
@@ -218,6 +219,15 @@ class CRS(Resource):
 										   EventEvaluationMode.ALL_EVENTS_MISSING):
 				raise BAD_REQUEST(L.logDebug(f'eem = {eem} is not allowed with twt = SLIDINGWINDOW'))
 
+
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if (rn := childResource._originalDict.get('rn')) is None:
+				childResource.setResourceName('notificationSchedule')
+			elif rn != 'notificationSchedule':
+				raise BAD_REQUEST(L.logDebug(f'rn of <schedule> under <subscription> must be "notificationSchedule"'))
+			
 
 	def handleNotification(self, request:CSERequest, originator:str) -> None:
 		"""	Handle a notification request to a CRS resource.

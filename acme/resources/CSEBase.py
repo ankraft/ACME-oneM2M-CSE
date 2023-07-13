@@ -130,6 +130,12 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('srv', CSE.supportedReleaseVersions)
 
 
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if CSE.dispatcher.directChildResources(self.ri, ResourceTypes.SCH):
+				raise BAD_REQUEST('Only one <schedule> resource is allowed for the CSEBase')
+
 
 def getCSE() -> CSEBase:	# Actual: CSEBase Resource
 	"""	Return the <CSEBase> resource.

@@ -32,6 +32,7 @@ from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
+from ..resources.SCH import SCH
 from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
 
@@ -46,6 +47,7 @@ _batchNotifications = 'batchNotifications'
 _statistics = 'statistics'
 _actions = 'actions'
 _requests = 'requests'
+_schedules = 'schedules'
 
 
 class Storage(object):
@@ -153,6 +155,9 @@ class Storage(object):
 			self.getStatistics()
 			dbFile = _actions
 			self.getActions()
+			dbFile = _schedules
+			self.getSchedules()
+
 			# TODO requests
 
 		except Exception as e:
@@ -313,9 +318,8 @@ class Storage(object):
 			self.db.deleteResource(resource)
 			self.db.deleteIdentifier(resource)
 			self.db.removeChildResource(resource)
-		except KeyError as e:
-			L.isDebug and L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.')
-			raise NOT_FOUND(dbg = str(e))
+		except KeyError:
+			raise NOT_FOUND(dbg =  L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 
 
 	def directChildResources(self, pi:str, 
@@ -444,12 +448,20 @@ class Storage(object):
 
 	def removeSubscription(self, subscription:Resource) -> bool:
 		# L.logDebug(f'Removing subscription: {subscription.ri}')
-		return self.db.removeSubscription(subscription)
+		try:
+			return self.db.removeSubscription(subscription)
+		except KeyError as e:
+			raise NOT_FOUND(dbg = L.logDebug(f'Cannot subscription data for: {subscription.ri} (NOT_FOUND). Could be an expected error.'))
 
 
 	def updateSubscription(self, subscription:Resource) -> bool:
 		# L.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
+
+
+	def updateSubscriptionSchedule(self, subscription:Resource, schedule:list[str]) -> bool:
+		# L.logDebug(f'Updating subscription schedule: {ri} - {schedule}')
+		return self.db.updateSubscriptionSchedule(subscription, schedule)
 
 
 	#########################################################################
@@ -586,6 +598,57 @@ class Storage(object):
 		return self.db.deleteRequests(ri)
 
 
+	#########################################################################
+	##
+	##	Schedules
+	##
+
+	def getSchedules(self) -> list[Document]:
+		"""	Retrieve the schedules data from the DB.
+
+			Return:
+				List of *Documents*. May be empty.
+		"""
+		return self.db.getSchedules()
+
+
+	def searchScheduleForTarget(self, pi:str) -> list[str]:
+		"""	Search for schedules for a target resource.
+
+			Args:
+				pi: The target resource's resource ID.
+			
+			Return:
+				List of schedule resource IDs.
+		"""
+		result = []
+		for s in self.db.searchSchedules(pi):
+			result.extend(s['sce'])
+		return result
+
+
+	def upsertSchedule(self, schedule:SCH) -> bool:
+		"""	Add or update a schedule in the DB.
+
+			Args:
+				schedule: The schedule to add or update.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.upsertSchedule(schedule.ri, schedule.pi, schedule.attribute('se/sce'))
+
+
+	def removeSchedule(self, schedule:SCH) -> bool:
+		"""	Remove a schedule from the DB.
+
+			Args:
+				schedule: The schedule to remove.
+			
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.removeSchedule(schedule.ri)
 
 #########################################################################
 #
@@ -611,6 +674,7 @@ class TinyDBBinding(object):
 		'lockStatistics',
 		'lockActions',
 		'lockRequests',
+		'lockSchedules',
 
 		'fileResources',
 		'fileIdentifiers',
@@ -619,6 +683,7 @@ class TinyDBBinding(object):
 		'fileStatistics',
 		'fileActions',
 		'fileRequests',
+		'fileSchedules',
 		
 		'dbResources',
 		'dbIdentifiers', 		
@@ -627,6 +692,7 @@ class TinyDBBinding(object):
 		'dbStatistics',
 		'dbActions',	
 		'dbRequests',	
+		'dbSchedules',	
 
 		'tabResources',
 		'tabIdentifiers',
@@ -637,6 +703,7 @@ class TinyDBBinding(object):
 		'tabStatistics',
 		'tabActions',
 		'tabRequests',
+		'tabSchedules',
 
 		'resourceQuery',
 		'identifierQuery',
@@ -644,6 +711,7 @@ class TinyDBBinding(object):
 		'batchNotificationQuery',
 		'actionsQuery',
 		'requestsQuery',
+		'schedulesQuery',
 	)
 
 	def __init__(self, path:str, postfix:str) -> None:
@@ -661,6 +729,7 @@ class TinyDBBinding(object):
 		self.lockStatistics 			= Lock()
 		self.lockActions 				= Lock()
 		self.lockRequests 				= Lock()
+		self.lockSchedules 				= Lock()
 
 		# file names
 		self.fileResources				= f'{self.path}/{_resources}-{postfix}.json'
@@ -670,6 +739,7 @@ class TinyDBBinding(object):
 		self.fileStatistics				= f'{self.path}/{_statistics}-{postfix}.json'
 		self.fileActions				= f'{self.path}/{_actions}-{postfix}.json'
 		self.fileRequests				= f'{self.path}/{_requests}-{postfix}.json'
+		self.fileSchedules				= f'{self.path}/{_schedules}-{postfix}.json'
 
 		# All databases/tables will use the smart query cache
 		if Configuration.get('database.inMemory'):
@@ -681,6 +751,7 @@ class TinyDBBinding(object):
 			self.dbStatistics			= TinyDB(storage = MemoryStorage)
 			self.dbActions				= TinyDB(storage = MemoryStorage)
 			self.dbRequests				= TinyDB(storage = MemoryStorage)
+			self.dbSchedules			= TinyDB(storage = MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
 			# self.dbResources 			= TinyDB(self.fileResources)
@@ -698,6 +769,7 @@ class TinyDBBinding(object):
 			self.dbStatistics 			= TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			self.dbActions	 			= TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			self.dbRequests	 			= TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbSchedules	 		= TinyDB(self.fileSchedules, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 
 		
 		# Open/Create tables
@@ -728,6 +800,10 @@ class TinyDBBinding(object):
 		self.tabRequests = self.dbRequests.table(_requests, cache_size = self.cacheSize)
 		TinyDBBetterTable.assign(self.tabRequests)
 
+		self.tabSchedules = self.dbSchedules.table(_schedules, cache_size = self.cacheSize)
+		TinyDBBetterTable.assign(self.tabSchedules)
+
+
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
@@ -736,6 +812,7 @@ class TinyDBBinding(object):
 		self.batchNotificationQuery 	= Query()
 		self.actionsQuery				= Query()
 		self.requestsQuery				= Query()
+		self.schedulesQuery				= Query()
 
 
 	def _assignConfig(self) -> None:
@@ -762,6 +839,8 @@ class TinyDBBinding(object):
 			self.dbActions.close()
 		with self.lockRequests:
 			self.dbRequests.close()
+		with self.lockSchedules:
+			self.dbSchedules.close()
 
 
 	def purgeDB(self) -> None:
@@ -775,6 +854,7 @@ class TinyDBBinding(object):
 		self.tabStatistics.truncate()
 		self.tabActions.truncate()
 		self.tabRequests.truncate()
+		self.tabSchedules.truncate()
 	
 
 	def backupDB(self, dir:str) -> bool:
@@ -784,7 +864,9 @@ class TinyDBBinding(object):
 					self.fileBatchNotifications,
 					self.fileStatistics,
 					self.fileActions,
-					self.fileRequests]:
+					self.fileRequests,
+					self.fileSchedules
+					]:
 			if Path(fn).is_file():
 				shutil.copy2(fn, dir)
 		return True
@@ -1048,11 +1130,17 @@ class TinyDBBinding(object):
 						  'nus' 	: subscription.nu,
 						  'bn'  	: subscription.bn,
 						  'cr'  	: subscription.cr,
+						  'nec'  	: subscription.nec,
 						  'org'		: subscription.getOriginator(),
 						  'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
 						  'nse' 	: subscription.nse
 						 }, ri)) is not None
 					# self.subscriptionQuery.ri == ri) is not None
+
+
+	def updateSubscriptionSchedule(self, subscription:Resource, schedule:list[str]) -> bool:
+		with self.lockSubscriptions:
+			return self.tabSubscriptions.update({'sce' : schedule}, doc_ids = [subscription.ri]) == 1
 
 
 	def removeSubscription(self, subscription:Resource) -> bool:
@@ -1271,3 +1359,74 @@ class TinyDBBinding(object):
 		else:
 			with self.lockRequests:
 				self.tabRequests.truncate()
+
+	#
+	#	Schedules
+	#
+
+	def getSchedules(self) -> list[Document]:
+		"""	Get all schedules from the database.
+		
+			Return:
+				List of *Documents*. May be empty.
+		"""
+		with self.lockSchedules:
+			return self.tabSchedules.all()
+
+
+	def getSchedule(self, ri:str) -> Optional[Document]:
+		"""	Get a schedule from the database.
+		
+			Args:
+				ri: The resource ID of the schedule.
+
+			Return:
+				The schedule, or *None* if not found.
+		"""
+		with self.lockSchedules:
+			return self.tabSchedules.get(doc_id = ri)	# type:ignore[arg-type]
+	
+
+	def searchSchedules(self, pi:str) -> list[Document]:
+		"""	Search for schedules in the database.
+		
+			Args:
+				pi: The resource ID of the parent resource.
+			
+			Return:
+				List of *Documents*. May be empty.
+		"""
+		with self.lockSchedules:
+			return self.tabSchedules.search(self.schedulesQuery.pi == pi)
+	
+
+	def upsertSchedule(self, ri:str, pi:str, schedule:list[str]) -> bool:
+		"""	Add or update a schedule in the database.
+		
+			Args:
+				ri: The resource ID of the schedule.
+				pi: The resource ID of the schedule's parent resource.
+				schedule: The schedule to store.
+			
+			Return:
+				True if the schedule was added or updated, False otherwise.
+		"""
+		with self.lockSchedules:
+			return self.tabSchedules.upsert(Document(
+						{ 'ri': ri,
+						  'pi': pi,
+						  'sce': schedule }, 
+						ri)) is not None	# type:ignore[arg-type]
+
+
+	def removeSchedule(self, ri:str) -> bool:
+		"""	Remove a schedule from the database.
+		
+			Args:
+				ri: The resource ID of the schedule to remove.
+
+			Return:
+				True if the schedule was removed, False otherwise.
+		"""
+		with self.lockSchedules:
+			return len(self.tabSchedules.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added automatic pip install of missing dependencies during startup.
+- [CSE] Added support for &lt;schedule> resource type.
 
 ### Experimental
 

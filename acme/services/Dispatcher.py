@@ -23,10 +23,12 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exc
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
+from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
 from ..etc.Utils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes, riFromID
 from ..etc.Utils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
+from ..etc.DateUtils import cronMatchesTimestamp
 from ..services import CSE
 from ..services.Configuration import Configuration
 from ..resources.Factory import resourceFromDict
@@ -113,8 +115,9 @@ class Dispatcher(object):
 				raise BAD_REQUEST(L.logWarn(f'Only "m2m:atrl" is allowed in Content for RETRIEVE.'))
 			CSE.validator.validateAttribute('atrl', attributeList)
 		
-		# Handle operation execution time and check request expiration
+		# Handle operation execution time , and check CSE schedule and request expiration
 		self._handleOperationExecutionTime(request)
+		self._checkActiveCSESchedule()
 		self._checkRequestExpiration(request)
 
 		# handle fanout point requests
@@ -562,8 +565,9 @@ class Dispatcher(object):
 			# 	return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
-		# Handle operation execution time and check request expiration
+		# Handle operation execution time, and check CSE schedule and request expiration
 		self._handleOperationExecutionTime(request)
+		self._checkActiveCSESchedule()
 		self._checkRequestExpiration(request)
 
 		# handle fanout point requests
@@ -792,8 +796,9 @@ class Dispatcher(object):
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
-		# Handle operation execution time and check request expiration
+		# Handle operation execution time , and check CSE schedule and request expiration
 		self._handleOperationExecutionTime(request)
+		self._checkActiveCSESchedule()
 		self._checkRequestExpiration(request)
 
 		# handle fanout point requests
@@ -957,8 +962,9 @@ class Dispatcher(object):
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
-		# Handle operation execution time and check request expiration
+		# Handle operation execution time , and check CSE schedule and request expiration
 		self._handleOperationExecutionTime(request)
+		self._checkActiveCSESchedule()
 		self._checkRequestExpiration(request)
 
 		# handle fanout point requests
@@ -1118,8 +1124,9 @@ class Dispatcher(object):
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
-		# Handle operation execution time and check request expiration
+		# Handle operation execution time, and check CSE schedule and request expiration
 		self._handleOperationExecutionTime(request)
+		self._checkActiveCSESchedule()
 		self._checkRequestExpiration(request)
 
 		# get resource to be notified and check permissions
@@ -1378,6 +1385,20 @@ class Dispatcher(object):
 		"""
 		if request._rqetUTCts is not None and timeUntilTimestamp(request._rqetUTCts) <= 0.0:
 			raise REQUEST_TIMEOUT(L.logDebug('request timed out'))
+
+
+	def _checkActiveCSESchedule(self) -> None:
+		"""	Check if the CSE is currently active according to its schedule.
+
+			Raises:
+				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
+		"""
+		if CSE.cseActiveSchedule:
+			for s in CSE.cseActiveSchedule:
+				if cronMatchesTimestamp(s):
+					return
+			# TODO not sure if this is the right error code
+			raise TARGET_NOT_REACHABLE(L.logDebug('request exection time outside of CSE\'s allowed schedule'))
 
 
 

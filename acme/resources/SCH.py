@@ -15,6 +15,7 @@ from typing import Optional
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..services.Logging import Logging as L
+from ..services import CSE
 from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -73,6 +74,9 @@ class SCH(AnnounceableResource):
 		if _nco is not None and _nco == True and not C.networkCoordinationSupported:
 			raise NOT_IMPLEMENTED (L.logWarn(f'Network Coordinated Operation is not supported by this CSE'))
 
+		# Add the schedule to the schedules DB
+		CSE.storage.upsertSchedule(self)
+
 		# TODO When <SoftwareCampaign> is supported
 		# c)The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code if the target resource 
 		# is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
@@ -97,7 +101,19 @@ class SCH(AnnounceableResource):
 		# if thetarget resource is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
 		
 		super().update(dct, originator, doValidateAttributes)
+
+		# Update the schedule in the schedules DB
+		CSE.storage.upsertSchedule(self)
 	
+
+	def validate(self, originator: str | None = None, dct: JSON | None = None, parentResource: Resource | None = None) -> None:
+		super().validate(originator, dct, parentResource)
+
+		# Set the active schedule in the CSE when updated
+		if parentResource.ty == ResourceTypes.CSEBase:
+			CSE.cseActiveSchedule = self.getFinalResourceAttribute('se/sce', dct)
+			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.cseActiveSchedule}')
+
 
 	def deactivate(self, originator: str) -> None:
 
@@ -107,5 +123,6 @@ class SCH(AnnounceableResource):
 		
 		super().deactivate(originator)
 
+		# Remove the schedule from the schedules DB
+		CSE.storage.removeSchedule(self)
 
-# TODO coninue
