@@ -1719,7 +1719,7 @@
 			"lname": "missingDataCurrentNr",
 			"ns": "m2m",
 			"type": "nonNegInteger",
-			"car": "01",
+			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
 			"od": "O",
