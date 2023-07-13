@@ -82,7 +82,7 @@ class ACMEViewRequests(Vertical):
 #request-list-header {
 	/* overflow: auto hidden; */
 	width: 1fr;
-	height: 3;
+	height: 1;
 	align-vertical: middle;
 	background: $panel;
 }
@@ -95,7 +95,7 @@ class ACMEViewRequests(Vertical):
 
 #request-list-details-header {
 	overflow: auto;
-	height: 3;
+	height: 1;
 	align-vertical: middle;
 	background: $panel;
 }

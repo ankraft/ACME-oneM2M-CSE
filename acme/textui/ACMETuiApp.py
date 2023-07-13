@@ -184,27 +184,32 @@ class ACMETuiApp(App):
 	
 	
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptPrint(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptPrint(scriptName, msg)
 
 
 	def scriptLog(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptLog(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptLog(scriptName, msg)
 
 
 	def scriptLogError(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptLogError(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptLogError(scriptName, msg)
 	
 
 	def scriptClearConsole(self, scriptName:str) -> None:
-		self.containerTools.scriptClearConsole(scriptName)
+		if self.containerTools:
+			self.containerTools.scriptClearConsole(scriptName)
 	
 
 	def scriptVisualBell(self, scriptName:str) -> None:
-		BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
-		# self.containerTools.scriptVisualBell(scriptName)
+		if self.containerTools:
+			BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
 
 	def refreshResources(self) -> None:
-		self.containerTree.update()
+		if self.containerTree:
+			self.containerTree.update()
 
 	#########################################################################
 

@@ -49,7 +49,7 @@ class ACMEContainerDelete(Container):
 		width: 1fr;
 		display: block;
 		overflow: auto;
-		height: 3;
+		height: 1;
 		content-align: center middle;
 		background: $panel;
 	}
