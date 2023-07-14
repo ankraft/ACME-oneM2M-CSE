@@ -20,6 +20,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [datetime](#datetime)                                   | Return a timestamp                                                               |
 |                            | [defun](#defun)                                         | Define a function                                                                |
 |                            | [dec](#dec)                                             | Decrement a variable                                                             |
+|                            | [dotimes](#dotimes)                                     | Simple loop over an s-expression                                                 |
 |                            | [eval](#eval)                                           | Evaluate and execute a quoted list                                               |
 |                            | [evaluate-inline](#evaluate-inline)                     | Enable and disable inline string evaluation                                      |
 |                            | [get-json-attribute](#get-json-attribute)               | Get a JSON attribute from a JSON structure                                       |
@@ -234,7 +235,7 @@ The `case` function implements the functionality of a `switch...case` statement 
 
 The *key* s-expression is evaluated and its value taken for the following comparisons. After this expression a number of  lists may be given. 
 
-Each of these list contains two symbols that are handled in order: The first symbol evaluates to a value that is compared to the result of the *key* s-expression. If there is a match then the second s-exprersion is evaluated, and then the comparisons are stopped and the *case* function returns.
+Each of these list contains two symbols that are handled in order: The first symbol evaluates to a value that is compared to the result of the *key* s-expression. If there is a match then the second s-expression is evaluated, and then the comparisons are stopped and the *case* function returns.
 
 The special symbol *otherwise* for a *condition* s-expression always matches and can be used as a default or fallback case .
 
@@ -314,30 +315,6 @@ Example:
 
 ---
 
-<a name="dec"></a>
-
-### dec
-
-`(dec <variable> [<value:number>])`
-
-The `dec` function decrements a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is decemented by this value. The value can be an integer or a float.
-
-The function returns the variable's new value.
-
-See also: [inc](#inc)
-
-Example:
-
-```lisp
-(setq a 1)   ;; Set variable "a" to 1
-(dec a)      ;; Decrement variable "a" by 1
-(dec a 2.5)  ;; Decrement variable "a" by 2.5
-```
-
-[top](#top)
-
----
-
 <a name="defun"></a>
 
 ### defun
@@ -371,6 +348,60 @@ Examples:
            (fib (- n 2)))
     ))
 (fib 10)                ;; Returns 55
+```
+
+[top](#top)
+
+---
+
+<a name="dec"></a>
+
+### dec
+
+`(dec <variable> [<value:number>])`
+
+The `dec` function decrements a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is decremented by this value. The value can be an integer or a float.
+
+The function returns the variable's new value.
+
+See also: [inc](#inc)
+
+Example:
+
+```lisp
+(setq a 1)   ;; Set variable "a" to 1
+(dec a)      ;; Decrement variable "a" by 1
+(dec a 2.5)  ;; Decrement variable "a" by 2.5
+```
+
+[top](#top)
+
+---
+
+<a name="dotimes"></a>
+
+### dotimes
+
+`(dotimes (<loop variable> <count:number> [<result variable>]) (<s-expression>+))`
+
+The `dotimes` function provides a simple loop functionality.
+The first arguments is a list that contains a loop variable that starts at 0, the loop `count` (which must be a non-negative number), and an optional
+`result` variable. The second argument is a list that contains one or more s-expressions that are executed in the loop.
+
+If the `result variable` is specified then the loop returns the value of that variable, otherwise `nil`.
+
+See also: [while](#while)
+
+Example:
+
+```lisp
+(dotimes (i 10)
+	(print i))                   ;; print 1..10
+
+(setq result 0)
+(dotimes (i 10 result)
+	(setq result (+ result i)))  ;; sum 1..10
+(print result)                   ;; 45
 ```
 
 [top](#top)
@@ -510,7 +541,7 @@ Example:
 
 `(inc <variable symbol> [<value:number>])`
 
-The `inc` function increments a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is incemented by this value. The value can be an integer or a float.
+The `inc` function increments a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is incremented by this value. The value can be an integer or a float.
 
 The function returns the variable's new value.
 
@@ -1030,8 +1061,8 @@ Example:
 
 `(round <value:number> [<precission:number>])`
 
-The `round` function rounds a number to *precission* digits after the decimal point. The default is 0, meaning to round to nearest integer.
-
+The `round` function rounds a number to *precision* digits after the decimal point. The default is 0, meaning to round to nearest integer.
+ 
 Example:
 
 ```lisp
@@ -1092,7 +1123,7 @@ Example:
 
 `(sleep <number>)`
 
-The `sleep` function adds a delay to the script execution. The evaludation stops for a number of seconds. The delay could be provided as an integer or float number.
+The `sleep` function adds a delay to the script execution. The evaluation stops for a number of seconds. The delay could be provided as an integer or float number.
 
 If the script execution timeouts during a sleep, the function is interrupted and all subsequent s-expressions are not evaluated.
 
@@ -1116,7 +1147,7 @@ Example:
 
 The `slice` function returns the slice of a list or a string.
 
-The behaviour is the same as slicing in Python, except that both *start* and *end* must be provided. The first argument is the *start* (including) of the slice, the second is the *end* (exlcuding) of the slice. The fourth argument is the list or string to slice.
+The behavior is the same as slicing in Python, except that both *start* and *end* must be provided. The first argument is the *start* (including) of the slice, the second is the *end* (excluding) of the slice. The fourth argument is the list or string to slice.
 
 Example:
 
@@ -1283,7 +1314,7 @@ A `while` loop continues to run when the first *guard* s-expression evaluates to
 
 The `while` function returns the result of the last evaluated s-expression in the *body*.
 
-See also: [return](#return)
+See also: [dotime](#dotimes), [return](#return)
 
 Example:
 
@@ -1559,7 +1590,7 @@ Example:
 
 `(log-divider [<message:string>])`
 
-The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It can help to easily identifiy the different sections when working with many requests. An optional (short) message can be provided in the argument.
+The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It can help to easily identify the different sections when working with many requests. An optional (short) message can be provided in the argument.
 
 Examples:
 
