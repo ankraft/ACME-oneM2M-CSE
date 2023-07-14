@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added automatic pip install of missing dependencies during startup.
 - [CSE] Added support for &lt;schedule> resource type.
+- [SCRIPTS] Added "dotimes" function to the script interpreter. 
 
 ### Experimental
 

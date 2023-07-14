@@ -1376,6 +1376,7 @@ class PContext():
 
 			Args:
 				symbol: The symbol to execute.
+				parentSymbol: The parent symbol of the symbol to execute.
 
 			Return:
 				The updated `PContext` object with the result.
@@ -1943,6 +1944,79 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires code list, got: {symbol[3].type}'))
 	_code = symbol[3]
 	pcontext.functions[str(_name)] = ( _argNames, _code )
+	return pcontext
+
+
+def _doDotimes(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	This function executes a code block a number of times.
+
+		The first argument is a list that contains the loop counter symbol and the
+		loop limit. An optional third argument is the result variable for the loop.
+		The second argument is the code block to execute.
+
+		Example:
+			::
+
+				(dotimes (i 10) (print i))
+				(dotimes (i 10 result) (setq result i))
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result 
+
+	"""
+	pcontext.assertSymbol(symbol, 3)
+
+	# arguments
+	pcontext, _arguments = pcontext.valueFromArgument(symbol, 1, SType.tList, doEval = False)	# don't evaluate the argument
+	if 2 <= len(_arguments) <= 3:
+		# get loop variable
+		_loopvar = cast(SSymbol, _arguments[0])
+		if _loopvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "counter" must be a symbol, got: {pcontext.result.type}'))
+
+		# get loop count
+		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		if pcontext.result.type != SType.tNumber:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a number, got: {pcontext.result.type}'))
+		_loopcount = pcontext.result
+		if int(_loopcount.value) < 0:	# type:ignore[arg-type]
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a non-negative number, got: {_loopcount.value}'))
+	else:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+	
+	# Get result variable name	
+	if len(_arguments) == 3:
+		_resultvar = cast(SSymbol, _arguments[2])
+		if _resultvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "result" must be a symbol, got: {pcontext.result.type}'))
+		
+		# if the variable does not exist, create it as a nil symbol
+		if not str(_resultvar) in pcontext.variables:
+			pcontext.variables[str(_resultvar)] = SSymbol()
+	else:
+		_resultvar = None
+
+	# code
+	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
+	_code = SSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
+
+	# execute the code
+	pcontext.variables[str(_loopvar)] = SSymbol(number = Decimal(0))
+	for i in range(0, int(cast(Decimal, _loopcount.value))):
+		pcontext.variables[str(_loopvar)] = SSymbol(number = Decimal(i))
+		pcontext = pcontext._executeExpression(_code, symbol)
+
+	# set the result
+	if _resultvar:
+		pcontext.result = pcontext.variables[str(_resultvar)]
+	else:
+		pcontext.result = SSymbol()
+
+	# return
 	return pcontext
 
 
@@ -3288,6 +3362,7 @@ _builtinCommands:PSymbolDict = {
 	'datetime':				_doDatetime,
 	'dec':					lambda p, a: _doIncDec(p, a, False),
 	'defun':				_doDefun,
+	'dotimes':				_doDotimes,
 	'eval':					_doEval,
 	'evaluate-inline':		_doEvaluateInline,
 	'false':				lambda p, a: _doBoolean(p, a, False),
