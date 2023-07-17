@@ -358,25 +358,27 @@ class SSymbol(object):
 	
 
 	def toString(self, quoteStrings:bool = False, pythonList:bool = False) -> str:
-		if self.type in [ SType.tList, SType.tListQuote ]:
-			# Set the list chars
-			lchar1 = '[' if pythonList else '('
-			lchar2 = ']' if pythonList else ')'
-			return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
-			# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
-		elif self.type == SType.tLambda:
-			return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
-		elif self.type == SType.tBool:
-			return str(self.value).lower()
-		elif self.type == SType.tString:
-			if quoteStrings:
-				return f'"{str(self.value)}"'
-			return str(self.value)
-		elif self.type == SType.tJson:
-			return json.dumps(self.value)
-		elif self.type == SType.tNIL:
-			return 'nil'
-		return str(self.value)
+		match self.type:
+			case SType.tList | SType.tListQuote:
+				# Set the list chars
+				lchar1 = '[' if pythonList else '('
+				lchar2 = ']' if pythonList else ')'
+				return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
+				# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
+			case SType.tLambda:
+				return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
+			case SType.tBool:
+				return str(self.value).lower()
+			case SType.tString:
+				if quoteStrings:
+					return f'"{str(self.value)}"'
+				return str(self.value)
+			case SType.tJson:
+				return json.dumps(self.value)
+			case SType.tNIL:
+				return 'nil'
+			case _:
+				return str(self.value)
 
 
 	def append(self, arg:SSymbol) -> SSymbol:
@@ -2112,17 +2114,19 @@ def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 
 	def _toSymbol(value:Any) -> SSymbol:
-		if isinstance(value, str):
-			return SSymbol(string = value)
-		elif isinstance(value, (int, float)):
-			return SSymbol(number = Decimal(value))
-		elif isinstance(value, dict):
-			return SSymbol(jsn = value)
-		elif isinstance(value, bool):
-			return SSymbol(boolean = value)
-		elif isinstance(value, list):
-			return SSymbol(lst = [ _toSymbol(l) for l in value])
-		return SSymbol() # nil
+		match value:
+			case str():
+				return SSymbol(string = value)
+			case int(), float():
+				return SSymbol(number = Decimal(value))
+			case dict():
+				return SSymbol(jsn = value)
+			case bool():
+				return SSymbol(boolean = value)
+			case list():
+				return SSymbol(lst = [ _toSymbol(l) for l in value])
+			case _:
+				return SSymbol() # nil
 
 	pcontext.assertSymbol(symbol, 3)
 

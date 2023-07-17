@@ -140,18 +140,19 @@ class AE(AnnounceableResource):
 		# check api attribute
 		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char
 			raise BAD_REQUEST('missing or empty attribute: "api"')
-		if api.startswith('N'):
-			pass # simple format
-		elif api.startswith('R'):
-			if len(api.split('.')) < 3:
-				raise BAD_REQUEST('wrong format for registered ID in attribute "api": to few elements')
-
-		# api must normally begin with a lower-case "r", but it is allowed for release 2a and 3
-		elif api.startswith('r'):
-			if (rvi := self.getRVI()) is not None and rvi not in ['2a', '3']:
-				raise BAD_REQUEST(L.logWarn('lower case "r" is only allowed for release versions "2a" and "3"'))
-		else:
-			raise BAD_REQUEST(L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
+		
+		match api:
+			case x if x.startswith('N'):
+				pass # simple format
+			case x if x.startswith('R'):
+				if len(x.split('.')) < 3:
+					raise BAD_REQUEST('wrong format for registered ID in attribute "api": to few elements')
+			# api must normally begin with a lower-case "r", but it is allowed for release 2a and 3
+			case x if x.startswith('r'):
+				if (rvi := self.getRVI()) is not None and rvi not in ['2a', '3']:
+					raise BAD_REQUEST(L.logWarn('lower case "r" is only allowed for release versions "2a" and "3"'))
+			case _:
+				raise BAD_REQUEST(L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
 
 
 	def deactivate(self, originator:str) -> None:
