@@ -250,11 +250,14 @@ class AnnounceableResource(Resource):
 				if not (policy := attributes.get(attr)):
 					continue
 				
-				if policy.announcement == Announced.MA:
-					mandatory.append(attr)
-				elif policy.announcement == Announced.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
-					optional.append(attr)
-				# else: just ignore Announced.NA
+				match policy.announcement:
+					case Announced.MA:
+						mandatory.append(attr)
+					case Announced.OA if attr in announceableAttributes: # only add optional attributes that are also in aa
+						optional.append(attr)
+					case Announced.NA:
+						# just ignore Announced.NA
+						pass
 
 		return mandatory + optional
 

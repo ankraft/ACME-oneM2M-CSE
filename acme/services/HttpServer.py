@@ -659,10 +659,11 @@ class HttpServer(object):
 		req['op']   				= operation.value		# Needed later for validation
 
 		# resolve http's /~ and /_ special prefixs
-		if path[0] == '~':
-			path = path[1:]			# ~/xxx -> /xxx
-		elif path[0] == '_':
-			path = f'/{path[1:]}'	# _/xxx -> //xxx
+		match path[0]:
+			case '~':
+				path = path[1:]			# ~/xxx -> /xxx
+			case '_':
+				path = f'/{path[1:]}'	# _/xxx -> //xxx
 		req['to'] 		 			= path
 
 

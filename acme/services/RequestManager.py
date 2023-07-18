@@ -853,7 +853,6 @@ class RequestManager(object):
 			# If the request has no id, then use the to field
 			if not request.id:
 				request.id = request.to
-			L.logErr(f'Internal error. {request}')
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType

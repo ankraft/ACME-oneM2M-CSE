@@ -149,24 +149,25 @@ class GroupManager(object):
 
 			# check specializationType spty
 			if (spty := group.spty):
-				if isinstance(spty, int):				# mgmtobj type
-					if isinstance(resource, MgmtObj) and ty != spty:
-						raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
-				elif isinstance(spty, str):				# fcnt specialization
-					if isinstance(resource, FCNT) and resource.cnd != spty:
-						raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
+				match spty:
+					case int():		# mgmtobj type
+						if isinstance(resource, MgmtObj) and ty != spty:
+							raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
+					case str():		# fcnt specialization
+						if isinstance(resource, FCNT) and resource.cnd != spty:
+							raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group
 			mt = group.mt
 			if not (mt == ResourceTypes.MIXED or ty == mt):	# types don't match
-				csy = group.csy
-				if csy == ConsistencyStrategy.abandonMember:		# abandon member
-					continue
-				elif csy == ConsistencyStrategy.setMixed:			# change group's member type
-					mt = ResourceTypes.MIXED
-					group['mt'] = ResourceTypes.MIXED
-				else:												# abandon group
-					raise GROUP_MEMBER_TYPE_INCONSISTENT('group consistency strategy and type "mixed" mismatch')
+				match group.csy:
+					case ConsistencyStrategy.abandonMember:	# abandon member
+						continue
+					case ConsistencyStrategy.setMixed:		# change group's member type
+						mt = ResourceTypes.MIXED
+						group['mt'] = ResourceTypes.MIXED
+					case _:
+						raise GROUP_MEMBER_TYPE_INCONSISTENT('group consistency strategy and type "mixed" mismatch')
 
 			# member seems to be ok, so add ri to the list
 			if isLocalResource:
