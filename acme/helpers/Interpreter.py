@@ -299,7 +299,7 @@ class SSymbol(object):
 			self.length = 1
 		else:
 			self.type = SType.tNIL
-			self.value = False
+			self.value = None	# was: False
 			self.length = 0
 
 
@@ -1125,9 +1125,10 @@ class PContext():
 
 
 	def getArgument(self, symbol:SSymbol, 
-						  idx:int = None, 
-						  expectedType:SType|Tuple[SType, ...] = None, 
-						  doEval:bool = True) -> PContext:
+						  idx:Optional[int] = None, 
+						  expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  doEval:Optional[bool] = True,
+						  optional:Optional[bool] = False) -> PContext:
 		"""	Verify that an expression is a list and return an argument symbol,
 			while optionally verify the allowed type(s) for that argument.
 
@@ -1140,6 +1141,7 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be None.
 			
 			Return:
 				Result `PContext` object with the result, possible changed variable and other states.
@@ -1161,6 +1163,9 @@ class PContext():
 		if expectedType is not None:
 			if isinstance(expectedType, SType):
 				expectedType = ( expectedType, )
+			# add NIL if optional
+			if optional:
+				expectedType = expectedType + ( SType.tNIL, )
 			if pcontext.result is not None and pcontext.result.type not in expectedType: 
 				raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid type for argument: {_symbol}, expected type: {expectedType}, is: {pcontext.result.type}'))
 
@@ -1170,9 +1175,10 @@ class PContext():
 
 
 	def valueFromArgument(self, symbol:SSymbol, 
-								idx:int = None, 
-						  		expectedType:SType|Tuple[SType, ...] = None, 
-						  		doEval:bool = True) -> Tuple[PContext, Any]:
+								idx:Optional[int] = None, 
+						  		expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  		doEval:Optional[bool] = True,
+								optional:Optional[bool] = False) -> Tuple[PContext, Any]:
 		"""	Return the actual value from an argument symbol.
 			
 			Args:
@@ -1180,18 +1186,24 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be optional.
 			
 			Return:
 				Result tuple of the updated `PContext` object with the result and the value.
 		"""
-		p,r = self.resultFromArgument(symbol, idx, expectedType, doEval)
-		return (p, r.value)
+		if idx < symbol.length:
+			p, r = self.resultFromArgument(symbol, idx, expectedType, doEval, optional)
+			return (p, r.value)
+		elif optional:
+			return (self, None)
+		raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid argument index: {idx}'))
 		
 
 	def resultFromArgument(self, symbol:SSymbol, 
-								 idx:int = None, 
-						  		 expectedType:SType|Tuple[SType, ...] = None, 
-						  		 doEval:bool = True) -> Tuple[PContext, SSymbol]:
+								 idx:Optional[int] = None, 
+						  		 expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  		 doEval:Optional[bool] = True,
+								 optional:Optional[bool] = False) -> Tuple[PContext, SSymbol]:
 		"""	Return the `SSymbol` result from an argument symbol.
 			
 			Args:
@@ -1199,11 +1211,12 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be optional.
 			
 			Return:
 				Result tuple of the updated `PContext` object with the result and the symbol.
 		"""
-		return (p := self.getArgument(symbol, idx, expectedType, doEval), p.result)
+		return (p := self.getArgument(symbol, idx, expectedType, doEval, optional), p.result)
 
 
 	def executeSubexpression(self, expression:str) -> PContext:
@@ -1453,6 +1466,9 @@ class PContext():
 
 		elif firstSymbol.type == SType.tJson:
 			return self.checkInStringExpressions(symbol)
+
+		elif firstSymbol.type == SType.tNIL:
+			return self.setResult(firstSymbol)
 	
 		raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
 
@@ -1895,6 +1911,13 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, maxLength = 2)
 	_format = '%Y%m%dT%H%M%S.%f'
+
+	# get format
+	pcontext, format = pcontext.valueFromArgument(symbol, 1, SType.tString, optional = True)
+	if format is None:
+		format = _format
+	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
+
 	if symbol.length == 2:
 		pcontext, _format = pcontext.valueFromArgument(symbol, 1, SType.tString)
 	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))

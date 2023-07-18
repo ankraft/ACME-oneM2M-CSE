@@ -182,6 +182,16 @@ class TextUI(object):
 			self.tuiApp.scriptClearConsole(scriptName)
 	
 
+	def scriptShowNotification(self, msg:str, title:str, severity:str, timeout:float) -> None:
+		"""	Show a notification.
+
+			Args:
+				msg: Message to show.
+		"""
+		if self.tuiApp:
+			self.tuiApp.scriptShowNotification(msg, title, severity, timeout)
+
+
 	def scriptVisualBell(self, scriptName:str) -> None:
 		"""	Visual bell.
 		"""
