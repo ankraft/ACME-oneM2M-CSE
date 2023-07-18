@@ -379,15 +379,17 @@ class Logging:
 		"""
 		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
 		# TODO change to match in Python10
-		if level == logging.DEBUG:
-			return Logging.logDebug(msg, stackOffset = stackOffset)
-		elif level == logging.INFO:
-			return Logging.log(msg, stackOffset = stackOffset)
-		elif level == logging.WARNING:
-			return Logging.logWarn(msg, stackOffset = stackOffset)
-		elif level == logging.ERROR:
-			return Logging.logErr(msg, showStackTrace = showStackTrace, stackOffset = stackOffset)
-		return msg
+		match level:
+			case logging.DEBUG:
+				return Logging.logDebug(msg, stackOffset = stackOffset)
+			case logging.INFO:
+				return Logging.log(msg, stackOffset = stackOffset)
+			case logging.WARNING:
+				return Logging.logWarn(msg, stackOffset = stackOffset)
+			case logging.ERROR:
+				return Logging.logErr(msg, showStackTrace = showStackTrace, stackOffset = stackOffset)
+			case _:
+				return msg
 
 
 	@staticmethod
@@ -454,14 +456,15 @@ class Logging:
 		style = Logging.terminalStyle if not isError else Logging.terminalStyleError
 		if nlb:	# Empty line before
 			Logging._console.print()
-		if isinstance(msg, str):
-			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end, highlight = False)
-		elif isinstance(msg, dict):
-			Logging._console.print(msg, style = style, end = end)
-		elif isinstance(msg, (Tree, Table, Text)):
-			Logging._console.print(msg, style = style, end = end)
-		else:
-			Logging._console.print(str(msg), style = style, end = end)
+		
+		match msg:
+			case str():
+				Logging._console.print(msg if plain else Markdown(msg), style = style, end = end, highlight = False)
+			case dict() | Tree() | Table() | Text():
+				Logging._console.print(msg, style = style, end = end)
+			case _:
+				Logging._console.print(str(msg), style = style, end = end)
+
 		if nl:	# Empty line after
 			Logging._console.print()
 

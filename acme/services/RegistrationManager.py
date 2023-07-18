@@ -116,31 +116,27 @@ class RegistrationManager(object):
 									originator:str, 
 									parentResource:Optional[Resource] = None) -> str:
 		# Some Resources are not allowed to be created in a request, return immediately
-		ty = resource.ty
 
-		if ty == ResourceTypes.AE:
-			originator = self.handleAERegistration(resource, originator, parentResource)
-
-		elif ty == ResourceTypes.REQ:
-			if not self.handleREQRegistration(resource, originator):
-				raise BAD_REQUEST('cannot register REQ')
-
-		elif ty == ResourceTypes.CSR:
-			if CSE.cseType == CSEType.ASN:
-				raise OPERATION_NOT_ALLOWED('cannot register to ASN CSE')
-			try:
-				self.handleCSRRegistration(resource, originator)
-			except ResponseException as e:
-				e.dbg = f'cannot register CSR: {e.dbg}'
-				raise e
-
-		elif ty == ResourceTypes.CSEBaseAnnc:
-			try:
-				self.handleCSEBaseAnncRegistration(resource, originator)
-			except ResponseException as e:
-				e.dbg = f'cannot register CSEBaseAnnc: {e.dbg}'
-				raise e
-		# fall-through
+		match resource.ty:
+			case ResourceTypes.AE:
+				originator = self.handleAERegistration(resource, originator, parentResource)
+			case ResourceTypes.CSR:
+				if CSE.cseType == CSEType.ASN:
+						raise OPERATION_NOT_ALLOWED('cannot register to ASN CSE')
+				try:
+					self.handleCSRRegistration(resource, originator)
+				except ResponseException as e:
+					e.dbg = f'cannot register CSR: {e.dbg}'
+					raise e
+			case ResourceTypes.REQ:
+				if not self.handleREQRegistration(resource, originator):
+					raise BAD_REQUEST('cannot register REQ')
+			case ResourceTypes.CSEBaseAnnc:
+				try:
+					self.handleCSEBaseAnncRegistration(resource, originator)
+				except ResponseException as e:
+					e.dbg = f'cannot register CSEBaseAnnc: {e.dbg}'
+					raise e
 
 		# Test and set creator attribute.
 		self.handleCreator(resource, originator)
@@ -155,13 +151,13 @@ class RegistrationManager(object):
 			Args:
 				resource: Resource that was created.
 		"""
-		ty = resource.ty
-		if ty == ResourceTypes.AE:
-			# Send event
-			self._eventAEHasRegistered(resource)
-		elif ty == ResourceTypes.CSR:
-			# send event
-			self._eventRegistreeCSEHasRegistered(resource)
+		match resource.ty:
+			case ResourceTypes.AE:
+				# Send event
+				self._eventAEHasRegistered(resource)
+			case ResourceTypes.CSR:
+				# send event
+				self._eventRegistreeCSEHasRegistered(resource)
 
 
 	def handleCreator(self, resource:Resource, originator:str) -> None:
@@ -184,19 +180,16 @@ class RegistrationManager(object):
 
 
 	def checkResourceDeletion(self, resource:Resource) -> None:
-		ty = resource.ty
-		if ty == ResourceTypes.AE:
-			if not self.handleAEDeRegistration(resource):
-				raise BAD_REQUEST('cannot deregister AE')
-
-		elif ty == ResourceTypes.REQ:
-			if not self.handleREQDeRegistration(resource):
-				raise BAD_REQUEST('cannot deregister REQ')
-
-		elif ty == ResourceTypes.CSR:
-			if not self.handleRegistreeCSRDeRegistration(resource):
-				raise BAD_REQUEST('cannot deregister CSR')
-		# fall-through
+		match resource.ty:
+			case ResourceTypes.AE:
+				if not self.handleAEDeRegistration(resource):
+					raise BAD_REQUEST('cannot deregister AE')
+			case ResourceTypes.REQ:
+				if not self.handleREQDeRegistration(resource):
+					raise BAD_REQUEST('cannot deregister REQ')
+			case ResourceTypes.CSR:
+				if not self.handleRegistreeCSRDeRegistration(resource):
+					raise BAD_REQUEST('cannot deregister CSR')
 
 
 	def postResourceDeletion(self, resource:Resource) -> None:
@@ -205,13 +198,13 @@ class RegistrationManager(object):
 			Args:
 				resource: Resource that was created.
 		"""
-		ty = resource.ty
-		if ty == ResourceTypes.AE:
-			# Send event
-			self._eventAEHasDeregistered(resource)
-		elif ty == ResourceTypes.CSR:
-			# send event
-			self._eventRegistreeCSEHasDeregistered(resource)
+		match resource.ty:
+			case ResourceTypes.AE:
+				# Send event
+				self._eventAEHasDeregistered(resource)
+			case ResourceTypes.CSR:
+				# send event
+				self._eventRegistreeCSEHasDeregistered(resource)
 
 
 	#########################################################################
@@ -235,14 +228,13 @@ class RegistrationManager(object):
 			raise APP_RULE_VALIDATION_FAILED(L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
-		if originator == 'C':
-			originator = uniqueAEI('C')
-		elif originator == 'S':
-			originator = uniqueAEI('S')
-		elif originator is not None:	# Allow empty originators
-			originator = getIdFromOriginator(originator)
-		# elif originator is None or len(originator) == 0:
-		# 	originator = uniqueAEI('S')
+		match originator:
+			case 'C':
+				originator = uniqueAEI('C')
+			case 'S':
+				originator = uniqueAEI('S')
+			case x if x is not None:
+				originator = getIdFromOriginator(originator)
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):
