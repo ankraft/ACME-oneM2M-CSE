@@ -180,10 +180,11 @@ class CRS(Resource):
 	def deactivate(self, originator:str) -> None:
 
 		# Deactivate time windows
-		if self.twt == TimeWindowType.PERIODICWINDOW:
-			CSE.notification.stopCRSPeriodicWindow(self.ri)
-		elif self.twt == TimeWindowType.SLIDINGWINDOW:
-			CSE.notification.stopCRSSlidingWindow(self.ri)
+		match self.twt:
+			case TimeWindowType.PERIODICWINDOW:
+				CSE.notification.stopCRSPeriodicWindow(self.ri)
+			case TimeWindowType.SLIDINGWINDOW:
+				CSE.notification.stopCRSSlidingWindow(self.ri)
 
 		# Delete rrat and srat subscriptions
 		self._deleteSubscriptions(originator)

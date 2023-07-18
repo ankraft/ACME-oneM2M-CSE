@@ -231,14 +231,16 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	# Determine a factory and call it
 	factory:FactoryCallableT = None
 
-	if typ == ResourceTypes.MGMTOBJ:										# for <mgmtObj>
-		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = ResourceTypes(resDict['mgd']).resourceFactory()
-	elif typ == ResourceTypes.MGMTOBJAnnc:									# for <mgmtObjA>
-		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
-	else:
-		factory = typ.resourceFactory()
+	match typ:
+		case ResourceTypes.MGMTOBJ:
+			# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+			factory = ResourceTypes(resDict['mgd']).resourceFactory()
+		case ResourceTypes.MGMTOBJAnnc:
+			# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+			factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
+		case _:
+			factory = typ.resourceFactory()
+	
 	if factory:
 		return cast(Resource, factory(resDict, tpe, pi, create))
 
