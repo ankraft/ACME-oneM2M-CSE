@@ -1110,44 +1110,41 @@ class ACMEPContext(PContext):
 
 		if Configuration.has(_key):	# could be None, False, 0, empty string etc
 			# Do some conversions first
-			v = Configuration.get(_key)
-			if isinstance(v, ACMEIntEnum):
-				if result.type == SType.tString:
-					r = Configuration.update(_key, v.__class__.to(cast(str, result.value), insensitive = True))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
-
-			elif isinstance(v, str):
-				if result.type == SType.tString:
-					r = Configuration.update(_key, cast(str, result.value).strip())
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
 			
-			# bool must be tested before int! 
-			# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
-			elif isinstance(v, bool):	
-				if result.type == SType.tBool:
-					r = Configuration.update(_key, result.value)
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
+			match (v := Configuration.get(_key)):
+				case ACMEIntEnum():
+					if result.type == SType.tString:
+						r = Configuration.update(_key, v.__class__.to(cast(str, result.value), insensitive = True))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+				case str():
+					if result.type == SType.tString:
+						r = Configuration.update(_key, cast(str, result.value).strip())
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+				# bool must be tested before int! 
+				# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
+				case bool():
+					if result.type == SType.tBool:
+						r = Configuration.update(_key, result.value)
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
 
-			elif isinstance(v, int):
-				if result.type == SType.tNumber:
-					r = Configuration.update(_key, int(cast(Decimal, result.value)))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
+				case int():
+					if result.type == SType.tNumber:
+						r = Configuration.update(_key, int(cast(Decimal, result.value)))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
 
-			elif isinstance(v, float):
-				if result.type == SType.tNumber:
-					r = Configuration.update(_key, float(cast(Decimal, result.value)))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {result.type}'))
+				case float():
+					if result.type == SType.tNumber:
+						r = Configuration.update(_key, float(cast(Decimal, result.value)))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {result.type}'))
 
-			elif isinstance(v, list):
-				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
-			else:
-				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
-			
+				case _:
+					raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
+						
 			# Check whether something went wrong while setting the config
 			if r:
 				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Error setting configuration: {r}'))
@@ -1366,41 +1363,41 @@ class ACMEPContext(PContext):
 		# Send request
 		L.isDebug and L.logDebug(f'Sending request from script: {request.originalRequest} to: {target}')
 		if isURL(target):
-			if operation == Operation.RETRIEVE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator)
-												   )[0].result	# there should be at least one result
-
-			elif operation == Operation.DELETE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.CREATE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   ty = ty,
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.UPDATE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.NOTIFY:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
+			match operation:
+				case Operation.RETRIEVE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator)
+													)[0].result	# there should be at least one result
+				case Operation.DELETE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator)
+													)[0].result	# there should be at least one result
+				case Operation.CREATE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
+												ot = getResourceDate(),
+												to = target, 
+												originator = originator, 
+												ty = ty,
+												pc = request.pc)
+									)[0].result	# there should be at least one result
+				case Operation.UPDATE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator, 
+																pc = request.pc)
+													)[0].result	# there should be at least one result
+				case Operation.NOTIFY:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+												ot = getResourceDate(),
+												to = target, 
+												originator = originator, 
+												pc = request.pc)
+									)[0].result	# there should be at least one result
 
 		else:
 			# Request via CSE-ID, either local, or otherwise a transit request. Let the CSE handle it

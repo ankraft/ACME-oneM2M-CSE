@@ -1208,24 +1208,27 @@ class NotificationEventType(ACMEIntEnum):
 			Return:
 				True if the NotificationEventType is allowed for the NotificationContentType.
 		"""
-		if nct == NotificationContentType.allAttributes:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.resourceDelete, 
-								   NotificationEventType.createDirectChild, 
-								   NotificationEventType.deleteDirectChild ]
-		elif nct == NotificationContentType.modifiedAttributes:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.blockingUpdate ]
-		elif nct == NotificationContentType.ri:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.resourceDelete, 
-								   NotificationEventType.createDirectChild, 
-								   NotificationEventType.deleteDirectChild ]
-		elif nct == NotificationContentType.triggerPayload:
-			return self.value in [ NotificationEventType.triggerReceivedForAE ]
-		elif nct == NotificationContentType.timeSeriesNotification:
-			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
-		return False
+		match nct:
+			case NotificationContentType.allAttributes:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.resourceDelete, 
+									   NotificationEventType.createDirectChild, 
+									   NotificationEventType.deleteDirectChild ]
+			case NotificationContentType.modifiedAttributes:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.blockingUpdate ]
+			case NotificationContentType.ri:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.resourceDelete, 
+									   NotificationEventType.createDirectChild, 
+									   NotificationEventType.deleteDirectChild ]
+			case NotificationContentType.triggerPayload:
+				return self.value in [ NotificationEventType.triggerReceivedForAE ]
+			case NotificationContentType.timeSeriesNotification:
+				return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
+			case _:
+				return False
+
 
 	def defaultNCT(self) -> NotificationContentType:
 		"""	Return the default NotificationContentType for this NotificationEventType.

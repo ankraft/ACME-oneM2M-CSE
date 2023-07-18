@@ -50,11 +50,13 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 	"""
 	if len(data) == 0:
 		return {}
-	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
-	elif ct == ContentSerializationType.CBOR:
-		return cast(JSON, cbor2.loads(data))
-	return None
+	match ct:
+		case ContentSerializationType.JSON:
+			return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
+		case ContentSerializationType.CBOR:
+			return cast(JSON, cbor2.loads(data))
+		case _:
+			return None
 
 
 def toHttpUrl(url:str) -> str:
@@ -67,12 +69,14 @@ def toHttpUrl(url:str) -> str:
 			A valid URL with escaped special characters.
 	"""
 	u = list(urlparse(url))
-	if u[2].startswith('///'):
-		u[2] = f'/_{u[2][2:]}'
-		url = urlunparse(u)
-	elif u[2].startswith('//'):
-		u[2] = f'/~{u[2][1:]}'
-		url = urlunparse(u)
+	match u[2]:
+		case x if x.startswith('///'):
+			u[2] = f'/_{u[2][2:]}'
+			url = urlunparse(u)
+		case x if x.startswith('//'):
+			u[2] = f'/~{u[2][1:]}'
+			url = urlunparse(u)
+
 	return url
 
 
