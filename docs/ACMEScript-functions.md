@@ -68,6 +68,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 | [CSE](#_cse)               | [clear-console](#clear-console)                         | Clear the console screen                                                         |
 |                            | [cse-status](#cse-status)                               | Return the CSE's current status                                                  |
 |                            | [get-config](#get-config)                               | Retrieve a CSE's configuration setting                                           |
+|                            | [get-loglevel](#get-loglevel)                           | Retrieve the CSE's current log level                                             |
 |                            | [get-storage](#get-storage)                             | Retrieve a value from the CSE's internal script-data storage                     |
 |                            | [has-config](#has-config)                               | Determine the existence of a CSE's configuration setting                         |
 |                            | [has-storage](#has-storage)                             | Determine the existence of a key/value in the CSE's internal script-data storage |
@@ -91,6 +92,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 | [Text UI](#_textui)        | [open-web-browser](#open-web-browser)                   | Open a web page in the default browser                                           |
 |                            | [set-category-description](#set-category-description)   | Set the description for a whole category of scripts                              |
 |                            | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode                                   |
+|                            | [tui-notify](#tui-notify)                               | Display a desktop-like notification                                              |
 |                            | [tui-refresh-resources](#tui-refresh-resources)         | Force a refresh of the Text UI's resource tree                                   |
 |                            | [tui-visual-bell](#tui-visual-bell)                     | Shortly flashes the script's entry in the text UI's scripts list                 |
 | [Network](#_network)       | [http](#http)                                           | Send http requests                                                               |
@@ -1501,6 +1503,29 @@ Examples:
 
 ---
 
+<a name="get-loglevel"></a>
+
+### get-loglevel
+
+`(get-loglevel)`
+
+The `get-loglevel` function retrieves a the CSE's current log level setting. The return value will be one of the following strings:
+
+- "DEBUG"
+- "INFO"
+- "WARNING"
+- "ERROR"
+- "OFF"
+
+Example:
+```lisp
+(get-loglevel)  ;; Return, for example, INFO
+```
+
+[top](#top)
+
+---
+
 <a name="get-storage"></a>
 
 ### get-storage
@@ -2131,6 +2156,42 @@ Examples:
 
 ```lisp
 (runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+```
+
+[top](#top)
+
+---
+
+<a name="tui-notify"></a>
+
+### tui-notify
+
+`(tui-notify <message:str> [<title:str>] [<severity>:str>] [<timeout:float>])`
+
+Show a desktop-like notification in the TUI.
+
+This function is only available in TUI mode. It has the following arguments:
+
+- message: The message to show.
+- title: (Optional) The title of the notification.
+- severity: (Optional) The severity of the notification. This can be one of the following values:
+  - information (the default)
+  - warning
+  - error
+- timeout: (Optional) The timeout in seconds after which the notification will disappear again. If not specified, the notification will disappear after 3 seconds.
+
+If one of the optional arguments needs to be left out, a *nil* symbol must be used instead.
+The function returns NIL.
+
+Examples:
+
+```lisp
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
+(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
+
 ```
 
 [top](#top)

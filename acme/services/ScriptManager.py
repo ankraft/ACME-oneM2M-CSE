@@ -122,6 +122,7 @@ class ACMEPContext(PContext):
 										'cse-status':				self.doCseStatus,
 							 			'delete-resource':			self.doDeleteResource,
 										'get-config':				self.doGetConfiguration,
+										'get-loglevel':				self.doGetLogLevel,
 										'get-storage':				self.doGetStorage,
 										'has-config':				self.doHasConfiguration,
 										'has-storage':				self.doHasStorage,
@@ -145,6 +146,7 @@ class ACMEPContext(PContext):
 										'set-config':				self.doSetConfig,
 										'set-console-logging':		self.doSetLogging,
 										'schedule-next-script':		self.doScheduleNextScript,
+										'tui-notify':				self.doTuiNotify,
 										'tui-refresh-resources':	self.doTuiRefreshResources,
 										'tui-visual-bell':			self.doTuiVisualBell,
 							 			'update-resource':			self.doUpdateResource,
@@ -397,6 +399,32 @@ class ACMEPContext(PContext):
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined key: {_key}'))
 		
 		return pcontext.setResult(SSymbol(value = _v))
+
+
+	def doGetLogLevel(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Get the log level of the CSE. This will be one of the following strings:
+
+				- "DEBUG"
+				- "INFO"
+				- "WARNING"
+				- "ERROR"
+				- "OFF"
+
+		
+			Example:
+				::
+
+					(get-loglevel) -> "INFO"
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(string  = str(L.logLevel)))
 
 
 	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1175,6 +1203,55 @@ class ACMEPContext(PContext):
 		# Value
 		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 		L.enableScreenLogging = cast(bool, value)
+		return pcontext.setResult(SSymbol())
+
+
+	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Show a TUI notification.
+
+			This function is only available in TUI mode. It has the following
+			arguments:
+
+				- message: The message to show.
+				- title: (Optional) The title of the notification.
+				- severity: (Optional) The severity of the notification. Can be
+				  one of the following values: `information`, `warning`, `error`.
+				- timeout: (Optional) The timeout in seconds after which the
+				  notification will disappear. If not specified, the notification
+				  will disappear after 3 seconds.
+
+			
+			The function returns NIL.
+
+			Example:
+				::
+
+					(tui-notify "This is a notification")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object.
+		"""
+		pcontext.assertSymbol(symbol, minLength = 2, maxLength = 5)
+
+		# Value
+		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# Title
+		pcontext, title = pcontext.valueFromArgument(symbol, 2, SType.tString, optional = True)
+
+		# Severity
+		pcontext, severity = pcontext.valueFromArgument(symbol, 3, SType.tString, optional = True)
+
+		# Timeout
+		pcontext, timeout = pcontext.valueFromArgument(symbol, 4, SType.tNumber, optional = True)
+
+		# show the notification
+		CSE.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
+
 		return pcontext.setResult(SSymbol())
 
 
