@@ -770,7 +770,7 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait second half
-		testSleep(crsTimeWindowSize)
+		testSleep(crsTimeWindowSize * 1.2)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
