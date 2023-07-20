@@ -1374,36 +1374,39 @@ Available under the BSD 3-Clause License
 			if self.treeMode not in [ TreeMode.COMPACT, TreeMode.CONTENTONLY ]: 
 				# if res.ty in [ T.FCNT, T.FCI] :
 				# 	extraInfo = f' (cnd={res.cnd})'
-				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TS ]:
-					extraInfo = f' ({res.cnf})' if res.cnf else ''
-				elif res.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSEBaseAnnc, ResourceTypes.CSR ]:
-					extraInfo = f' (csi={res.csi})'
-			
+				match res.ty:
+					case ResourceTypes.FCNT | ResourceTypes.FCI:
+						extraInfo = f' ({res.cnf})' if res.cnf else ''
+					case ResourceTypes.CSEBase | ResourceTypes.CSEBaseAnnc | ResourceTypes.CSR:
+						extraInfo = f' (csi={res.csi})'
+
 			# Determine content
 			contentInfo = ''
 			if self.treeMode in [ TreeMode.CONTENT, TreeMode.CONTENTONLY ]:
-				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TSI ]:
-					contentInfo = f'{res.con}' if res.con else ''
-				elif res.ty in [ ResourceTypes.FCNT, ResourceTypes.FCI ]:	# All the custom attributes
-					contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
+				match res.ty:
+					case ResourceTypes.CIN | ResourceTypes.TSI:
+						contentInfo = f'{res.con}' if res.con else ''
+					case ResourceTypes.FCNT | ResourceTypes.FCI:
+						contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
 
 			# construct the info
 			info = ''
-			if self.treeMode == TreeMode.COMPACT:
-				info = f'-> {res.__rtype__}'
-			elif self.treeMode == TreeMode.CONTENT:
-				if len(contentInfo) > 0:
-					info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
-				else:
-					info = f'-> {res.__rtype__}{extraInfo}'
-			elif self.treeMode == TreeMode.CONTENTONLY:
-				if len(contentInfo) > 0:
-					info = f'-> {contentInfo}'
-			else: # self.treeMode == NORMAL
-				if res.isVirtual():
-					info = f'-> {res.__rtype__}{extraInfo} (virtual)'
-				else:
-					info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+			match self.treeMode:
+				case TreeMode.COMPACT:
+					info = f'-> {res.__rtype__}'
+				case TreeMode.CONTENT:
+					if len(contentInfo) > 0:
+						info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
+					else:
+						info = f'-> {res.__rtype__}{extraInfo}'
+				case TreeMode.CONTENTONLY:
+					if len(contentInfo) > 0:
+						info = f'-> {contentInfo}'
+				case _: # self.treeMode == NORMAL
+					if res.isVirtual():
+						info = f'-> {res.__rtype__}{extraInfo} (virtual)'
+					else:
+						info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
 

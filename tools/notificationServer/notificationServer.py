@@ -82,32 +82,29 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.end_headers()
 
 
-
-		# Print JSON
-		if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
-			console.print(Syntax(json.dumps(json.loads(post_data.decode('utf-8')), indent=4),
-							 'json', 
-							 theme='monokai',
-							 line_numbers=False))
-		
-		# Print CBOR
-		elif contentType in [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ]:
-			console.print('[dim]Content as Hexdump:\n')
-			console.print(toHex(post_data), highlight=False)
-			console.print('\n[dim]Content as JSON:\n')
-			console.print(Syntax(json.dumps(cbor2.loads(post_data), indent=4),
-							 'json', 
-							 theme='monokai',
-							 line_numbers=False))		
-
-		# Print plain text formats
-		elif contentType in ['text/plain']:
-			console.print(post_data.decode(), highlight = False)
-			console.print()
-
-		# Print other binary content
-		else:
-			console.print(toHex(post_data), highlight=False)
+		match contentType:
+			# Print JSON
+			case 'application/json', 'application/vnd.onem2m-res+json':
+				console.print(Syntax(json.dumps(json.loads(post_data.decode('utf-8')), indent=4),
+								'json', 
+								theme='monokai',
+								line_numbers=False))
+			# Print CBOR
+			case 'application/cbor', 'application/vnd.onem2m-res+cbor':
+				console.print('[dim]Content as Hexdump:\n')
+				console.print(toHex(post_data), highlight=False)
+				console.print('\n[dim]Content as JSON:\n')
+				console.print(Syntax(json.dumps(cbor2.loads(post_data), indent=4),
+								'json', 
+								theme='monokai',
+								line_numbers=False))
+			# Print plain text formats
+			case 'text/plain':
+				console.print(post_data.decode(), highlight = False)
+				console.print()
+			# Print other binary content
+			case _:
+				console.print(toHex(post_data), highlight=False)
 		
 		# Print HTTP Response
 		# This looks a it more complicated but is necessary to render nicely in Jupyter
@@ -196,38 +193,35 @@ class MQTTClientHandler(MQTTHandler):
 			_frm 		= 'non-onem2m-entity'	
 			_to 		= 'unknown'
 			encoding	= 'json'
-
-		# Print JSON
+		
 		responseData = None
-		if encoding.upper() == 'JSON':
-			console.print(Syntax(json.dumps((jsn := json.loads(data)), indent=4),
-							 'json', 
-							 theme='monokai',
-							 line_numbers=False))
-			to 	= jsn['to'] if 'to' in jsn else _to
-			frm = jsn['fr'] if 'fr' in jsn else _frm
-			responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.JSON))
-			console.print(responseData)
-
-
-
-		# Print CBOR
-		elif encoding.upper() == 'CBOR':
-			console.print('[dim]Content as Hexdump:\n')
-			console.print(toHex(data), highlight=False)
-			console.print('\n[dim]Content as JSON:\n')
-			console.print(Syntax(json.dumps((jsn := cbor2.loads(data)), indent=4),
-							 'json', 
-							 theme='monokai',
-							 line_numbers=False))		
-			to 	= jsn['to'] if 'to' in jsn else to
-			frm = jsn['fr'] if 'fr' in jsn else frm
-			responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.CBOR))
-
-		# Print other binary content
-		else:
-			console.print('[dim]Content as Hexdump:\n')
-			console.print(toHex(data), highlight=False)
+		match encoding.upper():
+			# Print JSON
+			case 'JSON':
+				console.print(Syntax(json.dumps((jsn := json.loads(data)), indent=4),
+								'json', 
+								theme='monokai',
+								line_numbers=False))
+				to 	= jsn['to'] if 'to' in jsn else _to
+				frm = jsn['fr'] if 'fr' in jsn else _frm
+				responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.JSON))
+				console.print(responseData)
+			# Print CBOR
+			case 'CBOR':
+				console.print('[dim]Content as Hexdump:\n')
+				console.print(toHex(data), highlight=False)
+				console.print('\n[dim]Content as JSON:\n')
+				console.print(Syntax(json.dumps((jsn := cbor2.loads(data)), indent=4),
+								'json', 
+								theme='monokai',
+								line_numbers=False))		
+				to 	= jsn['to'] if 'to' in jsn else to
+				frm = jsn['fr'] if 'fr' in jsn else frm
+				responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.CBOR))
+			# Print other binary content
+			case _:
+				console.print('[dim]Content as Hexdump:\n')
+				console.print(toHex(data), highlight=False)
 		# TODO send a response
 
 		if responseData:

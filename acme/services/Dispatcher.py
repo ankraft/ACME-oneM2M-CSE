@@ -177,57 +177,62 @@ class Dispatcher(object):
 			return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(_resources, request.drt))
 
 		else:
-			if rcn in [ ResultContentType.attributes, 
-						ResultContentType.attributesAndChildResources, 
-						ResultContentType.childResources, 
-						ResultContentType.attributesAndChildResourceReferences, 
-						ResultContentType.originalResource ]:
-				resource = self.retrieveResource(id, originator, request)
 
-				if not CSE.security.hasAccess(originator, resource, permission):
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
+			# We can handle some rcn here directly, but some will be handled after this
+			match rcn:
+				case ResultContentType.attributes |\
+					 ResultContentType.attributesAndChildResources |\
+					 ResultContentType.childResources |\
+					 ResultContentType.attributesAndChildResourceReferences|\
+					 ResultContentType.originalResource:
 
-				# if rcn == "attributes" then we can return here, whatever the result is
-				if rcn == ResultContentType.attributes:
-					resource.willBeRetrieved(originator, request)	# resource instance may be changed in this call
+					resource = self.retrieveResource(id, originator, request)
+
+					if not CSE.security.hasAccess(originator, resource, permission):
+						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
+
+					match rcn:
+						case ResultContentType.attributes:
+							# if rcn == "attributes" then we can return here, whatever the result is
+							resource.willBeRetrieved(originator, request)	# resource instance may be changed in this call
+							
+							# partial retrieve?
+							return self._partialFromResource(resource, attributeList)
+
+						case ResultContentType.originalResource:
+							# if rcn == original-resource we retrieve the linked resource
+
+							# Some checks for resource validity
+							if not resource.isAnnounced():
+								raise BAD_REQUEST(L.logDebug(f'Resource {resource.ri} is not an announced resource'))
+							if not (lnk := resource.lnk):	# no link attribute?
+								raise INTERNAL_SERVER_ERROR('internal error: missing lnk attribute in target resource')
+
+							# Retrieve and check the linked-to request
+							linkedResource = self.retrieveResource(lnk, originator, request)
+							
+							# Normally, we would do some checks here and call "willBeRetrieved", 
+							# but we don't have to, because the resource is already checked during the
+							# retrieveResource call by the hosting CSE
+
+							# partial retrieve?
+							return self._partialFromResource(linkedResource, attributeList)
+
+
+				case ResultContentType.semanticContent:
+					#	Semantic query request
+					#	This is indicated by rcn = semantic content
+					L.isDebug and L.logDebug('Performing semantic discovery / query')
+					# Validate SPARQL in semanticFilter
+					CSE.semantic.validateSPARQL(request.fc.smf)
+
+					# Get all accessible semanticDescriptors
+					resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
 					
-					# partial retrieve?
-					return self._partialFromResource(resource, attributeList)
-
-				# if rcn == original-resource we retrieve the linked resource
-				if rcn == ResultContentType.originalResource:
-					# Some checks for resource validity
-					if not resource.isAnnounced():
-						raise BAD_REQUEST(L.logDebug(f'Resource {resource.ri} is not an announced resource'))
-					if not (lnk := resource.lnk):	# no link attribute?
-						raise INTERNAL_SERVER_ERROR('internal error: missing lnk attribute in target resource')
-
-					# Retrieve and check the linked-to request
-					linkedResource = self.retrieveResource(lnk, originator, request)
-					
-					# Normally, we would do some checks here and call "willBeRetrieved", 
-					# but we don't have to, because the resource is already checked during the
-					# retrieveResource call by the hosting CSE
-
-					# partial retrieve?
-					return self._partialFromResource(linkedResource, attributeList)
-			
-			#
-			#	Semantic query request
-			#	This is indicated by rcn = semantic content
-			#
-			if rcn == ResultContentType.semanticContent:
-				L.isDebug and L.logDebug('Performing semantic discovery / query')
-				# Validate SPARQL in semanticFilter
-				CSE.semantic.validateSPARQL(request.fc.smf)
-
-				# Get all accessible semanticDescriptors
-				resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
-				
-				# Execute semantic query
-				res = CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], resources))
-				L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
-				return Result(rsc = ResponseStatusCode.OK, data = { 'm2m:qres' : res.data })
+					# Execute semantic query
+					res = CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], resources))
+					L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
+					return Result(rsc = ResponseStatusCode.OK, data = { 'm2m:qres' : res.data })
 
 		#
 		#	Discovery request
@@ -248,28 +253,29 @@ class Dispatcher(object):
 		#	Handle more sophisticated RCN
 		#
 
-		if rcn == ResultContentType.attributesAndChildResources:
-			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
-			return Result(rsc = ResponseStatusCode.OK, resource = resource)
+		match rcn:
+			case ResultContentType.attributesAndChildResources:
+				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+		
+			case ResultContentType.attributesAndChildResourceReferences:
+				self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
+				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+		
+			case ResultContentType.childResourceReferences:
+				childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
+				return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
 
-		elif rcn == ResultContentType.attributesAndChildResourceReferences:
-			self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
-			return Result(rsc = ResponseStatusCode.OK, resource = resource)
+			case ResultContentType.childResources:
+				childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
+				self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
+				return Result(rsc = ResponseStatusCode.OK, resource = childResources)
 
-		elif rcn == ResultContentType.childResourceReferences: 
-			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
-			return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
-
-		elif rcn == ResultContentType.childResources:
-			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
-			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
-			return Result(rsc = ResponseStatusCode.OK, resource = childResources)
-
-		elif rcn == ResultContentType.discoveryResultReferences: # URIList
-			return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
-
-		else:
-			raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')
+			case ResultContentType.discoveryResultReferences:
+				return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
+		
+			case _:
+				raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')
 
 
 	def retrieveResource(self, id:str, 
@@ -630,29 +636,32 @@ class Dispatcher(object):
 		# Handle RCN's
 		#
 		tpe = _resource.tpe
-		rcn = request.rcn
-		if rcn is None or rcn == ResultContentType.attributes:	# Just the resource & attributes, integer
-			return Result(rsc = ResponseStatusCode.CREATED, resource = _resource)
 
-		elif rcn == ResultContentType.modifiedAttributes:
-			dictOrg = request.pc[tpe]
-			dictNew = _resource.asDict()[tpe]
-			return Result(resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, 
-						  rsc = ResponseStatusCode.CREATED)
+		match request.rcn:
+			case None | ResultContentType.attributes:
+				# Just the resource & attributes, integer
+				return Result(rsc = ResponseStatusCode.CREATED, resource = _resource)
+			
+			case ResultContentType.modifiedAttributes:
+				dictOrg = request.pc[tpe]
+				dictNew = _resource.asDict()[tpe]
+				return Result(resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, 
+							rsc = ResponseStatusCode.CREATED)
 
-		elif rcn == ResultContentType.hierarchicalAddress:
-			return Result(resource = { 'm2m:uri' : _resource.structuredPath() }, 
-						  rsc = ResponseStatusCode.CREATED)
+			case ResultContentType.hierarchicalAddress:
+				return Result(resource = { 'm2m:uri' : _resource.structuredPath() }, 
+							rsc = ResponseStatusCode.CREATED)
+		
+			case ResultContentType.hierarchicalAddressAttributes:
+				return Result(resource = { 'm2m:rce' : { noNamespace(tpe) : _resource.asDict()[tpe], 'uri' : _resource.structuredPath() }},
+					rsc = ResponseStatusCode.CREATED)
+		
+			case ResultContentType.nothing:
+				return Result(rsc = ResponseStatusCode.CREATED)
+			
+			case _:
+				raise BAD_REQUEST('wrong rcn for CREATE')
 
-		elif rcn == ResultContentType.hierarchicalAddressAttributes:
-			return Result(resource = { 'm2m:rce' : { noNamespace(tpe) : _resource.asDict()[tpe], 'uri' : _resource.structuredPath() }},
-						  rsc = ResponseStatusCode.CREATED)
-
-		elif rcn == ResultContentType.nothing:
-			return Result(rsc = ResponseStatusCode.CREATED)
-
-		else:
-			raise BAD_REQUEST('wrong rcn for CREATE')
 		# TODO C.rcnDiscoveryResultReferences 
 
 
@@ -839,24 +848,27 @@ class Dispatcher(object):
 		#
 
 		tpe = resource.tpe
-		if request.rcn is None or request.rcn == ResultContentType.attributes:	# rcn is an int
-			return Result(rsc = ResponseStatusCode.UPDATED, resource = resource)
+
+		match request.rcn:
+			case None | ResultContentType.attributes:
+				return Result(rsc = ResponseStatusCode.UPDATED, resource = resource)
+
+			case ResultContentType.modifiedAttributes:
+				dictNew = deepcopy(resource.dict)
+				requestPC = request.pc[tpe]
+				# return only the modified attributes. This does only include those attributes that are updated differently, or are
+				# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
+				#  are in the resource's __modified__ variable.
+				return Result(rsc = ResponseStatusCode.UPDATED,
+							  resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
+	
+			case ResultContentType.nothing:
+				return Result(rsc = ResponseStatusCode.UPDATED)
 			
-		elif request.rcn == ResultContentType.modifiedAttributes:
-			dictNew = deepcopy(resource.dict)
-			requestPC = request.pc[tpe]
-			# return only the modified attributes. This does only include those attributes that are updated differently, or are
-			# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
-			#  are in the resource's __modified__ variable.
-			return Result(rsc = ResponseStatusCode.UPDATED,
-						  resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
-		elif request.rcn == ResultContentType.nothing:
-			return Result(rsc = ResponseStatusCode.UPDATED)
+			case _:
+				raise BAD_REQUEST('wrong rcn for UPDATE')
 
 		# TODO C.rcnDiscoveryResultReferences 
-
-		else:
-			raise BAD_REQUEST('wrong rcn for UPDATE')
 
 
 	def updateLocalResource(self, resource:Resource, 
@@ -987,38 +999,42 @@ class Dispatcher(object):
 		#
 
 		resultContent:Resource|JSON = None
-		if request.rcn is None or request.rcn == ResultContentType.nothing:	# rcn is an int
-			resultContent = None
+		match request.rcn:
+			case None | ResultContentType.nothing:
+				resultContent = None
+			
+			case ResultContentType.attributes:
+				resultContent = resource
+			
+			case ResultContentType.attributesAndChildResources:
+				# resource and child resources, full attributes
+				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
+				self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
+				resultContent = resource
+			
+			case ResultContentType.childResources:
+				# direct child resources, NOT the root resource
+				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
+				childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
+				self.resourceTreeDict(children, childResources[resource.tpe])
+				resultContent = childResources
 
-		elif request.rcn == ResultContentType.attributes:
-			resultContent = resource
-
-		# resource and child resources, full attributes
-		elif request.rcn == ResultContentType.attributesAndChildResources:
-			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
-			resultContent = resource
-
-		# direct child resources, NOT the root resource
-		elif request.rcn == ResultContentType.childResources:
-			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-			childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
-			self.resourceTreeDict(children, childResources[resource.tpe])
-			resultContent = childResources
-
-		elif request.rcn == ResultContentType.attributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-			self._resourceTreeReferences(children, resource, request.drt, 'ch')	# the function call add attributes to the result resource
-			resultContent = resource
-
-		elif request.rcn == ResultContentType.childResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-			childResourcesRef = self._resourceTreeReferences(children, None, request.drt, 'm2m:rrl')
-			resultContent = childResourcesRef
+			case ResultContentType.attributesAndChildResourceReferences:
+				# resource and child resource references
+				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
+				self._resourceTreeReferences(children, resource, request.drt, 'ch')	# the function call add attributes to the result resource
+				resultContent = resource
+			
+			case ResultContentType.childResourceReferences:
+				# direct child resource references, NOT the root resource
+				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
+				childResourcesRef = self._resourceTreeReferences(children, None, request.drt, 'm2m:rrl')
+				resultContent = childResourcesRef
+			
+			case _:
+				raise BAD_REQUEST('wrong rcn for DELETE')
 			
 		# TODO RCN.discoveryResultReferences
-		else:
-			raise BAD_REQUEST('wrong rcn for DELETE')
 
 		# remove resource
 		self.deleteLocalResource(resource, originator, withDeregistration = True)

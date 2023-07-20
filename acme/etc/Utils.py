@@ -160,13 +160,15 @@ def isStructured(uri:str) -> bool:
 		Return:
 			Boolean if the URI is in structured format
 	"""
-	if isCSERelative(uri):
-		return '/' in uri or uri == CSE.cseRn
-	elif isSPRelative(uri):
-		return uri.count('/') > 2
-	elif isAbsolute(uri):
-		return uri.count('/') > 4
-	return False
+	match uri:
+		case x if isCSERelative(uri):
+			return '/' in uri or uri == CSE.cseRn
+		case x if isSPRelative(uri):
+			return uri.count('/') > 2
+		case x if isAbsolute(uri):
+			return uri.count('/') > 4
+		case _:
+			return False
 
 
 def localResourceID(ri:str) -> Optional[str]:
@@ -197,16 +199,19 @@ def localResourceID(ri:str) -> Optional[str]:
 
 	if ri == CSE.cseCsi:
 		return CSE.cseRn
-	if isAbsolute(ri):
-		if ri.startswith(CSE.cseAbsoluteSlash):
-			return _checkDash(ri[len(CSE.cseAbsoluteSlash):])
-		return None
-	elif isSPRelative(ri):
-		if ri.startswith(CSE.cseCsiSlash):
-			return _checkDash(ri[len(CSE.cseCsiSlash):])
-		return None
-	return ri
 	
+	match ri:
+		case x if isAbsolute(x):
+			if ri.startswith(CSE.cseAbsoluteSlash):
+				return _checkDash(ri[len(CSE.cseAbsoluteSlash):])
+			return None
+		case x if isSPRelative(x):
+			if ri.startswith(CSE.cseCsiSlash):
+				return _checkDash(ri[len(CSE.cseCsiSlash):])
+			return None
+		case _:
+			return ri
+
 
 def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	""" Test for a valid ID. 
@@ -318,10 +323,11 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 			Tuple (CSE ID (no leading slashes) without any SP-ID or CSE-ID, list of path elements)
 		"""
 	ids = id.split('/')
-	if isSPRelative(id):
-		return ids[1], ids
-	elif isAbsolute(id):
-		return ids[3], ids
+	match id:
+		case x if isSPRelative(x):
+			return ids[1], ids
+		case x if isAbsolute(x):
+			return ids[3], ids
 	return id, ids
 
 
@@ -386,67 +392,62 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 	
-	# CSE-Relative (first element is not /)
-	if lvl == 0:								
-		# L.logDebug("CSE-Relative")
-		if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
-			ri = ids[0]
-		else:									# structured
-			if ids[0] == '-':					# replace placeholder "-". Always convert in CSE-relative
-				ids[0] = CSE.cseRn
-			srn = '/'.join(ids)
-	
-	# SP-Relative (first element is  /)
-	elif lvl == 1:								
-		# L.logDebug("SP-Relative")
-		if idsLen < 2:
-			return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
-		csi = ids[0]							# extract the csi
-		if csi != CSE.cseCsiSlashLess:			# Not for this CSE? retargeting
-			if vrPresent:						# append last path element again
-				ids.append(vrPresent)
-			return id, csi, srn, None					# Early return. ri is the (un)structured path
-		# if idsLen == 1:
-		# 	# ri = ids[0]
-		# 	return None, None, None, 'ID too short'
-		#elif idsLen > 1:
+	match lvl:
+
+		# CSE-Relative (first element is not /)
+		case 0:
+			if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
+				ri = ids[0]
+			else:							# structured
+				if ids[0] == '-':			# replace placeholder "-". Always convert in CSE-relative
+					ids[0] = CSE.cseRn
+				srn = '/'.join(ids)
+
+		# SP-Relative (first element is /)
+		case 1:
+			# L.logDebug("SP-Relative")
+			if idsLen < 2:
+				return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
+			csi = ids[0]					# extract the csi
+			if csi != CSE.cseCsiSlashLess:	# Not for this CSE? retargeting
+				if vrPresent:				# append last path element again
+					ids.append(vrPresent)
+				return id, csi, srn, None	# Early return. ri is the (un)structured path
 		
-		# replace placeholder "-", convert in CSE-relative when the target is this CSE
-		if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
-			ids[1] = CSE.cseRn
-		if ids[1] == CSE.cseRn:					# structured
-			srn = '/'.join(ids[1:])				# remove the csi part
-		elif idsLen == 2:						# unstructured
-			ri = ids[1]
-		else:
-			return None, None, None, 'Too many "/" level'
+			# replace placeholder "-", convert in CSE-relative when the target is this CSE
+			if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
+				ids[1] = CSE.cseRn
+			if ids[1] == CSE.cseRn:			# structured
+				srn = '/'.join(ids[1:])		# remove the csi part
+			elif idsLen == 2:				# unstructured
+				ri = ids[1]
+			else:
+				return None, None, None, 'Too many "/" level'
 
-	# Absolute (2 first elements are /)
-	elif lvl == 2: 								
-		# L.logDebug("Absolute")
-		if idsLen < 3:
-			return None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
-		spi = ids[0]
-		csi = ids[1]
-		if spi != CSE.cseSpid:					# Check for SP-ID
-			return None, None, None, f'SP-ID: {CSE.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
-		if csi != CSE.cseCsiSlashLess:			# Check for CSE-ID
-			if vrPresent:						# append virtual last path element again
-				ids.append(vrPresent)
-			return id, csi, srn, None	# Not for this CSE? retargeting
-		# if idsLen == 2:
-		# 	ri = ids[1]
-		# elif idsLen > 2:
 
-		# replace placeholder "-", convert in absolute when the target is this CSE
-		if ids[2] == '-' and ids[1] == CSE.cseCsiSlashLess:	
-			ids[2] = CSE.cseRn
-		if ids[2] == CSE.cseRn:					# structured
-			srn = '/'.join(ids[2:])
-		elif idsLen == 3:						# unstructured
-			ri = ids[2]
-		else:
-			return None, None, None, 'Too many "/" level'
+		# Absolute (2 first elements are /)
+		case 2:
+			# L.logDebug("Absolute")
+			if idsLen < 3:
+				return None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
+			spi = ids[0]
+			csi = ids[1]
+			if spi != CSE.cseSpid:			# Check for SP-ID
+				return None, None, None, f'SP-ID: {CSE.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
+			if csi != CSE.cseCsiSlashLess:	# Check for CSE-ID
+				if vrPresent:				# append virtual last path element again
+					ids.append(vrPresent)
+				return id, csi, srn, None	# Not for this CSE? retargeting
+
+			# replace placeholder "-", convert in absolute when the target is this CSE
+			if ids[2] == '-' and ids[1] == CSE.cseCsiSlashLess:	
+				ids[2] = CSE.cseRn
+			if ids[2] == CSE.cseRn:			# structured
+				srn = '/'.join(ids[2:])
+			elif idsLen == 3:				# unstructured
+				ri = ids[2]
+			else:
+				return None, None, None, 'Too many "/" level'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
@@ -766,22 +767,25 @@ def getAttributeSize(attribute:Any) -> int:
 			Byte size of the attribute's value.
 	"""
 	size = 0
-	if isinstance(attribute, str):
-		size = len(attribute)
-	elif isinstance(attribute, int):
-		size = 4
-	elif isinstance(attribute, float):
-		size = 8
-	elif isinstance(attribute, bool):
-		size = 1
-	elif isinstance(attribute, list):	# recurse a list
-		for e in attribute:
-			size += getAttributeSize(e)
-	elif isinstance(attribute, dict):	# recurse a dictionary
-		for _,v in attribute:
-			size += getAttributeSize(v)
-	else:
-		size = sys.getsizeof(attribute)	# fallback for not handled types
+
+	match attribute:
+		case str():
+			size = len(attribute)
+		case int():
+			size = 4
+		case float():
+			size = 8
+		case bool():
+			size = 1
+		case list():	# recurse a list
+			for e in attribute:
+				size += getAttributeSize(e)
+		case dict():	# recurse a dictionary
+			for _,v in attribute:
+				size += getAttributeSize(v)
+		case _:		# fallback for not handled types
+			size = sys.getsizeof(attribute)
+
 	return size
 	
 

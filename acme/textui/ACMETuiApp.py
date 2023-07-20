@@ -220,6 +220,7 @@ class ACMETuiApp(App):
 		
 		if timeout is None:
 			timeout = Notification.timeout
+		
 		if severity is None:
 			severity = 'information'
 		elif severity not in get_args(SeverityLevel):

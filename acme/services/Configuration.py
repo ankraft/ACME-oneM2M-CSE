@@ -362,6 +362,24 @@ class Configuration(object):
 				'mqtt.security.useTLS'					: config.getboolean('mqtt.security', 'useTLS', 						fallback = False),
 				'mqtt.security.verifyCertificate'		: config.getboolean('mqtt.security', 'verifyCertificate', 			fallback = False),
 
+				#
+				#	CoAP Client
+				#
+
+				'coap.enable'							: config.getboolean('coap', 'enable', 								fallback = False),
+				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '127.0.0.1'),
+				'coap.port' 							: config.getint('coap', 'port', 									fallback = None),	# Default will be determined later (s.b.)
+
+				#
+				#	CoAP Client Security
+				#
+
+				'coap.security.certificateFile'			: config.get('coap.security', 'certificateFile', 					fallback = None),
+				'coap.security.privateKeyFile'			: config.get('coap.security', 'privateKeyFile', 					fallback = None),
+				'coap.security.dtlsVersion'				: config.get('coap.security', 'dtlsVersion', 						fallback = 'auto'),
+				'coap.security.useDTLS'					: config.getboolean('coap.security', 'useDTLS', 					fallback = False),
+				'coap.security.verifyCertificate'		: config.getboolean('coap.security', 'verifyCertificate',			fallback = False),
+
 
 				#
 				#	Defaults for Access Control Policies
@@ -465,12 +483,15 @@ class Configuration(object):
 		# CSE type
 		if isinstance(cseType := Configuration._configuration['cse.type'], str):
 			cseType = cseType.lower()
-			if  cseType == 'asn':
-				Configuration._configuration['cse.type'] = CSEType.ASN
-			elif cseType == 'mn':
-				Configuration._configuration['cse.type'] = CSEType.MN
-			else:
-				Configuration._configuration['cse.type'] = CSEType.IN
+			match cseType:
+				case 'asn':
+					Configuration._configuration['cse.type'] = CSEType.ASN
+				case 'mn':
+					Configuration._configuration['cse.type'] = CSEType.MN
+				case 'in':
+					Configuration._configuration['cse.type'] = CSEType.IN
+				case _:
+					return False, f'Configuration Error: Unsupported \[cse]:type: {cseType}'
 
 		# CSE Serialization
 		if isinstance(ct := Configuration._configuration['cse.defaultSerialization'], str):
@@ -489,16 +510,21 @@ class Configuration(object):
 		if isinstance(logLevel := Configuration._configuration['logging.level'], str):	
 			logLevel = logLevel.lower()
 			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
-			if logLevel == 'off':
-				Configuration._configuration['logging.level'] = LogLevel.OFF
-			elif logLevel == 'info':
-				Configuration._configuration['logging.level'] = LogLevel.INFO
-			elif logLevel in [ 'warn', 'warning' ]:
-				Configuration._configuration['logging.level'] = LogLevel.WARNING
-			elif logLevel == 'error':
-				Configuration._configuration['logging.level'] = LogLevel.ERROR
-			else:
-				Configuration._configuration['logging.level'] = LogLevel.DEBUG
+
+			match logLevel:
+				case 'off':
+					Configuration._configuration['logging.level'] = LogLevel.OFF
+				case 'info':
+					Configuration._configuration['logging.level'] = LogLevel.INFO
+				case 'warn' | 'warning':
+					Configuration._configuration['logging.level'] = LogLevel.WARNING
+				case 'error':
+					Configuration._configuration['logging.level'] = LogLevel.ERROR
+				case 'debug':
+					Configuration._configuration['logging.level'] = LogLevel.DEBUG
+				case _:
+					return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+				
 		
 		# Test for correct logging queue size
 		if (queueSize := Configuration._configuration['logging.queueSize']) < 0:
@@ -557,7 +583,7 @@ class Configuration(object):
 		#	Some sanity and validity checks
 		#
 
-		# TLS & certificates
+		# HTTP TLS & certificates
 		if not Configuration._configuration['http.security.useTLS']:	# clear certificates configuration if not in use
 			Configuration._configuration['http.security.verifyCertificate'] = False
 			Configuration._configuration['http.security.tlsVersion'] = 'auto'
@@ -590,6 +616,25 @@ class Configuration(object):
 		# remove empty cid from the list
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
+
+		# COAP TLS & certificates
+		if not Configuration._configuration['coap.security.useDTLS']:	# clear certificates configuration if not in use
+			Configuration._configuration['coap.security.verifyCertificate'] = False
+			Configuration._configuration['coap.security.tlsVersion'] = 'auto'
+			Configuration._configuration['coap.security.caCertificateFile'] = ''
+			Configuration._configuration['coap.security.caPrivateKeyFile'] = ''
+		else:
+			if not (val := Configuration._configuration['coap.security.dtlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				return False, f'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}'
+			if not (val := Configuration._configuration['coap.security.certificateFile']):
+				return False, 'Configuration Error: [i]\[coap.security]:certificateFile[/i] must be set when DTLS is enabled'
+			if not os.path.exists(val):
+				return False, f'Configuration Error: [i]\[coap.security]:certificateFile[/i] does not exists or is not accessible: {val}'
+			if not (val := Configuration._configuration['coap.security.privateKeyFile']):
+				return False, 'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] must be set when TLS is enabled'
+			if not os.path.exists(val):
+				return False, f'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] does not exists or is not accessible: {val}'
+
 
 		# check the csi format and value
 		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):

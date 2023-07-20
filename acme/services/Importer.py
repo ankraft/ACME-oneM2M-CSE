@@ -117,21 +117,21 @@ class Importer(object):
 				return False
 		
 			# Check that there is only one startup script, then execute it
-			if len(scripts := CSE.script.findScripts(meta = _metaInit)) > 1:
-				L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
-				return False
-
-			elif len(scripts) == 1:
-				# Check whether there is already a filled DB, then skip the imports
-				if CSE.dispatcher.countResources() > 0:
-					L.isInfo and L.log('Resources already imported, skipping boostrap')
-				else:
-					# Run the startup script. There shall only be one.
-					s = scripts[0]
-					L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
-					if not CSE.script.runScript(s):	
-						L.logErr(f'Error during startup: {s.error}')
-						return False
+			match len(scripts := CSE.script.findScripts(meta = _metaInit)):
+				case l if l > 1:
+					L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
+					return False
+				case 1:
+					# Check whether there is already a filled DB, then skip the imports
+					if CSE.dispatcher.countResources() > 0:
+						L.isInfo and L.log('Resources already imported, skipping boostrap')
+					else:
+						# Run the startup script. There shall only be one.
+						s = scripts[0]
+						L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
+						if not CSE.script.runScript(s):	
+							L.logErr(f'Error during startup: {s.error}')
+							return False
 		finally:
 			# This is executed no matter whether the code above returned or just succeeded
 			self._finishImporting()
@@ -387,21 +387,22 @@ class Importer(object):
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
 		for p in CSE.validator.getAllAttributePolicies().values():
-			if p.type == BasicType.complex:
-				for each in CSE.validator.getAllAttributePolicies().values():
-					if p.typeName == each.ctype:	# found a definition
-						break
-				else:
-					L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
-					return False
-			elif p.type == BasicType.list and p.ltype is not None:
-				if p.ltype == BasicType.complex:
+			match p.type:
+				case BasicType.complex:
 					for each in CSE.validator.getAllAttributePolicies().values():
-						if p.lTypeName == each.ctype:	# found a definition
+						if p.typeName == each.ctype:	# found a definition
 							break
 					else:
-						L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
-						return False			
+						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+						return False
+				case BasicType.list if p.ltype is not None:
+					if p.ltype == BasicType.complex:
+						for each in CSE.validator.getAllAttributePolicies().values():
+							if p.lTypeName == each.ctype:	# found a definition
+								break
+						else:
+							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+							return False			
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
 		return True

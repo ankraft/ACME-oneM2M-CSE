@@ -100,17 +100,23 @@ class SUB(Resource):
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
 		if len(net) > 0:
-			if net[0] in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, 
-						   NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild, 
-						   NotificationEventType.retrieveCNTNoChild ]:
-				self.setAttribute('nct', NotificationContentType.allAttributes, overwrite = False)
-			elif net[0] in [ NotificationEventType.triggerReceivedForAE ]:
-				self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite = False)
-			elif net[0] in [ NotificationEventType.blockingUpdate ]:
-				self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite = False)
-			elif net[0] in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]:
-				self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite = False)
-	
+			match net[0]:
+				case NotificationEventType.resourceUpdate |\
+					 NotificationEventType.resourceDelete |\
+					 NotificationEventType.createDirectChild |\
+					 NotificationEventType.deleteDirectChild |\
+					 NotificationEventType.retrieveCNTNoChild:
+					self.setAttribute('nct', NotificationContentType.allAttributes, overwrite = False)
+				
+				case NotificationEventType.triggerReceivedForAE:
+					self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite = False)
+
+				case NotificationEventType.blockingUpdate:
+					self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite = False)
+
+				case NotificationEventType.reportOnGeneratedMissingDataPoints:			
+					self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite = False)
+
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
 			self._checkAllowedCHTY(parentResource, chty)

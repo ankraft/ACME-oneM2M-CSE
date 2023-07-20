@@ -336,27 +336,31 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 		# 	return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		# elif operation == Operation.NOTIFY:
 		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		if operation == Operation.CREATE:
-			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.RETRIEVE:
-			return sendHttpRequest(httpSession.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.UPDATE:
-			return sendHttpRequest(httpSession.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.DELETE:
-			return sendHttpRequest(httpSession.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.NOTIFY:
-			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		match operation:
+			case Operation.CREATE:
+				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			
 	elif url.startswith('mqtt'):
-		if operation == Operation.CREATE:
-			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.RETRIEVE:
-			return sendMqttRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.UPDATE:
-			return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.DELETE:
-			return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.NOTIFY:
-			return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		match operation:
+			case Operation.CREATE:
+				return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendMqttRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+
 	else:
 		print('ERROR')
 		return None, 5103
@@ -800,12 +804,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			contentType = ''
 			if (val := self.headers.get('Content-Type')) is not None:
 				contentType = val.lower()
-			if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
-				setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
-			elif contentType in [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ]:
-				setLastNotification(decoded_data := cbor2.loads(post_data))
-			# else:
-			# 	setLastNotification(post_data.decode('utf-8'))
+			match contentType:
+				case 'application/json' | 'application/vnd.onem2m-res+json':
+					setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
+				case 'application/cbor' | 'application/vnd.onem2m-res+cbor':
+					setLastNotification(decoded_data := cbor2.loads(post_data))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
 		# make a dict out of the query arguments 

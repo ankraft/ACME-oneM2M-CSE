@@ -176,11 +176,13 @@ class SType(IntEnum):
 			Return:
 				The unquotde version of a quoted type. If the type is not a quoted type then return the same type.
 		"""
-		if self == SType.tListQuote:
-			return SType.tList
-		elif self == SType.tSymbolQuote:
-			return SType.tSymbol
-		return self
+		match self:
+			case SType.tListQuote:
+				return SType.tList
+			case SType.tSymbolQuote:
+				return SType.tSymbol
+			case _:
+				return self
 
 
 class SSymbol(object):
@@ -237,20 +239,19 @@ class SSymbol(object):
 
 		# Try to determine an unknown type
 		if value:
-			if isinstance(value, bool):
-				boolean = value
-			elif isinstance(value, str):
-				string = value
-			elif isinstance(value, (int, float)):
-				number = Decimal(value)
-			# elif isinstance(value, list):
-			# 	lstQuote = value
-			elif isinstance(value, dict):
-				jsn = value
-			elif isinstance(value, list):
-				lstQuote = [ SSymbol(value = _v) for _v in value ]
-			else:
-				raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
+			match value:
+				case bool():
+					boolean = value
+				case str():
+					string = value
+				case int() | float():
+					number = Decimal(value)
+				case dict():
+					jsn = value
+				case list():
+					lstQuote = [ SSymbol(value = _v) for _v in value ]
+				case _:
+					raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
 		# Assign known types
 		if string is not None:	# could be empty string
@@ -402,16 +403,18 @@ class SSymbol(object):
 			Return:
 				The raw value. For types that could not be converted directly the stringified version is returned.
 		"""
-		if self.type in [ SType.tList, SType.tListQuote ]:
-			return [ v.raw() for v in cast(list, self.value) ]
-		elif self.type in [ SType.tBool, SType.tString, SType.tSymbol, SType.tSymbolQuote, SType.tJson ]:
-			return self.value
-		if self.type == SType.tNumber:
-			if '.' in str(self.value):	# float or int?
-				return float(cast(Decimal, self.value))
-			return int(cast(Decimal, self.value))
-		return str(self.value)
-	
+		match self.type:
+			case SType.tList | SType.tListQuote:
+				return [ v.raw() for v in cast(list, self.value) ]
+			case SType.tBool | SType.tString | SType.tSymbol | SType.tSymbolQuote | SType.tJson:
+				return self.value
+			case SType.tNumber:
+				if '.' in str(self.value):	# float or int?
+					return float(cast(Decimal, self.value))
+				return int(cast(Decimal, self.value))
+			case _:
+				return str(self.value)
+
 
 class SExprParser(object):
 	"""	Class that implements an S-Expression parser. """
@@ -554,45 +557,51 @@ class SExprParser(object):
 				index += 1
 				continue
 
-			if symbol.type == SType.tListBegin:	# Start of another list
-				startIndex = index + 1
-				matchCtr = 1 # If 0, parenthesis has been matched.
-				# Determine the matching closing paranthesis on the same level
-				while matchCtr != 0:
-					index += 1
-					if index >= len(input):
-						self.errorExpression = input	# type:ignore[assignment]
-						raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
-					symbol = input[index]
-					if symbol.type == SType.tListBegin:
-						matchCtr += 1
-					elif symbol.type == SType.tListEnd:
-						matchCtr -= 1
-			
-				if isQuote:	# escaped with ' -> plain list
-					ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
-				else:		# normal list
-					ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
-			elif symbol.type == SType.tListEnd:
+			match symbol.type:
+				case SType.tListBegin:
+					startIndex = index + 1
+					matchCtr = 1 # If 0, parenthesis has been matched.
+					# Determine the matching closing paranthesis on the same level
+					while matchCtr != 0:
+						index += 1
+						if index >= len(input):
+							self.errorExpression = input	# type:ignore[assignment]
+							raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
+						symbol = input[index]
+						
+						match symbol.type:
+							case SType.tListBegin:
+								matchCtr += 1
+							case SType.tListEnd:
+								matchCtr -= 1
+							# ignore other types
+				
+					if isQuote:	# escaped with ' -> plain list
+						ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
+					else:		# normal list
+						ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
+				
+				case SType.tListEnd:
 					self.errorExpression = input	# type:ignore[assignment]
 					raise ValueError('Invalid input: Unmatched closing parenthesis.')
-			elif symbol.type == SType.tJson:
-				ast.append(symbol)
-			elif symbol.type == SType.tString:
-				ast.append(symbol)
-			else:
-				try:
-					ast.append(SSymbol(number = Decimal(symbol.value))) # type:ignore [arg-type]
-				except InvalidOperation:
-					if symbol.type == SType.tSymbol and symbol.value in [ 'true', 'false' ]:
-						ast.append(SSymbol(boolean = (symbol.value == 'true')))
-					elif symbol.type == SType.tSymbol and symbol.value == 'nil':
-						ast.append(SSymbol())
-					else:
-						if (_s := cast(str, symbol.value)).startswith('\''):
-							ast.append(SSymbol(symbolQuote = _s))
-						else:
-							ast.append(symbol)
+			
+				case SType.tJson | SType.tString:
+					ast.append(symbol)
+
+				case _:				
+					try:
+						ast.append(SSymbol(number = Decimal(symbol.value))) # type:ignore [arg-type]
+					except InvalidOperation:
+						match symbol.type:
+							case SType.tSymbol if symbol.value in [ 'true', 'false' ]:
+								ast.append(SSymbol(boolean = (symbol.value == 'true')))
+							case SType.tSymbol if symbol.value == 'nil':
+								ast.append(SSymbol())
+							case _:
+								if (_s := cast(str, symbol.value)).startswith('\''):
+									ast.append(SSymbol(symbolQuote = _s))
+								else:
+									ast.append(symbol)
 			index += 1
 			isQuote = False
 		
@@ -1412,65 +1421,61 @@ class PContext():
 			return self.setResult(SSymbol())
 		firstSymbol = symbol[0] if symbol.length and symbol.type == SType.tList else symbol
 
-		if firstSymbol.type == SType.tList:
-			if firstSymbol.length > 0:
-				# implicit progn
-				return _doProgn(self, SSymbol(lst = [ SSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
-			else:
-				self.result = SSymbol()
-				return self
-
-		elif firstSymbol.type == SType.tListQuote:
-			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(lst = firstSymbol.value)]))	
-
-		elif firstSymbol.type == SType.tSymbol:
-			_s = cast(str, firstSymbol.value)
-
-			# Just return already boolean values in the result here
-			if (_fn := self.functions.get(_s)) is not None:
-				return self._executeFunction(symbol, _s, _fn)
-			elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
-				if self.monitorFunc:
-					self.monitorFunc(self, firstSymbol)
-				return _cb(self, symbol)
-			elif _s in self.call.arguments:
-				self.result = deepcopy(self.call.arguments[_s])
-				return self
-			elif _s in self.variables:
-				self.result = deepcopy(self.variables[_s])
-				return self
-			elif _s in self.environment:
-				self.result = deepcopy(self.environment[_s])
-				return self
-
-			# Try to get the symbol's value from the caller, if possible
-			else:
-				if self.fallbackFunc:
-					return self.fallbackFunc(self, symbol)
-				raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
-
-		elif firstSymbol.type == SType.tSymbolQuote:
-			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
-
-		elif firstSymbol.type == SType.tLambda:
-			return self._executeFunction(symbol, cast(str, firstSymbol.value))
-
-		elif firstSymbol.type == SType.tString:
-			return self.checkInStringExpressions(firstSymbol)
+		match firstSymbol.type:
+			case SType.tList:
+				if firstSymbol.length > 0:
+					# implicit progn
+					return _doProgn(self, SSymbol(lst = [ SSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
+				else:
+					self.result = SSymbol()
+					return self
 			
-		elif firstSymbol.type == SType.tNumber:
-			return self.setResult(firstSymbol)	# type:ignore [arg-type]
+			case SType.tListQuote:
+				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(lst = firstSymbol.value)]))
 
-		elif firstSymbol.type == SType.tBool:
-			return self.setResult(firstSymbol)
+			case SType.tSymbol:
+				_s = cast(str, firstSymbol.value)
 
-		elif firstSymbol.type == SType.tJson:
-			return self.checkInStringExpressions(symbol)
+				# Execute function, if defined, or try to find the value in variables, environment, etc.
+				if (_fn := self.functions.get(_s)) is not None:
+					return self._executeFunction(symbol, _s, _fn)
+				elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
+					if self.monitorFunc:
+						self.monitorFunc(self, firstSymbol)
+					return _cb(self, symbol)
+				elif _s in self.call.arguments:
+					self.result = deepcopy(self.call.arguments[_s])
+					return self
+				elif _s in self.variables:
+					self.result = deepcopy(self.variables[_s])
+					return self
+				elif _s in self.environment:
+					self.result = deepcopy(self.environment[_s])
+					return self
 
-		elif firstSymbol.type == SType.tNIL:
-			return self.setResult(firstSymbol)
-	
-		raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
+				# Try to get the symbol's value from the caller as a last resort
+				else:
+					if self.fallbackFunc:
+						return self.fallbackFunc(self, symbol)
+					raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
+
+			case SType.tSymbolQuote:
+				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
+
+			case SType.tLambda:
+				return self._executeFunction(symbol, cast(str, firstSymbol.value))
+		
+			case SType.tString:
+				return self.checkInStringExpressions(firstSymbol)
+		
+			case SType.tNumber | SType.tBool | SType.tNIL:
+				return self.setResult(firstSymbol)	# type:ignore [arg-type]
+		
+			case SType.tJson:
+				return self.checkInStringExpressions(symbol)
+			
+			case _:
+				raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
 
 
 	def checkInStringExpressions(self, symbol:SSymbol) -> PContext:
@@ -1879,12 +1884,14 @@ def _doCons(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# get second symbol
 	pcontext, _second = pcontext.valueFromArgument(symbol, 2)
 
-	if _second.type in [SType.tList, SType.tListQuote]:
-		pcontext.result = deepcopy(_second)
-	elif _second.type == SType.tNIL:
-		pcontext.result = SSymbol(lst = [])
-	else:
-		pcontext.result = SSymbol(lst = [ deepcopy(_second) ])
+	match _second.type:
+		case SType.tList | SType.tListQuote:
+			pcontext.result = deepcopy(_second)
+		case SType.tNIL:
+			pcontext.result = SSymbol(lst = [])
+		case _:
+			pcontext.result = SSymbol(lst = [ deepcopy(_second) ])
+	
 	cast(list, pcontext.result.value).insert(0, deepcopy(_first))
 	return pcontext
 
