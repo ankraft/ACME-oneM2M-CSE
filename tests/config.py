@@ -9,26 +9,24 @@
 
 BINDING						= 'http'	# possible values: http, https, mqtt
 
-if BINDING == 'mqtt':
-	PROTOCOL				= 'mqtt'	
-	CONFIGPROTOCOL			= 'http'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-elif BINDING == 'http':
-	PROTOCOL				= 'http'
-	CONFIGPROTOCOL			= 'http'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-elif BINDING == 'https':
-	PROTOCOL				= 'https'
-	CONFIGPROTOCOL			= 'https'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-else:
-	assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
+match BINDING:
+	case 'mqtt':
+		PROTOCOL				= 'mqtt'	
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'http':
+		PROTOCOL				= 'http'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'https':
+		PROTOCOL				= 'https'
+		CONFIGPROTOCOL			= 'https'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case _:
+		assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
 
 # TODO ENCODING 			= 
 

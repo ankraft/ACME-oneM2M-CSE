@@ -243,11 +243,14 @@ class ACMEContainerTree(Container):
 		"""Handle TabActivated message sent by Tabs."""
 		# self.app.debugConsole.update(event.tab.id)
 
-		if self.tabs.active == 'tree-tab-requests':
-			self._update_requests()
-			self.requestView.updateBindings()
-		elif self.tabs.active == 'tree-tab-delete':
-			pass
+		match self.tabs.active:
+			case 'tree-tab-requests':
+				self._update_requests()
+				self.requestView.updateBindings()
+			case 'tree-tab-resource':
+				pass
+			case 'tree-tab-delete':
+				pass
 
 		self.app.updateFooter()	# type:ignore[attr-defined]
 

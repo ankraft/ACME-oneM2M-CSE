@@ -249,20 +249,22 @@ class MQTTConnection(object):
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
 		self.subscribedTopics.clear()
-		if rc == 0:
-			self.isConnected = False
-			self.messageHandler and	self.messageHandler.onDisconnect(self)
-		elif rc == 7:
-			self.isConnected = False
-			self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
-			self.messageHandler.logging(self, logging.ERROR, f'MQTT: Did another client connected with the same ID ({self.clientID})?')
-			self.messageHandler and	self.messageHandler.onDisconnect(self)
-		else:
-			self.isConnected = False
-			if self.messageHandler:
+
+		match rc:
+			case 0:
+				self.isConnected = False
+				self.messageHandler and	self.messageHandler.onDisconnect(self)
+			case 7:
+				self.isConnected = False
 				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
-				self.messageHandler.onDisconnect(self)
-				self.messageHandler.onError(self, rc)
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Did another client connected with the same ID ({self.clientID})?')
+				self.messageHandler and	self.messageHandler.onDisconnect(self)
+			case _:
+				self.isConnected = False
+				if self.messageHandler:
+					self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+					self.messageHandler.onDisconnect(self)
+					self.messageHandler.onError(self, rc)
 
 
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
@@ -402,12 +404,13 @@ def idToMQTTClientID(id:str, isCSE:Optional[bool] = True) -> str:
 def mqttToId(mqttId:str, isCSE:Optional[bool] = True) -> Tuple[str, bool]:
 	"""	Convert an MQTT compatible path element to an ID.
 	"""
-	if mqttId.startswith('A:'):
-		isCSE = False
-	elif mqttId.startswith('C:'):
-		isCSE = True
-	else:
-		return None, False
+	match mqttId:
+		case x if x.startswith('A:'):
+			isCSE = False
+		case x if x.startswith('C:'):
+			isCSE = True
+		case _:
+			return None, False
 	return mqttId[2:].replace(':', '/'), isCSE
 
 

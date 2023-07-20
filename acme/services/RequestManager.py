@@ -306,17 +306,16 @@ class RequestManager(object):
 	def retrieveRequest(self, request:CSERequest) ->  Result:
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processRetrieveRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
-				return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
-			else:									# flexBlocking as non-blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
+				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -333,17 +332,16 @@ class RequestManager(object):
 		if request.ty == None:
 			raise BAD_REQUEST('missing or wrong resourceType in request')
 
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processCreateRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processCreateRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processCreateRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -361,17 +359,16 @@ class RequestManager(object):
 			raise OPERATION_NOT_ALLOWED('operation not allowed for CSEBase')
 
 		# Check contentType and resourceType
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processUpdateRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processUpdateRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processUpdateRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -389,18 +386,17 @@ class RequestManager(object):
 		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
 			raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
 
-		if request.rt == ResponseType.blockingRequest or (request.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
-			return CSE.dispatcher.processDeleteRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processDeleteRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
-
+			case ResponseType.flexBlocking:								# flexBlocking as non-blocking
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processDeleteRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
+			
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
 
@@ -412,18 +408,17 @@ class RequestManager(object):
 	def notifyRequest(self, request:CSERequest) -> Result:
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
-		# Check contentType and resourceType
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processNotifyRequest(request, request.originator)
 
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processNotifyRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -1231,10 +1226,11 @@ class RequestManager(object):
 				# assign defaults when not provided
 				if cseRequest.fc.fu != FilterUsage.discoveryCriteria:	
 					# Different defaults for each operation
-					if cseRequest.op in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
-						rcn = ResultContentType.attributes
-					elif cseRequest.op == Operation.DELETE:
-						rcn = ResultContentType.nothing
+					match cseRequest.op:
+						case Operation.RETRIEVE | Operation.CREATE | Operation.UPDATE:
+							rcn = ResultContentType.attributes
+						case Operation.DELETE:
+							rcn = ResultContentType.nothing
 				else:
 					# discovery-result-references as default for Discovery operation
 					rcn = ResultContentType.discoveryResultReferences
@@ -1552,14 +1548,15 @@ class RequestManager(object):
 			return
 		
 		# Construct and store request & response
-		if result.resource and isinstance(result.resource, Resource):
-			pc = result.resource.asDict()
-		elif isinstance(result.resource, dict):
-			pc = result.resource
-		elif result.data:
-			pc = result.data # type:ignore
-		else:
-			pc = None
+		match _resource := result.resource:
+			case Resource():
+				pc = _resource.asDict()
+			case dict():
+				pc = _resource
+			case x if result.data:
+				pc = result.data # type:ignore
+			case _:
+				pc = None
 		
 		# Determine the structure address
 		if not (srn := request.srn):

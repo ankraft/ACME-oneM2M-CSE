@@ -258,10 +258,11 @@ class Storage(object):
 		elif aei:	# get an AE by its AE-ID
 			resources = self.db.searchResources(aei = aei)
 
-		if (l := len(resources)) == 1:
-			return resourceFromDict(resources[0])
-		elif l == 0:
-			raise NOT_FOUND('resource not found')
+		match len(resources):
+			case 1:
+				return resourceFromDict(resources[0])
+			case 0:
+				raise NOT_FOUND('resource not found')
 
 		raise INTERNAL_SERVER_ERROR('database inconsistency')
 
@@ -275,10 +276,12 @@ class Storage(object):
 				The resource dictionary.
 		"""
 		resources = self.db.searchResources(ri = ri)
-		if (l := len(resources)) == 1:
-			return resources[0]
-		elif l == 0:
-			raise NOT_FOUND('resource not found')
+		match len(resources):
+			case 1:
+				return resources[0]
+			case 0: 
+				raise NOT_FOUND('resource not found')
+
 		raise INTERNAL_SERVER_ERROR('database inconsistency')
 
 

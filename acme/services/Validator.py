@@ -319,10 +319,11 @@ class Validator(object):
 	def validatePvs(self, dct:JSON) -> None:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
-		if (l :=len(dct['pvs'])) == 0:
-			raise BAD_REQUEST(L.logWarn('Attribute pvs must not be an empty list'))
-		elif l > 1:
-			raise BAD_REQUEST(L.logWarn('Attribute pvs must contain only one item'))
+		match len(dct['pvs']):
+			case 0:
+				raise BAD_REQUEST(L.logWarn('Attribute pvs must not be an empty list'))
+			case l if l > 1:
+				raise BAD_REQUEST(L.logWarn('Attribute pvs must contain only one item'))
 		if not (acr := findXPath(dct, 'pvs/acr')):
 			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr not found'))
 		if not isinstance(acr, list):
@@ -578,144 +579,145 @@ class Validator(object):
 
 		# convert some types if necessary
 		if convert:
-			if dataType in ( BasicType.positiveInteger, 
-							 BasicType.nonNegInteger, 
-							 BasicType.unsignedInt, 
-							 BasicType.unsignedLong, 
-							 BasicType.integer, 
-							 BasicType.enum ) and isinstance(value, str):
+			if isinstance(value, str):
 				try:
-					value = int(value)
-				except Exception as e:
-					raise BAD_REQUEST(str(e))
-			elif dataType == BasicType.boolean and isinstance(value, str):	# "true"/"false"
-				try:
-					value = strToBool(value)
-				except Exception as e:
-					raise BAD_REQUEST(str(e))
-			elif dataType == BasicType.float and isinstance(value, str):
-				try:
-					value = float(value)
+					match dataType:
+						case BasicType.positiveInteger |\
+							 BasicType.nonNegInteger |\
+							 BasicType.unsignedInt |\
+							 BasicType.unsignedLong |\
+							 BasicType.integer |\
+							 BasicType.enum:
+							value = int(value)
+
+						case BasicType.boolean:
+							value = strToBool(value)
+
+						case BasicType.float:
+							value = float(value)
+
 				except Exception as e:
 					raise BAD_REQUEST(str(e))
 
 		# Check types and values
 
-		if dataType == BasicType.positiveInteger:
-			if isinstance(value, int):
-				if value > 0:
+		match dataType:
+			case BasicType.positiveInteger:
+				if isinstance(value, int) and value > 0:
 					return (dataType, value)
-				raise BAD_REQUEST('value must be > 0')
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+
+			case BasicType.enum:
+				if isinstance(value, int):
+					if policy is not None and len(policy.evalues) and value not in policy.evalues:
+						raise BAD_REQUEST('undefined enum value')
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
+			
+			case BasicType.nonNegInteger:
+				if isinstance(value, int) and value >= 0:
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+			
+			case BasicType.unsignedInt | BasicType.unsignedLong:
+				if isinstance(value, int):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
+
+			case BasicType.timestamp if isinstance(value, str):
+				if fromAbsRelTimestamp(value) == 0.0:
+					raise BAD_REQUEST(f'format error in timestamp: {value}')
+				return (dataType, value)
 		
-		if dataType == BasicType.enum:
-			if isinstance(value, int):
-				if policy is not None and len(policy.evalues) and value not in policy.evalues:
-					raise BAD_REQUEST('undefined enum value')
-				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+			case BasicType.absRelTimestamp:
+				match value:
+					case str():
+						try:
+							rel = int(value)
+							# fallthrough
+						except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
+							if fromAbsRelTimestamp(value) == 0.0:
+								raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
+						# fallthrough
+					case int():
+						pass
+						# fallthrough
+					case _:
+						raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
+				return (dataType, value)		# int/long is ok
 
-		if dataType == BasicType.nonNegInteger:
-			if isinstance(value, int):
-				if value >= 0:
+			case BasicType.string | BasicType.anyURI if isinstance(value, str):
+				return (dataType, value)
+
+			case BasicType.list | BasicType.listNE if isinstance(value, list):
+				if dataType == BasicType.listNE and len(value) == 0:
+					raise BAD_REQUEST('empty list is not allowed')
+				if policy is not None and policy.ltype is not None:
+					for each in value:
+						self._validateType(policy.ltype, each, convert = convert, policy = policy)
+				return (dataType, value)
+
+			case BasicType.complex:
+				# Check complex types
+				if not policy:
+					raise BAD_REQUEST(L.logErr(f'internal error: policy is missing for validation of complex attribute'))
+
+				if isinstance(value, dict):
+					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+					for k, v in value.items():
+						if not (p := self.getAttributePolicy(typeName, k)):
+							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+						# recursively validate a dictionary attribute
+						self._validateType(p.type, v, convert = convert, policy = p)
+
+					# Check that all mandatory attributes are present
+					attributeNames = value.keys()
+					for ap in self.getComplexTypeAttributePolicies(typeName):
+						if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
+							raise BAD_REQUEST(f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
 					return (dataType, value)
-				raise BAD_REQUEST('value must be >= 0')
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+				raise BAD_REQUEST(f'Expected complex type, found: {value}')
 
-		if dataType in ( BasicType.unsignedInt, BasicType.unsignedLong ):
-			if isinstance(value, int):
+			case BasicType.dict if isinstance(value, dict):
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
-		if dataType == BasicType.timestamp and isinstance(value, str):
-			if fromAbsRelTimestamp(value) == 0.0:
-				raise BAD_REQUEST(f'format error in timestamp: {value}')
-			return (dataType, value)
+			case BasicType.boolean:
+				if isinstance(value, bool):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: bool')
 
-		if dataType == BasicType.absRelTimestamp:
-			if isinstance(value, str):
+			case BasicType.integer:			
+				if isinstance(value, int):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
+			
+			case BasicType.float:
+				if isinstance(value, (float, int)):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
+
+			case BasicType.geoCoordinates if isinstance(value, dict):
+				return (dataType, value)
+
+			case BasicType.duration:
 				try:
-					rel = int(value)
-					# fallthrough
-				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
-					if fromAbsRelTimestamp(value) == 0.0:
-						raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
-				# fallthrough
-			elif not isinstance(value, int):
-				raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
-			return (dataType, value)		# int/long is ok
-
-		if dataType in ( BasicType.string, BasicType.anyURI ) and isinstance(value, str):
-			return (dataType, value)
-
-		if dataType in ( BasicType.list, BasicType.listNE ) and isinstance(value, list):
-			if dataType == BasicType.listNE and len(value) == 0:
-				raise BAD_REQUEST('empty list is not allowed')
-			if policy is not None and policy.ltype is not None:
-				for each in value:
-					self._validateType(policy.ltype, each, convert = convert, policy = policy)
-			return (dataType, value)
-
-		if dataType == BasicType.dict and isinstance(value, dict):
-			return (dataType, value)
-		
-		if dataType == BasicType.boolean:
-			if isinstance(value, bool):
+					isodate.parse_duration(value)
+				except Exception as e:
+					raise BAD_REQUEST(f'must be an ISO duration: {str(e)}')
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: bool')
 
-		if dataType == BasicType.float:
-			if isinstance(value, (float, int)):
+			case BasicType.base64:
+				if not TextTools.isBase64(value):
+					raise BAD_REQUEST(f'value is not base64-encoded')
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
 
-		if dataType == BasicType.integer:
-			if isinstance(value, int):
+			case BasicType.schedule:
+				if isinstance(value, str) and re.match(self._scheduleRegex, value):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
+
+			case BasicType.any:
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
-
-		if dataType == BasicType.geoCoordinates and isinstance(value, dict):
-			return (dataType, value)
-		
-		if dataType == BasicType.duration:
-			try:
-				isodate.parse_duration(value)
-			except Exception as e:
-				raise BAD_REQUEST(f'must be an ISO duration: {str(e)}')
-			return (dataType, value)
-		
-		if dataType == BasicType.base64:
-			if not TextTools.isBase64(value):
-				raise BAD_REQUEST(f'value is not base64-encoded')
-			return (dataType, value)
-		
-		if dataType == BasicType.schedule:
-			if isinstance(value, str) and re.match(self._scheduleRegex, value):
-				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
-
-		if dataType == BasicType.any:
-			return (dataType, value)
-		
-		if dataType == BasicType.complex:
-			if not policy:
-				raise BAD_REQUEST(L.logErr(f'internal error: policy is missing for validation of complex attribute'))
-
-			if isinstance(value, dict):
-				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
-				for k, v in value.items():
-					if not (p := self.getAttributePolicy(typeName, k)):
-						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
-					# recursively validate a dictionary attribute
-					self._validateType(p.type, v, convert = convert, policy = p)
-
-				# Check that all mandatory attributes are present
-				attributeNames = value.keys()
-				for ap in self.getComplexTypeAttributePolicies(typeName):
-					if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
-						raise BAD_REQUEST(f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
-				return (dataType, value)
-			raise BAD_REQUEST(f'Expected complex type, found: {value}')
 
 		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 

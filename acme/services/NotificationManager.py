@@ -304,59 +304,62 @@ class NotificationManager(object):
 			
 			if reason not in sub['net']:	# check whether reason is actually included in the subscription
 				continue
-			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
-				chty = sub['chty']
-				if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
-					continue
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource = childResource, 
-													 modifiedAttributes = modifiedAttributes, 
-													 asynchronous = self.asyncSubscriptionNotifications)
-				self.countNotificationEvents(ri)
-			
-			# Check Update and enc/atr vs the modified attributes 
-			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) and modifiedAttributes:
-				found = False
-				for k in atr:
-					if k in modifiedAttributes:
-						found = True
-				if found:
+
+			match reason:
+				case NotificationEventType.createDirectChild | NotificationEventType.deleteDirectChild:	# reasons for child resources
+					chty = sub['chty']
+					if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
+						continue
 					self._handleSubscriptionNotification(sub, 
 														 reason, 
-														 resource = resource, 
-														 modifiedAttributes = modifiedAttributes,
+														 resource = childResource, 
+														 modifiedAttributes = modifiedAttributes, 
 														 asynchronous = self.asyncSubscriptionNotifications)
 					self.countNotificationEvents(ri)
-				else:
-					L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
 			
-			# Check for missing data points (only for <TS>)
-			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData:
-				md = missingData[sub['ri']]
-				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
+				# Check Update and enc/atr vs the modified attributes 
+				case NotificationEventType.resourceUpdate if (atr := sub['atr']) and modifiedAttributes:
+					found = False
+					for k in atr:
+						if k in modifiedAttributes:
+							found = True
+					if found:	# any one found
+						self._handleSubscriptionNotification(sub, 
+															 reason, 
+															 resource = resource, 
+															 modifiedAttributes = modifiedAttributes,
+															 asynchronous = self.asyncSubscriptionNotifications)
+						self.countNotificationEvents(ri)
+					else:
+						L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
+			
+				#  Check for missing data points (only for <TS>)
+				case NotificationEventType.reportOnGeneratedMissingDataPoints if missingData:
+					md = missingData[sub['ri']]
+					if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
+						self._handleSubscriptionNotification(sub, 
+															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
+															 missingData = copy.deepcopy(md),
+															 asynchronous = self.asyncSubscriptionNotifications)
+						self.countNotificationEvents(ri)
+						md.clearMissingDataList()
+
+				case NotificationEventType.blockingUpdate | NotificationEventType.blockingRetrieve | NotificationEventType.blockingRetrieveDirectChild:
 					self._handleSubscriptionNotification(sub, 
-														 NotificationEventType.reportOnGeneratedMissingDataPoints, 
-														 missingData = copy.deepcopy(md),
-														 asynchronous = self.asyncSubscriptionNotifications)
+														reason, 
+														resource, 
+														modifiedAttributes = modifiedAttributes,
+														asynchronous = False)	# blocking NET always synchronous!
 					self.countNotificationEvents(ri)
-					md.clearMissingDataList()
 
-			elif reason in [NotificationEventType.blockingUpdate, NotificationEventType.blockingRetrieve, NotificationEventType.blockingRetrieveDirectChild]:
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource, 
-													 modifiedAttributes = modifiedAttributes,
-													 asynchronous = False)	# blocking NET always synchronous!
-				self.countNotificationEvents(ri)
-
-			else: # all other reasons that target the resource
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource, 
-													 modifiedAttributes = modifiedAttributes,
-													 asynchronous = self.asyncSubscriptionNotifications)
-				self.countNotificationEvents(ri)
+				# all other reasons that target the resource
+				case _:
+					self._handleSubscriptionNotification(sub, 
+														reason, 
+														resource, 
+														modifiedAttributes = modifiedAttributes,
+														asynchronous = self.asyncSubscriptionNotifications)
+					self.countNotificationEvents(ri)
 
 
 	def checkPerformBlockingUpdate(self, resource:Resource, 
@@ -764,17 +767,19 @@ class NotificationManager(object):
 		crsTwt = crs.twt
 		crsTws = crs.tws
 		L.isDebug and L.logDebug(f'Received notification for <crs>: {crsRi}, twt: {crsTwt}, tws: {crsTws}')
-		if crsTwt == TimeWindowType.SLIDINGWINDOW:
-			if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
-				L.isDebug and L.logDebug(f'Adding notification to worker: {workers[0].name}')
-				if sur not in workers[0].data:
-					workers[0].data.append(sur)
-			else:
-				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
-		elif crsTwt == TimeWindowType.PERIODICWINDOW:
-			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
-				if sur not in workers[0].data:
-					workers[0].data.append(sur)
+		match crsTwt:
+			case TimeWindowType.SLIDINGWINDOW:
+				if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
+					L.isDebug and L.logDebug(f'Adding notification to worker: {workers[0].name}')
+					if sur not in workers[0].data:
+						workers[0].data.append(sur)
+				else:
+					workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
+
+			case TimeWindowType.PERIODICWINDOW:
+				if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
+					if sur not in workers[0].data:
+						workers[0].data.append(sur)
 
 			# No else: Periodic is running or not
 
