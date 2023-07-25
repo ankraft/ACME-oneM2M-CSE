@@ -1,4 +1,4 @@
- #
+#
 #	SCH.py
 #
 #	(c) 2023 by Andreas Kraft

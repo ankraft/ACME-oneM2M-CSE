@@ -56,6 +56,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	CSEBase resource type. """
 	GRP 			=  9
 	"""	Group resouce type. """
+	LCP				= 10
+	"""	LocationPolicy resource type. """
 	MGMTOBJ			= 13
 	"""	ManagementObject resource type. """
 	NOD				= 14
@@ -154,6 +156,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced CSEBase resource type. """
 	GRPAnnc 		= 10009
 	"""	Announced Group resouce type. """
+	LCPAnnc			= 10010
+	"""	Announced LocationPolicy resource type. """
 	MGMTOBJAnnc 	= 10013
 	"""	Announced ManagementObject resource type. """
 	NODAnnc 		= 10014
@@ -426,6 +430,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
 	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
 	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', fullName='Fanout Point'),	# not an official type name
+	ResourceTypes.LCP			: ResourceDescription(typeName = 'm2m:lcp', announcedType = ResourceTypes.LCPAnnc, fullName='LocationPolicy'),
+	ResourceTypes.LCPAnnc		: ResourceDescription(typeName = 'm2m:lcpA', isAnnouncedResource = True, fullName='LocationPolicy Announced'),
 	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
 	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
@@ -530,7 +536,7 @@ _ResourceTypesAnnouncedResourceTypes = [ d.announcedType
 _ResourceTypesAnnouncedResourceTypes.sort()
 
 
-_ResourceTypesSupportedResourceTypes = [ t
+_ResourceTypesSupportedResourceTypes:list[ResourceTypes] = [ t
 										 for t, d in _ResourceTypeDetails.items()
 										 if not d.isMgmtSpecialization and not d.virtualResourceName and not d.isInternalType and t != ResourceTypes.CSEBaseAnnc]
 """ Sorted list of supported resource types (without MgmtObj spezializations and virtual resources). """
@@ -2035,7 +2041,7 @@ class AttributePolicy:
 	fname:str					= None 	# Name of the definition file
 	ltype:BasicType				= None	# sub-type of a list
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
-	evalues:list[Any]			= None 	# List of enum values
+	evalues:dict[int, str]		= None 	# Dict of enum values and interpretations
 	ptype:Type					= None	# Implementation type of the enum values
 
 	# TODO support annnouncedSyncType

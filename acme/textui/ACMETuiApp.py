@@ -99,6 +99,7 @@ class ACMETuiApp(App):
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
 
+		# Add the resource types to the attribute explanations
 		for n in ResourceTypes:
 			self.attributeExplanations[ResourceTypes(n).tpe()] = f'{ResourceTypes.fullname(n)} resource type'
 

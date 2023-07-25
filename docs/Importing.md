@@ -273,12 +273,15 @@ The format for enumeration data type definitions is a bit simpler:
 // The attributePolicy.ep file contains a dictionary of enumeration data types
 {
 
-	// Each enumeration definition is identified by its name
+	// Each enumeration definition is identified by its name. It is a dictionary.
 	"enumerationType": {
 
-		// Each definition can only contain a the following attribute (definition see above)
+		// A single enumeration definition is key value pair. The key is the enumeration
+		// value, the value is the interpretation of that value.
+		"<enumeration value>" : "<enumeration interpretation>"
 
-		"evalues" : ...
+		// This defines a range of values. Each one gets the same interpretation assigned.
+		"<enumeration value start>..<enumeration value end>" : "<enumeration interpretation>"
 	}
 }
 ```

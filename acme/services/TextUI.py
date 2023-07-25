@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 import asyncio
 
 from . import CSE
@@ -156,6 +156,10 @@ class TextUI(object):
 			
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
 		"""	Print a line to the script output.
+
+			Args:
+				scriptName: Name of the script.
+				msg: Message to print.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptPrint(scriptName, msg)
@@ -163,6 +167,10 @@ class TextUI(object):
 
 	def scriptLog(self, scriptName:str, msg:str) -> None:
 		"""	Print a line to the script log output.
+
+			Args:
+				scriptName: Name of the script.
+				msg: Message to print.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptLog(scriptName, msg)
@@ -170,6 +178,10 @@ class TextUI(object):
 
 	def scriptLogError(self, scriptName:str, msg:str) -> None:
 		"""	Print a line to the script log output.
+
+			Args:
+				scriptName: Name of the script.
+				msg: Message to print.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptLogError(scriptName, msg)
@@ -177,16 +189,22 @@ class TextUI(object):
 
 	def scriptClearConsole(self, scriptName:str) -> None:
 		"""	Clear the script console.
+
+			Args:
+				scriptName: Name of the script.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptClearConsole(scriptName)
 	
 
-	def scriptShowNotification(self, msg:str, title:str, severity:str, timeout:float) -> None:
+	def scriptShowNotification(self, msg:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:
 		"""	Show a notification.
 
 			Args:
 				msg: Message to show.
+				title: Title of the notification.
+				severity: Severity of the notification.
+				timeout: Timeout in seconds.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptShowNotification(msg, title, severity, timeout)
@@ -194,6 +212,9 @@ class TextUI(object):
 
 	def scriptVisualBell(self, scriptName:str) -> None:
 		"""	Visual bell.
+
+			Args:
+				scriptName: Name of the script.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptVisualBell(scriptName)
