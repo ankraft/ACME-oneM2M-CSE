@@ -54,6 +54,9 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 complexTypeAttributes:dict[str, list[str]] = {}
 # TODO doc
 
+attributesComplexTypes:dict[str, list[str]] = {}
+# TODO doc
+
 
 # TODO make this more generic!
 _valueNameMappings = {
@@ -61,8 +64,8 @@ _valueNameMappings = {
 	'bts': lambda v: BatteryStatus(int(v)).name,
 	'chty': lambda v: ResourceTypes.fullname(int(v)),
 	'cst': lambda v: CSEType(int(v)).name,
-	'nct': lambda v: NotificationContentType(int(v)).name,
-	'net': lambda v: NotificationEventType(int(v)).name,
+	#'nct': lambda v: NotificationContentType(int(v)).name,
+	#'net': lambda v: NotificationEventType(int(v)).name,
 	'op': lambda v: Operation(int(v)).name,
 	'rcn': lambda v: ResultContentType(int(v)).name,
 	'rsc': lambda v: ResponseStatusCode(int(v)).name,
@@ -488,9 +491,21 @@ class Validator(object):
 			else:
 				complexTypeAttributes[attrPolicy.ctype] = [ attr ]
 
+			if (ctypes := attributesComplexTypes.get(attr)):
+				ctypes.append(attrPolicy.ctype)
+			else:
+				attributesComplexTypes[attr] = [ attrPolicy.ctype ]
+
 
 	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
+
+			Args:
+				rtype: Resource type.
+				attr: Attribute name.
+			
+			Return:
+				AttributePolicy or None.
 		"""
 		# Search for the specific type first
 		if (ap := attributePolicies.get((rtype, attr))):
@@ -533,24 +548,46 @@ class Validator(object):
 		return result
 
 
-	def getAttributeValueName(self, key:str, value:str) -> str:
+	def getAttributeValueName(self, attr:str, value:int, rtype:Optional[ResourceTypes] = None) -> str:
 		"""	Return the name of an attribute value. This is usually used for
 			enumerations, where the value is a number and the name is a string.
 
 			Args:
-				key: String, attribute name.
-				value: String, attribute value.	
+				attr: Attribute name.
+				value: Attribute value.	
 			
 			Return:
 				String, name of the attribute value.
 		"""
 		try:
-			if key in _valueNameMappings:
-				return _valueNameMappings[key](value) # type: ignore [no-untyped-call]
+			if attr in _valueNameMappings:
+				return _valueNameMappings[attr](value) # type: ignore [no-untyped-call]
+			from ..services import CSE
+			return CSE.validator.getEnumInterpretation(rtype, attr, value)
 		except Exception as e:
 			return str(e)
-		return ''
-	
+
+
+	def getEnumInterpretation(self, rtype: ResourceTypes, attr:str, value:int) -> str:
+		"""	Return the interpretation of an enumeration.
+
+			Args:
+				rtype: Resource type. May be None.
+				attr: Attribute name.
+				value: Enumeration value.
+			
+			Return:
+				String, interpretation of the enumeration, or the value itself if no interpretation is available.
+		"""
+		if rtype is not None:
+			if (policy := self.getAttributePolicy(rtype, attr)) and policy.evalues:
+				return policy.evalues.get(int(value), str(value))
+
+		if (ctype := attributesComplexTypes.get(attr)):
+			if (policy := self.getAttributePolicy(ctype[0], attr)) and policy.evalues:	# just any policy for the complex type
+				return policy.evalues.get(int(value), str(value))
+		return str(value)
+
 
 	#
 	#	Internals.

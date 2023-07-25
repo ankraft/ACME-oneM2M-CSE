@@ -11,7 +11,7 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
-from typing import cast, Sequence, Optional
+from typing import cast, Sequence, Optional, Tuple
 
 import json, os, fnmatch, re
 from copy import deepcopy
@@ -46,7 +46,7 @@ class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
 	_firstImporters = [ 'csebase.json']
-	_enumValues:dict[str, list[int]] = {}
+	_enumValues:dict[str, dict[int, str]] = {}
 
 	def __init__(self) -> None:
 		"""	Initialization of an *Importer* instance.
@@ -243,10 +243,38 @@ class Importer(object):
 					return False
 
 				for enumName, enumDef in enums.items():
-					if not (evalues := enumDef.get('evalues')):
-						L.logErr(f'Missing or empty enumeration values (evalues) in file: {fn}')
+					if not isinstance(enumDef, dict):
+						L.logErr(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}')
 						return False
-					self._enumValues[enumName] = self._expandEnumValues(evalues, enumName, fn)
+					
+					enm:dict[int, str] = {}
+					for enumValue, enumInterpretation in enumDef.items():
+						s, found, e = enumValue.partition('..')
+						if not found:
+							# Single value
+							try:
+								value = int(enumValue)
+							except ValueError:
+								L.logErr(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer)')
+								return False
+							if not isinstance(enumInterpretation, str):
+								L.logErr(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}')
+								return False
+							enm[value] = enumInterpretation
+
+						else:
+							# Range
+							try:
+								si = int(s)
+								ei = int(e)
+							except ValueError:
+								L.logErr(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', showStackTrace=False)
+								return None
+							for i in range(si, ei+1):
+								enm[i] = enumInterpretation
+
+					self._enumValues[enumName] = enm
+
 		return True
 
 
@@ -518,6 +546,7 @@ class Importer(object):
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BasicType = None
+		evalues:dict[int, str] = None
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
 			if lTypeName := findXPath(attr, 'ltype'):
 				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
@@ -529,15 +558,14 @@ class Importer(object):
 				if not (ltype := BasicType.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BasicType.complex
 				if ltype == BasicType.enum:	# check sub-type enums
-					evalues:Sequence[int|str]
 					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 						evalues = self._enumValues.get(etype)
 					else:
-						evalues = findXPath(attr, 'evalues')
-					if not evalues or not isinstance(evalues, list):
+						evalues = findXPath(attr, 'evalues')	# TODO?
+					if not evalues or not isinstance(evalues, dict):
 						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
 						return None
-					evalues = self._expandEnumValues(evalues, tpe, fn)
+					# evalues = self._expandEnumValues(evalues, tpe, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
@@ -547,11 +575,11 @@ class Importer(object):
 			if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 				evalues = self._enumValues.get(etype)
 			else:
-				evalues = findXPath(attr, 'evalues')
-			if not evalues or not isinstance(evalues, list):
+				evalues = findXPath(attr, 'evalues')	# TODO?
+			if not evalues or not isinstance(evalues, dict):
 				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} etype: {etype} in file: {fn}', showStackTrace=False)
 				return None
-			evalues = self._expandEnumValues(evalues, tpe, fn)
+			# evalues = self._expandEnumValues(evalues, tpe, fn)
 
 		#	Check missing complex type definition
 		if typ == BasicType.dict or ltype == BasicType.dict:

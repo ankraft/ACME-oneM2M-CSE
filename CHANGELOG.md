@@ -14,11 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added automatic pip install of missing dependencies during startup.
 - [CSE] Added support for &lt;schedule> resource type.
 - [SCRIPTS] Added "dotimes", "tui-notify", and "get-loglevel" functions to the script interpreter. 
+- [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 
 ### Experimental
 
 ### Changed
 - [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
+- [CSE] Changed the oneM2M enumeration definition format. Each enumeration type is now a dictionary of enumeration values and their interpretations.
+
 
 ### Fixed
 

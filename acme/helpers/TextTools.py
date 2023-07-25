@@ -102,7 +102,7 @@ def commentJson(data:Union[str, dict],
 
 	
 		elif previousKey and value: # when the value is on the next line, w/o a key
-			lines.append(f'// {value}')
+			lines.append(f'// {getAttributeValueName(key, value)}')
 			lines.append(line)
 			_m = len(lines[-2]) + maxLineLength
 			maxLength = _m if _m > maxLength else maxLength

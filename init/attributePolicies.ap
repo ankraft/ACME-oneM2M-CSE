@@ -1575,6 +1575,20 @@
 			"annc": "OA"
 		}
 	],
+	"lit": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationInformationType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationInformationType",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"ln": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1619,6 +1633,35 @@
 			"annc": "MA"
 		}
 	],
+	"los": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationSource",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationSource",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lou": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationUpdatePeriod",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "duration",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	// TODO Align later
 	// EXPERIMENTAL
 	"ma": [
@@ -2062,7 +2105,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "notificationContentType",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",
+			"etype": "m2m:notificationContentType",
 			"car": "1",
 			"oc": "O",
 			"ou": "O",

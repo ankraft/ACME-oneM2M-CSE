@@ -61,7 +61,8 @@ class ACMEViewRequests(Vertical):
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
-				  Binding('e', 'enable_requests', '')
+				  Binding('e', 'enable_requests', ''),
+				  Binding('t', 'toggle_list_details', 'List Details'),
 				]
 
 	DEFAULT_CSS = """
@@ -132,6 +133,7 @@ class ACMEViewRequests(Vertical):
 
 		# Request List
 		self.requestList = ListView(id = 'request-list-list')
+		self.listDetails = False
 
 		# Request view: request + response
 		self.requestListRequest = Static(id = 'request-list-request')
@@ -237,6 +239,13 @@ class ACMEViewRequests(Vertical):
 	def action_disable_requests(self) -> None:
 		CSE.request.enableRequestRecording = False
 		self.updateBindings()
+	
+
+	def action_toggle_list_details(self) -> None:
+		self.listDetails = not self.listDetails
+		self.updateRequests()
+
+		# TODO
 
 
 	def updateBindings(self) -> None:
@@ -278,11 +287,18 @@ class ACMEViewRequests(Vertical):
 			# _to = _to if _to else ''
 			_srn = r.get('srn', '')
 			# _srn = _srn if _srn else ''
-			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]')))
+			match self.listDetails:
+				case True:
+					_l = ACMEListItem(Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]'))
+				case False:
+					_l = ACMEListItem(Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}'))
+				
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')
+			self.requestList.append(_l)
+			# self.requestList.append(_l := ACMEListItem(
+			# 	Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]')))
 
 
 	def deleteRequests(self) -> None:

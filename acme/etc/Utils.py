@@ -152,7 +152,7 @@ def isCSERelative(uri:str) -> bool:
 	return uri is not None and not uri.startswith('/')
 
 
-def isStructured(uri:str) -> bool:
+def isStructured(uri:str) -> bool: # type: ignore[return]
 	""" Test whether a URI is in structured format.
 	
 		Args:
@@ -171,7 +171,7 @@ def isStructured(uri:str) -> bool:
 			return False
 
 
-def localResourceID(ri:str) -> Optional[str]:
+def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 	""" Test whether an ID is a resource ID of the local CSE.
 	
 		Args:
