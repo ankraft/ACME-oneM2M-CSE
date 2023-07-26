@@ -74,6 +74,12 @@
 		"2": "Conditional Operation",
 		"3": "IPE On-demand Discovery"
 	},
+	"m2m:geofenceEventCriteria" : {
+		"1": "Entering",
+		"2": "Leaving",
+		"3": "Inside",
+		"4": "Outside"
+	},
 	"m2m:geometryType" : {
 		"1": "Point",
 		"2": "LineString",
@@ -95,6 +101,9 @@
 		"1": "Network based",
 		"2": "Device based",
 		"3": "User based"
+	},
+	"m2m:locationUpdateEventCriteria": {
+		"0": "Location_Change"
 	},
 	"m2m:logStatus" : {
 		"1": "Started",

@@ -365,6 +365,19 @@
 			"annc": "OA"
 		}
 	],
+	"aid": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "authID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"air": [
 		{
 			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
@@ -1360,6 +1373,20 @@
 			"annc": "OA"
 		}
 	],
+	"gec": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "geofenceEventCriteria",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:geofenceEventCriteria",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"gn": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1384,6 +1411,19 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"gta": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "geographicalTargetArea",
+			"ns": "m2m",
+			"type": "any",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"hael": [
@@ -1633,6 +1673,32 @@
 			"annc": "MA"
 		}
 	],
+	"loi": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationContainerID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lon": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationContainerName",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"los": [
 		{
 			"rtypes": [ "LCP", "LCPAnnc" ],
@@ -1640,8 +1706,47 @@
 			"ns": "m2m",
 			"type": "enum",
 			"etype": "m2m:locationSource",
-			"car": "1",
+			"car": "01",
 			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lost": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationStatus",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lor": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationServer",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lot": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationTargetID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01L",
+			"oc": "O",
 			"ou": "NP",
 			"od": "NP",
 			"annc": "OA"
@@ -1655,6 +1760,20 @@
 			"type": "list",
 			"ltype": "duration",
 			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"luec": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationUpdateEventCriteria",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationUpdateEventCriteria",
+			"car": "01",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
@@ -2576,6 +2695,19 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"rlkl": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "retrieveLastKnownLocation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"rms": [

@@ -31,6 +31,7 @@ class CSRAnnc(AnnouncedResource):
 									ResourceTypes.FCNTAnnc, 
 									ResourceTypes.GRP, 
 									ResourceTypes.GRPAnnc, 
+									ResourceTypes.LCPAnnc,
 									ResourceTypes.MGMTOBJAnnc, 
 									ResourceTypes.NODAnnc, 
 									ResourceTypes.SCHAnnc,
