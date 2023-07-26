@@ -25,7 +25,8 @@ class AEAnnc(AnnouncedResource):
 													   ResourceTypes.FCNT, 
 													   ResourceTypes.FCNTAnnc, 
 													   ResourceTypes.GRP, 
-													   ResourceTypes.GRPAnnc, 
+													   ResourceTypes.GRPAnnc,
+													   ResourceTypes.LCPAnnc,
 													   ResourceTypes.TS, 
 													   ResourceTypes.TSAnnc ]
 

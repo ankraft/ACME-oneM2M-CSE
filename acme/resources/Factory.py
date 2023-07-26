@@ -49,6 +49,8 @@ from ..resources.FCNT_OL import FCNT_OL
 from ..resources.GRP import GRP
 from ..resources.GRPAnnc import GRPAnnc
 from ..resources.GRP_FOPT import GRP_FOPT
+from ..resources.LCP import LCP
+# TODO from ..resources.LCPAnnc import LCPAnnc
 from ..resources.NOD import NOD
 from ..resources.NODAnnc import NODAnnc
 from ..resources.PCH import PCH
@@ -126,6 +128,8 @@ addResourceFactoryCallback(ResourceTypes.FCNT_OL,		FCNT_OL,		lambda dct, tpe, pi
 addResourceFactoryCallback(ResourceTypes.GRP,			GRP,			lambda dct, tpe, pi, create : GRP(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.GRPAnnc,		GRPAnnc,		lambda dct, tpe, pi, create : GRPAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.GRP_FOPT,		GRP_FOPT,		lambda dct, tpe, pi, create : GRP_FOPT(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.LCP,			LCP,			lambda dct, tpe, pi, create : LCP(dct, pi = pi, create = create))
+# TODO addResourceFactoryCallback(ResourceTypes.LCPAnnc,		LCPAnnc,		lambda dct, tpe, pi, create : LCPAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.NOD,			NOD,			lambda dct, tpe, pi, create : NOD(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.NODAnnc,		NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)) 

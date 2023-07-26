@@ -23,6 +23,7 @@ class CSEBaseAnnc(AnnouncedResource):
 									ResourceTypes.CNTAnnc, 
 									ResourceTypes.FCNTAnnc, 
 									ResourceTypes.GRPAnnc,
+									ResourceTypes.LCPAnnc,
 									ResourceTypes.NODAnnc, 
 									ResourceTypes.SCHAnnc,
 									ResourceTypes.SUB, 
