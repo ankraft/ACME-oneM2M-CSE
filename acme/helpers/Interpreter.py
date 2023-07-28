@@ -2253,7 +2253,6 @@ def _doIn(pcontext:PContext, symbol:SSymbol) -> PContext:
 	
 	# Get symbol (!) to check
 	pcontext, _s = pcontext.resultFromArgument(symbol, 2, (SType.tString, SType.tList, SType.tListQuote))
-
 	# check
 	return pcontext.setResult(SSymbol(boolean = _v in _s))
 
