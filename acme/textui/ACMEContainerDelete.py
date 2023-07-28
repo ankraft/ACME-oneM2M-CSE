@@ -85,7 +85,10 @@ class ACMEContainerDelete(Container):
 
 	def updateResource(self, resource:Resource) -> None:
 		self.requestOriginator = resource.getOriginator()
-		self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+		if self.requestOriginator:	
+			self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+		else: # No originator, use CSE originator
+			self.fieldOriginator.update(CSE.cseOriginator, [CSE.cseOriginator])
 		self.resource = resource
 		self.response.update('')
 	
