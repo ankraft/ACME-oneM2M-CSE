@@ -249,6 +249,41 @@ allowedCredentialIDs=
 
 
 ;
+;	CoAP client settings
+;
+
+[coap]
+; Enable the CoAP binding.
+; Default: false
+enable=false
+serverPort=5683
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+; Default:
+listenIF=${basic.config:networkInterface}
+
+
+;
+;	CoAP security settings
+;
+
+[coap.security]
+; Enable DTLS for communications with the CoAP server.
+; Default: False
+useDTLS=false
+; TLS version to be used in connections.
+; Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+; version negotiation.
+; Default: auto
+dtlsVersion=auto
+; Verify certificates in requests. Set to False when using self-signed certificates. 
+; Default: False
+verifyCertificate=False
+; Path and filename of the certificate file. Default: ${basic.config:dataDirectory}/certs/coap_cert.pem
+certificateFile=${basic.config:dataDirectory}/certs/coap_cert.pem
+; Path and filename of the private key file. Default: None
+privateKeyFile=${basic.config:dataDirectory}/certs/coap_key.pem
+
+;
 ;	Database settings
 ;
 
@@ -406,6 +441,36 @@ mbs=10000
 
 
 ;
+;	Resource defaults: LocationPolicy
+;
+
+[resource.lcp]
+; Default for maxNrOfInstances for the LocationPolicy's container.
+; Default: 10
+mni=10
+; Default for maxByteSize for the LocationPolicy's container. Default: 10.000 bytes
+mbs=10000
+
+
+;
+;	Resource defaults: Request
+;
+
+[resource.req]
+; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
+expirationTime=60
+
+
+;
+;	Resource defaults: Subscription
+;
+
+[resource.sub]
+; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
+batchNotifyDuration=60
+
+
+;
 ;	Resource defaults: TimeSeries
 ;
 
@@ -433,24 +498,6 @@ bcni=PT1H
 ; is sent to an AE or CSE target.
 ; Default: 10.0 seconds
 bcnt=10.0
-
-
-;
-;	Resource defaults: Request
-;
-
-[resource.req]
-; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
-expirationTime=60
-
-
-;
-;	Resource defaults: Subscription
-;
-
-[resource.sub]
-; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
-batchNotifyDuration=60
 
 
 ;
