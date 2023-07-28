@@ -396,7 +396,7 @@ class ACMEPContext(PContext):
 
 		# config value
 		if (_v := Configuration.get(_key)) is None:
-			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined key: {_key}'))
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined configuration key: {_key}'))
 		
 		return pcontext.setResult(SSymbol(value = _v))
 
@@ -1423,7 +1423,7 @@ class ACMEPContext(PContext):
 			if operation == Operation.CREATE:
 				if (ty := ResourceTypes.fromTPE( list(content.keys())[0] )) is None: # first is tpe
 					raise PInvalidArgumentError(pcontext.setError(PError.invalid, 'Cannot determine resource type'))
-				req['ty'] = ty
+				req['ty'] = ty.value
 
 			# Add primitive content when content is available
 			req['pc'] = content
