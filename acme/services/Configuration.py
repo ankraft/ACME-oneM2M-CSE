@@ -406,6 +406,14 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for LocationPolicy Resources
+				#
+
+				'resource.lcp.mni'						: config.getint('resource.lcp', 'mni', 								fallback = 10),
+				'resource.lcp.mbs'						: config.getint('resource.lcp', 'mbs', 								fallback = 10000),
+
+
+				#
 				#	Defaults for Request Resources
 				#
 

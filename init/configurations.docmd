@@ -1157,6 +1157,30 @@ The default value is `10000 bytes`.
 
 
 
+# resource.lcp
+
+This section specifies the CSE's defaults for LCP (LocationPolicy) resources.
+
+Settings in this section are listed under the `[resource.lcp]` section.
+
+
+
+# resource.lcp.mni
+
+This setting specifies the value of the *mni* (maxNrOfInstances) attribute for the "locations" CNT resource that is created by the CSE when the LCP is created.
+
+The default value is `10`.
+
+
+
+# resource.lcp.mbs
+
+This setting specifies the value of the *mbs* (maxByteSize) attribute for the "locations" CNT resource that is created by the CSE when the LCP is created.
+
+The default value is `10000 bytes`.
+
+
+
 # resource.req
 
 This section specifies the CSE's defaults for REQ (Request) resources.

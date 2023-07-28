@@ -76,6 +76,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
 [&#91;resource.actr&#93; - Resource defaults: Action](#resource_actr)  
 [&#91;resource.cnt&#93; - Resource Defaults: Container](#resource_cnt)  
+[&#91;resource.lcp&#93; - Resource Defaults: LocationPolicy](#resource_lcp)  
 [&#91;resource.req&#93; - Resource Defaults: Request](#resource_req)  
 [&#91;resource.sub&#93; - Resource Defaults: Subscription](#resource_sub)  
 [&#91;resource.ts&#93; - Resource Defaults: TimeSeries](#resource_ts)  
@@ -371,6 +372,19 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enableLimits | Enable/disable the default limits.<br/> Default: False | resource.cnt.enableLimits |
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | resource.cnt.mni          |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | resource.cnt.mbs          |
+
+[top](#sections)
+
+---
+
+<a name="resource_lcp"></a>
+
+### [resource.lcp] - Resource Defaults: 
+
+| Setting | Description                                                                           | Configuration Name |
+|:--------|:--------------------------------------------------------------------------------------|:-------------------|
+| mni     | Default for maxNrOfInstances for the LocationPolicy's container.<br/> Default: 10     | resource.lcp.mni   |
+| mbs     | Default for maxByteSize for the LocationPolicy's container.<br/>Default: 10.000 bytes | resource.lcp.mbs   |
 
 [top](#sections)
 
