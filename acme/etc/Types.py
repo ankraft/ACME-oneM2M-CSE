@@ -1477,10 +1477,48 @@ _SemanticFormatAsString = {
 	SemanticFormat.FF_RdfTurtle:		'ttl',
 	SemanticFormat.FF_Manchester:		'manchester',
 	SemanticFormat.FF_JsonLD:			'json-ld',
-	
-
 }
 
+
+##############################################################################
+#
+#	LocationPolicy related
+#
+
+class LocationSource(ACMEIntEnum):
+	"""	Location Source.
+	"""
+	
+	Network_based = 1
+	"""	Network based. """
+	Device_based = 2
+	"""	Device based. """
+	Sharing_based = 3
+	"""	Sharing based. """
+
+
+class GeofenceEventCriteria(ACMEIntEnum):
+	"""	Geofence Event Criteria.
+	"""
+	
+	Entering = 1
+	"""	Entering. """
+	Leaving = 2
+	"""	Leaving. """
+	Inside = 3
+	"""	Inside. """
+	Outside = 4
+	"""	Outside. """
+	
+
+class LocationUpdateEventCriteria(ACMEIntEnum):
+	"""	Location Update Event Criteria.
+	"""
+	
+	Location_Change = 0
+	"""	Location Change. """
+
+	
 ##############################################################################
 #
 #	Result and Argument and Header Data Classes
