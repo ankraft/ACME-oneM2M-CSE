@@ -77,11 +77,12 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 			return default
 
 
-def fromDuration(duration:str) -> float:
+def fromDuration(duration:str, allowMS:bool = True) -> float:
 	"""	Convert a duration to a number of seconds (float). 
 
 		Args:
 			duration: String with either an ISO 8601 period or a string with a number of ms.
+			allowMS: If True, the function tries to convert the string as if it contains a number of ms.
 		Return:
 			Float, number of seconds.
 		Raise:
@@ -93,7 +94,9 @@ def fromDuration(duration:str) -> float:
 		try:
 			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
 			# the string and return an absolute UTC-based duration
-			return float(duration) / 1000.0
+			if allowMS:
+				return float(duration) / 1000.0
+			raise
 		except Exception as e:
 			#if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
 			raise
