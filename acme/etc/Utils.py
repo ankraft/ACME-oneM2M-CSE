@@ -781,7 +781,7 @@ def getAttributeSize(attribute:Any) -> int:
 			for e in attribute:
 				size += getAttributeSize(e)
 		case dict():	# recurse a dictionary
-			for _,v in attribute:
+			for _,v in attribute.items():
 				size += getAttributeSize(v)
 		case _:		# fallback for not handled types
 			size = sys.getsizeof(attribute)
