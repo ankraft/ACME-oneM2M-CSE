@@ -448,7 +448,8 @@ mbs=10000
 ; Default for maxNrOfInstances for the LocationPolicy's container.
 ; Default: 10
 mni=10
-; Default for maxByteSize for the LocationPolicy's container. Default: 10.000 bytes
+; Default for maxByteSize for the LocationPolicy's container. 
+; Default: 10.000 bytes
 mbs=10000
 
 

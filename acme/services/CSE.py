@@ -30,6 +30,7 @@ from ..services.EventManager import EventManager
 from ..services.GroupManager import GroupManager
 from ..services.HttpServer import HttpServer
 from ..services.Importer import Importer
+from ..services.LocationManager import LocationManager
 from ..services.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
@@ -72,6 +73,9 @@ httpServer:HttpServer							= None
 
 importer:Importer								= None
 """	Runtime instance of the `Importer`. """
+
+location:LocationManager						= None
+"""	Runtime instance of the `LocationManager`. """
 
 mqttClient:MQTTClient							= None
 """	Runtime instance of the `MQTTClient`. """
@@ -189,7 +193,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, mqttClient, notification, registration
+	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient, notification, registration
 	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
@@ -274,6 +278,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
 	semantic = SemanticManager()			# Initialize the semantic manager
+	location = LocationManager()			# Initialize the location manager
 	time = TimeManager()					# Initialize the time mamanger
 	script = ScriptManager()				# Initialize the script manager
 	action = ActionManager()				# Initialize the action manager
@@ -361,6 +366,7 @@ def _shutdown() -> None:
 	textUI and textUI.shutdown()
 	console and console.shutdown()
 	time and time.shutdown()
+	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
 	mqttClient and mqttClient.shutdown()

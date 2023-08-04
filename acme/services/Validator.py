@@ -740,7 +740,7 @@ class Validator(object):
 				try:
 					isodate.parse_duration(value)
 				except Exception as e:
-					raise BAD_REQUEST(f'must be an ISO duration: {str(e)}')
+					raise BAD_REQUEST(f'must be an ISO duration (e.g. "PT2S"): {str(e)}')
 				return (dataType, value)
 
 			case BasicType.base64:

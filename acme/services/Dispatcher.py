@@ -719,12 +719,12 @@ class Dispatcher(object):
 
 	def createLocalResource(self,
 							resource:Resource,
-							parentResource:Resource = None,
+							parentResource:Resource,
 							originator:Optional[str] = None,
 							request:Optional[CSERequest] = None) -> Resource:
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
-		if parentResource:
+		if parentResource:	# parentResource might be None if this is the root resource
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == ResourceTypes.SUB:
@@ -1079,8 +1079,17 @@ class Dispatcher(object):
 
 
 	def deleteResource(self, id:str,  originator:Optional[str] = None) -> None:
-		# TODO doc
+		""" Delete a resource from the CSE. 
 
+			Args:
+				id: The resource ID to delete.
+				originator: The originator of the request. Defaults to None.
+
+			Raises:
+				OPERATION_NOT_ALLOWED: If the resource is a CSEBase resource.
+				NOT_FOUND: If the resource is not found.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no DELETE access to the resource.
+		"""
 		
 		# Update locally
 		if (rID := localResourceID(id)) is not None:
