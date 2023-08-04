@@ -1518,6 +1518,15 @@ class LocationUpdateEventCriteria(ACMEIntEnum):
 	Location_Change = 0
 	"""	Location Change. """
 
+
+class LocationInformationType(ACMEIntEnum):
+	"""	Location Information Type.
+	"""
+	
+	Position_fix = 1
+	"""	Position fix. """
+	Geofence_event = 2
+	"""	Geofence event. """
 	
 ##############################################################################
 #
