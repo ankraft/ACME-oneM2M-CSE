@@ -20,7 +20,8 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [datetime](#datetime)                                   | Return a timestamp                                                               |
 |                            | [defun](#defun)                                         | Define a function                                                                |
 |                            | [dec](#dec)                                             | Decrement a variable                                                             |
-|                            | [dotimes](#dotimes)                                     | Simple loop over an s-expression                                                 |
+|                            | [dolist](#dolist)                                       | Loop over a list                                                                 |
+|                            | [dotimes](#dotimes)                                     | Loop over a numeric value                                                        |
 |                            | [eval](#eval)                                           | Evaluate and execute a quoted list                                               |
 |                            | [evaluate-inline](#evaluate-inline)                     | Enable and disable inline string evaluation                                      |
 |                            | [get-json-attribute](#get-json-attribute)               | Get a JSON attribute from a JSON structure                                       |
@@ -380,29 +381,59 @@ Example:
 
 ---
 
+<a name="dolist"></a>
+
+### dolist
+
+`(dolist (<loop variable> <list:list or quoted list> [<result variable>]) (<s-expression>+))`
+
+The `dolist` function loops over a list.  
+The first arguments is a list that contains a loop variable, a list to iterate over, and an optional
+`result` variable. The second argument is a list that contains one or more s-expressions that are executed in the loop.
+
+If the `result variable` is specified then the loop returns the value of that variable, otherwise `nil`.
+
+See also: [dotimes](#dotimes), [while](#while)
+
+Example:
+
+```lisp
+(dolist (i '(1 2 3 4 5 6 7 8 9 10))
+	(print i))                   ;; print 1..10
+
+(setq result 0)
+(dolist (i '(1 2 3 4 5 6 7 8 9 10) result)
+	(setq result (+ result i)))  ;; sum 1..10
+(print result)                   ;; 55
+```
+
+[top](#top)
+
+---
+
 <a name="dotimes"></a>
 
 ### dotimes
 
 `(dotimes (<loop variable> <count:number> [<result variable>]) (<s-expression>+))`
 
-The `dotimes` function provides a simple loop functionality.
+The `dotimes` function provides a simple numeric loop functionality.  
 The first arguments is a list that contains a loop variable that starts at 0, the loop `count` (which must be a non-negative number), and an optional
 `result` variable. The second argument is a list that contains one or more s-expressions that are executed in the loop.
 
 If the `result variable` is specified then the loop returns the value of that variable, otherwise `nil`.
 
-See also: [while](#while)
+See also: [dolist](#dolist), [while](#while)
 
 Example:
 
 ```lisp
 (dotimes (i 10)
-	(print i))                   ;; print 1..10
+	(print i))                   ;; print 0..9
 
 (setq result 0)
 (dotimes (i 10 result)
-	(setq result (+ result i)))  ;; sum 1..10
+	(setq result (+ result i)))  ;; sum 0..9
 (print result)                   ;; 45
 ```
 
@@ -1316,7 +1347,7 @@ A `while` loop continues to run when the first *guard* s-expression evaluates to
 
 The `while` function returns the result of the last evaluated s-expression in the *body*.
 
-See also: [dotime](#dotimes), [return](#return)
+See also: [doloop](#doloop), [dotime](#dotimes), [return](#return)
 
 Example:
 

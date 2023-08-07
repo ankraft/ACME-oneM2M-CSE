@@ -1979,6 +1979,58 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext
 
 
+def _doDolist(pcontext:PContext, symbol:SSymbol) -> PContext:
+	pcontext.assertSymbol(symbol, 3)
+
+	# arguments
+	pcontext, _arguments = pcontext.valueFromArgument(symbol, 1, SType.tList, doEval = False)	# don't evaluate the argument
+	if 2 <= len(_arguments) <= 3:
+		# get loop variable
+		_loopvar = cast(SSymbol, _arguments[0])
+		if _loopvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "var" must be a symbol, got: {pcontext.result.type}'))
+
+		# get list to loop over
+		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		if pcontext.result.type not in (SType.tList, SType.tListQuote):
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "list" must be a (quoted) list, got: {pcontext.result.type}'))
+		_looplist = pcontext.result
+	else:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+
+	# Get result variable name	
+	if len(_arguments) == 3:
+		_resultvar = cast(SSymbol, _arguments[2])
+		if _resultvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "result" must be a symbol, got: {pcontext.result.type}'))
+		
+		# if the variable does not exist, create it as a nil symbol
+		if not str(_resultvar) in pcontext.variables:
+			pcontext.variables[str(_resultvar)] = SSymbol()
+	else:
+		_resultvar = None
+
+	# code
+	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
+	_code = SSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
+
+	# execute the code
+	pcontext.variables[str(_loopvar)] = SSymbol(number = Decimal(0))
+	for i in _looplist.value: # type:ignore[union-attr]
+		pcontext.variables[str(_loopvar)] = i	# type:ignore[assignment]
+		pcontext = pcontext._executeExpression(_code, symbol)
+
+	# set the result
+	if _resultvar:
+		pcontext.result = pcontext.variables[str(_resultvar)]
+	else:
+		pcontext.result = SSymbol()
+
+	# return
+	return pcontext
+
+
+
 def _doDotimes(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	This function executes a code block a number of times.
 
@@ -3395,6 +3447,7 @@ _builtinCommands:PSymbolDict = {
 	'datetime':				_doDatetime,
 	'dec':					lambda p, a: _doIncDec(p, a, False),
 	'defun':				_doDefun,
+	'dolist':				_doDolist,
 	'dotimes':				_doDotimes,
 	'eval':					_doEval,
 	'evaluate-inline':		_doEvaluateInline,
