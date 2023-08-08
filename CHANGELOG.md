@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added automatic pip install of missing dependencies during startup.
 - [CSE] Added support for &lt;schedule> resource type.
+- [LCP] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
 - [SCRIPTS] Added "dolist", "dotimes", "tui-notify", and "get-loglevel" functions to the script interpreter. 
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 
