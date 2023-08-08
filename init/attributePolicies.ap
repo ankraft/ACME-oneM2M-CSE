@@ -1660,7 +1660,7 @@
 		{
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
-						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
+						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "LCPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SCHAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
