@@ -1,4 +1,4 @@
- #
+#
 #	ACMEContainerDelete.py
 #
 #	(c) 2023 by Andreas Kraft
@@ -61,6 +61,8 @@ class ACMEContainerDelete(Container):
 	"""
 
 	def __init__(self) -> None:
+		"""	Initialize the view.
+		"""
 		super().__init__(id = idRequestDelete)
 		self.requestOriginator = 'CAdmin'
 		self.response = Static('', id = 'request-delete-response-response')
@@ -70,6 +72,11 @@ class ACMEContainerDelete(Container):
 
 
 	def compose(self) -> ComposeResult:
+		""" Compose the view.
+
+			Returns:
+				The ComposeResult
+		"""
 		with Vertical(id = 'request-delete-view'):
 			yield self.fieldOriginator
 			with Center():

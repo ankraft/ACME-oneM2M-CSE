@@ -14,7 +14,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, Center, Middle
-from textual.widgets import Button, Tree as TextualTree, Markdown, TextLog
+from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
 from textual.widgets.tree import TreeNode
 from ..services import CSE
 from ..services.ScriptManager import PContext
@@ -263,7 +263,7 @@ class ACMEContainerTools(Container):
 		self.toolsExecButton = Button('Execute', id = 'tool-execute', variant = 'primary')
 		self.toolsExecButton.styles.visibility = 'hidden'
 
-		self.toolsLog = TextLog(id = 'tools-log-view', markup=True)
+		self.toolsLog = RichLog(id = 'tools-log-view', markup=True)
 
 
 	def compose(self) -> ComposeResult:
