@@ -41,6 +41,7 @@ The ACME CSE supports the following oneM2M resource types:
 | FlexContainer & Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported specializations include: TS-0023 R4, GenericInterworking, AllJoyn. |
 | FlexContainerInstance           |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                         |
 | Group (GRP)                     |  &check;  | The support includes requests via the *fopt* (fanOutPoint) virtual resource. Groups may contain remote resources.                                                                                                 |
+| LocationPolicy (LCP)            |  &check;  | Only *device based* location policy is supported.                                                                                                                                                                 |
 | Management Objects              |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                                   |
 | Node (NOD)                      |  &check;  |                                                                                                                                                                                                                   |
 | Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual resource. *requestAggregation* functionality is supported, too.                                                       |
@@ -83,6 +84,7 @@ The following table presents the supported management object specifications.
 | Blocking requests             |  &check;  |                                                                                           |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
 | Discovery                     |  &check;  |                                                                                           |
+| Location                      |  &check;  | Only *device based, and no *network based* location policies are supported.               |
 | Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
 | Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                         |
