@@ -14,13 +14,14 @@ from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, Center, Middle
-from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
+from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog, Label
 from textual.widgets.tree import TreeNode
 from ..services import CSE
 from ..services.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ..helpers.Interpreter import SSymbol
+from ..textui.ACMEFieldOriginator import ACMEInputField
 
 # TODO Add editing of configuration values
 
@@ -118,6 +119,11 @@ class ACMEToolsTree(TextualTree):
 {description}
 """)
 
+			# Add input field if the meta tag "tuiInput" is set
+			if ctx.hasMeta('tuiInput'):
+				self.parentContainer.toolsInput.styles.visibility = 'visible'
+				self.parentContainer.toolsInput.setLabel(ctx.getMeta('tuiInput'))
+			
 			# configure the button according to the meta tag "tuiExecuteButton"
 			self.parentContainer.toolsExecButton.styles.visibility = 'visible'
 			self.parentContainer.toolsExecButton.label = 'Execute'
@@ -155,6 +161,7 @@ class ACMEToolsTree(TextualTree):
 		else:
 			self.parentContainer.toolsHeader.update('')
 			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
+			self.parentContainer.toolsInput.styles.visibility = 'hidden'
 		
 	
 	def printLogs(self) -> None:
@@ -259,8 +266,11 @@ class ACMEContainerTools(Container):
 
 		self.toolsTree = ACMEToolsTree('Tools & Commands', id = 'tree-view')
 		self.toolsTree.parentContainer = self
-		
-		self.toolsExecButton = Button('Execute', id = 'tool-execute', variant = 'primary')
+
+		self.toolsInput = ACMEInputField(id = 'tools-argument')
+		self.toolsInput.styles.visibility = 'hidden'
+
+		self.toolsExecButton = Button('Execute', id = 'tool-execute-button', variant = 'primary')
 		self.toolsExecButton.styles.visibility = 'hidden'
 
 		self.toolsLog = RichLog(id = 'tools-log-view', markup=True)
@@ -274,7 +284,10 @@ class ACMEContainerTools(Container):
 					yield self.toolsHeader
 				with Middle(id = 'tools-arguments-view'):
 					with Center():
+						yield self.toolsInput
+					with Center():
 						yield self.toolsExecButton
+
 				yield self.toolsLog
 
 
@@ -287,10 +300,15 @@ class ACMEContainerTools(Container):
 		self.toolsTree.stopAutoRunScript()
 
 	
-	@on(Button.Pressed, '#tool-execute')
+	@on(Button.Pressed, '#tool-execute-button')
 	def buttonExecute(self) -> None:
-		_executeScript(str(self.toolsTree.cursor_node.label))
+		_executeScript(str(self.toolsTree.cursor_node.label), argument = str(self.toolsInput.value))
 	
+
+	@on(ACMEInputField.Submitted)
+	def inputFieldSubmitted(self) -> None:
+		self.buttonExecute()
+
 
 	def action_clear_log(self) -> None:
 		# Clear the log view
@@ -410,7 +428,7 @@ def _getContext(name:str) -> Optional[PContext]:
 	return None
 
 
-def _executeScript(name:str, autoRun:Optional[bool] = False) -> bool:
+def _executeScript(name:str, autoRun:Optional[bool] = False, argument:Optional[str] = '') -> bool:
 	""" Executes the given script context.
 
 		Args:
@@ -418,6 +436,7 @@ def _executeScript(name:str, autoRun:Optional[bool] = False) -> bool:
 	"""
 	if (ctx := _getContext(str(name))) and not ctx.state.isRunningState():
 		return CSE.script.runScript(ctx,
+			      					arguments = argument,
 			      					background = True,
 									environment = { 'tui.autorun': SSymbol(boolean = autoRun),
 												  }

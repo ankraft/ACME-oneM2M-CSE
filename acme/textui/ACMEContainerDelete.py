@@ -122,3 +122,6 @@ class ACMEContainerDelete(Container):
 			self.response.update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
 
 
+	@on(ACMEFieldOriginator.Submitted)
+	def inputFieldSubmitted(self, value:str) -> None:
+		self.buttonExecute()
