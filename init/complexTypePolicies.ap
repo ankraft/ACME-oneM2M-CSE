@@ -112,10 +112,10 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:requestPrimitive",
-			"lname": "resourceType",
+			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
 			"type": "enum",
-			"etype": "m2m:resourceType",
+			"etype": "m2m:desIdResType",
 			"car": "01"
 		}
 	],
@@ -360,17 +360,17 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:filterCriteria",
-			"lname": "accessControlOperations",
+			"lname": "operations",
 			"ns": "m2m",
-			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"type": "nonNegInteger",
 			"car": "01"
 		},
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:operationMonitor",
-			"lname": "accessControlOperations",
+			"lname": "operations",
 			"ns": "m2m",
-			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"type": "nonNegInteger",
 			"car": "01"
 		}
 	],
