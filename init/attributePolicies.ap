@@ -315,7 +315,7 @@
 	"act": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "accessControWindow",
+			"lname": "activate",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "01",
