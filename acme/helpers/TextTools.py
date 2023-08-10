@@ -299,7 +299,7 @@ _soundexReplacements = (
 		('R', '6'),
 	)
 
-def soundex(s:str) -> str:
+def soundex(s:str, maxCount:Optional[int] = 4) -> str:
 	"""	Convert a string to a Soundex value.
 
 		Args:
@@ -337,23 +337,32 @@ def soundex(s:str) -> str:
 			if ch != 'H' and ch != 'W':
 				# leave last alone if middle letter is H or W
 				last = None
-		if count == 4:
+		if count == maxCount:
 			break
 
 	result += '0' * (4 - count)
 	return ''.join(result)
 
 
-def soundsLike(s1:str, s2:str) -> bool:
+def soundsLike(s1:str, s2:str, maxCount:Optional[int] = 4) -> bool:
 	"""	Compare two strings using the soundex algorithm.
 
 		Args:
 			s1: First string to compare.
 			s2: Second string to compare.
+			maxCount: Maximum number of soundex result characters to compare.
 		
 		Return:
 			Boolean indicating the result of the comparison.
 	"""
+	# Remove 0 characters from the soundex result because they indicate a too short string
+	_s1 = soundex(s1, maxCount).replace('0', '')
+	_s2 = soundex(s2, maxCount).replace('0', '')
+
+	# Only take the smaller number of characters of the soundex result into account
+	_l = min(len(_s1), len(_s2))
+	return _s1[:_l] == _s2[:_l]	
+
 	return soundex(s1) == soundex(s2)
 
 
