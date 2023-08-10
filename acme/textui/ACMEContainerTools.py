@@ -101,6 +101,7 @@ class ACMEToolsTree(TextualTree):
 			# This is a category node, so set the description, clear the button etc.
 			self.parentContainer.toolsHeader.update(f'## {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
+			self.parentContainer.toolsInput.styles.visibility = 'hidden'
 			self.parentContainer.toolsLog.clear()
 
 
@@ -120,9 +121,11 @@ class ACMEToolsTree(TextualTree):
 """)
 
 			# Add input field if the meta tag "tuiInput" is set
-			if ctx.hasMeta('tuiInput'):
+			if (_l := ctx.getMeta('tuiInput')):
 				self.parentContainer.toolsInput.styles.visibility = 'visible'
-				self.parentContainer.toolsInput.setLabel(ctx.getMeta('tuiInput'))
+				self.parentContainer.toolsInput.setLabel(_l)
+			else:
+				self.parentContainer.toolsInput.styles.visibility = 'hidden'
 			
 			# configure the button according to the meta tag "tuiExecuteButton"
 			self.parentContainer.toolsExecButton.styles.visibility = 'visible'
@@ -223,7 +226,7 @@ class ACMEContainerTools(Container):
 	display: block;
 	overflow: auto auto;
 	min-width: 100%;
-	height: 1fr;
+	height: 1.5fr;
 	margin: 0 0 0 0;
 }
 

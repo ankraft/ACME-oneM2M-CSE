@@ -28,6 +28,7 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 | [Text UI](#_textui) | [@category](#meta_category)                 | Add a category to the script for the text UI's *Tools* section                                 |
 |                     | [@tuiAutoRun](#meta_tuiAutoRun)             | Automatically run scripts when selecting them, and optionally repeat                           |
 |                     | [@tuiExecuteButton](#meta_tuiExecuteButton) | Configure the script's `Execute` button in the text UI                                         |
+|                     | [@tuiInput](#meta_tuiInput)                 | Add an input field for script arguments in the text UI                                         |
 |                     | [@tuiSortOrder](#meta_tuiSortOrder)         | Specify the sort order for scripts in a category in the text UI's *Tools* section              |
 |                     | [@tuiTool](#meta_tuiTool)                   | Tag a script for listing in the text UI's *Tools* section                                      |
 
@@ -434,9 +435,11 @@ Example:
 
 ### @tuiExecuteButton
 
-`@tuiExecuteButton [<label:string>] `
+`@tuiExecuteButton [<label:string>]`
 
-This meta tag configures the script's `Execute` button of the text UI. The following configurations are possible
+This meta tag configures the script's `Execute` button of the text UI. 
+
+The following configurations are possible:
 
 - Not present in a script: The button displays the default text "Execute".
 - Present in a script with an argument: The argument is used for the button's label.
@@ -452,19 +455,24 @@ Example:
 
 ---
 
-<a name="meta_tuiTool"></a>
+<a name="meta_tuiInput"></a>
 
-### @tuiTool
+### @tuiInput
 
-`@tuiTool`
+`@tuiInput [<label:string>]`
 
-This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
-section.
+This meta tag adds an input field to text UI. Text entered in this field is passed as 
+arguments to the script that can be access using the [argv](ACMEScript-functions.md#argv) function.
+
+The following configurations are possible:
+
+- Not present in a script or without a label: No input field is added.
+- Present in a script with an argument: The argument is used for the input field's label.
 
 Example:
 
 ```lisp
-@tuiTool
+@tuiInput A Label
 ```
 
 [top](#top)
@@ -486,6 +494,25 @@ Example:
 
 ```lisp
 @tuiSortOrder 100
+```
+
+[top](#top)
+
+---
+
+<a name="meta_tuiTool"></a>
+
+### @tuiTool
+
+`@tuiTool`
+
+This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools*
+section.
+
+Example:
+
+```lisp
+@tuiTool
 ```
 
 [top](#top)

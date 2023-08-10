@@ -125,12 +125,14 @@ In addition more functions are provided in the file [ASFunctions.as](../init/ASF
 
 Concatenate and return the stringified versions of the symbol arguments.
 
-See also: [to-string](#to-string)
+Note, that this function will not add spaces between the symbols. One can use the [nl](#nl) and [sp](#sp) functions to add newlines and spaces.
+
+See also: [nl](#nl), [sp](#sp), [to-string](#to-string)
 
 Example:
 
 ```lisp
-(. "Time: " (datetime))  ;; Returns "Time: 20230308T231049.934630"
+(. "Time:" sp (datetime))  ;; Returns "Time: 20230308T231049.934630"
 ```
 
 [top](#top)
@@ -1095,7 +1097,7 @@ Example:
 `(round <value:number> [<precission:number>])`
 
 The `round` function rounds a number to *precision* digits after the decimal point. The default is 0, meaning to round to nearest integer.
- 
+
 Example:
 
 ```lisp
