@@ -336,6 +336,13 @@ f"""
 allowedCSROriginators=id-in,id-mn,id-asn
 """
 
+		cnfRegular = \
+"""
+[scripting]
+scriptDirectories=${cse:resourcesPath}/utilities
+"""
+
+
 		cnfDevelopment = \
 """
 [textui]
@@ -347,6 +354,9 @@ enable=true
 [http]
 enableUpperTesterEndpoint=true
 enableStructureEndpoint=true
+
+[scripting]
+scriptDirectories=${cse:resourcesPath}/utilities
 """
 
 		cnfIntroduction = \
@@ -358,7 +368,7 @@ startWithTUI=true
 enable=true
 
 [scripting]
-scriptDirectories=${cse:resourcesPath}/demoLightbulb,${cse:resourcesPath}/demoDocumentationTutorials
+scriptDirectories=${cse:resourcesPath}/demoLightbulb,${cse:resourcesPath}/demoDocumentationTutorials,${cse:resourcesPath}/utilities
 """
 
 		cnfHeadless = \
@@ -371,14 +381,15 @@ headless=True
 		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra
 
 		# add more mode-specific configurations
-		if cseEnvironment in ('Development'):	
-			jcnf += cnfDevelopment
-		
-		if cseEnvironment in ('Introduction'):
-			jcnf += cnfIntroduction
-
-		if cseEnvironment in ('Headless'):
-			jcnf += cnfHeadless
+		match cseEnvironment:
+			case 'Regular':
+				jcnf += cnfRegular
+			case 'Development':
+				jcnf += cnfDevelopment
+			case 'Introduction':
+				jcnf += cnfIntroduction
+			case 'Headless':
+				jcnf += cnfHeadless
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')
