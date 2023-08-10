@@ -20,7 +20,7 @@ from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializati
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, NotificationContentType, NotificationEventType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
-from ..helpers.TextTools import findXPath
+from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
@@ -517,6 +517,47 @@ class Validator(object):
 		
 		# TODO look for other types, requests, filter...
 		return None
+	
+
+	def getAttributePoliciesByName(self, attr:str) -> Optional[list[AttributePolicy]]:
+		"""	Return the attribute policies for an attribute name.
+
+			Args:
+				attr: Attribute name.
+			
+			Return:
+				List of AttributePolicy or None.
+		"""
+		result = { }
+		keys = attributePolicies.keys()
+		_attrlower = attr.lower()
+
+		# First search for the specific attribute name
+		for each in keys:
+			s = each[1]
+			if s == _attrlower:
+				result[s] = attributePolicies[each]
+				break
+
+		# If it couldn't be found, search for similar full attribute names
+		if not result:
+			for each in keys:
+				s = each[1]
+				v = attributePolicies[each]
+				if soundsLike(_attrlower, v.lname, 99):
+					if s not in result:
+						result[s] = v
+		
+			# If it couldn't be found, search for parts of the attribute name
+			for each in keys:
+				s = each[1]
+				v = attributePolicies[each]
+				if _attrlower in v.lname.lower():
+					if s not in result:
+						result[s] = v
+
+
+		return [ each for each in result.values() ]
 	
 
 	def getComplexTypeAttributePolicies(self, ctype:str) -> Optional[list[AttributePolicy]]:

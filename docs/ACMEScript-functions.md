@@ -67,6 +67,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [Logical Operations](#logical-operations)               | List of supported logical operations                                             |
 |                            | [Mathematical Operations](#mathematical-operations)     | List of supported mathematical operations                                        |
 | [CSE](#_cse)               | [clear-console](#clear-console)                         | Clear the console screen                                                         |
+|                            | [cse-attribute-info](#cse-atribute-info)                | Return information about one or more matching attributes                         |
 |                            | [cse-status](#cse-status)                               | Return the CSE's current status                                                  |
 |                            | [get-config](#get-config)                               | Retrieve a CSE's configuration setting                                           |
 |                            | [get-loglevel](#get-loglevel)                           | Retrieve the CSE's current log level                                             |
@@ -1486,6 +1487,35 @@ Example:
 ```
 
 [top](#top)
+
+---
+
+<a name="cse-attribute-info"></a>
+
+### cse-attribute-info
+
+`(cse-attribute-info <name:str>)`
+
+Return a list of CSE attribute infos for the attribute `name``. 
+The search is done over the short and long names of the attributes applying
+a fuzzy search when searching the long names.
+
+			
+The function returns a quoted list where each entry is another quoted list 
+with the following symbols:
+				
+- attribute short name
+- attribute long name
+- attribute type
+				
+Example:
+
+```lisp
+(cse-attribute-info "acop") ;; Returns ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
+```
+
+[top](#top)
+
 
 ---
 

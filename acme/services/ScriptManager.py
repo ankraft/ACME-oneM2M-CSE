@@ -18,7 +18,7 @@ from rich.text import Text
 
 
 from ..helpers.KeyHandler import FunctionKey
-from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
+from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
@@ -119,6 +119,7 @@ class ACMEPContext(PContext):
 						 symbols = {	
 							 			'clear-console':			self.doClearConsole,
 							 			'create-resource':			self.doCreateResource,
+										'cse-attribute-infos':		self.doCseAttributeInfos,
 										'cse-status':				self.doCseStatus,
 							 			'delete-resource':			self.doDeleteResource,
 										'get-config':				self.doGetConfiguration,
@@ -321,6 +322,77 @@ class ACMEPContext(PContext):
 		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.CREATE)
 	
+
+	def doCseAttributeInfos(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Return a list of CSE attribute infos for the given attribute name. 
+			The search is done over the short and long names of the attributes using
+			a fuzzy search when searching the long names.
+
+			The function has the following arguments:
+
+				- attribute name. This could be a short name or a long name.
+			
+			The function returns a quoted list where each entry is another quoted list
+			with the following symbols:
+				
+				- attribute short name
+				- attribute long name
+				- attribute type
+				
+			Example:
+				::
+
+					(cse-attribute-info "acop") -> ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+
+		def _getType(t:BasicType, policy:AttributePolicy) -> str:	# type:ignore [return]
+			match t:
+				case BasicType.list | BasicType.listNE if policy.lTypeName != 'enum':
+					return f'{policy.typeName} of {policy.lTypeName}'
+				case BasicType.list | BasicType.listNE if policy.lTypeName == 'enum':
+					return f'{policy.typeName} of {_getType(BasicType.enum, policy)}'
+				case BasicType.complex:
+					return policy.typeName
+				case BasicType.enum:
+					return f'enum ({policy.etype})'
+				case _:
+					return policy.typeName
+
+
+		pcontext.assertSymbol(symbol, 2)
+
+		# get attribute name
+		pcontext, _name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		result = CSE.validator.getAttributePoliciesByName(_name)
+		resultSymbolList = []
+		if result is not None:
+			for policy in result:
+				# Determine exact type
+				_t = _getType(policy.type, policy)
+				# match policy.type:
+				# 	case BasicType.list | BasicType.listNE:
+				# 		_t = f'{policy.typeName} of {policy.lTypeName}'
+				# 	case BasicType.complex:
+				# 		_t = policy.typeName
+				# 	case BasicType.enum:
+				# 		_t = f'enum ({policy.etype})'
+				# 	case _:
+				# 		_t = policy.typeName
+				
+				resultSymbolList.append(SSymbol(lstQuote = [ SSymbol(string = policy.sname), 
+					   										 SSymbol(string = policy.lname), 
+															 SSymbol(string = _t) ]))
+
+		return pcontext.setResult(SSymbol(lstQuote = resultSymbolList))
+
 
 	def doCseStatus(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		""" Retrieve the CSE status.
