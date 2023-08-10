@@ -2087,6 +2087,7 @@ class AttributePolicy:
 	typeName:str				= None	# The type as written in the definition
 	fname:str					= None 	# Name of the definition file
 	ltype:BasicType				= None	# sub-type of a list
+	etype:str					= None	# name of the enum type
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
 	evalues:dict[int, str]		= None 	# Dict of enum values and interpretations
 	ptype:Type					= None	# Implementation type of the enum values

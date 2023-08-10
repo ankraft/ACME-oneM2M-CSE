@@ -546,6 +546,7 @@ class Importer(object):
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BasicType = None
+		etype:str = None
 		evalues:dict[int, str] = None
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
 			if lTypeName := findXPath(attr, 'ltype'):
@@ -611,6 +612,7 @@ class Importer(object):
 								ctype = ctype,
 								fname = fn,
 								ltype = ltype,
+								etype = etype,
 								lTypeName = lTypeName,
 								evalues = evalues
 							)
