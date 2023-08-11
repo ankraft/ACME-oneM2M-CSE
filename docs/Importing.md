@@ -2,14 +2,14 @@
 
 # CSE Startup, Importing Resources and Other Settings
 
-[Resources](#resources)  
+[Initial Resources](#resources)  
 [Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
 [Attribute Policies for Common Resources and Complex Types](#attributes)  
 [Help Documentation](#help-documentation)
 
 
 <a name="resources"></a>
-## Resources
+## Initial Resources
 
 During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
 

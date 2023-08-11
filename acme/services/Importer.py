@@ -37,6 +37,7 @@ class Importer(object):
 
 	__slots__ = (
 		'resourcePath',
+		'extendedResourcePath',
 		'macroMatch',
 		'isImporting',
 
@@ -52,6 +53,7 @@ class Importer(object):
 		"""	Initialization of an *Importer* instance.
 		"""
 		self.resourcePath = Configuration.get('cse.resourcesPath')
+		self.extendedResourcePath = None
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
 		L.isInfo and L.log('Importer initialized')
@@ -95,7 +97,7 @@ class Importer(object):
 	#	Scripts
 	#
 
-	def importScripts(self, path:Optional[str] = None) -> bool:
+	def importScripts(self, path:Optional[str|list[str]] = None) -> bool:
 		"""	Import the ACME script from a directory.
 		
 			Args:
@@ -110,6 +112,12 @@ class Importer(object):
 			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
+			path = [ path ]
+			for _e in os.scandir(self.resourcePath):
+				if _e.is_dir() and _e.name.endswith('.scripts'):
+					path.append(_e.path)
+			self.extendedResourcePath = path	# save for later use
+
 		self._prepareImporting()
 		try:
 			L.isInfo and L.log(f'Importing scripts from directory(s): {path}')

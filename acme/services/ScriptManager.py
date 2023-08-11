@@ -1779,11 +1779,11 @@ class ScriptManager(object):
 				del self.scripts[eachName]
 
 		# Read new scripts
-		if CSE.importer.resourcePath:	# from the init directory
-			if self.loadScriptsFromDirectory(CSE.importer.resourcePath) == -1:
+		if CSE.importer.extendedResourcePath:	# from the init directory
+			if self.loadScriptsFromDirectory(CSE.importer.extendedResourcePath) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
-		if CSE.script.scriptDirectories:	# from the extra script directories
-			if self.loadScriptsFromDirectory(CSE.script.scriptDirectories) == -1:
+		if self.scriptDirectories:	# from the extra script directories
+			if self.loadScriptsFromDirectory(self.scriptDirectories) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
 		return True
 
