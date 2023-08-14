@@ -96,6 +96,8 @@ class ACMEToolsTree(TextualTree):
 		# Stop a currently running autorun worker when the node is different 
 		# from the previous autorun node
 		self.stopAutoRunScript(str(node.label))
+		self.parentContainer.toolsInput.value = ''
+
 
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
