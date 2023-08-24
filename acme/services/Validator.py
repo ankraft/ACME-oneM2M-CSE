@@ -727,6 +727,9 @@ class Validator(object):
 			case BasicType.string | BasicType.anyURI if isinstance(value, str):
 				return (dataType, value)
 
+			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+				return (dataType, value)
+
 			case BasicType.list | BasicType.listNE if isinstance(value, list):
 				if dataType == BasicType.listNE and len(value) == 0:
 					raise BAD_REQUEST('empty list is not allowed')
@@ -775,6 +778,8 @@ class Validator(object):
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
 
 			case BasicType.geoCoordinates if isinstance(value, dict):
+
+				# TODO geoJSON validation
 				return (dataType, value)
 
 			case BasicType.duration:

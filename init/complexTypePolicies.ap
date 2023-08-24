@@ -219,7 +219,7 @@
 			"ctype": "m2m:operationResult",
 			"lname": "from",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01"
 		},
 		{
@@ -227,14 +227,14 @@
 			"ctype": "m2m:requestPrimitive",
 			"lname": "from",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		},
 		{
 			"rtypes": [ "REQRESP" ],
 			"lname": "from",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01",
 			"oc": "M",
 			"ou": "NP",
@@ -634,7 +634,7 @@
 			"ctype": "m2m:operationResult",
 			"lname": "to",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		},
 		{
@@ -642,14 +642,14 @@
 			"ctype": "m2m:requestPrimitive",
 			"lname": "to",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "1"
 		},
 		{
 			"rtypes": [ "REQRESP" ],
 			"lname": "to",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -964,7 +964,7 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:actionInput",
-			"lname": "resourceID",
+			"lname": "ID",
 			"ns": "m2m",
 			"type": "anyURI",
 			"car": "01"
@@ -1680,7 +1680,7 @@
 			"lname": "ontologyMappingResources",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", 	// m2m:listOfM2MID
+			"ltype": "ID", 	// m2m:listOfM2MID
 			"car": "01"
 		}
 	],
@@ -1738,7 +1738,7 @@
 			"ctype": "m2m:operationMonitor",
 			"lname": "originator",
 			"ns": "m2m",
-			"type": "string",	// m2m:ID
+			"type": "ID",
 			"car": "01"
 		}
 	],

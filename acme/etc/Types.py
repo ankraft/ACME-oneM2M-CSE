@@ -620,6 +620,7 @@ class BasicType(ACMEIntEnum):
 	schedule		= auto()	# scheduleEntry
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
+	ID 				= auto()	# m2m:ID
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
