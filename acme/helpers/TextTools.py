@@ -66,7 +66,7 @@ def commentJson(data:Union[str, dict],
 	"""
 
 	if isinstance(data, dict):
-		data = json.dumps(data, indent=4, sort_keys=True)
+		data = json.dumps(data, indent=2, sort_keys=True)
 
 	# find longest line
 	maxLineLength = 0
@@ -120,7 +120,6 @@ def commentJson(data:Union[str, dict],
 			result.append(line)
 		else:
 			if width is not None and maxLength > width:	# Put comment above line
-				result.append('')
 				result.append(f'{" " * (len(line) - len(line.lstrip()))}{comment}')
 				result.append(line)
 			else:
