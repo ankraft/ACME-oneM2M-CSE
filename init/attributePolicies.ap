@@ -3429,6 +3429,15 @@
 			"annc": "OA"
 		}
 	],
+	"vrq": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "verificationRequest",
+			"ns": "m2m",
+			"type": "boolean"
+		}
+	],
+
 	"wcrds": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
