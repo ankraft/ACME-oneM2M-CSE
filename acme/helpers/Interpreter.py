@@ -1935,10 +1935,6 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 		format = _format
 	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
 
-	if symbol.length == 2:
-		pcontext, _format = pcontext.valueFromArgument(symbol, 1, SType.tString)
-	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
-
 
 def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	This function defines a new function.
@@ -2022,7 +2018,7 @@ def _doDolist(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# code
 	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
-	_code = SSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
+	_code = SSymbol(lst = _code)	# We got a python list, but need a SSymbol list
 
 	# execute the code
 	pcontext.variables[str(_loopvar)] = SSymbol(number = Decimal(0))
