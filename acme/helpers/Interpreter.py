@@ -903,6 +903,16 @@ class PContext():
 		self.state = state
 		self.error = PErrorState(error, msg, expression, exception)
 		return self
+
+
+	def clearError(self, state:Optional[PState] = PState.running) -> None:
+		"""	Clear the error status.
+
+			Args:
+				state: `PState` to indicate the state of the script. Default is "running".
+		"""
+		self.state = state
+		self.error = PErrorState(PError.noError, 0, '', None)
 	
 
 	def copyError(self, pcontext:PContext) -> None:
@@ -2271,7 +2281,10 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, minLength = 3)
 
-	pcontext, _e = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+	pcontext, _e = pcontext.valueFromArgument(symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+	if isinstance(_e, (list, str)):
+		_e = len(_e) > 0
+
 	if _e:
 		_p = pcontext._executeExpression(symbol[2], symbol)
 	elif symbol.length == 4:
@@ -2786,6 +2799,7 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 	"""
 	pcontext.assertSymbol(symbol, minLength = 2)
 	r1 = pcontext._executeExpression(symbol[1], symbol).result
+	result = deepcopy(r1)
 
 	for i in range(2, symbol.length):
 		try:
@@ -2793,11 +2807,11 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 			r2 = pcontext._executeExpression(symbol[i], symbol).result
 			
 			# If the first operant is a list, then we have to perform a bit different
-			if r1.type in (SType.tList, SType.tListQuote):
+			if result.type in (SType.tList, SType.tListQuote):
 
 				# If both operants are list then do a raw comparison
 				if r2.type in (SType.tList, SType.tListQuote):
-					r1.value = op(r1.raw(), r2.raw())
+					result.value = op(result.raw(), r2.raw())
 				
 				# If the second operant is NOT a list, then iterate of the first and do the
 				# operation. If any succeeds, then the operation is true.
@@ -2806,14 +2820,14 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 					if tp != SType.tBool:
 						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators: {symbol}'))
 					_v1 = None
-					for s in cast(list, r1.value):
+					for s in cast(list, result.value):
 						if _v1 := op(s.value, r2.value):	# True if any
 							break
-					r1.value = _v1
+					result.value = _v1
 			
 			# Otherwise just apply the operator
 			else:
-				r1.value = op(r1.value, r2.value)
+				result.value = op(result.value, r2.value)
 		except ZeroDivisionError as e:
 			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
 		except TypeError as e:
@@ -2823,8 +2837,8 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 				raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid arguments in expression: {str(e)}'))
 
-	r1.type = tp
-	return pcontext.setResult(r1)
+	result.type = tp
+	return pcontext.setResult(result)
 
 
 def _doParseString(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3399,7 +3413,9 @@ def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
 	while True:
 		
 		# evaluate while expression
-		pcontext, _e = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+		pcontext, _e = pcontext.valueFromArgument(symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+		if isinstance(_e, (list, str)):
+			_e = len(_e) > 0
 		if not _e:
 			break
 

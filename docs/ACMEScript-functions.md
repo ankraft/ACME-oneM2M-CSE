@@ -530,11 +530,15 @@ Examples:
 
 ---
 
+<a name="if"></a>
+
 ### if
 
 `(if <boolean expression> <s-expression> [<s-expression>])`
 
 The `if` function works like an “if-then-else” statement in other programing languages. The first argument is a boolean expression. If it evaluates to *true* then the second argument is executed. If it evaluates to *false* then the third (optional) argument is executed, if present.
+
+The boolean expression can be any s-expression that evaluates to a boolean value or *nil*, or a list or a string. *nil* values, empty lists, or zero-length strings evaluate to *false*, or to *true* otherwise.
 
 Example:
 
@@ -1347,6 +1351,8 @@ Example:
 The `while` function implements a loop functionality.
 
 A `while` loop continues to run when the first *guard* s-expression evaluates to *true*. Then the *body* s-expression is evaluated. After this the *guard* is evaluated again and the the loops continues or the `while` function returns.
+
+The boolean guard can be any s-expression that evaluates to a boolean value or *nil*, or a list or a string. *nil* values, empty lists, or zero-length strings evaluate to *false*, or to *true* otherwise.
 
 The `while` function returns the result of the last evaluated s-expression in the *body*.
 

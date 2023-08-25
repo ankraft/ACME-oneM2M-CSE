@@ -241,7 +241,7 @@ class ACMEPContext(PContext):
 			Return:
 				String with the error message.
 		"""
-		return f'{self.error.error.name} error in {self.scriptFilename} - {self.error.message}'
+		return f'"{self.error.error.name}" error in {self.scriptFilename} - {self.error.message}'
 
 
 	@property
