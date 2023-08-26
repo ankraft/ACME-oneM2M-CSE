@@ -302,7 +302,7 @@ class Configuration(object):
 				'http.allowPatchForDelete'				: config.getboolean('http', 'allowPatchForDelete', 					fallback = False),
 				'http.enableStructureEndpoint'			: config.getboolean('http', 'enableStructureEndpoint', 				fallback = False),
 				'http.enableUpperTesterEndpoint'		: config.getboolean('http', 'enableUpperTesterEndpoint', 			fallback = False),
-				'http.listenIF'							: config.get('http', 'listenIF', 									fallback = '127.0.0.1'),
+				'http.listenIF'							: config.get('http', 'listenIF', 									fallback = '0.0.0.0'),
 				'http.port' 							: config.getint('http', 'port', 									fallback = 8080),
 				'http.root'								: config.get('http', 'root', 										fallback = ''),
 				'http.timeout' 							: config.getfloat('http', 'timeout',								fallback = 10.0),
@@ -346,7 +346,7 @@ class Configuration(object):
 				'mqtt.address'							: config.get('mqtt', 'address', 									fallback = '127.0.0.1'),
 				'mqtt.enable'							: config.getboolean('mqtt', 'enable', 								fallback = False),
 				'mqtt.keepalive' 						: config.getint('mqtt', 'keepalive',								fallback = 60),
-				'mqtt.listenIF' 						: config.get('mqtt', 'listenIF',									fallback = '127.0.0.1'),
+				'mqtt.listenIF' 						: config.get('mqtt', 'listenIF',									fallback = '0.0.0.0'),
 				'mqtt.port' 							: config.getint('mqtt', 'port', 									fallback = None),	# Default will be determined later (s.b.)
 				'mqtt.timeout' 							: config.getfloat('mqtt', 'timeout',								fallback = 10.0),
 				'mqtt.topicPrefix' 						: config.get('mqtt', 'topicPrefix',									fallback = ''),
@@ -367,7 +367,7 @@ class Configuration(object):
 				#
 
 				'coap.enable'							: config.getboolean('coap', 'enable', 								fallback = False),
-				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '127.0.0.1'),
+				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '0.0.0.0'),
 				'coap.port' 							: config.getint('coap', 'port', 									fallback = None),	# Default will be determined later (s.b.)
 
 				#

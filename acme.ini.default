@@ -132,7 +132,8 @@ size=200
 [http]
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
-; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+; Default:0.0.0.0
 listenIF=${basic.config:networkInterface}
 ; Own address. Should be a local/public reachable address.
 ; Default: http://127.0.0.1:8080
@@ -211,7 +212,7 @@ port=1883
 ; Default: 60 seconds
 keepalive=60
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
-; Default: 127.0.0.1
+; Default: 0.0.0.0
 listenIF=${basic.config:networkInterface}
 ; Optional prefix for topics.
 ; Default: empty string

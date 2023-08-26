@@ -735,7 +735,7 @@ The default value is `False`.
 This setting specifies the network interface on which the CSE's HTTP server is listening. 
 Use `0.0.0.0` to listen on all available interfaces.
 
-The default value is `127.0.0.1`.
+The default value is `0.0.0.0`.
 
 
 
@@ -980,7 +980,7 @@ The default value is `60 seconds`.
 This setting specifies the network interface on which the CSE's MQTT client is binding to. 
 Use `0.0.0.0` to listen on all available interfaces.
 
-The default value is `127.0.0.1`.
+The default value is `0.0.0.0`.
 
 
 

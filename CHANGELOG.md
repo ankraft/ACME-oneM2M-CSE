@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
 - [CSE] Changed the oneM2M enumeration definition format. Each enumeration type is now a dictionary of enumeration values and their interpretations.
+- [HTTP] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
+- [MQTT] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
 - [SCRIPTS] Moved utilities and system scripts to sub-directories. Now all scripts from directories "*.scripts" in the "init" directory are automatically imported.
 - [TUI] Simplified the request list view in the text UI.
 
