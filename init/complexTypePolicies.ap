@@ -535,7 +535,15 @@
 			"ns": "m2m",
 			"type": "absRelTimestamp",
 			"car": "01"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
 		}
+
 	],
 	"rt": [
 		{
