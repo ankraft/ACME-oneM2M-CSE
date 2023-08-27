@@ -2024,8 +2024,6 @@ class CSERequest:
 			self.originalRequest['rset'] = self.rset
 		if self.rtu:
 			self.originalRequest['rtu'] = self.rtu
-		if self.rset:
-			self.originalRequest['rset'] = self.rset
 		# TODO is the content serialization type necessary to store? An "ct" is not the right shortname
 		# if self.ct:
 		# 	self.originalRequest['ct'] = self.ct
