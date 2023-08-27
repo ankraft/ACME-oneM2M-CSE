@@ -927,7 +927,7 @@ class TinyDBBinding(object):
 			with self.lockResources:
 				if ri:
 					_r = self.tabResources.get(doc_id = ri)	# type:ignore[arg-type]
-					return [_r] if _r else []
+					return [_r] if _r else [] 	# type:ignore[list-item]
 					# return self.tabResources.search(self.resourceQuery.ri == ri)
 				elif csi:
 					return self.tabResources.search(self.resourceQuery.csi == csi)	
@@ -1034,16 +1034,17 @@ class TinyDBBinding(object):
 			Return:
 				A list of found identifier documents (see `insertIdentifier`), or an empty list if not found.
 		 """
+		_r:Document
 		if srn:
-			if (_r := self.tabStructuredIDs.get(doc_id = srn)):	# type:ignore[arg-type]
-				ri = _r['ri'] if _r else None
+			if (_r := self.tabStructuredIDs.get(doc_id = srn)):	# type:ignore[arg-type, assignment]
+				ri = _r['ri'] if _r else None 
 			else:
 				return []
 			# return self.tabIdentifiers.search(self.identifierQuery.srn == srn)
 
 		if ri:
 			with self.lockIdentifiers:
-				_r = self.tabIdentifiers.get(doc_id = ri)	# type:ignore[arg-type]
+				_r = self.tabIdentifiers.get(doc_id = ri)	# type:ignore[arg-type, assignment]
 				return [_r] if _r else []
 				# return self.tabIdentifiers.search(self.identifierQuery.ri == ri)
 		return []
@@ -1064,12 +1065,13 @@ class TinyDBBinding(object):
 
 			# Then add the child ri to the parent's record
 			if pi:	# ATN: CSE has no parent
-				_r = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type]
+				_r:Document
+				_r = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type, assignment]
 				_ch = _r['ch']
 				if ri not in _ch:
 					_ch.append( [ri, ty] )
 					_r['ch'] = _ch
-					self.tabChildResources.update(_r, doc_ids = [pi])# type:ignore[arg-type, list-item]
+					self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
 
 			
 	def removeChildResource(self, resource:Resource) -> None:
@@ -1083,7 +1085,7 @@ class TinyDBBinding(object):
 			self.tabChildResources.remove(doc_ids = [ri])	# type:ignore[arg-type, list-item]
 
 			# Remove (ri, ty) tuple from parent record
-			_r = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type]
+			_r:Document = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type, assignment]
 			_t = [ri, resource.ty]
 			_ch = _r['ch']
 			if _t in _ch:
@@ -1094,7 +1096,7 @@ class TinyDBBinding(object):
 
 
 	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[int] = None) -> Optional[list[str]]:
-		_r = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type]
+		_r:Document = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type, assignment]
 		if _r:
 			if ty is None:	# optimization: only check ty once for None
 				return [ c[0] for c in _r['ch'] ]
@@ -1110,7 +1112,7 @@ class TinyDBBinding(object):
 								  pi:Optional[str] = None) -> Optional[list[Document]]:
 		with self.lockSubscriptions:
 			if ri:
-				_r = self.tabSubscriptions.get(doc_id =  ri)	# type:ignore[arg-type]
+				_r:Document = self.tabSubscriptions.get(doc_id =  ri)	# type:ignore[arg-type, assignment]
 				return [_r] if _r else []
 				# return self.tabSubscriptions.search(self.subscriptionQuery.ri == ri)
 			if pi:
@@ -1222,7 +1224,7 @@ class TinyDBBinding(object):
 
 	def getAction(self, ri:str) -> Optional[Document]:
 		with self.lockActions:
-			return self.tabActions.get(doc_id = ri)	# type:ignore[arg-type]
+			return self.tabActions.get(doc_id = ri)	# type:ignore[arg-type, return-value]
 
 
 	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
@@ -1387,7 +1389,7 @@ class TinyDBBinding(object):
 				The schedule, or *None* if not found.
 		"""
 		with self.lockSchedules:
-			return self.tabSchedules.get(doc_id = ri)	# type:ignore[arg-type]
+			return self.tabSchedules.get(doc_id = ri)	# type:ignore[arg-type, return-value]
 	
 
 	def searchSchedules(self, pi:str) -> list[Document]:
