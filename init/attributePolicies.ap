@@ -3390,6 +3390,14 @@
 			"annc": "OA"
 		}
 	],
+	"m2m:uri": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
 	"url": [
 		{
 			"rtypes": [ "ALL" ],
