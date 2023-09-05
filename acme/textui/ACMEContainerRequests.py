@@ -63,6 +63,7 @@ class ACMEViewRequests(Vertical):
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
 				  Binding('e', 'enable_requests', ''),
 				  Binding('t', 'toggle_list_details', 'List Details'),
+				  Binding('ctrl+t', 'toggle_comment_style', 'Comments Style'),
 				]
 
 	DEFAULT_CSS = """
@@ -138,6 +139,7 @@ class ACMEViewRequests(Vertical):
 		# Request view: request + response
 		self.requestListRequest = Static(id = 'request-list-request')
 		self.requestListResponse = Static(id = 'request-list-response')
+		self.commentsOneLine = True
 		
 	
 	@property
@@ -199,9 +201,9 @@ class ACMEViewRequests(Vertical):
 		"""
 		# Get the request's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName,	# type: ignore [attr-defined]
-					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		_l1 = jsns.count('\n')
 		
 		# Add syntax highlighting and explanations, and add to the view
@@ -209,9 +211,9 @@ class ACMEViewRequests(Vertical):
 
 		# Get the response's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
-					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName, 	# type: ignore [attr-defined]
-					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
+					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		_l2 = jsns.count('\n')
 
 		# Make sure the response has the same number of lines as the request
@@ -245,7 +247,10 @@ class ACMEViewRequests(Vertical):
 		self.listDetails = not self.listDetails
 		self.updateRequests()
 
-		# TODO
+
+	def action_toggle_comment_style(self) -> None:
+		self.commentsOneLine = not self.commentsOneLine
+		self.updateRequests()
 
 
 	def updateBindings(self) -> None:
