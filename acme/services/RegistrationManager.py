@@ -8,11 +8,9 @@
 #
 
 from __future__ import annotations
-from typing import List, cast, Any, Optional
+from typing import Any, Optional
 
-from copy import deepcopy
-
-from ..etc.Types import Permission, ResourceTypes, JSON, CSEType
+from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
 from ..etc.Utils import uniqueAEI, getIdFromOriginator, uniqueRN
@@ -88,11 +86,11 @@ class RegistrationManager(object):
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
-		if key not in [ 'cse.checkExpirationsInterval', 
+		if key not in ( 'cse.checkExpirationsInterval', 
 						'cse.registration.allowedCSROriginators',
 						'cse.registration.allowedAEOriginators',
 						'cse.enableResourceExpiration',
-						'resource.acp.selfPermission']:
+						'resource.acp.selfPermission'):
 			return
 		self._assignConfig()
 		self.restartExpirationMonitor()

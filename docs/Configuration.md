@@ -76,6 +76,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
 [&#91;resource.actr&#93; - Resource defaults: Action](#resource_actr)  
 [&#91;resource.cnt&#93; - Resource Defaults: Container](#resource_cnt)  
+[&#91;resource.grp&#93; - Resource Defaults: Group](#resource_grp)  
 [&#91;resource.lcp&#93; - Resource Defaults: LocationPolicy](#resource_lcp)  
 [&#91;resource.req&#93; - Resource Defaults: Request](#resource_req)  
 [&#91;resource.sub&#93; - Resource Defaults: Subscription](#resource_sub)  
@@ -165,7 +166,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting                   | Description                                                                                                                                                                                                                                                                                                                             | Configuration Name             |
 |:--------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
 | port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                                                                                                                                    | http.port                      |
-| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                                                                                                                                         | http.listenIF                  |
+| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:0.0.0.0                                                                                                                                                                                                                                                         | http.listenIF                  |
 | address                   | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080                                                                                                                                                                                                                                            | http.address                   |
 | root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                                                                                                                                  | http.root                      |
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                                                                                                            | http.enableRemoteConfiguration |
@@ -214,9 +215,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting     | Description                                                                               | Configuration Name |
 |:------------|:------------------------------------------------------------------------------------------|:-------------------|
 | enable      | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable        |
-| address     | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address       |
+| address     | The hostname of the MQTT broker.<br />Default; 127.0.0.1                                  | mqtt.address       |
 | port        | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port          |
-| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
+| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:0.0.0.0             | mqtt.listenIF      |
 | keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
 | topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
 | timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 10.0 seconds  | mqtt.timeout       |
@@ -372,6 +373,18 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enableLimits | Enable/disable the default limits.<br/> Default: False | resource.cnt.enableLimits |
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | resource.cnt.mni          |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | resource.cnt.mbs          |
+
+[top](#sections)
+
+---
+
+<a name="resource_grp"></a>
+
+### [resource.grp] - Resource Defaults: Group
+
+| Setting              | Description                                                                                                                                                         | Configuration Name                |
+|:---------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------|
+| resultExpirationTime | Set the time for aggregating the results of a group request before interrupting. The format is the time in ms. A value of 0 ms means no timeout.</br >Default: 0 ms | resource.grp.resultExpirationTime |
 
 [top](#sections)
 

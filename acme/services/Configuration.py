@@ -406,6 +406,13 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for Group Resources
+				#
+
+				'resource.grp.resultExpirationTime'		: config.getint('resource.grp', 'resultExpirationTime', 			fallback = 0),
+
+
+				#
 				#	Defaults for LocationPolicy Resources
 				#
 
@@ -719,6 +726,10 @@ class Configuration(object):
 			isodate.parse_duration(bcni)
 		except Exception as e:
 			return False, f'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
+		
+		# Check group resource defaults
+		if Configuration._configuration['resource.grp.resultExpirationTime'] < 0:
+			return False, f'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0'
 		
 		# Everything is fine
 		return True, None

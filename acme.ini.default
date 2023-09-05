@@ -441,6 +441,12 @@ mni=10
 mbs=10000
 
 
+[resource.grp]
+; Set the time for aggregating the results of a group request before interrupting. 
+; The format is the time in ms. A value of 0 ms means no timeout. 
+; Default: 0 ms
+resultExpirationTime=0
+
 ;
 ;	Resource defaults: LocationPolicy
 ;

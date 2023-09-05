@@ -1156,6 +1156,21 @@ This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attri
 The default value is `10000 bytes`.
 
 
+# resource.grp
+
+This section specifies the CSE's defaults for GRP (Group) resources and the GroupManager service.
+
+Settings in this section are listed under the `[resource.grp]` section.
+
+
+# resource.grp.resultExpirationTime
+
+Set the time for the GroupManager for aggregating the results of a group request before interrupting. The format is the time in ms. 
+
+A value of 0 ms means no timeout. 
+
+The default is `0` ms.
+
 
 # resource.lcp
 

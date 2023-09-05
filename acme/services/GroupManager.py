@@ -10,7 +10,7 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List
+from typing import cast, List, Optional, Any
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ..etc.Types import CSERequest, JSON, ResponseType
@@ -22,10 +22,10 @@ from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
-from ..resources.GRP import GRP
 from ..resources.Factory import resourceFromDict
 from ..services import CSE
 from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
 
 
 class GroupManager(object):
@@ -37,17 +37,47 @@ class GroupManager(object):
 		"""
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
+
 		L.isInfo and L.log('GroupManager initialized')
 
 
 	def shutdown(self) -> bool:
-		"""	Shutdown the Group Manager.
+		"""	Shutdown the GroupManager.
 		
 			Returns:
-				*True* when shutdown complete.
+				*True* when shutdown is complete.
 		"""
 		L.isInfo and L.log('GroupManager shut down')
 		return True
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign the configuration values.
+		"""
+		self.resultExpirationTime = Configuration.get('resource.grp.resultExpirationTime')
+
+
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key not in ( 'resource.grp.resultExpirationTime' ):
+			return
+		self._assignConfig()
+
+
+	def restart(self, name:str) -> None:
+		"""	Restart the registration services.
+		"""
+		self._assignConfig()
+		L.isDebug and L.logDebug('GroupManager restarted')
 
 
 	#########################################################################
@@ -231,6 +261,17 @@ class GroupManager(object):
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		_mid = groupResource.mid.copy()	# copy mi because it is changed in the loop
+
+		# Determine the timeout for aggregating requests.
+		# If Result Expiration Timestamp is present in the request then use that one.
+		# Else use the default configuration, if set to a value > 0
+		if request.rset is not None:
+			_timeoutTS = request._rsetUTCts
+		elif self.resultExpirationTime > 0:
+			_timeoutTS = utcTime() + self.resultExpirationTime
+		else:
+			_timeoutTS = 0
+
 		for mid in _mid:	
 			# Try to get the SRN and add the tail
 			if srn := structuredPathFromRI(mid):
@@ -240,7 +281,7 @@ class GroupManager(object):
 			# Invoke the request
 			_result = CSE.request.processRequest(request, originator, mid)
 			# Check for RSET expiration
-			if request.rset is not None and request._rsetUTCts < utcTime():
+			if _timeoutTS and _timeoutTS < utcTime():
 				# Check for blocking request. Then raise a timeout
 				if request.rt == ResponseType.blockingRequest:
 					raise REQUEST_TIMEOUT(L.logDebug('Aggregation timed out'))
