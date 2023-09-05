@@ -13,10 +13,11 @@ from __future__ import annotations
 from typing import cast, List
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
-from ..etc.Types import CSERequest, JSON
+from ..etc.Types import CSERequest, JSON, ResponseType
 from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
-from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE
+from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
 from ..etc.Utils import isSPRelative, csiFromSPRelative, structuredPathFromRI
+from ..etc.DateUtils import utcTime
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
@@ -200,6 +201,8 @@ class GroupManager(object):
 				`Result` instance.
 		"""
 
+		L.isDebug and L.logDebug(f'Performing fanOutPoint operation: {operation} on: {id}')
+
 		# get parent / group and check permissions
 		if not (groupResource := fopt.retrieveParentResource()):
 			raise NOT_FOUND('group resource not found')
@@ -210,10 +213,15 @@ class GroupManager(object):
 		#check access rights for the originator through memberAccessControlPolicies
 		if not CSE.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
+		
+		# Determine expiration timestamp
+		expirationTimestamp = None
+		if request.rqet is not None:
+			expirationTimestamp = request._rqetUTCts
+		if request.rset is not None:
+			expirationTimestamp = request._rsetUTCts
 
 		# check whether there is something after the /fopt ...
-
-		# _, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
 		_, _, tail = id.partition('/fopt/')
 		
 		L.isDebug and L.logDebug(f'Adding additional path elements: {tail}')
@@ -222,14 +230,26 @@ class GroupManager(object):
 		resultList:List[Result] = []
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
-		for mid in groupResource.mid.copy():	# copy mi because it is changed in the loop
+		_mid = groupResource.mid.copy()	# copy mi because it is changed in the loop
+		for mid in _mid:	
 			# Try to get the SRN and add the tail
 			if srn := structuredPathFromRI(mid):
 				mid = srn + tail
 			else:
 				mid = mid + tail
 			# Invoke the request
-			resultList.append(CSE.request.processRequest(request, originator, mid))
+			_result = CSE.request.processRequest(request, originator, mid)
+			# Check for RSET expiration
+			if request.rset is not None and request._rsetUTCts < utcTime():
+				# Check for blocking request. Then raise a timeout
+				if request.rt == ResponseType.blockingRequest:
+					raise REQUEST_TIMEOUT(L.logDebug('Aggregation timed out'))
+				# Otherwise just interrupt the aggregation
+				break
+			# Append the result
+			resultList.append(_result)
+			# import time
+			# time.sleep(1.0)
 
 		# construct aggregated response
 		if len(resultList) > 0:
@@ -245,8 +265,16 @@ class GroupManager(object):
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
 			agr = { 'm2m:agr' : rsp }
+			
+			# if the request is a flexBlocking request and the number of results is not equal to the number of members
+			# then the request must be marked as incomplete. This will be removed later when adding to the <req> resource.
+			if len(_mid) != len(resultList) and request.rt == ResponseType.flexBlocking:
+				agr['acme:incomplete'] = True # type: ignore
+
 		else:
 			agr = {}
+
+		L.logWarn(agr)
 
 		return Result(rsc = ResponseStatusCode.OK, resource = agr) # Response Status Code is OK regardless of the requested fanout operation
 

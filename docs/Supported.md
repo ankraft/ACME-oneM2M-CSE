@@ -78,30 +78,31 @@ The following table presents the supported management object specifications.
 
 ## oneM2M Service Features
 
-| Functionality                 | Supported | Remark                                                                                    |
-|:------------------------------|:---------:|:------------------------------------------------------------------------------------------|
-| AE registration               |  &check;  |                                                                                           |
-| Blocking requests             |  &check;  |                                                                                           |
-| Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
-| Discovery                     |  &check;  |                                                                                           |
-| Location                      |  &check;  | Only *device based, and no *network based* location policies are supported.               |
-| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
-| Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
-| Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                         |
-| Partial Retrieve              |  &check;  | Support for partial retrieve of individual resource attributes.                           |
-| Remote CSE registration       |  &check;  |                                                                                           |
-| Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
-| Request forwarding            |  &check;  | Forwarding requests from one CSE to another.                                              |
-| Request parameter validations |  &check;  |                                                                                           |
-| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.  |
-| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                  |
-| Resource expiration           |  &check;  |                                                                                           |
-| Resource validations          |  &check;  |                                                                                           |
-| Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries and discovery.                |
-| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE, NOTIFY                                                  |
-| Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                      |
-| Time Synchronization          |  &check;  |                                                                                           |
-| TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
+| Functionality                 | Supported | Remark                                                                                                                                     |
+|:------------------------------|:---------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
+| AE registration               |  &check;  |                                                                                                                                            |
+| Blocking requests             |  &check;  |                                                                                                                                            |
+| Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                                                                             |
+| Discovery                     |  &check;  |                                                                                                                                            |
+| Location                      |  &check;  | Only *device based, and no *network based* location policies are supported.                                                                |
+| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.                                                             |
+| Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*.                                                  |
+| Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                                                                          |
+| Partial Retrieve              |  &check;  | Support for partial retrieve of individual resource attributes.                                                                            |
+| Remote CSE registration       |  &check;  |                                                                                                                                            |
+| Request expiration            |  &check;  | The *Request Expiration Timestamp* request attribute                                                                                       |
+| Request forwarding            |  &check;  | Forwarding requests from one CSE to another.                                                                                               |
+| Request parameter validations |  &check;  |                                                                                                                                            |
+| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.                                                   |
+| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                                                                   |
+| Resource expiration           |  &check;  |                                                                                                                                            |
+| Resource validations          |  &check;  |                                                                                                                                            |
+| Result expiration             |  &check;  | The *Result Expiration Timestamp* request attribute. Result timeouts for non-blocking requests depend on the resource expiration interval. |
+| Semantics                     |  &check;  | Basic support for semantic descriptors and semantic queries and discovery.                                                                 |
+| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE, NOTIFY                                                                                                   |
+| Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                                                                       |
+| Time Synchronization          |  &check;  |                                                                                                                                            |
+| TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                                                                                |
 
 
 ### Additional CSE Features

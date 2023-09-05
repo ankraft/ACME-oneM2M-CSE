@@ -75,7 +75,7 @@ class REQ(Resource):
 				The created REQ resource.
 		"""
 
-		# Check if a an expiration ts has been set in the request
+		# Check if a request expiration ts has been set in the request
 		if request.rqet:
 			et = request.rqet	# This is already an ISO8601 timestamp
 		

@@ -1915,15 +1915,18 @@ class CSERequest:
 	_rqetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
 	""" Request Expiration Timestamp as UTC-based timestamp (internal). """
 	
+	rset:str = None 
+	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
+
+	_rsetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
+	""" Result Expiration Timestamp as UTC-based timestamp (internal). """
+
 	ot:str = None  
 	"""	Originating Timestamp in ISO8901 format. """
 	
 	oet:str = None
 	""" Operation Execution Time in ISO8901 format or as ms (X-M2M-OET). """
 	
-	rset:str = None 
-	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
-
 	rtu:list[str] = None
 	""" The notificationURI element of the Response Type parameter(X-M2M-RTU). """
 

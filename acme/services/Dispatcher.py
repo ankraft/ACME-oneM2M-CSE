@@ -116,9 +116,10 @@ class Dispatcher(object):
 			CSE.validator.validateAttribute('atrl', attributeList)
 		
 		# Handle operation execution time , and check CSE schedule and request expiration
-		self._handleOperationExecutionTime(request)
+		self.handleOperationExecutionTime(request)
 		self._checkActiveCSESchedule()
-		self._checkRequestExpiration(request)
+		self.checkRequestExpiration(request)
+		self.checkResultExpiration(request)
 
 		# handle fanout point requests
 		if (fanoutPointResource := self._getFanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
@@ -131,7 +132,6 @@ class Dispatcher(object):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has not RETRIEVE privileges to <pollingChannelURI>: {id}'))
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIRsrc.getSrn()}')
 			return pollingChannelURIRsrc.handleRetrieveRequest(request, id, originator)
-
 
 		# EXPERIMENTAL
 		# Handle latest and oldest RETRIEVE
@@ -572,9 +572,10 @@ class Dispatcher(object):
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
 		# Handle operation execution time, and check CSE schedule and request expiration
-		self._handleOperationExecutionTime(request)
+		self.handleOperationExecutionTime(request)
 		self._checkActiveCSESchedule()
-		self._checkRequestExpiration(request)
+		self.checkRequestExpiration(request)
+		self.checkResultExpiration(request)
 
 		# handle fanout point requests
 		if (fanoutPointRsrc := self._getFanoutPointResource(srn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
@@ -806,9 +807,10 @@ class Dispatcher(object):
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
 		# Handle operation execution time , and check CSE schedule and request expiration
-		self._handleOperationExecutionTime(request)
+		self.handleOperationExecutionTime(request)
 		self._checkActiveCSESchedule()
-		self._checkRequestExpiration(request)
+		self.checkRequestExpiration(request)
+		self.checkResultExpiration(request)
 
 		# handle fanout point requests
 		if (fanoutPointResource := self._getFanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
@@ -975,9 +977,10 @@ class Dispatcher(object):
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
 		# Handle operation execution time , and check CSE schedule and request expiration
-		self._handleOperationExecutionTime(request)
+		self.handleOperationExecutionTime(request)
 		self._checkActiveCSESchedule()
-		self._checkRequestExpiration(request)
+		self.checkRequestExpiration(request)
+		self.checkResultExpiration(request)
 
 		# handle fanout point requests
 		if (fanoutPointRsrc := self._getFanoutPointResource(fopsrn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
@@ -1150,9 +1153,10 @@ class Dispatcher(object):
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time, and check CSE schedule and request expiration
-		self._handleOperationExecutionTime(request)
+		self.handleOperationExecutionTime(request)
 		self._checkActiveCSESchedule()
-		self._checkRequestExpiration(request)
+		self.checkRequestExpiration(request)
+		self.checkResultExpiration(request)
 
 		# get resource to be notified and check permissions
 		targetResource = self.retrieveResource(id)
@@ -1384,7 +1388,7 @@ class Dispatcher(object):
 	#	Request execution utilities
 	#
 
-	def _handleOperationExecutionTime(self, request:CSERequest) -> None:
+	def handleOperationExecutionTime(self, request:CSERequest) -> None:
 		"""	Handle operation execution time and request expiration. If the OET is set then
 			wait until the provided timestamp is reached.
 
@@ -1399,7 +1403,7 @@ class Dispatcher(object):
 			waitFor(delay)	
 
 
-	def _checkRequestExpiration(self, request:CSERequest) -> None:
+	def checkRequestExpiration(self, request:CSERequest) -> None:
 		"""	Check request expiration timeout if a request timeout is give.
 
 			Args:
@@ -1409,7 +1413,25 @@ class Dispatcher(object):
 				`REQUEST_TIMEOUT`: In case the request is expired 
 		"""
 		if request._rqetUTCts is not None and timeUntilTimestamp(request._rqetUTCts) <= 0.0:
-			raise REQUEST_TIMEOUT(L.logDebug('request timed out'))
+			raise REQUEST_TIMEOUT(L.logDebug('request timed out reached'))
+
+
+	def checkResultExpiration(self, request:CSERequest) -> None:
+		""" Check result expiration timeout if a result timeout is given.
+
+			Args:
+				request: The request to check.
+
+			Raises:
+				`REQUEST_TIMEOUT`: In case the result is expired 
+				`BAD_REQUEST`: In case the request expiration timestamp is greater than the result expiration timestamp.
+		"""
+		if not request.rset:
+			return
+		if timeUntilTimestamp(request._rsetUTCts) <= 0.0:
+			raise REQUEST_TIMEOUT(L.logDebug('result timed out reached'))
+		if request.rqet is not None and request._rsetUTCts < request._rqetUTCts:
+			raise BAD_REQUEST(L.logDebug('result expiration timestamp must be greater than request expiration timestamp'), data = request)
 
 
 	def _checkActiveCSESchedule(self) -> None:
@@ -1488,7 +1510,17 @@ class Dispatcher(object):
 									  drt:Optional[DesiredIdentifierResultType] = DesiredIdentifierResultType.structured,
 									  tp:Optional[str] = 'm2m:rrl') -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
-			a new target resource as "children" """
+			a **new** target resource instance as "children" 
+
+			Args:
+				resources: A list of resources to retrieve the child resource references from.	
+				targetResource: The target resource to add the child resource references to.
+				drt: Either structured or unstructured. Defaults to structured.
+				tp: The type of the target resource. Defaults to 'm2m:rrl'.
+
+			Return:	
+				The target resource with the added child resource references.
+		"""
 		if not targetResource:
 			targetResource = { }
 

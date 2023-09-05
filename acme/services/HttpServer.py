@@ -573,6 +573,7 @@ class HttpServer(object):
 			result.request.rvi = originalRequest.rvi
 			result.request.vsi = originalRequest.vsi
 			result.request.ec  = originalRequest.ec
+			result.request.rset = originalRequest.rset
 	
 		#
 		#	Transform request to oneM2M request
@@ -596,6 +597,8 @@ class HttpServer(object):
 			headers[Constants().hfRVI] = rvi
 		if vsi := findXPath(cast(JSON, outResult.data), 'vsi'):
 			headers[Constants().hfVSI] = vsi
+		if rset := findXPath(cast(JSON, outResult.data), 'rset'):
+			headers[Constants().hfRST] = rset
 		headers[Constants().hfOT] = getResourceDate()
 
 		# HTTP status code

@@ -222,6 +222,10 @@ def requestFromResult(inResult:Result,
 	# Result Content
 	if inResult.request.drt:
 		req['drt'] = int(inResult.request.drt)
+	
+	# Result Expiration Timestamp
+	if inResult.request.rset:
+		req['rset'] = inResult.request.rset
 
 
 

@@ -21,7 +21,7 @@ from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result,
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
-from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED
+from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
 from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
@@ -277,7 +277,7 @@ class RequestManager(object):
 				Request result
 		"""
 		return self.requestHandlers[request.op].dispatcherRequest(request, originator, id)
-		
+	
 
 	def handleReceivedNotifyRequest(self, id:str, request:CSERequest, originator:str) -> Result:
 		"""	Handle a NOTIFY request to resource.
@@ -532,16 +532,37 @@ class RequestManager(object):
 	def _executeOperation(self, request:CSERequest, reqRi:str) -> REQ:
 		"""	Execute a request operation and fill the respective request resource
 			accordingly.
+
+			Args:
+				request: The request to execute.
+				reqRi: The <request> resource id.
+			
+			Return:	
+				The <request> resource.
 		"""
 		# Execute the actual operation in the dispatcher
 		pc = None
 		try:
-			operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.originator)
+			try:
+				operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.originator)
+			except REQUEST_TIMEOUT:
+				pass
+			except ResponseException as e:
+				raise e
+
 			# attributes set below in the request
 			rs = RequestStatus.COMPLETED
 			rsc = operationResult.rsc
 			if operationResult.resource:
-				pc = operationResult.resource.asDict()
+				if isinstance(operationResult.resource, Resource):
+					pc = operationResult.resource.asDict()
+				else:
+					# Handle and remove the internal incomplete indicator
+					if operationResult.resource.get('acme:incomplete'):
+						rs = RequestStatus.PARTIALLY_COMPLETED
+						del operationResult.resource['acme:incomplete']
+					pc = operationResult.resource
+
 		
 		except ResponseException as e:
 			# attributes set below in the request
@@ -705,6 +726,10 @@ class RequestManager(object):
 			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
 			request.rqet = ret
 			request._rqetUTCts = fromAbsRelTimestamp(ret)
+		
+		# Why don't we handle the Result Expiration Timestamo request parameter here? Because it must be
+		# greater than the Request Expiration Timestamp, so the reqeust expires at that timestamp first anyway.
+
 		if not request.rqi:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
@@ -1163,7 +1188,7 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Request Expiration Timestamp'), data = cseRequest)
 				else:
 					if _ts < utcTime():
-						raise REQUEST_TIMEOUT(L.logDebug(f'request timeout: rqet {_ts} < {utcTime()}'), data = cseRequest)
+						raise REQUEST_TIMEOUT(L.logDebug(f'request timeout reached: rqet {_ts} < {utcTime()}'), data = cseRequest)
 					else:
 						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
 						cseRequest.rqet = toISO8601Date(_ts)
@@ -1174,9 +1199,14 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Result Expiration Timestamp'), data = cseRequest)
 				else:
 					if _ts < utcTime():
-						raise REQUEST_TIMEOUT(L.logDebug('result timeout'), data = cseRequest)
+						raise REQUEST_TIMEOUT(L.logDebug(f'result timeout reached: rset {_ts} < {utcTime()}'), data = cseRequest)
 					else:
-						cseRequest.rset = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+						cseRequest._rsetUTCts = _ts	# Re-assign "real" ISO8601 timestamp
+						# Re-assign "real" ISO8601 timestamp
+						try: 
+							cseRequest.rset = int(rset)	# type: ignore [assignment]
+						except ValueError:
+							cseRequest.rset = toISO8601Date(_ts)
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
@@ -1572,6 +1602,16 @@ class RequestManager(object):
 		else:
 			rid = 'unknown'
 		
+		# Map the response
+		response =  { 'rsc': result.rsc,
+					  'pc': pc,
+					  'dbg': result.dbg,
+					  'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
+					}
+		if request.rset:
+			response['rset'] = request.rset
+
+		
 		request.fillOriginalRequest(update = True)
 
 		CSE.storage.addRequest(request.op,
@@ -1581,9 +1621,5 @@ class RequestManager(object):
 							   request._outgoing,
 							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
 							   request.originalRequest,
-							   { 'rsc': result.rsc,
-							   	 'pc': pc,
-								 'dbg': result.dbg,
-								 'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
-							   })
+							   response)
 	
