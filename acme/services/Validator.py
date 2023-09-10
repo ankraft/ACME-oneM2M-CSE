@@ -11,13 +11,13 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional
 
 from copy import deepcopy
-import re
+import re, json
 import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
-from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
-from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, NotificationContentType, NotificationEventType
+from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
 from ..helpers.TextTools import findXPath, soundsLike
@@ -361,6 +361,102 @@ class Validator(object):
 		# fall-through
 
 
+	def validateGeoPoint(self, geo:dict) -> bool:
+		""" Validate a GeoJSON point. A point is a list of two or three floats.
+
+			Args:
+				geo: GeoJSON point.
+			
+			Return:
+				Boolean, indicating whether the point is valid.
+		"""
+		if not isinstance(geo, list) or 2 > len(geo) > 3:
+			return False
+		for g in geo:
+			if not isinstance(g, float):
+				return False
+		return True
+
+
+	def validateGeoLinePolygon(self, geo:dict, isPolygon:Optional[bool] = False) -> bool:
+		""" Validate a GeoJSON line or polygon. 
+			A line or polygon is a list of lists of two or three floats.
+
+			Args:
+				geo: GeoJSON string line or polygon.
+				isPolygon: Boolean, indicating whether the coordinates describe a polygon.
+			
+			Return:
+				Boolean, indicating whether the line or polygon is valid.
+		"""
+		if not isinstance(geo, list) or len(geo) < 2:
+			return False
+		for g in geo:
+			if not self.validateGeoPoint(g):
+				return False
+		if isPolygon and geo[0] != geo[-1]:
+			return False
+		return True
+
+
+	def validateGeoMultiLinePolygon(self, geo:dict, isPolygon:Optional[bool] = False) -> bool:
+		""" Validate a GeoJSON multi line or polygon. 
+			A line or polygon is a list of list of lists of two or three floats.
+
+			Args:
+				geo: GeoJSON string multi line or polygon.
+				isPolygon: Boolean, indicating whether the coordinates describe a polygon.
+	
+			Return:
+				Boolean, indicating whether the line or polygon is valid.
+		"""
+		if not isinstance(geo, list):
+			return False
+		
+		for g in geo:
+			if not isinstance(g, list) or len(g) < 2:
+				return False
+			if not self.validateGeoLinePolygon(g, isPolygon):
+				return False
+		return True
+
+
+	def validateGeoLocation(self, loc:dict) -> dict:
+		""" Validate a GeoJSON location. A location is a dictionary with a type and coordinates.
+
+			Args:
+				loc: GeoJSON location.
+			
+			Return:
+				The validated location dictionary.
+			
+			Raises:
+				BAD_REQUEST: If the location definition is invalid.
+		"""
+		crd = json.loads(loc.get('crd')) # was validated before
+		match (typ := loc.get('typ')):
+			case GeometryType.Point:
+				if not self.validateGeoPoint(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON point: {crd}'))
+			case GeometryType.LineString:	
+				if not self.validateGeoLinePolygon(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON LineString: {crd}'))
+			case GeometryType.Polygon:
+				if not self.validateGeoLinePolygon(crd, True):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON Polygon: {crd}'))
+			case GeometryType.MultiPoint:
+				for p in crd:
+					if not self.validateGeoPoint(p):
+						raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiPoint: {crd}'))
+			case GeometryType.MultiLineString:
+				if not self.validateGeoMultiLinePolygon(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiLineString: {crd}'))
+			case GeometryType.MultiPolygon:
+				if not self.validateGeoMultiLinePolygon(crd, True):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiPolygon: {crd}'))
+		return crd
+
+
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
 		"""	Check whether the resource attribute *attr* is neither a universal,
 			common, or resource attribute, nor an internal attribute. 
@@ -647,7 +743,7 @@ class Validator(object):
 					value and the method will attempt to convert the value to its target type; otherwise this
 					is an error. 
 			Return:
-				Result. If the check is positive then Result.data is set to a tuple (the determined data type, the converted value).
+				Result. If the check is positive then a tuple is returned: (the determined data type, the converted value).
 		"""
 
 		# Ignore None values
@@ -777,10 +873,14 @@ class Validator(object):
 					return (dataType, value)
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
 
-			case BasicType.geoCoordinates if isinstance(value, dict):
-
-				# TODO geoJSON validation
-				return (dataType, value)
+			case BasicType.geoJsonCoordinate if isinstance(value, str):					
+				try:
+					geo = json.loads(value)
+				except Exception as e:
+					raise BAD_REQUEST(f'Invalid geoJsonCoordinate: {str(e)}')
+				if self.validateGeoPoint(geo) or self.validateGeoLinePolygon(geo) or self.validateGeoMultiLinePolygon(geo):
+					return (dataType, geo)
+				raise BAD_REQUEST(f'Invalid geoJsonCoordinate: {value}')
 
 			case BasicType.duration:
 				try:

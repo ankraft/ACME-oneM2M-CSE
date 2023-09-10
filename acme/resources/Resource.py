@@ -11,10 +11,11 @@
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
 from typing import Any, Tuple, cast, Optional, List, overload
+import json
 
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, GeometryType
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
 from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL, pureResource
 from ..helpers.TextTools import findXPath, setXPath
@@ -36,6 +37,7 @@ _node = Constants.attrNode
 _createdInternallyRI = Constants.attrCreatedInternallyRI
 _imported = Constants.attrImported
 _isInstantiated = Constants.attrIsInstantiated
+_locCoordinate = Constants.attrLocCoordinage
 _originator = Constants.attrOriginator
 _modified = Constants.attrModified
 _remoteID = Constants.attrRemoteID
@@ -64,7 +66,8 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
-							_isInstantiated, _originator, _modified, _remoteID, _rvi]
+							_isInstantiated, _locCoordinate,
+							_originator, _modified, _remoteID, _rvi ]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
@@ -516,6 +519,16 @@ class Resource(object):
 				if not (et := parentResource.et):
 					et = getResourceDate(CSE.request.maxExpirationDelta)
 				self.setAttribute('et', et)
+		
+		# check loc validity: geo type and number of coordinates
+		if (loc := self.getFinalResourceAttribute('loc', dct)) is not None:
+			# crd should have been already check as valid JSON before
+			# Let's optimize and store the coordinates as a JSON object
+			crd = CSE.validator.validateGeoLocation(loc)
+			if dct is not None:
+				setXPath(dct, f'{self.tpe}/{_locCoordinate}', crd, overwrite = True)
+			else:	
+				self.setAttribute(_locCoordinate, crd)
 
 
 	#########################################################################

@@ -1448,8 +1448,7 @@
 			"ctype": "m2m:geoCoordinates",
 			"lname": "coordinates",
 			"ns": "m2m",
-			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
-			"ltype": "string",
+			"type": "geoJsonCoordinate",
 			"car": "1"
 		}
 	],

@@ -595,32 +595,32 @@ class BasicType(ACMEIntEnum):
 	""" Basic resource types.
 	"""
 
-	positiveInteger	= auto()
-	nonNegInteger	= auto()
-	unsignedInt		= auto()
-	unsignedLong	= auto()
-	string 			= auto()
-	timestamp		= auto()
-	absRelTimestamp	= auto()
-	list 			= auto()
-	listNE 			= auto()	# Not empty list
-	dict 			= auto()
-	anyURI			= auto()
-	boolean			= auto()
-	float 			= auto()
-	geoCoordinates	= auto()
-	integer			= auto()
-	void 			= auto()
-	duration 		= auto()
-	any				= auto()
-	complex 		= auto()
-	enum	 		= auto()
-	adict			= auto()	# anoymous dict structure
-	base64 			= auto()
-	schedule		= auto()	# scheduleEntry
-	time			= timestamp	# alias type for time
-	date			= timestamp	# alias type for date
-	ID 				= auto()	# m2m:ID
+	positiveInteger		= auto()
+	nonNegInteger		= auto()
+	unsignedInt			= auto()
+	unsignedLong		= auto()
+	string 				= auto()
+	timestamp			= auto()
+	absRelTimestamp		= auto()
+	list 				= auto()
+	listNE 				= auto()	# Not empty list
+	dict 				= auto()
+	anyURI				= auto()
+	boolean				= auto()
+	float 				= auto()
+	geoJsonCoordinate	= auto()
+	integer				= auto()
+	void 				= auto()
+	duration 			= auto()
+	any					= auto()
+	complex 			= auto()
+	enum	 			= auto()
+	adict				= auto()	# anoymous dict structure
+	base64 				= auto()
+	schedule			= auto()	# scheduleEntry
+	time				= timestamp	# alias type for time
+	date				= timestamp	# alias type for date
+	ID 					= auto()	# m2m:ID
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
@@ -1483,7 +1483,7 @@ _SemanticFormatAsString = {
 
 ##############################################################################
 #
-#	LocationPolicy related
+#	LocationPolicy and GeoQuery related
 #
 
 class LocationSource(ACMEIntEnum):
@@ -1528,6 +1528,51 @@ class LocationInformationType(ACMEIntEnum):
 	"""	Position fix. """
 	Geofence_event = 2
 	"""	Geofence event. """
+
+
+class GeometryType(ACMEIntEnum):
+	"""	Geometry Type.
+	"""
+	Point = 1
+	"""	Point."""
+	LineString = 2
+	"""	LineString. """
+	Polygon = 3 
+	"""	Polygon. """
+	MultiPoint = 4
+	"""	MultiPoint. """
+	MultiLineString = 5
+	"""	MultiLineString. """
+	MultiPolygon = 6
+	"""	MultiPolygon. """
+
+Coordinate = Tuple[float, float, Optional[float]]
+""" Coordinate type. """
+ListOfCoordinates = list[Coordinate]
+""" List of coordinates type. """
+
+
+class GeoSpatialFunctionType(ACMEIntEnum):
+	"""	Geo Spatial Function Type.
+	"""
+	Within = 1
+	"""	Within."""
+	Contains = 2
+	"""	Contains."""
+	Intersects = 3
+	"""	Intersects."""
+
+
+class GeoQuery:
+	"""	Geo Query.
+	"""
+	geometryType:GeometryType = None
+	"""	Geometry Type. """
+	geometry:ListOfCoordinates = []
+	"""	Geometry. """
+	geoSpatialFunction:GeoSpatialFunctionType = None
+
+
 	
 ##############################################################################
 #
@@ -1723,6 +1768,9 @@ class FilterCriteria:
 
 	lbl:list = None
 	""" List of labels. Default is *None*. """
+
+	gq:GeoQuery = None
+	""" Geo query. Default is *None*. """
 
 	aq:str = None
 	""" Advanced query. Default is *None*. """

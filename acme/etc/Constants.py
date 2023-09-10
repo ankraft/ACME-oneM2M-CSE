@@ -118,6 +118,9 @@ class Constants(object):
 	attrRiTyMapping = '__riTyMapping__'
 	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
 
+	attrLocCoordinage = '__locCoordinate__'
+	""" Constant: Name of the 'Resource internal *__locCoordinate__* attribute. This attribute holds the location coordinate of a resource. """
+
 
 	#
 	#	Supported URL schemes
