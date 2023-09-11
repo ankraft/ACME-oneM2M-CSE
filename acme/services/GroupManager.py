@@ -44,6 +44,9 @@ class GroupManager(object):
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
+		# Assign configuration values
+		self._assignConfig()
+
 		L.isInfo and L.log('GroupManager initialized')
 
 
@@ -244,12 +247,6 @@ class GroupManager(object):
 		if not CSE.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
 		
-		# Determine expiration timestamp
-		expirationTimestamp = None
-		if request.rqet is not None:
-			expirationTimestamp = request._rqetUTCts
-		if request.rset is not None:
-			expirationTimestamp = request._rsetUTCts
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/')
@@ -314,8 +311,6 @@ class GroupManager(object):
 
 		else:
 			agr = {}
-
-		L.logWarn(agr)
 
 		return Result(rsc = ResponseStatusCode.OK, resource = agr) # Response Status Code is OK regardless of the requested fanout operation
 
