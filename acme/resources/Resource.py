@@ -15,7 +15,7 @@ import json
 
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, GeometryType
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
 from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL, pureResource
 from ..helpers.TextTools import findXPath, setXPath
@@ -522,13 +522,18 @@ class Resource(object):
 		
 		# check loc validity: geo type and number of coordinates
 		if (loc := self.getFinalResourceAttribute('loc', dct)) is not None:
-			# crd should have been already check as valid JSON before
-			# Let's optimize and store the coordinates as a JSON object
-			crd = CSE.validator.validateGeoLocation(loc)
-			if dct is not None:
-				setXPath(dct, f'{self.tpe}/{_locCoordinate}', crd, overwrite = True)
-			else:	
-				self.setAttribute(_locCoordinate, crd)
+
+			# The following line is a hack that is necessary because the name "location" is used with different meanings
+			# and types in different resources (MgmtObj-DVI and normal resources). This is a quick fix for the moment.
+			# It only check if this is a DVI resource. If yes, then the loc attribute is not checked.
+			if CSE.validator.getAttributePolicy(self.ty if self.mgd is None else self.mgd, 'loc').type != BasicType.string:
+				# crd should have been already check as valid JSON before
+				# Let's optimize and store the coordinates as a JSON object
+				crd = CSE.validator.validateGeoLocation(loc)
+				if dct is not None:
+					setXPath(dct, f'{self.tpe}/{_locCoordinate}', crd, overwrite = True)
+				else:	
+					self.setAttribute(_locCoordinate, crd)
 
 
 	#########################################################################
