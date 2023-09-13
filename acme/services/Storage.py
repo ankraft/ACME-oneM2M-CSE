@@ -65,6 +65,7 @@ class Storage(object):
 		'dbReset',
 		'db',
 	)
+	""" Define slots for instance variables. """
 
 	def __init__(self) -> None:
 		"""	Initialization of the storage manager.
@@ -661,6 +662,57 @@ class Storage(object):
 
 
 class TinyDBBinding(object):
+	"""	This class implements the TinyDB binding to the database. It is used by the Storage class.
+
+		Attributes:
+			path: Path to the database directory.
+			cacheSize: Size of the cache for the TinyDB tables.
+			writeDelay: Delay for writing to the database.
+			maxRequests: Maximum number of oneM2M recorded requests to keep in the database. 
+			lockResources: Lock for the resources table.
+			lockIdentifiers: Lock for the identifiers table.
+			lockChildResources: Lock for the childResources table.
+			lockStructuredIDs: Lock for the structuredIDs table.
+			lockSubscriptions: Lock for the subscriptions table.
+			lockBatchNotifications: Lock for the batchNotifications table.
+			lockStatistics: Lock for the statistics table.
+			lockActions: Lock for the actions table.
+			lockRequests: Lock for the requests table.
+			lockSchedules: Lock for the schedules table.
+			fileResources: Filename for the resources table.
+			fileIdentifiers: Filename for the identifiers table.
+			fileSubscriptions: Filename for the subscriptions table.
+			fileBatchNotifications: Filename for the batchNotifications table.
+			fileStatistics: Filename for the statistics table.
+			fileActions: Filename for the actions table.
+			fileRequests: Filename for the requests table.
+			fileSchedules: Filename for the schedules table.
+			dbResources: The TinyDB database for the resources table.
+			dbIdentifiers: The TinyDB database for the identifiers table.
+			dbSubscriptions: The TinyDB database for the subscriptions table.
+			dbBatchNotifications: The TinyDB database for the batchNotifications table.
+			dbStatistics: The TinyDB database for the statistics table.
+			dbActions: The TinyDB database for the actions table.
+			dbRequests: The TinyDB database for the requests table.
+			dbSchedules: The TinyDB database for the schedules table.
+			tabResources: The TinyDB table for the resources table.
+			tabIdentifiers: The TinyDB table for the identifiers table.
+			tabChildResources: The TinyDB table for the childResources table.
+			tabStructuredIDs: The TinyDB table for the structuredIDs table.
+			tabSubscriptions: The TinyDB table for the subscriptions table.
+			tabBatchNotifications: The TinyDB table for the batchNotifications table.
+			tabStatistics: The TinyDB table for the statistics table.
+			tabActions: The TinyDB table for the actions table.
+			tabRequests: The TinyDB table for the requests table.
+			tabSchedules: The TinyDB table for the schedules table.
+			resourceQuery: The TinyDB query object for the resources table.
+			identifierQuery: The TinyDB query object for the identifiers table.
+			subscriptionQuery: The TinyDB query object for the subscriptions table.
+			batchNotificationQuery: The TinyDB query object for the batchNotifications table.
+			actionsQuery: The TinyDB query object for the actions table.
+			requestsQuery: The TinyDB query object for the requests table.
+			schedulesQuery: The TinyDB query object for the schedules table.
+	"""
 
 	__slots__ = (
 		'path',
@@ -716,6 +768,7 @@ class TinyDBBinding(object):
 		'requestsQuery',
 		'schedulesQuery',
 	)
+	""" Define slots for instance variables. """
 
 	def __init__(self, path:str, postfix:str) -> None:
 		self.path = path
@@ -881,40 +934,56 @@ class TinyDBBinding(object):
 
 
 	def insertResource(self, resource: Resource, ri:str) -> None:
+		"""	Insert a resource into the database.
+		
+			Args:
+				resource: The resource to insert.
+				ri: The resource ID of the resource.
+		"""
 		with self.lockResources:
 			self.tabResources.insert(Document(resource.dict, ri))	# type:ignore[arg-type]
-			# self.tabResources.insert(resource.dict)
 	
 
 	def upsertResource(self, resource: Resource, ri:str) -> None:
+		"""	Update or insert a resource into the database.
+		
+			Args:
+				resource: The resource to upate or insert.
+				ri: The resource ID of the resource.
+		"""
 		#L.logDebug(resource)
 		with self.lockResources:
 			# Update existing or insert new when overwriting
-			# _ri = resource.ri
-			# self.tabResources.upsert(resource.dict, self.resourceQuery.ri == _ri)
-
 			self.tabResources.upsert(Document(resource.dict, doc_id = ri))	# type:ignore[arg-type]
 	
 
 	def updateResource(self, resource: Resource, ri:str) -> Resource:
+		"""	Update a resource in the database. Only the fields that are not None will be updated.
+		
+			Args:
+				resource: The resource to update.
+				ri: The resource ID of the resource.
+		"""
 		#L.logDebug(resource)
 		with self.lockResources:
 			self.tabResources.update(resource.dict, doc_ids = [ri])	# type:ignore[call-arg, list-item]
-			# self.tabResources.update(resource.dict, self.resourceQuery.ri == _ri)
 			# remove nullified fields from db and resource
 			for k in list(resource.dict):
 				if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
 					self.tabResources.update(delete(k), doc_ids = [ri])	# type: ignore[no-untyped-call, call-arg, list-item]
-					# self.tabResources.update(delete(k), self.resourceQuery.ri == ri)	# type: ignore [no-untyped-call]
 					del resource.dict[k]
 			return resource
 
 
 	def deleteResource(self, resource:Resource) -> None:
+		"""	Delete a resource from the database.
+
+			Args:
+				resource: The resource to delete.
+		"""
 		with self.lockResources:
 			_ri = resource.ri
 			self.tabResources.remove(doc_ids = [_ri])	
-			# self.tabResources.remove(self.resourceQuery.ri == _ri)	
 	
 
 	def searchResources(self, ri:Optional[str] = None, 
@@ -928,7 +997,6 @@ class TinyDBBinding(object):
 				if ri:
 					_r = self.tabResources.get(doc_id = ri)	# type:ignore[arg-type]
 					return [_r] if _r else [] 	# type:ignore[list-item]
-					# return self.tabResources.search(self.resourceQuery.ri == ri)
 				elif csi:
 					return self.tabResources.search(self.resourceQuery.csi == csi)	
 				elif pi:
@@ -949,6 +1017,13 @@ class TinyDBBinding(object):
 
 
 	def discoverResourcesByFilter(self, func:Callable[[JSON], bool]) -> list[Document]:
+		"""	Search for resources by a filter function.
+
+			Args:
+				func: The filter function to use.
+			Return:
+				A list of found resources, or an empty list.
+		"""
 		with self.lockResources:
 			return self.tabResources.search(func)	# type: ignore [arg-type]
 
@@ -961,7 +1036,6 @@ class TinyDBBinding(object):
 			with self.lockResources:
 				if ri:
 					return self.tabResources.contains(doc_id = ri)	# type:ignore[arg-type]
-					# return self.tabResources.contains(self.resourceQuery.ri == ri)	
 				elif csi :
 					return self.tabResources.contains(self.resourceQuery.csi == csi)
 				elif ty is not None:	# ty is an int
@@ -974,12 +1048,24 @@ class TinyDBBinding(object):
 
 
 	def countResources(self) -> int:
+		"""	Return the number of resources in the database.
+		
+			Return:
+				The number of resources in the database.
+		"""
 		with self.lockResources:
 			return len(self.tabResources)
 
 
 	def searchByFragment(self, dct:dict) -> list[Document]:
-		""" Search and return all resources that match the given dictionary/document. """
+		""" Search and return all resources that match the given dictionary/document. 
+		
+			Args:
+				dct: The dictionary/document to search for.
+				
+			Return:
+				A list of found resources, or an empty list.
+		"""
 		with self.lockResources:
 			return self.tabResources.search(self.resourceQuery.fragment(dct))
 
@@ -997,14 +1083,6 @@ class TinyDBBinding(object):
 					'ty' : resource.ty 
 				}, ri))	# type:ignore[arg-type]
 
-			# self.tabIdentifiers.upsert(
-			# 	{	'ri' : ri, 
-			# 		'rn' : resource.rn, 
-			# 		'srn' : srn,
-			# 		'ty' : resource.ty 
-			# 	}, 
-			# 	self.identifierQuery.ri == ri)
-
 		with self.lockStructuredIDs:
 			self.tabStructuredIDs.upsert(
 				Document({'srn': srn,
@@ -1015,7 +1093,6 @@ class TinyDBBinding(object):
 	def deleteIdentifier(self, resource:Resource) -> None:
 		with self.lockIdentifiers:
 			self.tabIdentifiers.remove(doc_ids = [resource.ri])
-			# self.tabIdentifiers.remove(self.identifierQuery.ri == resource.ri)
 
 		with self.lockStructuredIDs:
 			self.tabStructuredIDs.remove(doc_ids = [resource.getSrn()])	# type:ignore[arg-type,list-item]
@@ -1040,13 +1117,11 @@ class TinyDBBinding(object):
 				ri = _r['ri'] if _r else None 
 			else:
 				return []
-			# return self.tabIdentifiers.search(self.identifierQuery.srn == srn)
 
 		if ri:
 			with self.lockIdentifiers:
 				_r = self.tabIdentifiers.get(doc_id = ri)	# type:ignore[arg-type, assignment]
 				return [_r] if _r else []
-				# return self.tabIdentifiers.search(self.identifierQuery.ri == ri)
 		return []
 
 
@@ -1114,7 +1189,6 @@ class TinyDBBinding(object):
 			if ri:
 				_r:Document = self.tabSubscriptions.get(doc_id =  ri)	# type:ignore[arg-type, assignment]
 				return [_r] if _r else []
-				# return self.tabSubscriptions.search(self.subscriptionQuery.ri == ri)
 			if pi:
 				return self.tabSubscriptions.search(self.subscriptionQuery.pi == pi)
 			return None
@@ -1320,17 +1394,6 @@ class TinyDBBinding(object):
 					Document({k: v for k, v in _doc.items() if v is not None}, 
 			    			 self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
 
-				# self.tabRequests.insert(
-					# Document({'ri': ri,
-					# 		  'srn': srn,
-					# 		  'ts': ts,
-					# 		  'org': originator,
-					# 		  'op': op,
-					# 		  'rsc': rsc,
-					# 		  'out': outgoing,
-					# 		  'req': request,
-					# 		  'rsp': response
-					# 		 }, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
 			except Exception as e:
 				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
 				return False
