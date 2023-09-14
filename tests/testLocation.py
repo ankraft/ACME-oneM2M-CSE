@@ -39,8 +39,15 @@ class TestLocation(unittest.TestCase):
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.CREATED, 'cannot create parent AE'
+
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		cls.aeRI = findXPath(cls.ae, 'm2m:ae/ri')
+
+		dct = 	{ 'm2m:cnt' : {
+					'rn'  : f'{cntRN}2'
+				}}
+		cls.ae, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)	# Extra CNT. Acts as a non-location enabled resource
+		assert rsc == RC.CREATED, 'cannot create CNT'
 
 		testCaseEnd('Setup TestLocation')
 
