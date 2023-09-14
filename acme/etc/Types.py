@@ -618,9 +618,11 @@ class BasicType(ACMEIntEnum):
 	adict				= auto()	# anoymous dict structure
 	base64 				= auto()
 	schedule			= auto()	# scheduleEntry
+	ID					= auto()	# m2m:ID
+
+	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time
 	date				= timestamp	# alias type for date
-	ID 					= auto()	# m2m:ID
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
