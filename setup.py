@@ -10,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.12.0',
+    version='0.13.0',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',

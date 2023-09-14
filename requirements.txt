@@ -12,9 +12,9 @@ certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via flask
-flask==2.3.2
+flask==2.3.3
     # via
     #   ACME-oneM2M-CSE (setup.py)
     #   flask-cors
@@ -59,7 +59,7 @@ plotext==5.2.8
     # via ACME-oneM2M-CSE (setup.py)
 prompt-toolkit==3.0.39
     # via inquirerpy
-pygments==2.15.1
+pygments==2.16.1
     # via rich
 pyparsing==3.1.1
     # via rdflib
@@ -77,7 +77,7 @@ shapely==2.0.1
     # via ACME-oneM2M-CSE (setup.py)
 six==1.16.0
     # via isodate
-textual==0.32.0
+textual==0.36.0
     # via ACME-oneM2M-CSE (setup.py)
 tinydb==4.8.0
     # via ACME-oneM2M-CSE (setup.py)
@@ -89,7 +89,7 @@ urllib3==2.0.4
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit
-werkzeug==2.3.6
+werkzeug==2.3.7
     # via flask
 zipp==3.16.2
     # via importlib-metadata
