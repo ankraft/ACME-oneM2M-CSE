@@ -84,6 +84,7 @@ The following table presents the supported management object specifications.
 | Blocking requests             |  &check;  |                                                                                                                                            |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                                                                             |
 | Discovery                     |  &check;  |                                                                                                                                            |
+| Geo-query                     |  &check;  |                                                                                                                                            |
 | Location                      |  &check;  | Only *device based, and no *network based* location policies are supported.                                                                |
 | Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.                                                             |
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*.                                                  |
