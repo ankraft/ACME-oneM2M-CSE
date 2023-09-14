@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
 
 from pathlib import Path
-import json, os, fnmatch
+import json, os, fnmatch, traceback
 import requests, webbrowser
 from decimal import Decimal
 from rich.text import Text
@@ -1507,7 +1507,7 @@ class ACMEPContext(PContext):
 		try:
 			request = CSE.request.fillAndValidateCSERequest(req)
 		except ResponseException as e:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}', exception = e))
 		
 		# Send request
 		L.isDebug and L.logDebug(f'Sending request from script: {request.originalRequest} to: {target}')
@@ -1978,6 +1978,8 @@ class ScriptManager(object):
 					L.logDebug(f'Script terminated with result: {pcontext.result}')
 				if pcontext.state == PState.terminatedWithError:
 					L.logWarn(f'Script terminated with error: {pcontext.error.message}')
+					if pcontext.error.exception:
+						L.logWarn(''.join(traceback.format_exception(pcontext.error.exception)))
 
 				if not result or not cast(ACMEPContext, pcontext).nextScript:	
 					return
