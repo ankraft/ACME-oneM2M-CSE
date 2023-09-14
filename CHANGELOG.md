@@ -14,11 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added automatic pip install of missing dependencies during startup.
 - [CSE] Added support for &lt;schedule> resource type.
 - [CSE] Added support for *Result Expiration Timestamp* request parameter for handling timeouts in fanoutPoint request aggregations.
-- [LCP] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
+- [CSE] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
+- [CSE] Added support *location* attribute and *locationQuery* request parameters and functionality 
 - [SCRIPTS] Added "dolist", "dotimes", "tui-notify", "cse-attribute-info", sand "get-loglevel" functions to the script interpreter. 
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
-
 
 ### Experimental
 

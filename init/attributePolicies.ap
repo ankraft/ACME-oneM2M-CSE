@@ -1386,6 +1386,25 @@
 			"annc": "OA"
 		}
 	],
+	"geom": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geometryType",
+			"ns": "m2m",
+			"type": "geoJsonCoordinate",
+			"car": "1"
+		}
+	],
+	"gmty": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geometryType",
+			"ns": "m2m",
+			"type": "enum", 
+			"etype": "m2m:geometryType",
+			"car": "1"
+		}
+	],
 	"gn": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1410,6 +1429,16 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"gsf": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geoSpatialFunction",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:geoSpatialFunctionType",
+			"car": "1"
 		}
 	],
 	"gta": [

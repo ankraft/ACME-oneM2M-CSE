@@ -19,7 +19,7 @@ from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, Req
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
-from ..etc.ResponseStatusCodes import ResponseException, exceptionFromRSC
+from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
 from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
@@ -1302,18 +1302,34 @@ class RequestManager(object):
 			#	Discovery and FilterCriteria
 			#
 			if fcAttrs:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
-				for h in [ 'lim', 'lvl', 'ofst', 'arp',
+				for h in ( 'lim', 'lvl', 'ofst', 'arp',
 						   'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr',
 						   'smf', 
-						   'aq']:
+						   'aq'):
 					if (v := gget(fcAttrs, h)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
-				for h in [ 'lbl', 'cty' ]: # different handling of list attributes
+				for h in ( 'lbl', 'cty' ): # different handling of list attributes
 					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = False)) is not None:
 						cseRequest.fc.set(h, v)
-				for h in [ 'ty' ]: # different handling of list attributes that are normally non-lists
+				for h in ( 'ty', ): # different handling of list attributes that are normally non-lists
 					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
+
+				# Handling of geo-query attributes
+				match len([a for a in ('gmty', 'geom', 'gsf') if a in fcAttrs]):
+					case 0:
+						pass
+					case 1 | 2:
+						raise BAD_REQUEST(L.logDebug('gmty, geom and gsf must be specified together'), data = cseRequest)
+					case 3:
+						if (v := gget(fcAttrs, 'gmty')) is not None:
+							cseRequest.fc.gmty = v
+						geom = fcAttrs.get('geom')
+						if (v := gget(fcAttrs, 'geom')) is not None:
+							cseRequest.fc.geom = geom
+							cseRequest.fc._geom = v
+						if (v := gget(fcAttrs, 'gsf')) is not None:
+							cseRequest.fc.gsf = v
 				
 				# Copy all remaining attributes as filter criteria!
 

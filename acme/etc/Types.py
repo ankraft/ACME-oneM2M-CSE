@@ -1563,17 +1563,7 @@ class GeoSpatialFunctionType(ACMEIntEnum):
 	"""	Intersects."""
 
 
-class GeoQuery:
-	"""	Geo Query.
-	"""
-	geometryType:GeometryType = None
-	"""	Geometry Type. """
-	geometry:ListOfCoordinates = []
-	"""	Geometry. """
-	geoSpatialFunction:GeoSpatialFunctionType = None
 
-
-	
 ##############################################################################
 #
 #	Result and Argument and Header Data Classes
@@ -1769,10 +1759,20 @@ class FilterCriteria:
 	lbl:list = None
 	""" List of labels. Default is *None*. """
 
-	gq:GeoQuery = None
-	""" Geo query. Default is *None*. """
+	gmty:GeometryType = None
+	""" geometryType for geo-query. Default is *None*. """
 
-	aq:str = None
+	geom:str = None
+	""" geometry for geo-query. Default is *None*. """
+
+	_geom:list = None
+	""" Internal attribute to hold a parsed geometry. Default is *None*."""
+
+	gsf:GeoSpatialFunctionType = None
+	""" geoSpatialFunction for geo-query. Default is *None*. """
+
+
+	aq:str = None	# EXPERIMENTAL
 	""" Advanced query. Default is *None*. """
 
 
@@ -1802,7 +1802,7 @@ class FilterCriteria:
 		"""
 		return { k:v 
 				 for k, v in self.__dict__.items() 
-				 if k is not None and k not in [ 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes' ] and v is not None
+				 if k is not None and k not in ( 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes', 'gmty', 'geom', '_geom', 'gsf' ) and v is not None
 			   }
 
 

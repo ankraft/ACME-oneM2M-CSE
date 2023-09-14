@@ -531,6 +531,11 @@ class Dispatcher(object):
 		if filterCriteria.aq:
 			found += 1 if CSE.script.runComparisonQuery(filterCriteria.aq, r) else 0
 
+		# Geo query
+		if filterCriteria.geom:	# Just check one of the tree required attributes. If one is there, all are there
+			allLen += 1	# Add one more criteria to check to the required count
+			if r.loc:	# Only check if the resource has a location
+				found += 1 if CSE.location.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled

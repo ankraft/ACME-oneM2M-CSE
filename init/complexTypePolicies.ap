@@ -968,7 +968,7 @@
 			"car": "01"
 		}
 	],
-	"ri": [
+	"rsid": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:actionInput",
@@ -1426,16 +1426,16 @@
 			"car": "01"
 		}
 	],
-	"gq": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:filterCriteria",
-			"lname": "geoQuery",
-			"ns": "m2m",
-			"type": "m2m:geoQuery",
-			"car": "01"
-		}
-	],
+	// "gq": [
+	// 	{
+	// 		"rtypes": [ "COMPLEX" ],
+	// 		"ctype": "m2m:filterCriteria",
+	// 		"lname": "geoQuery",
+	// 		"ns": "m2m",
+	// 		"type": "m2m:geoQuery",
+	// 		"car": "01"
+	// 	}
+	// ],
 
 
 	//
@@ -1449,44 +1449,6 @@
 			"lname": "coordinates",
 			"ns": "m2m",
 			"type": "geoJsonCoordinate",
-			"car": "1"
-		}
-	],
-
-
-	//
-	//	m2m:geoQuery
-	//
-	"gmty": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geometryType",
-			"ns": "m2m",
-			"type": "enum", 
-			"etype": "m2m:geometryType",
-			"car": "1"
-		}
-	],
-	"geom": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geometryType",
-			"ns": "m2m",
-			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
-			"ltype": "string",
-			"car": "1"
-		}
-	],
-	"gsf": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geoSpatialFunction",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:geoSpatialFunctionType",
 			"car": "1"
 		}
 	],

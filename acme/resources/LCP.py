@@ -21,7 +21,7 @@ from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory 
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
-from ..etc.GeoUtils import getGeoPolygon
+from ..etc.GeoTools import getGeoPolygon
 
 # TODO add annc
 # TODO add to supported resources of CSE

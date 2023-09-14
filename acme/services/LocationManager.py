@@ -12,16 +12,19 @@ from __future__ import annotations
 
 from typing import Tuple, Optional, Literal
 from dataclasses import dataclass
+import json
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes
+from ..etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
 from ..etc.DateUtils import fromDuration
-from ..etc.GeoUtils import getGeoPoint, getGeoPolygon, isLocationInsidePolygon
+from ..etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
+from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources.LCP import LCP
 from ..resources.CIN import CIN
 from ..resources import Factory
+from ..resources.Resource import Resource
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
 """ Type alias for the geofence position."""
@@ -334,3 +337,37 @@ class LocationManager(object):
 		# L.isDebug and L.logDebug(f'Location is: {result}')
 		return result	# type:ignore [return-value]
 
+
+	#########################################################################
+	#
+	# 	GeoLocation and GeoQuery
+	#
+
+	def checkGeoLocation(self, r:Resource, gmty:GeometryType, geom:list, gsf:GeoSpatialFunctionType) -> bool:
+		"""	Check if a resource's location confirms to a geo location.
+
+			Args:
+				r: The resource to check.
+				gmty: The geometry type.
+				geom: The geometry.
+				gsf: The geo spatial function.
+
+			Returns:
+				True if the resource's location confirms to the geo location, False otherwise.
+		"""
+		if (rGeom := r.getLocationCoordinates()) is None:
+			return False
+		rTyp = r.loc.get('typ')
+		
+		try:
+			match gsf:
+				case GeoSpatialFunctionType.Within:
+					return geoWithin(gmty, geom, rTyp, rGeom)
+				case GeoSpatialFunctionType.Contains:
+					return geoContains(gmty, geom, rTyp, rGeom)
+				case GeoSpatialFunctionType.Intersects:
+					return geoIntersects(gmty, geom, rTyp, rGeom)
+				case _:
+					raise ValueError(f'Invalid geo spatial function: {gsf}')
+		except ValueError as e:
+			raise BAD_REQUEST(L.logDebug(f'Invalid geometry: {e}'))

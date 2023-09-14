@@ -21,7 +21,6 @@ class TestLocation(unittest.TestCase):
 	ae 			= None
 	aeRI		= None
 
-
 	originator 	= None
 
 	@classmethod
@@ -390,11 +389,1101 @@ class TestLocation(unittest.TestCase):
 		r, rsc = DELETE(cntURL, self.originator)
 		self.assertEqual(rsc, RC.DELETED, r)
 
+	#
+	# geo-query
+	#
+
+	def test_geoQueryGmtyOnlyFail(self) -> None:
+		"""	RETRIEVE <AE> with rcn=4, gmty only -> Fail"""
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1', self.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	def test_geoQueryGeomOnlyFail(self) -> None:
+		"""	RETRIEVE <AE> with rcn=4, geom only -> Fail"""
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&geom=[1.0,2.0]', self.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	def test_geoQueryGsfOnlyFail(self) -> None:
+		"""	RETRIEVE <AE> with rcn=4, gsf only -> Fail"""
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gsf=1', self.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	def test_geoQueryGeomWrongFail(self) -> None:
+		"""	RETRIEVE <AE> with rcn=4, geometry wrong format -> Fail"""
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=1.0', self.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+	# Point
+
+	def test_geoQueryPointWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point is within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=[0.5,0.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=[2.0,2.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointWithinPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point is within point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[ 1.0, 1.0 ]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=[1.0,1.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointContainsPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point contains point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[ 1.0, 1.0 ]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=2&geom=[1.0,1.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointContainsPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point contains polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=2&geom=[0.5,0.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[ 1.0, 1.0 ]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[1.0,1.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[ 1.0, 1.0 ]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[2.0,2.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[0.0,0.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=2&geom=[0.5,0.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 
+	# LineString
+
+	def test_geoQueryLineStringWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line strinng is within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=1&geom=[[0.5,0.5],[0.6,0.6]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	def test_geoQueryLineStringOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=1&geom=[[2.0,2.0],[3.0,3.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointWithinLineString1(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point is within LineString start point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=[1.0,1.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointWithinLineString2(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point is within LineString middle"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=1&geom=[1.5,1.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringContainsLineString(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string contains line string"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=2&geom=[[1.0,1.0],[2.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringContainsPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point contains polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=2&geom=[[0.5,0.5],[0.6,0.6]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsLineString(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects line string"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[1.5,1.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringIntersectsLineString(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string intersects line string"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=3&geom=[[2.0,1.0],[1.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringIntersectsLineStringFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string intersects line string -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 1.0 ], [ 2.0, 2.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=3&geom=[[3.0,3.0],[4.0,4.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	# Polygon
+
+	def test_geoQueryPolygonWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon is within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=1&geom=[[0.5,0.5],[0.6,0.5],[0.6,0.6],[0.5,0.6],[0.5,0.5]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=1&geom=[[2.0,2.0],[3.0,2.0],[3.0,3.0],[2.0,3.0],[2.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonPartlyWithinPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon partly is within polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=1&geom=[[0.5,0.5],[1.5,0.5],[1.5,1.5],[0.5,1.5],[0.5,0.5]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonContainsPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon contains polygon """
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=2&geom=[[0.0,0.0],[2.0,0.0],[2.0,2.0],[0.0,2.0],[0.0,0.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonContainsPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon contains polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 3.0, 0.0 ], [ 3.0, 3.0 ], [ 0.0, 3.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=2&geom=[[0.0,0.0],[2.0,0.0],[2.0,2.0],[0.0,2.0],[0.0,0.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonIntersectsPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon intersects polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=3&geom=[[0.5,0.5],[2.0,0.5],[2.0,2.0],[0.5,2.0],[0.5,0.5]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonIntersectsPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon intersects polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=3&geom=[[1.5,1.5],[2.0,1.5],[2.0,2.0],[1.5,2.0],[1.5,1.5]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+	# MultiPoint
+
+	def test_geoQueryMultiPointWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point is within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=1&geom=[[0.5,0.5],[0.6,0.6]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=1&geom=[[2.0,2.0],[3.0,3.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointOutsidePolygonWrongGmtyFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry type invalid for geometry -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# request with invalid geometry
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=1&geom=[[2.0,2.0],[3.0,3.0]]', self.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointContainsPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point contains Point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[0.5, 0.5]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=2&geom=[[0.5,0.5],[0.6,0.6]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointContainsPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point contains Point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[0.5, 0.5]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=2&geom=[[0.4,0.4],[0.6,0.6]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 4,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[0.0,0.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 4,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[2.0,2.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointIntersectsMultiPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point intersects multi point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 4,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=3&geom=[[0.0,0.0],[2.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPointIntersectsMultiPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi point intersects multi point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 4,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=4&gsf=3&geom=[[3.0,3.0],[2.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+	# MultiLinestring
+
+	def test_geoQueryMultiLinestringWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi line string within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=5&gsf=1&geom=[[[0.5,0.5],[0.6,0.6]],[[0.7,0.7],[0.8,0.8]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiLinestringOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi line string outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=5&gsf=1&geom=[[[1.5,1.5],[1.6,1.6]],[[1.7,1.7],[1.8,1.8]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiLineContainsPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi line contains Point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[1.55, 1.55]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=5&gsf=2&geom=[[[1.5,1.5],[1.6,1.6]],[[1.7,1.7],[1.8,1.8]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiLineContainsPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi line contains Point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[0.5, 0.5]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=5&gsf=2&geom=[[[1.5,1.5],[1.6,1.6]],[[1.7,1.7],[1.8,1.8]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiLine(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi line"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.0,1.0],[2.0,2.0]],[[3.0,3.0],[4.0,4.0]]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[1.5,1.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiLineFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi line -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.0,1.0],[2.0,2.0]],[[3.0,3.0],[4.0,4.0]]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[5.0,5.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringIntersectsMultiLine(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string intersects multi line"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.0,1.0],[2.0,2.0]],[[3.0,3.0],[4.0,4.0]]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=3&geom=[[2.0,1.0],[1.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryLineStringIntersectsMultiLineFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry line string intersects multi line -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.0,1.0],[2.0,2.0]],[[3.0,3.0],[4.0,4.0]]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=2&gsf=3&geom=[[5.0,5.0],[6.0,6.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+	# MultiPolygon
+
+	def test_geoQueryMultiPolygonWithinPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi polygon is within polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=6&gsf=1&geom=[[[0.5,0.5],[0.6,0.5],[0.6,0.6],[0.5,0.6],[0.5,0.5]],[[0.7,0.7],[0.8,0.7],[0.8,0.8],[0.7,0.8],[0.7,0.7]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPolygonOutsidePolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi polygon outside polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 3,
+					  'crd': '[[ 0.0, 0.0 ], [ 1.0, 0.0 ], [ 1.0, 1.0 ], [ 0.0, 1.0 ], [ 0.0, 0.0 ]]'
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=6&gsf=1&geom=[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPolygonContainsPoint(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi polygon contains Point"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[1.55, 1.55]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=6&gsf=2&geom=[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryMultiPolygonContainsPointFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry multi line contains Point -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 1,
+					  'crd': '[0.5, 0.5]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=6&gsf=2&geom=[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[1.55,1.5]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPointIntersectsMultiPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry point intersects multi polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=1&gsf=3&geom=[2.0,2.0]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonIntersectsMultiPolygon(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon intersects multi polygon"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=3&geom=[[0.0,0.0],[2.0,0.0],[2.0,2.0],[0.0,2.0],[0.0,0.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	def test_geoQueryPolygonIntersectsMultiPolygonFail(self) -> None:
+		"""	CREATE <CNT>, RETRIEVE <AE>, geometry polygon intersects multi polygon -> Fail"""
+
+		dct = { 'm2m:cnt': {
+		  		'rn': cntRN,
+		  		'loc': {
+					  'typ': 5,
+					  'crd': '[[[1.5,1.5],[1.6,1.5],[1.6,1.6],[1.5,1.6],[1.5,1.5]],[[1.7,1.7],[1.8,1.7],[1.8,1.8],[1.7,1.8],[1.7,1.7]]]',
+				 },
+		}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}?rcn=4&gmty=3&gsf=3&geom=[[2.0,2.0],[4.0,2.0],[4.0,4.0],[2.0,4.0],[2.0,2.0]]', self.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'), r)
+
+		r, rsc = DELETE(cntURL, self.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 
 	#########################################################################
 
@@ -403,37 +1492,99 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
 
 	# basic tests
-	suite.addTest(TestLocation('test_createContainerWrongLocFail'))
+	addTest(suite, TestLocation('test_createContainerWrongLocFail'))
 
 	# Point
-	suite.addTest(TestLocation('test_createContainerLocWrongAttributesFail'))
-	suite.addTest(TestLocation('test_createContainerLocPointIntCoordinatesFail'))
-	suite.addTest(TestLocation('test_createContainerLocPointWrongCountFail'))
-	suite.addTest(TestLocation('test_createContainerLocPoint'))
+	addTest(suite, TestLocation('test_createContainerLocWrongAttributesFail'))
+	addTest(suite, TestLocation('test_createContainerLocPointIntCoordinatesFail'))
+	addTest(suite, TestLocation('test_createContainerLocPointWrongCountFail'))
+	addTest(suite, TestLocation('test_createContainerLocPoint'))
 
 	# LineString
-	suite.addTest(TestLocation('test_createContainerLocLineStringWrongCountFail'))
-	suite.addTest(TestLocation('test_createContainerLocLineString'))
+	addTest(suite, TestLocation('test_createContainerLocLineStringWrongCountFail'))
+	addTest(suite, TestLocation('test_createContainerLocLineString'))
 
 	# Polygon
-	suite.addTest(TestLocation('test_createContainerLocPolygonWrongCountFail'))
-	suite.addTest(TestLocation('test_createContainerLocPolygonWrongFirstLastCoordinateFail'))
-	suite.addTest(TestLocation('test_createContainerLocPolygon'))
+	addTest(suite, TestLocation('test_createContainerLocPolygonWrongCountFail'))
+	addTest(suite, TestLocation('test_createContainerLocPolygonWrongFirstLastCoordinateFail'))
+	addTest(suite, TestLocation('test_createContainerLocPolygon'))
 
 	# MultiPoint
-	suite.addTest(TestLocation('test_createContainerLocMultiPointWrongFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiPointWrongCountFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiPoint'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPointWrongFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPointWrongCountFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPoint'))
 
 	# MultiLineString
-	suite.addTest(TestLocation('test_createContainerLocMultiLineStringWrongFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiLineString2WrongFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiLineString'))
+	addTest(suite, TestLocation('test_createContainerLocMultiLineStringWrongFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiLineString2WrongFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiLineString'))
 
 	# MultiPolygon
-	suite.addTest(TestLocation('test_createContainerLocMultiPolygonWrongFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiPolygonWrongFirstLastCoordinateFail'))
-	suite.addTest(TestLocation('test_createContainerLocMultiPolygon'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPolygonWrongFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPolygonWrongFirstLastCoordinateFail'))
+	addTest(suite, TestLocation('test_createContainerLocMultiPolygon'))
+
+	# geo-query
+	addTest(suite, TestLocation('test_geoQueryGmtyOnlyFail'))
+	addTest(suite, TestLocation('test_geoQueryGeomOnlyFail'))
+	addTest(suite, TestLocation('test_geoQueryGsfOnlyFail'))
+	addTest(suite, TestLocation('test_geoQueryGeomWrongFail'))
+
+	addTest(suite, TestLocation('test_geoQueryPointWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPointOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryPointWithinPoint'))
+	addTest(suite, TestLocation('test_geoQueryPointContainsPoint'))
+	addTest(suite, TestLocation('test_geoQueryPointContainsPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsPoint'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsPointFail'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsPolygonFail'))
+	
+	addTest(suite, TestLocation('test_geoQueryLineStringWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryLineStringOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryPointWithinLineString1'))
+	addTest(suite, TestLocation('test_geoQueryPointWithinLineString2'))
+	addTest(suite, TestLocation('test_geoQueryLineStringContainsLineString'))
+	addTest(suite, TestLocation('test_geoQueryLineStringContainsPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsLineString'))
+	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsLineStringFail'))
+	
+	addTest(suite, TestLocation('test_geoQueryPolygonWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPolygonOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryPolygonPartlyWithinPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryPointContainsPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryPolygonContainsPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPolygonContainsPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsPolygonFail'))
+
+	addTest(suite, TestLocation('test_geoQueryMultiPointWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointOutsidePolygonWrongGmtyFail'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointContainsPoint'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointContainsPointFail'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPoint'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPointFail'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointIntersectsMultiPoint'))
+	addTest(suite, TestLocation('test_geoQueryMultiPointIntersectsMultiPointFail'))
+	
+	addTest(suite, TestLocation('test_geoQueryMultiLinestringWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiLinestringOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiLineContainsPoint'))
+	addTest(suite, TestLocation('test_geoQueryMultiLineContainsPointFail'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiLine'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiLineFail'))
+	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsMultiLine'))
+	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsMultiLineFail'))
+
+	addTest(suite, TestLocation('test_geoQueryMultiPolygonWithinPolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiPolygonOutsidePolygon'))
+	addTest(suite, TestLocation('test_geoQueryMultiPolygonContainsPoint'))
+	addTest(suite, TestLocation('test_geoQueryMultiPolygonContainsPointFail'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPolygonFail'))
+	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsMultiPolygon'))
+	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsMultiPolygonFail'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

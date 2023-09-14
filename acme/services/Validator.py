@@ -434,7 +434,7 @@ class Validator(object):
 				BAD_REQUEST: If the location definition is invalid.
 		"""
 		crd = json.loads(loc.get('crd')) # was validated before
-		match (typ := loc.get('typ')):
+		match loc.get('typ'):
 			case GeometryType.Point:
 				if not self.validateGeoPoint(crd):
 					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON point: {crd}'))

@@ -532,8 +532,8 @@ class Resource(object):
 				crd = CSE.validator.validateGeoLocation(loc)
 				if dct is not None:
 					setXPath(dct, f'{self.tpe}/{_locCoordinate}', crd, overwrite = True)
-				else:	
-					self.setAttribute(_locCoordinate, crd)
+				else:
+					self.setLocationCoordinates(crd)
 
 
 	#########################################################################
@@ -1085,3 +1085,21 @@ class Resource(object):
 				rvi: Original CREATE request's *rvi*.
 		"""
 		self.setAttribute(_rvi, rvi)
+
+
+	def getLocationCoordinates(self) -> list:
+		"""	Retrieve a resource's location coordinates (internal attribute).
+
+			Return:
+				The resource's location coordinates. Might be None.
+		"""
+		return self.attribute(_locCoordinate)
+	
+
+	def setLocationCoordinates(self, crd:JSON) -> None:
+		"""	Set a resource's location coordinates (internal attribute).
+
+			Args:
+				crd: The location coordinates to assign to a resource.
+		"""
+		self.setAttribute(_locCoordinate, crd)
