@@ -123,7 +123,7 @@ class CNT_LA(VirtualResource):
 
 
 	def getLCPLink(self) -> str:
-		"""	Retrieve a `LocationPolicy` resource's resource ID.
+		"""	Retrieve a `LCP` (LocationPolicy) resource's resource ID.
 
 			Return:
 				The resource ID.
@@ -132,9 +132,9 @@ class CNT_LA(VirtualResource):
 	
 
 	def setLCPLink(self, lcpRi:str) -> None:
-		"""	Assign a resource ID of a `LocationPolicy` resource to the latest resource.
+		"""	Assign a resource ID of a `LCP` (LocationPolicy) resource to the latest resource.
 
 			Args:
-				ri: The resource ID of an `LocationPolicy` resource.
+				lcpRi: The resource ID of an `LCP` resource.
 		"""
 		self.setAttribute(self._li, lcpRi, overwrite = True)

@@ -53,9 +53,9 @@ class ACMEInputField(Container):
 	@dataclass
 	class Submitted(Message):
 		input: ACMEInputField
-		"""The `Input` widget that is being submitted."""
+		"""The *Input* widget that is being submitted."""
 		value: str
-		"""The value of the `Input` being submitted."""
+		"""The value of the *Input* being submitted."""
 
 
 

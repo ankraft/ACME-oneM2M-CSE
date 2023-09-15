@@ -1281,17 +1281,15 @@ class ACMEPContext(PContext):
 	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Show a TUI notification.
 
-			This function is only available in TUI mode. It has the following
-			arguments:
+			This function is only available in TUI mode. It has the following arguments.
 
 				- message: The message to show.
 				- title: (Optional) The title of the notification.
 				- severity: (Optional) The severity of the notification. Can be
-				  one of the following values: `information`, `warning`, `error`.
+				  one of the following values: *information*, *warning*, *error*.
 				- timeout: (Optional) The timeout in seconds after which the
 				  notification will disappear. If not specified, the notification
 				  will disappear after 3 seconds.
-
 			
 			The function returns NIL.
 

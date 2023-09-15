@@ -10,6 +10,14 @@
 #
 
 """	This module defines storage managers and drivers for database access.
+
+	Storage managers are used to store, retrieve and manage resources and other runtime data in the database.
+
+	Storage drivers are used to access the database. Currently, the only supported database is TinyDB.
+
+	See also:
+		- `TinyDBBetterTable`
+		- `TinyDBBufferedStorage`
 """
 
 from __future__ import annotations
@@ -57,6 +65,7 @@ class Storage(object):
 			inMemory: Indicator whether the database is located in memory (volatile) or on disk.
 			dbPath: In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk.
 			dbReset: Indicator that the database should be reset or cleared during start-up.
+			db: The database object.
 	"""
 
 	__slots__ = (
@@ -219,6 +228,7 @@ class Storage(object):
 			Args:
 				ri: Optional resource ID.
 				srn: Optional structured resource name.
+
 			Returns:
 				True when a resource with the ID or name exists.
 		"""
@@ -238,6 +248,7 @@ class Storage(object):
 				csi: The resource is retrieved via its CSE-ID.
 				srn: The resource is retrieved via its structured resource name.
 				aei: The resource is retrieved via its AE-ID.
+
 			Returns:
 				The resource.
 		"""
@@ -273,6 +284,7 @@ class Storage(object):
 
 			Args:
 				ri:  The resource is retrieved via its rersource ID.
+
 			Returns:
 				The resource dictionary.
 		"""
@@ -291,6 +303,7 @@ class Storage(object):
 
 			Args:
 				ty: resource type to retrieve.
+
 			Returns:
 				List of resource *Document* objects	. 
 		"""
@@ -303,6 +316,7 @@ class Storage(object):
 
 			Args:
 				resource: Resource to update.
+
 			Return:
 				Updated Resource object.
 		"""
@@ -335,6 +349,7 @@ class Storage(object):
 				pi: The parent resource's Resource ID.
 				ty: Optional resource type to filter the result.
 				raw: When "True" then return the child resources as resource dictionary instead of resources.
+
 			Returns:
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
@@ -351,6 +366,7 @@ class Storage(object):
 			Args:
 				pi: The parent resource's Resource ID.
 				ty: Optional resource type to filter the result.
+
 			Returns:
 				Return a list of resource IDs.
 		"""
@@ -363,6 +379,7 @@ class Storage(object):
 			Args:
 				pi: The parent resource's Resource ID.
 				ty: Optional resource type to filter the result.
+
 			Returns:
 				The number of child resources.
 		"""
@@ -383,6 +400,7 @@ class Storage(object):
 
 			Args:
 				ri: Unstructured resource ID for the mapping to look for.
+
 			Return:
 				List of found resources identifier mappings, or an empty list.
 		"""
@@ -394,6 +412,7 @@ class Storage(object):
 
 			Args:
 				srn: Structured resource ID for the mapping to look for.
+
 			Return:
 				List of found resources identifier mappings, or an empty list.
 		"""
@@ -406,6 +425,7 @@ class Storage(object):
 			Args:
 				dct: A fragment dictionary to use as a filter for the search.
 				filter: An optional callback to provide additional filter functionality.
+
 			Return:
 				List of `Resource` objects.
 		"""
@@ -419,6 +439,7 @@ class Storage(object):
 
 			Args:
 				filter: A callback to provide filter functionality.
+
 			Return:
 				List of `Resource` objects.
 		"""
@@ -433,6 +454,14 @@ class Storage(object):
 	##
 
 	def getSubscription(self, ri:str) -> Optional[Document]:
+		"""	Retrieve a subscription representation (not a oneM2M `Resource` object) from the DB.
+
+			Args:
+				ri: The subscription's resource ID.
+
+			Return:
+				The subscription as a dictionary, or None.
+		"""
 		# L.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri = ri)
 		if not subs or len(subs) != 1:
@@ -441,16 +470,40 @@ class Storage(object):
 
 
 	def getSubscriptionsForParent(self, pi:str) -> list[Document]:
+		"""	Retrieve all subscriptions representations (not oneM2M `Resource` objects) for a parent resource.
+
+			Args:
+				pi: The parent resource's resource ID.
+
+			Return:
+				List of subscriptions.
+		"""
 		# L.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi = pi)
 
 
 	def addSubscription(self, subscription:Resource) -> bool:
+		"""	Add a subscription to the DB.
+		
+			Args:
+				subscription: The subscription `Resource` to add.
+				
+			Return:	
+				Boolean value to indicate success or failure.
+		"""
 		# L.logDebug(f'Adding subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
 	def removeSubscription(self, subscription:Resource) -> bool:
+		"""	Remove a subscription from the DB.
+
+			Args:
+				subscription: The subscription `Resource` to remove.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		# L.logDebug(f'Removing subscription: {subscription.ri}')
 		try:
 			return self.db.removeSubscription(subscription)
@@ -459,13 +512,16 @@ class Storage(object):
 
 
 	def updateSubscription(self, subscription:Resource) -> bool:
+		"""	Update a subscription representation in the DB.
+
+			Args:
+				subscription: The subscription `Resource` to update.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		# L.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
-
-
-	def updateSubscriptionSchedule(self, subscription:Resource, schedule:list[str]) -> bool:
-		# L.logDebug(f'Updating subscription schedule: {ri} - {schedule}')
-		return self.db.updateSubscriptionSchedule(subscription, schedule)
 
 
 	#########################################################################
@@ -474,20 +530,56 @@ class Storage(object):
 	##
 
 	def addBatchNotification(self, ri:str, nu:str, request:JSON) -> bool:
+		"""	Add a batch notification to the DB.
+		
+			Args:
+				ri: The resource ID of the target resource.
+				nu: The notification URI.
+				request: The request to store.
+				
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		return self.db.addBatchNotification(ri, nu, request)
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		"""	Count the number of batch notifications for a target resource and a notification URI.
+		
+			Args:
+				ri: The resource ID of the target resource.
+				nu: The notification URI.
+				
+			Return:
+				The number of matching batch notifications.
+		"""
 		return self.db.countBatchNotifications(ri, nu)
 
 
 	def getBatchNotifications(self, ri:str, nu:str) -> list[Document]:
+		"""	Retrieve the batch notifications for a target resource and a notification URI.
+		
+			Args:
+				ri: The resource ID of the target resource.
+				nu: The notification URI.
+				
+			Return:
+				List of batch notifications.
+		"""
 		return self.db.getBatchNotifications(ri, nu)
 
 
 	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
-		return self.db.removeBatchNotifications(ri, nu)
+		"""	Remove the batch notifications for a target resource and a notification URI.
 
+			Args:
+				ri: The resource ID of the target resource.
+				nu: The notification URI.
+			
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.removeBatchNotifications(ri, nu)
 
 
 	#########################################################################
@@ -497,21 +589,32 @@ class Storage(object):
 
 	def getStatistics(self) -> JSON:
 		"""	Retrieve the statistics data from the DB.
+
+			Return:
+				The statistics data as a JSON dictionary.
 		"""
 		return self.db.searchStatistics()
 
 
 	def updateStatistics(self, stats:JSON) -> bool:
 		"""	Update the statistics DB with new data.
+
+			Args:
+				stats: The statistics data to store.
+
+			Return:
+				Boolean value to indicate success or failure.
 		"""
 		return self.db.upsertStatistics(stats)
 
 
 	def purgeStatistics(self) -> None:
 		"""	Purge the statistics DB.
+
+			Return:
+				Boolean value to indicate success or failure.
 		"""
 		self.db.purgeStatistics()
-
 
 
 	#########################################################################
@@ -520,30 +623,73 @@ class Storage(object):
 	##
 
 	def getActions(self) -> list[Document]:
-		"""	Retrieve the actions data from the DB.
+		"""	Retrieve all action representations from the DB.
+
+			Return:
+				List of *Documents*. May be empty.
 		"""
 		return self.db.searchActionReprs()
 	
 
 	def getAction(self, ri:str) -> Optional[Document]:
-		"""	Retrieve the actions data from the DB.
+		"""	Retrieve the actions representation from the DB.
+
+			Args:
+				ri: The action's resource ID.
+
+			Return:
+				The action's data as a *Document*, or None.
 		"""
 		return self.db.getAction(ri)
 
 	
 	def searchActionsForSubject(self, ri:str) -> Sequence[JSON]:
+		"""	Search for actions for a subject resource.
+		
+			Args:
+				ri: The subject resource's resource ID.
+			
+			Return:
+				List of matching action representations.
+		"""
 		return self.db.searchActionsDeprsForSubject(ri)
 
 
 	def updateAction(self, action:ACTR, period:float, count:int) -> bool:
+		"""	Update or add an action representation in the DB.
+		
+			Args:
+				action: The action to update or insert.
+				period: The period for the action.
+				count: The run count for the action.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		return self.db.upsertActionRepr(action, period, count)
 
 
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
+		"""	Update an action representation in the DB.
+		
+			Args:
+				actionRepr: The action representation to update.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		return self.db.updateActionRepr(actionRepr)
 
 
 	def removeAction(self, ri:str) -> bool:
+		"""	Remove an action representation from the DB.
+		
+			Args:
+				ri: The action's resource ID.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		return self.db.removeActionRepr(ri)
 
 
@@ -583,6 +729,7 @@ class Storage(object):
 		
 			Args:
 				ri: The target resource's resource ID. If *None* or empty, then all requests are returned
+				sortedByOt: If true, then the requests are sorted by their creation time.
 			
 			Return:
 				List of *Documents*. May be empty.
@@ -771,6 +918,13 @@ class TinyDBBinding(object):
 	""" Define slots for instance variables. """
 
 	def __init__(self, path:str, postfix:str) -> None:
+		"""	Initialize the TinyDB binding.
+		
+			Args:
+				path: Path to the database directory.
+				postfix: Postfix for the database file names.
+		"""
+		
 		self.path = path
 		self._assignConfig()
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
@@ -880,6 +1034,8 @@ class TinyDBBinding(object):
 
 
 	def closeDB(self) -> None:
+		"""	Close the database.
+		"""
 		L.isInfo and L.log('Closing DBs')
 		with self.lockResources:
 			self.dbResources.close()
@@ -900,6 +1056,8 @@ class TinyDBBinding(object):
 
 
 	def purgeDB(self) -> None:
+		"""	Purge the database.
+		"""
 		L.isInfo and L.log('Purging DBs')
 		self.tabResources.truncate()
 		self.tabIdentifiers.truncate()
@@ -914,6 +1072,14 @@ class TinyDBBinding(object):
 	
 
 	def backupDB(self, dir:str) -> bool:
+		"""	Backup the database to a directory.
+		
+			Args:
+				dir: The directory to backup to.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
 		for fn in [	self.fileResources,
 					self.fileIdentifiers,
 					self.fileSubscriptions,
@@ -963,6 +1129,9 @@ class TinyDBBinding(object):
 			Args:
 				resource: The resource to update.
 				ri: The resource ID of the resource.
+
+			Return:
+				The updated resource.
 		"""
 		#L.logDebug(resource)
 		with self.lockResources:
@@ -992,6 +1161,23 @@ class TinyDBBinding(object):
 							  pi:Optional[str] = None, 
 							  ty:Optional[int] = None, 
 							  aei:Optional[str] = None) -> list[Document]:
+		"""	Search for resources by structured resource name, resource ID, CSE-ID, parent resource ID, resource type,
+		 	or application entity ID.
+			
+			Only one of the parameters may be used at a time. The order of precedence is: structured resource name,
+			resource ID, CSE-ID, structured resource name, parent resource ID, resource type, application entity ID.
+
+			Args:
+				ri: A resource ID.
+				csi: A CSE ID.
+				srn: A structured resource name.
+				pi: A parent resource ID.
+				ty: A resource type.
+				aei: An application entity ID.
+			
+			Return:
+				A list of found resources, or an empty list.
+		"""
 		if not srn:
 			with self.lockResources:
 				if ri:
@@ -1021,8 +1207,9 @@ class TinyDBBinding(object):
 
 			Args:
 				func: The filter function to use.
+
 			Return:
-				A list of found resources, or an empty list.
+				A list of found resource documents, or an empty list.
 		"""
 		with self.lockResources:
 			return self.tabResources.search(func)	# type: ignore [arg-type]
@@ -1032,6 +1219,20 @@ class TinyDBBinding(object):
 						  csi:Optional[str] = None, 
 						  srn:Optional[str] = None,
 						  ty:Optional[int] = None) -> bool:
+		"""	Check if a resource exists in the database.
+
+			Only one of the parameters may be used at a time. The order of precedence is: structured resource name,
+			resource ID, CSE-ID, resource type.
+			
+			Args:
+				ri: A resource ID.
+				csi: A CSE ID.
+				srn: A structured resource name.
+				ty: A resource type.
+			
+			Return:
+				True if the resource exists, False otherwise.
+		"""
 		if not srn:
 			with self.lockResources:
 				if ri:
@@ -1074,6 +1275,13 @@ class TinyDBBinding(object):
 	#
 
 	def insertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
+		"""	Insert an identifier into the identifiers DB.
+
+			Args:
+				resource: The resource to insert.
+				ri: The resource ID of the resource.
+				srn: The structured resource name of the resource.
+		"""
 		# L.isDebug and L.logDebug({'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty})		
 		with self.lockIdentifiers:
 			self.tabIdentifiers.upsert(Document(
@@ -1091,6 +1299,11 @@ class TinyDBBinding(object):
 
 
 	def deleteIdentifier(self, resource:Resource) -> None:
+		"""	Delete an identifier from the identifiers DB.
+
+			Args:
+				resource: The resource for which to delete the identifier.
+		"""
 		with self.lockIdentifiers:
 			self.tabIdentifiers.remove(doc_ids = [resource.ri])
 
@@ -1126,6 +1339,12 @@ class TinyDBBinding(object):
 
 
 	def addChildResource(self, resource:Resource, ri:str) -> None:
+		"""	Add a child resource to the childResources DB.
+
+			Args:
+				resource: The resource to add as a child.
+				ri: The resource ID of the resource.
+		"""
 		# L.isDebug and L.logDebug(f'insertChildResource ri:{ri}')		
 
 		pi = resource.pi
@@ -1150,6 +1369,11 @@ class TinyDBBinding(object):
 
 			
 	def removeChildResource(self, resource:Resource) -> None:
+		"""	Remove a child resource from the childResources DB.
+
+			Args:
+				resource: The resource to remove as a child.
+		"""
 		ri = resource.ri
 		pi = resource.pi
 
@@ -1170,7 +1394,17 @@ class TinyDBBinding(object):
 				self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
 
 
-	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[int] = None) -> Optional[list[str]]:
+	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[int] = None) -> list[str]:
+		"""	Search for child resources by parent resource ID.
+
+			Args:
+				pi: The parent resource ID.
+				ty: The resource type of the child resources to search for.	
+
+			Return:
+				A list of child resource IDs, or an empty list if not found.
+		"""
+
 		_r:Document = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type, assignment]
 		if _r:
 			if ty is None:	# optimization: only check ty once for None
@@ -1185,6 +1419,17 @@ class TinyDBBinding(object):
 
 	def searchSubscriptions(self, ri:Optional[str] = None, 
 								  pi:Optional[str] = None) -> Optional[list[Document]]:
+		"""	Search for subscription representations by resource ID or parent resource ID.
+
+			Only one of the parameters may be used at a time. The order of precedence is: resource ID, parent resource ID.
+
+			Args:
+				ri: A resource ID.
+				pi: A parent resource ID.
+
+			Return:
+				A list of found subscription representations, or None.
+		"""
 		with self.lockSubscriptions:
 			if ri:
 				_r:Document = self.tabSubscriptions.get(doc_id =  ri)	# type:ignore[arg-type, assignment]
@@ -1195,6 +1440,14 @@ class TinyDBBinding(object):
 
 
 	def upsertSubscription(self, subscription:Resource) -> bool:
+		"""	Update or insert a subscription representation into the database.
+
+			Args:
+				subscription: The `SUB` (subscription) to update or insert.
+
+			Return:
+				True if the subscription representation was updated or inserted, False otherwise.
+		"""
 		with self.lockSubscriptions:
 			ri = subscription.ri
 			return self.tabSubscriptions.upsert(
@@ -1217,12 +1470,15 @@ class TinyDBBinding(object):
 					# self.subscriptionQuery.ri == ri) is not None
 
 
-	def updateSubscriptionSchedule(self, subscription:Resource, schedule:list[str]) -> bool:
-		with self.lockSubscriptions:
-			return self.tabSubscriptions.update({'sce' : schedule}, doc_ids = [subscription.ri]) == 1
-
-
 	def removeSubscription(self, subscription:Resource) -> bool:
+		"""	Remove a subscription representation from the database.
+
+			Args:
+				subscription: The `SUB` (subscription) to remove.
+
+			Return:
+				True if the subscription representation was removed, False otherwise.
+		"""
 		with self.lockSubscriptions:
 			return len(self.tabSubscriptions.remove(doc_ids = [subscription.ri])) > 0
 			# return len(self.tabSubscriptions.remove(self.subscriptionQuery.ri == _ri)) > 0
@@ -1233,6 +1489,16 @@ class TinyDBBinding(object):
 	#
 
 	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
+		"""	Add a batch notification to the database.
+
+			Args:
+				ri: The resource ID of the resource.
+				nu: The notification URI.
+				notificationRequest: The notification request.
+
+			Return:
+				True if the batch notification was added, False otherwise.
+		"""
 		with self.lockBatchNotifications:
 			return self.tabBatchNotifications.insert( 
 					{	'ri' 		: ri,
@@ -1243,16 +1509,43 @@ class TinyDBBinding(object):
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		"""	Return the number of batch notifications for a resource and notification URI.
+
+			Args:
+				ri: The resource ID of the resource.
+				nu: The notification URI.
+
+			Return:
+				The number of batch notifications for the resource and notification URI.
+		"""
 		with self.lockBatchNotifications:
 			return self.tabBatchNotifications.count((self.batchNotificationQuery.ri == ri) & (self.batchNotificationQuery.nu == nu))
 
 
 	def getBatchNotifications(self, ri:str, nu:str) -> list[Document]:
+		"""	Return the batch notifications for a resource and notification URI.
+
+			Args:
+				ri: The resource ID of the resource.
+				nu: The notification URI.
+
+			Return:
+				A list of batch notifications for the resource and notification URI.
+		"""
 		with self.lockBatchNotifications:
 			return self.tabBatchNotifications.search((self.batchNotificationQuery.ri == ri) & (self.batchNotificationQuery.nu == nu))
 
 
 	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
+		"""	Remove the batch notifications for a resource and notification URI.
+
+			Args:
+				ri: The resource ID of the resource.
+				nu: The notification URI.
+
+			Return:
+				True if the batch notifications were removed, False otherwise.
+		"""
 		with self.lockBatchNotifications:
 			return len(self.tabBatchNotifications.remove((self.batchNotificationQuery.ri == ri) & (self.batchNotificationQuery.nu == nu))) > 0
 
@@ -1262,6 +1555,11 @@ class TinyDBBinding(object):
 	#
 
 	def searchStatistics(self) -> JSON:
+		"""	Search for statistics.
+
+			Return:
+				The statistics, or None if not found.
+		"""
 		with self.lockStatistics:
 			stats = self.tabStatistics.all()
 			# stats = self.tabStatistics.get(doc_id = 1)
@@ -1270,6 +1568,14 @@ class TinyDBBinding(object):
 
 
 	def upsertStatistics(self, stats:JSON) -> bool:
+		"""	Update or insert statistics.
+
+			Args:
+				stats: The statistics to update or insert.
+
+			Return:
+				True if the statistics were updated or inserted, False otherwise.
+		"""
 		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
 				doc_id = self.tabStatistics.all()[0].doc_id
@@ -1291,23 +1597,53 @@ class TinyDBBinding(object):
 	#
 
 	def searchActionReprs(self) -> list[Document]:
+		"""	Search for action representations.
+		
+			Return:
+				A list of action representations, or None if not found.
+		"""
 		with self.lockActions:
 			actions = self.tabActions.all()
 			return actions if actions else None
 	
 
 	def getAction(self, ri:str) -> Optional[Document]:
+		"""	Get an action representation by resource ID.
+		
+			Args:
+				ri: The resource ID of the action representation.
+			
+			Return:
+				The action representation, or None if not found.
+		"""
 		with self.lockActions:
 			return self.tabActions.get(doc_id = ri)	# type:ignore[arg-type, return-value]
 
 
 	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
+		"""	Search for action representations by subject.
+		
+			Args:
+				ri: The resource ID of the action representation's subject.
+			
+			Return:
+				A list of action representations, or None if not found.
+		"""
 		with self.lockActions:
 			return self.tabActions.search(self.actionsQuery.subject == ri)
 	
 
-	# TODO add only?
 	def upsertActionRepr(self, action:ACTR, periodTS:float, count:int) -> bool:
+		"""	Update or insert an action representation.
+		
+			Args:
+				action: The action representation to update or insert.
+				periodTS: The timestamp for periodic execution.
+				count: The number of times the action will be executed.
+			
+			Return:
+				True if the action representation was updated or inserted, False otherwise.
+		"""
 		with self.lockActions:
 			_ri = action.ri
 			_sri = action.sri
@@ -1325,11 +1661,27 @@ class TinyDBBinding(object):
 
 
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
+		"""	Update an action representation.
+		
+			Args:
+				actionRepr: The action representation to update.
+			
+			Return:
+				True if the action representation was updated, False otherwise.
+		"""
 		with self.lockActions:
 			return self.tabActions.update(actionRepr, doc_ids = [actionRepr['ri']]) is not None	# type:ignore[arg-type]
 
 
 	def removeActionRepr(self, ri:str) -> bool:
+		"""	Remove an action representation.
+
+			Args:
+				ri: The action's resource ID.
+			
+			Return:
+				True if the action representation was removed, False otherwise.
+		"""
 		with self.lockActions:
 			if self.tabActions.get(doc_id = ri):	# type:ignore[arg-type]
 				return len(self.tabActions.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]

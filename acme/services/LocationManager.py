@@ -235,7 +235,6 @@ class LocationManager(object):
 		
 			Args:
 				lcpRi: The resource ID of the location policy
-				cntRi: The resource ID of the location policy's container resource
 				content: The content of the latest CIN of the location policy's container resource
 				
 			Returns:
