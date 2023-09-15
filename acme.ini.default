@@ -576,5 +576,9 @@ verbose=False
 ; 0 means disable monitoring.
 ; Default: 2.0 seconds
 fileMonitoringInterval=2.0
+; Set the timeout for script execution in seconds. 
+; 0.0 means no timeout.
+; Default: 60.0 seconds
+maxRuntime=60.0
 
 

@@ -1570,6 +1570,7 @@ class ScriptManager(object):
 			scriptDirectories: List of script directories to monitoe.
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
 			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
+			maxRuntime: Maximum runtime for a script.
 	"""
 
 	__slots__ = (
@@ -1582,6 +1583,7 @@ class ScriptManager(object):
 		'scriptDirectories',
 		'scriptMonitorInterval',
 		'verbose',
+		'maxRuntime'
 	)
 	""" Slots of class attributes. """
 
@@ -1639,6 +1641,7 @@ class ScriptManager(object):
 		self.verbose = Configuration.get('scripting.verbose')
 		self.scriptMonitorInterval = Configuration.get('scripting.fileMonitoringInterval')
 		self.scriptDirectories = Configuration.get('scripting.scriptDirectories')
+		self.maxRuntime = Configuration.get('scripting.maxRuntime')
 
 
 	def configUpdate(self, name:str, 
@@ -1653,7 +1656,8 @@ class ScriptManager(object):
 		"""
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
-						'scripting.scriptDirectories'
+						'scripting.scriptDirectories',
+						'scripting.maxRuntime'
 					  ]:
 			return
 
@@ -1997,6 +2001,9 @@ class ScriptManager(object):
 				# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 				return False
 			
+			# Set script timeout
+			pcontext.setMaxRuntime(self.maxRuntime)
+
 			# Set environemt
 			environment['tui.theme'] = SSymbol(string = CSE.textUI.theme)
 			pcontext.setEnvironment(environment)

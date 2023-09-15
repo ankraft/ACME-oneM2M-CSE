@@ -497,6 +497,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | scriptDirectories      | Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory. Must be a comma-separated list.<br/>Default: not set | scripting.scriptDirectories      |
 | verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | scripting.verbose                |
 | fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | scripting.fileMonitoringInterval |
+| maxRuntime             | Set the timeout for script execution in seconds. 0.0 seconds means no timeout.<br/>Must be >= 0.0.<br/>Default: 60.0 seconds                                   | scripting.maxRuntime |
 
 [top](#sections)
 

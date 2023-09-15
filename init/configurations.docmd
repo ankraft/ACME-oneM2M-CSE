@@ -1312,6 +1312,14 @@ The default value is `2.0 seconds`.
 
 
 
+# scripting.maxRuntime
+
+This setting specifies the maximum runtime, in seconds, for a script execution.
+
+The default value is `60 seconds`. `0.0 seconds` means no timeout.
+
+
+
 # scripting.scriptDirectories
 
 This setting specifies a comma-separated list of directories that contain additional CSE's script files.

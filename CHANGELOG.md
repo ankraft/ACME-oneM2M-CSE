@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
 - [CSE] Added support *location* attribute and *locationQuery* request parameters and functionality 
 - [SCRIPTS] Added "dolist", "dotimes", "tui-notify", "cse-attribute-info", sand "get-loglevel" functions to the script interpreter. 
+- [SCRIPTS] Added *maxRuntime* configuration setting to limit the execution time of scripts.
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
 - [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
