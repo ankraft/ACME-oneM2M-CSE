@@ -16,7 +16,7 @@ import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
-from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType
+from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
@@ -66,6 +66,8 @@ _valueNameMappings = {
 	'cst': lambda v: CSEType(int(v)).name,
 	#'nct': lambda v: NotificationContentType(int(v)).name,
 	#'net': lambda v: NotificationEventType(int(v)).name,
+	'gmty': lambda v: GeometryType(int(v)).name,
+	'gsf': lambda v: GeoSpatialFunctionType(int(v)).name,
 	'op': lambda v: Operation(int(v)).name,
 	'rcn': lambda v: ResultContentType(int(v)).name,
 	'rsc': lambda v: ResponseStatusCode(int(v)).name,
@@ -723,6 +725,7 @@ class Validator(object):
 		if (ctype := attributesComplexTypes.get(attr)):
 			if (policy := self.getAttributePolicy(ctype[0], attr)) and policy.evalues:	# just any policy for the complex type
 				return policy.evalues.get(int(value), str(value))
+		return ''
 		return str(value)
 
 
