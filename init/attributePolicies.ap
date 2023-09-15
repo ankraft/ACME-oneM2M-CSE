@@ -1389,7 +1389,7 @@
 	"geom": [
 		{
 			"rtypes": [ "REQRESP" ],
-			"lname": "geometryType",
+			"lname": "geometry",
 			"ns": "m2m",
 			"type": "geoJsonCoordinate",
 			"car": "1"
