@@ -1094,53 +1094,82 @@ class ContentSerializationType(ACMEIntEnum):
 	UNKNOWN				= auto()
 
 	def toHeader(self) -> str:
-		"""	Return the mime header for a enum value.
+		"""	Return the mime header for an enum value.
+
+			Return:
+				The mime header for an enum value.
 		"""
-		if self.value == self.JSON:	return 'application/json'
-		if self.value == self.CBOR:	return 'application/cbor'
-		if self.value == self.XML:	return 'application/xml'
-		return None
+		match self.value:
+			case self.JSON:	
+				return 'application/json'
+			case self.CBOR:	
+				return 'application/cbor'
+			case self.XML:	
+				return 'application/xml'
+			case _:
+				return None
 	
+
 	def toSimple(self) -> str:
-		"""	Return the simple string for a enum value.
+		"""	Return the simple string for an enum value.
+
+			Return:
+				The simple string for an enum value.
 		"""
-		if self.value == self.JSON:	return 'json'
-		if self.value == self.CBOR:	return 'cbor'
-		if self.value == self.XML:	return 'xml'
-		return None
+		match self.value:
+			case self.JSON:
+				return 'json'
+			case self.CBOR:
+				return 'cbor'
+			case self.XML:
+				return 'xml'
+			case _:
+				return None
+
 
 	@classmethod
 	def toContentSerialization(cls, t:str) -> ContentSerializationType:
-		"""	Return the enum from a string.
+		"""	Return the enum from a string for a content serialization.
+
+			Args:
+				t: String to convert.
+
+			Return:
+				The enum value.
 		"""
-		t = t.lower()
-		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
-		if t in [ 'json', 'application/json' ]:	return cls.JSON
-		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
-		return cls.UNKNOWN
+		match t.lower():
+			case 'json' | 'application/json':
+				return cls.JSON
+			case 'cbor' | 'application/cbor':
+				return cls.CBOR
+			case 'xml' | 'application/xml':
+				return cls.XML
+			case _:
+				return cls.UNKNOWN
 
 	
 	@classmethod
-	def getType(cls, hdr:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
-		"""	Return the enum from a header definition.
+	def getType(cls, t:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
+		"""	Return the enum from a content-type header definition.
+
+			Args:
+				t: String to convert.
+				default: Default value to return if the string is not a valid content-type.
+
+			Return:
+				The enum value.
 		"""
-		default = cls.UNKNOWN if not default else default
-		if not hdr:														return default
-		hdr = hdr.lower()
-
-		if hdr.lower() == 'json':										return cls.JSON
-		if hdr.lower().startswith('application/json'):					return cls.JSON
-		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
-
-		if hdr.lower() == 'cbor':										return cls.CBOR
-		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
-		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
-		
-		if hdr.lower() == 'xml':										return cls.XML
-		if hdr.lower().startswith('application/xml'):					return cls.XML
-		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
-
-		return cls.UNKNOWN
+		if not t:
+			return cls.UNKNOWN if not default else default
+		match t.lower():
+			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
+				return cls.JSON
+			case 'cbor' | 'application/cbor' | 'application/vnd.onem2m-res+cbor':
+				return cls.CBOR
+			case 'xml' |  'application/xml' | 'application/vnd.onem2m-res+xml':
+				return cls.XML
+			case _:
+				return cls.UNKNOWN
 	
 
 	@classmethod
@@ -1827,6 +1856,8 @@ class FilterCriteria:
 			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
 				return
 			if k == 'fo' and int(v) == FilterOperation.AND:
+				return
+			if k.startswith('_'):	# internal attributes
 				return
 			result[k] = v
 		
