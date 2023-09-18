@@ -76,9 +76,13 @@ Example:
 
 ### Variables and Function Scopes
 
-The scope of variables is global to a script execution, and variables are removed between script runs.
+Variables are global to a script execution. Global variables that are updated in a function call are updated globally. Variables that are not defined globally and are set in the scope of a function call do only exist in the scope of the function call and its sub-function calls.
 
-In addition to the normal script variables the runtime environment may pass extra environment variables to the script.
+In addition to the normal script variables the runtime environment may pass extra environment variables to the script. They are mapped to the script's global variables and can be retrieved like any other global variable (but not updated or deleted). Variables that are set during the execution of a script override environment variables with the same name.
+
+Variables are removed between script runs.
+
+Variable names are case-sensitive.
 
 
 ### Quoting
