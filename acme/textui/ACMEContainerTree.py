@@ -152,6 +152,8 @@ class ACMEContainerTree(Container):
 		self.header = Markdown('')
 		self.resourceView = Static(id = 'resource-view', expand = True)
 		self.requestView = ACMEViewRequests()
+		self.commentsOneLine = True
+
 
 
 	def compose(self) -> ComposeResult:
@@ -213,7 +215,7 @@ class ACMEContainerTree(Container):
 			jsns = commentJson(resource.asDict(sort = True), 
 							explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
 							getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, resource.ty if resource else None),		# type: ignore [attr-defined]
-							width = (self.resourceView.size[0] - 2) if self.resourceView.size[0] > 0 else 9999)										# type: ignore [attr-defined]
+							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 			
 			# Update the requests view
 			self._update_requests(resource.ri)
