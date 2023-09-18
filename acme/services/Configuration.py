@@ -458,6 +458,7 @@ class Configuration(object):
 				'scripting.fileMonitoringInterval'		: config.getfloat('scripting', 'fileMonitoringInterval',			fallback = 2.0),
 				'scripting.scriptDirectories'			: config.getlist('scripting', 'scriptDirectories',					fallback = []),	# type: ignore[attr-defined]
 				'scripting.verbose'						: config.getboolean('scripting', 'verbose', 						fallback = False),
+				'scripting.maxRuntime'					: config.getfloat('scripting', 'maxRuntime', 						fallback = 60.0),
 
 				#
 				#	Text UI
@@ -709,6 +710,8 @@ class Configuration(object):
 		# Script settings
 		if Configuration._configuration['scripting.fileMonitoringInterval'] < 0.0:
 			return False, f'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0'
+		if Configuration._configuration['scripting.maxRuntime'] < 0.0:
+			return False, f'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0'
 		if (scriptDirs := Configuration._configuration['scripting.scriptDirectories']):
 			lst = []
 			for each in scriptDirs:

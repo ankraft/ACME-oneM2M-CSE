@@ -1153,6 +1153,17 @@ class PContext():
 				name: Name of the script.
 		"""
 		self.meta['name'] = name
+	
+
+	def setMaxRuntime(self, maxRuntime:float) -> None:
+		"""	Set the maximum runtime of the script.
+
+			Args:
+				maxRuntime: Maximum runtime in seconds.
+		"""
+		if self.state == PState.running:
+			raise PUnsupportedError(self.setError(PError.runtime, f'Cannot set runtime while script is running'))
+		self.maxRuntime = maxRuntime
 
 
 	def getMeta(self, key:str, default:Optional[str] = '') -> str:
@@ -1403,7 +1414,7 @@ class PContext():
 
 		# Start running
 		self.state = PState.running
-		if self.maxRuntime is not None:	# set max runtime
+		if self.maxRuntime:	# > 0 or not None: set max runtime
 			self._maxRTimestamp = _utcTimestamp() + self.maxRuntime
 		if (scriptName := self.scriptName) and not isSubCall:
 			if self.verbose:

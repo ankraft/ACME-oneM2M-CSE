@@ -58,7 +58,7 @@ def commentJson(data:Union[str, dict],
 		Args:
 			data: The JSON string or as a dictionary.
 			explanations: A dictionary with the explanations. The keys must match the JSON keys.
-			getAttributeValueNae: A function that returns the named value of an attribute. 
+			getAttributeValueName: A function that returns the named value of an attribute. 
 			width: Optional width of the output. If greater then the comment is put above the line.
 		
 		Return:

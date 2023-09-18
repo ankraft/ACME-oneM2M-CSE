@@ -1281,17 +1281,15 @@ class ACMEPContext(PContext):
 	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Show a TUI notification.
 
-			This function is only available in TUI mode. It has the following
-			arguments:
+			This function is only available in TUI mode. It has the following arguments.
 
 				- message: The message to show.
 				- title: (Optional) The title of the notification.
 				- severity: (Optional) The severity of the notification. Can be
-				  one of the following values: `information`, `warning`, `error`.
+				  one of the following values: *information*, *warning*, *error*.
 				- timeout: (Optional) The timeout in seconds after which the
 				  notification will disappear. If not specified, the notification
 				  will disappear after 3 seconds.
-
 			
 			The function returns NIL.
 
@@ -1572,6 +1570,7 @@ class ScriptManager(object):
 			scriptDirectories: List of script directories to monitoe.
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
 			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
+			maxRuntime: Maximum runtime for a script.
 	"""
 
 	__slots__ = (
@@ -1584,6 +1583,7 @@ class ScriptManager(object):
 		'scriptDirectories',
 		'scriptMonitorInterval',
 		'verbose',
+		'maxRuntime'
 	)
 	""" Slots of class attributes. """
 
@@ -1641,6 +1641,7 @@ class ScriptManager(object):
 		self.verbose = Configuration.get('scripting.verbose')
 		self.scriptMonitorInterval = Configuration.get('scripting.fileMonitoringInterval')
 		self.scriptDirectories = Configuration.get('scripting.scriptDirectories')
+		self.maxRuntime = Configuration.get('scripting.maxRuntime')
 
 
 	def configUpdate(self, name:str, 
@@ -1655,7 +1656,8 @@ class ScriptManager(object):
 		"""
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
-						'scripting.scriptDirectories'
+						'scripting.scriptDirectories',
+						'scripting.maxRuntime'
 					  ]:
 			return
 
@@ -1999,6 +2001,9 @@ class ScriptManager(object):
 				# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 				return False
 			
+			# Set script timeout
+			pcontext.setMaxRuntime(self.maxRuntime)
+
 			# Set environemt
 			environment['tui.theme'] = SSymbol(string = CSE.textUI.theme)
 			pcontext.setEnvironment(environment)

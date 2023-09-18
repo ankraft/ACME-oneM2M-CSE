@@ -17,9 +17,11 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
 - [CSE] Added support *location* attribute and *geo-query* request parameters and functionality 
 - [SCRIPTS] Added "dolist", "dotimes", "tui-notify", "cse-attribute-info", sand "get-loglevel" functions to the script interpreter. 
+- [SCRIPTS] Added *maxRuntime* configuration setting to limit the execution time of scripts.
 - [SCRIPTS] Functions now have their own variable scope.
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
+- [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
 
 ### Experimental
 
