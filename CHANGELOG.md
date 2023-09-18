@@ -5,24 +5,26 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased] - xxxx-xx-xx
+## [unreleased 2023.DEV] - xxxx-xx-xx
 
 ### Added
-- [CSE] Added automatic pip install of missing dependencies during startup.
+- [CSE] Added automatic "pip install" of missing dependencies during startup.
 - [CSE] Added support for &lt;schedule> resource type.
 - [CSE] Added support for *Result Expiration Timestamp* request parameter for handling timeouts in fanoutPoint request aggregations.
 - [CSE] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
-- [CSE] Added support *location* attribute and *locationQuery* request parameters and functionality 
+- [CSE] Added support *location* attribute and *geo-query* request parameters and functionality 
 - [SCRIPTS] Added "dolist", "dotimes", "tui-notify", "cse-attribute-info", sand "get-loglevel" functions to the script interpreter. 
+- [SCRIPTS] Functions now have their own variable scope.
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
 
 ### Experimental
 
 ### Changed
+- [MISC] The project now follows the [Calendar Versioning](https://calver.org) scheme.
 - [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
 - [CSE] Changed the oneM2M enumeration definition format. Each enumeration type is now a dictionary of enumeration values and their interpretations.
 - [HTTP] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".

@@ -11,7 +11,7 @@ class Constants(object):
 	""" Various CSE and oneM2M constants """
 
 	
-	version	= '0.13.0-dev'
+	version	= '2023.DEV'
 	"""	ACME's release version """
 
 	logoColor = '#b42025'
