@@ -382,6 +382,32 @@ class MongoBinding():
         return self._deleteOne(self.__COL_SUBSCRIPTIONS, {'ri': subscription.ri})
     
     
+    #
+	#	BatchNotifications
+	#
+    
+    def addBatchNotification(self, ri: str, nu: str, notificationRequest: JSON) -> bool:
+        data = \
+        {	
+            'ri' 		: ri,
+            'nu' 		: nu,
+            'tstamp'	: utcTime(),
+            'request'	: notificationRequest
+        }
+        return self._insertOne(self.__COL_BATCHNOTIF, data)
+
+
+    def countBatchNotifications(self, ri: str, nu: str) -> int:
+        return self._countDocuments(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+
+
+    def getBatchNotifications(self, ri: str, nu: str) -> list[dict]:
+        return self._find(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+
+
+    def removeBatchNotifications(self, ri: str, nu: str) -> bool:
+        return self._deleteOne(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+
     
     #
     #   Internal functions
