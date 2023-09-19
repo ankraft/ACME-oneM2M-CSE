@@ -202,6 +202,13 @@ class MongoBinding():
 	#
  
     def insert_identifier(self, resource: Resource, ri: str, srn: str) -> None:
+        """ Insert resource identifier to identifier and srn collection
+
+        Args:
+            resource (Resource): Data of the resource to insert
+            ri (str): ri of the resource
+            srn (str): srn of the resource
+        """
         # Upsert identifier first
         data = \
         {	
@@ -222,12 +229,30 @@ class MongoBinding():
     
     
     def delete_identifier(self, resource: Resource) -> None:
+        """ Delete identifier from identifier and srn collection
+
+        Args:
+            resource (Resource): Data of the resource to delete
+        """
+        # TODO: Add log when failed delete resource
         self._delete_one(self.__COL_IDENTIFIERS, {'ri': resource.ri})
         self._delete_one(self.__COL_SRN, {'srn': resource.getSrn()})
     
     
     def search_identifiers(self, ri:Optional[str] = None, 
                            srn: Optional[str] = None) -> list[dict]:
+        """ Search for an resource ID OR for a structured name in the identifiers DB.
+
+			Either *ri* or *srn* shall be given. If both are given then *srn*
+			is taken.
+
+        Args:
+            ri (Optional[str], optional): ri to search for. Defaults to None.
+            srn (Optional[str], optional): srn to search for. Defaults to None.
+
+        Returns:
+            list[dict]: A list of found identifier documents (see `insert_identifier`), or an empty list if not found.
+        """
         if srn:
             if ( _r := self._find(self.__COL_SRN, {'srn': srn}, 1) ):
                 ri = _r['ri'] if _r else None
@@ -241,6 +266,14 @@ class MongoBinding():
     
     
     def add_child_resource(self, resource: Resource, ri: str) -> None:
+        """ Save resource with list of child resource it has
+        
+            Also it will add the resource ri to it's parent resource child list
+
+        Args:
+            resource (Resource): Data of resource to add
+            ri (str): ri of the resource
+        """
         # First add a new document to children collection
         children = \
         {
@@ -264,7 +297,13 @@ class MongoBinding():
 
 
     def remove_child_resource(self, resource: Resource) -> None:
+        """ Remove resource with child list
         
+            Also it will remove the resource from it's parent child list
+
+        Args:
+            resource (Resource): Target resource to remove
+        """
         # First remove resource from children collection
         # TODO: Add check if delete success before continue
         self._delete_one(self.__COL_CHILDREN, {'ri': resource.ri})
@@ -284,6 +323,15 @@ class MongoBinding():
 
 
     def search_child_by_parent_ri(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
+        """ Retrieve child resource of a resource
+
+        Args:
+            pi (str): Target parent to get it's child
+            ty (Optional[int], optional): More filter to retrieve specific ty. Defaults to None.
+
+        Returns:
+            Optional[list[str]]: List of resource childs
+        """
         tmp = self._find(self.__COL_CHILDREN, {'ri': pi}, 1)
         if len(tmp) > 0:
             _r = tmp[0]
