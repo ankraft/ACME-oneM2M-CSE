@@ -416,6 +416,7 @@ class MongoBinding():
     def _setupDatabase(self):
         """ Setup mongo database by create acme-cse collection if not exist and add unique index of respective collection
         """
+        # TODO: Set csi, aei to unique on resource collection
         L.isInfo and L.log("Setup acme-cse mongodb database")
         l_col = [self.__COL_RESOURCES, self.__COL_IDENTIFIERS, self.__COL_CHILDREN, self.__COL_SRN, self.__COL_SUBSCRIPTIONS, 
                            self.__COL_BATCHNOTIF, self.__COL_ACTIONS, self.__COL_REQUESTS]
@@ -433,6 +434,9 @@ class MongoBinding():
                 elif col == self.__COL_REQUESTS:
                     tmp = self._db[self.__COL_REQUESTS]
                     tmp.create_index("ts", unique = True)
+                elif (col == self.__COL_BATCHNOTIF) or (col == self.__COL_STATISTICS):
+                    # TODO: Set ri and nu as index but not unique for batchNotif. Maybe??
+                    continue # Statistics and Batch notifications collection don't need index
                 else:
                     tmp = self._db[col]
                     tmp.create_index("ri", unique = True)
@@ -468,7 +472,7 @@ class MongoBinding():
             collection (str): Target collection to update the document
             query (dict): Target filter to update/upsert a document
             data (dict): data to update (changed attribute and not)
-            upsert (bool, optional): Set to true if want to insert if ri is not found. Defaults to False.
+            upsert (bool, optional): Set to true if want to insert if query/filter is not found. Defaults to False.
 
         Returns:
             bool: Success update or upsert
