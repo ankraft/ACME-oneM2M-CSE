@@ -32,6 +32,7 @@ class MongoBinding():
         self._db = self._client["acme-cse"]
         # TODO: Add locking to each collection access. Lock object are different for each collection
         # TODO: Add transaction if possible when querying (with)
+        # TODO: Print error log when CRUD
         self._setup_database()
         
     def stop_connection(self):
@@ -197,6 +198,102 @@ class MongoBinding():
     
     
     #
+	#	Identifiers, Structured RI, Child Resources
+	#
+ 
+    def insert_identifier(self, resource: Resource, ri: str, srn: str) -> None:
+        # Upsert identifier first
+        data = \
+        {	
+            'ri' : ri, 
+            'rn' : resource.rn, 
+            'srn' : srn,
+            'ty' : resource.ty 
+        }
+        self._update_one(self.__COL_IDENTIFIERS, {'ri': ri}, data, True)
+
+        # Then upsert structuredIds
+        data2 = \
+        {
+            'srn': srn,
+            'ri' : ri 
+        }
+        self._update_one(self.__COL_SRN, {'srn': resource.getSrn()}, data2, True)
+    
+    
+    def delete_identifier(self, resource: Resource) -> None:
+        self._delete_one(self.__COL_IDENTIFIERS, {'ri': resource.ri})
+        self._delete_one(self.__COL_SRN, {'srn': resource.getSrn()})
+    
+    
+    def search_identifiers(self, ri:Optional[str] = None, 
+                           srn: Optional[str] = None) -> list[dict]:
+        if srn:
+            if ( _r := self._find(self.__COL_SRN, {'srn': srn}, 1) ):
+                ri = _r['ri'] if _r else None
+            else:
+                return []
+        
+        if ri:
+            return self._find(self.__COL_IDENTIFIERS, {'ri': ri}, 1)
+
+        return []
+    
+    
+    def add_child_resource(self, resource: Resource, ri: str) -> None:
+        # First add a new document to children collection
+        children = \
+        {
+            'ri': ri,
+            'ch': []
+        }
+        # TODO: Add check if insert success before continue
+        self._insert_one(self.__COL_CHILDREN, children)
+        
+        # Then add just inserted resource to parents document (ch field)
+        if resource.pi: # ATN: CSE has no parent
+            tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1) # Find parent document
+            if len(tmp) == 0:
+                return
+            _r = tmp[0]
+            _ch:list = _r['ch']
+            if ri not in _ch:
+                _ch.append( [ri, resource.ty] )
+                _r['ch'] = _ch
+                self._update_one(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
+
+
+    def remove_child_resource(self, resource: Resource) -> None:
+        
+        # First remove resource from children collection
+        # TODO: Add check if delete success before continue
+        self._delete_one(self.__COL_CHILDREN, {'ri': resource.ri})
+
+        # Then remove resource data from parent ch field
+        tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1)
+        if len(tmp) == 0:
+            return
+        _r = tmp[0]
+        _t = [resource.ri, resource.ty]
+        _ch:list = _r['ch']
+        if _t in _ch:
+            _ch.remove(_t)
+            _r['ch'] = _ch
+            # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
+            self._update_one(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
+
+
+    def search_child_by_parent_ri(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
+        tmp = self._find(self.__COL_CHILDREN, {'ri': pi}, 1)
+        if len(tmp) > 0:
+            _r = tmp[0]
+            if ty is None:	# optimization: only check ty once for None
+                return [ c[0] for c in _r['ch'] ]
+            return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
+        return []
+ 
+    
+    #
     #   Internal functions
     #
         
@@ -248,12 +345,12 @@ class MongoBinding():
             L.logErr(str(e))
         return False
             
-    def _update_one(self, collection: str, ri: str, data: dict, upsert: bool = False) -> bool:
+    def _update_one(self, collection: str, query: dict, data: dict, upsert: bool = False) -> bool:
         """ Update document from collection; It actually replace the whole document
 
         Args:
             collection (str): Target collection to update the document
-            ri (str): ri of the resource to filter
+            query (dict): Target filter to update/upsert a document
             data (dict): data to update (changed attribute and not)
             upsert (bool, optional): Set to true if want to insert if ri is not found. Defaults to False.
 
@@ -263,22 +360,22 @@ class MongoBinding():
         # TODO: Add exception
         # TODO: Consider using update_one. But how to know the only specific field to update?
         col = self._db[collection]
-        result = col.replace_one({'ri': ri}, data, upsert=upsert)
+        result = col.replace_one(query, data, upsert=upsert)
         return (result.modified_count == 1) or result.upserted_id
     
-    def _delete_one(self, collection: str, ri: str) -> bool:
+    def _delete_one(self, collection: str, query: dict) -> bool:
         """ Delete a document from collection
 
         Args:
             collection (str): Target collection to find the document
-            ri (str): ri field of the document to delete
+            query (dict): Target filter to delete a document
 
         Returns:
             bool: success or not deleting document; False might be because document is not found
         """
         # TODO: Add exception
         col = self._db[collection]
-        result = col.delete_one({'ri': ri})
+        result = col.delete_one(query)
         return (result.deleted_count == 1)
     
     def _find(self, collection: str, query: dict, limit: int = 0) -> list[dict]:
