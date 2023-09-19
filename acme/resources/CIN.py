@@ -44,6 +44,8 @@ class CIN(AnnounceableResource):
 			'daci': None,
 			'st': None,
 			'cr': None,
+			'loc': None,
+
 
 			# Resource attributes
 			'cnf': None,

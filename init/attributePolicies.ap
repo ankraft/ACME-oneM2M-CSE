@@ -244,7 +244,8 @@
 	],
 	"loc": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", "CNT", "CNTAnnc", "FCNT", "FCNTAnnc", "TS", "TSAnnc", "REQRESP" ],	
+			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", "CIN", "CINAnnc", 
+					    "CNT", "CNTAnnc", "FCI", "FCNT", "FCNTAnnc", "TS", "TSAnnc", "TSI", "TSIAnnc", "REQRESP" ],	
 			"lname": "location",
 			"ns": "m2m",
 			"type": "m2m:geoCoordinates",

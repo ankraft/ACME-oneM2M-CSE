@@ -31,6 +31,7 @@ class CINAnnc(AnnouncedResource):
 		'et': None,
 		'lbl': None,
 		'ast': None,
+		'loc': None,
 		'lnk': None,
 
 		# Resource attributes
