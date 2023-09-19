@@ -33,7 +33,7 @@ class MongoBinding():
         # TODO: Add locking to each collection access. Lock object are different for each collection
         # TODO: Add transaction if possible when querying (with)
         # TODO: Print error log when CRUD
-        self._setup_database()
+        self._setupDatabase()
         
     def stop_connection(self):
         L.log("Close MongoDB connection")
@@ -58,7 +58,7 @@ class MongoBinding():
         Args:
             resource (Resource): Data of the resource
         """
-        self._insert_one(self.__COL_RESOURCES, resource.dict)
+        self._insertOne(self.__COL_RESOURCES, resource.dict)
         
         
     def upsert_resource(self, ri: str, resource: Resource) -> None:
@@ -68,7 +68,7 @@ class MongoBinding():
             ri (str): Resource ri to update if exist
             resource (Resource): Data of the resource
         """
-        self._update_one(self.__COL_RESOURCES, ri, resource.dict, True)
+        self._updateOne(self.__COL_RESOURCES, ri, resource.dict, True)
         
         
     def update_resource(self, ri: str, resource: Resource) -> Resource:
@@ -86,7 +86,7 @@ class MongoBinding():
         for k in list(resource.dict):
             if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
                 del resource.dict[k]
-        self._update_one(self.__COL_RESOURCES, ri, resource.dict, False)
+        self._updateOne(self.__COL_RESOURCES, ri, resource.dict, False)
         return resource
 
     def delete_resource(self, resource: Resource) -> None:
@@ -95,7 +95,7 @@ class MongoBinding():
         Args:
             resource (Resource): Target resource to delete
         """
-        self._delete_one(self.__COL_RESOURCES, resource.ri)
+        self._deleteOne(self.__COL_RESOURCES, resource.ri)
     
 
     def search_resource(self, ri:Optional[str] = None, 
@@ -168,18 +168,18 @@ class MongoBinding():
         if not srn:
             if ri:
                 # Limit document count result to 1 because only ri is unique
-                return bool( self._count_documents(self.__COL_RESOURCES, {'ri': ri}, 1) )
+                return bool( self._countDocuments(self.__COL_RESOURCES, {'ri': ri}, 1) )
             elif csi :
                 # Limit document count result to 1 because only csi is unique
-                return bool( self._count_documents(self.__COL_RESOURCES, {'csi': csi}, 1) )
+                return bool( self._countDocuments(self.__COL_RESOURCES, {'csi': csi}, 1) )
             elif ty is not None:	# ty is an int
                 # Limit is provided because hasResource only expect if resource with ty is exist
-                return bool( self._count_documents(self.__COL_RESOURCES, {'ty': ty}, 1) )
+                return bool( self._countDocuments(self.__COL_RESOURCES, {'ty': ty}, 1) )
         else:
             # TODO: Consider directly count srn from resources collection
             # for SRN find the ri first from identifiers collection and then find resource using ri
             if len(( identifiers := self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1) )) == 1:
-                return bool( self._count_documents(self.__COL_RESOURCES, {'ri': identifiers[0]['ri']}, 1) )
+                return bool( self._countDocuments(self.__COL_RESOURCES, {'ri': identifiers[0]['ri']}, 1) )
         return False
 
 
@@ -189,10 +189,10 @@ class MongoBinding():
         Returns:
             int: Total resources exist
         """
-        return self._count_documents(self.__COL_RESOURCES, {})
+        return self._countDocuments(self.__COL_RESOURCES, {})
 
 
-    def searchByFragment(self, dct:dict) -> list[dict]:
+    def searchByFragment(self, dct: dict) -> list[dict]:
         """ Search and return all resources that match the given dictionary/document. """
         pass
     
@@ -201,7 +201,7 @@ class MongoBinding():
 	#	Identifiers, Structured RI, Child Resources
 	#
  
-    def insert_identifier(self, resource: Resource, ri: str, srn: str) -> None:
+    def insertIdentifier(self, resource: Resource, ri: str, srn: str) -> None:
         """ Insert resource identifier to identifier and srn collection
 
         Args:
@@ -217,7 +217,7 @@ class MongoBinding():
             'srn' : srn,
             'ty' : resource.ty 
         }
-        self._update_one(self.__COL_IDENTIFIERS, {'ri': ri}, data, True)
+        self._updateOne(self.__COL_IDENTIFIERS, {'ri': ri}, data, True)
 
         # Then upsert structuredIds
         data2 = \
@@ -225,21 +225,21 @@ class MongoBinding():
             'srn': srn,
             'ri' : ri 
         }
-        self._update_one(self.__COL_SRN, {'srn': resource.getSrn()}, data2, True)
+        self._updateOne(self.__COL_SRN, {'srn': resource.getSrn()}, data2, True)
     
     
-    def delete_identifier(self, resource: Resource) -> None:
+    def deleteIdentifier(self, resource: Resource) -> None:
         """ Delete identifier from identifier and srn collection
 
         Args:
             resource (Resource): Data of the resource to delete
         """
         # TODO: Add log when failed delete resource
-        self._delete_one(self.__COL_IDENTIFIERS, {'ri': resource.ri})
-        self._delete_one(self.__COL_SRN, {'srn': resource.getSrn()})
+        self._deleteOne(self.__COL_IDENTIFIERS, {'ri': resource.ri})
+        self._deleteOne(self.__COL_SRN, {'srn': resource.getSrn()})
     
     
-    def search_identifiers(self, ri:Optional[str] = None, 
+    def searchIdentifiers(self, ri: Optional[str] = None, 
                            srn: Optional[str] = None) -> list[dict]:
         """ Search for an resource ID OR for a structured name in the identifiers DB.
 
@@ -265,7 +265,7 @@ class MongoBinding():
         return []
     
     
-    def add_child_resource(self, resource: Resource, ri: str) -> None:
+    def addChildResource(self, resource: Resource, ri: str) -> None:
         """ Save resource with list of child resource it has
         
             Also it will add the resource ri to it's parent resource child list
@@ -281,7 +281,7 @@ class MongoBinding():
             'ch': []
         }
         # TODO: Add check if insert success before continue
-        self._insert_one(self.__COL_CHILDREN, children)
+        self._insertOne(self.__COL_CHILDREN, children)
         
         # Then add just inserted resource to parents document (ch field)
         if resource.pi: # ATN: CSE has no parent
@@ -293,10 +293,10 @@ class MongoBinding():
             if ri not in _ch:
                 _ch.append( [ri, resource.ty] )
                 _r['ch'] = _ch
-                self._update_one(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
+                self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
 
 
-    def remove_child_resource(self, resource: Resource) -> None:
+    def removeChildResource(self, resource: Resource) -> None:
         """ Remove resource with child list
         
             Also it will remove the resource from it's parent child list
@@ -306,7 +306,7 @@ class MongoBinding():
         """
         # First remove resource from children collection
         # TODO: Add check if delete success before continue
-        self._delete_one(self.__COL_CHILDREN, {'ri': resource.ri})
+        self._deleteOne(self.__COL_CHILDREN, {'ri': resource.ri})
 
         # Then remove resource data from parent ch field
         tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1)
@@ -319,10 +319,10 @@ class MongoBinding():
             _ch.remove(_t)
             _r['ch'] = _ch
             # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
-            self._update_one(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
+            self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
 
 
-    def search_child_by_parent_ri(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
+    def searchChildResourcesByParentRI(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
         """ Retrieve child resource of a resource
 
         Args:
@@ -345,7 +345,7 @@ class MongoBinding():
     #   Internal functions
     #
         
-    def _setup_database(self):
+    def _setupDatabase(self):
         """ Setup mongo database by create acme-cse collection if not exist and add unique index of respective collection
         """
         L.isInfo and L.log("Setup acme-cse mongodb database")
@@ -372,7 +372,7 @@ class MongoBinding():
         if not all_exist:
             L.isInfo and L.log("One or more collections not exist and just created")
         
-    def _insert_one(self, collection: str, data: dict) -> bool:
+    def _insertOne(self, collection: str, data: dict) -> bool:
         """ Insert resource to a collection
 
         Args:
@@ -393,7 +393,7 @@ class MongoBinding():
             L.logErr(str(e))
         return False
             
-    def _update_one(self, collection: str, query: dict, data: dict, upsert: bool = False) -> bool:
+    def _updateOne(self, collection: str, query: dict, data: dict, upsert: bool = False) -> bool:
         """ Update document from collection; It actually replace the whole document
 
         Args:
@@ -411,7 +411,7 @@ class MongoBinding():
         result = col.replace_one(query, data, upsert=upsert)
         return (result.modified_count == 1) or result.upserted_id
     
-    def _delete_one(self, collection: str, query: dict) -> bool:
+    def _deleteOne(self, collection: str, query: dict) -> bool:
         """ Delete a document from collection
 
         Args:
@@ -442,7 +442,7 @@ class MongoBinding():
         result = col.find(filter = query, limit = limit)
         return [x for x in result]
     
-    def _count_documents(self, collection: str, query: dict, limit: int = 0) -> int:
+    def _countDocuments(self, collection: str, query: dict, limit: int = 0) -> int:
         """ Count how many document/s found on a collection
 
         Args:
