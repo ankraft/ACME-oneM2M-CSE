@@ -2,6 +2,7 @@ from typing import Callable, cast, List, Optional, Tuple
 
 from pymongo import MongoClient
 from pymongo import errors as MongoErrors
+from bson import ObjectId
 
 from ..etc.DateUtils import utcTime, fromDuration
 from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
@@ -408,6 +409,29 @@ class MongoBinding():
     def removeBatchNotifications(self, ri: str, nu: str) -> bool:
         return self._deleteOne(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
 
+
+    #
+	#	Statistics
+	#
+
+    def searchStatistics(self) -> JSON:
+        if len(stats := self._find(self.__COL_STATISTICS)) > 0:
+            return stats[0]
+        return None
+
+
+    def upsertStatistics(self, statisticsData: JSON) -> bool:
+        if len(stats := self._find(self.__COL_STATISTICS)) > 0:
+            return self._updateOne(self.__COL_STATISTICS, {'_id': stats[0]['_id']}, statisticsData)
+        else:
+            return self._insertOne(self.__COL_STATISTICS, statisticsData)
+
+
+    def purgeStatistics(self) -> None:
+        """	Purge the statistics DB.
+        """
+        self._db.drop_collection(self.__COL_STATISTICS)
+
     
     #
     #   Internal functions
@@ -498,7 +522,7 @@ class MongoBinding():
         result = col.delete_one(query)
         return (result.deleted_count == 1)
     
-    def _find(self, collection: str, query: dict, limit: int = 0) -> list[dict]:
+    def _find(self, collection: str, query: dict = None, limit: int = 0) -> list[dict]:
         """ Find document on a collection
 
         Args:
