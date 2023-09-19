@@ -221,7 +221,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 									amark = '✓', 
 									invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 								).execute(),
-			'httpPort': inquirer.number(
+			'registrarCsePort': inquirer.number(
 							message = 'The Registrar CSE\' host http port:',
 							default = _iniValues[cseType]['registrarCsePort'],
 							long_instruction = 'The TCP port of the remote (Registrar) CSE.',
