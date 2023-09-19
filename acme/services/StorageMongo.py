@@ -3,6 +3,7 @@ from typing import Callable, cast, List, Optional, Tuple
 from pymongo import MongoClient
 from pymongo import errors as MongoErrors
 
+from ..etc.DateUtils import utcTime, fromDuration
 from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
 from ..etc import DateUtils, Utils
 from ..services.Configuration import Configuration
@@ -340,6 +341,47 @@ class MongoBinding():
             return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
         return []
  
+    
+    #
+	#	Subscriptions
+	#
+ 
+    def searchSubscriptions(self, ri: Optional[str] = None, 
+								  pi: Optional[str] = None) -> Optional[list[dict]]:
+        if ri:
+            return self._find(self.__COL_SUBSCRIPTIONS, {'ri': ri}, 1)
+        if pi:
+            return self._find(self.__COL_SUBSCRIPTIONS, {'pi': pi})
+
+        return None
+        
+
+    def upsertSubscription(self, subscription: Resource) -> bool:
+        data = \
+        {
+            'ri'  	: subscription.ri, 
+            'pi'  	: subscription.pi,
+            'nct' 	: subscription.nct,
+            'net' 	: subscription['enc/net'],	# TODO perhaps store enc as a whole?
+            'atr' 	: subscription['enc/atr'],
+            'chty'	: subscription['enc/chty'],
+            'exc' 	: subscription.exc,
+            'ln'  	: subscription.ln,
+            'nus' 	: subscription.nu,
+            'bn'  	: subscription.bn,
+            'cr'  	: subscription.cr,
+            'org'	: subscription.getOriginator(),
+            'ma' 	: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
+            'nse' 	: subscription.nse
+        }
+        
+        return self._updateOne(self.__COL_SUBSCRIPTIONS, {'ri': data['ri']}, data, True)
+
+
+    def removeSubscription(self, subscription: Resource) -> bool:
+        return self._deleteOne(self.__COL_SUBSCRIPTIONS, {'ri': subscription.ri})
+    
+    
     
     #
     #   Internal functions
