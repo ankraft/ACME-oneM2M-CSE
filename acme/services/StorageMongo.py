@@ -7,6 +7,7 @@ from bson import ObjectId
 from ..etc.DateUtils import utcTime, fromDuration
 from ..etc.Types import ResourceTypes, JSON, Operation
 from ..etc import DateUtils, Utils
+from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -36,6 +37,11 @@ class MongoBinding():
         # TODO: Add locking to each collection access. Lock object are different for each collection
         # TODO: Add transaction if possible when querying (with)
         # TODO: Print error log when CRUD
+        # TODO: Get config from configfile
+        
+        
+        self.maxRequests = 10
+        
         self._setupDatabase()
         
     def stop_connection(self):
@@ -431,7 +437,9 @@ class MongoBinding():
     def purgeStatistics(self) -> None:
         """	Purge the statistics DB.
         """
+        # Truncate: just drop target collection and re-create the collection
         self._db.drop_collection(self.__COL_STATISTICS)
+        self._setupDatabase()
 
 
     #
@@ -475,6 +483,96 @@ class MongoBinding():
 
     def removeActionRepr(self, ri: str) -> bool:
         return self._deleteOne(self.__COL_ACTIONS, {'ri': ri})
+    
+    
+    #
+	#	Requests
+	#
+
+    def insertRequest(self, op: Operation, 
+                            ri: str, 
+                            srn: str, 
+                            originator: str, 
+                            outgoing: bool, 
+                            ot: str,
+                            request: JSON, 
+                            response: JSON) -> bool:
+        """	Add a request to the *requests* database.
+    
+        Args:
+            op: Operation.
+            ri: Resource ID of a request's target resource.
+            srn: Structured resource ID of a request's target resource.
+            originator: Request originator.
+            outgoing: If true, then this is a request sent by the CSE.
+            ot: Request creation timestamp.
+            request: The request to store.
+            response: The response to store.
+        
+        Return:
+            Boolean value to indicate success or failure.
+        """
+        try:
+            # First check whether we reached the max number of allowed requests.
+            # If yes, then remove the oldest.
+            if ( self._countDocuments(self.__COL_REQUESTS, {}) > self.maxRequests ):
+                col = self._db[self.__COL_REQUESTS]
+                oldDoc = col.find({}).sort('_id').limit(1)
+                if not ( self._deleteOne(self.__COL_REQUESTS, {'_id': oldDoc['_id']}) ):
+                    return False
+            
+            # Adding a request    
+            ts = utcTime()
+            #op = request.get('op') if 'op' in request else Operation.NA
+            rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
+            # The following removes all None values from the request and response, and the requests structure
+            _doc = \
+            {
+                'ri': ri,
+                'srn': srn,
+                'ts': ts,
+                'org': originator,
+                'op': op,
+                'rsc': rsc,
+                'out': outgoing,
+                'ot': ot,
+                'req': { k: v for k, v in request.items() if v is not None }, 
+                'rsp': { k: v for k, v in response.items() if v is not None }
+            }
+            toInsert = {k: v for k, v in _doc.items() if v is not None}
+            
+            return self._insertOne(self.__COL_REQUESTS, toInsert)
+        except Exception as e:
+            L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
+            return False
+    
+    
+    def getRequests(self, ri:Optional[str] = None) -> list[dict]:
+        """	Get requests for a resource ID, or all requests.
+        
+            Args:
+                ri: The target resource's resource ID. If *None* or empty, then all requests are returned
+            
+            Return:
+                List of *dict*. May be empty.
+        """
+        if not ri:
+            return self._find(self.__COL_REQUESTS)
+        return self._find(self.__COL_REQUESTS, {'ri': ri})
+  
+    
+    def deleteRequests(self, ri:Optional[str] = None) -> None:
+        """	Remnove all stord requests from the database.
+
+            Args:
+                ri: Optional resouce ID. Only requests for this resource ID will be deleted.
+        """
+        if ri:
+            self._deleteOne(self.__COL_REQUESTS, {'ri': ri})
+        else:
+            # Truncate: just drop target collection and re-create the collection
+            self._db.drop_collection(self.__COL_REQUESTS)
+            self._setupDatabase()
     
     
     #
