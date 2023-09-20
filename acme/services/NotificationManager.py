@@ -843,7 +843,7 @@ class NotificationManager(object):
 	#	Notification Statistics
 	#
 
-	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS) -> None:
+	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS, add:Optional[bool] = True) -> None:
 		"""	Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
 
 			This method adds, if necessary, the necessarry stat info structures for each notification
@@ -854,7 +854,12 @@ class NotificationManager(object):
 			
 			Args:
 				sub: The \<sub> or \<crs> resource for whoich to validate the attribute.
+				add: If True, add the *notificationStatsInfo* attribute if not present.
 		"""
+
+		# Optionally add the attribute
+		if add:
+			sub.setAttribute('nsi', [], overwrite = False)
 
 		if (nsi := sub.nsi) is None:	# nsi attribute must be at least an empty list
 			return
@@ -893,7 +898,7 @@ class NotificationManager(object):
 				isResponse: Indicates whether a sent notification or a received response should be counted for.
 				count: Number of notifications to count.
 		"""
-		if not sub or not sub.nse:	# Don't count if disabled
+		if not sub or not sub.nse:	# Don't count if not present or disabled
 			return
 		
 		L.isDebug and L.logDebug(f'Incrementing notification stats for: {sub.ri} ({"response" if isResponse else "request"})')
@@ -904,6 +909,11 @@ class NotificationManager(object):
 		# We have to lock this to prevent race conditions in some cases with CRS handling
 		with self.lockNotificationEventStats:
 			sub.dbReloadDict()	# get a fresh copy of the subscription
+
+			# Add nsi if not present. This happens when the first notification is sent after enabling the recording
+			if sub.nsi is None:
+				self.validateAndConstructNotificationStatsInfo(sub, True)	# nsi is filled here again
+
 			for each in sub.nsi:
 				if each['tg'] == target:
 					each[activeField] += count
@@ -927,7 +937,7 @@ class NotificationManager(object):
 				# TODO check resource type?
 			except ResponseException as e:
 				return
-		if not sub.nse:	# Don't count if disabled
+		if not sub.nse:	# Don't count if not present or disabled
 			return
 		
 		L.isDebug and L.logDebug(f'Incrementing notification event stat for: {sub.ri}')
@@ -936,6 +946,11 @@ class NotificationManager(object):
 		# We have to lock this to prevent race conditions in some cases with CRS handling
 		with self.lockNotificationEventStats:
 			sub.dbReloadDict()	# get a fresh copy of the subscription
+
+			# Add nsi if not present. This happens when the first notification is sent after enabling the recording
+			if sub.nsi is None:
+				self.validateAndConstructNotificationStatsInfo(sub, True)	# nsi is filled here again
+
 			for each in sub.nsi:
 				each['noec'] += 1
 			sub.dbUpdate(True)
@@ -962,12 +977,13 @@ class NotificationManager(object):
 				if newNse == False:
 					pass # Stop collecting, but keep notificationStatsInfo
 				else: # Both are True
-					sub.setAttribute('nsi', [])
-					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
+					# Remove the nsi
+					sub.delAttribute('nsi')
+					# After SDS-2022-184R01: nsi is not added yet, but when the first statistics are collected. See countNotificationEvents()
 			else:	# self.nse == False
 				if newNse == True:
-					sub.setAttribute('nsi', [])
-					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
+					sub.delAttribute('nsi')
+					# After SDS-2022-184R01: nsi is not added yet, but when the first statistics are collected. See countNotificationEvents()
 		else:
 			# nse is removed (present in resource, but None, and neither True or False)
 			sub.delAttribute('nsi')
@@ -1009,7 +1025,7 @@ class NotificationManager(object):
 						raise SUBSCRIPTION_VERIFICATION_INITIATION_FAILED(f'Verification request failed for: {nu}')
 
 		# Add/Update NotificationStatsInfo structure
-		self.validateAndConstructNotificationStatsInfo(subscription)
+		self.validateAndConstructNotificationStatsInfo(subscription, False) # DON'T add nsi here if not present
 
 
 	#########################################################################

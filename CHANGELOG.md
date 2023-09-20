@@ -29,6 +29,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [MISC] The project now follows the [Calendar Versioning](https://calver.org) scheme.
 - [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
 - [CSE] Changed the oneM2M enumeration definition format. Each enumeration type is now a dictionary of enumeration values and their interpretations.
+- [CSE] Changed procedure for *notifictionStatsInfo* attribute for &lt;subscription> and &lt;crossResourceSubscription; resources according to SDS-2022-0183R01 and SDS-2022-0184R01.
 - [HTTP] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
 - [MQTT] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
 - [SCRIPTS] Moved utilities and system scripts to sub-directories. Now all scripts from directories "*.scripts" in the "init" directory are automatically imported.

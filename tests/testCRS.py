@@ -336,9 +336,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rrats[1], self._testSubscriptionForCnt(cntRN2))
 		self._testSubscriptionForCnt(cntRN3, False)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
-		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/tg'), TestCRS.originator)
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -840,15 +838,13 @@ class TestCRS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCRSwithNSE(self) -> None:
-		"""	RETRIEVE <CRS>"""
+	def test_retrieveCRSwithNSENSINone(self) -> None:
+		"""	RETRIEVE <CRS> with NSE set to True and no NSI"""
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
-		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/tg'), TestCRS.originator)
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -881,11 +877,7 @@ class TestCRS(unittest.TestCase):
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
-		self.assertEqual(findXPath(nsi, '{0}/tg'), TestCRS.originator, TestCRS.crs)	
-		self.assertEqual(findXPath(nsi, '{0}/rqs'), 0)	
-		self.assertEqual(findXPath(nsi, '{0}/rsr'), 0)	
-		self.assertEqual(findXPath(nsi, '{0}/noec'), 0)	
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -898,12 +890,8 @@ class TestCRS(unittest.TestCase):
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
 		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nse'), TestCRS.crs)
-		self.assertIsNotNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
-		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
-		self.assertEqual(findXPath(nsi, '{0}/tg'), TestCRS.originator, TestCRS.crs)	
-		self.assertEqual(findXPath(nsi, '{0}/rqs'), 0)	
-		self.assertEqual(findXPath(nsi, '{0}/rsr'), 0)	
-		self.assertEqual(findXPath(nsi, '{0}/noec'), 0)	
+		# nsi must be empty
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:crs/nsi'), TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -941,11 +929,9 @@ class TestCRS(unittest.TestCase):
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED, TestCRS.crs)
-		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1, TestCRS.crs)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/rqs'), 0, TestCRS.crs)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/rsr'), 0, TestCRS.crs)
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi/{0}/noec'), 0, TestCRS.crs)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse', TestCRS.crs))
+		# nsi must be empty
+		self.assertIsNone(findXPath(TestCRS.crs, 'm2m:sub/nsi'), TestCRS.crs)
 
 
 	#########################################################################
@@ -2048,7 +2034,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# Test Notification Stats
 	addTest(suite, TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
-	addTest(suite, TestCRS('test_retrieveCRSwithNSE'))
+	addTest(suite, TestCRS('test_retrieveCRSwithNSENSINone'))
 	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
 	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
 

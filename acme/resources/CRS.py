@@ -118,10 +118,7 @@ class CRS(Resource):
 		if self.twt == TimeWindowType.PERIODICWINDOW:
 			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions(), self.eem)
 
-		# nsi is at least an empty list if nse is present, otherwise it must not be present
-		if self.nse is not None:
-			self.setAttribute('nsi', [], overwrite = False)
-			CSE.notification.validateAndConstructNotificationStatsInfo(self)
+		# "nsi" will be added later during the first stat recording
 		
 		# Set twi default if not present
 		self.setAttribute('eem', EventEvaluationMode.ALL_EVENTS_PRESENT.value, False)

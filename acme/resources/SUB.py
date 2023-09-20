@@ -121,10 +121,7 @@ class SUB(Resource):
 		if chty := self['enc/chty']:
 			self._checkAllowedCHTY(parentResource, chty)
 		
-		# nsi is at least an empty list if nse is present, otherwise it must not be present
-		if self.nse is not None:
-			self.setAttribute('nsi', [], overwrite = False)
-			CSE.notification.validateAndConstructNotificationStatsInfo(self)
+		# "nsi" will be added later during the first stat recording
 
 		CSE.notification.addSubscription(self, originator)
 
