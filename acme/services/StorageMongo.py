@@ -27,9 +27,13 @@ class MongoBinding():
     __COL_STATISTICS = "statistics"
     def __init__(self) -> None:
         L.isInfo and L.log("Initialize mongodb binding and create connection!")
+        
+        # Create collection names as list
+        self._l_col = [self.__COL_RESOURCES, self.__COL_IDENTIFIERS, self.__COL_CHILDREN, self.__COL_SRN, self.__COL_SUBSCRIPTIONS, 
+                    self.__COL_BATCHNOTIF, self.__COL_ACTIONS, self.__COL_REQUESTS]
 
         # Initiate connection to mongodb server
-        # TODO: Add parameter to mongo host, port, DB name and auth
+        # TODO: Add parameter to mongo host, port, DB name and auth and get it from configuration file
         # TODO: Connection pool; Actually it's already enabled on default
         # TODO: Check connection if successfully connected
         self._client = MongoClient("mongodb://username:password@127.0.0.1/acme-cse?authMechanism=PLAIN", 27017)
@@ -37,16 +41,31 @@ class MongoBinding():
         # TODO: Add locking to each collection access. Lock object are different for each collection
         # TODO: Add transaction if possible when querying (with)
         # TODO: Print error log when CRUD
-        # TODO: Get config from configfile
+        # TODO: Get config from configfile 
         
         
-        self.maxRequests = 10
+        self.maxRequests = Configuration.get('cse.operation.requests.size')
         
         self._setupDatabase()
         
-    def stop_connection(self):
+        
+    def closeDB(self) -> None:
         L.log("Close MongoDB connection")
         self._client.close()
+        
+        
+    def purgeDB(self) -> None:
+        L.isInfo and L.log('Purging DBs')
+        for col in self._l_col:
+            self._db.drop_collection(col)
+        self._setupDatabase()
+    
+    
+    def backupDB(self, dir: str) -> bool:
+        # NOTE: Bypass this
+        return True
+        
+    
         
     # def _check_connection(self) -> bool:
     #     try:
@@ -584,13 +603,11 @@ class MongoBinding():
         """
         # TODO: Set csi, aei to unique on resource collection
         L.isInfo and L.log("Setup acme-cse mongodb database")
-        l_col = [self.__COL_RESOURCES, self.__COL_IDENTIFIERS, self.__COL_CHILDREN, self.__COL_SRN, self.__COL_SUBSCRIPTIONS, 
-                           self.__COL_BATCHNOTIF, self.__COL_ACTIONS, self.__COL_REQUESTS]
         l_existing_collection = self._db.list_collection_names()
         all_exist = True
         
         # loop through acme-cse collection
-        for col in l_col:
+        for col in self._l_col:
             # check if each acme-cse collection not exist then add unique index
             if col not in l_existing_collection:
                 all_exist = False
