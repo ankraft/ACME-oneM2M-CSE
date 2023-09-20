@@ -1,16 +1,17 @@
-from typing import Callable, cast, List, Optional, Tuple
+from typing import Callable, cast, List, Optional, Sequence
 
 from pymongo import MongoClient
 from pymongo import errors as MongoErrors
 from bson import ObjectId
 
 from ..etc.DateUtils import utcTime, fromDuration
-from ..etc.Types import ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import ResourceTypes, JSON, Operation
 from ..etc import DateUtils, Utils
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..resources import Factory
+from ..resources.ACTR import ACTR
 from ..services.Logging import Logging as L
 
 class MongoBinding():
@@ -432,6 +433,49 @@ class MongoBinding():
         """
         self._db.drop_collection(self.__COL_STATISTICS)
 
+
+    #
+	#	Actions
+	#
+ 
+    def searchActionReprs(self) -> list[dict]:
+        actions = self._find(self.__COL_ACTIONS)
+        return actions if len(actions) > 0 else None
+
+
+    def getAction(self, ri: str) -> Optional[dict]:
+        actions = self._find(self.__COL_ACTIONS, {'ri': ri}, 1)
+        return actions[0] if len(actions) > 0 else None
+    
+
+    def searchActionsDeprsForSubject(self, ri: str) -> Sequence[JSON]:
+        return self._find(self.__COL_ACTIONS, {'subject': ri})
+    
+
+    # TODO add only?
+    def upsertActionRepr(self, action:ACTR, periodTS:float, count:int) -> bool:
+        data = \
+        {	
+            'ri':		action.ri,
+            'subject':	action.sri if action.sri else action.pi,
+            'dep':		action.dep,
+            'apy':		action.apy,
+            'evm':		action.evm,
+            'evc':		action.evc,	
+            'ecp':		action.ecp,
+            'periodTS': periodTS,
+            'count':	count,
+        }
+        return self._updateOne(self.__COL_ACTIONS, {'ri': action.ri}, data, True)
+
+
+    def updateActionRepr(self, actionRepr: JSON) -> bool:
+        return self._updateOne(self.__COL_ACTIONS, {'ri': actionRepr['ri']}, actionRepr)
+    
+
+    def removeActionRepr(self, ri: str) -> bool:
+        return self._deleteOne(self.__COL_ACTIONS, {'ri': ri})
+    
     
     #
     #   Internal functions
