@@ -2,7 +2,7 @@ from typing import Callable, cast, List, Optional, Sequence
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo import errors as MongoErrors
-from bson import ObjectId
+from threading import Lock
 
 from ..etc.DateUtils import utcTime, fromDuration
 from ..etc.Types import ResourceTypes, JSON, Operation
@@ -38,11 +38,21 @@ class MongoBinding():
         # TODO: Check connection if successfully connected
         self._client = MongoClient("mongodb://username:password@127.0.0.1/acme-cse?authMechanism=PLAIN", 27017)
         self._db = self._client["acme-cse"]
-        # TODO: Add locking to each collection access. Lock object are different for each collection
         # TODO: Add transaction if possible when querying (with)
         # TODO: Print error log when CRUD
         # TODO: Get config from configfile 
         
+        # Add locking to each collection access. Lock object are different for each collection
+        self.lockResources				= Lock()
+        self.lockIdentifiers			= Lock()
+        self.lockChildResources			= Lock()
+        self.lockSrn	        		= Lock()
+        self.lockSubscriptions			= Lock()
+        self.lockBatchNotifications		= Lock()
+        self.lockStatistics 			= Lock()
+        self.lockActions 				= Lock()
+        self.lockRequests 				= Lock()
+
         
         self.maxRequests = Configuration.get('cse.operation.requests.size')
         
@@ -80,26 +90,28 @@ class MongoBinding():
     #   Resources
     #
     
-    def insert_resource(self, resource: Resource) -> None:
+    def insertResource(self, resource: Resource) -> None:
         """ Insert resource
 
         Args:
             resource (Resource): Data of the resource
         """
-        self._insertOne(self.__COL_RESOURCES, resource.dict)
+        with self.lockResources:
+            self._insertOne(self.__COL_RESOURCES, resource.dict)
         
         
-    def upsert_resource(self, ri: str, resource: Resource) -> None:
+    def upsertResource(self, ri: str, resource: Resource) -> None:
         """ Update resource if exist and insert if not exist
 
         Args:
             ri (str): Resource ri to update if exist
             resource (Resource): Data of the resource
         """
-        self._updateOne(self.__COL_RESOURCES, ri, resource.dict, True)
+        with self.lockResources:
+            self._updateOne(self.__COL_RESOURCES, ri, resource.dict, True)
         
         
-    def update_resource(self, ri: str, resource: Resource) -> Resource:
+    def updateResource(self, ri: str, resource: Resource) -> Resource:
         """ Update resource from a document
         By first removing field that have None value from the dictionary
 
@@ -110,23 +122,25 @@ class MongoBinding():
         Returns:
             Resource: updated resource
         """
-        # remove nullified fields from db and resource
-        for k in list(resource.dict):
-            if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
-                del resource.dict[k]
-        self._updateOne(self.__COL_RESOURCES, ri, resource.dict, False)
-        return resource
+        with self.lockResources:
+            # remove nullified fields from db and resource
+            for k in list(resource.dict):
+                if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
+                    del resource.dict[k]
+            self._updateOne(self.__COL_RESOURCES, ri, resource.dict, False)
+            return resource
 
-    def delete_resource(self, resource: Resource) -> None:
+    def deleteResource(self, resource: Resource) -> None:
         """ Delete resource
 
         Args:
             resource (Resource): Target resource to delete
         """
-        self._deleteOne(self.__COL_RESOURCES, resource.ri)
+        with self.lockResources:
+            self._deleteOne(self.__COL_RESOURCES, resource.ri)
     
 
-    def search_resource(self, ri:Optional[str] = None, 
+    def searchResources(self, ri:Optional[str] = None, 
 							  csi:Optional[str] = None, 
 							  srn:Optional[str] = None, 
 							  pi:Optional[str] = None, 
@@ -146,31 +160,37 @@ class MongoBinding():
             list[dict]: List of resource data
         """
         if not srn:
-            if ri:
-                # Limit resource to 1 because every resource should have unique ri
-                return self._find(self.__COL_RESOURCES, {'ri': ri}, 1)
-            elif csi:
-                # Limit resource to 1 because every CSE should have unique csi
-                return self._find(self.__COL_RESOURCES, {'csi': csi}, 1)
-            elif aei:
-                # Limit resource to 1 because every AE should have unique aei
-                return self._find(self.__COL_RESOURCES, {'aei': aei}, 1)
-            elif pi:
-                # Format query, by adding ty field if exist
-                query = {'pi': pi}
-                if ty:
-                    query['ty'] = ty
-                    
-                # Can have multiple value, so set limit to default
-                return self._find(self.__COL_RESOURCES, query)
-            elif ty:
-                # Can have multiple value, so set limit to default
-                return self._find(self.__COL_RESOURCES, {'ty': ty})
+            with self.lockResources:
+                if ri:
+                    # Limit resource to 1 because every resource should have unique ri
+                    return self._find(self.__COL_RESOURCES, {'ri': ri}, 1)
+                elif csi:
+                    # Limit resource to 1 because every CSE should have unique csi
+                    return self._find(self.__COL_RESOURCES, {'csi': csi}, 1)
+                elif aei:
+                    # Limit resource to 1 because every AE should have unique aei
+                    return self._find(self.__COL_RESOURCES, {'aei': aei}, 1)
+                elif pi:
+                    # Format query, by adding ty field if exist
+                    query = {'pi': pi}
+                    if ty:
+                        query['ty'] = ty
+                        
+                    # Can have multiple value, so set limit to default
+                    return self._find(self.__COL_RESOURCES, query)
+                elif ty:
+                    # Can have multiple value, so set limit to default
+                    return self._find(self.__COL_RESOURCES, {'ty': ty})
             
         else:
             # for SRN find the ri first from identifiers collection and then find resource using ri
             # TODO: Consider to find directly to resources collection
-            if len(( identifiers := self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1) )) == 1:
+            with self.lockIdentifiers:
+                identifiers = self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1)
+            if len(identifiers) != 1:
+                return []
+
+            with self.lockResources:
                 return self._find(self.__COL_RESOURCES, {'ri': identifiers[0]['ri']}, 1)
         
 
@@ -189,18 +209,19 @@ class MongoBinding():
 		Returns:
 			Optional[Resource]: Resource data in dict object or None
 		"""
-        col = self._db[self.__COL_RESOURCES]
-        filter = {'ty': ty}
-        if pi:
-            filter['pi'] = pi
-        
-        result: dict = None
-        if oldest:
-            result = col.find(filter).sort('_id', ASCENDING).limit(1)
-        else:
-            result = col.find(filter).sort('_id', DESCENDING).limit(1)
+        with self.lockResources:
+            col = self._db[self.__COL_RESOURCES]
+            filter = {'ty': ty}
+            if pi:
+                filter['pi'] = pi
+            
+            result: dict = None
+            if oldest:
+                result = col.find(filter).sort('_id', ASCENDING).limit(1)
+            else:
+                result = col.find(filter).sort('_id', DESCENDING).limit(1)
 
-        return result
+            return result
     
     
     def retrieveResourcesByContain(self, field: str, contain: str) -> list[dict]:
@@ -213,8 +234,9 @@ class MongoBinding():
 		Returns:
 			list[Resource]: List of found resource in dict object
 		"""
-        filter = {field: contain}
-        return self._find(self.__COL_RESOURCES, filter)
+        with self.lockResources:
+            filter = {field: contain}
+            return self._find(self.__COL_RESOURCES, filter)
 
 
     def hasResource(self, ri:Optional[str] = None, 
@@ -233,21 +255,26 @@ class MongoBinding():
             bool: True if resource is exist and vice versa
         """
         if not srn:
-            if ri:
-                # Limit document count result to 1 because only ri is unique
-                return bool( self._countDocuments(self.__COL_RESOURCES, {'ri': ri}, 1) )
-            elif csi :
-                # Limit document count result to 1 because only csi is unique
-                return bool( self._countDocuments(self.__COL_RESOURCES, {'csi': csi}, 1) )
-            elif ty is not None:	# ty is an int
-                # Limit is provided because hasResource only expect if resource with ty is exist
-                return bool( self._countDocuments(self.__COL_RESOURCES, {'ty': ty}, 1) )
+            with self.lockResources:
+                if ri:
+                    # Limit document count result to 1 because only ri is unique
+                    return bool( self._countDocuments(self.__COL_RESOURCES, {'ri': ri}, 1) )
+                elif csi :
+                    # Limit document count result to 1 because only csi is unique
+                    return bool( self._countDocuments(self.__COL_RESOURCES, {'csi': csi}, 1) )
+                elif ty is not None:	# ty is an int
+                    # Limit is provided because hasResource only expect if resource with ty is exist
+                    return bool( self._countDocuments(self.__COL_RESOURCES, {'ty': ty}, 1) )
         else:
             # TODO: Consider directly count srn from resources collection
             # for SRN find the ri first from identifiers collection and then find resource using ri
-            if len(( identifiers := self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1) )) == 1:
+            with self.lockIdentifiers:
+                identifiers = self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1)
+            if len(identifiers) != 1:
+                return False
+
+            with self.lockResources:
                 return bool( self._countDocuments(self.__COL_RESOURCES, {'ri': identifiers[0]['ri']}, 1) )
-        return False
 
 
     def countResources(self) -> int:
@@ -256,7 +283,8 @@ class MongoBinding():
         Returns:
             int: Total resources exist
         """
-        return self._countDocuments(self.__COL_RESOURCES, {})
+        with self.lockResources:
+            return self._countDocuments(self.__COL_RESOURCES, {})
 
 
     def searchByFragment(self, dct: dict) -> list[dict]:
@@ -268,7 +296,8 @@ class MongoBinding():
         Returns:
             list[dict]: list of found documents
         """
-        return self._find(self.__COL_RESOURCES, dct)
+        with self.lockResources:
+            return self._find(self.__COL_RESOURCES, dct)
     
     
     #
@@ -291,7 +320,8 @@ class MongoBinding():
             'srn' : srn,
             'ty' : resource.ty 
         }
-        self._updateOne(self.__COL_IDENTIFIERS, {'ri': ri}, data, True)
+        with self.lockIdentifiers:
+            self._updateOne(self.__COL_IDENTIFIERS, {'ri': ri}, data, True)
 
         # Then upsert structuredIds
         data2 = \
@@ -299,7 +329,8 @@ class MongoBinding():
             'srn': srn,
             'ri' : ri 
         }
-        self._updateOne(self.__COL_SRN, {'srn': resource.getSrn()}, data2, True)
+        with self.lockSrn:
+            self._updateOne(self.__COL_SRN, {'srn': resource.getSrn()}, data2, True)
     
     
     def deleteIdentifier(self, resource: Resource) -> None:
@@ -308,9 +339,10 @@ class MongoBinding():
         Args:
             resource (Resource): Data of the resource to delete
         """
-        # TODO: Add log when failed delete resource
-        self._deleteOne(self.__COL_IDENTIFIERS, {'ri': resource.ri})
-        self._deleteOne(self.__COL_SRN, {'srn': resource.getSrn()})
+        with self.lockIdentifiers:
+            self._deleteOne(self.__COL_IDENTIFIERS, {'ri': resource.ri})
+        with self.lockSrn:
+            self._deleteOne(self.__COL_SRN, {'srn': resource.getSrn()})
     
     
     def searchIdentifiers(self, ri: Optional[str] = None, 
@@ -327,14 +359,16 @@ class MongoBinding():
         Returns:
             list[dict]: A list of found identifier documents (see `insert_identifier`), or an empty list if not found.
         """
-        if srn:
-            if ( _r := self._find(self.__COL_SRN, {'srn': srn}, 1) ):
-                ri = _r['ri'] if _r else None
-            else:
-                return []
+        with self.lockSrn:
+            if srn:
+                if ( _r := self._find(self.__COL_SRN, {'srn': srn}, 1) ):
+                    ri = _r['ri'] if _r else None
+                else:
+                    return []
         
-        if ri:
-            return self._find(self.__COL_IDENTIFIERS, {'ri': ri}, 1)
+        with self.lockIdentifiers:
+            if ri:
+                return self._find(self.__COL_IDENTIFIERS, {'ri': ri}, 1)
 
         return []
     
@@ -349,25 +383,26 @@ class MongoBinding():
             ri (str): ri of the resource
         """
         # First add a new document to children collection
-        children = \
-        {
-            'ri': ri,
-            'ch': []
-        }
-        # TODO: Add check if insert success before continue
-        self._insertOne(self.__COL_CHILDREN, children)
-        
-        # Then add just inserted resource to parents document (ch field)
-        if resource.pi: # ATN: CSE has no parent
-            tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1) # Find parent document
-            if len(tmp) == 0:
-                return
-            _r = tmp[0]
-            _ch:list = _r['ch']
-            if ri not in _ch:
-                _ch.append( [ri, resource.ty] )
-                _r['ch'] = _ch
-                self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
+        with self.lockChildResources:
+            children = \
+            {
+                'ri': ri,
+                'ch': []
+            }
+            # TODO: Add check if insert success before continue
+            self._insertOne(self.__COL_CHILDREN, children)
+            
+            # Then add just inserted resource to parents document (ch field)
+            if resource.pi: # ATN: CSE has no parent
+                tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1) # Find parent document
+                if len(tmp) == 0:
+                    return
+                _r = tmp[0]
+                _ch:list = _r['ch']
+                if ri not in _ch:
+                    _ch.append( [ri, resource.ty] )
+                    _r['ch'] = _ch
+                    self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
 
 
     def removeChildResource(self, resource: Resource) -> None:
@@ -378,22 +413,23 @@ class MongoBinding():
         Args:
             resource (Resource): Target resource to remove
         """
-        # First remove resource from children collection
-        # TODO: Add check if delete success before continue
-        self._deleteOne(self.__COL_CHILDREN, {'ri': resource.ri})
+        with self.lockChildResources:
+            # First remove resource from children collection
+            # TODO: Add check if delete success before continue
+            self._deleteOne(self.__COL_CHILDREN, {'ri': resource.ri})
 
-        # Then remove resource data from parent ch field
-        tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1)
-        if len(tmp) == 0:
-            return
-        _r = tmp[0]
-        _t = [resource.ri, resource.ty]
-        _ch:list = _r['ch']
-        if _t in _ch:
-            _ch.remove(_t)
-            _r['ch'] = _ch
-            # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
-            self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
+            # Then remove resource data from parent ch field
+            tmp = self._find(self.__COL_CHILDREN, {'ri': resource.pi}, 1)
+            if len(tmp) == 0:
+                return
+            _r = tmp[0]
+            _t = [resource.ri, resource.ty]
+            _ch:list = _r['ch']
+            if _t in _ch:
+                _ch.remove(_t)
+                _r['ch'] = _ch
+                # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
+                self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
 
 
     def searchChildResourcesByParentRI(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
@@ -406,13 +442,14 @@ class MongoBinding():
         Returns:
             Optional[list[str]]: List of resource childs
         """
-        tmp = self._find(self.__COL_CHILDREN, {'ri': pi}, 1)
-        if len(tmp) > 0:
-            _r = tmp[0]
-            if ty is None:	# optimization: only check ty once for None
-                return [ c[0] for c in _r['ch'] ]
-            return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
-        return []
+        with self.lockChildResources:
+            tmp = self._find(self.__COL_CHILDREN, {'ri': pi}, 1)
+            if len(tmp) > 0:
+                _r = tmp[0]
+                if ty is None:	# optimization: only check ty once for None
+                    return [ c[0] for c in _r['ch'] ]
+                return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
+            return []
  
     
     #
@@ -421,10 +458,11 @@ class MongoBinding():
  
     def searchSubscriptions(self, ri: Optional[str] = None, 
 								  pi: Optional[str] = None) -> Optional[list[dict]]:
-        if ri:
-            return self._find(self.__COL_SUBSCRIPTIONS, {'ri': ri}, 1)
-        if pi:
-            return self._find(self.__COL_SUBSCRIPTIONS, {'pi': pi})
+        with self.lockSubscriptions:
+            if ri:
+                return self._find(self.__COL_SUBSCRIPTIONS, {'ri': ri}, 1)
+            if pi:
+                return self._find(self.__COL_SUBSCRIPTIONS, {'pi': pi})
 
         return None
         
@@ -447,12 +485,13 @@ class MongoBinding():
             'ma' 	: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
             'nse' 	: subscription.nse
         }
-        
-        return self._updateOne(self.__COL_SUBSCRIPTIONS, {'ri': data['ri']}, data, True)
+        with self.lockSubscriptions:
+            return self._updateOne(self.__COL_SUBSCRIPTIONS, {'ri': data['ri']}, data, True)
 
 
     def removeSubscription(self, subscription: Resource) -> bool:
-        return self._deleteOne(self.__COL_SUBSCRIPTIONS, {'ri': subscription.ri})
+        with self.lockSubscriptions:
+            return self._deleteOne(self.__COL_SUBSCRIPTIONS, {'ri': subscription.ri})
     
     
     #
@@ -467,19 +506,23 @@ class MongoBinding():
             'tstamp'	: utcTime(),
             'request'	: notificationRequest
         }
-        return self._insertOne(self.__COL_BATCHNOTIF, data)
+        with self.lockBatchNotifications:
+            return self._insertOne(self.__COL_BATCHNOTIF, data)
 
 
     def countBatchNotifications(self, ri: str, nu: str) -> int:
-        return self._countDocuments(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+        with self.lockBatchNotifications:
+            return self._countDocuments(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
 
 
     def getBatchNotifications(self, ri: str, nu: str) -> list[dict]:
-        return self._find(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+        with self.lockBatchNotifications:
+            return self._find(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
 
 
     def removeBatchNotifications(self, ri: str, nu: str) -> bool:
-        return self._deleteOne(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
+        with self.lockBatchNotifications:
+            return self._deleteOne(self.__COL_BATCHNOTIF, {'ri': ri, 'nu': nu})
 
 
     #
@@ -487,23 +530,26 @@ class MongoBinding():
 	#
 
     def searchStatistics(self) -> JSON:
-        if len(stats := self._find(self.__COL_STATISTICS)) > 0:
-            return stats[0]
+        with self.lockStatistics:
+            if len(stats := self._find(self.__COL_STATISTICS)) > 0:
+                return stats[0]
         return None
 
 
     def upsertStatistics(self, statisticsData: JSON) -> bool:
-        if len(stats := self._find(self.__COL_STATISTICS)) > 0:
-            return self._updateOne(self.__COL_STATISTICS, {'_id': stats[0]['_id']}, statisticsData)
-        else:
-            return self._insertOne(self.__COL_STATISTICS, statisticsData)
+        with self.lockStatistics:
+            if len(stats := self._find(self.__COL_STATISTICS)) > 0:
+                return self._updateOne(self.__COL_STATISTICS, {'_id': stats[0]['_id']}, statisticsData)
+            else:
+                return self._insertOne(self.__COL_STATISTICS, statisticsData)
 
 
     def purgeStatistics(self) -> None:
         """	Purge the statistics DB.
         """
         # Truncate: just drop target collection and re-create the collection
-        self._db.drop_collection(self.__COL_STATISTICS)
+        with self.lockStatistics:
+            self._db.drop_collection(self.__COL_STATISTICS)
         self._setupDatabase()
 
 
@@ -512,17 +558,20 @@ class MongoBinding():
 	#
  
     def searchActionReprs(self) -> list[dict]:
-        actions = self._find(self.__COL_ACTIONS)
-        return actions if len(actions) > 0 else None
+        with self.lockActions:
+            actions = self._find(self.__COL_ACTIONS)
+            return actions if len(actions) > 0 else None
 
 
     def getAction(self, ri: str) -> Optional[dict]:
-        actions = self._find(self.__COL_ACTIONS, {'ri': ri}, 1)
-        return actions[0] if len(actions) > 0 else None
+        with self.lockActions:
+            actions = self._find(self.__COL_ACTIONS, {'ri': ri}, 1)
+            return actions[0] if len(actions) > 0 else None
     
 
     def searchActionsDeprsForSubject(self, ri: str) -> Sequence[JSON]:
-        return self._find(self.__COL_ACTIONS, {'subject': ri})
+        with self.lockActions:
+            return self._find(self.__COL_ACTIONS, {'subject': ri})
     
 
     # TODO add only?
@@ -539,15 +588,18 @@ class MongoBinding():
             'periodTS': periodTS,
             'count':	count,
         }
-        return self._updateOne(self.__COL_ACTIONS, {'ri': action.ri}, data, True)
+        with self.lockActions:
+            return self._updateOne(self.__COL_ACTIONS, {'ri': action.ri}, data, True)
 
 
     def updateActionRepr(self, actionRepr: JSON) -> bool:
-        return self._updateOne(self.__COL_ACTIONS, {'ri': actionRepr['ri']}, actionRepr)
+        with self.lockActions:
+            return self._updateOne(self.__COL_ACTIONS, {'ri': actionRepr['ri']}, actionRepr)
     
 
     def removeActionRepr(self, ri: str) -> bool:
-        return self._deleteOne(self.__COL_ACTIONS, {'ri': ri})
+        with self.lockActions:
+            return self._deleteOne(self.__COL_ACTIONS, {'ri': ri})
     
     
     #
@@ -577,39 +629,40 @@ class MongoBinding():
         Return:
             Boolean value to indicate success or failure.
         """
-        try:
-            # First check whether we reached the max number of allowed requests.
-            # If yes, then remove the oldest.
-            if ( self._countDocuments(self.__COL_REQUESTS, {}) > self.maxRequests ):
-                col = self._db[self.__COL_REQUESTS]
-                oldDoc = col.find({}).sort('_id').limit(1)
-                if not ( self._deleteOne(self.__COL_REQUESTS, {'_id': oldDoc['_id']}) ):
-                    return False
-            
-            # Adding a request    
-            ts = utcTime()
-            #op = request.get('op') if 'op' in request else Operation.NA
-            rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
-            # The following removes all None values from the request and response, and the requests structure
-            _doc = \
-            {
-                'ri': ri,
-                'srn': srn,
-                'ts': ts,
-                'org': originator,
-                'op': op,
-                'rsc': rsc,
-                'out': outgoing,
-                'ot': ot,
-                'req': { k: v for k, v in request.items() if v is not None }, 
-                'rsp': { k: v for k, v in response.items() if v is not None }
-            }
-            toInsert = {k: v for k, v in _doc.items() if v is not None}
-            
-            return self._insertOne(self.__COL_REQUESTS, toInsert)
-        except Exception as e:
-            L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
-            return False
+        with self.lockRequests:
+            try:
+                # First check whether we reached the max number of allowed requests.
+                # If yes, then remove the oldest.
+                if ( self._countDocuments(self.__COL_REQUESTS, {}) > self.maxRequests ):
+                    col = self._db[self.__COL_REQUESTS]
+                    oldDoc = col.find({}).sort('_id').limit(1)
+                    if not ( self._deleteOne(self.__COL_REQUESTS, {'_id': oldDoc['_id']}) ):
+                        return False
+                
+                # Adding a request    
+                ts = utcTime()
+                #op = request.get('op') if 'op' in request else Operation.NA
+                rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
+                # The following removes all None values from the request and response, and the requests structure
+                _doc = \
+                {
+                    'ri': ri,
+                    'srn': srn,
+                    'ts': ts,
+                    'org': originator,
+                    'op': op,
+                    'rsc': rsc,
+                    'out': outgoing,
+                    'ot': ot,
+                    'req': { k: v for k, v in request.items() if v is not None }, 
+                    'rsp': { k: v for k, v in response.items() if v is not None }
+                }
+                toInsert = {k: v for k, v in _doc.items() if v is not None}
+                
+                return self._insertOne(self.__COL_REQUESTS, toInsert)
+            except Exception as e:
+                L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
+                return False
     
     
     def getRequests(self, ri:Optional[str] = None) -> list[dict]:
@@ -621,9 +674,10 @@ class MongoBinding():
             Return:
                 List of *dict*. May be empty.
         """
-        if not ri:
-            return self._find(self.__COL_REQUESTS)
-        return self._find(self.__COL_REQUESTS, {'ri': ri})
+        with self.lockRequests:
+            if not ri:
+                return self._find(self.__COL_REQUESTS)
+            return self._find(self.__COL_REQUESTS, {'ri': ri})
   
     
     def deleteRequests(self, ri:Optional[str] = None) -> None:
@@ -632,11 +686,16 @@ class MongoBinding():
             Args:
                 ri: Optional resouce ID. Only requests for this resource ID will be deleted.
         """
-        if ri:
-            self._deleteOne(self.__COL_REQUESTS, {'ri': ri})
-        else:
-            # Truncate: just drop target collection and re-create the collection
-            self._db.drop_collection(self.__COL_REQUESTS)
+        setupDatabase = False
+        with self.lockRequest:
+            if ri:
+                self._deleteOne(self.__COL_REQUESTS, {'ri': ri})
+            else:
+                # Truncate: just drop target collection and re-create the collection
+                self._db.drop_collection(self.__COL_REQUESTS)
+                setupDatabase = True
+                
+        if setupDatabase:
             self._setupDatabase()
     
     
