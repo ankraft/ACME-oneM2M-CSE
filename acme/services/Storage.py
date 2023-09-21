@@ -417,6 +417,42 @@ class Storage(object):
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
 						if (res := resourceFromDict(each))
 				]
+  
+	def retrieveLatestOldestResource(self, oldest: bool, ty: int, pi: Optional[str]) -> Optional[Resource]:
+		""" Retrieve latest or oldest resource
+
+		Args:
+			oldest (bool): True if want to find oldest, False otherwise
+			ty (int): Resource type to retrieve
+			pi (Optional[str]): Find specific resource that has pi as parents
+
+		Returns:
+			Optional[Resource]: Resource or None
+		"""
+		if (resource := self.db.retrieveLatestOldestResource(oldest, ty, pi)):
+			return resourceFromDict(resource)
+		return None
+
+
+	def retrieveResourcesByContain(self, field: str, contain: str) -> list[Resource]:
+		""" Retrieve resources by checking value exist in array field
+
+		Args:
+			field (str): Target field to find
+			contain (str): Value to find in an array
+
+		Returns:
+			list[Resource]: List of found resources
+		"""
+		return  [ res for each in self.db.retrieveResourcesByContain(field, contain)
+					if (res := resourceFromDict(each))
+				]
+  
+	
+	def retrieveResourcesByLessDate(self, utcTime: float) -> list[Resource]:
+		#  TODO: Problem when get less than date because 'et' value is in string. 
+		#  Aggregation $toData not supported yet on ferretDB
+		pass
 
 
 	#########################################################################

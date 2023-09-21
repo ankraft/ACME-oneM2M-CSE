@@ -1,6 +1,6 @@
 from typing import Callable, cast, List, Optional, Sequence
 
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo import errors as MongoErrors
 from bson import ObjectId
 
@@ -175,7 +175,46 @@ class MongoBinding():
         
 
     def discoverResourcesByFilter(self, func:Callable[[JSON], bool]) -> list[dict]:
-        pass
+        return []
+    
+    
+    def retrieveLatestOldestResource(self, oldest: bool, ty: int, pi: Optional[str]) -> Optional[dict]:
+        """ Retrieve latest or oldest resource
+
+		Args:
+			oldest (bool): True if want to find oldest, False otherwise
+			ty (int): Resource type to retrieve
+			pi (Optional[str]): Find specific resource that has pi as parents
+
+		Returns:
+			Optional[Resource]: Resource data in dict object or None
+		"""
+        col = self._db[self.__COL_RESOURCES]
+        filter = {'ty': ty}
+        if pi:
+            filter['pi'] = pi
+        
+        result: dict = None
+        if oldest:
+            result = col.find(filter).sort('_id', ASCENDING).limit(1)
+        else:
+            result = col.find(filter).sort('_id', DESCENDING).limit(1)
+
+        return result
+    
+    
+    def retrieveResourcesByContain(self, field: str, contain: str) -> list[dict]:
+        """ Retrieve resources by checking value exist in array field
+
+		Args:
+			field (str): Target field to find
+			contain (str): Value to find in an array
+
+		Returns:
+			list[Resource]: List of found resource in dict object
+		"""
+        filter = {field: contain}
+        return self._find(self.__COL_RESOURCES, filter)
 
 
     def hasResource(self, ri:Optional[str] = None, 
@@ -221,8 +260,15 @@ class MongoBinding():
 
 
     def searchByFragment(self, dct: dict) -> list[dict]:
-        """ Search and return all resources that match the given dictionary/document. """
-        pass
+        """ Search and return all resources that match the given dictionary/document
+
+        Args:
+            dct (dict): Fragments filter
+
+        Returns:
+            list[dict]: list of found documents
+        """
+        return self._find(self.__COL_RESOURCES, dct)
     
     
     #
