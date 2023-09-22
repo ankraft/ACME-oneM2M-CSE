@@ -127,8 +127,8 @@ class MongoBinding():
             for k in list(resource.dict):
                 if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
                     del resource.dict[k]
-            #! This is the key, that solve all the problem. Because it return resource that have _id as field. It throws can serialize objectId to json.
-            resource.dict.pop('_id', 'Key not found') 
+            #! *This is the key, that solve the problem. Because it return resource that have _id as field. It throws can serialize objectId to json.
+            resource.dict.pop('_id', 'Key not found') #! *This
             self._updateOne(self.__COL_RESOURCES, {'ri': ri}, resource.dict, False)
             return resource
 
