@@ -90,7 +90,7 @@ class MongoBinding():
     #   Resources
     #
     
-    def insertResource(self, resource: Resource) -> None:
+    def insertResource(self, resource: Resource, ri: str) -> None:
         """ Insert resource
 
         Args:
@@ -100,7 +100,7 @@ class MongoBinding():
             self._insertOne(self.__COL_RESOURCES, resource.dict)
         
         
-    def upsertResource(self, ri: str, resource: Resource) -> None:
+    def upsertResource(self, resource: Resource, ri: str) -> None:
         """ Update resource if exist and insert if not exist
 
         Args:
@@ -108,10 +108,10 @@ class MongoBinding():
             resource (Resource): Data of the resource
         """
         with self.lockResources:
-            self._updateOne(self.__COL_RESOURCES, ri, resource.dict, True)
+            self._updateOne(self.__COL_RESOURCES, {'ri': ri}, resource.dict, True)
         
         
-    def updateResource(self, ri: str, resource: Resource) -> Resource:
+    def updateResource(self, resource: Resource, ri: str) -> Resource:
         """ Update resource from a document
         By first removing field that have None value from the dictionary
 
@@ -127,8 +127,9 @@ class MongoBinding():
             for k in list(resource.dict):
                 if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
                     del resource.dict[k]
-            self._updateOne(self.__COL_RESOURCES, ri, resource.dict, False)
+            self._updateOne(self.__COL_RESOURCES, {'ri': ri}, resource.dict, False)
             return resource
+
 
     def deleteResource(self, resource: Resource) -> None:
         """ Delete resource
@@ -137,7 +138,7 @@ class MongoBinding():
             resource (Resource): Target resource to delete
         """
         with self.lockResources:
-            self._deleteOne(self.__COL_RESOURCES, resource.ri)
+            self._deleteOne(self.__COL_RESOURCES, {'ri': resource.ri})
     
 
     def searchResources(self, ri:Optional[str] = None, 
