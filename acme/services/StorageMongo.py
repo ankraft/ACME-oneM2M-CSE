@@ -695,7 +695,7 @@ class MongoBinding():
                 # Truncate: just drop target collection and re-create the collection
                 self._db.drop_collection(self.__COL_REQUESTS)
                 setupDatabase = True
-                
+
         if setupDatabase:
             self._setupDatabase()
     
@@ -751,8 +751,10 @@ class MongoBinding():
         except MongoErrors.DuplicateKeyError as e:
             L.logErr("Failed insert data")
         except Exception:
-            L.logErr(str(e))
+            L.logErr(f'_insertOne failed: {str(e)}')
+            L.logErr(f'data: {data}')
         return False
+    
             
     def _updateOne(self, collection: str, query: dict, data: dict, upsert: bool = False) -> bool:
         """ Update document from collection; It actually replace the whole document
@@ -768,9 +770,16 @@ class MongoBinding():
         """
         # TODO: Add exception
         # TODO: Consider using update_one. But how to know the only specific field to update?
-        col = self._db[collection]
-        result = col.replace_one(query, data, upsert=upsert)
-        return (result.modified_count == 1) or result.upserted_id
+        try:
+            col = self._db[collection]
+            result = col.replace_one(query, data, upsert=upsert)
+            return (result.modified_count == 1) or result.upserted_id
+        except Exception as e:
+            L.logErr(f'_updateOne failed: {str(e)}')
+            L.logErr(f'query: {query}')
+            L.logErr(f'data: {data}')
+        return False
+    
     
     def _deleteOne(self, collection: str, query: dict) -> bool:
         """ Delete a document from collection
@@ -783,9 +792,15 @@ class MongoBinding():
             bool: success or not deleting document; False might be because document is not found
         """
         # TODO: Add exception
-        col = self._db[collection]
-        result = col.delete_one(query)
-        return (result.deleted_count == 1)
+        try:
+            col = self._db[collection]
+            result = col.delete_one(query)
+            return (result.deleted_count == 1)
+        except Exception as e:
+            L.logErr(f'_deleteOne failed: {str(e)}')
+            L.logErr(f'query: {query}')
+        return False
+    
     
     def _find(self, collection: str, query: dict = None, limit: int = 0) -> list[dict]:
         """ Find document on a collection
@@ -799,9 +814,17 @@ class MongoBinding():
             list[dict]: List of documents found
         """
         # TODO: Add exception
-        col = self._db[collection]
-        result = col.find(filter = query, limit = limit)
-        return [x for x in result]
+        try:
+            print(f"Mongo._find: {query}")
+            print()
+            col = self._db[collection]
+            result = col.find(filter = query, limit = limit)
+            return [x for x in result]
+        except Exception as e:
+            L.logErr(f'_find failed: {str(e)}')
+            L.logErr(f'query: {query}')
+        return []
+
     
     def _countDocuments(self, collection: str, query: dict, limit: int = 0) -> int:
         """ Count how many document/s found on a collection
@@ -815,13 +838,18 @@ class MongoBinding():
             int: Total documents found
         """
         # TODO: Add exception
-        col = self._db[collection]
-        result = None
-        if limit > 0:
-            result = col.find(filter = query, limit = limit)
-        else:
-            result = col.find(filter = query)
-        return result
+        try:
+            col = self._db[collection]
+            result = None
+            if limit > 0:
+                result = col.count_documents(filter = query, limit = limit)
+            else:
+                result = col.count_documents(filter = query)
+            return result
+        except Exception as e:
+            L.logErr(f'_countDocuments failed: {str(e)}')
+            L.logErr(f'query: {query}')
+        return 0
             
 
 if __name__ == "__main__":
