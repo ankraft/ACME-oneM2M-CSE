@@ -399,9 +399,10 @@ class MongoBinding():
                 if len(tmp) == 0:
                     return
                 _r = tmp[0]
-                _ch:list = _r['ch']
+                _ch:list = _r['ch'] # ch list value is dict {x: ri, y: ty}
                 if ri not in _ch:
-                    _ch.append( [ri, resource.ty] )
+                    # _ch.append( [ri, resource.ty] ) # 22 - 09 - 2023: FerretDB not support nested array
+                    _ch.append( { 'x': ri, 'y': resource.ty } )
                     _r['ch'] = _ch
                     self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)
 
@@ -424,13 +425,14 @@ class MongoBinding():
             if len(tmp) == 0:
                 return
             _r = tmp[0]
-            _t = [resource.ri, resource.ty]
-            _ch:list = _r['ch']
-            if _t in _ch:
-                _ch.remove(_t)
-                _r['ch'] = _ch
-                # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
-                self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
+            _ch:list = _r['ch'] # ch list value is dict {x: ri, y: ty}
+            for v in _ch:
+                if (v['x'] == resource.ri) and (v['y'] == resource.ty):
+                    _ch.remove(v)
+                    _r['ch'] = _ch
+                    # L.isDebug and L.logDebug(f'remove_child_resource _r:{_r}')
+                    self._updateOne(self.__COL_CHILDREN, {'ri': resource.pi}, _r)	
+                    break
 
 
     def searchChildResourcesByParentRI(self, pi: str, ty:Optional[int] = None) -> Optional[list[str]]:
@@ -441,15 +443,17 @@ class MongoBinding():
             ty (Optional[int], optional): More filter to retrieve specific ty. Defaults to None.
 
         Returns:
-            Optional[list[str]]: List of resource childs
+            Optional[list[str]]: List of resource childs ri
         """
         with self.lockChildResources:
             tmp = self._find(self.__COL_CHILDREN, {'ri': pi}, 1)
             if len(tmp) > 0:
                 _r = tmp[0]
-                if ty is None:	# optimization: only check ty once for None
-                    return [ c[0] for c in _r['ch'] ]
-                return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
+                # ch list value is dict {x: ri, y: ty}
+                if ty is None:      # optimization: only check ty once for None
+                    return [ c['x'] for c in _r['ch'] ]
+                return [ c['x'] for c in _r['ch'] if ty == c['y']]
+                
             return []
  
     
