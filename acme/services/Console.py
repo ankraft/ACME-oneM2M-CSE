@@ -358,9 +358,9 @@ class Console(object):
 		]
 
 		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Key', no_wrap = True, justify = 'left')
-		table.add_column('Description', no_wrap = True)
-		table.add_column('Script', no_wrap = True, justify = 'center')
+		table.add_column('Key', no_wrap = True, justify = 'left', min_width = 10)
+		table.add_column('Description', no_wrap = False)
+		table.add_column('Script', no_wrap = True, justify = 'center', min_width = 6)
 		for each in commands:
 			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
 
