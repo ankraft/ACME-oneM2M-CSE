@@ -220,20 +220,32 @@ class MongoBinding():
             if pi:
                 filter['pi'] = pi
             
-            result: dict = None
+            # Retrieve oldest or latest resource
+            findResult: dict = None
             # TODO: Add exception when interact to mongo
             if oldest:
-                result = col.find(filter).sort('_id', ASCENDING).limit(1)
+                findResult = col.find(filter).sort('_id', ASCENDING).limit(1)
             else:
-                result = col.find(filter).sort('_id', DESCENDING).limit(1)                
-            del result[0]['_id']
+                findResult = col.find(filter).sort('_id', DESCENDING).limit(1) 
             
-            L.isDebug and L.logDebug(f'retrieveLatestOldestResource(): {result[0]}')
+            # Convert result which in cursor to list then check if result is empty
+            tmp = [x for x in findResult]
+            if len(tmp) == 0:
+                return None               
 
-            return result[0]
+            # Remove _id from the result
+            result:JSON = tmp[0]
+            result.pop('_id')
+            L.isDebug and L.logDebug(f'retrieveLatestOldestResource(): {result}')
+
+            return result
     
     
-    def retrieveResourcesByContain(self, field: str, contain: str) -> list[dict]:
+    def retrieveResourcesByContain(self, 
+                                   field: str, 
+                                   contain: Optional[str] = None,
+                                   startswith: Optional[str] = None,
+                                   endswith: Optional[str] = None) -> list[dict]:
         """ Retrieve resources by checking value exist in array field
 
 		Args:
@@ -243,8 +255,15 @@ class MongoBinding():
 		Returns:
 			list[Resource]: List of found resource in dict object
 		"""
-        with self.lockResources:
+        filter = {}
+        if contain:
             filter = {field: contain}
+        elif startswith:
+            filter = {field: {'$regex': f'^{startswith}' }}
+        elif endswith:
+            filter = {field: {'$regex': f'{endswith}$' }}
+            
+        with self.lockResources:
             return self._find(self.__COL_RESOURCES, filter)
 
 
@@ -438,7 +457,7 @@ class MongoBinding():
                 return
             _r = tmp[0]
             _ch:list = _r['ch'] # ch list value is dict {x: ri, y: ty}
-            for v in _ch:
+            for v in _ch: # TODO: Because of # 22 - 09 - 2023: FerretDB not support nested array
                 if (v['x'] == resource.ri) and (v['y'] == resource.ty):
                     _ch.remove(v)
                     _r['ch'] = _ch
@@ -652,7 +671,14 @@ class MongoBinding():
                 # If yes, then remove the oldest.
                 if ( self._countDocuments(self.__COL_REQUESTS, {}) > self.maxRequests ):
                     col = self._db[self.__COL_REQUESTS]
-                    oldDoc = col.find({}).sort('_id', ASCENDING).limit(1) # TODO: Add exception when interact with mongo
+                    findResult = col.find({}).sort('_id', ASCENDING).limit(1) # TODO: Add exception when interact with mongo
+                    
+                    # Convert result which in cursor to list then check if result is empty
+                    tmp = [x for x in findResult]
+                    if len(tmp) > 0:
+                        return None
+                    oldDoc:JSON = tmp[0]
+                    
                     if not ( self._deleteOne(self.__COL_REQUESTS, {'_id': oldDoc['_id']}) ):
                         return False
                 
@@ -819,7 +845,6 @@ class MongoBinding():
             L.logErr(f'query: {query}')
         return False
     
-    
     def _find(self, collection: str, query: dict = None, limit: int = 0, removeId: bool = True) -> list[dict]:
         """ Find document on a collection
 
@@ -834,8 +859,17 @@ class MongoBinding():
         L.isDebug and L.logDebug(f'FIND {query} FROM {collection}')
         try:
             col = self._db[collection]
-            result = col.find(filter = query, limit = limit)
-            filtered = [ x if (removeId and x.pop('_id', 'Not found')) else x for x in result ]
+            # Make it seperate to find many and find one. Because findOne already return in dict, no formatting anymore
+            filtered = []
+            if limit == 1:
+                result:JSON = col.find_one(filter = query)
+                if result == None:
+                    return []
+                result.pop('_id')
+                filtered = [result]
+            else:
+                result = col.find(filter = query, limit = limit)
+                filtered = [ x if (removeId and x.pop('_id', 'Not found')) else x for x in result ]
             L.isDebug and L.logDebug(f'RESULT _find: {filtered}')
             return filtered
         except Exception as e:

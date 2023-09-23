@@ -547,6 +547,14 @@ class AnnouncementManager(object):
 		"""
 
 		mcsi = f'{csi}/'
+  
+		def _filter(r: JSON) -> bool:
+			if ato := r.get(Constants.attrAnnouncedTo):
+				for i in ato:
+					if csi == i[0]:	# 0=remote csi,
+						return isAnnounced
+				return not isAnnounced
+			return False
 
 		def _announcedFilter(r:JSON) -> bool:
 			"""	Internal filter function for announced resources.
@@ -557,13 +565,13 @@ class AnnouncementManager(object):
 				Return:
 					Boolean indicating the search filter result.
 			"""
+
 			if (at := r.get('at')) and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
-				if ato := r.get(Constants.attrAnnouncedTo):
-					for i in ato:
-						if csi == i[0]:	# 0=remote csi,
-							return isAnnounced
-					return not isAnnounced
+				return _filter(r)
 			return False
+
+		if CSE.storage.isMongoDB():
+			CSE.storage.retrieveResourcesByContain(field='at', startswith=mcsi, filter=_filter)
 
 		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))
 

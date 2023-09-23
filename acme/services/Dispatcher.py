@@ -1236,7 +1236,14 @@ class Dispatcher(object):
 			Return:
 				Resource
 		"""
+		# TODO: Check if it's using mongodb to access retrieveLatestOldestResource()
+  
 		hit:Tuple[JSON, str] = None
+
+		# If using mongodb, use other functions and return immediately the result
+		if CSE.storage.isMongoDB():
+			return CSE.storage.retrieveLatestOldestResource(oldest, int(ty), pi)
+  
 		op = operator.gt if oldest else operator.lt
 
 		# This function used as a mapper to search through all resources and
@@ -1292,6 +1299,7 @@ class Dispatcher(object):
 			return cnt
 
 		# Count all resources of a specific type
+		# TODO: SAMUEL: This can be optimized
 		return len(CSE.storage.retrieveResourcesByType(ty))
 
 

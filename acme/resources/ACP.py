@@ -118,7 +118,15 @@ class ACP(AnnounceableResource):
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
-		for r in CSE.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
+		l_acpi = []
+  		
+		# search for presence in acpi, not perfect match
+		if CSE.storage.isMongoDB():
+			l_acpi = CSE.storage.retrieveResourcesByContain(field='acpi', contain=self.ri)
+		else:
+			l_acpi = CSE.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi)
+
+		for r in l_acpi:	
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence
+from enum import Enum
 
 import os, shutil
 from threading import Lock
@@ -34,6 +35,7 @@ from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
+from ..services.StorageMongo import MongoBinding
 
 
 # Constants for database and table names
@@ -46,6 +48,12 @@ _batchNotifications = 'batchNotifications'
 _statistics = 'statistics'
 _actions = 'actions'
 _requests = 'requests'
+
+
+class Database(Enum):
+    IN_MEMORY 	= 1
+    IN_FILE	 	= 2
+    MONGODB 	= 3
 
 
 class Storage(object):
@@ -62,6 +70,7 @@ class Storage(object):
 		'dbPath',
 		'dbReset',
 		'db',
+		'dbMode'
 	)
 
 	def __init__(self) -> None:
@@ -71,6 +80,11 @@ class Storage(object):
 		# create data directory
 		self._assignConfig()
 
+		if self.dbMode == Database.MONGODB:
+			self.db = MongoBinding()
+			L.isInfo and L.log('Storage initialized')
+			return
+      
 		if not self.inMemory:
 			if self.dbPath:
 				L.isInfo and L.log('Using data directory: ' + self.dbPath)
@@ -109,12 +123,17 @@ class Storage(object):
 		return True
 
 
+	def isMongoDB(self) -> bool:
+		return (self.dbMode == Database.MONGODB)
+
+
 	def _assignConfig(self) -> None:
 		"""	Assign default configurations.
 		"""
-		self.inMemory 	= Configuration.get('database.inMemory')
-		self.dbPath 	= Configuration.get('database.path')
-		self.dbReset 	= Configuration.get('database.resetOnStartup') 
+		self.inMemory 		 = Configuration.get('database.inMemory')
+		self.dbPath 		 = Configuration.get('database.path')
+		self.dbReset 		 = Configuration.get('database.resetOnStartup') 
+		self.dbMode:Database = Database.MONGODB # TODO: Get from configuration
 
 
 	def purge(self) -> None:
@@ -286,7 +305,9 @@ class Storage(object):
 				List of resource *Document* objects	. 
 		"""
 		# L.logDebug(f'Retrieving all resources ty: {ty}')
-		return self.db.searchResources(ty = int(ty))
+		tmp = self.db.searchResources(ty = int(ty))
+		L.logDebug(f'result: {tmp}')
+		return tmp
 
 
 	def updateResource(self, resource:Resource) -> Resource:
@@ -434,7 +455,12 @@ class Storage(object):
 		return None
 
 
-	def retrieveResourcesByContain(self, field: str, contain: str) -> list[Resource]:
+	def retrieveResourcesByContain(self, 
+                                field: str, 
+                                contain: Optional[str] = None,
+                                startswith: Optional[str] = None,
+                                endswith: Optional[str] = None,
+                                filter:Optional[Callable[[JSON], bool]] = None) -> list[Resource]:
 		""" Retrieve resources by checking value exist in array field
 
 		Args:
@@ -444,7 +470,19 @@ class Storage(object):
 		Returns:
 			list[Resource]: List of found resources
 		"""
-		return  [ res for each in self.db.retrieveResourcesByContain(field, contain)
+  
+		temporaryResult = self.db.retrieveResourcesByContain(field, contain, startswith, endswith)
+		result = []
+
+		# Do filter function callback
+		if filter:
+			for res in temporaryResult:
+				if filter(res):
+					result.append(res)
+		else:
+			result = temporaryResult
+  
+		return  [ res for each in result
 					if (res := resourceFromDict(each))
 				]
   
