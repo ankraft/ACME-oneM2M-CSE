@@ -117,6 +117,9 @@ class Constants(object):
 
 	attrRiTyMapping = '__riTyMapping__'
 	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
+ 
+	attrExpireTime = '__et__'
+	""" Constant: Name of the Resource internal *__et__* attribute. This attribute holds resource expiretime in python datetime object"""
 
 
 	#

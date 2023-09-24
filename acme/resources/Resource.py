@@ -40,6 +40,7 @@ _originator = Constants.attrOriginator
 _modified = Constants.attrModified
 _remoteID = Constants.attrRemoteID
 _rvi = Constants.attrRvi
+_et = Constants.attrExpireTime
 
 
 class Resource(object):
@@ -64,7 +65,7 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
-							_isInstantiated, _originator, _modified, _remoteID, _rvi]
+							_isInstantiated, _originator, _modified, _remoteID, _rvi, _et]
 	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 

@@ -4,7 +4,7 @@ from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo import errors as MongoErrors
 from threading import Lock
 
-from ..etc.DateUtils import utcTime, fromDuration
+from ..etc.DateUtils import utcTime, fromDuration, fromAbsRelDateObject
 from ..etc.Types import ResourceTypes, JSON, Operation
 from ..etc import DateUtils, Utils
 from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
@@ -14,6 +14,7 @@ from ..resources.Resource import Resource
 from ..resources import Factory
 from ..resources.ACTR import ACTR
 from ..services.Logging import Logging as L
+from ..etc.Constants import Constants
 
 class MongoBinding():
     __COL_RESOURCES = "resources"
@@ -96,6 +97,7 @@ class MongoBinding():
         Args:
             resource (Resource): Data of the resource
         """
+        self._addExpireTime(resource)
         with self.lockResources:
             self._insertOne(self.__COL_RESOURCES, resource.dict)
         
@@ -107,6 +109,7 @@ class MongoBinding():
             ri (str): Resource ri to update if exist
             resource (Resource): Data of the resource
         """
+        self._addExpireTime(resource)
         with self.lockResources:
             self._updateOne(self.__COL_RESOURCES, {'ri': ri}, resource.dict, True)
         
@@ -122,6 +125,7 @@ class MongoBinding():
         Returns:
             Resource: updated resource
         """
+        self._addExpireTime(resource)
         with self.lockResources:
             # remove nullified fields from db and resource
             for k in list(resource.dict):
@@ -902,6 +906,13 @@ class MongoBinding():
             L.logErr(f'_countDocuments failed: {str(e)}')
             L.logErr(f'query: {query}')
         return 0
+    
+    
+    def _addExpireTime(self, resource: Resource) -> None:
+        """ Add other et attribute to accomodate date object of mongodb """
+        if et := resource.dict.get('et'):
+            if dtObj := fromAbsRelDateObject(et):
+                resource.setAttribute(Constants.attrExpireTime, dtObj)
     
 
 if __name__ == "__main__":
