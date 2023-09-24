@@ -195,9 +195,9 @@ class MongoBinding():
             # TODO: Consider to find directly to resources collection
             with self.lockIdentifiers:
                 identifiers = self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1)
-                L.isDebug and L.logDebug(f'RESULT identifiers {srn}: {identifiers}')
+                # L.isDebug and L.logDebug(f'RESULT identifiers {srn}: {identifiers}')
             if len(identifiers) != 1:
-                L.logWarn(f'IDENTIFIERS {srn} NOT FOUND')
+                # L.logWarn(f'IDENTIFIERS {srn} NOT FOUND')
                 return []
 
             with self.lockResources:
@@ -241,7 +241,7 @@ class MongoBinding():
             # Remove _id from the result
             result:JSON = tmp[0]
             result.pop('_id')
-            L.isDebug and L.logDebug(f'retrieveLatestOldestResource(): {result}')
+            # L.isDebug and L.logDebug(f'retrieveLatestOldestResource(): {result}')
 
             return result
     
@@ -319,7 +319,7 @@ class MongoBinding():
                 identifiers = self._find(self.__COL_IDENTIFIERS, {'srn': srn}, 1)
                 L.isDebug and L.logDebug(f'RESULT identifiers {srn}: {identifiers}')
             if len(identifiers) != 1:
-                L.logWarn(f'IDENTIFIERS {srn} NOT FOUND')
+                # L.logWarn(f'IDENTIFIERS {srn} NOT FOUND')
                 return False
 
             with self.lockResources:
@@ -411,14 +411,14 @@ class MongoBinding():
         with self.lockSrn:
             if srn:
                 if ( _r := self._find(self.__COL_SRN, {'srn': srn}, 1) ):
-                    L.logDebug(f'searchIdentifiers() srn: {_r}')
+                    # L.logDebug(f'searchIdentifiers() srn: {_r}')
                     ri = _r[0]['ri'] if _r[0] else None
                 else:
                     return []
         
         with self.lockIdentifiers:
             if ri:
-                L.logDebug(f'searchIdentifiers() identifiers: {ri}')
+                # L.logDebug(f'searchIdentifiers() identifiers: {ri}')
                 return self._find(self.__COL_IDENTIFIERS, {'ri': ri}, 1)
 
         return []
@@ -719,7 +719,7 @@ class MongoBinding():
                     'req': { k: v for k, v in request.items() if v is not None }, 
                     'rsp': { k: v for k, v in response.items() if v is not None }
                 }
-                L.isDebug and L.logDebug(f'_doc.rsp {_doc}')
+                # L.isDebug and L.logDebug(f'_doc.rsp {_doc}')
                 toInsert = {k: v for k, v in _doc.items() if v is not None}
                 
                 return self._insertOne(self.__COL_REQUESTS, toInsert)
@@ -805,11 +805,11 @@ class MongoBinding():
         Returns:
             bool: Success insert or not
         """
-        L.isDebug and L.logDebug(f'INSERT {data} TO {collection}')
+        # L.isDebug and L.logDebug(f'INSERT {data} TO {collection}')
         try:
             col = self._db[collection]
             result = col.insert_one(data)
-            L.isDebug and L.log(f'Success insert data: {result.inserted_id}')
+            # L.isDebug and L.log(f'Success insert data: {result.inserted_id}')
             return True
         except MongoErrors.DuplicateKeyError as e:
             L.logErr("Failed insert data")
@@ -832,7 +832,7 @@ class MongoBinding():
             bool: Success update or upsert
         """
         # TODO: Consider using update_one. But how to know the only specific field to update?
-        L.isDebug and L.logDebug(f'UPDATE {query} {data} TO {collection}')
+        # L.isDebug and L.logDebug(f'UPDATE {query} {data} TO {collection}')
         try:
             col = self._db[collection]
             result = col.replace_one(query, data, upsert=upsert)
@@ -854,7 +854,7 @@ class MongoBinding():
         Returns:
             bool: success or not deleting document; False might be because document is not found
         """
-        L.isDebug and L.logDebug(f'DELETE {query} FROM {collection}')
+        # L.isDebug and L.logDebug(f'DELETE {query} FROM {collection}')
         try:
             col = self._db[collection]
             result = col.delete_one(query)
@@ -875,7 +875,7 @@ class MongoBinding():
         Returns:
             list[dict]: List of documents found
         """
-        L.isDebug and L.logDebug(f'FIND {query} FROM {collection}')
+        # L.isDebug and L.logDebug(f'FIND {query} FROM {collection}')
         try:
             col = self._db[collection]
             # Make it seperate to find many and find one. Because findOne already return in dict, no formatting anymore
@@ -889,7 +889,7 @@ class MongoBinding():
             else:
                 result = col.find(filter = query, limit = limit)
                 filtered = [ x if (removeId and x.pop('_id', 'Not found')) else x for x in result ]
-            L.isDebug and L.logDebug(f'RESULT _find: {filtered}')
+            # L.isDebug and L.logDebug(f'RESULT _find: {filtered}')
             return filtered
         except Exception as e:
             L.logErr(f'_find failed: {str(e)}')
@@ -908,7 +908,7 @@ class MongoBinding():
         Returns:
             int: Total documents found
         """
-        L.isDebug and L.logDebug(f'COUNT {query} FROM {collection}')
+        # L.isDebug and L.logDebug(f'COUNT {query} FROM {collection}')
         try:
             col = self._db[collection]
             result = None
