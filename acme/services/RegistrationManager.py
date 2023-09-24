@@ -16,7 +16,8 @@ from ..etc.Types import Permission, ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
 from ..etc.Utils import uniqueAEI, getIdFromOriginator, uniqueRN
-from ..etc.DateUtils import getResourceDate
+from ..etc.DateUtils import getResourceDate, utcTimeObject
+from ..etc.Constants import Constants
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -412,8 +413,14 @@ class RegistrationManager(object):
 
 	def expirationDBMonitor(self) -> bool:
 		# L.isDebug and L.logDebug('Looking for expired resources')
-		now = getResourceDate()
-		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
+
+		if CSE.storage.isMongoDB():
+			now = utcTimeObject()
+			resources = CSE.storage.retrieveResourcesByLessDate(Constants.attrExpireTime, now)
+		else:
+			now = getResourceDate()
+			resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
+
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource

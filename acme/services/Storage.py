@@ -15,6 +15,7 @@
 from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence
 from enum import Enum
+from datetime import datetime
 
 import os, shutil
 from threading import Lock
@@ -487,10 +488,19 @@ class Storage(object):
 				]
   
 	
-	def retrieveResourcesByLessDate(self, utcTime: float) -> list[Resource]:
-		#  TODO: Problem when get less than date because 'et' value is in string. 
-		#  Aggregation $toData not supported yet on ferretDB
-		pass
+	def retrieveResourcesByLessDate(self, field: str, dt: datetime) -> list[Resource]:
+		""" Retrieve resource by searching date field that less than provided datetime
+
+		Args:
+			field (str): Target field of date value that will search
+            dt (datetime): Filter value in python datetime object
+
+		Returns:
+			list[Resource]: List of Resource data that match filter
+		"""
+		return [ res	for each in self.db.retrieveResourcesByLessDate(field, dt)
+						if (res := resourceFromDict(each))
+				]
 
 
 	#########################################################################

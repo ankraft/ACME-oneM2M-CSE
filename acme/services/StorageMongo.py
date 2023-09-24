@@ -1,4 +1,5 @@
 from typing import Callable, cast, List, Optional, Sequence
+from datetime import datetime
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo import errors as MongoErrors
@@ -269,6 +270,20 @@ class MongoBinding():
             
         with self.lockResources:
             return self._find(self.__COL_RESOURCES, filter)
+        
+        
+    def retrieveResourcesByLessDate(self, field: str, dt: datetime) -> list[dict]:
+        """ Retrieve resource by searching date field that less than provided datetime
+
+        Args:
+            field (str): Target field of date value that will search
+            dt (datetime): Filter value in python datetime object
+
+        Returns:
+            list[dict]: List of resource data that match filter
+        """
+        with self.lockResources:
+            return self._find(self.__COL_RESOURCES, {field: {'$lt': dt} })
 
 
     def hasResource(self, ri:Optional[str] = None, 
@@ -909,7 +924,10 @@ class MongoBinding():
     
     
     def _addExpireTime(self, resource: Resource) -> None:
-        """ Add other et attribute to accomodate date object of mongodb """
+        """ Add other __et__ as internal attribute to accomodate date object of mongodb 
+            Problem when get less than date because 'et' value is in string. 
+		    Aggregation $toData not supported yet on ferretDB, so add internal attribute
+        """
         if et := resource.dict.get('et'):
             if dtObj := fromAbsRelDateObject(et):
                 resource.setAttribute(Constants.attrExpireTime, dtObj)

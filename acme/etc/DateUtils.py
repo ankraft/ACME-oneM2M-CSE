@@ -148,6 +148,14 @@ def utcTime() -> float:
 	"""
 	return datetime.now(tz = timezone.utc).timestamp()
 
+def utcTimeObject() -> datetime:
+	""" Return the current time's timestamp, but relative to UTC.
+
+	Returns:
+		datetime: python datetime object with current UTC-based POSIX time.
+	"""
+	return datetime.now(tz = timezone.utc)
+
 
 def timeUntilTimestamp(ts:float) -> float:
 	"""	Return the time in seconds until the UTC-based POSIX timestamp is reached.
