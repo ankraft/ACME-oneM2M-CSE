@@ -293,6 +293,8 @@ class Configuration(object):
 				'database.path'							: config.get('database', 'path', 									fallback = './data'),
 				'database.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',					fallback = False),
 				'database.writeDelay'					: config.getint('database', 'writeDelay', 							fallback = 1),		# Default: 1 second
+				'database.useMongo'					    : config.getboolean('database', 'useMongo', 						fallback = False),		# Default: False
+	
 
 				#
 				#	HTTP Server

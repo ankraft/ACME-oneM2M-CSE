@@ -52,9 +52,8 @@ _requests = 'requests'
 
 
 class Database(Enum):
-    IN_MEMORY 	= 1
-    IN_FILE	 	= 2
-    MONGODB 	= 3
+    TINYDB		= 1
+    MONGODB 	= 2
 
 
 class Storage(object):
@@ -134,8 +133,8 @@ class Storage(object):
 		self.inMemory 		 = Configuration.get('database.inMemory')
 		self.dbPath 		 = Configuration.get('database.path')
 		self.dbReset 		 = Configuration.get('database.resetOnStartup') 
-		self.dbMode:Database = Database.MONGODB # TODO: Get from configuration
-
+		self.dbMode		     = Database.MONGODB if Configuration.get('database.useMongo') == True else Database.TINYDB
+   
 
 	def purge(self) -> None:
 		"""	Reset and clear the databases.
