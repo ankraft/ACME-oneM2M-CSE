@@ -133,7 +133,7 @@ class Storage(object):
 		self.inMemory 		 = Configuration.get('database.inMemory')
 		self.dbPath 		 = Configuration.get('database.path')
 		self.dbReset 		 = Configuration.get('database.resetOnStartup') 
-		self.dbMode		     = Database.MONGODB if Configuration.get('database.useMongo') == True else Database.TINYDB
+		self.dbMode		     = Database.MONGODB if Configuration.get('database.mongo.enable') == True else Database.TINYDB
    
 
 	def purge(self) -> None:

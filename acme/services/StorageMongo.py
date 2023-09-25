@@ -18,6 +18,7 @@ from ..services.Logging import Logging as L
 from ..etc.Constants import Constants
 
 class MongoBinding():
+    __DBNAME = 'acme-cse'
     __COL_RESOURCES = "resources"
     __COL_IDENTIFIERS = "identifiers"
     __COL_CHILDREN = "children"
@@ -33,16 +34,21 @@ class MongoBinding():
         # Create collection names as list
         self._l_col = [self.__COL_RESOURCES, self.__COL_IDENTIFIERS, self.__COL_CHILDREN, self.__COL_SRN, self.__COL_SUBSCRIPTIONS, 
                     self.__COL_BATCHNOTIF, self.__COL_ACTIONS, self.__COL_REQUESTS]
+        
+        self.maxRequests = Configuration.get('cse.operation.requests.size')
+        username         = Configuration.get('database.mongo.username')
+        password         = Configuration.get('database.mongo.password')
+        host             = Configuration.get('database.mongo.host')
+        port:int         = Configuration.get('database.mongo.port')
 
         # Initiate connection to mongodb server
-        # TODO: Add parameter to mongo host, port, DB name and auth and get it from configuration file
+        self._client = MongoClient(f'mongodb://{username}:{password}@{host}/{self.__DBNAME}?authMechanism=PLAIN', port)
+        self._db = self._client[self.__DBNAME]
+        
         # TODO: Connection pool; Actually it's already enabled on default
         # TODO: Check connection if successfully connected
-        self._client = MongoClient("mongodb://username:password@127.0.0.1/acme-cse?authMechanism=PLAIN", 27017)
-        self._db = self._client["acme-cse"]
         # TODO: Add transaction if possible when querying (with)
         # TODO: Print error log when CRUD
-        # TODO: Get config from configfile 
         
         # Add locking to each collection access. Lock object are different for each collection
         self.lockResources				= Lock()
@@ -55,9 +61,6 @@ class MongoBinding():
         self.lockActions 				= Lock()
         self.lockRequests 				= Lock()
 
-        
-        self.maxRequests = Configuration.get('cse.operation.requests.size')
-        
         self._setupDatabase()
         
         

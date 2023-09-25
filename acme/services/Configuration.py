@@ -293,7 +293,15 @@ class Configuration(object):
 				'database.path'							: config.get('database', 'path', 									fallback = './data'),
 				'database.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',					fallback = False),
 				'database.writeDelay'					: config.getint('database', 'writeDelay', 							fallback = 1),		# Default: 1 second
-				'database.useMongo'					    : config.getboolean('database', 'useMongo', 						fallback = False),		# Default: False
+
+				#
+				#	Database MongoDB
+				#
+				'database.mongo.enable'					: config.getboolean('database.mongo', 'enable', 					fallback = False),		
+				'database.mongo.username'				: config.get('database.mongo', 'username', 							fallback = 'username'),	
+				'database.mongo.password'				: config.get('database.mongo', 'password', 							fallback = 'password'),	
+				'database.mongo.host'					: config.get('database.mongo', 'host', 								fallback = '127.0.0.1'),
+				'database.mongo.port'					: config.getint('database.mongo', 'port', 							fallback = 27017),		
 	
 
 				#
