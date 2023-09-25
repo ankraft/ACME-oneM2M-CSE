@@ -211,7 +211,8 @@ class AnnouncementManager(object):
 			if t := self._announcedInfos(cseBase, csi):
 				L.isDebug and L.logDebug(f'announcement infos: {t}')
 				# CSEBase has "old" announcement infos
-				remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
+				# remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
+				remoteRi = t['y'] if isSPRelative(t['y']) else f'{csi}/{t["y"]}'
 				try:
 					_r = CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi)
 				except ResponseException as e:	# basically anything that isn't "OK"
@@ -304,7 +305,8 @@ class AnnouncementManager(object):
 			# parent resource is announced -> Announce the resource under the parent resource Annc
 			if not (at := self._announcedInfos(parentResource, csi)):
 				raise BAD_REQUEST(L.logWarn(f'no announcement for parent resource: {parentResource.ri} to: {csi}'))
-			targetID = at[1]
+			# targetID = at[1]
+			targetID = at['y']
 
 		# Create the announed resource on the remote CSE
 		if targetID:
@@ -359,7 +361,7 @@ class AnnouncementManager(object):
 			resource.dbUpdate()
 
 
-	def deAnnounceResource(self, resource:AnnounceableResource) -> None:
+	def deAnnounceResource(self, resource:AnnounceableResource) -> None:  
 		"""	De-announce a single resource from its announcement target(s).
 
 			Args:
@@ -370,8 +372,8 @@ class AnnouncementManager(object):
 		"""
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
-		for (csi, remoteRI) in resource.getAnnouncedTo():
-			self.deAnnounceResourceFromCSI(resource, csi, remoteRI)
+		for at in resource.getAnnouncedTo():
+			self.deAnnounceResourceFromCSI(resource, at['x'], at['y']) # x=cse, y=remoteCseRI
 
 
 	def deAnnounceResourceFromCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
@@ -423,16 +425,17 @@ class AnnouncementManager(object):
 		# Update the annoucned remote resources 
 		announcedCSIs = []
 		remoteRIs = []
-		for (csi, remoteRI) in resource.getAnnouncedTo():
-			if csi == originator:	# Skip the announced resource at the originator !!
+		# for (csi, remoteRI) in resource.getAnnouncedTo(): #TODO GET announce
+		for at in resource.getAnnouncedTo(): #TODO GET announce
+			if at['x'] == originator:	# Skip the announced resource at the originator !!
 				continue
-			announcedCSIs.append(csi)	# build a list of already announced CSIs
-			remoteRIs.append(csi) 		# build a list of remote RIs
-			self.updateResourceOnCSI(resource, csi, remoteRI)
+			announcedCSIs.append(at['x'])	# build a list of already announced CSIs
+			remoteRIs.append(at['x']) 		# build a list of remote RIs #? TODO: Why appending csi to remote ri too?
+			self.updateResourceOnCSI(resource, at['x'], at['y'])
 
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
-			if csi not in announcedCSIs and csi not in remoteRIs:
+			if csi not in announcedCSIs and csi not in remoteRIs: #? Then it is a redundant check
 				self.announceResourceToCSI(resource, csi)
 
 
@@ -491,11 +494,11 @@ class AnnouncementManager(object):
 			Return:
 				Boolean indicating the announced status.
 		"""
-		return (at := resource.getAnnouncedTo()) is not None and any(csi == _csi for (_csi, _) in at)
+		return (at := resource.getAnnouncedTo()) is not None and any(csi == _at['x'] for _at in at) # x=cse, y=remoteCseRI
 	
 
-	def _announcedInfos(self, resource:Resource, csi:str) -> Optional[Tuple[str, str]]:
-		"""	Return the matching tuple for the given *csi* of a resource announcement,
+	def _announcedInfos(self, resource:Resource, csi:str) -> Optional[dict[str, str]]:
+		"""	Return the matching dict for the given *csi* of a resource announcement,
 			or *None* if none is set.
 
 			Args:
@@ -504,7 +507,7 @@ class AnnouncementManager(object):
 		"""
 		if at := resource.getAnnouncedTo():
 			for _at in at:
-				if _at[0] == csi:
+				if _at['x'] == csi:
 					return _at
 		return None
 

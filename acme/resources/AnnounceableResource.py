@@ -35,7 +35,7 @@ class AnnounceableResource(Resource):
 		
 		self._addToInternalAttributes(_announcedTo) # add announcedTo to internal attributes
 		self._origAA = None	# hold original announceableAttributes when doing an update
-		self.setAttribute(_announcedTo, [], overwrite = False)
+		self.setAttribute(_announcedTo, [], overwrite = False) # List of dict; eg. [{'x': <csi>, 'y': <remote cse ri>}, ...]
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -185,7 +185,7 @@ class AnnounceableResource(Resource):
 
 
 	def addAnnouncementToResource(self, csi:str, remoteRI:str) -> None:
-		"""	Add anouncement information to the resource. These are a list of tuples of 
+		"""	Add anouncement information to the resource. These are a list of dict of 
 			the csi to which the resource is registered and the CSE-relative ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.
 
@@ -199,7 +199,8 @@ class AnnounceableResource(Resource):
 		
 		# Set the internal __announcedTo__ attribute
 		ats = self.getAnnouncedTo()
-		ats.append((csi, remoteRI))
+		# ats.append((csi, remoteRI))
+		ats.append({'x': csi, 'y': remoteRI})
 		self.setAnnouncedTo(ats)
 
 		# Modify the at attribute, if applicable
@@ -214,7 +215,7 @@ class AnnounceableResource(Resource):
 
 
 	def removeAnnouncementFromResource(self, csi:str) -> Optional[str]:
-		"""	Remove anouncement information from the resource. These are a list of tuples of 
+		"""	Remove anouncement information from the resource. These are a list of dict of 
 			the csi to which the resource is registered and the CSE-relative ri of the 
 			resource on the remote CSE. Also, remove the reference from the at attribute.
 
@@ -224,8 +225,8 @@ class AnnounceableResource(Resource):
 		ats = self.getAnnouncedTo()
 		remoteRI = None
 		for x in ats:
-			if x[0] == csi:
-				remoteRI = x[1]
+			if x['x'] == csi: 
+				remoteRI = x['y']
 				ats.remove(x)
 				self.setAnnouncedTo(ats)
 				break
@@ -259,7 +260,7 @@ class AnnounceableResource(Resource):
 		return mandatory + optional
 
 
-	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
+	def getAnnouncedTo(self) -> list[dict[str, str]]:
 		"""	Return the internal *announcedTo* list attribute of a resource.
 
 			Return:
@@ -268,7 +269,7 @@ class AnnounceableResource(Resource):
 		return self[_announcedTo]
 	
 
-	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
+	def setAnnouncedTo(self, announcedTo:list[dict[str, str]]) -> None:
 		"""	Set the internal *announcedTo* list attribute of a resource.
 
 			Args:
