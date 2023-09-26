@@ -18,6 +18,7 @@ from flask import Flask, Request, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+from waitress import serve
 from flask_cors import CORS
 import requests
 import isodate
@@ -205,12 +206,21 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				self.flaskApp.run(host = self.listenIF, 
-								  port = self.port,
-								  threaded = True,
-								  request_handler = ACMERequestHandler,
-								  ssl_context = CSE.security.getSSLContext(),
-								  debug = False)
+
+				""" TODO
+				Do not use run() in a production setting. 
+    			It is not intended to meet security and performance requirements for a production server. 
+       			Instead, see Deploying to Production for WSGI server recommendations.
+				https://flask.palletsprojects.com/en/2.3.x/api/#flask.Flask.run
+    			"""
+				# self.flaskApp.run(host = self.listenIF, 
+				# 				  port = self.port,
+				# 				  threaded = True,
+				# 				  request_handler = ACMERequestHandler,
+				# 				  ssl_context = CSE.security.getSSLContext(),
+				# 				  debug = False)
+				# Run HTTP server using waitress.serve function
+				serve(self.flaskApp, host=self.listenIF, port=self.port, threads=2) # TODO: Adjust threads counts
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
