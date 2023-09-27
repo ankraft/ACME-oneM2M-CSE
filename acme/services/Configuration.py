@@ -90,6 +90,8 @@ class Configuration(object):
 	_argsLoglevel:str = None
 	_argsDBReset:bool = None
 	_argsDBStorageMode:str = None
+	_argsMongoHost:str = None
+	_argsMongoPort:int = None
 	_argsHeadless:bool = None
 	_argsHttpAddress:str = None
 	_argsHttpPort:int = None
@@ -120,6 +122,8 @@ class Configuration(object):
 		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
 		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
+		Configuration._argsMongoHost			= args.dbmongohost if args and 'dbmongohost' in args else None
+		Configuration._argsMongoPort			= args.dbmongoport if args and 'dbmongoport' in args else None
 		Configuration._argsHeadless				= args.headless if args and 'headless' in args else False
 		Configuration._argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
 		Configuration._argsHttpPort				= args.httpport if args and 'httpport' in args else None
@@ -516,7 +520,15 @@ class Configuration(object):
 
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					Configuration._configuration['database.resetOnStartup'] = True									# Override DB reset from command line
-		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['database.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		if Configuration._argsDBStorageMode is not None:
+			if Configuration._argsDBStorageMode == 'mongo':
+				Configuration._configuration['database.mongo.enable'] = True
+			elif Configuration._argsDBStorageMode == 'disk':
+				Configuration._configuration['database.inMemory'] = False
+			else:
+				Configuration._configuration['database.inMemory'] = True
+		if Configuration._argsMongoHost is not None: Configuration._configuration['database.mongo.host'] = Configuration._argsMongoHost
+		if Configuration._argsMongoPort is not None: Configuration._configuration['database.mongo.port'] = Configuration._argsMongoPort
 		if Configuration._argsHttpAddress is not None:			Configuration._configuration['http.address'] = Configuration._argsHttpAddress								# Override server http address
 		if Configuration._argsHttpPort is not None:				Configuration._configuration['http.port'] = Configuration._argsHttpPort									# Override server http port
 		if Configuration._argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = Configuration._argsImportDirectory						# Override import directory from command line

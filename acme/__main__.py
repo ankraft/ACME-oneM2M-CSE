@@ -62,7 +62,10 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
-	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
+	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=['memory', 'disk', 'mongo'], type=str.lower, help='specify the DB´s storage mode')
+	parser.add_argument('--db-host', action='store', dest='dbmongohost', metavar='<mongo-host>', type=str.lower, help='specify MongoDB host')
+	parser.add_argument('--db-port', action='store', dest='dbmongoport', metavar='<mongo-port>', type=int, help='specify MongoDB port')
+
 	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server-URL>', help='specify the CSE\'s http server URL')
 	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http-port>',  type=int, help='specify the CSE\'s http port')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
