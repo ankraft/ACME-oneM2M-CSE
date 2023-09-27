@@ -183,6 +183,22 @@ verifyCertificate=false
 caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. Default: None
 caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
+; Enable basic authentication for the HTTP binding.
+; Default: false
+enableBasicAuth=false
+; Enable token authentication for the HTTP binding.
+; Default: false
+enableTokenAuth=false
+; Path and filename of the http basic authentication file. 
+; The file must contain lines with the format "username:password".
+; Comments are lines starting with a #.
+; Default: certs/http_basic_auth.txt
+basicAuthFile=${basic.config:dataDirectory}/certs/http_basic_auth.txt
+; Path and filename of the http bearer token authentication file.
+; The file must contain lines with the format "token".
+; Comments are lines starting with a #.
+; Default: certs/http_token_auth.txt
+tokenAuthFile=${basic.config:dataDirectory}/certs/http_token_auth.txt
 
 
 [http.cors]

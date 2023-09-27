@@ -850,6 +850,47 @@ The default value is `False`.
 
 
 
+# http.security.enableBasicAuth
+
+This setting enables or disables the CSE's HTTP server's basic authentication support.
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid username and password in the HTTP *Authorization* header.
+
+Can be enabled together with token authentication.
+
+The default value is `False`.
+
+
+
+# http.security.enableTokenAuth
+
+This setting enables or disables the CSE's HTTP server's token authentication support.
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid token in the HTTP *Authorization* header.
+
+Can be enabled together with basic authentication.
+
+The default value is `False`.
+
+
+
+# http.security.basicAuthFile
+
+This setting specifies the path to the CSE's HTTP server's basic authentication file.
+The file must contain lines with the format "username:password". 
+Comments are lines starting with a #.
+
+The default value is `${basic.config:dataDirectory}/certs/http_basic_auth.txt`.
+
+
+# http.security.tokenAuthFile
+
+This setting specifies the path to the CSE's HTTP server's token authentication file.
+The file must contain lines with the format "token".
+Comments are lines starting with a #.
+
+The default value is `${basic.config:dataDirectory}/certs/http_token_auth.txt`.
+
+
+
 # logging
 
 This section contains settings that control the CSE's logging behavior.

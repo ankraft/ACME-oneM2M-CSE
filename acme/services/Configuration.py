@@ -323,6 +323,10 @@ class Configuration(object):
 				'http.security.tlsVersion'				: config.get('http.security', 'tlsVersion', 						fallback = 'auto'),
 				'http.security.useTLS'					: config.getboolean('http.security', 'useTLS', 						fallback = False),
 				'http.security.verifyCertificate'		: config.getboolean('http.security', 'verifyCertificate',			fallback = False),
+				'http.security.enableBasicAuth'			: config.getboolean('http.security', 'enableBasicAuth',				fallback = False),
+				'http.security.enableTokenAuth'			: config.getboolean('http.security', 'enableTokenAuth',				fallback = False),
+				'http.security.basicAuthFile'			: config.get('http.security', 'basicAuthFile',						fallback = './certs/http_basic_auth.txt'),
+				'http.security.tokenAuthFile'			: config.get('http.security', 'tokenAuthFile',						fallback = './certs/http_token_auth.txt'),
 
 				#
 				#	Logging
@@ -621,6 +625,11 @@ class Configuration(object):
 		if initial and Configuration._configuration['http.cors.enable'] and not Configuration._configuration['http.security.useTLS']:
 			Configuration._print('[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
 
+		# HTTP authentication
+		if Configuration._configuration['http.security.enableBasicAuth'] and not Configuration._configuration['http.security.basicAuthFile']:
+			return False, 'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled'
+		if Configuration._configuration['http.security.enableTokenAuth'] and not Configuration._configuration['http.security.tokenAuthFile']:
+			return False, 'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled'
 		
 		#
 		#	MQTT client

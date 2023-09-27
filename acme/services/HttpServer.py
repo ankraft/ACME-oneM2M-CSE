@@ -10,11 +10,13 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Tuple, Optional
 
-import logging, sys, urllib3, re
+import logging, sys, urllib3, re, base64
 from copy import deepcopy
 
 import flask
 from flask import Flask, Request, request
+
+
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
@@ -48,6 +50,12 @@ FlaskHandler = 	Callable[[str], Response]
 """ Type definition for flask handler. """
 
 
+
+#########################################################################
+#
+#	HTTP Server
+#
+
 class HttpServer(object):
 
 	__close__ = (
@@ -63,6 +71,8 @@ class HttpServer(object):
 		'isStopped',
 		'corsEnable',
 		'corsResources',
+		'enableBasicAuth',
+		'enableTokenAuth',
 		'backgroundActor',
 		'serverID',
 		'_responseHeaders',
@@ -83,18 +93,14 @@ class HttpServer(object):
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
 		self.flaskApp			= Flask(CSE.cseCsi)
-		self.rootPath			= Configuration.get('http.root')
-		self.serverAddress		= Configuration.get('http.address')
-		self.listenIF			= Configuration.get('http.listenIF')
-		self.port 				= Configuration.get('http.port')
-		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
-		self.requestTimeout 	= Configuration.get('http.timeout')
-		self.webuiRoot 			= Configuration.get('webui.root')
-		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
-		self.isStopped			= False
-		self.corsEnable			= Configuration.get('http.cors.enable')
-		self.corsResources		= Configuration.get('http.cors.resources')
 
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
+
+		self.isStopped					 = False
 		self.backgroundActor:BackgroundWorker = None
 
 		self.serverID			= f'ACME {Constants.version}' 	# The server's ID for http response headers
@@ -158,6 +164,50 @@ class HttpServer(object):
 		self._eventHttpUpdate = CSE.event.httpUpdate				# type: ignore [attr-defined]
 		self._eventHttpDelete = CSE.event.httpDelete				# type: ignore [attr-defined]
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign the configuration values to the http server.
+		"""
+		self.rootPath			= Configuration.get('http.root')
+		self.serverAddress		= Configuration.get('http.address')
+		self.listenIF			= Configuration.get('http.listenIF')
+		self.port 				= Configuration.get('http.port')
+		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
+		self.requestTimeout 	= Configuration.get('http.timeout')
+		self.webuiRoot 			= Configuration.get('webui.root')
+		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
+		self.corsEnable			= Configuration.get('http.cors.enable')
+		self.corsResources		= Configuration.get('http.cors.resources')
+		self.enableBasicAuth	= Configuration.get('http.security.enableBasicAuth')
+		self.enableTokenAuth 	= Configuration.get('http.security.enableTokenAuth')
+
+
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None,
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+
+			Args:
+				name: The name of the configuration section.
+				key: The key of the configuration value.
+				value: The new value.
+		"""
+		if key not in ( 'http.root', 
+						'http.address',
+						'http.listenIF',
+						'http.port',
+						'http.allowPatchForDelete',
+						'http.timeout',
+						'webui.root',
+						'http.cors.enable',
+						'http.cors.resources',
+						'http.security.enableBasicAuth',
+						'http.security.enableTokenAuth',
+						'mqtt.security.password'
+					  ):
+			return
+		self._assignConfig()
 
 
 	def run(self) -> bool:
@@ -277,12 +327,16 @@ class HttpServer(object):
 
 
 	def handleGET(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTRE')
 		self._eventHttpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		if self._hasContentType():
 			renameThread('HTCR')
 			self._eventHttpCreate()
@@ -294,12 +348,16 @@ class HttpServer(object):
 
 
 	def handlePUT(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTUP')
 		self._eventHttpUpdate()
 		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTDE')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
@@ -308,6 +366,8 @@ class HttpServer(object):
 	def handlePATCH(self, path:Optional[str] = None) -> Response:
 		"""	Support instead of DELETE for http/1.0.
 		"""
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
 		renameThread('HTDE')
@@ -349,6 +409,11 @@ class HttpServer(object):
 		"""
 		if self.isStopped:
 			return Response('Service not available', status = 503)
+
+		# Check, when authentication is enabled, the user is authorized, else return status 401
+		if not self.handleAuthentication():
+			return Response(status = 401)
+
 
 		def prepareUTResponse(rcs:ResponseStatusCode, result:str) -> Response:
 			"""	Prepare the Upper Tester Response.
@@ -541,6 +606,47 @@ class HttpServer(object):
 		self._eventResponseReceived(resp)
 		return res
 		
+	#########################################################################
+
+	#
+	#	Handle authentication
+	#
+
+	def handleAuthentication(self) -> bool:
+		"""	Handle the authentication for the current request.
+
+			Return:
+				True if the request is authenticated, False otherwise.
+		"""
+		if not (self.enableBasicAuth or self.enableTokenAuth):
+			return True
+		
+		if (authorization := request.authorization) is None:
+			L.isDebug and L.logDebug('No authorization header found.')
+			return False
+		
+		match authorization.type:
+			case 'basic':
+				return self._handleBasicAuthentication(authorization.parameters)
+			case 'bearer':
+				return self._handleTokenAuthentication(authorization.token)
+			case _:
+				L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization.type}')
+				return False
+	
+
+	def _handleBasicAuthentication(self, parameters:dict) -> bool:
+		if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
+			L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
+			return False
+		return True
+	
+
+	def _handleTokenAuthentication(self, token:str) -> bool:
+		if not CSE.security.validateHttpTokenAuth(token):
+			L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+			return False
+		return True
 
 	#########################################################################
 

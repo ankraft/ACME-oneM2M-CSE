@@ -21,6 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Functions now have their own variable scope.
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
+- [HTTP] Added support for http authorization for *basic* and *bearer* (token) methods.
 - [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
 
 ### Experimental

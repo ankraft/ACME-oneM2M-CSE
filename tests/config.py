@@ -73,6 +73,7 @@ MQTTREGREQUESTTOPIC	= f'/oneM2M/reg_req/{mqttClientID}{CSEID}/json'
 MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 
 
+##############################################################################
 
 #
 #	OAuth2 authentication
@@ -83,6 +84,21 @@ doOAuth 			= False
 oauthServerUrl		= ''
 oauthClientID 		= ''
 oauthClientSecret 	= ''
+
+
+#
+#	HTTP Basic authentication
+#
+
+doHttpBasicAuth		= False
+httpUserName 		= 'test'
+httpPassword 		= 'testPassword'
+
+#
+#	HTTP Token authentication
+#
+doHttpTokenAuth		= False
+httpAuthToken		= 'testToken'
 
 
 #

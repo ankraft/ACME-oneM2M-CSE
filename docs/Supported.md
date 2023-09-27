@@ -109,7 +109,8 @@ The following table presents the supported management object specifications.
 ### Additional CSE Features
 | Functionality         | Remark                                                                                                    |
 |:----------------------|:----------------------------------------------------------------------------------------------------------|
-| HTTP CORS			    | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                 | 
+| HTTP CORS             | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                 |
+| HTTP Authorization    | Basic support for *basic* and *bearer* (token) authorization.                                             |
 | Text Console          | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
 | Test UI               | Text-based UI to inspect resources and requests, configurations, stats, and more                          |
 | Testing: Upper Tester | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
@@ -167,12 +168,12 @@ The following result contents are implemented for standard oneM2M requests & dis
 ## Protocols Bindings
 The following Protocol Bindings are supported:
 
-| Protocol Binding | Supported | Remark                                                                                                  |
-|:-----------------|:---------:|:--------------------------------------------------------------------------------------------------------|
-| http             |  &check;  | incl. TLS (https) and CORS support.<br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
-| coap             |  &cross;  |                                                                                                         |
-| mqtt             |  &check;  | incl. mqtts                                                                                             |
-| WebSocket        |  &cross;  |                                                                                                         |
+| Protocol Binding | Supported | Remark                                                                                                                                        |
+|:-----------------|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| http             |  &check;  | incl. TLS (https) and CORS support. *basic* and *bearer* authentication. <br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
+| coap             |  &cross;  |                                                                                                                                               |
+| mqtt             |  &check;  | incl. mqtts                                                                                                                                   |
+| WebSocket        |  &cross;  |                                                                                                                                               |
 
 The supported bindings can be used together, and combined and mixed in any way.
 
