@@ -13,4 +13,5 @@ COPY requirements.txt acme-cse/requirements.txt
 WORKDIR acme-cse/
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "-m", "acme", "--config", "acme.ini"]
+ENTRYPOINT [ "python", "-m", "acme", "--config", "acme.ini" ]
+CMD ["--headless"]
