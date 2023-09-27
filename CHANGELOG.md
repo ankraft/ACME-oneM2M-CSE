@@ -37,6 +37,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 
 ### Fixed
+- [CSE] Removed superfluous code when announcing resources (see issue #122).
 
 ### Removed
 

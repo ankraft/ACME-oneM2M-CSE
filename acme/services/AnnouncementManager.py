@@ -422,17 +422,15 @@ class AnnouncementManager(object):
 
 		# Update the annoucned remote resources 
 		announcedCSIs = []
-		remoteRIs = []
 		for (csi, remoteRI) in resource.getAnnouncedTo():
 			if csi == originator:	# Skip the announced resource at the originator !!
 				continue
 			announcedCSIs.append(csi)	# build a list of already announced CSIs
-			remoteRIs.append(csi) 		# build a list of remote RIs
 			self.updateResourceOnCSI(resource, csi, remoteRI)
 
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
-			if csi not in announcedCSIs and csi not in remoteRIs:
+			if csi not in announcedCSIs:
 				self.announceResourceToCSI(resource, csi)
 
 
