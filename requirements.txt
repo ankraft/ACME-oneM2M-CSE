@@ -81,7 +81,7 @@ typing-extensions==4.6.3
     # via textual
 uc-micro-py==1.0.2
     # via linkify-it-py
-urllib3==2.0.3
+urllib3==2.0.6
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit
