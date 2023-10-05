@@ -78,6 +78,9 @@ class Storage(object):
 
 	def __init__(self) -> None:
 		"""	Initialization of the storage manager.
+
+			Raises:
+				RuntimeError: In case of an error during initialization.
 		"""
 
 		# create data directory
@@ -200,10 +203,12 @@ class Storage(object):
 			Args:
 				resource: The resource to store in the database.
 				overwrite: Indicator whether an existing resource shall be overwritten.
+			
+			Raises:
+				CONFLICT: In case the resource already exists and *overwrite* is "False".
 		"""
 		ri  = resource.ri
 		srn = resource.getSrn()
-		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn}, srn: {srn}')
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource, ri)
@@ -214,10 +219,10 @@ class Storage(object):
 				raise CONFLICT(L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
 
 		# Add path to identifiers db
-		self.db.insertIdentifier(resource, ri, srn)
+		self.db.upsertIdentifier(resource, ri, srn)
 
 		# Add record to childResources db
-		self.db.addChildResource(resource, ri)
+		self.db.upsertChildResource(resource, ri)
 
 
 	def hasResource(self, ri:Optional[str] = None, srn:Optional[str] = None) -> bool:
@@ -251,6 +256,10 @@ class Storage(object):
 
 			Returns:
 				The resource.
+			
+			Raises:
+				NOT_FOUND: In case the resource does not exist.
+				INTENRAL_SERVER_ERROR: In case of a database inconsistency.
 		"""
 		resources = []
 
@@ -287,6 +296,10 @@ class Storage(object):
 
 			Returns:
 				The resource dictionary.
+
+			Raises:
+				NOT_FOUND: In case the resource does not exist.
+				INTENRAL_SERVER_ERROR: In case of a database inconsistency.
 		"""
 		resources = self.db.searchResources(ri = ri)
 		match len(resources):
@@ -330,6 +343,9 @@ class Storage(object):
 
 			Args:
 				resource: Resource to delete.
+			
+			Raises:
+				NOT_FOUND: In case the resource does not exist.
 		"""
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn})')
 		try:
@@ -337,7 +353,7 @@ class Storage(object):
 			self.db.deleteIdentifier(resource)
 			self.db.removeChildResource(resource)
 		except KeyError:
-			raise NOT_FOUND(dbg =  L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.'))
+			raise NOT_FOUND(L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 
 
 	def directChildResources(self, pi:str, 
@@ -503,12 +519,15 @@ class Storage(object):
 
 			Return:
 				Boolean value to indicate success or failure.
+			
+			Raises:
+				NOT_FOUND: In case the subscription does not exist.
 		"""
 		# L.logDebug(f'Removing subscription: {subscription.ri}')
 		try:
 			return self.db.removeSubscription(subscription)
 		except KeyError as e:
-			raise NOT_FOUND(dbg = L.logDebug(f'Cannot subscription data for: {subscription.ri} (NOT_FOUND). Could be an expected error.'))
+			raise NOT_FOUND(L.logDebug(f'Cannot subscription data for: {subscription.ri} (NOT_FOUND). Could be an expected error.'))
 
 
 	def updateSubscription(self, subscription:Resource) -> bool:
@@ -1274,8 +1293,8 @@ class TinyDBBinding(object):
 	#	Identifiers, Structured RI, Child Resources
 	#
 
-	def insertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
-		"""	Insert an identifier into the identifiers DB.
+	def upsertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
+		"""	Insert or update an identifier into the identifiers DB.
 
 			Args:
 				resource: The resource to insert.
@@ -1322,7 +1341,7 @@ class TinyDBBinding(object):
 				ri: Resource ID to search for.
 				srn: Structured path to search for.
 			Return:
-				A list of found identifier documents (see `insertIdentifier`), or an empty list if not found.
+				A list of found identifier documents (see `upsertIdentifier`), or an empty list if not found.
 		 """
 		_r:Document
 		if srn:
@@ -1338,7 +1357,7 @@ class TinyDBBinding(object):
 		return []
 
 
-	def addChildResource(self, resource:Resource, ri:str) -> None:
+	def upsertChildResource(self, resource:Resource, ri:str) -> None:
 		"""	Add a child resource to the childResources DB.
 
 			Args:
