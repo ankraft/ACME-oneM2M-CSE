@@ -384,7 +384,7 @@ class RequestManager(object):
 
 		# Don't delete the CSEBase
 		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
-			raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
+			raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 		match request.rt:
 			case ResponseType.blockingRequest:

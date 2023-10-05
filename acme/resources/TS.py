@@ -230,7 +230,7 @@ class TS(AnnounceableResource):
 											 'pi': self.ri,
 											 'dgt': childResource.dgt})
 		if len(tsis) > 0:	# Error if yes
-			raise CONFLICT(dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
+			raise CONFLICT(f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.

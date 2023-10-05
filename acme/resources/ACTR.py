@@ -220,13 +220,13 @@ class ACTR(AnnounceableResource):
 			try:
 				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(dbg = e.dbg)
+				raise BAD_REQUEST(e.dbg)
 
 		if orc is not None:
 			try:
 				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(dbg = e.dbg)
+				raise BAD_REQUEST(e.dbg)
 
 		return (resSri, resOrc)
 

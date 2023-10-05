@@ -713,7 +713,7 @@ class Dispatcher(object):
 			if res.rsc != ResponseStatusCode.CREATED:
 				_exc = exceptionFromRSC(res.rsc)	# Get exception class from rsc
 				if _exc:
-					raise _exc(dbg = res.request.pc.get('dbg'))	# type:ignore[call-arg]
+					raise _exc(res.request.pc.get('dbg'))	# type:ignore[call-arg]
 				raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 
 			resRi = findXPath(res.request.pc, '{*}/ri')
@@ -943,7 +943,7 @@ class Dispatcher(object):
 			if result.rsc != ResponseStatusCode.UPDATED:
 				_exc = exceptionFromRSC(result.rsc)	# Get exception class from rsc
 				if _exc:
-					raise _exc(dbg = result.request.pc.get('dbg'))	# type:ignore[call-arg]
+					raise _exc(result.request.pc.get('dbg'))	# type:ignore[call-arg]
 				raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {result.rsc}')
 			
 			updatedResource = result.resource
@@ -1107,7 +1107,7 @@ class Dispatcher(object):
 			resource = self.retrieveLocalResource(rID, originator = originator)
 			
 			if id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
-				raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
+				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, resource, Permission.DELETE):
@@ -1128,7 +1128,7 @@ class Dispatcher(object):
 			if res.rsc != ResponseStatusCode.DELETED:
 				_exc = exceptionFromRSC(res.rsc)	# Get exception class from rsc
 				if _exc:
-					raise _exc(dbg = res.request.pc.get('dbg'))	# type:ignore[call-arg]
+					raise _exc(res.request.pc.get('dbg'))	# type:ignore[call-arg]
 				raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 
 
