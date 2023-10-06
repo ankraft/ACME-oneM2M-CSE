@@ -63,6 +63,7 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableHttp = parser.add_mutually_exclusive_group()
 	groupEnableHttp.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
 	groupEnableHttp.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+	groupEnableHttp.add_argument('--http-wsgi', action='store_true', dest='httpWsgi', default=None, help='run CSE with http WSGI support')
 
 	groupEnableMqtt = parser.add_mutually_exclusive_group()
 	groupEnableMqtt.add_argument('--mqtt', action='store_true', dest='mqttenabled', default=None, help='enable mqtt binding')

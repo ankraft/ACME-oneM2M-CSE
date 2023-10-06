@@ -70,6 +70,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;http&#93; - HTTP Server Settings](#http)  
 [&#91;http.security&#93; - HTTP Security Settings](#security_http)  
 [&#91;http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
+[&#91;http.wsgi&#93; - HTTP WSGI (Web Server Gateway Interface) Settings](#http_wsgi)  
 [&#91;logging&#93; - Logging Settings](#logging)  
 [&#91;mqtt&#93; - MQTT Client Settings](#client_mqtt)  
 [&#91;mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
@@ -211,7 +212,21 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [top](#sections)
 
 ---
+<a name="http_wsgi"></a>
 
+### [http.wsgi] - HTTP WSGI (Web Server Gateway Interface) Settings
+
+| Setting         | Description                                                                                                                                                  | Configuration Name        |
+|:----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
+| enable          | Enable WSGI support for the HTTP binding.<br />Default: false                                                                                                | http.wsgi.enable          |
+| threadPoolSize  | The number of threads used to process requests. This number should be of similar size as the *connectionLimit* setting.<br />Default: 100                    | http.wsgi.threadPoolSize  |
+| connectionLimit | The number of possible parallel connections that can be accepted by the WSGI server. Note: One connection uses one system file descriptor.<br />Default: 100 | http.wsgi.connectionLimit |
+
+
+
+[top](#sections)
+
+---
 <a name="client_mqtt"></a>
 
 ###	[mqtt] - MQTT Client Settings

@@ -106,6 +106,8 @@ def buildUserConfigFile(configFile:str) -> bool:
 											   value = 'Regular'),
 										Choice(name = 'Headless     - Like "regular", plus disable most screen output, and the console and text UIs',
 											   value = 'Headless'),
+										Choice(name = 'WSGI         - Like "regular", but enable a WSGI server instead of the built-in HTTP server',
+											   value = 'WSGI'),
 									],
 							default = 'Development',
 							transformer = lambda result: result.split()[0],
@@ -373,6 +375,12 @@ scriptDirectories=${cse:resourcesPath}/demoLightbulb,${cse:resourcesPath}/demoDo
 headless=True
 """
 
+		cnfWSGI = \
+"""
+[http.wsgi]
+enable=True
+"""
+
 		# Construct the configuration
 		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra
 
@@ -386,6 +394,8 @@ headless=True
 				jcnf += cnfIntroduction
 			case 'Headless':
 				jcnf += cnfHeadless
+			case 'WSGI':
+				jcnf += cnfWSGI
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')

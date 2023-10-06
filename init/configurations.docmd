@@ -881,6 +881,7 @@ Comments are lines starting with a #.
 The default value is `${basic.config:dataDirectory}/certs/http_basic_auth.txt`.
 
 
+
 # http.security.tokenAuthFile
 
 This setting specifies the path to the CSE's HTTP server's token authentication file.
@@ -888,6 +889,45 @@ The file must contain lines with the format "token".
 Comments are lines starting with a #.
 
 The default value is `${basic.config:dataDirectory}/certs/http_token_auth.txt`.
+
+
+
+# http.wsgi
+
+This section contains settings that control the CSE's HTTP server's WSGI support.
+
+The *Web Server Gateway Interface* is a simple calling convention for web servers to forward requests to 
+web applications. It is intended to be used together with a reverse proxy server or API gateway, for example *nginx*.
+
+Note, that the CSE's HTTP server's WSGI implementation does not support TLS. It is intended for use in
+a local network and behind a secure gateway only.
+
+
+
+# http.wsgi.enable
+
+This setting enables or disables the CSE's HTTP server's WSGI support.
+
+The default value is `False`.
+
+
+
+# http.wsgi.connectionLimit
+
+This setting specifies the number of possible parallel connections that can be accepted by the WSGI server.
+One connection uses one system file descriptor.
+
+The default value is `100`.
+
+
+
+# http.wsgi.threadPoolSize
+
+This setting specifies the number of threads used to process requests.
+
+This number should be of similar size as the *connectionLimit* setting.
+
+The default value is `100`.
 
 
 

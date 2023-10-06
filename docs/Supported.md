@@ -107,16 +107,17 @@ The following table presents the supported management object specifications.
 
 
 ### Additional CSE Features
-| Functionality         | Remark                                                                                                    |
-|:----------------------|:----------------------------------------------------------------------------------------------------------|
-| HTTP CORS             | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                 |
-| HTTP Authorization    | Basic support for *basic* and *bearer* (token) authorization.                                             |
-| Text Console          | Control and manage the CSE, inspect resources, run scripts in a text console.                             |
-| Test UI               | Text-based UI to inspect resources and requests, configurations, stats, and more                          |
-| Testing: Upper Tester | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support. |
-| Request Recording     | Record requests to and from the CSE to learn and debug requests over Mca and Mcc.                         |
-| Script Interpreter    | Lisp-based scripting support to extent functionalities, implement simple AEs, prototypes, test, ...       |
-| Web UI                |                                                                                                           |
+| Functionality         | Remark                                                                                                                       |
+|:----------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+| HTTP CORS             | Support for *Cross-Origin Resource Sharing* to support http(s) redirects.                                                    |
+| HTTP Authorization    | Basic support for *basic* and *bearer* (token) authorization.                                                                |
+| HTTP WSGI             | Support for the Python *Web Server Gateway Interface* to improve integration with a reverse proxy or API gateway, ie. Nginx. |
+| Text Console          | Control and manage the CSE, inspect resources, run scripts in a text console.                                                |
+| Test UI               | Text-based UI to inspect resources and requests, configurations, stats, and more                                             |
+| Testing: Upper Tester | Basic support for the Upper Tester protocol defined in TS-0019, and additional command execution support.                    |
+| Request Recording     | Record requests to and from the CSE to learn and debug requests over Mca and Mcc.                                            |
+| Script Interpreter    | Lisp-based scripting support to extent functionalities, implement simple AEs, prototypes, test, ...                          |
+| Web UI                |                                                                                                                              |
 
 
 ### Experimental CSE Features

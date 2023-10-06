@@ -98,6 +98,7 @@ class Configuration(object):
 	_argsMqttEnabled:bool = None
 	_argsRemoteCSEEnabled:bool = None
 	_argsRunAsHttps:bool = None
+	_argsRunAsHttpWsgi:bool = None
 	_argsStatisticsEnabled:bool = None
 	_argsTextUI:bool = None
 
@@ -128,6 +129,7 @@ class Configuration(object):
 		Configuration._argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
 		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
+		Configuration._argsRunAsHttpWsgi		= args.httpWsgi if args and 'httpWsgi' in args else None
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 		Configuration._argsTextUI				= args.textui if args and 'textui' in args else None
 
@@ -146,10 +148,10 @@ class Configuration(object):
 
 
 		# Read and parse the configuration file
-		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
+		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
 											
 											# Convert csv to list, ignore empty elements
-											converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
+											converters = {'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
 		config.read_dict({ 'basic.config': {
 								'baseDirectory' 	: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent,	# points to the acme module's parent directory
@@ -313,6 +315,15 @@ class Configuration(object):
 
 				'http.cors.enable'						: config.getboolean('http.cors', 'enable', 							fallback = False),
 				'http.cors.resources'					: config.getlist('http.cors', 'resources', 							fallback = [ r'/*' ]),	# type: ignore [attr-defined]
+
+				#
+				#	HTTP Server WSGI
+				#
+
+				'http.wsgi.enable'						: config.getboolean('http.wsgi', 'enable', 							fallback = False),
+				'http.wsgi.threadPoolSize'				: config.getint('http.wsgi', 'threadPoolSize',						fallback = 100),
+				'http.wsgi.connectionLimit'				: config.getint('http.wsgi', 'connectionLimit',						fallback = 100),
+
 
 				#
 				#	HTTP Server Security
@@ -498,50 +509,58 @@ class Configuration(object):
 	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
+		def _get(key:str) -> Any:
+			return Configuration.get(key)
+		
+
+		def _put(key:str, value:Any) -> None:
+			Configuration._configuration[key] = value
+
+
 		from ..etc.Utils import normalizeURL, isValidCSI	# cannot import at the top because of circel import
 
 		# CSE type
-		if isinstance(cseType := Configuration._configuration['cse.type'], str):
+		if isinstance(cseType := _get('cse.type'), str):
 			cseType = cseType.lower()
 			match cseType:
 				case 'asn':
-					Configuration._configuration['cse.type'] = CSEType.ASN
+					_put('cse.type', CSEType.ASN)
 				case 'mn':
-					Configuration._configuration['cse.type'] = CSEType.MN
+					_put('cse.type', CSEType.MN)
 				case 'in':
-					Configuration._configuration['cse.type'] = CSEType.IN
+					_put('cse.type', CSEType.IN)
 				case _:
 					return False, f'Configuration Error: Unsupported \[cse]:type: {cseType}'
 
 		# CSE Serialization
-		if isinstance(ct := Configuration._configuration['cse.defaultSerialization'], str):
-			Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.toContentSerialization(ct)
-			if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
+		if isinstance(ct := _get('cse.defaultSerialization'), str):
+			_put('cse.defaultSerialization', ContentSerializationType.toContentSerialization(ct))
+			if _get('cse.defaultSerialization') == ContentSerializationType.UNKNOWN:
 				return False, f'Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}'
 		
 		# Registrar Serialization
-		if isinstance(ct := Configuration._configuration['cse.registrar.serialization'], str):
-			Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.toContentSerialization(ct)
-			if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
+		if isinstance(ct := _get('cse.registrar.serialization'), str):
+			_put('cse.registrar.serialization', ContentSerializationType.toContentSerialization(ct))
+			if _get('cse.registrar.serialization') == ContentSerializationType.UNKNOWN:
 				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 
 		# Loglevel and various overrides from command line
 		from ..services.Logging import LogLevel
-		if isinstance(logLevel := Configuration._configuration['logging.level'], str):	
+		if isinstance(logLevel := _get('logging.level'), str):	
 			logLevel = logLevel.lower()
 			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
 
 			match logLevel:
 				case 'off':
-					Configuration._configuration['logging.level'] = LogLevel.OFF
+					_put('logging.level', LogLevel.OFF)
 				case 'info':
-					Configuration._configuration['logging.level'] = LogLevel.INFO
+					_put('logging.level', LogLevel.INFO)
 				case 'warn' | 'warning':
-					Configuration._configuration['logging.level'] = LogLevel.WARNING
+					_put('logging.level', LogLevel.WARNING)
 				case 'error':
-					Configuration._configuration['logging.level'] = LogLevel.ERROR
+					_put('logging.level', LogLevel.ERROR)
 				case 'debug':
-					Configuration._configuration['logging.level'] = LogLevel.DEBUG
+					_put('logging.level', LogLevel.DEBUG)
 				case _:
 					return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
 				
@@ -551,39 +570,39 @@ class Configuration(object):
 			return False, f'Configuration Error: \[logging]:queueSize must be 0 or greater'
 
 		# Overwriting some configurations from command line
-		if Configuration._argsDBReset is True:					Configuration._configuration['database.resetOnStartup'] = True									# Override DB reset from command line
-		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['database.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
-		if Configuration._argsHttpAddress is not None:			Configuration._configuration['http.address'] = Configuration._argsHttpAddress								# Override server http address
-		if Configuration._argsHttpPort is not None:				Configuration._configuration['http.port'] = Configuration._argsHttpPort									# Override server http port
-		if Configuration._argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = Configuration._argsImportDirectory						# Override import directory from command line
-		if Configuration._argsListenIF is not None:				Configuration._configuration['http.listenIF'] = Configuration._argsListenIF								# Override binding network interface
-		if Configuration._argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = Configuration._argsMqttEnabled								# Override mqtt enable
-		if Configuration._argsRemoteCSEEnabled is not None:		Configuration._configuration['cse.enableRemoteCSE'] = Configuration._argsRemoteCSEEnabled					# Override remote CSE enablement
-		if Configuration._argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = Configuration._argsRunAsHttps						# Override useTLS
-		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
-		if Configuration._argsTextUI is not None:				Configuration._configuration['textui.startWithTUI'] = Configuration._argsTextUI
-		if Configuration._argsHeadless is True:
-			Configuration._configuration['console.headless'] = True
+		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
+		if Configuration._argsDBStorageMode is not None:		_put('database.inMemory', Configuration._argsDBStorageMode == 'memory')	# Override DB storage mode from command line
+		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
+		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
+		if Configuration._argsImportDirectory is not None:		_put('cse.resourcesPath', Configuration._argsImportDirectory)			# Override import directory from command line
+		if Configuration._argsListenIF is not None:				_put('http.listenIF', Configuration._argsListenIF)						# Override binding network interface
+		if Configuration._argsMqttEnabled is not None:			_put('mqtt.enable', Configuration._argsMqttEnabled)						# Override mqtt enable
+		if Configuration._argsRemoteCSEEnabled is not None:		_put('cse.enableRemoteCSE', Configuration._argsRemoteCSEEnabled)		# Override remote CSE enablement
+		if Configuration._argsRunAsHttps is not None:			_put('http.security.useTLS', Configuration._argsRunAsHttps)				# Override useTLS
+		if Configuration._argsRunAsHttpWsgi is not None:		_put('http.wsgi.enable', Configuration._argsRunAsHttpWsgi)				# Override use WSGI
+		if Configuration._argsStatisticsEnabled is not None:	_put('cse.statistics.enable', Configuration._argsStatisticsEnabled)		# Override statistics enablement
+		if Configuration._argsTextUI is not None:				_put('textui.startWithTUI', Configuration._argsTextUI)
+		if Configuration._argsHeadless is True:					_put('console.headless', True)
 
 		# Correct urls
-		Configuration._configuration['cse.registrar.address'] = normalizeURL(Configuration._configuration['cse.registrar.address'])
-		Configuration._configuration['http.address'] = normalizeURL(Configuration._configuration['http.address'])
-		Configuration._configuration['http.root'] = normalizeURL(Configuration._configuration['http.root'])
-		Configuration._configuration['cse.registrar.root'] = normalizeURL(Configuration._configuration['cse.registrar.root'])
+		_put('cse.registrar.address', normalizeURL(Configuration._configuration['cse.registrar.address']))
+		_put('http.address', normalizeURL(Configuration._configuration['http.address']))
+		_put('http.root', normalizeURL(Configuration._configuration['http.root']))
+		_put('cse.registrar.root', normalizeURL(Configuration._configuration['cse.registrar.root']))
 
 		# Just in case: check the URL's
-		if Configuration._configuration['http.security.useTLS']:
-			if Configuration._configuration['http.address'].startswith('http:'):
+		if _get('http.security.useTLS'):
+			if _get('http.address').startswith('http:'):
 				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
-				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
+				_put('http.address', _get('http.address').replace('http:', 'https:'))
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
 			# 	_print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
-			if Configuration._configuration['http.address'].startswith('https:'):
+			if _get('http.address').startswith('https:'):
 				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
-				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
+				_put('http.address', _get('http.address').replace('https:', 'http:'))
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
 			# 	_print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
@@ -591,11 +610,11 @@ class Configuration(object):
 
 
 		# Operation
-		if Configuration._configuration['cse.operation.jobs.balanceTarget'] <= 0.0:
+		if _get('cse.operation.jobs.balanceTarget') <= 0.0:
 			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0'
-		if Configuration._configuration['cse.operation.jobs.balanceLatency'] < 0:
+		if _get('cse.operation.jobs.balanceLatency') < 0:
 			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0'
-		if Configuration._configuration['cse.operation.jobs.balanceReduceFactor'] < 1.0:
+		if _get('cse.operation.jobs.balanceReduceFactor') < 1.0:
 			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0'
 
 
@@ -604,88 +623,101 @@ class Configuration(object):
 		#
 
 		# HTTP TLS & certificates
-		if not Configuration._configuration['http.security.useTLS']:	# clear certificates configuration if not in use
-			Configuration._configuration['http.security.verifyCertificate'] = False
-			Configuration._configuration['http.security.tlsVersion'] = 'auto'
-			Configuration._configuration['http.security.caCertificateFile'] = ''
-			Configuration._configuration['http.security.caPrivateKeyFile'] = ''
+		if not _get('http.security.useTLS'):	# clear certificates configuration if not in use
+			_put('http.security.verifyCertificate', False)
+			_put('http.security.tlsVersion', 'auto')
+			_put('http.security.caCertificateFile', '')
+			_put('http.security.caPrivateKeyFile', '')
 		else:
-			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+			if not (val := _get('http.security.tlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
 				return False, f'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}'
-			if not (val := Configuration._configuration['http.security.caCertificateFile']):
+			if not (val := _get('http.security.caCertificateFile')):
 				return False, 'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
 				return False, f'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
-			if not (val := Configuration._configuration['http.security.caPrivateKeyFile']):
+			if not (val := _get('http.security.caPrivateKeyFile')):
 				return False, 'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
 				return False, f'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
 		
+
 		# HTTP CORS
-		if initial and Configuration._configuration['http.cors.enable'] and not Configuration._configuration['http.security.useTLS']:
+		if initial and _get('http.cors.enable') and not _get('http.security.useTLS'):
 			Configuration._print('[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
 
+
 		# HTTP authentication
-		if Configuration._configuration['http.security.enableBasicAuth'] and not Configuration._configuration['http.security.basicAuthFile']:
+		if _get('http.security.enableBasicAuth') and not _get('http.security.basicAuthFile'):
 			return False, 'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled'
-		if Configuration._configuration['http.security.enableTokenAuth'] and not Configuration._configuration['http.security.tokenAuthFile']:
+		if _get('http.security.enableTokenAuth') and not _get('http.security.tokenAuthFile'):
 			return False, 'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled'
+	
+
+		# HTTP WSGI
+		if _get('http.wsgi.enable') and _get('http.security.useTLS'):
+			# WSGI and TLS cannot both be enabled
+			return False, 'Configuration Error: [i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).'
+		if _get('http.wsgi.threadPoolSize') < 1:
+			return False, 'Configuration Error: [i]\[http.wsgi]:threadPoolSize[/i] must be > 0'
+		if _get('http.wsgi.connectionLimit') < 1:
+			return False, 'Configuration Error: [i]\[http.wsgi]:connectionLimit[/i] must be > 0'
+
 		
 		#
 		#	MQTT client
 		#
-		if not Configuration._configuration['mqtt.port']:	# set the default port depending on whether to use TLS
-			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['mqtt.security.useTLS'] else 1883
-		if not (Configuration._configuration['mqtt.security.username']) != (not Configuration._configuration['mqtt.security.password']):
+		if not _get('mqtt.port'):	# set the default port depending on whether to use TLS
+			_put('mqtt.port', 8883) if _get('mqtt.security.useTLS') else 1883
+		if not _get('mqtt.security.username') != (not _get('mqtt.security.password')):	# Hack: != -> either both are empty, or both are set
 			return False, f'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]'
 		# remove empty cid from the list
-		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
+		_put('mqtt.security.allowedCredentialIDs', [ cid for cid in _get('mqtt.security.allowedCredentialIDs') if len(cid) ])
 		
 
 		# COAP TLS & certificates
-		if not Configuration._configuration['coap.security.useDTLS']:	# clear certificates configuration if not in use
-			Configuration._configuration['coap.security.verifyCertificate'] = False
-			Configuration._configuration['coap.security.tlsVersion'] = 'auto'
-			Configuration._configuration['coap.security.caCertificateFile'] = ''
-			Configuration._configuration['coap.security.caPrivateKeyFile'] = ''
+		if not _get('coap.security.useDTLS'):	# clear certificates configuration if not in use
+			_put('coap.security.verifyCertificate', False)
+			_put('coap.security.tlsVersion', 'auto')
+			_put('coap.security.caCertificateFile', '')
+			_put('coap.security.caPrivateKeyFile', '')
 		else:
-			if not (val := Configuration._configuration['coap.security.dtlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+			if not (val := _get('coap.security.dtlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
 				return False, f'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}'
-			if not (val := Configuration._configuration['coap.security.certificateFile']):
+			if not (val := _get('coap.security.certificateFile')):
 				return False, 'Configuration Error: [i]\[coap.security]:certificateFile[/i] must be set when DTLS is enabled'
 			if not os.path.exists(val):
 				return False, f'Configuration Error: [i]\[coap.security]:certificateFile[/i] does not exists or is not accessible: {val}'
-			if not (val := Configuration._configuration['coap.security.privateKeyFile']):
+			if not (val := _get('coap.security.privateKeyFile')):
 				return False, 'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
 				return False, f'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] does not exists or is not accessible: {val}'
 
 
 		# check the csi format and value
-		if not isValidCSI(val:=Configuration._configuration['cse.cseID']):
+		if not isValidCSI(val := _get('cse.cseID')):
 			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
-		if Configuration._configuration['cse.cseID'][1:] == Configuration._configuration['cse.resourceName']:
+		if _get('cse.cseID')[1:] == _get('cse.resourceName'):
 			return False, f'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
 
-		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.cseID']:
-			if not isValidCSI(val:=Configuration._configuration['cse.registrar.cseID']):
+		if _get('cse.registrar.address') and _get('cse.registrar.cseID'):
+			if not isValidCSI(val := _get('cse.registrar.cseID')):
 				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
-			if len(Configuration._configuration['cse.registrar.cseID']) > 0 and len(Configuration._configuration['cse.registrar.resourceName']) == 0:
+			if len(_get('cse.registrar.cseID')) > 0 and len(_get('cse.registrar.resourceName')) == 0:
 				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
 
 		# Check default subscription duration
-		if Configuration._configuration['resource.sub.batchNotifyDuration'] < 1:
+		if _get('resource.sub.batchNotifyDuration') < 1:
 			return False, 'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0'
 
 		# Check flexBlocking value
-		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
-		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
+		_put('cse.flexBlockingPreference', _get('cse.flexBlockingPreference').lower())
+		if _get('cse.flexBlockingPreference') not in ['blocking', 'nonblocking']:
 			return False, 'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"'
 
 		# Check release versions
-		if len(srv := Configuration._configuration['cse.supportedReleaseVersions']) == 0:
+		if len(srv := _get('cse.supportedReleaseVersions')) == 0:
 			return False, 'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty'
-		if len(rvi := Configuration._configuration['cse.releaseVersion']) == 0:
+		if len(rvi := _get('cse.releaseVersion')) == 0:
 			return False, 'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty'
 		if rvi not in srv:
 			return False, f'Configuration Error: [i]\[cse]:releaseVersion[/i]: {rvi} not in [i]\[cse].supportedReleaseVersions[/i]: {srv}'
@@ -693,35 +725,35 @@ class Configuration(object):
 		#	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}. Either increase the [i]releaseVersion[/i] or reduce the set of [i]supportedReleaseVersions[/i].'
 
 		# Check various intervals
-		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
+		if _get('cse.checkExpirationsInterval') <= 0:
 			return False, 'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0'
-		if Configuration._configuration['console.refreshInterval'] <= 0.0:
+		if _get('console.refreshInterval') <= 0.0:
 			return False, 'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0'
-		if Configuration._configuration['cse.maxExpirationDelta'] <= 0:
+		if _get('cse.maxExpirationDelta') <= 0:
 			return False, 'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
 
 		# Console settings
 		from ..services.Console import TreeMode
-		if isinstance(tm := Configuration._configuration['console.treeMode'], str):
+		if isinstance(tm := _get('console.treeMode'), str):
 			if not (treeMode := TreeMode.to(tm)):
 				return False, f'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}'
-			Configuration._configuration['console.treeMode'] = treeMode
+			_put('console.treeMode', treeMode)
 		
-		Configuration._configuration['console.theme'] = (theme := Configuration._configuration['console.theme'].lower())
+		_put('console.theme', (theme := _get('console.theme').lower()))
 		if theme not in [ 'dark', 'light' ]:
 			return False, f'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"'
 
-		if Configuration._configuration['console.headless']:
-			Configuration._configuration['logging.enableScreenLogging'] = False
-			Configuration._configuration['textui.startWithTUI'] = False
+		if _get('console.headless'):
+			_put('logging.enableScreenLogging', False)
+			_put('textui.startWithTUI', False)
 
 
 		# Script settings
-		if Configuration._configuration['scripting.fileMonitoringInterval'] < 0.0:
+		if _get('scripting.fileMonitoringInterval') < 0.0:
 			return False, f'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0'
-		if Configuration._configuration['scripting.maxRuntime'] < 0.0:
+		if _get('scripting.maxRuntime') < 0.0:
 			return False, f'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0'
-		if (scriptDirs := Configuration._configuration['scripting.scriptDirectories']):
+		if (scriptDirs := _get('scripting.scriptDirectories')):
 			lst = []
 			for each in scriptDirs:
 				if not each:
@@ -729,18 +761,18 @@ class Configuration(object):
 				if not os.path.isdir(each):
 					return False, f'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
 				lst.append(each)
-			Configuration._configuration['scripting.scriptDirectories'] = lst
+			_put('scripting.scriptDirectories', lst)
 			
 
 		# TimeSyncBeacon defaults
-		bcni = Configuration._configuration['resource.tsb.bcni']
+		bcni = _get('resource.tsb.bcni')
 		try:
 			isodate.parse_duration(bcni)
 		except Exception as e:
 			return False, f'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
 		
 		# Check group resource defaults
-		if Configuration._configuration['resource.grp.resultExpirationTime'] < 0:
+		if _get('resource.grp.resultExpirationTime') < 0:
 			return False, f'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0'
 		
 		# Everything is fine

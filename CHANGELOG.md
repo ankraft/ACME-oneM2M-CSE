@@ -22,6 +22,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
 - [HTTP] Added support for http authorization for *basic* and *bearer* (token) methods.
+- [HTTP] Support for the Python *Web Server Gateway Interface* to improve integration with a reverse proxy or API gateway, ie. Nginx. Thanks to @samuelbles07 for the idea.
 - [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
 
 ### Experimental

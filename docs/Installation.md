@@ -76,6 +76,7 @@ The following third-party components are used by the ACME CSE.
 - The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output. MIT License 
 - [shapely](https://github.com/shapely/shapely) is a library for manipulation and analysis of geometric objects. BSD 3-Clause License 
 - [Textual](https://github.com/textualize/textual) is a Rapid Application Development framework for to build textual user interfaces in Python. MIT License
+- [waitress](https://github.com/Pylons/waitress) is a production-quality pure-Python WSGI server with very acceptable performance. ZPL 2.1 License
 - To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. MIT License
 
 

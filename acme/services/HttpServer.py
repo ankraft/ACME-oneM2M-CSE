@@ -16,10 +16,10 @@ from copy import deepcopy
 import flask
 from flask import Flask, Request, request
 
-
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+from waitress import serve
 from flask_cors import CORS
 import requests
 import isodate
@@ -73,11 +73,13 @@ class HttpServer(object):
 		'corsResources',
 		'enableBasicAuth',
 		'enableTokenAuth',
+		'wsgiEnable',
+		'wsgiThreadPoolSize',
+		'wsgiConnectionLimit',
 		'backgroundActor',
 		'serverID',
 		'_responseHeaders',
 		'webui',
-		'mappeings',
 		'httpActor',
 
 		'_eventHttpRetrieve',
@@ -181,6 +183,9 @@ class HttpServer(object):
 		self.corsResources		= Configuration.get('http.cors.resources')
 		self.enableBasicAuth	= Configuration.get('http.security.enableBasicAuth')
 		self.enableTokenAuth 	= Configuration.get('http.security.enableTokenAuth')
+		self.wsgiEnable			= Configuration.get('http.wsgi.enable')
+		self.wsgiThreadPoolSize	= Configuration.get('http.wsgi.threadPoolSize')
+		self.wsgiConnectionLimit= Configuration.get('http.wsgi.connectionLimit')
 
 
 	def configUpdate(self, name:str, 
@@ -202,6 +207,9 @@ class HttpServer(object):
 						'webui.root',
 						'http.cors.enable',
 						'http.cors.resources',
+						'http.wsgi.enable',
+						'http.wsgi.threadPoolSize',
+						'http.wsgi.connectionLimit',
 						'http.security.enableBasicAuth',
 						'http.security.enableTokenAuth',
 						'mqtt.security.password'
@@ -255,12 +263,21 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				self.flaskApp.run(host = self.listenIF, 
-								  port = self.port,
-								  threaded = True,
-								  request_handler = ACMERequestHandler,
-								  ssl_context = CSE.security.getSSLContext(),
-								  debug = False)
+				if self.wsgiEnable:
+					L.isInfo and L.log(f'HTTP server listening on {self.listenIF}:{self.port} (wsgi)')
+					serve(self.flaskApp, 
+		   				  host = self.listenIF, 
+						  port = self.port, 
+						  threads = self.wsgiThreadPoolSize, 
+						  connection_limit = self.wsgiConnectionLimit)
+				else:
+					L.isInfo and L.log(f'HTTP server listening on {self.listenIF}:{self.port} (flask http)')
+					self.flaskApp.run(host = self.listenIF, 
+									port = self.port,
+									threaded = True,
+									request_handler = ACMERequestHandler,
+									ssl_context = CSE.security.getSSLContext(),
+									debug = False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:

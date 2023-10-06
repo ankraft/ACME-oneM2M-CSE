@@ -10,11 +10,11 @@ cbor2==5.4.6
     # via ACME-oneM2M-CSE (setup.py)
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via requests
 click==8.1.7
     # via flask
-flask==2.3.3
+flask==3.0.0
     # via
     #   ACME-oneM2M-CSE (setup.py)
     #   flask-cors
@@ -49,7 +49,7 @@ mdit-py-plugins==0.4.0
     # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
-numpy==1.25.2
+numpy==1.26.0
     # via shapely
 paho-mqtt==1.6.1
     # via ACME-oneM2M-CSE (setup.py)
@@ -69,7 +69,7 @@ rdflib==7.0.0
     # via ACME-oneM2M-CSE (setup.py)
 requests==2.31.0
     # via ACME-oneM2M-CSE (setup.py)
-rich==13.5.2
+rich==13.6.0
     # via
     #   ACME-oneM2M-CSE (setup.py)
     #   textual
@@ -77,19 +77,27 @@ shapely==2.0.1
     # via ACME-oneM2M-CSE (setup.py)
 six==1.16.0
     # via isodate
-textual==0.36.0
+textual==0.38.1
     # via ACME-oneM2M-CSE (setup.py)
 tinydb==4.8.0
     # via ACME-oneM2M-CSE (setup.py)
-typing-extensions==4.7.1
+tree-sitter==0.20.2
+    # via
+    #   textual
+    #   tree-sitter-languages
+tree-sitter-languages==1.7.0
+    # via textual
+typing-extensions==4.8.0
     # via textual
 uc-micro-py==1.0.2
     # via linkify-it-py
-urllib3==2.0.4
+urllib3==2.0.6
     # via requests
-wcwidth==0.2.6
+waitress==2.1.2
+    # via ACME-oneM2M-CSE (setup.py)
+wcwidth==0.2.8
     # via prompt-toolkit
-werkzeug==2.3.7
+werkzeug==3.0.0
     # via flask
-zipp==3.16.2
+zipp==3.17.0
     # via importlib-metadata

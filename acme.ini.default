@@ -210,6 +210,20 @@ enable=false
 resources=/*
 
 
+[http.wsgi]
+; Enable WSGI support for the HTTP binding.
+; Default: false
+enable=false
+; The number of threads used to process requests. 
+; This number should be of similar size as the "connectionLimit" setting.
+; Default: 100
+threadPoolSize=100
+; The number of possible parallel connections that can be accepted by the WSGI server.
+; One connection uses one system file descriptor.
+; Default: 100
+connectionLimit=100
+
+
 ;
 ;	MQTT client settings
 ;

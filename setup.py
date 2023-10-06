@@ -41,6 +41,7 @@ setup(
         'shapely',
 		'textual',
 		'tinydb',
+		'waitress',
 	],
     entry_points={
         'console_scripts': [
