@@ -836,7 +836,6 @@ class HttpServer(object):
 
 		# parse accept header
 		cseRequest.httpAccept 	= [ a for a in _headers.getlist('accept') if a != '*/*' ]
-		cseRequest.originalHttpArgs	= deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking
 		_args = request.args.copy() 	# type: ignore [no-untyped-call]

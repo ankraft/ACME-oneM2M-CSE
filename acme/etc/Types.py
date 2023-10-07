@@ -2051,9 +2051,6 @@ class CSERequest:
 	httpAccept:list[str]			= None
 	"""	http Accept header media type. """
 
-	originalHttpArgs:Any 			= None
-	""" Original http request arguments. A MultiDict. """
-
 	#
 	#	Helpers
 	#

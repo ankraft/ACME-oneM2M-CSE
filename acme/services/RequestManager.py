@@ -658,28 +658,6 @@ class RequestManager(object):
 		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
-	# def _getForwardURL(self, path:str) -> Optional[str]:		# FIXME DELETE ME This may be removed due to the new request handling 
-	# 	""" Get the new target URL when forwarding. 
-	# 	"""
-	# 	# L.isDebug and L.logDebug(path)
-	# 	csr, pe = CSE.remote.getCSRFromPath(path)
-	# 	# L.isDebug and L.logDebug(csr)
-	# 	if csr and (poas := csr.poa) and len(poas) > 0:
-	# 		return f'{poas[0]}//{"/".join(pe[1:])}'	# TODO check all available poas.
-	# 	return None
-
-
-	# def _constructForwardURL(self, request:CSERequest) -> str:
-	# 	"""	Construct the target URL for the forward request. Add the original
-	# 		arguments. The URL is returned in Result.data .
-	# 	"""
-	# 	if not (url := self._getForwardURL(request.id)):
-	# 		raise NOT_FOUND(f'forward URL not found for id: {request.id}')
-	# 	if request.originalHttpArgs is not None and len(request.originalHttpArgs) > 0:	# pass on other arguments, for discovery. Only http
-	# 		url += '?' + urllib.parse.urlencode(request.originalHttpArgs)
-	# 	return url
-
-
 	def _originatorToSPRelative(self, request:CSERequest) -> None:
 		"""	Convert *from* to SP-relative format in the request. The *from* is converted in
 			*request.originator* and *request.originalRequest*, but NOT in 
