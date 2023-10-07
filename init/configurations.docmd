@@ -989,6 +989,16 @@ The default value is `debug`.
 
 
 
+# logging.maxLogMessageLength
+
+This setting specifies the maximum length of a log message. Longer messages will be truncated. 
+
+A value of 0 means no truncation.
+
+The default value is `1000` characters.
+
+
+
 # logging.path
 
 This setting specifies the path to the CSE's log files.

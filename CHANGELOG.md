@@ -23,6 +23,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added utility "Attribute Info Search".
 - [HTTP] Added support for http authorization for *basic* and *bearer* (token) methods.
 - [HTTP] Support for the Python *Web Server Gateway Interface* to improve integration with a reverse proxy or API gateway, ie. Nginx. Thanks to @samuelbles07 for the idea.
+- [LOGGING] Added limiting the size of a single log message. Messages that are too large are truncated. This feature is configurable (ie. length and whether to truncate or not).
 - [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
 
 ### Experimental

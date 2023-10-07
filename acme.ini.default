@@ -380,19 +380,30 @@ excludeCSRAttributes=
 ;
 
 [logging]
-; Enable logging to file. Default: False
+; Enable logging to file. 
+; Default: False
 enableFileLogging=False
-; Enable logging to the screen. Default: True
+; Enable logging to the screen.
+; Default: True
 enableScreenLogging=true
-; Path to the log files. Default: ./logs
+; Path to the log files. 
+; Default: ./logs
 path=${basic.config:dataDirectory}/logs
-; Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
+; Loglevel. Allowed values: debug, info, warning, error, off. 
+; Default: debug
 level=${basic.config:logLevel}
-; Number of files for log rotation. Default: 10
+; Number of files for log rotation. 
+; Default: 10
 count=10
-; Size per log file. Default: 100.000 bytes
+; Size per log file. 
+; Default: 100.000 bytes
 size=100000
-; Print a stack trace when logging an 'error' level message. Default: True
+; Maximum length of a log message. Longer messages will be truncated.
+; A value of 0 means no truncation.
+; Default: 1000 characters
+maxLogMessageLength=1000
+; Print a stack trace when logging an 'error' level message. 
+; Default: True
 stackTraceOnError=False
 ; Enable logging of low-level HTTP & MQTT client events.
 ; Default: False
@@ -403,6 +414,7 @@ enableBindingsLogging=False
 queueSize=5000
 ; List of component names to exclude from logging
 filter=werkzeug,markdown_it,asyncio
+
 
 
 ;

@@ -126,6 +126,7 @@ class Logging:
 	enableQueue						= False		# Can be used to enable/disable the logging queue 
 	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
 	filterSources:tuple[str, ...]	= ()		# List of log sources that will be removed while processing the log messages
+	maxLogMessageLength:int			= 0			# Max length of a log message. Longer messages will be truncated
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
@@ -156,6 +157,7 @@ class Logging:
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
 		Logging.queueSize				= Configuration.get('logging.queueSize')
 		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
+		Logging.maxLogMessageLength		= Configuration.get('logging.maxLogMessageLength')
 
 		Logging._configureColors(Configuration.get('console.theme'))
 
@@ -427,6 +429,7 @@ class Logging:
 				# Queue a log message : (level, message, caller from stackframe, current thread)
 				caller = inspect.getframeinfo(inspect.stack()[stackOffset + 2][0])
 				thread = threading.current_thread()
+				msg = msg[:Logging.maxLogMessageLength] if Logging.maxLogMessageLength else msg	# truncate message if necessary
 				if Logging.enableQueue and not immediate:
 					Logging.queue.put((level, msg, caller, thread))
 				else:

@@ -316,14 +316,6 @@ class Configuration(object):
 				'http.cors.enable'						: config.getboolean('http.cors', 'enable', 							fallback = False),
 				'http.cors.resources'					: config.getlist('http.cors', 'resources', 							fallback = [ r'/*' ]),	# type: ignore [attr-defined]
 
-				#
-				#	HTTP Server WSGI
-				#
-
-				'http.wsgi.enable'						: config.getboolean('http.wsgi', 'enable', 							fallback = False),
-				'http.wsgi.threadPoolSize'				: config.getint('http.wsgi', 'threadPoolSize',						fallback = 100),
-				'http.wsgi.connectionLimit'				: config.getint('http.wsgi', 'connectionLimit',						fallback = 100),
-
 
 				#
 				#	HTTP Server Security
@@ -339,6 +331,16 @@ class Configuration(object):
 				'http.security.basicAuthFile'			: config.get('http.security', 'basicAuthFile',						fallback = './certs/http_basic_auth.txt'),
 				'http.security.tokenAuthFile'			: config.get('http.security', 'tokenAuthFile',						fallback = './certs/http_token_auth.txt'),
 
+
+				#
+				#	HTTP Server WSGI
+				#
+
+				'http.wsgi.enable'						: config.getboolean('http.wsgi', 'enable', 							fallback = False),
+				'http.wsgi.connectionLimit'				: config.getint('http.wsgi', 'connectionLimit',						fallback = 100),
+				'http.wsgi.threadPoolSize'				: config.getint('http.wsgi', 'threadPoolSize',						fallback = 100),
+
+
 				#
 				#	Logging
 				#
@@ -349,10 +351,12 @@ class Configuration(object):
 				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 				fallback = True),
 				'logging.filter'						: config.getlist('logging', 'filter',								fallback = []),		# type: ignore [attr-defined]
 				'logging.level'							: config.get('logging', 'level', 									fallback = 'debug'),
+				'logging.maxLogMessageLength'			: config.getint('logging', 'maxLogMessageLength',					fallback = 1000),	# Max length of a log message
 				'logging.path'							: config.get('logging', 'path', 									fallback = './logs'),
 				'logging.queueSize'						: config.getint('logging', 'queueSize', 							fallback = 5000),	# Size of the log queue
 				'logging.size'							: config.getint('logging', 'size', 									fallback = 100000),
 				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',					fallback = True),
+
 
 				#
 				#	MQTT Client
