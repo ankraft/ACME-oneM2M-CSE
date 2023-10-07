@@ -539,7 +539,8 @@ class SecurityManager(object):
 			The data is stored in the `httpBasicAuthData` dictionary.
 		"""
 		self.httpBasicAuthData = {}
-		if self.httpBasicAuthFile:
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.get('http.security.enableBasicAuth') and self.httpBasicAuthFile:
 			try:
 				with open(self.httpBasicAuthFile, 'r') as f:
 					for line in f:
@@ -560,7 +561,8 @@ class SecurityManager(object):
 			The data is stored in the `httpTokenAuthData` list.
 		"""
 		self.httpTokenAuthData = []
-		if self.httpTokenAuthFile:
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.get('http.security.enableTokenAuth') and self.httpTokenAuthFile:
 			try:
 				with open(self.httpTokenAuthFile, 'r') as f:
 					for line in f:

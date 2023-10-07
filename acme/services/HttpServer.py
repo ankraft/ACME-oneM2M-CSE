@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-from typing import Any, Callable, cast, Tuple, Optional
+from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re, base64
+import logging, sys, urllib3, re
 from copy import deepcopy
 
 import flask
@@ -25,7 +25,7 @@ import requests
 import isodate
 
 from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
