@@ -619,6 +619,7 @@ class BasicType(ACMEIntEnum):
 	base64 				= auto()
 	schedule			= auto()	# scheduleEntry
 	ID					= auto()	# m2m:ID
+	ncname				= auto()	# xs:NCName
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time

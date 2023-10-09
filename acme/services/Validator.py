@@ -733,6 +733,10 @@ class Validator(object):
 	#	Internals.
 	#
 
+	_ncNameDisallowedChars = (	'!', '"', '#', '$', '%', '&', '\'', '(', ')', 
+						   		'*', '+', ',', '/', ':', ';', '<', '=', '>', 
+								'?', '@', '[', ']', '^', '´' , '`', '{', '|', '}', '~' )
+
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 
 							convert:Optional[bool] = False, 
@@ -810,7 +814,7 @@ class Validator(object):
 				match value:
 					case str():
 						try:
-							rel = int(value)
+							int(value)
 							# fallthrough
 						except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
 							if fromAbsRelTimestamp(value) == 0.0:
@@ -827,6 +831,16 @@ class Validator(object):
 				return (dataType, value)
 
 			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+				return (dataType, value)
+			
+			case BasicType.ncname if isinstance(value, str):
+				if len(value) == 0 or value[0].isdigit() or value[0] in ('-', '.'):
+					raise BAD_REQUEST(f'invalid NCName: {value} (must not start with a digit, "-", or ".")')
+				for v in value:
+					if v.isspace():
+						raise BAD_REQUEST(f'invalid NCName: {value} (must not contain whitespace)')
+					if v in self._ncNameDisallowedChars:
+						raise BAD_REQUEST(f'invalid NCName: {value} (must not contain any of {",".join(self._ncNameDisallowedChars)})')
 				return (dataType, value)
 
 			case BasicType.list | BasicType.listNE if isinstance(value, list):

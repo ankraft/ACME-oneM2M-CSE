@@ -18,7 +18,7 @@
 			"lname": "attribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",		//m2m:attributeList
+			"ltype": "m2m:attribute",
 			"car": "01L"
 		},
 		{
@@ -26,8 +26,8 @@
 			"ctype": "m2m:eventNotificationCriteria",
 			"lname": "attribute",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "string",		//m2m:attributeList
+			"type": "list",		//m2m:attributeList
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
@@ -274,7 +274,7 @@
 			"ctype": "m2m:contentRef",
 			"lname": "name",
 			"ns": "m2m",
-			"type": "string",	// xs:NCName
+			"type": "ncname",
 			"car": "1"
 		},
 		{
@@ -282,7 +282,7 @@
 			"ctype": "m2m:attribute",
 			"lname": "name",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ncname",
 			"car": "1"
 		}
 	],
@@ -949,7 +949,7 @@
 			"lname": "accessControlAttributes",
 			"ns": "m2m",
 			"type": "list", 	// m2m:attributeList
-			"ltype": "string",
+			"ltype": "ncname",
 			"car": "01"
 		}
 	],
@@ -964,7 +964,7 @@
 			"ctype": "m2m:actionInput",
 			"lname": "contentString",
 			"ns": "m2m",
-			"type": "string",	// xs:NCName
+			"type": "ncname",
 			"car": "01"
 		}
 	],
@@ -1199,7 +1199,7 @@
 			"ctype": "m2m:evalCriteria",
 			"lname": "subject",
 			"ns": "m2m",
-			"type": "string", 			// TODO "type": "xs:NCName", 
+			"type": "ncname",
 			"car": "1"
 		}
 	],
@@ -1565,7 +1565,7 @@
 			"lname": "tokenIDs",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", // 	m2m:tokenID TODO validate
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
@@ -1573,10 +1573,10 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:metaInformation",
-			"lname": "tokenIDs",
+			"lname": "localTokenIDs",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", // 	xs:NCName TODO validate
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
