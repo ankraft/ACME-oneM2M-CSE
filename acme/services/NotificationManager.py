@@ -235,7 +235,7 @@ class NotificationManager(object):
 
 
 	def checkSubscriptions(	self, 
-							resource:Resource, 
+							resource:Optional[Resource], 
 							reason:NotificationEventType, 
 							childResource:Optional[Resource] = None, 
 							modifiedAttributes:Optional[JSON] = None,
@@ -280,8 +280,18 @@ class NotificationManager(object):
 				subs.append(sub)
 
 		for sub in subs:
+
+			if reason not in sub['net']:	# check whether reason is actually included in the subscription
+				continue
+
 			# Prevent own notifications for subscriptions 
 			ri = sub['ri']
+
+			# Check whether reason is included in the subscription
+			if childResource and \
+				ri == childResource.ri and \
+				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
+					continue
 
 			# Check the subscription's schedule, but only if it is not an immediate notification
 			if not ((nec := sub['nec']) and nec == EventCategory.Immediate):
@@ -295,15 +305,6 @@ class NotificationManager(object):
 					else:
 						# No schedule matches the current time, so continue with the next subscription
 						continue
-
-			# Check whether reason is included in the subscription
-			if childResource and \
-				ri == childResource.ri and \
-				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
-					continue
-			
-			if reason not in sub['net']:	# check whether reason is actually included in the subscription
-				continue
 
 			match reason:
 				case NotificationEventType.createDirectChild | NotificationEventType.deleteDirectChild:	# reasons for child resources
