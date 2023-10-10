@@ -27,6 +27,6 @@ Thank you for contributed ideas, code, patches, testing, bug fixes, time, and mo
 <img src="https://github.com/massimov.png" width="24"> [Massimo Vanetti](https://github.com/massimov)  
 <img src="https://media.licdn.com/dms/image/C5603AQFArXDrtMqbgg/profile-displayphoto-shrink_200_200/0/1590795241373?e=1692835200&v=beta&t=Pfu4WCSuUoZG8BVtKbZ7EgU90Y0ous6FVdTcnvcAGvk" width="24"> [Tyler Sengia](https://www.linkedin.com/in/tyler-sengia/)  
 ![JiriD85](https://github.com/JiriD85.png?size=24) [JiriD85](https://github.com/JiriD85)  
-
+![samuelbles07](https://github.com/samuelbles07.png?size=24) [samuelbles07](https://github.com/samuelbles07)  
 
 [← README](../README.md) 
