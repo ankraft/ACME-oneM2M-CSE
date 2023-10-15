@@ -1170,8 +1170,7 @@ class TinyDBBinding(object):
 				resource: The resource to delete.
 		"""
 		with self.lockResources:
-			_ri = resource.ri
-			self.tabResources.remove(doc_ids = [_ri])	
+			self.tabResources.remove(doc_ids = [resource.ri])	
 	
 
 	def searchResources(self, ri:Optional[str] = None, 

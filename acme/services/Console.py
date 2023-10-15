@@ -825,7 +825,7 @@ Available under the BSD 3-Clause License
 			
 		# plot
 		try:
-			cins = CSE.dispatcher.directChildResources(resource.ri, ResourceTypes.CIN)
+			cins = CSE.dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
 			x = range(1, (lcins := len(cins)) + 1)
 			y = [ float(each.con) for each in cins ]
 			cols, rows = plotext.terminal_size()
@@ -1422,7 +1422,7 @@ Available under the BSD 3-Clause License
 			"""
 			if maxLevel > 0 and level == maxLevel:
 				return
-			chs = CSE.dispatcher.directChildResources(res.ri)
+			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
 				if ch.isVirtual() and not self.treeIncludeVirtualResources:	# Ignore virual resources
 					continue

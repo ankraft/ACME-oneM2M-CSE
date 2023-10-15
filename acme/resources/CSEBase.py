@@ -134,7 +134,7 @@ class CSEBase(AnnounceableResource):
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
 		super().childWillBeAdded(childResource, originator)
 		if childResource.ty == ResourceTypes.SCH:
-			if CSE.dispatcher.directChildResources(self.ri, ResourceTypes.SCH):
+			if CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
 				raise BAD_REQUEST('Only one <schedule> resource is allowed for the CSEBase')
 
 

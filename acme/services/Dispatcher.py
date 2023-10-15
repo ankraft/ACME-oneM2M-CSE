@@ -365,7 +365,7 @@ class Dispatcher(object):
 		lim:int = filterCriteria.lim if filterCriteria.lim is not None else sys.maxsize
 
 		# get all direct children and slice the page (offset and limit)
-		dcrs = self.directChildResources(id)[ofst-1:ofst-1 + lim]	# now dcrs only contains the desired child resources for ofst and lim
+		dcrs = self.retrieveDirectChildResources(id)[ofst-1:ofst-1 + lim]	# now dcrs only contains the desired child resources for ofst and lim
 
 		# a bit of optimization. This length stays the same.
 		allLen = len(filterCriteria.attributes) if filterCriteria.attributes else 0
@@ -418,7 +418,7 @@ class Dispatcher(object):
 
 		# get all direct children, if not provided
 		if not dcrs:
-			if len(dcrs := self.directChildResources(rootResource.ri)) == 0:
+			if len(dcrs := self.retrieveDirectChildResources(rootResource.ri)) == 0:
 				return []
 		
 
@@ -1232,10 +1232,17 @@ class Dispatcher(object):
 	#	Public Utility methods
 	#
 
-	def directChildResources(self, pi:str, 
-								   ty:Optional[ResourceTypes] = None) -> list[Resource]:
+	def retrieveDirectChildResources(self, pi:str, 
+								  		   ty:Optional[ResourceTypes] = None) -> list[Resource]:
 		"""	Return all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
+
+			Args:
+				pi: The parent's resourceIdentifier.
+				ty: The resource type to filter for.
+
+			Return:
+				A list of retrieved `Resource` objects. This list might be empty.
 		"""
 		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
 
@@ -1244,12 +1251,26 @@ class Dispatcher(object):
 			    					 ty:Optional[ResourceTypes] = None) -> list[str]:
 		"""	Return the resourceIdentifiers of all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
+
+			Args:
+				pi: The parent's resourceIdentifier.
+				ty: The resource type to filter for.
+
+			Return:
+				A list of retrieved resourceIdentifiers. This list might be empty.
 		"""
 		return CSE.storage.directChildResourcesRI(pi, ty)
 	
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
 		"""	Return the number of all child resources of resource, optionally filtered by type. 
+
+			Args:
+				pi: The parent's resourceIdentifier.
+				ty: The resource type to filter for.
+
+			Return:
+				Number of child resources.
 		"""
 		return CSE.storage.countDirectChildResources(pi, ty)
 
@@ -1257,6 +1278,13 @@ class Dispatcher(object):
 	def hasDirectChildResource(self, pi:str, 
 			    					 ri:str) -> bool:
 		"""	Check if a resource has a direct child resource with a given resourceID
+
+			Args:
+				pi: The parent's resourceIdentifier.
+				ri: The resourceIdentifier to check for.
+
+			Return:
+				True if a direct child resource with the given resourceIdentifier exists, False otherwise.
 		"""
 		return riFromID(ri) in self.directChildResourcesRI(pi)
 	
@@ -1382,7 +1410,7 @@ class Dispatcher(object):
 			If *ty* is set only the resources of this type are removed.
 		"""
 		# Remove directChildResources
-		rs = self.directChildResources(parentResource.ri)
+		rs = self.retrieveDirectChildResources(parentResource.ri)
 		for r in rs:
 			if ty is None or r.ty == ty:	# ty is an int
 				#parentResource.childRemoved(r, originator)	# recursion here

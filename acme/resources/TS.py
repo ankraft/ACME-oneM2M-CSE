@@ -394,7 +394,7 @@ class TS(AnnounceableResource):
 	def timeSeriesInstances(self) -> list[Resource]:
 		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
 		""" 
-		return sorted(CSE.dispatcher.directChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:

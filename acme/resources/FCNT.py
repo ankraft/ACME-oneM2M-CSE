@@ -236,7 +236,7 @@ class FCNT(AnnounceableResource):
 	def flexContainerInstances(self) -> list[Resource]:
 		"""	Get all flexContainerInstances of a resource and return a sorted (by ct) list
 		""" 
-		return sorted(CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCI), key = lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCI), key = lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	# Add a new FlexContainerInstance for this flexContainer
@@ -306,10 +306,10 @@ class FCNT(AnnounceableResource):
 		L.isDebug and L.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
 
 		# remove latest
-		if len(chs := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
+		if len(chs := CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
 			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 		# remove oldest
-		if len(chs := CSE.dispatcher.directChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
+		if len(chs := CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
 			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 	
 		self.setAttribute(self._hasFCI, False)
@@ -319,7 +319,7 @@ class FCNT(AnnounceableResource):
 		"""	Remove the FCI childResources.
 		"""
 		L.isDebug and L.logDebug(f'Removing FCI child resources for: {self.ri}')
-		chs = CSE.dispatcher.directChildResources(self.ri, ty = ResourceTypes.FCI)
+		chs = CSE.dispatcher.retrieveDirectChildResources(self.ri, ty = ResourceTypes.FCI)
 		for ch in chs:
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
 			CSE.dispatcher.deleteLocalResource(ch, parentResource = self)

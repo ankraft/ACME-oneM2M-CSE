@@ -1527,7 +1527,7 @@ class RequestManager(object):
 		pollingChannelResources = []
 		if targetResource.rr == False:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
-			if not len(pollingChannelResources := CSE.dispatcher.directChildResources(targetResource.ri, ResourceTypes.PCH)):
+			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
