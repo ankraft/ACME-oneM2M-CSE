@@ -1311,6 +1311,8 @@ class PContext():
 			raise PInvalidArgumentError(self)
 		self.result = None
 		self.run(arguments = self.argv, isSubCall = True)	# might throw exception
+		if self.state in(PState.terminated, PState.terminatedWithResult):	# Correct state for subcall
+			self.state = PState.running
 		self.ast = _ast
 		self.script = _script
 		return self
