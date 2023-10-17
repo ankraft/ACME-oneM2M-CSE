@@ -357,13 +357,13 @@ class Storage(object):
 
 
 	def directChildResources(self, pi:str, 
-								   ty:Optional[ResourceTypes] = None, 
+								   ty:Optional[ResourceTypes|list[ResourceTypes]] = None, 
 								   raw:Optional[bool] = False) -> list[Document]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 
 			Args:
 				pi: The parent resource's Resource ID.
-				ty: Optional resource type to filter the result.
+				ty: Optional resource type or list of resource types to filter the result.
 				raw: When "True" then return the child resources as resource dictionary instead of resources.
 
 			Returns:
@@ -376,12 +376,12 @@ class Storage(object):
 	
 
 	def directChildResourcesRI(self, pi:str, 
-			    					 ty:Optional[ResourceTypes] = None) -> list[str]:
+			    					 ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		"""	Return a list of direct child resource IDs, or an empty list
 
 			Args:
 				pi: The parent resource's Resource ID.
-				ty: Optional resource type to filter the result.
+				ty: Optional resource type or list of resource types to filter the result.
 
 			Returns:
 				Return a list of resource IDs.
@@ -1412,22 +1412,24 @@ class TinyDBBinding(object):
 				self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
 
 
-	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[int] = None) -> list[str]:
+	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		"""	Search for child resources by parent resource ID.
 
 			Args:
 				pi: The parent resource ID.
-				ty: The resource type of the child resources to search for.	
+				ty: The resource type of the child resources to search for, or a list of resource types.
 
 			Return:
 				A list of child resource IDs, or an empty list if not found.
 		"""
-
+		# First convert ty to a list if it is just an int
+		if isinstance(ty, int):
+			ty = [ty]
 		_r:Document = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type, assignment]
 		if _r:
 			if ty is None:	# optimization: only check ty once for None
 				return [ c[0] for c in _r['ch'] ]
-			return [ c[0] for c in _r['ch'] if ty == c[1] ]	# c is a tuple (ri, ty)
+			return [ c[0] for c in _r['ch'] if c[1] in ty]	# c is a tuple (ri, ty)
 		return []
 
 	#

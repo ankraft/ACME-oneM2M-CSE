@@ -1222,7 +1222,7 @@ class Dispatcher(object):
 										   originator)
 			return Result(rsc = ResponseStatusCode.OK)
 		except ResponseException as e:
-			L.isWarn and L.logWarn(f'error handling notificatuin: {e.dbg}')
+			L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
 			raise
 		
 
@@ -1233,13 +1233,13 @@ class Dispatcher(object):
 	#
 
 	def retrieveDirectChildResources(self, pi:str, 
-								  		   ty:Optional[ResourceTypes] = None) -> list[Resource]:
+								  		   ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[Resource]:
 		"""	Return all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
 
 			Args:
 				pi: The parent's resourceIdentifier.
-				ty: The resource type to filter for.
+				ty: The resource type or list of resource types to filter for.
 
 			Return:
 				A list of retrieved `Resource` objects. This list might be empty.
@@ -1248,13 +1248,13 @@ class Dispatcher(object):
 
 
 	def directChildResourcesRI(self, pi:str, 
-			    					 ty:Optional[ResourceTypes] = None) -> list[str]:
+			    					 ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		"""	Return the resourceIdentifiers of all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
 
 			Args:
 				pi: The parent's resourceIdentifier.
-				ty: The resource type to filter for.
+				ty: The resource type or list of resource types to filter for.
 
 			Return:
 				A list of retrieved resourceIdentifiers. This list might be empty.
