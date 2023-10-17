@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Callable, List, Dict, Any, Tuple, Optional
 from .TextTools import simpleMatch
-import random, sys, heapq, traceback, time
+import random, sys, heapq, traceback, time, inspect
 from datetime import datetime, timezone
 from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
 import logging
@@ -213,10 +213,15 @@ class BackgroundWorker(object):
 			# - ignoreException is False then the exception is raised again
 			while True:
 				try:
-					if self.data is not None:
-						result = self.callback(_data = self.data, **self.args)
-					else:
-						result = self.callback(**self.args)
+					# check whether the callback has a _data and _worker argument
+					# and add them if they are
+					argSpec = inspect.getfullargspec(self.callback)	
+					if '_data' in argSpec.args:
+						self.args['_data'] = self.data
+					if '_worker' in argSpec.args:
+						self.args['_worker'] = self
+					# call the callback
+					result = self.callback(**self.args)
 					break
 				except Exception as e:
 					if BackgroundWorker._logger:
@@ -269,7 +274,7 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime})'
+		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime}, data = {self.data})'
 
 
 
@@ -598,7 +603,7 @@ class BackgroundWorkerPool(object):
 			(it may be 0.0s, though), or *at* a specific time (UTC timestamp).
 
 			Args:
-				workerCallback: Callback that is executed to perform the action for the actor.
+				workerCallback: Callback that is executed to perform the action for the actor. It will receive the *data* in its *_data*, and the worker itself in the *_worker* arguments (if available as arguments).
 				delay: Delay in seconds after which the actor callback is executed.
 					This is an alternative to *at*.
 					Only one of *at* or *delay* must be specified.
@@ -610,7 +615,7 @@ class BackgroundWorkerPool(object):
 				finished: Callable that is executed after the worker finished.
 					It will	receive the same arguments as the *workerCallback* callback.
 				ignoreException: Restart the actor in case an exception is encountered.
-				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed in the *_data* argument of the *workerCallback* if not *None*.
 			Return:
 				`BackgroundWorker` object. It is only an initialized object and needs to be started manually with its `start()` method.
 		"""
