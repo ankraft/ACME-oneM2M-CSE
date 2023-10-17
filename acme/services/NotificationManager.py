@@ -632,14 +632,12 @@ class NotificationManager(object):
 				else:
 					# No schedule matches the current time, so clear the data and just return
 					L.isDebug and L.logDebug(f'No matching schedule found for <crs>: {crsRi}')
-					data.clear()
 					return
 
 			try:
 				resource = CSE.dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
-				data.clear()
 				return
 
 			crs = cast(CRS, resource)
@@ -671,7 +669,6 @@ class NotificationManager(object):
 
 		else:
 			L.isDebug and L.logDebug(f'No notification sent')
-		data.clear()
 
 
 	# Time Window Monitor : Periodic
@@ -710,11 +707,13 @@ class NotificationManager(object):
 
 
 	def _crsPeriodicWindowMonitor(self, _data:list[str], 
+							   			_worker:BackgroundWorker,
 			       						crsRi:str, 
 										expectedCount:int,
 										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
+		_worker.data = []
 		return True
 
 
@@ -752,12 +751,15 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any, 
+	def _crsSlidingWindowMonitor(self, _data:Any,
+							  		   _worker:BackgroundWorker,
 			      					   crsRi:str, 
 									   subCount:int, 
 									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, subCount, eem)
+		_worker.data = []
+		# _data.clear()
 		return True
 
 
