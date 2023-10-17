@@ -40,6 +40,7 @@ setup(
 		'rich', 
         'shapely',
 		'textual',
+		'textual-plotext',
 		'tinydb',
 		'waitress',
 	],

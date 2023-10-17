@@ -21,6 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Functions now have their own variable scope.
 - [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
 - [TUI] Added utility "Attribute Info Search".
+- [TUI] Added diagram viee for &lt;containers> that &lt;contentInstance> child resources with numerical values.
 - [HTTP] Added support for http authorization for *basic* and *bearer* (token) methods.
 - [HTTP] Support for the Python *Web Server Gateway Interface* to improve integration with a reverse proxy or API gateway, ie. Nginx. Thanks to @samuelbles07 for the idea.
 - [LOGGING] Added limiting the size of a single log message. Messages that are too large are truncated. This feature is configurable (ie. length and whether to truncate or not).

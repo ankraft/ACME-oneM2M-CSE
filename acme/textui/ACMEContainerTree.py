@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 from typing import List, Tuple, Optional
+from datetime import datetime
 from textual import events
 from textual.app import ComposeResult
 from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Markdown, Label, Button
@@ -20,8 +21,10 @@ from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
+from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers.TextTools import commentJson
 from .ACMEContainerDelete import ACMEContainerDelete
+from .ACMEContainerDiagram import ACMEContainerDiagram
 
 
 idTree = 'tree'
@@ -87,13 +90,14 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}' if resource else '## &nbsp;')
 
 
+
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
 		result:List[Tuple[Resource, bool]] = []
-		chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
+		chs = [ x for x in CSE.dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
 		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
 		for r in chs:
-			result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri)  ]) > 0))
+			result.append((r, len([ x for x in CSE.dispatcher.retrieveDirectChildResources(r.ri)  ]) > 0))
 			# result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
 		return result
 
@@ -133,6 +137,8 @@ class ACMEContainerTree(Container):
 	/* TODO try to get padding working with later released of textualize */
 }
 
+
+
 '''
 
 	def __init__(self) -> None:
@@ -145,8 +151,9 @@ class ACMEContainerTree(Container):
 		# Tabs
 		self.tabs = TabbedContent()
 
-		# Resource and Request views
+		# Various Resource and Request views
 		self.deleteView = ACMEContainerDelete()
+		self.diagram = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource())
 
 		# For some reason, the markdown header is not refreshed the very first time
 		self.header = Markdown('')
@@ -168,6 +175,9 @@ class ACMEContainerTree(Container):
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield self.requestView
 
+				with TabPane('Diagram', id = 'tree-tab-diagram'):
+					yield self.diagram
+
 				# with TabPane('CREATE', id = 'tree-tab-create', disabled = True):
 				# 	yield Markdown('## Send CREATE Request')
 				# 	yield Label('TODO')
@@ -177,6 +187,7 @@ class ACMEContainerTree(Container):
 				# with TabPane('UPDATE', id = 'tree-tab-update', disabled = True):
 				# 	yield Markdown('## Send UPDATE Request')
 				# 	yield Label('TODO')
+				
 				with TabPane('DELETE', id = 'tree-tab-delete'):
 					yield Markdown('## Send DELETE Request')
 					yield self.deleteView
@@ -208,7 +219,12 @@ class ACMEContainerTree(Container):
 
 
 	def updateResource(self, resource:Optional[Resource] = None) -> None:
-		self.resource = resource
+		if resource:
+			# Store the resource for later
+			self.resource = resource
+		else:
+			# Otherwise use the old / current resource
+			resource = self.resource
 
 		# Add attribute explanations
 		if resource:
@@ -223,6 +239,31 @@ class ACMEContainerTree(Container):
 			# Update DELETE view
 			self.deleteView.updateResource(resource)
 			self.deleteView.disabled = False
+
+			# Update Diagram view
+			try:
+				if resource.ty in (ResourceTypes.CNT, ResourceTypes.TS):
+					instances = CSE.dispatcher.retrieveDirectChildResources(resource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
+					
+					# The following line may fail if the content cannot be converted to a float.
+					# This is expected! This just means that any content is not a number and we cannot raw a diagram.
+					# The exception is caught below and the diagram view is hidden.
+					values = [float(r.con) for r in instances]
+
+					dates = [r.ct for r in instances]
+					# values = [float(r.con)
+					# 		for r in instances
+					# 		if r.ty in (ResourceTypes.CIN, ResourceTypes.TSI)]
+					# dates = [r.ct
+					# 		for r in instances
+					# 		if r.ty in (ResourceTypes.CIN, ResourceTypes.TSI)]
+
+					self.diagram.setData(values, dates)
+					self.tabs.show_tab('tree-tab-diagram') 
+				else:
+					self.tabs.hide_tab('tree-tab-diagram') 
+			except:
+				self.tabs.hide_tab('tree-tab-diagram')
 
 		else:
 			jsns = ''

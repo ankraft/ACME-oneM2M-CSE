@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-blinker==1.6.2
+blinker==1.6.3
     # via flask
 cbor2==5.4.6
     # via ACME-oneM2M-CSE (setup.py)
@@ -49,14 +49,16 @@ mdit-py-plugins==0.4.0
     # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
-numpy==1.26.0
+numpy==1.26.1
     # via shapely
 paho-mqtt==1.6.1
     # via ACME-oneM2M-CSE (setup.py)
 pfzy==0.3.4
     # via inquirerpy
 plotext==5.2.8
-    # via ACME-oneM2M-CSE (setup.py)
+    # via
+    #   ACME-oneM2M-CSE (setup.py)
+    #   textual-plotext
 prompt-toolkit==3.0.39
     # via inquirerpy
 pygments==2.16.1
@@ -73,20 +75,18 @@ rich==13.6.0
     # via
     #   ACME-oneM2M-CSE (setup.py)
     #   textual
-shapely==2.0.1
+shapely==2.0.2
     # via ACME-oneM2M-CSE (setup.py)
 six==1.16.0
     # via isodate
-textual==0.38.1
+textual==0.40.0
+    # via
+    #   ACME-oneM2M-CSE (setup.py)
+    #   textual-plotext
+textual-plotext==0.1.0
     # via ACME-oneM2M-CSE (setup.py)
 tinydb==4.8.0
     # via ACME-oneM2M-CSE (setup.py)
-tree-sitter==0.20.2
-    # via
-    #   textual
-    #   tree-sitter-languages
-tree-sitter-languages==1.7.0
-    # via textual
 typing-extensions==4.8.0
     # via textual
 uc-micro-py==1.0.2
