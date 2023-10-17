@@ -39,11 +39,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Moved utilities and system scripts to sub-directories. Now all scripts from directories "*.scripts" in the "init" directory are automatically imported.
 - [TUI] Simplified the request list view in the text UI.
 
-
 ### Fixed
 - [CSE] Removed superfluous code when announcing resources (see issue #122).
 - [CSE] Added support and validation for 'xs:NCName' type in attribute policies.
-
 
 ### Removed
 

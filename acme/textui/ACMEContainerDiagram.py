@@ -223,4 +223,3 @@ class ACMEContainerDiagram(Container):
 		"""
 		self.values = values
 		self.dates = dates
-		return

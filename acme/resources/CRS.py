@@ -419,6 +419,8 @@ class CRS(Resource):
 				CSE.dispatcher.deleteResource(subRI, originator = originator)
 			except NOT_FOUND as e:
 				pass # ignore not found resources here
+			except Exception as e:
+				L.logErr(f'Cannot delete subscription for {subRI}: {e}')
 
 			# To be sure: Set the RI in the rrats list to None
 			_rrats = self.rrats
@@ -432,8 +434,11 @@ class CRS(Resource):
 		if (subRI := _subRIs.get(srat)) is not None:
 			try:
 				resource = CSE.dispatcher.retrieveResource(subRI, originator = originator)
-			except:
-				raise BAD_REQUEST(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
+			except Exception as e:
+				L.logErr(f'Cannot retrieve subscription for {subRI}: {e}')
+
+			# except:
+			# 	raise BAD_REQUEST(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
 
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
@@ -455,7 +460,7 @@ class CRS(Resource):
 			try:
 				resource = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
 			except ResponseException as e:
-				raise BAD_REQUEST(L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e.dbg}'))
+				raise BAD_REQUEST(L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e} {e.dbg}'))
 
 			del _subRIs[srat]
 			self.setAttribute(self._subSratRIs, _subRIs)
