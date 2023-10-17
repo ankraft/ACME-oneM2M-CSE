@@ -25,10 +25,8 @@ class ACMEHeaderClock(HeaderClock):
 	DEFAULT_CSS = """
 ACMEHeaderClock {
 	background: transparent;
-}
-
-HeaderClockSpace {
 	width: 26;
+
 }
 """
 	
