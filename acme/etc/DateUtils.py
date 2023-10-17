@@ -46,6 +46,17 @@ def toISO8601Date(ts:Union[float, datetime], readable:Optional[bool] = False) ->
 	return ts.strftime('%Y-%m-%dT%H:%M:%S,%f' if readable else '%Y%m%dT%H%M%S,%f')
 
 
+def fromISO8601Date(date:str) -> datetime:
+	"""	Convert an ISO 8601 date time string to a *datetime* object.
+
+		Args:
+			date: ISO 8601 datetime string.
+		Return:
+			Datetime object.
+	"""
+	return isodate.parse_datetime(date)
+
+
 def fromAbsRelTimestamp(absRelTimestamp:str, 
 						default:Optional[float] = 0.0, 
 						withMicroseconds:Optional[bool] = True) -> float:
