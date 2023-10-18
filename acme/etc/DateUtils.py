@@ -249,7 +249,7 @@ def cronMatchesTimestamp(cronPattern:Union[str, list[str]],
 						 ts:Optional[datetime] = None) -> bool:
 	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
 
-		The cronPattern must follow the usual crontab pattern of 5 fields:
+		The cronPattern must follow the usual crontab pattern of 7 fields:
 	
 			second minute hour dayOfMonth month dayOfWeek year
 
