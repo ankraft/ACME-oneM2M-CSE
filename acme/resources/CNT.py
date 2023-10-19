@@ -6,6 +6,8 @@
 #
 #	ResourceType: Container
 #
+""" Container (CNT) resource type.
+"""
 
 from __future__ import annotations
 from typing import Optional, cast
@@ -23,6 +25,7 @@ from ..resources import Factory	# attn: circular import
 
 
 class CNT(ContainerResource):
+	""" Container resource type. """
 
 	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
 									ResourceTypes.CNT, 
@@ -33,6 +36,7 @@ class CNT(ContainerResource):
 									ResourceTypes.TS,
 									ResourceTypes.CNT_LA,
 									ResourceTypes.CNT_OL ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -69,6 +73,7 @@ class CNT(ContainerResource):
 			# EXPERIMENTAL
 			'subi': None,
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 

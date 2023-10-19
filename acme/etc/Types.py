@@ -2315,12 +2315,15 @@ class AttributePolicy:
 			return None
 
 
-"""	Represent a dictionary of attribute policies used in validation. """
 AttributePolicyDict = Dict[str, AttributePolicy]
+"""	Represent a dictionary of attribute policies used in validation. """
 ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
+"""	Represent a dictionary of attribute policies used in validation. """
 
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
+""" Type definition for a dictionary of attribute policies for a flexContainer. """
 FlexContainerSpecializations = Dict[str, str]
+""" Type definition for a dictionary of specializations for a flexContainer. """
 
 
 ##############################################################################
@@ -2330,17 +2333,23 @@ FlexContainerSpecializations = Dict[str, str]
 
 
 Parameters = Dict[str, str]
-Attributes = Dict[str, Any]
+"""	Type definition for a dictionary of parameters. """
 JSON = Dict[str, Any]
+"""	Type definition for a JSON type, which is just a dictionary. """
 JSONLIST = List[JSON]
+"""	Type definition for a list of JSON types. """
 ReqResp = Dict[str, Union[int, str, List[str], JSON]]
+"""	Type definition for a dictionary of request/response parameters. """
 
 RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent')
+""" Type definition for a callback function to handle outgoing requests. """
 RequestHandler = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
 RequestResponse = namedtuple('RequestResponse', 'request result')
+""" Type definition for a request/response pair. """
 RequestResponseList = List[RequestResponse]
+""" Type definition for a list of request/response pairs. """
 
 FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """

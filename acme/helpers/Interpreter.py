@@ -704,33 +704,7 @@ class PCall():
 
 
 class PContext():
-	"""	Process context for a single script. Can be re-used.
-
-		Attributes:
-			argv: List of string that are arguments to the script.
-			ast: The script' abstract syntax tree.
-			environment: Dictionary of variables that are passed by the application to the script. Similar to `variables`, but the environment is not cleared.
-			error: Error state.
-			errorFunc: An optional function that is called when an error occured.
-			evaluateInline: Check and execute inline expressions in strings.
-			functions: Dictoonary of defined script functions.
-			logErrorFunc: An optional function that receives error log messages.
-			logFunc: An optional function that receives non-error log messages.
-			matchFunc: An optional function that is used to run regex comparisons.
-			maxRuntime: Number of seconds that is a script allowed to run.
-			meta: Dictionary of the script's meta tags and their arguments.
-			postFunc: An optional function that is called after running a script.
-			preFunc: An optional function that is called before running a script.
-			printFunc: An optional function for printing messages to the screen, console, etc.
-			result: Intermediate and final results during the execution.
-			script: The script to run.
-			state: The internal state of a script.
-			symbols: A dictionary of new symbols / functions to add to the interpreter.
-			_variables: Dictionary of variables.
-			_maxRTimestamp: The max timestamp until the script may run (internal).
-			_callStack: The internal call stack (internal).
-			_symbols: Dictionary with all build-in and provided functions (internal).
-	"""
+	"""	Process context for a single script. Can be re-used. """
 
 	__slots__ = (
 		'script',
@@ -803,35 +777,61 @@ class PContext():
 
 		# Extra parameters that can be provided
 		self.script = script
+		""" The script to run. """
 		self.symbols = _builtinCommands
+		""" A dictionary of new symbols / functions to add to the interpreter. """
 		self.logFunc = logFunc
+		""" An optional function that receives non-error log messages. """
 		self.logErrorFunc = logErrorFunc
+		""" An optional function that receives error log messages. """
 		self.printFunc = printFunc
+		""" An optional function for printing messages to the screen, console, etc. """
 		self.preFunc = preFunc
+		""" An optional function that is called before running a script. """
 		self.postFunc = postFunc
+		""" An optional function that is called after running a script. """
 		self.errorFunc = errorFunc
+		""" An optional function that is called when an error occured. """
 		self.matchFunc = matchFunc
+		""" An optional function that is used to run regex comparisons. """
 		self.maxRuntime = maxRuntime
+		""" Number of seconds that is a script allowed to run. """
 		self.fallbackFunc = fallbackFunc
+		""" An optional function to retrieve unknown symbols from the caller. """
 		self.monitorFunc = monitorFunc
+		""" An optional function to monitor function calls, e.g. to forbid them during particular executions. """
 		self.allowBrackets = allowBrackets
+		""" Allow "[" and "]" for opening and closing lists as well. """
 
 		# State, result and error attributes	
 		self.ast:list[SSymbol] = None
+		""" The script's abstract syntax tree."""
 		self.result:SSymbol = None
+		""" Intermediate and final results during the execution. """
 		self.verbose:bool = verbose
+		""" Print more debug messages. """
 		self.state:PState = PState.created
+		""" The internal state of a script."""
 		self.error:PErrorState = PErrorState(PError.noError, 0, '', None )
+		""" Error state. """
 		self.meta:Dict[str, str] = {}
+		""" Dictionary of the script's meta tags and their arguments. """
 		self.functions:dict[str, FunctionDefinition] = {}
-		self.environment:Dict[str,SSymbol] = {}		# Similar to variables, but not cleared
+		""" Dictoonary of defined script functions. """
+		self.environment:Dict[str, SSymbol] = {}		# Similar to variables, but not cleared
+		""" Dictionary of variables that are passed by the application to the script. Similar to `variables`, but the environment is not cleared. """
 		self.argv:list[str] = []
+		""" List of string that are arguments to the script. """
 		self.evaluateInline = True		# check and execute inline expressions
+		""" Check and execute inline expressions in strings. """
 
 		# Internal attributes that should not be accessed from extern
 		self._maxRTimestamp:float = None
+		""" The max timestamp until the script may run (internal). """
 		self._callStack:list[PCall] = []
+		""" The internal call stack (internal). """
 		self._symbols:PSymbolDict = None		# builtins + provided commands
+		""" Dictionary with all build-in and provided functions (internal). """
 		# self._variables:Dict[str, SSymbol] = {}
 
 

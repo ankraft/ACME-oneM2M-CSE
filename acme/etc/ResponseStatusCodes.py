@@ -100,8 +100,8 @@ class ResponseStatusCode(ACMEIntEnum):
 	INSUFFICIENT_ARGUMENTS						= 6024
 	"""	INSUFFICIENT_ARGUMENTS """
 
-
 	UNKNOWN										= -1
+	"""	UNKNOWN """
 
 
 	def httpStatusCode(self) -> int:
@@ -158,6 +158,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.UNKNOWN										: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 
 }
+""" Mapping of oneM2M return codes to http status codes. """
 
 _successRSC = (
 	ResponseStatusCode.ACCEPTED,
@@ -168,21 +169,23 @@ _successRSC = (
 	ResponseStatusCode.DELETED,
 	ResponseStatusCode.UPDATED,
 )
+""" The list of success response status codes. """
 
 
 def isSuccessRSC(rsc:ResponseStatusCode) -> bool:
+	""" Check whether a response status code is a success code. 
+	
+		Args:
+			rsc: The response status code to check.
+			
+		Returns:
+			True if the response status code is a success code, False otherwise.
+"""
 	return rsc in _successRSC
 
 
 class ResponseException(Exception):
-	"""	Base class for CSE Exceptions.
-
-		Attributes:
-			rsc: The response status code.
-			dbg: An optional debug message.
-			error: This is an error-related exception.
-			data: Optional data.
-	"""
+	"""	Base class for CSE Exceptions."""
 
 	def __init__(self, rsc:ResponseStatusCode, 
 					   dbg:Optional[str] = None,
@@ -196,8 +199,11 @@ class ResponseException(Exception):
 		"""
 		super().__init__()
 		self.rsc = rsc
+		""" The response status code. """
 		self.dbg = dbg
+		""" An optional debug message. """
 		self.data = data
+		""" Optional data. """
 
 
 class ALREADY_EXISTS(ResponseException):

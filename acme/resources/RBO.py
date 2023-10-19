@@ -6,6 +6,7 @@
 #
 #	ResourceType: mgmtObj:Reboot
 #
+""" MgmtObj:Reboot (RBO) resource type."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,6 +18,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 
 class RBO(MgmtObj):
+	""" MgmtObj:Reboot (RBO) resource type. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -49,6 +51,7 @@ class RBO(MgmtObj):
 		'rbo': None,
 		'far': None
 	}
+	""" The allowed attributes and their policy for this resource type."""
 	
 	
 	def __init__(self, dct:Optional[JSON] = None, 

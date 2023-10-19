@@ -6,6 +6,7 @@
 #
 #	RBO : Announceable variant
 #
+""" MgmtObj:Reboot announced (RBOA) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -15,6 +16,7 @@ from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class RBOAnnc(MgmtObjAnnc):
+	""" MgmtObj:Reboot announced (RBOA) resource type. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -45,6 +47,7 @@ class RBOAnnc(MgmtObjAnnc):
 		'rbo': None,
 		'far': None
 	}
+	""" The allowed attributes and their policy for this resource type."""
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
