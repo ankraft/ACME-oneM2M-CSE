@@ -6,6 +6,7 @@
 #
 #	Implementation of an MQTT Client helper class.
 #
+""" Implementation of an MQTT Client helper class. """
 
 from __future__ import annotations
 from typing import Callable, Any, Tuple, Optional
@@ -24,10 +25,15 @@ class MQTTTopic:
 	"""	Structure that represents a subscribed-to topic.
 	"""
 	topic:str				= None
+	""" The MQTT topic. """
 	mid:int					= None
+	""" The message ID of the MQTT subscription. """
 	isSubscribed:bool		= False
+	""" Whether the topic is subscribed to. """
 	callback:MQTTCallback	= None
+	""" The callback function for the topic. """
 	callbackArgs:dict 		= None
+	""" The callback arguments for the topic. """
 
 
 class MQTTHandler(object):
@@ -43,38 +49,88 @@ class MQTTHandler(object):
 		"""	This method is called after the MQTT client connected to the MQTT broker. 
 			Usually, an MQTT client should subscribe to topics and register the callback
 			methods here.
+
+			Args:
+				connection: The MQTT connection.
+
+			Returns:
+				True if successful, False otherwise.
 		"""
 		return True
+
 
 	def onDisconnect(self, connection:MQTTConnection) -> bool:
 		"""	This method is called after the MQTT client disconnected from the MQTT broker. 
+
+			Args:
+				connection: The MQTT connection.
+			
+			Returns:
+				True if successful, False otherwise.
 		"""
 		return True
 
+
 	def onSubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully subsribed to a topic. 
+
+			Args:
+				connection: The MQTT connection.
+				topic: The topic that was subscribed to.
+			
+			Returns:
+				True if successful, False otherwise.
 		"""
 		connection.subscribedCount += 1
 		return True
 
+
 	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully unsubsribed from a topic. 
+
+			Args:
+				connection: The MQTT connection.
+				topic: The topic that was unsubscribed from.
+			
+			Returns:
+				True if successful, False otherwise.
 		"""
 		connection.subscribedCount -= 1
 		return True
 
+
 	def onError(self, connection:MQTTConnection, rc:int) -> bool:
 		"""	This method is called when receiving an error when communicating with the MQTT broker. 
+
+			Args:
+				connection: The MQTT connection.
+				rc: The error code.
+			
+			Returns:
+				True if successful, False otherwise.
 		"""
 		return True
 
+
 	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
 		"""	This method is called when a log message should be handled. 
+
+			Args:
+				connection: The MQTT connection.
+				level: The log level.
+				message: The log message.
+			
+			Returns:
+				True if successful, False otherwise.
 		"""
 		return True
 	
+
 	def onShutdown(self, connection:MQTTConnection) -> None:
 		"""	This method is called after the ```connection``` was shut down.
+
+			Args:
+				connection: The MQTT connection.
 		"""
 
 
@@ -82,7 +138,9 @@ class MQTTHandler(object):
 
 
 class MQTTConnection(object):
-
+	"""	This class implements an MQTT client. It is a wrapper around the paho MQTT client.
+		It is implemented as a BackgroundWorker/Actor, so it runs in its own thread.
+	"""
 
 	__slots__ = (
 		'address',
@@ -106,6 +164,7 @@ class MQTTConnection(object):
 		'actor',
 		'subscribedTopics',
 	)
+	"""	Slots of the class. """
 
 	#
 	#	Runtime methods
@@ -126,33 +185,75 @@ class MQTTConnection(object):
 					   lowLevelLogging:bool = True,
 					   messageHandler:MQTTHandler = None
 				) -> None:
+		"""	Constructor. Initialize the MQTT client.
+
+			Args:
+				address: The address of the MQTT broker.
+				port: The port of the MQTT broker.
+				keepalive: The keepalive time for the MQTT connection.
+				interface: The interface to bind to.
+				clientID: The client ID for the MQTT client.
+				username: The username for the MQTT broker.
+				password: The password for the MQTT broker.
+				useTLS: Whether to use TLS for the MQTT connection.
+				caFile: The CA file for the MQTT broker's certificate.
+				verifyCertificate: Indicator whether to verify the MQTT broker's certificate.
+				certfile: The certificate file for the MQTT client.
+				keyfile: The key file for the MQTT client.
+				lowLevelLogging: Indicator whether to log MQTT messages.
+				messageHandler: The message handler.
+		"""
+		
 		self.address								= address
+		""" The address of the MQTT broker. """
 		self.port									= port if port else 8883 if useTLS else 1883
+		""" The port of the MQTT broker. """
 		self.keepalive								= keepalive
+		""" The keepalive time for the MQTT connection. """
 		self.bindIF									= interface
+		""" The interface to bind to. """
 		self.username:str							= username
+		""" The username for the MQTT broker. """
 		self.password:str 							= password
+		""" The password for the MQTT broker. """
 		self.useTLS:bool							= useTLS
+		""" Whether to use TLS for the MQTT connection. """
 		self.verifyCertificate						= verifyCertificate
+		""" Indicator whether to verify the MQTT broker's certificate. """
 		self.caFile									= caFile
+		""" The CA file for the MQTT broker's certificate. """
 		self.mqttsCertfile 							= certfile
+		""" The certificate file for the MQTT client. """
 		self.mqttsKeyfile 							= keyfile
+		""" The key file for the MQTT client. """
 		self.clientID								= clientID
+		""" The client ID for the MQTT client. """
 		self.lowLevelLogging						= lowLevelLogging
+		""" Indicator whether to log MQTT messages. """
 
 		self.isStopped								= True
+		""" Indicator whether the MQTT client is stopped."""
 		self.isConnected							= False
+		""" Indicator whether the MQTT client is connected."""
 		self.subscribedCount 						= 0
+		""" The number of subscribed-to topics. """
 
 
 		self.mqttClient:mqtt.Client 				= None
+		""" The MQTT client. """
 		self.messageHandler:MQTTHandler				= messageHandler
+		""" The message handler. """
 		self.actor:BackgroundWorker 				= None
+		""" The actor for the MQTT client. """
 		self.subscribedTopics:dict[str, MQTTTopic]	= {}
+		""" The list of subscribed-to topics. """
 
 	
 	def shutdown(self) -> bool:
 		"""	Shutting down the MQTT client.
+
+			Returns:
+				True if successful, False otherwise.
 		"""
 
 		self.isStopped = True
@@ -215,7 +316,10 @@ class MQTTConnection(object):
 
 
 	def _mqttActor(self) -> bool:
-		"""	Backgroundworker callback to run the actuall MQTT loop.
+		"""	BackgroundWorker callback to run the actuall MQTT loop.
+
+			Returns:
+				Always True.
 		"""
 		self.isStopped = False
 		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.INFO, 'MQTT: client started')
@@ -232,6 +336,12 @@ class MQTTConnection(object):
 
 	def _onConnect(self, client:mqtt.Client, userdata:Any, flags:dict, rc:int) -> None:
 		"""	Callback when the MQTT client connected to the broker.
+
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				flags: Flags.
+				rc: Result code.
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with result code: {rc} ({mqtt.error_string(rc)})')
 		if rc == 0:
@@ -246,6 +356,11 @@ class MQTTConnection(object):
 
 	def _onDisconnect(self, client:mqtt.Client, userdata:Any, rc:int) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
+
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				rc: Result code.
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
 		self.subscribedTopics.clear()
@@ -268,12 +383,28 @@ class MQTTConnection(object):
 
 
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
-		"""	Mapping of the paho MQTT client's log to the logging system. Also handles different log-level scheme.
+		"""	Mapping of the paho MQTT client's log to the logging system. 
+			Also handles different log-level scheme.
+
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				level: Log level.
+				buf: Log message.
 		"""
 		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
 	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:
+		"""	Callback when the client successfulle subscribed to a topic. The topic
+			is also added to the internal topic list.
+
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				mid: The message ID.
+				granted_qos: The QoS level.
+		"""
 		# TODO doc, error check when not connected, not subscribed
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
@@ -283,9 +414,17 @@ class MQTTConnection(object):
 	
 
 	def _onUnsubscribe(self, client:mqtt.Client, userdata:Any, mid:int) -> None:
+		"""	Callback when the client successfulle unsubscribed from a topic. The topic
+			is also removed from the internal topic list.
+			"""
 		# TODO doc, error check when not connected, not subscribed
 		"""	Callback when the client successfulle unsubscribed from a topic. The topic
 			is also removed from the internal list.
+
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				mid: The message ID.
 		"""
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
@@ -295,7 +434,13 @@ class MQTTConnection(object):
 
 
 	def _onMessage(self, client:mqtt.Client, userdata:Any, message:mqtt.MQTTMessage) -> None:
-		"""	Handle a received message. Forward it to the apropriate handler callback (in a Thread)
+		"""	Handle a received message. Forward it to the apropriate handler callback
+		 	(in another Thread).
+			 
+			Args:
+				client: The MQTT client.
+				userdata: User data.
+				message: The received message.
 		"""
 		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
 		for t in self.subscribedTopics.keys():
@@ -317,6 +462,11 @@ class MQTTConnection(object):
 	def subscribeTopic(self, topic:str|list[str], callback:Optional[MQTTCallback] = None, **kwargs:Any) -> None:
 		"""	Add one or more MQTT topics to subscribe to. Add the topic(s) afterwards
 			to the list of subscribed-to topics.
+
+			Args:
+				topic: The topic(s) to subscribe to. Either a single topic or a list of topics.
+				callback: The callback function to call when a message is received for the topic.
+				kwargs: Additional arguments for the callback function.
 		"""
 		def _subscribe(topic:str) -> None:
 			"""	Handle subscription of a single topic.
@@ -342,6 +492,9 @@ class MQTTConnection(object):
 		"""	Unsubscribe from a topic. `topic` is either an MQTTTopic structure with
 			a previously subscribed to topic, or a topic name, in which case
 			it is searched for in the list of MQTTTopics.
+
+			Args:
+				topic: The topic to unsubscribe from.
 		"""
 		if isinstance(topic, MQTTTopic):
 			if topic.topic not in self.subscribedTopics:
@@ -373,13 +526,19 @@ class MQTTConnection(object):
 	def isFullySubscribed(self) -> bool:
 		"""	Check whether the number managed subscriptions matches the number of
 			currently subscribed-to topics.
+
+			Return:
+				True if fully subscribed, False otherwise.
 		"""
 		return self.subscribedCount == len(self.subscribedTopics)
 
 
-
 	def publish(self, topic:str, data:bytes) -> None:
 		"""	Publish the message *data* with the topic *topic* with the MQTT broker.
+		
+			Args:
+				topic: The topic to publish to.
+				data: The data to publish.
 		"""
 		self.mqttClient.publish(topic, data)
 
@@ -392,17 +551,38 @@ class MQTTConnection(object):
 
 def idToMQTT(id:str) -> str:
 	"""	Convert a oneM2M ID to an MQTT compatible path element.
+
+		Args:
+			id: The oneM2M ID to convert.
+
+		Returns:
+			The MQTT compatible path element.
 	"""
 	return f'{id.lstrip("/").replace("/", ":")}'
 
 
 def idToMQTTClientID(id:str, isCSE:Optional[bool] = True) -> str:
 	"""	Convert a oneM2M ID to an MQTT client ID.
+
+		Args:
+			id: The oneM2M ID to convert.
+			isCSE: Whether the ID is a CSE-ID or an AE-ID.
+
+		Returns:
+			The MQTT client ID.
 	"""
 	return f'{"C::" if isCSE else "A::"}{id.lstrip("/")}'
 
+
 def mqttToId(mqttId:str, isCSE:Optional[bool] = True) -> Tuple[str, bool]:
 	"""	Convert an MQTT compatible path element to an ID.
+
+		Args:
+			mqttId: The MQTT compatible path element to convert.
+			isCSE: Whether the ID is a CSE-ID or an AE-ID.
+
+		Returns:
+			The ID and whether it is a CSE-ID or an AE-ID.
 	"""
 	match mqttId:
 		case x if x.startswith('A:'):
@@ -414,5 +594,5 @@ def mqttToId(mqttId:str, isCSE:Optional[bool] = True) -> Tuple[str, bool]:
 	return mqttId[2:].replace(':', '/'), isCSE
 
 
-# Type for an MQTT Callback
 MQTTCallback = Callable[[MQTTConnection, str, bytes], None]
+""" Type for an MQTT Callback. """
