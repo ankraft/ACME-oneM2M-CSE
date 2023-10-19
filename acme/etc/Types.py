@@ -387,18 +387,32 @@ class ResourceTypes(ACMEIntEnum):
 
 @dataclass()
 class ResourceDescription():
+	"""	Describes a resource type.
+	"""
 	typeName:str = None
+	"""	The resource type name. """
 	announcedType:ResourceTypes = None
+	"""	The announced resource type. """
 	isAnnouncedResource:bool= False
+	"""	Whether the resource type is an announced resource type. """
 	isMgmtSpecialization:bool = False
+	"""	Whether the resource type is a mgmtObj specialization. """
 	isInstanceResource:bool = False
+	"""	Whether the resource type is an instance resource. """
 	isInternalType:bool = False
+	"""	Whether the resource type is an internal type. """
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
+	"""	The name of a virtual resource. """
 	clazz:Resource = None 			# type:ignore [name-defined]
+	"""	The resource class. """
 	factory:FactoryCallableT = None
+	"""	The resource factory callable to create this resource. """
 	isRequestCreatable:bool = True	# Can be created by a request
+	"""	Whether the resource type can be created by a request. """
 	isNotificationEntity:bool = False	# Is a direct notification target
+	"""	Whether the resource type is a direct notification target. """
 	fullName:str = ''				# Full name of the resource type
+	"""	The full name of the resource type. """
 	
 _ResourceTypeDetails = {
 	
@@ -596,34 +610,61 @@ class BasicType(ACMEIntEnum):
 	"""
 
 	positiveInteger		= auto()
+	"""	Positive integer. """
 	nonNegInteger		= auto()
+	"""	Non-negative integer. """
 	unsignedInt			= auto()
+	"""	Unsigned integer. """
 	unsignedLong		= auto()
+	"""	Unsigned long. """
 	string 				= auto()
+	"""	String. """
 	timestamp			= auto()
+	"""	Timestamp. """
 	absRelTimestamp		= auto()
+	"""	Absolute or relative timestamp. """
 	list 				= auto()
+	"""	List. """
 	listNE 				= auto()	# Not empty list
+	"""	Not empty list. """
 	dict 				= auto()
+	"""	Dictionary or sub-structure. """
 	anyURI				= auto()
+	"""	Any URI. """
 	boolean				= auto()
+	"""	Boolean. """
 	float 				= auto()
+	"""	Float. """
 	geoJsonCoordinate	= auto()
+	"""	GeoJSON coordinate. """
 	integer				= auto()
+	"""	Integer. """
 	void 				= auto()
+	"""	Void. """
 	duration 			= auto()
+	"""	Duration. """
 	any					= auto()
+	"""	Any type. """
 	complex 			= auto()
+	"""	Complex type. """
 	enum	 			= auto()
+	"""	Enumeration. """
 	adict				= auto()	# anoymous dict structure
+	"""	Anonymous dictionary. """
 	base64 				= auto()
+	"""	Base64 encoded data. """
 	schedule			= auto()	# scheduleEntry
+	"""	Schedule entry. """
 	ID					= auto()	# m2m:ID
+	"""	oneM2M ID. """
 	ncname				= auto()	# xs:NCName
+	"""	XML NCName. """
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time
+	"""	Alias for timestamp. """
 	date				= timestamp	# alias type for date
+	"""	Alias for timestamp. """
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
@@ -640,21 +681,19 @@ class BasicType(ACMEIntEnum):
 
 class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities.
-		
-		Attributes:
-			CAR1: Mandatory.
-			CAR1L: Mandatory list.
-			CAR1LN: Mandatory list that shall not be empty.
-			CAR01: Optional.
-			CAR01L: Optional list.
-			CAR1N: Mandatory but may be Null/None.
 	"""
 	CAR1			= auto()
+	"""	Mandatory. """
 	CAR1L			= auto()
+	"""	Mandatory list. """
 	CAR1LN			= auto()
+	"""	Mandatory list that shall not be empty. """
 	CAR01			= auto()
+	"""	Optional. """
 	CAR01L			= auto()
+	"""	Optional list. """
 	CAR1N			= auto()
+	"""	Mandatory but may be Null/None. """
 
 	@classmethod
 	def hasCar(cls, name:str) -> bool:
@@ -707,24 +746,17 @@ class Cardinality(ACMEIntEnum):
 
 class RequestOptionality(ACMEIntEnum):
 	""" Request optionality enum values.
-
-		Attributes:
-			NP: Not provided.
-			O: Optional.
-			M: Mandatory.
 	"""
 	NP				= auto()
+	"""	Not provided. """
 	O 				= auto()
+	"""	Optional. """
 	M 				= auto()
+	"""	Mandatory. """
 
 
 class Announced(ACMEIntEnum):
 	""" Anouncement attribute enum values.
-
-		Attributes:
-			NA:	Not announced.
-			OA: Optionally announced.
-			MA: Mandatory announced.
 	"""
 
 	NA				= auto()
@@ -785,17 +817,15 @@ class EvalCriteriaOperator(ACMEIntEnum):
 
 
 class EvalMode(ACMEIntEnum):
-	"""	Eval Mode enum values. """
+	"""	Eval Mode enum values. 
+	"""
 	
 	off					= 0
 	""" Evaluation off. """
-
 	once				= 1
 	""" Evaluation once. """
-
 	periodic			= 2
 	""" Evaluation periodic. """
-
 	continous 			= 3
 	""" Evaluation continous. """
 
@@ -807,7 +837,8 @@ class EvalMode(ACMEIntEnum):
 #
 
 class Permission(ACMEIntEnum):
-	""" Permissions """
+	""" Permissions.
+	"""
 	NONE				=  0
 	"""	No permission """
 	CREATE				=  1
@@ -916,17 +947,29 @@ _OperationPermissionsMapping =	{
 class ResultContentType(ACMEIntEnum):
 	"""	Result Content Types """
 	nothing									= 0
+	"""	Nothing. """
 	attributes 								= 1
+	""" Resource Attributes. """
 	hierarchicalAddress						= 2
+	""" Hierarchical Address. """
 	hierarchicalAddressAttributes			= 3
+	""" Hierarchical Address and Attributes. """
 	attributesAndChildResources				= 4	
+	""" Attributes and Child Resources. """
 	attributesAndChildResourceReferences	= 5
+	""" Attributes and Child Resource References. """
 	childResourceReferences					= 6
+	""" Child Resource References. """
 	originalResource 						= 7
+	""" Original Resource. """
 	childResources							= 8
+	""" Child Resources. """
 	modifiedAttributes						= 9
+	""" Modified Attributes. """
 	semanticContent							= 10
+	""" Semantic Content. """
 	discoveryResultReferences				= 11
+	""" Discovery Result References. """
 
 
 	def validForOperation(self, op:Operation) -> bool:
@@ -941,6 +984,14 @@ class ResultContentType(ACMEIntEnum):
 
 	@classmethod
 	def default(cls, op:Operation) -> ResultContentType:
+		"""	Get the default Result Content for an operation.
+
+			Args:
+				op: The operation to get the default Result Content for.
+
+			Return:
+				The default Result Content for the operation.
+		"""
 		return _ResultContentTypeDefaults[op]
 	
 
@@ -988,22 +1039,31 @@ _ResultContentTypeDefaults = {
 class FilterOperation(ACMEIntEnum):
 	"""	Filter Operation """
 	AND 			= 1 # default
+	""" AND. The default. """
 	OR 				= 2
+	""" OR. """
 	XOR 			= 3
+	""" XOR. """
 
 
 class FilterUsage(ACMEIntEnum):
 	"""	Filter Usage """
 	discoveryCriteria		= 1
+	"""	Discovery Criteria. """
 	conditionalRetrieval	= 2 # default
+	""" Conditional Retrieval. The default. """
 	ipeOnDemandDiscovery	= 3
+	""" IPE On-Demand Discovery. """
 	discoveryBasedOperation	= 4
+	""" Discovery Based Operation. """
 
 
 class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
 	structured		= 1 # default
+	""" Structured. """
 	unstructured	= 2
+	""" Unstructured. """
 
 
 ##############################################################################
@@ -1014,17 +1074,25 @@ class DesiredIdentifierResultType(ACMEIntEnum):
 class CSEType(ACMEIntEnum):
 	""" CSE Types """
 	IN					=  1
+	"""	Infrastructure Node. """
 	MN					=  2
+	"""	Middle Node. """
 	ASN					=  3
+	"""	Access Node. """
 
 
 class CSEStatus(ACMEIntEnum):
 	"""	CSE Status """
 	STOPPED				= auto()
+	"""	CSE is stopped. """
 	STARTING			= auto()
+	"""	CSE is starting. """
 	RUNNING				= auto()
+	"""	CSE is running. """
 	STOPPING			= auto()
+	"""	CSE is stopping. """
 	RESETTING			= auto()
+	"""	CSE is resetting. """
 
 ##############################################################################
 #
@@ -1057,10 +1125,15 @@ class ResponseType(ACMEIntEnum):
 class RequestStatus(ACMEIntEnum):
 	"""	Reponse Types """
 	COMPLETED			= 1
+	""" Completed. """
 	FAILED				= 2
+	""" Failed. """
 	PENDING				= 3
+	""" Pending. """
 	FORWARDED			= 4
+	""" Forwarded. """
 	PARTIALLY_COMPLETED	= 5
+	""" Partially completed. """
 
 
 ##############################################################################
@@ -1088,11 +1161,15 @@ class ContentSerializationType(ACMEIntEnum):
 	"""
 
 	XML					= auto()
+	"""	XML. """
 	JSON				= auto()
+	"""	JSON. """
 	CBOR				= auto()
+	"""	CBOR. """
 	PLAIN				= auto()
-	NA	 				= auto()
+	"""	Plain text. """
 	UNKNOWN				= auto()
+	"""	Unknown. """
 
 	def toHeader(self) -> str:
 		"""	Return the mime header for an enum value.
@@ -1176,6 +1253,9 @@ class ContentSerializationType(ACMEIntEnum):
 	@classmethod
 	def supportedContentSerializations(cls) -> list[str]:
 		"""	Return a list of supported media types for content serialization.
+
+			Return:
+				A list of supported media types for content serialization.
 		"""
 		return [ 'application/json',
 				 'application/vnd.onem2m-res+json', 
@@ -1187,11 +1267,22 @@ class ContentSerializationType(ACMEIntEnum):
 	def supportedContentSerializationsSimple(cls) -> list[str]:
 		"""	Return a simplified (only the names of the serializations)
 			list of supported media types for content serialization.
+
+			Return:
+				A list of supported media types for content serialization.
 		"""
 		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
 
 
 	def __eq__(self, other:object) -> bool:
+		"""	Compare two ContentSerializationType enums for equality.
+
+			Args:
+				other: The other enum to compare with.
+
+			Return:
+				True if the enums are equal.
+		"""
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
@@ -1205,8 +1296,11 @@ class ContentSerializationType(ACMEIntEnum):
 class ConsistencyStrategy(ACMEIntEnum):
 	"""	Consistency Strategy """
 	abandonMember		= 1	# default
+	""" Abandon member. The default. """
 	abandonGroup		= 2
+	""" Abandon group. """
 	setMixed			= 3
+	""" Set mixed. """
 
 
 ##############################################################################
@@ -1217,10 +1311,15 @@ class ConsistencyStrategy(ACMEIntEnum):
 class NotificationContentType(ACMEIntEnum):
 	"""	Notification Content Types """
 	allAttributes			= 1
+	""" All Attributes. """
 	modifiedAttributes		= 2
+	""" Modified Attributes. """
 	ri 						= 3
+	""" Resource Identifier. """
 	triggerPayload			= 4
+	""" Trigger Payload. """
 	timeSeriesNotification	= 5
+	""" Time Series Notification. """
 	
 
 class NotificationEventType(ACMEIntEnum):
@@ -1608,11 +1707,17 @@ class Result:
 		the general result, a status code, values, resources etc.
 	"""
 	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	""" Resource instance. """
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
+	""" Data. """
 	rsc:ResponseStatusCode					= ResponseStatusCode.UNKNOWN	#	The responseStatusCode of a Result
+	""" ResponseStatusCode. """
 	dbg:Optional[str]						= None
+	""" Optional debug message. """
 	request:Optional[CSERequest]			= None  	# may contain the processed incoming request object
+	""" Optional `CSERequest`. """
 	embeddedRequest:Optional[CSERequest]	= None		# May contain a request as a response, e.g. when polling
+	""" Optional embedded `CSERequest`. """
 
 
 	# def errorResultCopy(self) -> Result:
@@ -2150,28 +2255,49 @@ class CSERequest:
 
 @dataclass
 class AttributePolicy:
+	"""	Attribute policy for a single resource attribute.
+	"""
 	
 	# !!! DON'T CHANGE the order of the attributes!
 
 	type:BasicType
+	""" Type of the attribute. """
 	cardinality:Cardinality
+	""" Cardinality of the attribute. """
 	optionalCreate:RequestOptionality
+	""" Optionality of the attribute for create requests. """
 	optionalUpdate:RequestOptionality
+	""" Optionality of the attribute for update requests. """
 	optionalDiscovery:RequestOptionality
+	""" Optionality of the attribute for discovery requests. """
 	announcement:Announced
+	""" Whether the attribute is announced. """
 	sname:str 					= None 	# short name
+	""" Short name of the attribute. """
 	lname:str 					= None	# longname
+	""" Long name of the attribute. """
 	namespace:str				= None	# namespace
+	""" Namespace of the attribute. """
 	tpe:str   					= None	# namespace:type name
+	""" Type name of the attribute. """
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+	""" List of resource types that this attribute is valid for. """
 	ctype:str					= None	# Definition for a complex type attribute
+	""" Definition name for a complex type attribute. """
 	typeName:str				= None	# The type as written in the definition
+	""" The type as written in the definition. """
 	fname:str					= None 	# Name of the definition file
+	""" Name of the definition file. """
 	ltype:BasicType				= None	# sub-type of a list
+	""" Sub-type of a list as writen in the definition. """
 	etype:str					= None	# name of the enum type
+	""" Name of the enum type (if the attribute is of type *enum*). """
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
+	""" Sub-type of a list as writen in the definition. """
 	evalues:dict[int, str]		= None 	# Dict of enum values and interpretations
+	""" Dict of enum values and interpretations. """
 	ptype:Type					= None	# Implementation type of the enum values
+	""" Implementation type of the enum values. """
 
 	# TODO support annnouncedSyncType
 

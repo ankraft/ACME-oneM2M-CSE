@@ -6,6 +6,8 @@
 #
 #	Managing CSE configurations
 #
+""" This module implements the configuration of the CSE. It reads the configuration file, performs checks,
+	and provides access to the configuration values. """
 
 
 from __future__ import annotations
@@ -51,6 +53,7 @@ documentationLinks = {
 	'textui': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#textui',
 	'webui': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#webui',
 }
+"""	Documentation links for configuration settings. These are used in the console and text UIto show the documentation for a configuration setting. """
 
 #
 #	Deprecated secttions
@@ -74,6 +77,7 @@ _deprecatedSections = (
     ('cse.textui', 'textui'),
     ('cse.scripting', 'scripting')
 )
+"""	Deprecated sections. Mapping from old section name to new section name."""
 
 
 
@@ -82,36 +86,67 @@ class Configuration(object):
 		method init(). Access to configuration valus is done by calling Configuration.get(<key>).
 	"""
 	_configuration: Dict[str, Any] = {}
+	""" The configuration values as a dictionary. """
 	_configurationDocs: Dict[str, str] = {}
+	""" The configuration values documentation as a dictionary. """
 
 	_defaultConfigFile:str = None
+	""" The default configuration file. """
 
 	_argsConfigfile:str = None
+	""" The configuration file passed as argument. This overrides the respective value in the configuration file. """
 	_argsLoglevel:str = None
+	""" The log level passed as argument. This overrides the respective value in the configuration file. """
 	_argsDBReset:bool = None
+	""" The reset DB flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsDBStorageMode:str = None
+	""" The DB storage mode passed as argument. This overrides the respective value in the configuration file. """
 	_argsHeadless:bool = None
+	""" The headless flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsHttpAddress:str = None
+	""" The http address passed as argument. This overrides the respective value in the configuration file. """
 	_argsHttpPort:int = None
+	""" The http port passed as argument. This overrides the respective value in the configuration file. """
 	_argsImportDirectory:str = None
+	""" The import directory passed as argument. This overrides the respective value in the configuration file. """
 	_argsListenIF:str = None
+	""" The network interface passed as argument. This overrides the respective value in the configuration file. """
 	_argsMqttEnabled:bool = None
+	""" The mqtt enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRemoteCSEEnabled:bool = None
+	""" The remote CSE enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRunAsHttps:bool = None
+	""" The https flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRunAsHttpWsgi:bool = None
+	""" The http WSGI flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsStatisticsEnabled:bool = None
+	""" The statistics enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsTextUI:bool = None
+	""" The text UI flag passed as argument. This overrides the respective value in the configuration file. """
 
 
 	# Internal print function that takes the headless setting into account
 	@staticmethod
 	def _print(msg:str) -> None:
+		"""	Print a message to the console. If the CSE is running in headless mode, then the message is not printed.
+		
+			Args:
+				msg: The message to print.	
+		"""
 		if not Configuration._argsHeadless:
 			Console().print(msg)	# Print error message to console
 
 
 	@staticmethod
-	def init(args:argparse.Namespace = None) -> bool:
+	def init(args:Optional[argparse.Namespace] = None) -> bool:
+		"""	Initialize and read the configuration. This method must be called before accessing any configuration value.
+
+			Args:
+				args: Optional arguments. If not given, then the command line arguments are used.
+
+			Returns:
+				True on success, False otherwise.
+		"""
 
 		# The default ini file
 		Configuration._defaultConfigFile		= f'{pathlib.Path.cwd()}{os.sep}{C.defaultConfigFile}'
@@ -511,13 +546,31 @@ class Configuration(object):
 
 	@staticmethod
 	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
+		""" Validates the configuration and returns a tuple (bool, str) with the result and an error message if applicable. 
+
+			Args:
+				initial:	True if this is the initial validation during startup, False otherwise. Default: False
+
+			Returns:
+				A tuple (bool, str) with the result and an error message if applicable.
+		"""
 		# Some clean-ups and overrides
 
 		def _get(key:str) -> Any:
+			""" Helper function to retrieve a configuration value. If the value is not found, None is returned.
+			
+				Args:
+					key:	The configuration key to retrieve.
+			"""
 			return Configuration.get(key)
 		
 
 		def _put(key:str, value:Any) -> None:
+			""" Helper function to set a configuration value.
+			
+				Args:
+					key:	The configuration key to set.
+			"""
 			Configuration._configuration[key] = value
 
 
@@ -785,6 +838,11 @@ class Configuration(object):
 
 	@staticmethod
 	def print() -> str:
+		"""	Prints the current configuration to the console.
+
+			Returns:
+				A string with the current configuration.
+		"""	
 		result = 'Configuration:\n'		# Magic string used e.g. in tests, don't remove
 		for (k,v) in Configuration._configuration.items():
 			result += f'  {k} = {v}\n'
@@ -793,30 +851,59 @@ class Configuration(object):
 
 	@staticmethod
 	def all() -> Dict[str, Any]:
+		"""	Returns the complete configuration as a dictionary.
+
+			Returns:
+				A dictionary with the complete configuration.
+		"""
 		return Configuration._configuration
 
 
 	@staticmethod
 	def get(key: str) -> Any:
 		"""	Retrieve a configuration value or None if no configuration could be found for a key.
+
+			Args:
+				key:	The configuration key to retrieve.
+
+			Returns:
+				The configuration value or None if no configuration could be found for a key.
 		"""
 		return Configuration._configuration.get(key)
 	
 
 	@staticmethod
 	def addDoc(key: str, markdown:str) -> None:
+		"""	Adds a documentation for a configuration key.
+
+			Args:
+				key:		The configuration key to add the documentation for.
+				markdown:	The documentation in markdown format.
+		"""
 		if key:
 			Configuration._configurationDocs[key] = markdown
 
 	
 	@staticmethod
-	def getDoc(key:str) -> str|None:
+	def getDoc(key:str) -> Optional[str]:
+		"""	Retrieves the documentation for a configuration key.
+		
+			Args:
+				key:	The configuration key to retrieve the documentation for.
+				
+			Returns:
+				The documentation in markdown format or None if no documentation could be found for the key.
+		"""
 		return Configuration._configurationDocs.get(key)
 
 
 	@staticmethod
 	def update(key:str, value:Any) -> Optional[str]:
 		""" Update a configuration value and inform other components via an event.
+
+			Args:
+				key:	The configuration key to update.
+				value:	The new value for the configuration key.
 
 			Returns:
 				None if no error occurs, or a string with an error message, what has gone wrong while validating
@@ -840,6 +927,12 @@ class Configuration(object):
 	@staticmethod
 	def has(key:str) -> bool:
 		"""	Check whether a configuration setting exsists.
+
+			Args:
+				key:	The configuration key to check.
+
+			Returns:
+				True if the configuration key exists, False otherwise.
 		"""
 		return key in Configuration._configuration
 

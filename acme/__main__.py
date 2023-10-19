@@ -7,6 +7,9 @@
 #	Starter for the ACME CSE
 #
 
+"""	This module contains the ACME CSE implementation. It is the main module of the ACME CSE.
+"""
+
 import os, re, sys
 if sys.version_info < (3, 8):
 	print('Python version >= 3.8 is required')
@@ -56,6 +59,11 @@ except ImportError as e:
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
+	""" Parse the command line arguments.
+	
+		Returns:
+			The parsed arguments.
+	"""
 	parser = argparse.ArgumentParser(prog='acme')
 	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultUserConfigFile, metavar='<filename>', help='specify the configuration file')
 
@@ -92,6 +100,8 @@ def parseArgs() -> argparse.Namespace:
 
 
 def main() -> None:
+	""" Main function of the ACME CSE.
+	"""
 	#	Start the CSE with command line arguments.
 	#	In case the CSE should be started without command line parsing, the values
 	#	can be passed instead. Unknown arguments are ignored.

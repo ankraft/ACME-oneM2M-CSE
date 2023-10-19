@@ -181,11 +181,19 @@ class ResponseException(Exception):
 			rsc: The response status code.
 			dbg: An optional debug message.
 			error: This is an error-related exception.
+			data: Optional data.
 	"""
 
 	def __init__(self, rsc:ResponseStatusCode, 
 					   dbg:Optional[str] = None,
 					   data:Optional[Any] = None) -> None:
+		""" Constructor.
+		
+			Args:
+				rsc: The response status code.
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__()
 		self.rsc = rsc
 		self.dbg = dbg
@@ -196,6 +204,12 @@ class ALREADY_EXISTS(ResponseException):
 	"""	ALREADY EXISTS Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		""" Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.ALREADY_EXISTS, dbg, data)
 
 
@@ -203,6 +217,12 @@ class APP_RULE_VALIDATION_FAILED(ResponseException):
 	"""	APP RULE VALIDATION FAILED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.APP_RULE_VALIDATION_FAILED, dbg, data)
 
 
@@ -210,6 +230,12 @@ class BAD_REQUEST(ResponseException):
 	"""	BAD REQUEST Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.BAD_REQUEST, dbg, data)
 
 
@@ -217,6 +243,12 @@ class CONFLICT(ResponseException):
 	"""	CONFLICT Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.CONFLICT, dbg, data)
 
 
@@ -224,6 +256,12 @@ class CONTENTS_UNACCEPTABLE(ResponseException):
 	"""	CONTENTS UNACCEPTABLE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.CONTENTS_UNACCEPTABLE, dbg, data)
 
 
@@ -231,6 +269,12 @@ class CROSS_RESOURCE_OPERATION_FAILURE(ResponseException):
 	"""	CROSS RESOURCE OPERATION FAILURE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.CROSS_RESOURCE_OPERATION_FAILURE, dbg, data)
 
 
@@ -238,6 +282,12 @@ class GROUP_MEMBER_TYPE_INCONSISTENT(ResponseException):
 	"""	GROUP MEMBER TYPE INCONSISTENT Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.GROUP_MEMBER_TYPE_INCONSISTENT, dbg, data)
 
 
@@ -245,6 +295,12 @@ class INSUFFICIENT_ARGUMENTS(ResponseException):
 	"""	INSUFFICIENT ARGUMENTS Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.INSUFFICIENT_ARGUMENTS, dbg, data)
 
 
@@ -252,6 +308,12 @@ class INTERNAL_SERVER_ERROR(ResponseException):
 	"""	INTERNAL SERVER ERRROR Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg, data)
 
 
@@ -259,6 +321,12 @@ class INVALID_CHILD_RESOURCE_TYPE(ResponseException):
 	"""	INVALID CHILD RESOURCE TYPE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.INVALID_CHILD_RESOURCE_TYPE, dbg, data)
 
 
@@ -266,6 +334,12 @@ class INVALID_ARGUMENTS(ResponseException):
 	"""	INVALID ARGUMENTS Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.INVALID_ARGUMENTS, dbg, data)
 
 
@@ -273,6 +347,12 @@ class INVALID_SPARQL_QUERY(ResponseException):
 	"""	INVALID SPARQL QUERY Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.INVALID_SPARQL_QUERY, dbg, data)
 
 
@@ -287,6 +367,12 @@ class NOT_ACCEPTABLE(ResponseException):
 	"""	NOT ACCEPTABLE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.NOT_ACCEPTABLE, dbg, data)
 
 
@@ -294,6 +380,12 @@ class NOT_FOUND(ResponseException):
 	"""	NOT FOUND Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.NOT_FOUND, dbg, data)
 
 
@@ -301,6 +393,12 @@ class NOT_IMPLEMENTED(ResponseException):
 	"""	NOT IMPLEMENTED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.NOT_IMPLEMENTED, dbg, data)
 
 
@@ -308,6 +406,12 @@ class OPERATION_DENIED_BY_REMOTE_ENTITY(ResponseException):
 	"""	OPERATION DENIED BY REMOTE ENTITY Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.OPERATION_DENIED_BY_REMOTE_ENTITY, dbg, data)
 
 
@@ -315,6 +419,12 @@ class OPERATION_NOT_ALLOWED(ResponseException):
 	"""	OPERATION NOT ALLOWED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.OPERATION_NOT_ALLOWED, dbg, data)
 
 
@@ -322,6 +432,12 @@ class ORIGINATOR_HAS_ALREADY_REGISTERED(ResponseException):
 	"""	ORIGINATOR HAS ALREADY REGISTERED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.ORIGINATOR_HAS_ALREADY_REGISTERED, dbg, data)
 
 
@@ -329,6 +445,12 @@ class ORIGINATOR_HAS_NO_PRIVILEGE(ResponseException):
 	"""	ORIGINATOR HAS NO PRIVILEGE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, dbg, data)
 
 
@@ -336,6 +458,12 @@ class RECEIVER_HAS_NO_PRIVILEGES(ResponseException):
 	"""	RECEIVER HAS NO PRIVILEGES Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.RECEIVER_HAS_NO_PRIVILEGES, dbg, data)
 
 
@@ -343,6 +471,12 @@ class RELEASE_VERSION_NOT_SUPPORTED(ResponseException):
 	"""	RELEASE VERSION NOT SUPPORTED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.RELEASE_VERSION_NOT_SUPPORTED, dbg, data)
 
 
@@ -350,6 +484,12 @@ class REMOTE_ENTITY_NOT_REACHABLE(ResponseException):
 	"""	REMOTE ENTITY NOT REACHABLE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.REMOTE_ENTITY_NOT_REACHABLE, dbg, data)
 
 
@@ -357,6 +497,12 @@ class REQUEST_TIMEOUT(ResponseException):
 	"""	REQUEST TIMEOUT Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.REQUEST_TIMEOUT, dbg, data)
 
 
@@ -364,6 +510,12 @@ class SECURITY_ASSOCIATION_REQUIRED(ResponseException):
 	"""	SECURITY ASSOCIATION REQUIRED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.SECURITY_ASSOCIATION_REQUIRED, dbg, data)
 
 
@@ -371,6 +523,12 @@ class SERVICE_SUBSCRIPTION_NOT_ESTABLISHED(ResponseException):
 	"""	SERVICE SUBSCRIPTION NOT ESTABLISHED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.SERVICE_SUBSCRIPTION_NOT_ESTABLISHED, dbg, data)
 
 
@@ -378,6 +536,12 @@ class SUBSCRIPTION_CREATER_HAS_NO_PRIVILEGE(ResponseException):
 	"""	SUBSCRIPTION CREATER HAS NO PRIVILEGE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.SUBSCRIPTION_CREATER_HAS_NO_PRIVILEGE, dbg, data)
 
 
@@ -385,6 +549,12 @@ class SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE(ResponseException):
 	"""	SUBSCRIPTION HOST HAS NO PRIVILEGE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE, dbg, data)
 
 
@@ -392,6 +562,12 @@ class SUBSCRIPTION_VERIFICATION_INITIATION_FAILED(ResponseException):
 	"""	SUBSCRIPTION VERIFICATION INITIATION FAILED Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED, dbg, data)
 
 
@@ -399,6 +575,12 @@ class TARGET_NOT_REACHABLE(ResponseException):
 	"""	TARGET NOT REACHABLE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.TARGET_NOT_REACHABLE, dbg, data)
 
 
@@ -406,6 +588,12 @@ class TARGET_NOT_SUBSCRIBABLE(ResponseException):
 	"""	TARGET NOT SUBSCRIBABLE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE, dbg, data)
 
 
@@ -413,6 +601,12 @@ class UNSUPPORTED_MEDIA_TYPE(ResponseException):
 	"""	UNSUPPORTED MEDIA TYPE Response Status Code.
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
 		super().__init__(ResponseStatusCode.UNSUPPORTED_MEDIA_TYPE, dbg, data)
 
 
@@ -454,9 +648,13 @@ _mapping = {
 
 
 def exceptionFromRSC(rsc:ResponseStatusCode) -> Optional[Type[ResponseException]]:
+	""" Get the exception class for a Response Status Code.
+	
+		Args:
+			rsc: The Response Status Code.
+
+		Returns:
+			The exception class or None if not found.
+	"""
 	return _mapping.get(rsc)
-
-
-
-
 

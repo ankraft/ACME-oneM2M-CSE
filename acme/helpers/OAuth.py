@@ -4,8 +4,8 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module implements OAuth token retrieval.
-#
+"""	This module implements OAuth token retrieval.
+"""
 
 from __future__ import annotations
 from typing import Optional
@@ -13,7 +13,10 @@ import collections, time
 import requests
 
 Token = collections.namedtuple('Token', 'token expiration')
+"""	A named tuple for a token. """
+
 _expirationLeeway:float	= 5.0		# 5 seconds leeway for token expiration
+"""	Leeway for token expiration. """
 
 
 def getOAuthToken(serverURL:str, 
@@ -26,6 +29,16 @@ def getOAuthToken(serverURL:str,
 
 		This function returns a new named tuple Token(token, expiration), or None in case of an error. The expiration 
 		is in epoch seconds.
+
+		Args:
+			serverURL: The URL of the OAuth server.
+			clientID: The client ID.
+			clientSecret: The client secret.
+			token: Optional token to check if it is still valid.
+			kind: The kind of OAuth server. Currently only 'keycloak' is supported.
+
+		Returns:
+			A Token tuple or None in case of an error.
 	"""
 	if not token:
 		token = Token(token = None, expiration=0.0)
