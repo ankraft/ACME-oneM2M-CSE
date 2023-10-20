@@ -7,6 +7,9 @@
 #	Implementation of a simple s-expression-based command processor.
 #
 """	The interpreter module implements an extensible lisp-based scripting runtime.
+
+	See:
+		`PContext` for the main class to run a script.
 """
 from __future__ import annotations
 
@@ -704,7 +707,16 @@ class PCall():
 
 
 class PContext():
-	"""	Process context for a single script. Can be re-used. """
+	"""	Process context for a single script. 
+	
+		This is the main runtime object for the interpreter. 
+		To run a script, create a `PContext` object, and call its `run()` method.
+
+		To add new symbols to the interpreter, inherit from `PContext` 
+		and add them to the `symbols` dictionary during initialization.	
+		
+		A `PContext` object can be re-used.
+	"""
 
 	__slots__ = (
 		'script',
@@ -743,24 +755,24 @@ class PContext():
 
 	def __init__(self, 
 				 script:str,
-				 symbols:PSymbolDict				= None,
-				 logFunc:PLogCallable 				= lambda pcontext, msg: print(f'** {msg}'),
-				 logErrorFunc:PErrorLogCallable		= lambda pcontext, msg, exception: print(f'!! {msg}'),
-				 printFunc:PLogCallable 			= lambda pcontext, msg: print(msg),
-				 preFunc:PFuncCallable				= None,
-				 postFunc:PFuncCallable				= None,
-			 	 errorFunc:PFuncCallable			= None,
-				 matchFunc:PMatchCallable			= lambda pcontext, l, r: l == r,
-				 maxRuntime:float					= None,
-				 fallbackFunc:PSymbolCallable		= None,
-				 monitorFunc:PSymbolCallable		= None,
-				 allowBrackets:bool					= False,
-				 verbose:bool						= False) -> None:
+				 symbols:Optional[PSymbolDict]				= None,
+				 logFunc:Optional[PLogCallable] 			= lambda pcontext, msg: print(f'** {msg}'),
+				 logErrorFunc:Optional[PErrorLogCallable]	= lambda pcontext, msg, exception: print(f'!! {msg}'),
+				 printFunc:Optional[PLogCallable] 			= lambda pcontext, msg: print(msg),
+				 preFunc:Optional[PFuncCallable]			= None,
+				 postFunc:Optional[PFuncCallable]			= None,
+			 	 errorFunc:Optional[PFuncCallable]			= None,
+				 matchFunc:Optional[PMatchCallable]			= lambda pcontext, l, r: l == r,
+				 maxRuntime:Optional[float]					= None,
+				 fallbackFunc:Optional[PSymbolCallable]		= None,
+				 monitorFunc:Optional[PSymbolCallable]		= None,
+				 allowBrackets:Optional[bool]				= False,
+				 verbose:Optional[bool]						= False) -> None:
 		"""	Initialization of a `PContext` object.
 
 			Args:
 				script: The script to run.
-				symbols: A dictionary of new symbols / functions to add to the interpreter.
+				symbols: An optional dictionary of new symbols / functions to add to the interpreter.
 				logFunc: An optional function that receives non-error log messages.
 				logErrorFunc: An optional function that receives error log messages.
 				printFunc: An optional function for printing messages to the screen, console, etc.
@@ -1653,7 +1665,7 @@ PFuncCallable = Callable[[PContext], PContext]
 PSymbolCallable = Callable[[PContext, SSymbol], PContext]
 """	Signature of a symbol callable. The callbacks are 
 	called with a `PContext` object	and is supposed to return
-	it again, or None in case of an error.
+	it again, updated with a return value, or *None* in case of an error.
 """
 
 PLogCallable = Callable[[PContext, str], None]

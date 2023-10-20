@@ -6,6 +6,11 @@
 #
 #	Most internal requests are routed through here.
 #
+""" Dispatcher module. Handles all requests and dispatches them to the
+	appropriate handlers. This includes requests for resources, requests
+	for resource creation, and requests for resource deletion.
+	Also handles the discovery of resources.
+"""
 
 from __future__ import annotations
 from typing import List, Tuple, cast, Sequence, Optional
@@ -41,6 +46,10 @@ from ..services.Logging import Logging as L
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
 class Dispatcher(object):
+	""" Dispatcher class. Handles all requests and dispatches them to the
+		appropriate handlers. This includes requests for resources, requests
+		for resource creation, and requests for resource deletion.
+	"""
 
 	__slots__ = (
 		'csiSlashLen',
@@ -51,15 +60,24 @@ class Dispatcher(object):
 		'_eventUpdateResource',
 		'_eventDeleteResource',
 	)
+	""" Slots of class attributes. """
 
 	def __init__(self) -> None:
+		""" Initialize the Dispatcher. """
+
 		self.csiSlashLen 				= len(CSE.cseCsiSlash)
+		""" Length of the CSI with a slash. """
 		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
+		""" Sort the discovered resources. """
 
 		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
+		""" Event handler for resource creation events. """
 		self._eventCreateChildResource = CSE.event.createChildResource	# type: ignore [attr-defined]
+		""" Event handler for child resource creation events. """
 		self._eventUpdateResource = CSE.event.updateResource			# type: ignore [attr-defined]
+		""" Event handler for resource update events. """
 		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
+		""" Event handler for resource deletion events. """
 
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -95,8 +113,14 @@ class Dispatcher(object):
 				request: The incoming request.
 				originator: The requests originator.
 				id: Optional ID of the request.
+
 			Return:
 				Result object.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
+				INTERNAL_SERVER_ERROR: If an internal error occurred.
 		"""
 		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn}')
 
@@ -290,9 +314,9 @@ class Dispatcher(object):
 					If no, then try to retrieve the resource from a connected (!) remote CSE.
 				originator:	The originator of the request.
 				postRetrieveHook: Only when retrieving localls, invoke the Resource's *willBeRetrieved()* callback.
+			
 			Return:
 				Result instance.
-
 		"""
 		if id:
 			if id.startswith(CSE.cseCsiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
@@ -319,6 +343,20 @@ class Dispatcher(object):
 									srn:Optional[str] = None, 
 									originator:Optional[str] = None, 
 									request:Optional[CSERequest] = None) -> Resource:
+		"""	Retrieve a resource locally.
+
+			Args:
+				ri:	The resource ID.
+				srn: The structured resource name.
+				originator: The originator of the request.
+				request: The request.
+
+			Return:
+				The retrieved resource.
+
+			Raises:
+				NOT_FOUND: If the resource cannot be found.
+		"""
 		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
@@ -350,6 +388,18 @@ class Dispatcher(object):
 						  filterCriteria:Optional[FilterCriteria] = None,
 						  rootResource:Optional[Resource] = None, 
 						  permission:Optional[Permission] = Permission.DISCOVERY) -> List[Resource]:
+		"""	Discover resources. This is the main function for resource discovery.
+
+			Args:
+				id: The ID of the resource to start discovery from.
+				originator: The originator of the request.
+				filterCriteria: The filter criteria.
+				rootResource: The root resource for discovery.
+				permission: The permission to use.
+
+			Return:
+				A list of discovered resources.
+		"""
 		L.isDebug and L.logDebug('Discovering resources')
 
 		if not rootResource:
@@ -413,6 +463,21 @@ class Dispatcher(object):
 								 dcrs:Optional[list[Resource]] = None, 
 								 filterCriteria:Optional[FilterCriteria] = None,
 								 permission:Optional[Permission] = Permission.DISCOVERY) -> list[Resource]:
+		"""	Discover resources recursively. This is a helper function for discoverResources().
+
+			Args:
+				rootResource: The root resource for discovery.
+				originator: The originator of the request.
+				level: The level of discovery.
+				fo: The filter operation.
+				allLen: The length of all filter criteria.
+				dcrs: The direct child resources of the root resource.
+				filterCriteria: The filter criteria.
+				permission: The permission to use.
+
+			Return:
+				A list of discovered resources.
+		"""
 		if not rootResource or level == 0:		# no resource or level == 0
 			return []
 
@@ -561,8 +626,17 @@ class Dispatcher(object):
 				request: The incoming request.
 				originator: The requests originator.
 				id: Optional ID of the request.
+
 			Return:
 				Result object.
+			
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+				NOT_FOUND: If the resource cannot be found.
+				OPERATION_NOT_ALLOWED: If the operation is not allowed.
+				SECURITY_ASSOCIATION_REQUIRED: If a security association is required.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
+				CONFLICT: If the resource already exists.
 		"""
 		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}|{request.srn}')
 
@@ -596,7 +670,7 @@ class Dispatcher(object):
 
 		# Get parent resource and check permissions
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
-		parentResource = CSE.dispatcher.retrieveResource(id)
+		parentResource = self.retrieveResource(id)
 
 		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource):
 			if ty == ResourceTypes.AE:
@@ -630,7 +704,7 @@ class Dispatcher(object):
 
 		# Create the resource. If this fails we de-register everything
 		try:
-			_resource = CSE.dispatcher.createLocalResource(newResource, parentResource, originator, request = request)
+			_resource = self.createLocalResource(newResource, parentResource, originator, request = request)
 		except ResponseException as e:
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
@@ -675,7 +749,22 @@ class Dispatcher(object):
 									 parentID:str, 
 									 ty:ResourceTypes, 
 									 originator:str) -> Tuple[str, str, str]:
-		# TODO doc
+		"""	Create a resource from a JSON dictionary.
+		
+			Args:
+				dct: The dictionary.
+				parentID: The parent ID.
+				ty: The resource type.
+				originator: The originator.
+			
+			Return:
+				A tuple of (resource ID, CSE-ID, parent ID).
+
+			Raises:
+				INTERNAL_SERVER_ERROR: If an unknown/unsupported RSC is returned.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
+			
+		"""
 		# Create locally
 		if (pID := localResourceID(parentID)) is not None:
 			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
@@ -729,6 +818,21 @@ class Dispatcher(object):
 							parentResource:Resource,
 							originator:Optional[str] = None,
 							request:Optional[CSERequest] = None) -> Resource:
+		"""	Create a resource locally.
+
+			Args:
+				resource: The resource to create.
+				parentResource: The parent resource.
+				originator: The originator of the request.
+				request: The request.
+
+			Return:
+				The created resource.
+			
+			Raises:
+				TARGET_NOT_SUBSCRIBABLE: If the parent resource is not subscribable.
+				INVALID_CHILD_RESOURCE_TYPE: If the child resource type is invalid.
+		"""
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
 		if parentResource:	# parentResource might be None if this is the root resource
@@ -797,8 +901,15 @@ class Dispatcher(object):
 				request: The incoming request.
 				originator: The requests originator.
 				id: Optional ID of the request.
+
 			Return:
 				Result object.
+			
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+				NOT_FOUND: If the resource cannot be found.
+				OPERATION_NOT_ALLOWED: If the operation is not allowed.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 		"""
 		L.isDebug and L.logDebug(f'Process UPDATE request for id: {request.id}|{request.srn}')
 
@@ -890,6 +1001,7 @@ class Dispatcher(object):
 				dct: JSON dictionary with the updated attributes.
 				doUpdateCheck: Enable/disable a call to update().
 				originator: The request's originator.
+
 			Return:
 				Updated resource.
 		"""
@@ -913,7 +1025,21 @@ class Dispatcher(object):
 									 id:str, 
 									 originator:Optional[str] = None, 
 									 resource:Optional[Resource] = None) -> Resource:
-		# TODO doc
+		"""	Update a resource from a JSON dictionary.
+
+			Args:
+				dct: The dictionary.
+				id: The resource ID.
+				originator: The originator.
+				resource: The resource to update.
+
+			Return:
+				The updated resource.
+
+			Raises:
+				INTERNAL_SERVER_ERROR: If the resource cannot be updated.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no UPDATE privileges.
+		"""	
 
 		# Update locally
 		if (rID := localResourceID(id)) is not None:
@@ -967,8 +1093,13 @@ class Dispatcher(object):
 				request: The incoming request.
 				originator: The requests originator.
 				id: Optional ID of the request.
+
 			Return:
 				Result object.
+			
+			Raises:
+				NOT_FOUND: If the resource cannot be found.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 		"""
 		L.isDebug and L.logDebug(f'Process DELETE request for id: {request.id}|{request.srn}')
 
@@ -1059,6 +1190,15 @@ class Dispatcher(object):
 								  withDeregistration:Optional[bool] = False, 
 								  parentResource:Optional[Resource] = None, 
 								  doDeleteCheck:Optional[bool] = True) -> None:
+		"""	Delete a resource from the CSE. Call deactivate() and deleted() callbacks on the resource.
+
+			Args:
+				resource: The resource to delete.
+				originator: The originator of the request.
+				withDeregistration: If True, deregister the resource.
+				parentResource: The parent resource.
+				doDeleteCheck: If True, call childRemoved() on the parent resource.
+		"""
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
 		resource.deactivate(originator)	# deactivate it first
@@ -1147,8 +1287,13 @@ class Dispatcher(object):
 				request: The incoming request.
 				originator: The requests originator.
 				id: Optional ID of the request.
+
 			Return:
 				Result object.
+			
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 		"""
 		L.isDebug and L.logDebug(f'Process NOTIFY request for id: {request.id}|{request.srn}')
 
@@ -1201,7 +1346,19 @@ class Dispatcher(object):
 	def notifyLocalResource(self, ri:str, 
 								  originator:str, 
 								  content:JSON) -> Result:
-		# TODO doc
+		"""	Notify a local resource.
+		
+			Args:
+				ri: The resourceIdentifier of the resource to notify.
+				originator: The originator of the request.
+				content: The notification content.
+
+			Return:
+				Result object.
+
+			Raises:
+				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no NOTIFY access to the resource.
+		"""
 
 		L.isDebug and L.logDebug(f'Sending NOTIFY to local resource: {ri}')
 		resource = self.retrieveLocalResource(ri, originator = originator)
@@ -1334,7 +1491,18 @@ class Dispatcher(object):
 							   originator:str, 
 							   filterCriteria:FilterCriteria, 
 							   permission:Permission) -> Optional[list[Resource]]:
-		# TODO documentation
+		"""	Discover child resources of a resource.
+
+			Args:
+				id: The resourceIdentifier of the resource to discover the children for.
+				resource: The resource to discover the children for.
+				originator: The originator of the request.
+				filterCriteria: The filter criteria to use.
+				permission: The permission to check.
+
+			Return:
+				A list of child resources. This list might be empty.
+		"""
 		resources = self.discoverResources(id, originator, filterCriteria = filterCriteria, rootResource = resource, permission = permission)
 
 		# check and filter by ACP
@@ -1396,7 +1564,7 @@ class Dispatcher(object):
 				`ORIGINATOR_HAS_NO_PRIVILEGE`: In case the originator has not the required permission to the resoruce.
 
 		"""
-		resource = CSE.dispatcher.retrieveResource(riFromID(ri), originator)
+		resource = self.retrieveResource(riFromID(ri), originator)
 		if not CSE.security.hasAccess(originator, resource, permission):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator has no access to the resource: {ri}'))
 		return resource
@@ -1584,8 +1752,14 @@ class Dispatcher(object):
 		return targetResource
 
 
-	# Retrieve full child resources of a resource and add them to a new target resource
 	def _childResourceTree(self, resources:list[Resource], targetResource:Resource|JSON) -> None:
+		""" Retrieve child resources of a resource and add them to
+			a **new** target resource instance as "children"
+
+			Args:
+				resources: A list of resources to retrieve the child resources from.
+				targetResource: The target resource to add the child resources to.
+		"""
 		if len(resources) == 0:
 			return
 		result:JSON = {}
@@ -1632,7 +1806,7 @@ class Dispatcher(object):
 				if not (id := structuredPathFromRI(id)):
 					return None
 
-			resource = CSE.dispatcher.retrieveResource(id)
+			resource = self.retrieveResource(id)
 			if resource.ty == ResourceTypes.PCH_PCU:
 				return cast(PCH_PCU, resource)
 
@@ -1664,7 +1838,7 @@ class Dispatcher(object):
 
 		if nid:
 			try:
-				return CSE.dispatcher.retrieveResource(nid)
+				return self.retrieveResource(nid)
 			except:
 				pass
 		return None
@@ -1685,13 +1859,25 @@ class Dispatcher(object):
 			if not isStructured(id):
 				if not (id := structuredPathFromRI(id)):
 					return None
-			if (resource := CSE.dispatcher.retrieveResource(id)) and ResourceTypes.isLatestOldestResource(resource.ty):
+			if (resource := self.retrieveResource(id)) and ResourceTypes.isLatestOldestResource(resource.ty):
 				return resource
 		# Fallthrough
 		return None
 
 
 	def _partialFromResource(self, resource:Resource, attributeList:JSON) -> Result:
+		"""	Filter attributes from a resource.
+
+			Args:
+				resource: The resource to filter the attributes from.
+				attributeList: The list of attributes to filter.
+
+			Return:
+				A Result object with the filtered resource.
+
+			Raises:
+				BAD_REQUEST: In case an attribute is not defined for the resource.
+		"""
 		if attributeList:
 			# Validate that the attribute(s) are actual resouce attributes
 			for a in attributeList:

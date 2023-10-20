@@ -47,25 +47,27 @@ from ..services.Logging import Logging as L
 
 # Constants for database and table names
 _resources = 'resources'
+""" Name of the resources table. """
 _identifiers = 'identifiers'
+""" Name of the identifiers table. """
 _children = 'children'
-_srn = 'srn'
+""" Name of the children table. """
 _subscriptions = 'subscriptions'
+""" Name of the subscriptions table. """
 _batchNotifications = 'batchNotifications'
+""" Name of the batchNotifications table. """
 _statistics = 'statistics'
+""" Name of the statistics table. """
 _actions = 'actions'
+""" Name of the actions table. """
 _requests = 'requests'
+""" Name of the requests table. """
 _schedules = 'schedules'
+""" Name of the schedules table. """
 
 
 class Storage(object):
 	"""	This class implements the entry points to the CSE's underlying database functions.
-
-		Attributes:
-			inMemory: Indicator whether the database is located in memory (volatile) or on disk.
-			dbPath: In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk.
-			dbReset: Indicator that the database should be reset or cleared during start-up.
-			db: The database object.
 	"""
 
 	__slots__ = (
@@ -95,6 +97,7 @@ class Storage(object):
 
 		# create DB object and open DB
 		self.db = TinyDBBinding(self.dbPath, CSE.cseCsi[1:]) # add CSE CSI as postfix
+		""" The database object. """
 
 		# Reset dbs?
 		if self.dbReset:
@@ -128,8 +131,11 @@ class Storage(object):
 		"""	Assign default configurations.
 		"""
 		self.inMemory 	= Configuration.get('database.inMemory')
+		""" Indicator whether the database is located in memory (volatile) or on disk. """
 		self.dbPath 	= Configuration.get('database.path')
+		""" In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk. """
 		self.dbReset 	= Configuration.get('database.resetOnStartup') 
+		""" Indicator that the database should be reset or cleared during start-up. """
 
 
 	def purge(self) -> None:
@@ -829,55 +835,6 @@ class Storage(object):
 
 class TinyDBBinding(object):
 	"""	This class implements the TinyDB binding to the database. It is used by the Storage class.
-
-		Attributes:
-			path: Path to the database directory.
-			cacheSize: Size of the cache for the TinyDB tables.
-			writeDelay: Delay for writing to the database.
-			maxRequests: Maximum number of oneM2M recorded requests to keep in the database. 
-			lockResources: Lock for the resources table.
-			lockIdentifiers: Lock for the identifiers table.
-			lockChildResources: Lock for the childResources table.
-			lockStructuredIDs: Lock for the structuredIDs table.
-			lockSubscriptions: Lock for the subscriptions table.
-			lockBatchNotifications: Lock for the batchNotifications table.
-			lockStatistics: Lock for the statistics table.
-			lockActions: Lock for the actions table.
-			lockRequests: Lock for the requests table.
-			lockSchedules: Lock for the schedules table.
-			fileResources: Filename for the resources table.
-			fileIdentifiers: Filename for the identifiers table.
-			fileSubscriptions: Filename for the subscriptions table.
-			fileBatchNotifications: Filename for the batchNotifications table.
-			fileStatistics: Filename for the statistics table.
-			fileActions: Filename for the actions table.
-			fileRequests: Filename for the requests table.
-			fileSchedules: Filename for the schedules table.
-			dbResources: The TinyDB database for the resources table.
-			dbIdentifiers: The TinyDB database for the identifiers table.
-			dbSubscriptions: The TinyDB database for the subscriptions table.
-			dbBatchNotifications: The TinyDB database for the batchNotifications table.
-			dbStatistics: The TinyDB database for the statistics table.
-			dbActions: The TinyDB database for the actions table.
-			dbRequests: The TinyDB database for the requests table.
-			dbSchedules: The TinyDB database for the schedules table.
-			tabResources: The TinyDB table for the resources table.
-			tabIdentifiers: The TinyDB table for the identifiers table.
-			tabChildResources: The TinyDB table for the childResources table.
-			tabStructuredIDs: The TinyDB table for the structuredIDs table.
-			tabSubscriptions: The TinyDB table for the subscriptions table.
-			tabBatchNotifications: The TinyDB table for the batchNotifications table.
-			tabStatistics: The TinyDB table for the statistics table.
-			tabActions: The TinyDB table for the actions table.
-			tabRequests: The TinyDB table for the requests table.
-			tabSchedules: The TinyDB table for the schedules table.
-			resourceQuery: The TinyDB query object for the resources table.
-			identifierQuery: The TinyDB query object for the identifiers table.
-			subscriptionQuery: The TinyDB query object for the subscriptions table.
-			batchNotificationQuery: The TinyDB query object for the batchNotifications table.
-			actionsQuery: The TinyDB query object for the actions table.
-			requestsQuery: The TinyDB query object for the requests table.
-			schedulesQuery: The TinyDB query object for the schedules table.
 	"""
 
 	__slots__ = (
@@ -945,111 +902,159 @@ class TinyDBBinding(object):
 		"""
 		
 		self.path = path
+		""" Path to the database directory. """
 		self._assignConfig()
+		""" Assign configuration values. """
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
 		self.lockResources				= Lock()
+		""" Lock for the resources table."""
 		self.lockIdentifiers			= Lock()
+		""" Lock for the identifiers table."""
 		self.lockChildResources			= Lock()
+		""" Lock for the childResources table."""
 		self.lockStructuredIDs			= Lock()
+		""" Lock for the structuredIDs table."""
 		self.lockSubscriptions			= Lock()
+		""" Lock for the subscriptions table."""
 		self.lockBatchNotifications		= Lock()
+		""" Lock for the batchNotifications table."""
 		self.lockStatistics 			= Lock()
+		""" Lock for the statistics table."""
 		self.lockActions 				= Lock()
+		""" Lock for the actions table."""
 		self.lockRequests 				= Lock()
+		""" Lock for the requests table."""
 		self.lockSchedules 				= Lock()
+		""" Lock for the schedules table."""
 
 		# file names
 		self.fileResources				= f'{self.path}/{_resources}-{postfix}.json'
+		""" Filename for the resources table."""
 		self.fileIdentifiers			= f'{self.path}/{_identifiers}-{postfix}.json'
+		""" Filename for the identifiers table."""
 		self.fileSubscriptions			= f'{self.path}/{_subscriptions}-{postfix}.json'
+		""" Filename for the subscriptions table."""
 		self.fileBatchNotifications		= f'{self.path}/{_batchNotifications}-{postfix}.json'
+		""" Filename for the batchNotifications table."""
 		self.fileStatistics				= f'{self.path}/{_statistics}-{postfix}.json'
+		""" Filename for the statistics table."""
 		self.fileActions				= f'{self.path}/{_actions}-{postfix}.json'
+		""" Filename for the actions table."""
 		self.fileRequests				= f'{self.path}/{_requests}-{postfix}.json'
+		""" Filename for the requests table."""
 		self.fileSchedules				= f'{self.path}/{_schedules}-{postfix}.json'
+		""" Filename for the schedules table."""
 
 		# All databases/tables will use the smart query cache
 		if Configuration.get('database.inMemory'):
 			L.isInfo and L.log('DB in memory')
 			self.dbResources 			= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the resources table."""
 			self.dbIdentifiers 			= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the identifiers table."""
 			self.dbSubscriptions 		= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the subscriptions table."""
 			self.dbBatchNotifications	= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the batchNotifications table."""
 			self.dbStatistics			= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the statistics table."""
 			self.dbActions				= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the actions table."""
 			self.dbRequests				= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the requests table."""
 			self.dbSchedules			= TinyDB(storage = MemoryStorage)
+			""" The TinyDB database for the schedules table."""
 		else:
 			L.isInfo and L.log('DB in file system')
-			# self.dbResources 			= TinyDB(self.fileResources)
-			# self.dbIdentifiers 			= TinyDB(self.fileIdentifiers)
-			# self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
-			# self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
-			# self.dbStatistics 			= TinyDB(self.fileStatistics)
-			# self.dbActions	 			= TinyDB(self.fileActions)
-
-			# EXPERIMENTAL Using TinyDBBufferedStorage - Buffers read and writes to disk
 			self.dbResources 			= TinyDB(self.fileResources, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the resources table."""
 			self.dbIdentifiers 			= TinyDB(self.fileIdentifiers, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the identifiers table."""
 			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the subscriptions table."""
 			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the batchNotifications table."""
 			self.dbStatistics 			= TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the statistics table."""
 			self.dbActions	 			= TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the actions table."""
 			self.dbRequests	 			= TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the requests table."""
 			self.dbSchedules	 		= TinyDB(self.fileSchedules, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			""" The TinyDB database for the schedules table."""
 
 		
 		# Open/Create tables
 		self.tabResources = self.dbResources.table(_resources, cache_size = self.cacheSize)
+		""" The TinyDB table for the resources table."""
 		TinyDBBetterTable.assign(self.tabResources)
 		
 		self.tabIdentifiers = self.dbIdentifiers.table(_identifiers, cache_size = self.cacheSize)
+		""" The TinyDB table for the identifiers table."""
 		TinyDBBetterTable.assign(self.tabIdentifiers)
 
 		self.tabChildResources = self.dbIdentifiers.table(_children, cache_size = self.cacheSize)
+		""" The TinyDB table for the childResources table."""
 		TinyDBBetterTable.assign(self.tabChildResources)
 
 		self.tabStructuredIDs = self.dbIdentifiers.table('srn', cache_size = self.cacheSize)
+		""" The TinyDB table for the structuredIDs table."""
 		TinyDBBetterTable.assign(self.tabStructuredIDs)
 		
 		self.tabSubscriptions = self.dbSubscriptions.table(_subscriptions, cache_size = self.cacheSize)
+		""" The TinyDB table for the subscriptions table."""
 		TinyDBBetterTable.assign(self.tabSubscriptions)
 		
 		self.tabBatchNotifications = self.dbBatchNotifications.table(_batchNotifications, cache_size = self.cacheSize)
+		""" The TinyDB table for the batchNotifications table."""
 		TinyDBBetterTable.assign(self.tabBatchNotifications)
 		
 		self.tabStatistics = self.dbStatistics.table(_statistics, cache_size = self.cacheSize)
+		""" The TinyDB table for the statistics table."""
 		TinyDBBetterTable.assign(self.tabStatistics)
 
 		self.tabActions = self.dbActions.table(_actions, cache_size = self.cacheSize)
+		""" The TinyDB table for the actions table."""
 		TinyDBBetterTable.assign(self.tabActions)
 
 		self.tabRequests = self.dbRequests.table(_requests, cache_size = self.cacheSize)
+		""" The TinyDB table for the requests table."""
 		TinyDBBetterTable.assign(self.tabRequests)
 
 		self.tabSchedules = self.dbSchedules.table(_schedules, cache_size = self.cacheSize)
+		""" The TinyDB table for the schedules table."""
 		TinyDBBetterTable.assign(self.tabSchedules)
 
 
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
+		""" The TinyDB query object for the resources table."""
 		self.identifierQuery 			= Query()
+		""" The TinyDB query object for the identifiers table."""
 		self.subscriptionQuery			= Query()
+		""" The TinyDB query object for the subscriptions table."""
 		self.batchNotificationQuery 	= Query()
+		""" The TinyDB query object for the batchNotifications table."""
 		self.actionsQuery				= Query()
+		""" The TinyDB query object for the actions table."""
 		self.requestsQuery				= Query()
+		""" The TinyDB query object for the requests table."""
 		self.schedulesQuery				= Query()
+		""" The TinyDB query object for the schedules table."""
 
 
 	def _assignConfig(self) -> None:
 		"""	Assign default configurations.
 		"""
 		self.cacheSize = Configuration.get('database.cacheSize')
+		""" Size of the cache for the TinyDB tables. """
 		self.writeDelay = Configuration.get('database.writeDelay')
+		""" Delay for writing to the database. """
 		self.maxRequests = Configuration.get('cse.operation.requests.size')
+		""" Maximum number of oneM2M recorded requests to keep in the database. """
 
 
 	def closeDB(self) -> None:
