@@ -293,8 +293,8 @@ class AnnouncementManager(object):
 
 					# Don't allow instances to be announced without their parents
 					if resource.ty in [ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI]:
-						raise OPERATION_NOT_ALLOWED(L.logDebug('announcing instances without their parents is not allowed'))
-
+						L.logWarn('Announcing instances without their parents is not allowed. Unsuccessful announcement')
+						return
 					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
 					# and set the announced CSEBase as new parent
 					checkCSEBaseAnnouncement(parentResource := getCSE())
