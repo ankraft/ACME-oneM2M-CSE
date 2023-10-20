@@ -705,7 +705,8 @@ class Dispatcher(object):
 			res = CSE.request.handleSendRequest(CSERequest(to = (pri := toSPRelative(parentID)),
 														   originator = originator,
 														   ty = ty,
-														   pc = dct)
+														   pc = dct,
+														   op = Operation.CREATE)
 											   )[0].result	# there should be at least one result
 
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
