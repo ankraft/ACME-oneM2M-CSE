@@ -89,7 +89,7 @@ class ResourceTypes(ACMEIntEnum):
 	ACTR			= 65
 	""" Action resource type. """
 	DEPR			= 66
-
+	""" Dependency resource type. """
 
 
 	# Virtual resources (some are proprietary resource types)
@@ -179,7 +179,6 @@ class ResourceTypes(ACMEIntEnum):
 	ACTRAnnc		= 10065
 	"""	Announced Action resource type. """
 	DEPRAnnc		= 10066
-
 	"""	Announced Dependency resource type. """
 	FWRAnnc			= -30001
 	"""	Announced Firmware ManagementObject specialization. """
@@ -793,26 +792,34 @@ class EvalCriteriaOperator(ACMEIntEnum):
 	""" Less than or equal. """
 
 	def isAllowedType(self, typ:BasicType) -> bool:
-		# Ordered types are allowed for all operators
-		if typ in [ BasicType.positiveInteger,
-					BasicType.nonNegInteger,
-					BasicType.unsignedInt,
-					BasicType.unsignedLong,
-					BasicType.timestamp,
-					BasicType.absRelTimestamp,
-					BasicType.float,
-					BasicType.integer,
-					BasicType.duration,
-					BasicType.enum,
-					BasicType.time,
-					BasicType.date ]:
-			return True
-		# Equal and unequal are the only operators allowed for all other types
-		if self.value in [ EvalCriteriaOperator.equal,
-						   EvalCriteriaOperator.notEqual ]:
-			return True
-		# Not allowed
-		return False
+			"""	Check if the given BasicType is allowed for the current EvalCriteriaOperator.
+
+				Args:
+					typ: The BasicType to check.
+
+				Returns:
+					True if the BasicType is allowed for the current EvalCriteriaOperator, False otherwise.
+			"""
+			# Ordered types are allowed for all operators
+			if typ in [ BasicType.positiveInteger,
+						BasicType.nonNegInteger,
+						BasicType.unsignedInt,
+						BasicType.unsignedLong,
+						BasicType.timestamp,
+						BasicType.absRelTimestamp,
+						BasicType.float,
+						BasicType.integer,
+						BasicType.duration,
+						BasicType.enum,
+						BasicType.time,
+						BasicType.date ]:
+				return True
+			# Equal and unequal are the only operators allowed for all other types
+			if self.value in [ EvalCriteriaOperator.equal,
+							   EvalCriteriaOperator.notEqual ]:
+				return True
+			# Not allowed
+			return False
 
 
 
@@ -1324,17 +1331,28 @@ class NotificationContentType(ACMEIntEnum):
 
 class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate						=  1	# A, default
-	resourceDelete						=  2	# B
+
+	resourceUpdate						=  1 # A, default
+	""" Resource Update (the default)."""
+	resourceDelete						=  2 # B
+	""" Resource Delete. """
 	createDirectChild					=  3 # C
+	""" Create Direct Child. """
 	deleteDirectChild					=  4 # D	
+	""" Delete Direct Child. """
 	retrieveCNTNoChild					=  5 # E # TODO not supported yet
+	""" Retrieve CNT No Child. """
 	triggerReceivedForAE				=  6 # F # TODO not supported yet
+	""" Trigger Received For AE. """
 	blockingUpdate 						=  7 # G
+	""" Blocking Update. """
 	# TODO spec and implementation for blockingUpdateDirectChild			=  ???
 	reportOnGeneratedMissingDataPoints	=  8 # H
+	""" Report On Generated Missing Data Points. """
 	blockingRetrieve					=  9 # I # EXPERIMENTAL
+	""" Blocking Retrieve. """
 	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL
+	""" Blocking Retrieve Direct Child. """
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
@@ -1396,24 +1414,42 @@ _defaultNCT = {
 @dataclass
 class MissingData:
 	"""	Data class for collecting the missing data states. """ 
+
 	subscriptionRi:str
+	""" Subscription resource identifier. """
 	missingDataDuration:float
+	""" Missing data duration. """
 	missingDataNumber:int
+	""" Missing data number. """
 	timeWindowEndTimestamp:float	= None
+	""" Time window end timestamp. """
 	missingDataList:list[str]		= field(default_factory=list)
+	""" Missing data list. """
 	missingDataCurrentNr:int 		= 0
+	""" Missing data current number. """
 
 	def clear(self) -> None:
+		"""	Clear the missing data states.
+		"""
+		
 		self.timeWindowEndTimestamp	= None
 		self.clearMissingDataList()
 
 
 	def clearMissingDataList(self) -> None:
+		"""	Clear the missing data list.
+		"""
+
 		self.missingDataList		= []
 		self.missingDataCurrentNr	= 0
 
 	
 	def asDict(self) -> JSON:
+		"""	Return the missing data as a dictionary.
+
+			Return:
+				The missing data as a dictionary.
+		"""
 		return {
 			'mdlt': self.missingDataList,
 			'mdc' : self.missingDataCurrentNr
@@ -1427,20 +1463,29 @@ class LastTSInstance:
 
 	# runtime attributes
 	dgt:list[float]						= field(default_factory = lambda: [0])
+	""" List of data generation times. """
 	expectedDgt:float				 	= 0.0
+	""" Expected data generation time. """
 	missingDataDetectionTime:float		= 0.0
+	""" Missing data detection time. """
 
 	# <TS> attributes
 	pei:float							= 0.0
+	""" Periodic interval. """
 	mdt:float							= 0.0
+	""" Missing data detection time. """
 	peid:float							= 0.0
+	""" Periodic interval duration. """
 
 	# Subscriptions
 	missingData:dict[str, MissingData]	= field(default_factory = dict)
+	""" Missing data. """
 
 	# Internal
 	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
+	""" Actor for this TS."""
 	running:bool 						= False # for late activation of this 
+	""" Running. """
 
 
 	def prepareNextDgt(self) -> None:
@@ -1456,6 +1501,11 @@ class LastTSInstance:
 	
 
 	def addDgt(self, dgt:float) -> None:
+		"""	Add a data generation time to the list of data generation times.
+
+			Args:
+				dgt: The data generation time to add.
+		"""
 		# TODO really support list. currently only one dgt is put, but 
 		# always overrides the old one. 
 		# Also change declaration of dgt above
@@ -1466,16 +1516,31 @@ class LastTSInstance:
 	
 
 	def nextDgt(self) -> float:
+		"""	Get the next expected data generation time.
+
+			Return:
+				The next expected data generation time.
+		"""
 		if len(self.dgt) == 0:
 			return None
 		return self.dgt.pop(0)
 	
 
 	def hasDgt(self) -> bool:
+		"""	Check if there is a data generation time.
+
+			Return:
+				True if there is a data generation time.
+		"""
 		return len(self.dgt) > 0
 	
 
 	def clearDgt(self) -> None:
+		"""	Clear the data generation time.
+
+			Return:
+				True if there is a data generation time.
+		"""
 		self.dgt.clear()
 		
 
@@ -1487,6 +1552,7 @@ class LastTSInstance:
 
 class AnnounceSyncType(ACMEIntEnum):
 	""" Announce Sync Types """
+
 	UNI_DIRECTIONAL = 1
 	"""	Announcement shall be done uni-directional, ie. changes in the announced resource are not synced back."""
 	BI_DIRECTIONAL = 2
@@ -2317,11 +2383,13 @@ class AttributePolicy:
 
 AttributePolicyDict = Dict[str, AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
+
 ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
 
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
+
 FlexContainerSpecializations = Dict[str, str]
 """ Type definition for a dictionary of specializations for a flexContainer. """
 

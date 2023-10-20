@@ -130,6 +130,8 @@ def commentJson(data:Union[str, dict],
 	
 
 _decimalMatch = re.compile(r'{(\d+)}')
+"""	Compiled regex expression of recognize decimal numbers in a string. """
+
 def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Optional[Any]:
 	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
 		*default* is returned.
@@ -297,6 +299,7 @@ _soundexReplacements = (
 		('MN', '5'),
 		('R', '6'),
 	)
+"""	Replacement characters for the soundex algorithm. """
 
 def soundex(s:str, maxCount:Optional[int] = 4) -> str:
 	"""	Convert a string to a Soundex value.

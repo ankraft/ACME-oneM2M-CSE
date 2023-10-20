@@ -107,6 +107,8 @@ def noNamespace(id:str) -> str:
 
 
 _randomIDCharSet = string.ascii_uppercase + string.digits + string.ascii_lowercase
+"""	Character set for random IDs. """
+
 def _randomID() -> str:
 	""" Generate an ID. Prevent certain patterns in the ID.
 
@@ -228,6 +230,8 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 
 
 _unreserved = re.compile(r'^[\w\-.~]*$')
+"""	Regular expression to test for unreserved characters. """
+
 def hasOnlyUnreserved(id:str) -> bool:
 	"""	Test that an ID only contains characters from the unreserved character set of 
 		RFC 3986.
@@ -241,6 +245,8 @@ def hasOnlyUnreserved(id:str) -> bool:
 
 
 _csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid CSE-ID format. """
+
 def isValidCSI(csi:str) -> bool:
 	"""	Test for valid CSE-ID format.
 
@@ -253,6 +259,8 @@ def isValidCSI(csi:str) -> bool:
 
 
 _aeRx = re.compile('^[^/\s]+') # Must not start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid AE-ID format. """
+
 def isValidAEI(aei:str) -> bool:
 	"""	Test for valid AE-ID format. 
 
@@ -579,6 +587,8 @@ _urlregex = re.compile(
 		# r'\S+' # re.IGNORECASE		 			# optional path
 
 		)
+"""	Regular expression to test for a valid URL. """
+
 def isURL(url:str) -> bool:
 	""" Check whether a given string is a URL. 
 
@@ -643,7 +653,10 @@ def normalizeURL(url:str) -> str:
 #
 
 _excludeFromRoot = [ 'pi' ]
+"""	Attributes that are excluded from the root of a resource tree. """
+
 _pureResourceRegex = re.compile('[\w]+:[\w]')
+"""	Regular expression to test for a pure resource name. """
 
 def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 	"""	Return the "pure" structure without the "<domain>:xxx" resource type name, and the oneM2M type identifier. 
@@ -740,6 +753,15 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 
 
 def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
+	"""	Filter a dictionary by a list of attributes to include.
+	
+		Args:
+			dct: Dictionary to filter.
+			attributesToInclude: List of attributes to include.
+			
+		Return:
+			Filtered dictionary.
+	"""
 	return { k: v 
 			 for k, v in dct.items() 
 			 if k in attributesToInclude }
@@ -878,5 +900,12 @@ def runsInIPython() -> bool:
 
 
 def reverseEnumerate(data:list) -> Generator[Tuple[int, Any], None, None]:
+	"""	Reverse enumerate a list.
+
+		Args:
+			data: List to enumerate.
+		Return:
+			Generator that yields a tuple with the index and the value of the list.
+	"""
 	for i in range(len(data)-1, -1, -1):
 		yield (i, data[i])

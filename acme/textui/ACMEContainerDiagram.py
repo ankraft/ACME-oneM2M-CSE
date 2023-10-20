@@ -110,7 +110,7 @@ class ACMEContainerDiagram(Container):
 		self.dates:Optional[list[str]] = []
 		self.refreshCallback = refreshCallback
 		self.buttons = {
-			DiagramTypes.Line: Button('Line', variant = 'primary', id = 'diagram-line-button'),
+			DiagramTypes.Line: Button('Line', variant = 'success', id = 'diagram-line-button'),
 			DiagramTypes.Graph: Button('Graph', variant = 'primary', id = 'diagram-graph-button'),
 			DiagramTypes.Scatter: Button('Scatter', variant = 'primary', id = 'diagram-scatter-button'),
 			DiagramTypes.Bar: Button('Bar', variant = 'primary', id = 'diagram-bar-button'),
