@@ -1419,7 +1419,6 @@ class TestCRS(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCRSPeriodicAllSomeEventsMissingNone(self) -> None:
 		"""	CREATE <CRS> with rrat, one encs, periodic window, all or some events missing, no event"""
-		clearLastNotification()
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'nu' : [ '/id-in/'+TestCRS.originator ],
@@ -1444,6 +1443,7 @@ class TestCRS(unittest.TestCase):
 		# Create NO CIN
 
 		# wait and check notification
+		clearLastNotification()
 		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
