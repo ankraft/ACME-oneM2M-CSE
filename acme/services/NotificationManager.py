@@ -613,7 +613,8 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, eem: {eem}')
 
 		# Test for conditions
-		if	(eem == EventEvaluationMode.ALL_EVENTS_PRESENT and len(data) == subCount) or \
+		if	((eem is None or eem == EventEvaluationMode.ALL_EVENTS_PRESENT) and len(data) == subCount) or \
+			(eem == EventEvaluationMode.ALL_EVENTS_PRESENT and len(data) == subCount) or \
 			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
 			(eem == EventEvaluationMode.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
 			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
