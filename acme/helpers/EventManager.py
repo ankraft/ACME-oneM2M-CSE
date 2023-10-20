@@ -44,11 +44,6 @@ class Event(list):	# type:ignore[type-arg]
 
 	Attention: 
 		Since the parent class is a *list* calling *isInstance(obj, list)* will return True.
-
-	Attributes:
-		runInBackground: Indicator whether an event should be handled in a separate thread.
-		manager: The responsible `EventManager` to handle an event.
-		name: The event name.
 	"""
 
 	__slots__ = (
@@ -56,6 +51,7 @@ class Event(list):	# type:ignore[type-arg]
 		'manager',
 		'name',
 	)
+	"""	Slots of the Event class. """
 
 	def __init__(self,  runInBackground:Optional[bool] = True, 
 						manager:Optional[EventManager] = None,
@@ -68,8 +64,11 @@ class Event(list):	# type:ignore[type-arg]
 				name: The event name.
 		"""
 		self.runInBackground = runInBackground
+		"""	Indicator whether an event should be handled in a separate thread. """
 		self.manager = manager
+		"""	The responsible `EventManager` to handle an event. """
 		self.name = name
+		"""	The event name. """
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
@@ -131,20 +130,20 @@ class EventManager(object):
 
 			manager.anEvent(anArg)
 				Raise the *anEvent* `Event` with an *anArg* argument.
-
-		Attributes:
-			_running: Internal Running indicator for the manager instance.
 	"""
 
 	__slots__ = (
 		'_running',
 	)
+	"""	Slots of the EventManager class. """
 
 
 	def __init__(self) -> None:
 		"""	EventManager initialization.
 		"""
 		self._running = True
+		"""	Internal Running indicator for the manager instance. """
+
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the Event Manager.

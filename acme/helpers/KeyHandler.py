@@ -16,7 +16,7 @@ import sys, time, select
 from enum import Enum
 
 _timeout = 0.5
-
+""" Timeout for getch() in seconds. """
 
 try:
 	# Posix, Linux, Mac OS
@@ -27,123 +27,226 @@ try:
 
 		# Common
 		LF					= '\x0a'
+		""" Line feed. """
 		CR					= '\x0d'
+		""" Carriage return. """
 		SPACE				= '\x20'
+		""" Space. """
 		# ESC				= '\x1b'
 		BACKSPACE			= '\x7f'
+		""" Backspace. """
 		TAB					= '\x09'
+		""" Tab. """
 		SHIFT_TAB			= '\x1b\x5b\x5a'
+		""" Shift tab. """
 		
 		# CTRL-Keys
 		CTRL_A				= '\x01'
+		""" Ctrl-A. """
 		CTRL_B				= '\x02'
+		""" Ctrl-B. """
 		CTRL_C				= '\x03'
+		""" Ctrl-C. """
 		CTRL_D				= '\x04'
+		""" Ctrl-D. """
 		CTRL_E				= '\x05'
+		""" Ctrl-E. """
 		CTRL_F				= '\x06'
+		""" Ctrl-F. """
 		CTRL_G				= '\x07'
+		""" Ctrl-G. """
 		CTRL_H				= '\x08'
+		""" Ctrl-H. """
 		CTRL_I				= TAB
+		""" Ctrl-I. Mappped to TAB. """
 		CTRL_J				= LF
+		""" Ctrl-J. Mapped to Line Feed. """
 		CTRL_K				= '\x0b'
+		""" Ctrl-K. """
 		CTRL_L				= '\x0c'
+		""" Ctrl-L. """
 		CTRL_M	 			= CR
+		""" Ctrl-M. Mapped to Carriage Return. """
 		CTRL_N				= '\x0e'
+		""" Ctrl-N. """
 		CTRL_O				= '\x0f'
+		""" Ctrl-O. """
 		CTRL_P				= '\x10'
+		""" Ctrl-P. """
 		CTRL_Q				= '\x11'
+		""" Ctrl-Q. """
 		CTRL_R				= '\x12'
+		""" Ctrl-R. """
 		CTRL_S				= '\x13'
+		""" Ctrl-S. """
 		CTRL_T				= '\x14'
+		""" Ctrl-T. """
 		CTRL_U				= '\x15'
+		""" Ctrl-U. """
 		CTRL_V				= '\x16'
+		""" Ctrl-V. """
 		CTRL_W				= '\x17'
+		""" Ctrl-W. """
 		CTRL_X				= '\x18'
+		""" Ctrl-X. """
 		CTRL_Y				= '\x19'
+		""" Ctrl-Y. """
 		CTRL_Z				= '\x1a'
+		""" Ctrl-Z. """
 		
 		# Cursor keys
 		UP 					= '\x1b\x5b\x41'
+		""" Cursor up. """
 		DOWN				= '\x1b\x5b\x42'
+		""" Cursor down. """
 		LEFT				= '\x1b\x5b\x44'
+		""" Cursor left. """
 		RIGHT				= '\x1b\x5b\x43'
+		""" Cursor right. """
 		SHIFT_UP			= '\x1b\x5b\x31\x3b\x32\x41'
+		""" Shift cursor up. """
 		SHIFT_DOWN			= '\x1b\x5b\x31\x3b\x32\x42'
+		""" Shift cursor down. """
 		SHIFT_RIGHT			= '\x1b\x5b\x31\x3b\x32\x43'
+		""" Shift cursor right. """
 		SHIFT_LEFT			= '\x1b\x5b\x31\x3b\x32\x44'
+		""" Shift cursor left. """
 		CTRL_UP				= '\x1b\x5b\x31\x3b\x35\x41'
+		""" Ctrl cursor up. """
 		CTRL_DOWN			= '\x1b\x5b\x31\x3b\x35\x42'
+		""" Ctrl cursor down. """
 		CTRL_RIGHT			= '\x1b\x5b\x31\x3b\x35\x43'
+		""" Ctrl cursor right. """
 		CTRL_LEFT			= '\x1b\x5b\x31\x3b\x35\x44'
+		""" Ctrl cursor left. """
 		ALT_UP				= '\x1b\x1b\x5b\x41'
+		""" Alt cursor up. """
 		ALT_DOWN			= '\x1b\x1b\x5b\x42'
+		""" Alt cursor down. """
 		ALT_RIGHT			= '\x1b\x1b\x5b\x43'
+		""" Alt cursor right. """
 		ALT_LEFT			= '\x1b\x1b\x5b\x44'
+		""" Alt cursor left. """
 		SHIFT_ALT_UP		= '\x1b\x5b\x31\x3b\x31\x30\x41'
+		""" Shift Alt cursor up. """
 		SHIFT_ALT_DOWN		= '\x1b\x5b\x31\x3b\x31\x30\x42'
+		""" Shift Alt cursor down. """
 		SHIFT_ALT_RIGHT		= '\x1b\x5b\x31\x3b\x31\x30\x43'
+		""" Shift Alt cursor right. """
 		SHIFT_ALT_LEFT		= '\x1b\x5b\x31\x3b\x31\x30\x44'
+		""" Shift Alt cursor left. """
 		SHIFT_CTRL_UP		= '\x1b\x5b\x31\x3b\x36\x41'
+		""" Shift Ctrl cursor up. """
 		SHIFT_CTRL_DOWN		= '\x1b\x5b\x31\x3b\x36\x42'
+		""" Shift Ctrl cursor down. """
 		SHIFT_CTRL_RIGHT	= '\x1b\x5b\x31\x3b\x36\x43'
+		""" Shift Ctrl cursor right. """
 		SHIFT_CTRL_LEFT		= '\x1b\x5b\x31\x3b\x36\x44'
+		""" Shift Ctrl cursor left. """
 		SHIFT_CTRL_ALT_UP	= '\x1b\x5b\x31\x3b\x31\x34\x41'
+		""" Shift Ctrl Alt cursor up. """
 		SHIFT_CTRL_ALT_DOWN	= '\x1b\x5b\x31\x3b\x31\x34\x42'
+		""" Shift Ctrl Alt cursor down. """
 		SHIFT_CTRL_ALT_RIGHT= '\x1b\x5b\x31\x3b\x31\x34\x43'
+		""" Shift Ctrl Alt cursor right. """
 		SHIFT_CTRL_ALT_LEFT	= '\x1b\x5b\x31\x3b\x31\x34\x44'
+		""" Shift Ctrl Alt cursor left. """
 
 		# Navigation keys
 		INSERT 				= '\x1b\x5b\x32\x7e'
+		""" Insert. """
 		SUPR				= '\x1b\x5b\x33\x7e'
+		""" Supr. """
 
 		HOME				= '\x1b\x5b\x48'
+		""" Home. """
 		SHIFT_HOME			= '\x1b\x5b\x31\x3b\x32\x48'
+		""" Shift Home. """
 		CTRL_HOME			= '\x1b\x5b\x31\x3b\x35\x48'
+		""" Ctrl Home. """
 		ALT_HOME			= '\x1b\x5b\x31\x3b\x39\x48'
+		""" Alt Home. """
 		SHIFT_CTRL_HOME		= '\x1b\x5b\x31\x3b\x36\x48'
+		""" Shift Ctrl Home. """
 		SHIFT_ALT_HOME		= '\x1b\x5b\x31\x3b\x31\x30\x48'
+		""" Shift Alt Home. """
 		SHIFT_CTRL_ALT_HOME	= '\x1b\x5b\x31\x3b\x31\x34\x48'
+		""" Shift Ctrl Alt Home. """
 
 		END					= '\x1b\x5b\x46'
+		""" End. """
 		SHIFT_END			= '\x1b\x5b\x31\x3b\x32\x46'
+		""" Shift End. """
 		CTRL_END			= '\x1b\x5b\x31\x3b\x35\x46'
+		""" Ctrl End. """
 		ALT_END				= '\x1b\x5b\x31\x3b\x39\x46'
+		""" Alt End. """
 		SHIFT_CTRL_END		= '\x1b\x5b\x31\x3b\x36\x46'
+		""" Shift Ctrl End. """
 		SHIFT_ALT_END		= '\x1b\x5b\x31\x3b\x31\x30\x46'
+		""" Shift Alt End. """
 		SHIFT_CTRL_ALT_END	= '\x1b\x5b\x31\x3b\x31\x34\x46'
+		""" Shift Ctrl Alt End. """
 
 		PAGE_UP				= '\x1b\x5b\x35\x7e'
+		""" Page up. """
 		ALT_PAGE_UP			= '\x1b\x1b\x5b\x35\x7e'
-
+		""" Alt Page up. """
 		PAGE_DOWN			= '\x1b\x5b\x36\x7e'
+		""" Page down. """
 		ALT_PAGE_DOWN		= '\x1b\x1b\x5b\x36\x7e'
+		""" Alt Page down. """
 
 
 		# Funcion keys
 		F1					= '\x1b\x4f\x50'
+		""" F1. """
 		F2					= '\x1b\x4f\x51'
+		""" F2. """
 		F3					= '\x1b\x4f\x52'
+		""" F3. """
 		F4					= '\x1b\x4f\x53'
+		""" F4. """
 		F5					= '\x1b\x5b\x31\x35\x7e'
+		""" F5. """
 		F6					= '\x1b\x5b\x31\x37\x7e'
+		""" F6. """
 		F7					= '\x1b\x5b\x31\x38\x7e'
+		""" F7. """
 		F8					= '\x1b\x5b\x31\x39\x7e'
+		""" F8. """
 		F9					= '\x1b\x5b\x32\x30\x7e'
+		""" F9. """
 		F10					= '\x1b\x5b\x32\x31\x7e'
+		""" F10. """
 		F11					= '\x1b\x5b\x32\x33\x7e'
+		""" F11. """
 		F12					= '\x1b\x5b\x32\x34\x7e'
+		""" F12. """
 		SHIFT_F1			= '\x1b\x5b\x31\x3b\x32\x50'
+		""" Shift F1. """
 		SHIFT_F2			= '\x1b\x5b\x31\x3b\x32\x51'
+		""" Shift F2. """
 		SHIFT_F3			= '\x1b\x5b\x31\x3b\x32\x52'
+		""" Shift F3. """
 		SHIFT_F4			= '\x1b\x5b\x31\x3b\x32\x53'
+		""" Shift F4. """
 		SHIFT_F5			= '\x1b\x5b\x31\x35\x3b\x32\x7e'
+		""" Shift F5. """
 		SHIFT_F6			= '\x1b\x5b\x31\x37\x3b\x32\x7e'
+		""" Shift F6. """
 		SHIFT_F7			= '\x1b\x5b\x31\x38\x3b\x32\x7e'
+		""" Shift F7. """
 		SHIFT_F8			= '\x1b\x5b\x31\x39\x3b\x32\x7e'
+		""" Shift F8. """
 		SHIFT_F9			= '\x1b\x5b\x32\x30\x3b\x32\x7e'
+		""" Shift F9. """
 		SHIFT_F10			= '\x1b\x5b\x32\x31\x3b\x32\x7e'
+		""" Shift F10. """
 		SHIFT_F11			= '\x1b\x5b\x32\x33\x3b\x32\x7e'
+		""" Shift F11. """
 		SHIFT_F12			= '\x1b\x5b\x32\x34\x3b\x32\x7e'
+		""" Shift F12. """
 
 
 except ImportError:
@@ -302,15 +405,18 @@ else:
 
 	_errorInGetch:bool = False
 	def getch() -> Optional[str|FunctionKey]:
-		"""getch() -> key character
+		"""	getch() -> key character
 
-		Read a single keypress from stdin and return the resulting character. 
-		Nothing is echoed to the console. This call will block if a keypress 
-		is not already available, but will not wait for Enter to be pressed. 
+			Read a single keypress from stdin and return the resulting character. 
+			Nothing is echoed to the console. This call will block if a keypress 
+			is not already available, but will not wait for Enter to be pressed. 
 
-		If the pressed key was a modifier key, nothing will be detected; if
-		it were a special function key, it may return the first character of
-		of an escape sequence, leaving additional characters in the buffer.
+			If the pressed key was a modifier key, nothing will be detected; if
+			it were a special function key, it may return the first character of
+			of an escape sequence, leaving additional characters in the buffer.
+
+			Returns:
+				A single character str or a FunctionKey enum value.
 		"""
 		global _errorInGetch
 		if _errorInGetch:		# getch() doesnt't fully work previously, so just return
@@ -339,7 +445,7 @@ else:
 		sys.stdin.flush()
 
 _functionKeys:Tuple[FunctionKey, str] = [(e, e.value) for e in FunctionKey] # type:ignore
-# TODO
+""" List of all function keys. """
 
 Commands = Dict[str, Callable[[str], None]]
 """ Mapping between characters and callback functions. """
@@ -493,6 +599,12 @@ def stopLoop() -> None:
 def readline(prompt:str='>') -> str:
 	"""	Read a line from the console. 
 		Catch EOF (^D) and Keyboard Interrup (^C). I that case None is returned.
+
+		Args:
+			prompt: The prompt to display before the input.
+
+		Returns:
+			The input line or None.
 	"""
 	answer = None
 	try:
@@ -504,6 +616,15 @@ def readline(prompt:str='>') -> str:
 	return answer
 
 def waitForKeypress(s:float) -> Optional[str]:
+	"""	Wait for a keypress for a maximum of *s* seconds. 
+		If no key was pressed then return None.
+
+		Args:
+			s: Maximum time to wait in seconds.
+
+		Returns:
+			The key that was pressed or None.
+	"""
 	for i in range(0, int(s * 1.0 / _timeout)):
 		ch = None
 		try:

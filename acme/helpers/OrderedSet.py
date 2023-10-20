@@ -4,10 +4,9 @@
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
+""" Simple implementation of an ordered set."""
 
 from typing import Any
-
-""" Simple implementation of an ordered set."""
 
 class OrderedSet(list):
 	"""	Simple implementation of an ordered set.

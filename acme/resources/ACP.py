@@ -77,24 +77,15 @@ class ACP(AnnounceableResource):
 		if not self.pvs:
 			raise BAD_REQUEST('pvs must not be empty')
 
-		# Check acod
-		# TODO Is this still necessary? Check in resource validation?
-		def _checkAcod(acrs:list) -> None:
-			if acrs:
-				for acr in acrs:
-					if (acod := acr.get('acod')):
-						for each in acod:
-							if not (chty := each.get('chty')) or not isinstance(chty, list):
-								raise BAD_REQUEST('chty is mandatory in acod')
-
-		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pv/acr'))
-		_checkAcod(findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'))
-
 		# Get types for the acor members. Ignore if not found
 		# This is an optimization used later in case there is a group in acor
 		riTyDict = {}
 
 		def _getAcorTypes(pv:JSON) -> None:
+			""" Get the types of the acor members.
+				Args:
+					pv: The pv attribute to get the types for.
+			"""
 			if pv:
 				for acr in pv.get('acr', []):
 					if (acor := acr.get('acor')):
@@ -238,6 +229,15 @@ class ACP(AnnounceableResource):
 
 
 	def _checkAcor(self, acor:list[str], originator:str) -> bool:
+		""" Check whether an originator is in the list of acor entries.
+		
+			Args:
+				acor: The list of acor entries.
+				originator: The originator to check.
+				
+			Return:
+				True if the originator is in the list of acor entries, False otherwise.
+		"""
 
 		# Check originator
 		if 'all' in acor or \

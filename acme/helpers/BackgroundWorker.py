@@ -30,6 +30,35 @@ def _utcTime() -> float:
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
+
+		Background workers are executed in a separate thread. 
+		
+		They are executed periodically according to the interval. The interval is the time between
+		the end of the previous execution and the start of the next execution. The interval is usually
+		not the time betweenthe start of two consecutive executions, but this could be achieved by setting the
+		*runOnTime* parameter to *True*. This will compensate for the processing time of the
+		worker callback.
+
+		Background workers can be stopped and started again. They can also be paused and resumed.
+
+		Attributes:
+			interval: Interval in seconds to run the worker callback.
+			runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.
+			runPastEvents: If True then runs in the past are executed, otherwise they are dismissed.
+			nextRunTime: Timestamp of the next execution.
+			callback: Callback to run as a worker.
+			running: True if the worker is running.
+			executing: True if the worker is currently executing.
+			name: Name of the worker.
+			startWithDelay: If True then start the worker after a `interval` delay.
+			maxCount: Maximum number runs.
+			numberOfRuns: Number of runs.
+			dispose: If True then dispose the worker after finish.
+			finished: Callable that is executed after the worker finished.
+			ignoreException: Restart the actor in case an exception is encountered.
+			id: Unique ID of the worker.
+			data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
+			args: Additional arguments passed to the worker callback.
 	"""
 
 	__slots__ = (
@@ -72,6 +101,22 @@ class BackgroundWorker(object):
 						finished:Optional[Callable] = None,
 						ignoreException:Optional[bool] = False,
 						data:Optional[Any] = None) -> None:
+		"""	Initialize a background worker.
+		
+			Args:
+				interval: Interval in seconds to run the worker callback.
+				callback: Callback to run as a worker.
+				name: Name of the worker.
+				startWithDelay: If True then start the worker after a `interval` delay.
+				maxCount: Maximum number runs.
+				dispose: If True then dispose the worker after finish.
+				id: Unique ID of the worker.
+				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.
+				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed.
+				finished: Callable that is executed after the worker finished.
+				ignoreException: Restart the actor in case an exception is encountered.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
+		"""
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -274,6 +319,11 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
+		"""	Return a string representation of the worker. 
+		
+			Return:
+				A string representation of the worker.
+		"""
 		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime}, data = {self.data})'
 
 
@@ -439,6 +489,8 @@ class Job(Thread):
 
 	@classmethod
 	def _balanceJobs(cls) -> None:
+		"""	Internal function to balance the number of paused and running jobs.
+		"""
 		if not Job._balanceLatency:
 			return
 		Job._balanceCount += 1
@@ -466,6 +518,13 @@ class Job(Thread):
 
 
 class WorkerEntry(object):
+	"""	Internal class for a worker entry in the priority queue.
+
+		Attributes:
+			timestamp: Timestamp of the next execution.
+			workerID: ID of the worker.
+			workerName: Name of the worker.
+	"""
 
 	__slots__ = (
 		'timestamp',
@@ -473,31 +532,53 @@ class WorkerEntry(object):
 		'workerName',
 	)
 
-	# timestamp:float = 0.0
-	# workerID:int = None
-	# workerName:str = None
-
 	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
+		"""	Initialize a WorkerEntry.
+		
+			Args:
+				timestamp: Timestamp of the next execution.
+				workerID: ID of the worker.
+				workerName: Name of the worker.
+		"""
 		self.timestamp = timestamp
 		self.workerID = workerID
 		self.workerName = workerName
 
 
 	def __lt__(self, other:WorkerEntry) -> bool:
+		"""	Compare two WorkerEntry objects for less-than.
+
+			Args:
+				other: The other WorkerEntry object to compare with.
+
+			Return:
+				True if this WorkerEntry is less than the other.
+		"""
 		return self.timestamp < other.timestamp
 
 	
 	def __str__(self) -> str:
+		"""	Return a string representation of the WorkerEntry.
+		
+			Return:
+				A string representation of the WorkerEntry.
+		"""
 		return f'(ts: {self.timestamp} id: {self.workerID} name: {self.workerName})'
 	
 
 	def __repr__(self) -> str:
+		"""	Return a string representation of the WorkerEntry.
+		
+			Return:
+				A string representation of the WorkerEntry.
+		"""
 		return self.__str__()
 
 
 class BackgroundWorkerPool(object):
 	"""	Pool and factory for background workers and actors.
 	"""
+	
 	backgroundWorkers:Dict[int, BackgroundWorker]	= {}
 	workerQueue:list[WorkerEntry] 					= []
 	""" Priority queue. Contains tuples (next execution timestamp, worker ID, worker name). """

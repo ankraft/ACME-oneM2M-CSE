@@ -98,33 +98,31 @@ class ACMEContainerDiagram(Container):
 }
 '''
 
+# TODO perhaps replace the PlotextPlot instance every time one chooses another diagram type
+
 	def __init__(self, refreshCallback:Callable) -> None:
 		super().__init__()
-		self.plot:PlotextPlot = None
-		self.type = DiagramTypes.Line
 		self.color = (0, 120, 212)
+		self.type = DiagramTypes.Line
+		self.plotContainer:Container = None
+		self.plot:PlotextPlot = None
 		self.values:list[float] = []
 		self.dates:Optional[list[str]] = []
 		self.refreshCallback = refreshCallback
+		self.buttons = {
+			DiagramTypes.Line: Button('Line', variant = 'success', id = 'diagram-line-button'),
+			DiagramTypes.Graph: Button('Graph', variant = 'primary', id = 'diagram-graph-button'),
+			DiagramTypes.Scatter: Button('Scatter', variant = 'primary', id = 'diagram-scatter-button'),
+			DiagramTypes.Bar: Button('Bar', variant = 'primary', id = 'diagram-bar-button'),
+			DiagramTypes.Timeline: Button('Timeline', variant = 'primary', id = 'diagram-timeline-button'),
+		}
+
 
 
 	def compose(self) -> ComposeResult:
-		if not self.plot:
-			self.plot = PlotextPlot(id = 'diagram-plot')
-			self.plot.plt.date_form('d/m/Y H:M:S', 'Y-m-d H:M:S')
-			self.buttons = {
-				# TODO Bar and the others diagram types are not working together,
-				# after Bar was seleced the dates are not shown anymore.
-				# Perhaps the current types are enough for now
-
-				DiagramTypes.Line: Button('Line', variant = 'primary', id = 'diagram-line-button'),
-				# DiagramTypes.Graph: Button('Graph', variant = 'primary', id = 'diagram-graph-button'),
-				DiagramTypes.Scatter: Button('Scatter', variant = 'primary', id = 'diagram-scatter-button'),
-				# DiagramTypes.Bar: Button('Bar', variant = 'primary', id = 'diagram-bar-button'),
-				DiagramTypes.Timeline: Button('Timeline', variant = 'primary', id = 'diagram-timeline-button'),
-			}
+		self._newPlot()
 		with Vertical(id = 'diagram-view'):
-			yield self.plot
+			yield self.plotContainer
 			with Center(id = 'diagram-footer'):
 				with Horizontal(id = 'diagram-button-set'):
 					for button in self.buttons.values():
@@ -133,57 +131,64 @@ class ACMEContainerDiagram(Container):
 
 
 	def on_show(self) -> None:
-		self.activateButton(self.type)
-		self.plotGraph()
-
-
-	def activateButton(self, type:DiagramTypes) -> None:
-		self.type = type
-		for b in self.buttons.values():
-			b.variant = 'primary'
-		self.buttons[type].variant = 'success'
+		self._activateButton(self.type)
 		self.plotGraph()
 
 
 	@on(Button.Pressed, '#diagram-line-button')
 	def lineButtonExecute(self) -> None:
-		self.activateButton(DiagramTypes.Line)
+		"""	Callback to switch to the line diagram.
+		"""
+		self._activateButton(DiagramTypes.Line)
 
 
 	@on(Button.Pressed, '#diagram-graph-button')
 	def graphButtonExecute(self) -> None:
-		self.activateButton(DiagramTypes.Graph)
+		"""	Callback to switch to the graph diagram.
+		"""
+		self._activateButton(DiagramTypes.Graph)
 
 
 	@on(Button.Pressed, '#diagram-scatter-button')
 	def scatterButtonExecute(self) -> None:
-		self.activateButton(DiagramTypes.Scatter)
+		"""	Callback to switch to the scatter diagram.
+		"""
+		self._activateButton(DiagramTypes.Scatter)
 
 
 	@on(Button.Pressed, '#diagram-bar-button')
 	def barButtonExecute(self) -> None:
-		self.activateButton(DiagramTypes.Bar)
+		"""	Callback to switch to the bar diagram.
+		"""
+		self._activateButton(DiagramTypes.Bar)
 
 
 	@on(Button.Pressed, '#diagram-timeline-button')
 	def timeLineButtonExecute(self) -> None:
-		self.activateButton(DiagramTypes.Timeline)
+		"""	Callback to switch to the timeline diagram.
+		"""
+		self._activateButton(DiagramTypes.Timeline)
 	
 
 	@on(Button.Pressed, '#diagram-refresh-button')
 	def refreshButtonExecute(self) -> None:
+		"""	Callback to refresh the diagram.
+		"""
 		if self.refreshCallback:
 			self.refreshCallback()
 			self.plotGraph()
 
 	
 	def plotGraph(self) -> None:
+		"""	Plot the graph.
+		"""
 		dates = [ fromISO8601Date(d).strftime('%d/%m/%Y %H:%M:%S') for d in self.dates ] if self.dates else None
 		values = self.values
+
+		# plt.clear_data()
+		self._newPlot()
+
 		plt = self.plot.plt
-
-		plt.clear_data()
-
 		match self.type:
 			case DiagramTypes.Line:
 				if dates is None:
@@ -223,3 +228,41 @@ class ACMEContainerDiagram(Container):
 		"""
 		self.values = values
 		self.dates = dates
+
+
+	#################################################################
+	#
+	#	Private
+	#
+
+	def _newPlot(self) -> None:
+		"""	Create a new plot instance and update the container.
+		"""
+
+		# Remove a previous plot if there is one
+		if not self.plotContainer:
+			self.plotContainer = Container()
+		else:
+			self.plot.remove()
+		
+		# Create a new plot and configure its timestamp format
+		self.plot = PlotextPlot()
+		self.plot.plt.date_form('d/m/Y H:M:S', 'Y-m-d H:M:S')
+
+		# Add the plot to the container and refresh the container
+		self.plotContainer._add_child(self.plot)
+		self.plotContainer.refresh(layout=True)
+
+
+	def _activateButton(self, type:DiagramTypes) -> None:
+		"""	Activate a button.
+
+			Args:
+				type: The button to activate.
+		"""
+		if self.type != type:
+			self.type = type
+			for b in self.buttons.values():
+				b.variant = 'primary'
+			self.buttons[type].variant = 'success'
+			self.plotGraph()
