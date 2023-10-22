@@ -6,7 +6,7 @@
 #
 blinker==1.6.3
     # via flask
-cbor2==5.4.6
+cbor2==5.5.0
     # via ACME-oneM2M-CSE (setup.py)
 certifi==2023.7.22
     # via requests
