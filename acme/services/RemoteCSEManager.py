@@ -527,7 +527,7 @@ class RemoteCSEManager(object):
 				A list of found CSR resources.
 		"""
 		registreeCsrList = []
-		for eachCSR in CSE.dispatcher.directChildResources(pi = CSE.cseRi, ty = ResourceTypes.CSR):
+		for eachCSR in CSE.dispatcher.retrieveDirectChildResources(pi = CSE.cseRi, ty = ResourceTypes.CSR):
 			if eachCSR.csi == self.registrarCSI:		# type: ignore[name-defined]
 				if includeRegistrarCSR: 	
 					registreeCsrList.append(eachCSR)

@@ -29,7 +29,8 @@ from ..resources.Resource import Resource
 class SUB(Resource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH
+						   							 ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -99,25 +100,28 @@ class SUB(Resource):
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
 		if len(net) > 0:
-			if net[0] in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, 
-						   NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild, 
-						   NotificationEventType.retrieveCNTNoChild ]:
-				self.setAttribute('nct', NotificationContentType.allAttributes, overwrite = False)
-			elif net[0] in [ NotificationEventType.triggerReceivedForAE ]:
-				self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite = False)
-			elif net[0] in [ NotificationEventType.blockingUpdate ]:
-				self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite = False)
-			elif net[0] in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]:
-				self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite = False)
-	
+			match net[0]:
+				case NotificationEventType.resourceUpdate |\
+					 NotificationEventType.resourceDelete |\
+					 NotificationEventType.createDirectChild |\
+					 NotificationEventType.deleteDirectChild |\
+					 NotificationEventType.retrieveCNTNoChild:
+					self.setAttribute('nct', NotificationContentType.allAttributes, overwrite = False)
+				
+				case NotificationEventType.triggerReceivedForAE:
+					self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite = False)
+
+				case NotificationEventType.blockingUpdate:
+					self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite = False)
+
+				case NotificationEventType.reportOnGeneratedMissingDataPoints:			
+					self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite = False)
+
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
 			self._checkAllowedCHTY(parentResource, chty)
 		
-		# nsi is at least an empty list if nse is present, otherwise it must not be present
-		if self.nse is not None:
-			self.setAttribute('nsi', [], overwrite = False)
-			CSE.notification.validateAndConstructNotificationStatsInfo(self)
+		# "nsi" will be added later during the first stat recording
 
 		CSE.notification.addSubscription(self, originator)
 
@@ -264,6 +268,15 @@ class SUB(Resource):
 		self._normalizeURIAttribute('nfu')
 		self._normalizeURIAttribute('nu')
 		self._normalizeURIAttribute('su')
+
+
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if (rn := childResource._originalDict.get('rn')) is None:
+				childResource.setResourceName('notificationSchedule')
+			elif rn != 'notificationSchedule':
+				raise BAD_REQUEST(L.logDebug(f'rn of <schedule> under <subscription> must be "notificationSchedule"'))
 
 
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[ResourceTypes]) -> None:

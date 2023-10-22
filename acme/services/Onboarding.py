@@ -106,6 +106,8 @@ def buildUserConfigFile(configFile:str) -> bool:
 											   value = 'Regular'),
 										Choice(name = 'Headless     - Like "regular", plus disable most screen output, and the console and text UIs',
 											   value = 'Headless'),
+										Choice(name = 'WSGI         - Like "regular", but enable a WSGI server instead of the built-in HTTP server',
+											   value = 'WSGI'),
 									],
 							default = 'Development',
 							transformer = lambda result: result.split()[0],
@@ -221,7 +223,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 									amark = '✓', 
 									invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 								).execute(),
-			'httpPort': inquirer.number(
+			'registrarCsePort': inquirer.number(
 							message = 'The Registrar CSE\' host http port:',
 							default = _iniValues[cseType]['registrarCsePort'],
 							long_instruction = 'The TCP port of the remote (Registrar) CSE.',
@@ -336,6 +338,12 @@ f"""
 allowedCSROriginators=id-in,id-mn,id-asn
 """
 
+		cnfRegular = \
+"""
+
+"""
+
+
 		cnfDevelopment = \
 """
 [textui]
@@ -367,18 +375,27 @@ scriptDirectories=${cse:resourcesPath}/demoLightbulb,${cse:resourcesPath}/demoDo
 headless=True
 """
 
+		cnfWSGI = \
+"""
+[http.wsgi]
+enable=True
+"""
+
 		# Construct the configuration
 		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra
 
 		# add more mode-specific configurations
-		if cseEnvironment in ('Development'):	
-			jcnf += cnfDevelopment
-		
-		if cseEnvironment in ('Introduction'):
-			jcnf += cnfIntroduction
-
-		if cseEnvironment in ('Headless'):
-			jcnf += cnfHeadless
+		match cseEnvironment:
+			case 'Regular':
+				jcnf += cnfRegular
+			case 'Development':
+				jcnf += cnfDevelopment
+			case 'Introduction':
+				jcnf += cnfIntroduction
+			case 'Headless':
+				jcnf += cnfHeadless
+			case 'WSGI':
+				jcnf += cnfWSGI
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')

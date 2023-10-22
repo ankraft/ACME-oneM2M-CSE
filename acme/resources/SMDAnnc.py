@@ -33,7 +33,6 @@ class SMDAnnc(AnnouncedResource):
 		'acpi':None,
 		'daci': None,
 		'ast': None,
-		'loc': None,
 		'lnk': None,
 
 		# Resource attributes

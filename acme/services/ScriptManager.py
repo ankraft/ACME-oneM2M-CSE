@@ -11,16 +11,16 @@ from __future__ import annotations
 from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
 
 from pathlib import Path
-import json, os, fnmatch
+import json, os, fnmatch, traceback
 import requests, webbrowser
 from decimal import Decimal
 from rich.text import Text
 
 
 from ..helpers.KeyHandler import FunctionKey
-from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result
+from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate
+from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.Utils import runsInIPython, uniqueRI, isURL, uniqueID, pureResource
 from .Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
@@ -119,9 +119,11 @@ class ACMEPContext(PContext):
 						 symbols = {	
 							 			'clear-console':			self.doClearConsole,
 							 			'create-resource':			self.doCreateResource,
+										'cse-attribute-infos':		self.doCseAttributeInfos,
 										'cse-status':				self.doCseStatus,
 							 			'delete-resource':			self.doDeleteResource,
 										'get-config':				self.doGetConfiguration,
+										'get-loglevel':				self.doGetLogLevel,
 										'get-storage':				self.doGetStorage,
 										'has-config':				self.doHasConfiguration,
 										'has-storage':				self.doHasStorage,
@@ -145,6 +147,7 @@ class ACMEPContext(PContext):
 										'set-config':				self.doSetConfig,
 										'set-console-logging':		self.doSetLogging,
 										'schedule-next-script':		self.doScheduleNextScript,
+										'tui-notify':				self.doTuiNotify,
 										'tui-refresh-resources':	self.doTuiRefreshResources,
 										'tui-visual-bell':			self.doTuiVisualBell,
 							 			'update-resource':			self.doUpdateResource,
@@ -238,7 +241,7 @@ class ACMEPContext(PContext):
 			Return:
 				String with the error message.
 		"""
-		return f'{self.error.error.name} error in {self.scriptFilename} - {self.error.message}'
+		return f'"{self.error.error.name}" error in {self.scriptFilename} - {self.error.message}'
 
 
 	@property
@@ -320,6 +323,77 @@ class ACMEPContext(PContext):
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.CREATE)
 	
 
+	def doCseAttributeInfos(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Return a list of CSE attribute infos for the given attribute name. 
+			The search is done over the short and long names of the attributes using
+			a fuzzy search when searching the long names.
+
+			The function has the following arguments:
+
+				- attribute name. This could be a short name or a long name.
+			
+			The function returns a quoted list where each entry is another quoted list
+			with the following symbols:
+				
+				- attribute short name
+				- attribute long name
+				- attribute type
+				
+			Example:
+				::
+
+					(cse-attribute-info "acop") -> ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+
+		def _getType(t:BasicType, policy:AttributePolicy) -> str:	# type:ignore [return]
+			match t:
+				case BasicType.list | BasicType.listNE if policy.lTypeName != 'enum':
+					return f'{policy.typeName} of {policy.lTypeName}'
+				case BasicType.list | BasicType.listNE if policy.lTypeName == 'enum':
+					return f'{policy.typeName} of {_getType(BasicType.enum, policy)}'
+				case BasicType.complex:
+					return policy.typeName
+				case BasicType.enum:
+					return f'enum ({policy.etype})'
+				case _:
+					return policy.typeName
+
+
+		pcontext.assertSymbol(symbol, 2)
+
+		# get attribute name
+		pcontext, _name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		result = CSE.validator.getAttributePoliciesByName(_name)
+		resultSymbolList = []
+		if result is not None:
+			for policy in result:
+				# Determine exact type
+				_t = _getType(policy.type, policy)
+				# match policy.type:
+				# 	case BasicType.list | BasicType.listNE:
+				# 		_t = f'{policy.typeName} of {policy.lTypeName}'
+				# 	case BasicType.complex:
+				# 		_t = policy.typeName
+				# 	case BasicType.enum:
+				# 		_t = f'enum ({policy.etype})'
+				# 	case _:
+				# 		_t = policy.typeName
+				
+				resultSymbolList.append(SSymbol(lstQuote = [ SSymbol(string = policy.sname), 
+					   										 SSymbol(string = policy.lname), 
+															 SSymbol(string = _t) ]))
+
+		return pcontext.setResult(SSymbol(lstQuote = resultSymbolList))
+
+
 	def doCseStatus(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		""" Retrieve the CSE status.
 		
@@ -394,9 +468,35 @@ class ACMEPContext(PContext):
 
 		# config value
 		if (_v := Configuration.get(_key)) is None:
-			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined key: {_key}'))
+			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined configuration key: {_key}'))
 		
 		return pcontext.setResult(SSymbol(value = _v))
+
+
+	def doGetLogLevel(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Get the log level of the CSE. This will be one of the following strings:
+
+				- "DEBUG"
+				- "INFO"
+				- "WARNING"
+				- "ERROR"
+				- "OFF"
+
+		
+			Example:
+				::
+
+					(get-loglevel) -> "INFO"
+
+			Args:
+				pcontext: PContext object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		pcontext.assertSymbol(symbol, 1)
+		return pcontext.setResult(SSymbol(string  = str(L.logLevel)))
 
 
 	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -541,7 +641,6 @@ class ACMEPContext(PContext):
 		except requests.exceptions.ConnectionError:
 			pcontext.variables['response.status'] = SSymbol()	# nil
 			return pcontext.setResult(SSymbol())
-		#print(response)
 
 		# parse response and assign to variables
 
@@ -1111,44 +1210,41 @@ class ACMEPContext(PContext):
 
 		if Configuration.has(_key):	# could be None, False, 0, empty string etc
 			# Do some conversions first
-			v = Configuration.get(_key)
-			if isinstance(v, ACMEIntEnum):
-				if result.type == SType.tString:
-					r = Configuration.update(_key, v.__class__.to(cast(str, result.value), insensitive = True))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
-
-			elif isinstance(v, str):
-				if result.type == SType.tString:
-					r = Configuration.update(_key, cast(str, result.value).strip())
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
 			
-			# bool must be tested before int! 
-			# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
-			elif isinstance(v, bool):	
-				if result.type == SType.tBool:
-					r = Configuration.update(_key, result.value)
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
+			match (v := Configuration.get(_key)):
+				case ACMEIntEnum():
+					if result.type == SType.tString:
+						r = Configuration.update(_key, v.__class__.to(cast(str, result.value), insensitive = True))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+				case str():
+					if result.type == SType.tString:
+						r = Configuration.update(_key, cast(str, result.value).strip())
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalid, 'configuration value must be a string'))
+				# bool must be tested before int! 
+				# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
+				case bool():
+					if result.type == SType.tBool:
+						r = Configuration.update(_key, result.value)
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a boolean'))
 
-			elif isinstance(v, int):
-				if result.type == SType.tNumber:
-					r = Configuration.update(_key, int(cast(Decimal, result.value)))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
+				case int():
+					if result.type == SType.tNumber:
+						r = Configuration.update(_key, int(cast(Decimal, result.value)))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be an integer'))
 
-			elif isinstance(v, float):
-				if result.type == SType.tNumber:
-					r = Configuration.update(_key, float(cast(Decimal, result.value)))
-				else:
-					raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {result.type}'))
+				case float():
+					if result.type == SType.tNumber:
+						r = Configuration.update(_key, float(cast(Decimal, result.value)))
+					else:
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'configuration value must be a float, is: {result.type}'))
 
-			elif isinstance(v, list):
-				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
-			else:
-				raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
-			
+				case _:
+					raise PUnsupportedError(pcontext.setError(PError.invalidType, f'unsupported type: {type(v)}'))
+						
 			# Check whether something went wrong while setting the config
 			if r:
 				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Error setting configuration: {r}'))
@@ -1179,6 +1275,53 @@ class ACMEPContext(PContext):
 		# Value
 		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 		L.enableScreenLogging = cast(bool, value)
+		return pcontext.setResult(SSymbol())
+
+
+	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Show a TUI notification.
+
+			This function is only available in TUI mode. It has the following arguments.
+
+				- message: The message to show.
+				- title: (Optional) The title of the notification.
+				- severity: (Optional) The severity of the notification. Can be
+				  one of the following values: *information*, *warning*, *error*.
+				- timeout: (Optional) The timeout in seconds after which the
+				  notification will disappear. If not specified, the notification
+				  will disappear after 3 seconds.
+			
+			The function returns NIL.
+
+			Example:
+				::
+
+					(tui-notify "This is a notification")
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object.
+		"""
+		pcontext.assertSymbol(symbol, minLength = 2, maxLength = 5)
+
+		# Value
+		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+		# Title
+		pcontext, title = pcontext.valueFromArgument(symbol, 2, SType.tString, optional = True)
+
+		# Severity
+		pcontext, severity = pcontext.valueFromArgument(symbol, 3, SType.tString, optional = True)
+
+		# Timeout
+		pcontext, timeout = pcontext.valueFromArgument(symbol, 4, SType.tNumber, optional = True)
+
+		# show the notification
+		CSE.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
+
 		return pcontext.setResult(SSymbol())
 
 
@@ -1350,7 +1493,7 @@ class ACMEPContext(PContext):
 			if operation == Operation.CREATE:
 				if (ty := ResourceTypes.fromTPE( list(content.keys())[0] )) is None: # first is tpe
 					raise PInvalidArgumentError(pcontext.setError(PError.invalid, 'Cannot determine resource type'))
-				req['ty'] = ty
+				req['ty'] = ty.value
 
 			# Add primitive content when content is available
 			req['pc'] = content
@@ -1362,46 +1505,46 @@ class ACMEPContext(PContext):
 		try:
 			request = CSE.request.fillAndValidateCSERequest(req)
 		except ResponseException as e:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}', exception = e))
 		
 		# Send request
 		L.isDebug and L.logDebug(f'Sending request from script: {request.originalRequest} to: {target}')
 		if isURL(target):
-			if operation == Operation.RETRIEVE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator)
-												   )[0].result	# there should be at least one result
-
-			elif operation == Operation.DELETE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.CREATE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   ty = ty,
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.UPDATE:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
-			elif operation == Operation.NOTIFY:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-						   									   ot = getResourceDate(),
-															   to = target, 
-															   originator = originator, 
-															   pc = request.pc)
-												   )[0].result	# there should be at least one result
+			match operation:
+				case Operation.RETRIEVE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator)
+													)[0].result	# there should be at least one result
+				case Operation.DELETE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator)
+													)[0].result	# there should be at least one result
+				case Operation.CREATE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
+												ot = getResourceDate(),
+												to = target, 
+												originator = originator, 
+												ty = ty,
+												pc = request.pc)
+									)[0].result	# there should be at least one result
+				case Operation.UPDATE:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
+																ot = getResourceDate(),
+																to = target, 
+																originator = originator, 
+																pc = request.pc)
+													)[0].result	# there should be at least one result
+				case Operation.NOTIFY:
+					res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
+												ot = getResourceDate(),
+												to = target, 
+												originator = originator, 
+												pc = request.pc)
+									)[0].result	# there should be at least one result
 
 		else:
 			# Request via CSE-ID, either local, or otherwise a transit request. Let the CSE handle it
@@ -1427,6 +1570,7 @@ class ScriptManager(object):
 			scriptDirectories: List of script directories to monitoe.
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
 			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
+			maxRuntime: Maximum runtime for a script.
 	"""
 
 	__slots__ = (
@@ -1439,6 +1583,7 @@ class ScriptManager(object):
 		'scriptDirectories',
 		'scriptMonitorInterval',
 		'verbose',
+		'maxRuntime'
 	)
 	""" Slots of class attributes. """
 
@@ -1496,6 +1641,7 @@ class ScriptManager(object):
 		self.verbose = Configuration.get('scripting.verbose')
 		self.scriptMonitorInterval = Configuration.get('scripting.fileMonitoringInterval')
 		self.scriptDirectories = Configuration.get('scripting.scriptDirectories')
+		self.maxRuntime = Configuration.get('scripting.maxRuntime')
 
 
 	def configUpdate(self, name:str, 
@@ -1510,7 +1656,8 @@ class ScriptManager(object):
 		"""
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
-						'scripting.scriptDirectories'
+						'scripting.scriptDirectories',
+						'scripting.maxRuntime'
 					  ]:
 			return
 
@@ -1542,8 +1689,9 @@ class ScriptManager(object):
 		if self.scriptMonitorInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
-		# Add a worker to check scheduled script, fixed every minute
-		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, 
+		# Add a worker to check scheduled script, fixed every second
+		# TODO resolution
+		self.scriptCronWorker = BackgroundWorkerPool.newWorker(1, 
 							 								   self.cronMonitor, 
 															   'scriptCronMonitor').start()
 
@@ -1633,11 +1781,11 @@ class ScriptManager(object):
 				del self.scripts[eachName]
 
 		# Read new scripts
-		if CSE.importer.resourcePath:	# from the init directory
-			if self.loadScriptsFromDirectory(CSE.importer.resourcePath) == -1:
+		if CSE.importer.extendedResourcePath:	# from the init directory
+			if self.loadScriptsFromDirectory(CSE.importer.extendedResourcePath) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
-		if CSE.script.scriptDirectories:	# from the extra script directories
-			if self.loadScriptsFromDirectory(CSE.script.scriptDirectories) == -1:
+		if self.scriptDirectories:	# from the extra script directories
+			if self.loadScriptsFromDirectory(self.scriptDirectories) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
 		return True
 
@@ -1652,9 +1800,10 @@ class ScriptManager(object):
 				Boolean. Usually *True* to continue with monitoring.
 		"""
 		#L.isDebug and L.logDebug(f'Looking for scheduled scripts')
+		_ts = utcDatetime()
 		for each in self.findScripts(meta = _metaAt):
 			try:
-				if cronMatchesTimestamp(at := each.meta.get(_metaAt)):
+				if cronMatchesTimestamp(at := each.meta.get(_metaAt), _ts):
 					L.isDebug and L.logDebug(f'Running script: {each.scriptName} at: {at}')
 					self.runScript(each)
 			except ValueError as e:
@@ -1831,6 +1980,8 @@ class ScriptManager(object):
 					L.logDebug(f'Script terminated with result: {pcontext.result}')
 				if pcontext.state == PState.terminatedWithError:
 					L.logWarn(f'Script terminated with error: {pcontext.error.message}')
+					if pcontext.error.exception:
+						L.logWarn(''.join(traceback.format_exception(pcontext.error.exception)))
 
 				if not result or not cast(ACMEPContext, pcontext).nextScript:	
 					return
@@ -1850,6 +2001,9 @@ class ScriptManager(object):
 				# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 				return False
 			
+			# Set script timeout
+			pcontext.setMaxRuntime(self.maxRuntime)
+
 			# Set environemt
 			environment['tui.theme'] = SSymbol(string = CSE.textUI.theme)
 			pcontext.setEnvironment(environment)

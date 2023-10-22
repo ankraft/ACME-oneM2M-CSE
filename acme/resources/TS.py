@@ -230,46 +230,49 @@ class TS(AnnounceableResource):
 											 'pi': self.ri,
 											 'dgt': childResource.dgt})
 		if len(tsis) > 0:	# Error if yes
-			raise CONFLICT(dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
+			raise CONFLICT(f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
-		if childResource.ty == ResourceTypes.TSI:	# Validate if child is TSI
+		match childResource.ty:
+			case ResourceTypes.TSI:
+				# Check for mia handling. This sets the et attribute in the TSI
+				if self.mia is not None:
+					# Take either mia or the maxExpirationDelta, whatever is smaller
+					maxEt = getResourceDate(self.mia 
+											if self.mia <= CSE.request.maxExpirationDelta 
+											else CSE.request.maxExpirationDelta)
+					# Only replace the childresource's et if it is greater than the calculated maxEt
+					if childResource.et > maxEt:
+						childResource.setAttribute('et', maxEt)
+						childResource.dbUpdate(True)
 
-			# Check for mia handling. This sets the et attribute in the TSI
-			if self.mia is not None:
-				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = getResourceDate(self.mia 
-										if self.mia <= CSE.request.maxExpirationDelta 
-										else CSE.request.maxExpirationDelta)
-				# Only replace the childresource's et if it is greater than the calculated maxEt
-				if childResource.et > maxEt:
-					childResource.setAttribute('et', maxEt)
-					childResource.dbUpdate(True)
-
-			self.validate(originator)	# Handle old TSI removals
-		
-			# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
-			if self.mdd and self.pei is not None and self.mdt is not None:
-				CSE.timeSeries.updateTimeSeries(self, childResource)
-		
-		elif childResource.ty == ResourceTypes.SUB:		# start monitoring
-			if childResource['enc/md']:
-				CSE.timeSeries.addSubscription(self, childResource)
+				self.validate(originator)	# Handle old TSI removals
+			
+				# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
+				if self.mdd and self.pei is not None and self.mdt is not None:
+					CSE.timeSeries.updateTimeSeries(self, childResource)
+			
+			case ResourceTypes.SUB:
+				# start monitoring
+				if childResource['enc/md']:
+					CSE.timeSeries.addSubscription(self, childResource)
 
 
 	# Handle the removal of a TSI. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
-		if childResource.ty == ResourceTypes.TSI:	# Validate if child was TSI
-			self._validateChildren()
-		elif childResource.ty == ResourceTypes.SUB:
-			if childResource['enc/md']:
-				CSE.timeSeries.removeSubscription(self, childResource)
+		match childResource.ty:
+			case ResourceTypes.TSI:
+				# Validate if removed child was TSI
+				self._validateChildren()
+			case ResourceTypes.SUB:
+				if childResource['enc/md']:
+					CSE.timeSeries.removeSubscription(self, childResource)
 
 
 	# handle eventuel updates of subscriptions
@@ -365,6 +368,8 @@ class TS(AnnounceableResource):
 		# Always set the mdc to the length of mdlt if present
 		if self.mdlt is not None:
 			self.setAttribute('mdc', len(self.mdlt))
+		else:
+			self.setAttribute('mdc', 0)
 
 		# Save changes
 		self.dbUpdate(True)
@@ -389,7 +394,7 @@ class TS(AnnounceableResource):
 	def timeSeriesInstances(self) -> list[Resource]:
 		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
 		""" 
-		return sorted(CSE.dispatcher.directChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:

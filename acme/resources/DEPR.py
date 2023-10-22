@@ -65,7 +65,7 @@ class DEPR(AnnounceableResource):
 		try:
 			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.rri, originator, Permission.RETRIEVE)
 		except ResponseException as e:
-			raise BAD_REQUEST(dbg = e.dbg)
+			raise BAD_REQUEST(e.dbg)
 
 		# Check existence of referenced subject attribute in the referenced resource.
 		sbjt = self.evc['sbjt']
@@ -87,7 +87,7 @@ class DEPR(AnnounceableResource):
 		try:
 			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.getFinalResourceAttribute('rri', dct), originator, Permission.RETRIEVE)
 		except ResponseException as e:
-			raise BAD_REQUEST(dbg = e.dbg)
+			raise BAD_REQUEST(e.dbg)
 
 		if (evc := findXPath(dct, 'm2m:depr/evc')) is not None:
 

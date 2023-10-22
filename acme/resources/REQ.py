@@ -11,8 +11,8 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, RequestStatus, CSERequest, JSON
-from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
+from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
 from ..services.Configuration import Configuration
@@ -75,7 +75,7 @@ class REQ(Resource):
 				The created REQ resource.
 		"""
 
-		# Check if a an expiration ts has been set in the request
+		# Check if a request expiration ts has been set in the request
 		if request.rqet:
 			et = request.rqet	# This is already an ISO8601 timestamp
 		
@@ -83,47 +83,44 @@ class REQ(Resource):
 		elif request._rpts:
 			et = request._rpts
 		
-		# otherwise calculate request et
+		# otherwise get the request's et from the configuration
 		else:	
 			et = getResourceDate(offset = Configuration.get('resource.req.et'))
-			# minEt = getResourceDate(Configuration.get('resource.req.minet'))
-			# maxEt = getResourceDate(Configuration.get('resource.req.maxet'))
-			# if request.args.rpts:
-			# 	et = request.args.rpts if request.args.rpts < maxEt else maxEt
-			# else:
-			# 	et = minEt
 
 
+		# Build the REQ resource from the original request
 		dct:Dict[str, Any] = {
 			'm2m:req' : {
-				'et'	: et,
-				'lbl'	: [ request.originator ],
-				'op'	: request.op,
-				'tg'	: request.id,
-				'org'	: request.originator,
-				'rid'	: request.rqi,
-				'mi'	: {
-					'ty'	: request.ty,
-					'ot'	: getResourceDate(),
-					'rqet'	: request.rqet,
-					'rset'	: request.rset,
-					'rt'	: { 
-						'rtv' : request.rt
+				'et': et,
+				'lbl': [ request.originator ],
+				'op': request.op,
+				'tg': request.id,
+				'org': request.originator,
+				'rid': request.rqi,
+				'mi': {
+					'ty': request.ty,
+					'ot': getResourceDate(),
+					'rqet': request.rqet,
+					'rset': request.rset,
+					'rt': { 
+						'rtv': request.rt
 					},
-					'rp'	: request.rp,
-					'rcn'	: request.rcn,
-					'fc'	: {
-						'fu'	: request.fc.fu,
-						'fo'	: request.fc.fo,
+					'rp': request.rp,
+					'rcn': request.rcn,
+					'fc': {
+						'fu': request.fc.fu,
+						'fo': request.fc.fo,
 					},
-					'drt'	: request.drt,
-					'rvi'	: request.rvi if request.rvi else CSE.releaseVersion,
-					'vsi'	: request.vsi,
-					'sqi'	: request.sqi,
+					'drt': request.drt,
+					'rvi': request.rvi if request.rvi else CSE.releaseVersion,
+					'vsi': request.vsi,
+					'sqi': request.sqi,
 				},
-				'rs'	: RequestStatus.PENDING,
-				# 'ors'	: {
-				# }
+				'rs': RequestStatus.PENDING,
+				'ors': {
+					'rsc': ResponseStatusCode.ACCEPTED,
+					'rqi': request.rqi,
+				}
 		}}
 
 		# add handlings, conditions and attributes from filter

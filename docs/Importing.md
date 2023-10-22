@@ -2,14 +2,14 @@
 
 # CSE Startup, Importing Resources and Other Settings
 
-[Resources](#resources)  
+[Initial Resources](#resources)  
 [Attribute and Hierarchy Policies for FlexContainer Specializations](#flexcontainers)  
 [Attribute Policies for Common Resources and Complex Types](#attributes)  
 [Help Documentation](#help-documentation)
 
 
 <a name="resources"></a>
-## Resources
+## Initial Resources
 
 During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
 
@@ -273,12 +273,15 @@ The format for enumeration data type definitions is a bit simpler:
 // The attributePolicy.ep file contains a dictionary of enumeration data types
 {
 
-	// Each enumeration definition is identified by its name
+	// Each enumeration definition is identified by its name. It is a dictionary.
 	"enumerationType": {
 
-		// Each definition can only contain a the following attribute (definition see above)
+		// A single enumeration definition is key value pair. The key is the enumeration
+		// value, the value is the interpretation of that value.
+		"<enumeration value>" : "<enumeration interpretation>"
 
-		"evalues" : ...
+		// This defines a range of values. Each one gets the same interpretation assigned.
+		"<enumeration value start>..<enumeration value end>" : "<enumeration interpretation>"
 	}
 }
 ```

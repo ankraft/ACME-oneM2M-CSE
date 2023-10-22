@@ -59,7 +59,7 @@ the *lightswitch*.")
       "pv": {
         "acr": [
           { ;; Allow CDemoLightbulb only to retrieve					
-            "acor": [ "CDemoLightswitch"	],
+            "acor": [ "CDemoLightswitch"],
             "acop": 16  ;; NOTIFY
           }, 
           { ;; Allow CDemoLightswitch all access

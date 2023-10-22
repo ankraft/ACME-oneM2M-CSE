@@ -56,6 +56,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	CSEBase resource type. """
 	GRP 			=  9
 	"""	Group resouce type. """
+	LCP				= 10
+	"""	LocationPolicy resource type. """
 	MGMTOBJ			= 13
 	"""	ManagementObject resource type. """
 	NOD				= 14
@@ -66,6 +68,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Remote CSE resource type. """
 	REQ 			= 17
 	"""	Request resource type. """
+	SCH				= 18
+	"""	Schedule resource type. """
 	SUB				= 23
 	"""	Subscription resource type. """
 	SMD				= 24
@@ -85,7 +89,7 @@ class ResourceTypes(ACMEIntEnum):
 	ACTR			= 65
 	""" Action resource type. """
 	DEPR			= 66
-
+	""" Dependency resource type. """
 
 
 	# Virtual resources (some are proprietary resource types)
@@ -152,12 +156,16 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced CSEBase resource type. """
 	GRPAnnc 		= 10009
 	"""	Announced Group resouce type. """
+	LCPAnnc			= 10010
+	"""	Announced LocationPolicy resource type. """
 	MGMTOBJAnnc 	= 10013
 	"""	Announced ManagementObject resource type. """
 	NODAnnc 		= 10014
 	"""	Announced Node resource type. """
 	CSRAnnc 		= 10016
 	"""	Announced Remote CSE resource type. """
+	SCHAnnc 		= 10018
+	"""	Announced Schedule resource type. """
 	SMDAnnc			= 10024
 	"""	Announced SemanticDescriptor resouce type. """
 	FCNTAnnc 		= 10028
@@ -171,7 +179,6 @@ class ResourceTypes(ACMEIntEnum):
 	ACTRAnnc		= 10065
 	"""	Announced Action resource type. """
 	DEPRAnnc		= 10066
-
 	"""	Announced Dependency resource type. """
 	FWRAnnc			= -30001
 	"""	Announced Firmware ManagementObject specialization. """
@@ -202,10 +209,22 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def tpe(self) -> str:
+		"""	Get the resource type name.
+		
+			Return:
+				The resource type name.
+		"""
 		return _ResourceTypesNames.get(self)
 
 
 	def announced(self, mgd:Optional[ResourceTypes] = None) -> ResourceTypes:
+		"""	Get the announced resource type for a resource type.
+		
+			Args:
+				mgd: The mgmtObj specialization type. Only used for mgmtObjs.
+			Return:
+				The announced resource type, or UNKNOWN.
+		"""
 
 		if self != ResourceTypes.MGMTOBJ:
 			# Handling for non-mgmtObjs
@@ -379,18 +398,32 @@ class ResourceTypes(ACMEIntEnum):
 
 @dataclass()
 class ResourceDescription():
+	"""	Describes a resource type.
+	"""
 	typeName:str = None
+	"""	The resource type name. """
 	announcedType:ResourceTypes = None
+	"""	The announced resource type. """
 	isAnnouncedResource:bool= False
+	"""	Whether the resource type is an announced resource type. """
 	isMgmtSpecialization:bool = False
+	"""	Whether the resource type is a mgmtObj specialization. """
 	isInstanceResource:bool = False
+	"""	Whether the resource type is an instance resource. """
 	isInternalType:bool = False
+	"""	Whether the resource type is an internal type. """
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
+	"""	The name of a virtual resource. """
 	clazz:Resource = None 			# type:ignore [name-defined]
+	"""	The resource class. """
 	factory:FactoryCallableT = None
+	"""	The resource factory callable to create this resource. """
 	isRequestCreatable:bool = True	# Can be created by a request
+	"""	Whether the resource type can be created by a request. """
 	isNotificationEntity:bool = False	# Is a direct notification target
+	"""	Whether the resource type is a direct notification target. """
 	fullName:str = ''				# Full name of the resource type
+	"""	The full name of the resource type. """
 	
 _ResourceTypeDetails = {
 	
@@ -422,6 +455,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
 	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
 	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', fullName='Fanout Point'),	# not an official type name
+	ResourceTypes.LCP			: ResourceDescription(typeName = 'm2m:lcp', announcedType = ResourceTypes.LCPAnnc, fullName='LocationPolicy'),
+	ResourceTypes.LCPAnnc		: ResourceDescription(typeName = 'm2m:lcpA', isAnnouncedResource = True, fullName='LocationPolicy Announced'),
 	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
 	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
@@ -429,6 +464,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
+	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
+	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),
 	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc, fullName='SemanticDescriptor'),
 	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True, fullName='SemanticDescriptor Announced'),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
@@ -477,6 +514,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
 
 }
+"""	Mapping between resource types and their description. """
 
 
 def addResourceFactoryCallback(ty:ResourceTypes, clazz:Resource, factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
@@ -524,7 +562,7 @@ _ResourceTypesAnnouncedResourceTypes = [ d.announcedType
 _ResourceTypesAnnouncedResourceTypes.sort()
 
 
-_ResourceTypesSupportedResourceTypes = [ t
+_ResourceTypesSupportedResourceTypes:list[ResourceTypes] = [ t
 										 for t, d in _ResourceTypeDetails.items()
 										 if not d.isMgmtSpecialization and not d.virtualResourceName and not d.isInternalType and t != ResourceTypes.CSEBaseAnnc]
 """ Sorted list of supported resource types (without MgmtObj spezializations and virtual resources). """
@@ -583,31 +621,62 @@ class BasicType(ACMEIntEnum):
 	""" Basic resource types.
 	"""
 
-	positiveInteger	= auto()
-	nonNegInteger	= auto()
-	unsignedInt		= auto()
-	unsignedLong	= auto()
-	string 			= auto()
-	timestamp		= auto()
-	absRelTimestamp	= auto()
-	list 			= auto()
-	listNE 			= auto()	# Not empty list
-	dict 			= auto()
-	anyURI			= auto()
-	boolean			= auto()
-	float 			= auto()
-	geoCoordinates	= auto()
-	integer			= auto()
-	void 			= auto()
-	duration 		= auto()
-	any				= auto()
-	complex 		= auto()
-	enum	 		= auto()
-	adict			= auto()	# anoymous dict structure
-	base64 			= auto()
-	schedule		= auto()	# scheduleEntry
-	time			= timestamp	# alias type for time
-	date			= timestamp	# alias type for date
+	positiveInteger		= auto()
+	"""	Positive integer. """
+	nonNegInteger		= auto()
+	"""	Non-negative integer. """
+	unsignedInt			= auto()
+	"""	Unsigned integer. """
+	unsignedLong		= auto()
+	"""	Unsigned long. """
+	string 				= auto()
+	"""	String. """
+	timestamp			= auto()
+	"""	Timestamp. """
+	absRelTimestamp		= auto()
+	"""	Absolute or relative timestamp. """
+	list 				= auto()
+	"""	List. """
+	listNE 				= auto()	# Not empty list
+	"""	Not empty list. """
+	dict 				= auto()
+	"""	Dictionary or sub-structure. """
+	anyURI				= auto()
+	"""	Any URI. """
+	boolean				= auto()
+	"""	Boolean. """
+	float 				= auto()
+	"""	Float. """
+	geoJsonCoordinate	= auto()
+	"""	GeoJSON coordinate. """
+	integer				= auto()
+	"""	Integer. """
+	void 				= auto()
+	"""	Void. """
+	duration 			= auto()
+	"""	Duration. """
+	any					= auto()
+	"""	Any type. """
+	complex 			= auto()
+	"""	Complex type. """
+	enum	 			= auto()
+	"""	Enumeration. """
+	adict				= auto()	# anoymous dict structure
+	"""	Anonymous dictionary. """
+	base64 				= auto()
+	"""	Base64 encoded data. """
+	schedule			= auto()	# scheduleEntry
+	"""	Schedule entry. """
+	ID					= auto()	# m2m:ID
+	"""	oneM2M ID. """
+	ncname				= auto()	# xs:NCName
+	"""	XML NCName. """
+
+	# aliases. Always put at the end! Seems cause confusion with python < 3.11
+	time				= timestamp	# alias type for time
+	"""	Alias for timestamp. """
+	date				= timestamp	# alias type for date
+	"""	Alias for timestamp. """
 
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:Optional[bool] = True) -> BasicType:
@@ -624,21 +693,19 @@ class BasicType(ACMEIntEnum):
 
 class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities.
-		
-		Attributes:
-			CAR1: Mandatory.
-			CAR1L: Mandatory list.
-			CAR1LN: Mandatory list that shall not be empty.
-			CAR01: Optional.
-			CAR01L: Optional list.
-			CAR1N: Mandatory but may be Null/None.
 	"""
 	CAR1			= auto()
+	"""	Mandatory. """
 	CAR1L			= auto()
+	"""	Mandatory list. """
 	CAR1LN			= auto()
+	"""	Mandatory list that shall not be empty. """
 	CAR01			= auto()
+	"""	Optional. """
 	CAR01L			= auto()
+	"""	Optional list. """
 	CAR1N			= auto()
+	"""	Mandatory but may be Null/None. """
 
 	@classmethod
 	def hasCar(cls, name:str) -> bool:
@@ -691,24 +758,17 @@ class Cardinality(ACMEIntEnum):
 
 class RequestOptionality(ACMEIntEnum):
 	""" Request optionality enum values.
-
-		Attributes:
-			NP: Not provided.
-			O: Optional.
-			M: Mandatory.
 	"""
 	NP				= auto()
+	"""	Not provided. """
 	O 				= auto()
+	"""	Optional. """
 	M 				= auto()
+	"""	Mandatory. """
 
 
 class Announced(ACMEIntEnum):
 	""" Anouncement attribute enum values.
-
-		Attributes:
-			NA:	Not announced.
-			OA: Optionally announced.
-			MA: Mandatory announced.
 	"""
 
 	NA				= auto()
@@ -745,41 +805,47 @@ class EvalCriteriaOperator(ACMEIntEnum):
 	""" Less than or equal. """
 
 	def isAllowedType(self, typ:BasicType) -> bool:
-		# Ordered types are allowed for all operators
-		if typ in [ BasicType.positiveInteger,
-					BasicType.nonNegInteger,
-					BasicType.unsignedInt,
-					BasicType.unsignedLong,
-					BasicType.timestamp,
-					BasicType.absRelTimestamp,
-					BasicType.float,
-					BasicType.integer,
-					BasicType.duration,
-					BasicType.enum,
-					BasicType.time,
-					BasicType.date ]:
-			return True
-		# Equal and unequal are the only operators allowed for all other types
-		if self.value in [ EvalCriteriaOperator.equal,
-						   EvalCriteriaOperator.notEqual ]:
-			return True
-		# Not allowed
-		return False
+			"""	Check if the given BasicType is allowed for the current EvalCriteriaOperator.
+
+				Args:
+					typ: The BasicType to check.
+
+				Returns:
+					True if the BasicType is allowed for the current EvalCriteriaOperator, False otherwise.
+			"""
+			# Ordered types are allowed for all operators
+			if typ in [ BasicType.positiveInteger,
+						BasicType.nonNegInteger,
+						BasicType.unsignedInt,
+						BasicType.unsignedLong,
+						BasicType.timestamp,
+						BasicType.absRelTimestamp,
+						BasicType.float,
+						BasicType.integer,
+						BasicType.duration,
+						BasicType.enum,
+						BasicType.time,
+						BasicType.date ]:
+				return True
+			# Equal and unequal are the only operators allowed for all other types
+			if self.value in [ EvalCriteriaOperator.equal,
+							   EvalCriteriaOperator.notEqual ]:
+				return True
+			# Not allowed
+			return False
 
 
 
 class EvalMode(ACMEIntEnum):
-	"""	Eval Mode enum values. """
+	"""	Eval Mode enum values. 
+	"""
 	
 	off					= 0
 	""" Evaluation off. """
-
 	once				= 1
 	""" Evaluation once. """
-
 	periodic			= 2
 	""" Evaluation periodic. """
-
 	continous 			= 3
 	""" Evaluation continous. """
 
@@ -791,7 +857,8 @@ class EvalMode(ACMEIntEnum):
 #
 
 class Permission(ACMEIntEnum):
-	""" Permissions """
+	""" Permissions.
+	"""
 	NONE				=  0
 	"""	No permission """
 	CREATE				=  1
@@ -836,84 +903,6 @@ class Permission(ACMEIntEnum):
 		if bitfield == Permission.ALL.value:
 			return [ Permission.ALL ]
 		return [ p for p in Permission if p != Permission.ALL and p & bitfield ]
-
-
-# #/usr/local/bin/python3 acop.py {query}
-# import sys
-
-# operations = [
-#     (32, 'DISCOVERY', 'i'),
-#     (16, 'NOTIFY', 'n'),
-#     ( 8, 'DELETE', 'd'),
-#     ( 4, 'UPDATE', 'u'),
-#     ( 2, 'RETRIEVE', 'r'),
-#     ( 1, 'CREATE', 'c')
-# ]
-
-# def bitfield(n, length = 6):
-#     r = [int(digit) for digit in bin(n)[2:]]
-#     while len(r) < length:
-#         r.insert(0, 0)
-#     return r
-
-
-# def opsBitfield(field):
-#     sm = []
-#     for i in range(len(field)-1, -1, -1):
-#         if field[i]:
-#             sm.append(operations[i][1])
-#     return ', '.join(sm)
-
-
-# def toBitfield(query):
-# 	r = []
-# 	for each in query.lower():
-# 		for op in operations:
-# 			if each == op[2]:
-# 				if op[0] not in r:
-# 					r.append(op[0])
-# 				break # break for if found
-# 		else:
-# 			return -1 # return error if for did not exit
-
-# 	return sum(r)
-
-
-
-
-# qu = sys.argv[1]
-# try:
-# 	query = int(qu)
-
-# except ValueError:
-# 	# Not a number, so try to calculate the reverse
-# 	result = toBitfield(qu)
-# 	if result > 0:
-# 		result = str(result)
-# 		print('<items><item arg="' + result + '">')
-# 		#print('<title>Access Control Operations</title>')
-# 		print('<title>' + qu + ' = ' + result + '</title>')
-# 		print('<text type="copy">' + result + '</text>')
-# 		print('<text type="largetype">' + result + '</text>')
-# 		print('</item></items>')
-
-# 	else:
-# 		error()
-
-# else:
-# 	# If no exception, ie. query is an integer
-# 	if 0 < query < 64:
-# 		result = 'ALL' if query == 63 else opsBitfield(bitfield(query))
-# 		print('<items><item arg="' + result + '">')
-# 		#print('<title>Access Control Operations</title>')
-# 		print('<title>' + qu + ' = ' + result + '</title>')
-# 		print('<text type="copy">' + result + '</text>')
-# 		print('<text type="largetype">' + result + '</text>')
-# 		print('</item></items>')
-# 	else:
-# 		error()
-
-
 		
 
 ##############################################################################
@@ -978,17 +967,29 @@ _OperationPermissionsMapping =	{
 class ResultContentType(ACMEIntEnum):
 	"""	Result Content Types """
 	nothing									= 0
+	"""	Nothing. """
 	attributes 								= 1
+	""" Resource Attributes. """
 	hierarchicalAddress						= 2
+	""" Hierarchical Address. """
 	hierarchicalAddressAttributes			= 3
+	""" Hierarchical Address and Attributes. """
 	attributesAndChildResources				= 4	
+	""" Attributes and Child Resources. """
 	attributesAndChildResourceReferences	= 5
+	""" Attributes and Child Resource References. """
 	childResourceReferences					= 6
+	""" Child Resource References. """
 	originalResource 						= 7
+	""" Original Resource. """
 	childResources							= 8
+	""" Child Resources. """
 	modifiedAttributes						= 9
+	""" Modified Attributes. """
 	semanticContent							= 10
+	""" Semantic Content. """
 	discoveryResultReferences				= 11
+	""" Discovery Result References. """
 
 
 	def validForOperation(self, op:Operation) -> bool:
@@ -1003,6 +1004,14 @@ class ResultContentType(ACMEIntEnum):
 
 	@classmethod
 	def default(cls, op:Operation) -> ResultContentType:
+		"""	Get the default Result Content for an operation.
+
+			Args:
+				op: The operation to get the default Result Content for.
+
+			Return:
+				The default Result Content for the operation.
+		"""
 		return _ResultContentTypeDefaults[op]
 	
 
@@ -1033,6 +1042,7 @@ _ResultContentTypeForOperations = {
 							  ResultContentType.childResourceReferences ],
 	Operation.NOTIFY:		[ ResultContentType.nothing ],
 }
+"""	Mappings between request operations and allowed Result Content """
 
 _ResultContentTypeDefaults = {
 	Operation.RETRIEVE:	ResultContentType.attributes, 					
@@ -1042,6 +1052,7 @@ _ResultContentTypeDefaults = {
 	Operation.DELETE: ResultContentType.nothing,
 	Operation.NOTIFY: None,
 }
+"""	Mappings between request operations and default Result Content """
 
 
 	# ResultContentType.discoveryRCN = [ ResultContentType.discoveryResultReferences,		 #  type: ignore
@@ -1050,22 +1061,31 @@ _ResultContentTypeDefaults = {
 class FilterOperation(ACMEIntEnum):
 	"""	Filter Operation """
 	AND 			= 1 # default
+	""" AND. The default. """
 	OR 				= 2
+	""" OR. """
 	XOR 			= 3
+	""" XOR. """
 
 
 class FilterUsage(ACMEIntEnum):
 	"""	Filter Usage """
 	discoveryCriteria		= 1
+	"""	Discovery Criteria. """
 	conditionalRetrieval	= 2 # default
+	""" Conditional Retrieval. The default. """
 	ipeOnDemandDiscovery	= 3
+	""" IPE On-Demand Discovery. """
 	discoveryBasedOperation	= 4
+	""" Discovery Based Operation. """
 
 
 class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
 	structured		= 1 # default
+	""" Structured. """
 	unstructured	= 2
+	""" Unstructured. """
 
 
 ##############################################################################
@@ -1076,17 +1096,25 @@ class DesiredIdentifierResultType(ACMEIntEnum):
 class CSEType(ACMEIntEnum):
 	""" CSE Types """
 	IN					=  1
+	"""	Infrastructure Node. """
 	MN					=  2
+	"""	Middle Node. """
 	ASN					=  3
+	"""	Access Node. """
 
 
 class CSEStatus(ACMEIntEnum):
 	"""	CSE Status """
 	STOPPED				= auto()
+	"""	CSE is stopped. """
 	STARTING			= auto()
+	"""	CSE is starting. """
 	RUNNING				= auto()
+	"""	CSE is running. """
 	STOPPING			= auto()
+	"""	CSE is stopping. """
 	RESETTING			= auto()
+	"""	CSE is resetting. """
 
 ##############################################################################
 #
@@ -1119,10 +1147,15 @@ class ResponseType(ACMEIntEnum):
 class RequestStatus(ACMEIntEnum):
 	"""	Reponse Types """
 	COMPLETED			= 1
+	""" Completed. """
 	FAILED				= 2
+	""" Failed. """
 	PENDING				= 3
+	""" Pending. """
 	FORWARDED			= 4
+	""" Forwarded. """
 	PARTIALLY_COMPLETED	= 5
+	""" Partially completed. """
 
 
 ##############################################################################
@@ -1131,10 +1164,13 @@ class RequestStatus(ACMEIntEnum):
 #
 
 class EventCategory(ACMEIntEnum):
-	"""	Event Categories """
+	"""	Event Categories from m2m:stdEventCats """
 	Immediate			= 2
+	"""	Immediate event. """
 	BestEffort			= 3
+	"""	Best effort event. """
 	Latest				= 4
+	"""	Only latest event. """
 
 
 ##############################################################################
@@ -1147,65 +1183,101 @@ class ContentSerializationType(ACMEIntEnum):
 	"""
 
 	XML					= auto()
+	"""	XML. """
 	JSON				= auto()
+	"""	JSON. """
 	CBOR				= auto()
+	"""	CBOR. """
 	PLAIN				= auto()
-	NA	 				= auto()
+	"""	Plain text. """
 	UNKNOWN				= auto()
+	"""	Unknown. """
 
 	def toHeader(self) -> str:
-		"""	Return the mime header for a enum value.
+		"""	Return the mime header for an enum value.
+
+			Return:
+				The mime header for an enum value.
 		"""
-		if self.value == self.JSON:	return 'application/json'
-		if self.value == self.CBOR:	return 'application/cbor'
-		if self.value == self.XML:	return 'application/xml'
-		return None
+		match self.value:
+			case self.JSON:	
+				return 'application/json'
+			case self.CBOR:	
+				return 'application/cbor'
+			case self.XML:	
+				return 'application/xml'
+			case _:
+				return None
 	
+
 	def toSimple(self) -> str:
-		"""	Return the simple string for a enum value.
+		"""	Return the simple string for an enum value.
+
+			Return:
+				The simple string for an enum value.
 		"""
-		if self.value == self.JSON:	return 'json'
-		if self.value == self.CBOR:	return 'cbor'
-		if self.value == self.XML:	return 'xml'
-		return None
+		match self.value:
+			case self.JSON:
+				return 'json'
+			case self.CBOR:
+				return 'cbor'
+			case self.XML:
+				return 'xml'
+			case _:
+				return None
+
 
 	@classmethod
 	def toContentSerialization(cls, t:str) -> ContentSerializationType:
-		"""	Return the enum from a string.
+		"""	Return the enum from a string for a content serialization.
+
+			Args:
+				t: String to convert.
+
+			Return:
+				The enum value.
 		"""
-		t = t.lower()
-		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
-		if t in [ 'json', 'application/json' ]:	return cls.JSON
-		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
-		return cls.UNKNOWN
+		match t.lower():
+			case 'json' | 'application/json':
+				return cls.JSON
+			case 'cbor' | 'application/cbor':
+				return cls.CBOR
+			case 'xml' | 'application/xml':
+				return cls.XML
+			case _:
+				return cls.UNKNOWN
 
 	
 	@classmethod
-	def getType(cls, hdr:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
-		"""	Return the enum from a header definition.
+	def getType(cls, t:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
+		"""	Return the enum from a content-type header definition.
+
+			Args:
+				t: String to convert.
+				default: Default value to return if the string is not a valid content-type.
+
+			Return:
+				The enum value.
 		"""
-		default = cls.UNKNOWN if not default else default
-		if not hdr:														return default
-		hdr = hdr.lower()
-
-		if hdr.lower() == 'json':										return cls.JSON
-		if hdr.lower().startswith('application/json'):					return cls.JSON
-		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
-
-		if hdr.lower() == 'cbor':										return cls.CBOR
-		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
-		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
-		
-		if hdr.lower() == 'xml':										return cls.XML
-		if hdr.lower().startswith('application/xml'):					return cls.XML
-		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
-
-		return cls.UNKNOWN
+		if not t:
+			return cls.UNKNOWN if not default else default
+		match t.lower():
+			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
+				return cls.JSON
+			case 'cbor' | 'application/cbor' | 'application/vnd.onem2m-res+cbor':
+				return cls.CBOR
+			case 'xml' |  'application/xml' | 'application/vnd.onem2m-res+xml':
+				return cls.XML
+			case _:
+				return cls.UNKNOWN
 	
 
 	@classmethod
 	def supportedContentSerializations(cls) -> list[str]:
 		"""	Return a list of supported media types for content serialization.
+
+			Return:
+				A list of supported media types for content serialization.
 		"""
 		return [ 'application/json',
 				 'application/vnd.onem2m-res+json', 
@@ -1217,11 +1289,22 @@ class ContentSerializationType(ACMEIntEnum):
 	def supportedContentSerializationsSimple(cls) -> list[str]:
 		"""	Return a simplified (only the names of the serializations)
 			list of supported media types for content serialization.
+
+			Return:
+				A list of supported media types for content serialization.
 		"""
 		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
 
 
 	def __eq__(self, other:object) -> bool:
+		"""	Compare two ContentSerializationType enums for equality.
+
+			Args:
+				other: The other enum to compare with.
+
+			Return:
+				True if the enums are equal.
+		"""
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
@@ -1235,8 +1318,11 @@ class ContentSerializationType(ACMEIntEnum):
 class ConsistencyStrategy(ACMEIntEnum):
 	"""	Consistency Strategy """
 	abandonMember		= 1	# default
+	""" Abandon member. The default. """
 	abandonGroup		= 2
+	""" Abandon group. """
 	setMixed			= 3
+	""" Set mixed. """
 
 
 ##############################################################################
@@ -1247,25 +1333,41 @@ class ConsistencyStrategy(ACMEIntEnum):
 class NotificationContentType(ACMEIntEnum):
 	"""	Notification Content Types """
 	allAttributes			= 1
+	""" All Attributes. """
 	modifiedAttributes		= 2
+	""" Modified Attributes. """
 	ri 						= 3
+	""" Resource Identifier. """
 	triggerPayload			= 4
+	""" Trigger Payload. """
 	timeSeriesNotification	= 5
+	""" Time Series Notification. """
 	
 
 class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate						=  1	# A, default
-	resourceDelete						=  2	# B
+
+	resourceUpdate						=  1 # A, default
+	""" Resource Update (the default)."""
+	resourceDelete						=  2 # B
+	""" Resource Delete. """
 	createDirectChild					=  3 # C
+	""" Create Direct Child. """
 	deleteDirectChild					=  4 # D	
+	""" Delete Direct Child. """
 	retrieveCNTNoChild					=  5 # E # TODO not supported yet
+	""" Retrieve CNT No Child. """
 	triggerReceivedForAE				=  6 # F # TODO not supported yet
+	""" Trigger Received For AE. """
 	blockingUpdate 						=  7 # G
+	""" Blocking Update. """
 	# TODO spec and implementation for blockingUpdateDirectChild			=  ???
 	reportOnGeneratedMissingDataPoints	=  8 # H
+	""" Report On Generated Missing Data Points. """
 	blockingRetrieve					=  9 # I # EXPERIMENTAL
+	""" Blocking Retrieve. """
 	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL
+	""" Blocking Retrieve Direct Child. """
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
@@ -1277,24 +1379,27 @@ class NotificationEventType(ACMEIntEnum):
 			Return:
 				True if the NotificationEventType is allowed for the NotificationContentType.
 		"""
-		if nct == NotificationContentType.allAttributes:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.resourceDelete, 
-								   NotificationEventType.createDirectChild, 
-								   NotificationEventType.deleteDirectChild ]
-		elif nct == NotificationContentType.modifiedAttributes:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.blockingUpdate ]
-		elif nct == NotificationContentType.ri:
-			return self.value in [ NotificationEventType.resourceUpdate, 
-								   NotificationEventType.resourceDelete, 
-								   NotificationEventType.createDirectChild, 
-								   NotificationEventType.deleteDirectChild ]
-		elif nct == NotificationContentType.triggerPayload:
-			return self.value in [ NotificationEventType.triggerReceivedForAE ]
-		elif nct == NotificationContentType.timeSeriesNotification:
-			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
-		return False
+		match nct:
+			case NotificationContentType.allAttributes:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.resourceDelete, 
+									   NotificationEventType.createDirectChild, 
+									   NotificationEventType.deleteDirectChild ]
+			case NotificationContentType.modifiedAttributes:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.blockingUpdate ]
+			case NotificationContentType.ri:
+				return self.value in [ NotificationEventType.resourceUpdate, 
+									   NotificationEventType.resourceDelete, 
+									   NotificationEventType.createDirectChild, 
+									   NotificationEventType.deleteDirectChild ]
+			case NotificationContentType.triggerPayload:
+				return self.value in [ NotificationEventType.triggerReceivedForAE ]
+			case NotificationContentType.timeSeriesNotification:
+				return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
+			case _:
+				return False
+
 
 	def defaultNCT(self) -> NotificationContentType:
 		"""	Return the default NotificationContentType for this NotificationEventType.
@@ -1315,6 +1420,7 @@ _defaultNCT = {
 	NotificationEventType.blockingUpdate:						NotificationContentType.modifiedAttributes,
 	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
 }
+"""	Mappings between NotificationEventType and default NotificationContentType """
 
 ##############################################################################
 #
@@ -1324,24 +1430,42 @@ _defaultNCT = {
 @dataclass
 class MissingData:
 	"""	Data class for collecting the missing data states. """ 
+
 	subscriptionRi:str
+	""" Subscription resource identifier. """
 	missingDataDuration:float
+	""" Missing data duration. """
 	missingDataNumber:int
+	""" Missing data number. """
 	timeWindowEndTimestamp:float	= None
+	""" Time window end timestamp. """
 	missingDataList:list[str]		= field(default_factory=list)
+	""" Missing data list. """
 	missingDataCurrentNr:int 		= 0
+	""" Missing data current number. """
 
 	def clear(self) -> None:
+		"""	Clear the missing data states.
+		"""
+		
 		self.timeWindowEndTimestamp	= None
 		self.clearMissingDataList()
 
 
 	def clearMissingDataList(self) -> None:
+		"""	Clear the missing data list.
+		"""
+
 		self.missingDataList		= []
 		self.missingDataCurrentNr	= 0
 
 	
 	def asDict(self) -> JSON:
+		"""	Return the missing data as a dictionary.
+
+			Return:
+				The missing data as a dictionary.
+		"""
 		return {
 			'mdlt': self.missingDataList,
 			'mdc' : self.missingDataCurrentNr
@@ -1355,20 +1479,29 @@ class LastTSInstance:
 
 	# runtime attributes
 	dgt:list[float]						= field(default_factory = lambda: [0])
+	""" List of data generation times. """
 	expectedDgt:float				 	= 0.0
+	""" Expected data generation time. """
 	missingDataDetectionTime:float		= 0.0
+	""" Missing data detection time. """
 
 	# <TS> attributes
 	pei:float							= 0.0
+	""" Periodic interval. """
 	mdt:float							= 0.0
+	""" Missing data detection time. """
 	peid:float							= 0.0
+	""" Periodic interval duration. """
 
 	# Subscriptions
 	missingData:dict[str, MissingData]	= field(default_factory = dict)
+	""" Missing data. """
 
 	# Internal
 	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
+	""" Actor for this TS."""
 	running:bool 						= False # for late activation of this 
+	""" Running. """
 
 
 	def prepareNextDgt(self) -> None:
@@ -1384,6 +1517,11 @@ class LastTSInstance:
 	
 
 	def addDgt(self, dgt:float) -> None:
+		"""	Add a data generation time to the list of data generation times.
+
+			Args:
+				dgt: The data generation time to add.
+		"""
 		# TODO really support list. currently only one dgt is put, but 
 		# always overrides the old one. 
 		# Also change declaration of dgt above
@@ -1394,16 +1532,31 @@ class LastTSInstance:
 	
 
 	def nextDgt(self) -> float:
+		"""	Get the next expected data generation time.
+
+			Return:
+				The next expected data generation time.
+		"""
 		if len(self.dgt) == 0:
 			return None
 		return self.dgt.pop(0)
 	
 
 	def hasDgt(self) -> bool:
+		"""	Check if there is a data generation time.
+
+			Return:
+				True if there is a data generation time.
+		"""
 		return len(self.dgt) > 0
 	
 
 	def clearDgt(self) -> None:
+		"""	Clear the data generation time.
+
+			Return:
+				True if there is a data generation time.
+		"""
 		self.dgt.clear()
 		
 
@@ -1415,6 +1568,7 @@ class LastTSInstance:
 
 class AnnounceSyncType(ACMEIntEnum):
 	""" Announce Sync Types """
+
 	UNI_DIRECTIONAL = 1
 	"""	Announcement shall be done uni-directional, ie. changes in the announced resource are not synced back."""
 	BI_DIRECTIONAL = 2
@@ -1537,9 +1691,92 @@ _SemanticFormatAsString = {
 	SemanticFormat.FF_RdfTurtle:		'ttl',
 	SemanticFormat.FF_Manchester:		'manchester',
 	SemanticFormat.FF_JsonLD:			'json-ld',
+}
+"""	Mappings between semantic formats and strings representations. """
+
+
+##############################################################################
+#
+#	LocationPolicy and GeoQuery related
+#
+
+class LocationSource(ACMEIntEnum):
+	"""	Location Source.
+	"""
+	
+	Network_based = 1
+	"""	Network based. """
+	Device_based = 2
+	"""	Device based. """
+	Sharing_based = 3
+	"""	Sharing based. """
+
+
+class GeofenceEventCriteria(ACMEIntEnum):
+	"""	Geofence Event Criteria.
+	"""
+	
+	Entering = 1
+	"""	Entering. """
+	Leaving = 2
+	"""	Leaving. """
+	Inside = 3
+	"""	Inside. """
+	Outside = 4
+	"""	Outside. """
 	
 
-}
+class LocationUpdateEventCriteria(ACMEIntEnum):
+	"""	Location Update Event Criteria.
+	"""
+	
+	Location_Change = 0
+	"""	Location Change. """
+
+
+class LocationInformationType(ACMEIntEnum):
+	"""	Location Information Type.
+	"""
+	
+	Position_fix = 1
+	"""	Position fix. """
+	Geofence_event = 2
+	"""	Geofence event. """
+
+
+class GeometryType(ACMEIntEnum):
+	"""	Geometry Type.
+	"""
+	Point = 1
+	"""	Point."""
+	LineString = 2
+	"""	LineString. """
+	Polygon = 3 
+	"""	Polygon. """
+	MultiPoint = 4
+	"""	MultiPoint. """
+	MultiLineString = 5
+	"""	MultiLineString. """
+	MultiPolygon = 6
+	"""	MultiPolygon. """
+
+Coordinate = Tuple[float, float, Optional[float]]
+""" Coordinate type. """
+ListOfCoordinates = list[Coordinate]
+""" List of coordinates type. """
+
+
+class GeoSpatialFunctionType(ACMEIntEnum):
+	"""	Geo Spatial Function Type.
+	"""
+	Within = 1
+	"""	Within."""
+	Contains = 2
+	"""	Contains."""
+	Intersects = 3
+	"""	Intersects."""
+
+
 
 ##############################################################################
 #
@@ -1553,11 +1790,17 @@ class Result:
 		the general result, a status code, values, resources etc.
 	"""
 	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	""" Resource instance. """
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
+	""" Data. """
 	rsc:ResponseStatusCode					= ResponseStatusCode.UNKNOWN	#	The responseStatusCode of a Result
+	""" ResponseStatusCode. """
 	dbg:Optional[str]						= None
+	""" Optional debug message. """
 	request:Optional[CSERequest]			= None  	# may contain the processed incoming request object
+	""" Optional `CSERequest`. """
 	embeddedRequest:Optional[CSERequest]	= None		# May contain a request as a response, e.g. when polling
+	""" Optional embedded `CSERequest`. """
 
 
 	# def errorResultCopy(self) -> Result:
@@ -1588,6 +1831,14 @@ class Result:
 
 
 	def toData(self, ct:Optional[ContentSerializationType] = None) -> str|bytes|JSON:
+		"""	Return the result data as a string or bytes or JSON.
+
+			Args:
+				ct: The content serialization type to use. If not given, the default serialization type is used.
+
+			Return:
+				The result data as a string or bytes or JSON.
+		"""
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
 		from ..services.CSE import defaultSerialization
@@ -1736,7 +1987,20 @@ class FilterCriteria:
 	lbl:list = None
 	""" List of labels. Default is *None*. """
 
-	aq:str = None
+	gmty:GeometryType = None
+	""" geometryType for geo-query. Default is *None*. """
+
+	geom:str = None
+	""" geometry for geo-query. Default is *None*. """
+
+	_geom:list = None
+	""" Internal attribute to hold a parsed geometry. Default is *None*."""
+
+	gsf:GeoSpatialFunctionType = None
+	""" geoSpatialFunction for geo-query. Default is *None*. """
+
+
+	aq:str = None	# EXPERIMENTAL
 	""" Advanced query. Default is *None*. """
 
 
@@ -1766,7 +2030,7 @@ class FilterCriteria:
 		"""
 		return { k:v 
 				 for k, v in self.__dict__.items() 
-				 if k is not None and k not in [ 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes' ] and v is not None
+				 if k is not None and k not in ( 'fu', 'fo', 'lim', 'ofst', 'lvl', 'arp', 'attributes', 'gmty', 'geom', '_geom', 'gsf' ) and v is not None
 			   }
 
 
@@ -1789,6 +2053,8 @@ class FilterCriteria:
 			if k == 'fu' and int(v) == FilterUsage.conditionalRetrieval:
 				return
 			if k == 'fo' and int(v) == FilterOperation.AND:
+				return
+			if k.startswith('_'):	# internal attributes
 				return
 			result[k] = v
 		
@@ -1927,15 +2193,18 @@ class CSERequest:
 	_rqetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
 	""" Request Expiration Timestamp as UTC-based timestamp (internal). """
 	
+	rset:str = None 
+	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
+
+	_rsetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
+	""" Result Expiration Timestamp as UTC-based timestamp (internal). """
+
 	ot:str = None  
 	"""	Originating Timestamp in ISO8901 format. """
 	
 	oet:str = None
 	""" Operation Execution Time in ISO8901 format or as ms (X-M2M-OET). """
 	
-	rset:str = None 
-	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
-
 	rtu:list[str] = None
 	""" The notificationURI element of the Response Type parameter(X-M2M-RTU). """
 
@@ -1978,9 +2247,6 @@ class CSERequest:
 
 	httpAccept:list[str]			= None
 	"""	http Accept header media type. """
-
-	originalHttpArgs:Any 			= None
-	""" Original http request arguments. A MultiDict. """
 
 	#
 	#	Helpers
@@ -2036,8 +2302,6 @@ class CSERequest:
 			self.originalRequest['rset'] = self.rset
 		if self.rtu:
 			self.originalRequest['rtu'] = self.rtu
-		if self.rset:
-			self.originalRequest['rset'] = self.rset
 		# TODO is the content serialization type necessary to store? An "ct" is not the right shortname
 		# if self.ct:
 		# 	self.originalRequest['ct'] = self.ct
@@ -2082,27 +2346,49 @@ class CSERequest:
 
 @dataclass
 class AttributePolicy:
+	"""	Attribute policy for a single resource attribute.
+	"""
 	
 	# !!! DON'T CHANGE the order of the attributes!
 
 	type:BasicType
+	""" Type of the attribute. """
 	cardinality:Cardinality
+	""" Cardinality of the attribute. """
 	optionalCreate:RequestOptionality
+	""" Optionality of the attribute for create requests. """
 	optionalUpdate:RequestOptionality
+	""" Optionality of the attribute for update requests. """
 	optionalDiscovery:RequestOptionality
+	""" Optionality of the attribute for discovery requests. """
 	announcement:Announced
+	""" Whether the attribute is announced. """
 	sname:str 					= None 	# short name
+	""" Short name of the attribute. """
 	lname:str 					= None	# longname
+	""" Long name of the attribute. """
 	namespace:str				= None	# namespace
+	""" Namespace of the attribute. """
 	tpe:str   					= None	# namespace:type name
+	""" Type name of the attribute. """
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+	""" List of resource types that this attribute is valid for. """
 	ctype:str					= None	# Definition for a complex type attribute
+	""" Definition name for a complex type attribute. """
 	typeName:str				= None	# The type as written in the definition
+	""" The type as written in the definition. """
 	fname:str					= None 	# Name of the definition file
+	""" Name of the definition file. """
 	ltype:BasicType				= None	# sub-type of a list
+	""" Sub-type of a list as writen in the definition. """
+	etype:str					= None	# name of the enum type
+	""" Name of the enum type (if the attribute is of type *enum*). """
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
-	evalues:list[Any]			= None 	# List of enum values
+	""" Sub-type of a list as writen in the definition. """
+	evalues:dict[int, str]		= None 	# Dict of enum values and interpretations
+	""" Dict of enum values and interpretations. """
 	ptype:Type					= None	# Implementation type of the enum values
+	""" Implementation type of the enum values. """
 
 	# TODO support annnouncedSyncType
 
@@ -2120,12 +2406,17 @@ class AttributePolicy:
 			return None
 
 
-"""	Represent a dictionary of attribute policies used in validation. """
 AttributePolicyDict = Dict[str, AttributePolicy]
+"""	Represent a dictionary of attribute policies used in validation. """
+
 ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
+"""	Represent a dictionary of attribute policies used in validation. """
 
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
+""" Type definition for a dictionary of attribute policies for a flexContainer. """
+
 FlexContainerSpecializations = Dict[str, str]
+""" Type definition for a dictionary of specializations for a flexContainer. """
 
 
 ##############################################################################
@@ -2135,17 +2426,23 @@ FlexContainerSpecializations = Dict[str, str]
 
 
 Parameters = Dict[str, str]
-Attributes = Dict[str, Any]
+"""	Type definition for a dictionary of parameters. """
 JSON = Dict[str, Any]
+"""	Type definition for a JSON type, which is just a dictionary. """
 JSONLIST = List[JSON]
+"""	Type definition for a list of JSON types. """
 ReqResp = Dict[str, Union[int, str, List[str], JSON]]
+"""	Type definition for a dictionary of request/response parameters. """
 
 RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent')
+""" Type definition for a callback function to handle outgoing requests. """
 RequestHandler = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
 RequestResponse = namedtuple('RequestResponse', 'request result')
+""" Type definition for a request/response pair. """
 RequestResponseList = List[RequestResponse]
+""" Type definition for a list of request/response pairs. """
 
 FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """

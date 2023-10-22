@@ -6,6 +6,8 @@
 #
 #	ResourceType: ContentInstance
 #
+""" ContentInstance (CIN) resource type.
+"""
 
 from __future__ import annotations
 from typing import Optional
@@ -20,9 +22,12 @@ from ..services.Logging import Logging as L
 
 
 class CIN(AnnounceableResource):
+	""" ContentInstance resource type.
+	"""
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SMD ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -44,6 +49,8 @@ class CIN(AnnounceableResource):
 			'daci': None,
 			'st': None,
 			'cr': None,
+			'loc': None,
+
 
 			# Resource attributes
 			'cnf': None,
@@ -55,6 +62,7 @@ class CIN(AnnounceableResource):
 			'dcnt': None,
 			'dgt': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 

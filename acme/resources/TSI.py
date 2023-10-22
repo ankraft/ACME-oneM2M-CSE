@@ -39,6 +39,7 @@ class TSI(AnnounceableResource):
 		'cr': None,
 		'loc': None,
 
+
 		# Resource attributes
    		'dgt': None,
 		'con': None,

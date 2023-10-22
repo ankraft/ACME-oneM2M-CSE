@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Callable, List, Dict, Any, Tuple, Optional
 from .TextTools import simpleMatch
-import random, sys, heapq, traceback, time
+import random, sys, heapq, traceback, time, inspect
 from datetime import datetime, timezone
 from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
 import logging
@@ -30,6 +30,16 @@ def _utcTime() -> float:
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
+
+		Background workers are executed in a separate thread. 
+		
+		They are executed periodically according to the interval. The interval is the time between
+		the end of the previous execution and the start of the next execution. The interval is usually
+		not the time betweenthe start of two consecutive executions, but this could be achieved by setting the
+		*runOnTime* parameter to *True*. This will compensate for the processing time of the
+		worker callback.
+
+		Background workers can be stopped and started again. They can also be paused and resumed.
 	"""
 
 	__slots__ = (
@@ -51,6 +61,7 @@ class BackgroundWorker(object):
 		'data',
 		'args',
 	)
+	"""	Slots for the class. """
 
 	# Holds a reference to an specific logging function.
 	# This must have the same signature as the `logging.log` method.
@@ -72,22 +83,56 @@ class BackgroundWorker(object):
 						finished:Optional[Callable] = None,
 						ignoreException:Optional[bool] = False,
 						data:Optional[Any] = None) -> None:
+		"""	Initialize a background worker.
+		
+			Args:
+				interval: Interval in seconds to run the worker callback.
+				callback: Callback to run as a worker.
+				name: Name of the worker.
+				startWithDelay: If True then start the worker after a `interval` delay.
+				maxCount: Maximum number runs.
+				dispose: If True then dispose the worker after finish.
+				id: Unique ID of the worker.
+				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.
+				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed.
+				finished: Callable that is executed after the worker finished.
+				ignoreException: Restart the actor in case an exception is encountered.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
+		"""
 		self.interval 				= interval
+		""" Interval in seconds to run the worker callback. """
 		self.runOnTime				= runOnTime			# Compensate for processing time
+		""" If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution. """
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
+		""" If True then missed worker runs in the past are executed, otherwise they are dismissed. """
 		self.nextRunTime:float		= None				# Timestamp
+		""" Timestamp of the next execution. """
 		self.callback 				= callback			# Actual callback to process
+		""" Callback function to run as a worker. """
 		self.running 				= False				# Indicator that a worker is running or will be stopped
+		""" True if the worker is running. """
 		self.executing				= False				# Indicator that the worker callback is currently executed
+		""" True if the worker is currently executing. """
 		self.name 					= name
+		""" Name of the worker. """
 		self.startWithDelay 		= startWithDelay
+		""" If True then start the worker after a `interval` delay. """
 		self.maxCount 				= maxCount			# max runs
+		""" Maximum number runs. """
 		self.numberOfRuns 			= 0					# Actual runs
+		""" Number of runs. """
 		self.dispose 				= dispose			# Only run once, then remove itself from the pool
+		""" If True then dispose the worker after finish. """
 		self.finished				= finished			# Callback after worker finished
+		""" Callback that is executed after the worker finished. """
 		self.ignoreException		= ignoreException	# Ignore exception when running workers
+		""" Restart the actor in case an exception is encountered. """
 		self.id 					= id
+		""" Unique ID of the worker. """
 		self.data					= data				# Any extra data
+		""" Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*. """
+		self.args:Dict[str, Any]	= {}				# Arguments for the callback
+		""" Arguments for the callback. """
 
 
 
@@ -213,10 +258,15 @@ class BackgroundWorker(object):
 			# - ignoreException is False then the exception is raised again
 			while True:
 				try:
-					if self.data is not None:
-						result = self.callback(_data = self.data, **self.args)
-					else:
-						result = self.callback(**self.args)
+					# check whether the callback has a _data and _worker argument
+					# and add them if they are
+					argSpec = inspect.getfullargspec(self.callback)	
+					if '_data' in argSpec.args:
+						self.args['_data'] = self.data
+					if '_worker' in argSpec.args:
+						self.args['_worker'] = self
+					# call the callback
+					result = self.callback(**self.args)
 					break
 				except Exception as e:
 					if BackgroundWorker._logger:
@@ -269,7 +319,12 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime})'
+		"""	Return a string representation of the worker. 
+		
+			Return:
+				A string representation of the worker.
+		"""
+		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime}, data = {self.data})'
 
 
 
@@ -287,18 +342,26 @@ class Job(Thread):
 		'Callable',
 		'finished',
 	)
+	"""	Slots for the class."""
 
-	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
+	jobListLock	= RLock()
+	"""	Lock for the job lists. """
 
 	# Paused and running job lists
 	pausedJobs:list[Job] = []
+	""" List of paused jobs. """
 	runningJobs:list[Job] = []
+	""" List of running jobs. """
 
 	# Defaults for reducing overhead jobs
-	_balanceTarget:float = 3.0			# Target balance between paused and running jobs (n paused for 1 running)
-	_balanceLatency:int = 1000			# Number of requests for getting a new Job before a check
-	_balanceReduceFactor:float = 2.0	# Factor to reduce the paused jobs (number of paused / balanceReduceFactor)
-	_balanceCount:int = 0				# Counter for current runs. Compares against balance
+	_balanceTarget:float = 3.0	
+	""" Target balance between paused and running jobs (n paused for 1 running). """
+	_balanceLatency:int = 1000
+	""" Number of requests for getting a new Job before a balance check. """
+	_balanceReduceFactor:float = 2.0
+	""" Factor to reduce the paused jobs (number of paused / balanceReduceFactor). """
+	_balanceCount:int = 0
+	""" Counter for current runs. Compares against balance. """
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
@@ -434,6 +497,8 @@ class Job(Thread):
 
 	@classmethod
 	def _balanceJobs(cls) -> None:
+		"""	Internal function to balance the number of paused and running jobs.
+		"""
 		if not Job._balanceLatency:
 			return
 		Job._balanceCount += 1
@@ -461,46 +526,77 @@ class Job(Thread):
 
 
 class WorkerEntry(object):
+	"""	Internal class for a worker entry in the priority queue.
+	"""
 
 	__slots__ = (
 		'timestamp',
 		'workerID',
 		'workerName',
 	)
-
-	# timestamp:float = 0.0
-	# workerID:int = None
-	# workerName:str = None
+	"""	Slots for the class. """
 
 	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
+		"""	Initialize a WorkerEntry.
+		
+			Args:
+				timestamp: Timestamp of the next execution.
+				workerID: ID of the worker.
+				workerName: Name of the worker.
+		"""
 		self.timestamp = timestamp
+		""" Timestamp of the next execution. """
 		self.workerID = workerID
+		""" ID of the worker. """
 		self.workerName = workerName
+		""" Name of the worker. """
 
 
 	def __lt__(self, other:WorkerEntry) -> bool:
+		"""	Compare two WorkerEntry objects for less-than.
+
+			Args:
+				other: The other WorkerEntry object to compare with.
+
+			Return:
+				True if this WorkerEntry is less than the other.
+		"""
 		return self.timestamp < other.timestamp
 
 	
 	def __str__(self) -> str:
+		"""	Return a string representation of the WorkerEntry.
+		
+			Return:
+				A string representation of the WorkerEntry.
+		"""
 		return f'(ts: {self.timestamp} id: {self.workerID} name: {self.workerName})'
 	
 
 	def __repr__(self) -> str:
+		"""	Return a string representation of the WorkerEntry.
+		
+			Return:
+				A string representation of the WorkerEntry.
+		"""
 		return self.__str__()
 
 
 class BackgroundWorkerPool(object):
 	"""	Pool and factory for background workers and actors.
 	"""
+	
 	backgroundWorkers:Dict[int, BackgroundWorker]	= {}
+	"""	All background workers. """
 	workerQueue:list[WorkerEntry] 					= []
 	""" Priority queue. Contains tuples (next execution timestamp, worker ID, worker name). """
 	workerTimer:Timer								= None
 	"""	A single timer to run the next task in the *workerQueue*. """
 
 	queueLock:Lock					 				= Lock()
+	"""	Lock for the *workerQueue*. """
 	timerLock:Lock					 				= Lock()
+	"""	Lock for the *workerTimer*. """
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
@@ -598,7 +694,7 @@ class BackgroundWorkerPool(object):
 			(it may be 0.0s, though), or *at* a specific time (UTC timestamp).
 
 			Args:
-				workerCallback: Callback that is executed to perform the action for the actor.
+				workerCallback: Callback that is executed to perform the action for the actor. It will receive the *data* in its *_data*, and the worker itself in the *_worker* arguments (if available as arguments).
 				delay: Delay in seconds after which the actor callback is executed.
 					This is an alternative to *at*.
 					Only one of *at* or *delay* must be specified.
@@ -610,7 +706,7 @@ class BackgroundWorkerPool(object):
 				finished: Callable that is executed after the worker finished.
 					It will	receive the same arguments as the *workerCallback* callback.
 				ignoreException: Restart the actor in case an exception is encountered.
-				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed in the *_data* argument of the *workerCallback* if not *None*.
 			Return:
 				`BackgroundWorker` object. It is only an initialized object and needs to be started manually with its `start()` method.
 		"""

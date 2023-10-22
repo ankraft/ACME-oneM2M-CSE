@@ -20,6 +20,8 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [datetime](#datetime)                                   | Return a timestamp                                                               |
 |                            | [defun](#defun)                                         | Define a function                                                                |
 |                            | [dec](#dec)                                             | Decrement a variable                                                             |
+|                            | [dolist](#dolist)                                       | Loop over a list                                                                 |
+|                            | [dotimes](#dotimes)                                     | Loop over a numeric value                                                        |
 |                            | [eval](#eval)                                           | Evaluate and execute a quoted list                                               |
 |                            | [evaluate-inline](#evaluate-inline)                     | Enable and disable inline string evaluation                                      |
 |                            | [get-json-attribute](#get-json-attribute)               | Get a JSON attribute from a JSON structure                                       |
@@ -65,8 +67,10 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [Logical Operations](#logical-operations)               | List of supported logical operations                                             |
 |                            | [Mathematical Operations](#mathematical-operations)     | List of supported mathematical operations                                        |
 | [CSE](#_cse)               | [clear-console](#clear-console)                         | Clear the console screen                                                         |
+|                            | [cse-attribute-info](#cse-atribute-info)                | Return information about one or more matching attributes                         |
 |                            | [cse-status](#cse-status)                               | Return the CSE's current status                                                  |
 |                            | [get-config](#get-config)                               | Retrieve a CSE's configuration setting                                           |
+|                            | [get-loglevel](#get-loglevel)                           | Retrieve the CSE's current log level                                             |
 |                            | [get-storage](#get-storage)                             | Retrieve a value from the CSE's internal script-data storage                     |
 |                            | [has-config](#has-config)                               | Determine the existence of a CSE's configuration setting                         |
 |                            | [has-storage](#has-storage)                             | Determine the existence of a key/value in the CSE's internal script-data storage |
@@ -90,6 +94,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 | [Text UI](#_textui)        | [open-web-browser](#open-web-browser)                   | Open a web page in the default browser                                           |
 |                            | [set-category-description](#set-category-description)   | Set the description for a whole category of scripts                              |
 |                            | [runs-in-tui](#runs-in-tui)                             | Determine whether the CSE runs in Text UI mode                                   |
+|                            | [tui-notify](#tui-notify)                               | Display a desktop-like notification                                              |
 |                            | [tui-refresh-resources](#tui-refresh-resources)         | Force a refresh of the Text UI's resource tree                                   |
 |                            | [tui-visual-bell](#tui-visual-bell)                     | Shortly flashes the script's entry in the text UI's scripts list                 |
 | [Network](#_network)       | [http](#http)                                           | Send http requests                                                               |
@@ -121,12 +126,14 @@ In addition more functions are provided in the file [ASFunctions.as](../init/ASF
 
 Concatenate and return the stringified versions of the symbol arguments.
 
-See also: [to-string](#to-string)
+Note, that this function will not add spaces between the symbols. One can use the [nl](#nl) and [sp](#sp) functions to add newlines and spaces.
+
+See also: [nl](#nl), [sp](#sp), [to-string](#to-string)
 
 Example:
 
 ```lisp
-(. "Time: " (datetime))  ;; Returns "Time: 20230308T231049.934630"
+(. "Time:" sp (datetime))  ;; Returns "Time: 20230308T231049.934630"
 ```
 
 [top](#top)
@@ -234,7 +241,7 @@ The `case` function implements the functionality of a `switch...case` statement 
 
 The *key* s-expression is evaluated and its value taken for the following comparisons. After this expression a number of  lists may be given. 
 
-Each of these list contains two symbols that are handled in order: The first symbol evaluates to a value that is compared to the result of the *key* s-expression. If there is a match then the second s-exprersion is evaluated, and then the comparisons are stopped and the *case* function returns.
+Each of these list contains two symbols that are handled in order: The first symbol evaluates to a value that is compared to the result of the *key* s-expression. If there is a match then the second s-expression is evaluated, and then the comparisons are stopped and the *case* function returns.
 
 The special symbol *otherwise* for a *condition* s-expression always matches and can be used as a default or fallback case .
 
@@ -314,30 +321,6 @@ Example:
 
 ---
 
-<a name="dec"></a>
-
-### dec
-
-`(dec <variable> [<value:number>])`
-
-The `dec` function decrements a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is decemented by this value. The value can be an integer or a float.
-
-The function returns the variable's new value.
-
-See also: [inc](#inc)
-
-Example:
-
-```lisp
-(setq a 1)   ;; Set variable "a" to 1
-(dec a)      ;; Decrement variable "a" by 1
-(dec a 2.5)  ;; Decrement variable "a" by 2.5
-```
-
-[top](#top)
-
----
-
 <a name="defun"></a>
 
 ### defun
@@ -371,6 +354,90 @@ Examples:
            (fib (- n 2)))
     ))
 (fib 10)                ;; Returns 55
+```
+
+[top](#top)
+
+---
+
+<a name="dec"></a>
+
+### dec
+
+`(dec <variable> [<value:number>])`
+
+The `dec` function decrements a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is decremented by this value. The value can be an integer or a float.
+
+The function returns the variable's new value.
+
+See also: [inc](#inc)
+
+Example:
+
+```lisp
+(setq a 1)   ;; Set variable "a" to 1
+(dec a)      ;; Decrement variable "a" by 1
+(dec a 2.5)  ;; Decrement variable "a" by 2.5
+```
+
+[top](#top)
+
+---
+
+<a name="dolist"></a>
+
+### dolist
+
+`(dolist (<loop variable> <list:list or quoted list> [<result variable>]) (<s-expression>+))`
+
+The `dolist` function loops over a list.  
+The first arguments is a list that contains a loop variable, a list to iterate over, and an optional
+`result` variable. The second argument is a list that contains one or more s-expressions that are executed in the loop.
+
+If the `result variable` is specified then the loop returns the value of that variable, otherwise `nil`.
+
+See also: [dotimes](#dotimes), [while](#while)
+
+Example:
+
+```lisp
+(dolist (i '(1 2 3 4 5 6 7 8 9 10))
+	(print i))                   ;; print 1..10
+
+(setq result 0)
+(dolist (i '(1 2 3 4 5 6 7 8 9 10) result)
+	(setq result (+ result i)))  ;; sum 1..10
+(print result)                   ;; 55
+```
+
+[top](#top)
+
+---
+
+<a name="dotimes"></a>
+
+### dotimes
+
+`(dotimes (<loop variable> <count:number> [<result variable>]) (<s-expression>+))`
+
+The `dotimes` function provides a simple numeric loop functionality.  
+The first arguments is a list that contains a loop variable that starts at 0, the loop `count` (which must be a non-negative number), and an optional
+`result` variable. The second argument is a list that contains one or more s-expressions that are executed in the loop.
+
+If the `result variable` is specified then the loop returns the value of that variable, otherwise `nil`.
+
+See also: [dolist](#dolist), [while](#while)
+
+Example:
+
+```lisp
+(dotimes (i 10)
+	(print i))                   ;; print 0..9
+
+(setq result 0)
+(dotimes (i 10 result)
+	(setq result (+ result i)))  ;; sum 0..9
+(print result)                   ;; 45
 ```
 
 [top](#top)
@@ -463,11 +530,15 @@ Examples:
 
 ---
 
+<a name="if"></a>
+
 ### if
 
 `(if <boolean expression> <s-expression> [<s-expression>])`
 
 The `if` function works like an “if-then-else” statement in other programing languages. The first argument is a boolean expression. If it evaluates to *true* then the second argument is executed. If it evaluates to *false* then the third (optional) argument is executed, if present.
+
+The boolean expression can be any s-expression that evaluates to a boolean value or *nil*, or a list or a string. *nil* values, empty lists, or zero-length strings evaluate to *false*, or to *true* otherwise.
 
 Example:
 
@@ -510,7 +581,7 @@ Example:
 
 `(inc <variable symbol> [<value:number>])`
 
-The `inc` function increments a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is incemented by this value. The value can be an integer or a float.
+The `inc` function increments a provided variable. The default for the increment is 1, but can be given as an optional second argument. If this argument is  provided then the variable is incremented by this value. The value can be an integer or a float.
 
 The function returns the variable's new value.
 
@@ -1030,7 +1101,7 @@ Example:
 
 `(round <value:number> [<precission:number>])`
 
-The `round` function rounds a number to *precission* digits after the decimal point. The default is 0, meaning to round to nearest integer.
+The `round` function rounds a number to *precision* digits after the decimal point. The default is 0, meaning to round to nearest integer.
 
 Example:
 
@@ -1092,7 +1163,7 @@ Example:
 
 `(sleep <number>)`
 
-The `sleep` function adds a delay to the script execution. The evaludation stops for a number of seconds. The delay could be provided as an integer or float number.
+The `sleep` function adds a delay to the script execution. The evaluation stops for a number of seconds. The delay could be provided as an integer or float number.
 
 If the script execution timeouts during a sleep, the function is interrupted and all subsequent s-expressions are not evaluated.
 
@@ -1116,7 +1187,7 @@ Example:
 
 The `slice` function returns the slice of a list or a string.
 
-The behaviour is the same as slicing in Python, except that both *start* and *end* must be provided. The first argument is the *start* (including) of the slice, the second is the *end* (exlcuding) of the slice. The fourth argument is the list or string to slice.
+The behavior is the same as slicing in Python, except that both *start* and *end* must be provided. The first argument is the *start* (including) of the slice, the second is the *end* (excluding) of the slice. The fourth argument is the list or string to slice.
 
 Example:
 
@@ -1281,9 +1352,11 @@ The `while` function implements a loop functionality.
 
 A `while` loop continues to run when the first *guard* s-expression evaluates to *true*. Then the *body* s-expression is evaluated. After this the *guard* is evaluated again and the the loops continues or the `while` function returns.
 
+The boolean guard can be any s-expression that evaluates to a boolean value or *nil*, or a list or a string. *nil* values, empty lists, or zero-length strings evaluate to *false*, or to *true* otherwise.
+
 The `while` function returns the result of the last evaluated s-expression in the *body*.
 
-See also: [return](#return)
+See also: [doloop](#doloop), [dotime](#dotimes), [return](#return)
 
 Example:
 
@@ -1423,6 +1496,35 @@ Example:
 
 ---
 
+<a name="cse-attribute-info"></a>
+
+### cse-attribute-info
+
+`(cse-attribute-info <name:str>)`
+
+Return a list of CSE attribute infos for the attribute `name``. 
+The search is done over the short and long names of the attributes applying
+a fuzzy search when searching the long names.
+
+			
+The function returns a quoted list where each entry is another quoted list 
+with the following symbols:
+				
+- attribute short name
+- attribute long name
+- attribute type
+				
+Example:
+
+```lisp
+(cse-attribute-info "acop") ;; Returns ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
+```
+
+[top](#top)
+
+
+---
+
 <a name="cse-status"></a>
 
 ### cse-status
@@ -1464,6 +1566,29 @@ Examples:
 ```lisp
 (get-config "cse.type")    ;; Returns, for example, 1
 (get-config "cse.cseID")   ;; Returns, for example, "/id-in"
+```
+
+[top](#top)
+
+---
+
+<a name="get-loglevel"></a>
+
+### get-loglevel
+
+`(get-loglevel)`
+
+The `get-loglevel` function retrieves a the CSE's current log level setting. The return value will be one of the following strings:
+
+- "DEBUG"
+- "INFO"
+- "WARNING"
+- "ERROR"
+- "OFF"
+
+Example:
+```lisp
+(get-loglevel)  ;; Return, for example, INFO
 ```
 
 [top](#top)
@@ -1559,7 +1684,7 @@ Example:
 
 `(log-divider [<message:string>])`
 
-The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It can help to easily identifiy the different sections when working with many requests. An optional (short) message can be provided in the argument.
+The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It can help to easily identify the different sections when working with many requests. An optional (short) message can be provided in the argument.
 
 Examples:
 
@@ -2100,6 +2225,42 @@ Examples:
 
 ```lisp
 (runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+```
+
+[top](#top)
+
+---
+
+<a name="tui-notify"></a>
+
+### tui-notify
+
+`(tui-notify <message:str> [<title:str>] [<severity>:str>] [<timeout:float>])`
+
+Show a desktop-like notification in the TUI.
+
+This function is only available in TUI mode. It has the following arguments:
+
+- message: The message to show.
+- title: (Optional) The title of the notification.
+- severity: (Optional) The severity of the notification. This can be one of the following values:
+  - information (the default)
+  - warning
+  - error
+- timeout: (Optional) The timeout in seconds after which the notification will disappear again. If not specified, the notification will disappear after 3 seconds.
+
+If one of the optional arguments needs to be left out, a *nil* symbol must be used instead.
+The function returns NIL.
+
+Examples:
+
+```lisp
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
+(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
+
 ```
 
 [top](#top)

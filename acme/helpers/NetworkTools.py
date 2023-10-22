@@ -29,8 +29,17 @@ def isValidateIpAddress(ip:str) -> bool:
 	return True
 
 _allowedPart = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+"""	Regular expression for validating host names. """
 
 def isValidateHostname(hostname:str) -> bool:
+	"""	Validate a host name.
+
+		Args:
+			hostname: The host name to validate.
+
+		Return:
+			True if the *hostname* is valid, or False otherwise.
+	"""
 	if len(hostname) > 255:
 		return False
 	if hostname[-1] == '.':
@@ -39,6 +48,14 @@ def isValidateHostname(hostname:str) -> bool:
 
 
 def isValidPort(port:str) -> bool:
+	"""	Validate a port number.
+	
+		Args:
+			port: The port number to validate.
+		
+		Return:
+			True if *port* is valid, or False otherwise.
+	"""
 	try:
 		_port = int(port)
 	except ValueError:
@@ -47,6 +64,13 @@ def isValidPort(port:str) -> bool:
 
 
 def isTCPPortAvailable(port:int) -> bool:
+	"""	Check whether a TCP port is available.
+	
+		Args:
+			port: The port to check.
+
+		Return:
+			True if *port* is available, or False otherwise."""
 	try:
 		with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
 			s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -54,6 +78,7 @@ def isTCPPortAvailable(port:int) -> bool:
 	except OSError:
 		return False
 	return True
+
 
 def getIPAddress(hostname:Optional[str] = None) -> str:
 	"""	Lookup and return the IP address for a host name.

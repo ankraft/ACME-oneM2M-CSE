@@ -10,21 +10,22 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List
+from typing import cast, List, Optional, Any
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
-from ..etc.Types import CSERequest, JSON
+from ..etc.Types import CSERequest, JSON, ResponseType
 from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
-from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE
+from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
 from ..etc.Utils import isSPRelative, csiFromSPRelative, structuredPathFromRI
+from ..etc.DateUtils import utcTime
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
-from ..resources.GRP import GRP
 from ..resources.Factory import resourceFromDict
 from ..services import CSE
 from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
 
 
 class GroupManager(object):
@@ -36,17 +37,50 @@ class GroupManager(object):
 		"""
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
+
+		# Assign configuration values
+		self._assignConfig()
+
 		L.isInfo and L.log('GroupManager initialized')
 
 
 	def shutdown(self) -> bool:
-		"""	Shutdown the Group Manager.
+		"""	Shutdown the GroupManager.
 		
 			Returns:
-				*True* when shutdown complete.
+				*True* when shutdown is complete.
 		"""
 		L.isInfo and L.log('GroupManager shut down')
 		return True
+
+
+	def _assignConfig(self) -> None:
+		"""	Assign the configuration values.
+		"""
+		self.resultExpirationTime = Configuration.get('resource.grp.resultExpirationTime')
+
+
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None, 
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key not in ( 'resource.grp.resultExpirationTime' ):
+			return
+		self._assignConfig()
+
+
+	def restart(self, name:str) -> None:
+		"""	Restart the registration services.
+		"""
+		self._assignConfig()
+		L.isDebug and L.logDebug('GroupManager restarted')
 
 
 	#########################################################################
@@ -149,24 +183,25 @@ class GroupManager(object):
 
 			# check specializationType spty
 			if (spty := group.spty):
-				if isinstance(spty, int):				# mgmtobj type
-					if isinstance(resource, MgmtObj) and ty != spty:
-						raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
-				elif isinstance(spty, str):				# fcnt specialization
-					if isinstance(resource, FCNT) and resource.cnd != spty:
-						raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
+				match spty:
+					case int():		# mgmtobj type
+						if isinstance(resource, MgmtObj) and ty != spty:
+							raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
+					case str():		# fcnt specialization
+						if isinstance(resource, FCNT) and resource.cnd != spty:
+							raise GROUP_MEMBER_TYPE_INCONSISTENT(f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group
 			mt = group.mt
 			if not (mt == ResourceTypes.MIXED or ty == mt):	# types don't match
-				csy = group.csy
-				if csy == ConsistencyStrategy.abandonMember:		# abandon member
-					continue
-				elif csy == ConsistencyStrategy.setMixed:			# change group's member type
-					mt = ResourceTypes.MIXED
-					group['mt'] = ResourceTypes.MIXED
-				else:												# abandon group
-					raise GROUP_MEMBER_TYPE_INCONSISTENT('group consistency strategy and type "mixed" mismatch')
+				match group.csy:
+					case ConsistencyStrategy.abandonMember:	# abandon member
+						continue
+					case ConsistencyStrategy.setMixed:		# change group's member type
+						mt = ResourceTypes.MIXED
+						group['mt'] = ResourceTypes.MIXED
+					case _:
+						raise GROUP_MEMBER_TYPE_INCONSISTENT('group consistency strategy and type "mixed" mismatch')
 
 			# member seems to be ok, so add ri to the list
 			if isLocalResource:
@@ -199,6 +234,8 @@ class GroupManager(object):
 				`Result` instance.
 		"""
 
+		L.isDebug and L.logDebug(f'Performing fanOutPoint operation: {operation} on: {id}')
+
 		# get parent / group and check permissions
 		if not (groupResource := fopt.retrieveParentResource()):
 			raise NOT_FOUND('group resource not found')
@@ -209,10 +246,9 @@ class GroupManager(object):
 		#check access rights for the originator through memberAccessControlPolicies
 		if not CSE.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
+		
 
 		# check whether there is something after the /fopt ...
-
-		# _, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
 		_, _, tail = id.partition('/fopt/')
 		
 		L.isDebug and L.logDebug(f'Adding additional path elements: {tail}')
@@ -221,14 +257,37 @@ class GroupManager(object):
 		resultList:List[Result] = []
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
-		for mid in groupResource.mid.copy():	# copy mi because it is changed in the loop
+		_mid = groupResource.mid.copy()	# copy mi because it is changed in the loop
+
+		# Determine the timeout for aggregating requests.
+		# If Result Expiration Timestamp is present in the request then use that one.
+		# Else use the default configuration, if set to a value > 0
+		if request.rset is not None:
+			_timeoutTS = request._rsetUTCts
+		elif self.resultExpirationTime > 0:
+			_timeoutTS = utcTime() + self.resultExpirationTime
+		else:
+			_timeoutTS = 0
+
+		for mid in _mid:	
 			# Try to get the SRN and add the tail
 			if srn := structuredPathFromRI(mid):
 				mid = srn + tail
 			else:
 				mid = mid + tail
 			# Invoke the request
-			resultList.append(CSE.request.processRequest(request, originator, mid))
+			_result = CSE.request.processRequest(request, originator, mid)
+			# Check for RSET expiration
+			if _timeoutTS and _timeoutTS < utcTime():
+				# Check for blocking request. Then raise a timeout
+				if request.rt == ResponseType.blockingRequest:
+					raise REQUEST_TIMEOUT(L.logDebug('Aggregation timed out'))
+				# Otherwise just interrupt the aggregation
+				break
+			# Append the result
+			resultList.append(_result)
+			# import time
+			# time.sleep(1.0)
 
 		# construct aggregated response
 		if len(resultList) > 0:
@@ -244,6 +303,12 @@ class GroupManager(object):
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
 			agr = { 'm2m:agr' : rsp }
+			
+			# if the request is a flexBlocking request and the number of results is not equal to the number of members
+			# then the request must be marked as incomplete. This will be removed later when adding to the <req> resource.
+			if len(_mid) != len(resultList) and request.rt == ResponseType.flexBlocking:
+				agr['acme:incomplete'] = True # type: ignore
+
 		else:
 			agr = {}
 

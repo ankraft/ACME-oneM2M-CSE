@@ -735,7 +735,7 @@ The default value is `False`.
 This setting specifies the network interface on which the CSE's HTTP server is listening. 
 Use `0.0.0.0` to listen on all available interfaces.
 
-The default value is `127.0.0.1`.
+The default value is `0.0.0.0`.
 
 
 
@@ -850,6 +850,87 @@ The default value is `False`.
 
 
 
+# http.security.enableBasicAuth
+
+This setting enables or disables the CSE's HTTP server's basic authentication support.
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid username and password in the HTTP *Authorization* header.
+
+Can be enabled together with token authentication.
+
+The default value is `False`.
+
+
+
+# http.security.enableTokenAuth
+
+This setting enables or disables the CSE's HTTP server's token authentication support.
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid token in the HTTP *Authorization* header.
+
+Can be enabled together with basic authentication.
+
+The default value is `False`.
+
+
+
+# http.security.basicAuthFile
+
+This setting specifies the path to the CSE's HTTP server's basic authentication file.
+The file must contain lines with the format "username:password". 
+Comments are lines starting with a #.
+
+The default value is `${basic.config:dataDirectory}/certs/http_basic_auth.txt`.
+
+
+
+# http.security.tokenAuthFile
+
+This setting specifies the path to the CSE's HTTP server's token authentication file.
+The file must contain lines with the format "token".
+Comments are lines starting with a #.
+
+The default value is `${basic.config:dataDirectory}/certs/http_token_auth.txt`.
+
+
+
+# http.wsgi
+
+This section contains settings that control the CSE's HTTP server's WSGI support.
+
+The *Web Server Gateway Interface* is a simple calling convention for web servers to forward requests to 
+web applications. It is intended to be used together with a reverse proxy server or API gateway, for example *nginx*.
+
+Note, that the CSE's HTTP server's WSGI implementation does not support TLS. It is intended for use in
+a local network and behind a secure gateway only.
+
+
+
+# http.wsgi.enable
+
+This setting enables or disables the CSE's HTTP server's WSGI support.
+
+The default value is `False`.
+
+
+
+# http.wsgi.connectionLimit
+
+This setting specifies the number of possible parallel connections that can be accepted by the WSGI server.
+One connection uses one system file descriptor.
+
+The default value is `100`.
+
+
+
+# http.wsgi.threadPoolSize
+
+This setting specifies the number of threads used to process requests.
+
+This number should be of similar size as the *connectionLimit* setting.
+
+The default value is `100`.
+
+
+
 # logging
 
 This section contains settings that control the CSE's logging behavior.
@@ -905,6 +986,16 @@ This setting specifies the CSE's logging level.
 **Allowed values**: `debug`, `info`, `warning`, `error`, `off`.
 
 The default value is `debug`.
+
+
+
+# logging.maxLogMessageLength
+
+This setting specifies the maximum length of a log message. Longer messages will be truncated. 
+
+A value of 0 means no truncation.
+
+The default value is `1000` characters.
 
 
 
@@ -980,7 +1071,7 @@ The default value is `60 seconds`.
 This setting specifies the network interface on which the CSE's MQTT client is binding to. 
 Use `0.0.0.0` to listen on all available interfaces.
 
-The default value is `127.0.0.1`.
+The default value is `0.0.0.0`.
 
 
 
@@ -1156,6 +1247,45 @@ This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attri
 The default value is `10000 bytes`.
 
 
+# resource.grp
+
+This section specifies the CSE's defaults for GRP (Group) resources and the GroupManager service.
+
+Settings in this section are listed under the `[resource.grp]` section.
+
+
+# resource.grp.resultExpirationTime
+
+Set the time for the GroupManager for aggregating the results of a group request before interrupting. The format is the time in ms. 
+
+A value of 0 ms means no timeout. 
+
+The default is `0` ms.
+
+
+# resource.lcp
+
+This section specifies the CSE's defaults for LCP (LocationPolicy) resources.
+
+Settings in this section are listed under the `[resource.lcp]` section.
+
+
+
+# resource.lcp.mni
+
+This setting specifies the value of the *mni* (maxNrOfInstances) attribute for the "locations" CNT resource that is created by the CSE when the LCP is created.
+
+The default value is `10`.
+
+
+
+# resource.lcp.mbs
+
+This setting specifies the value of the *mbs* (maxByteSize) attribute for the "locations" CNT resource that is created by the CSE when the LCP is created.
+
+The default value is `10000 bytes`.
+
+
 
 # resource.req
 
@@ -1270,6 +1400,14 @@ This setting specifies the interval, in seconds, for monitoring for changes in t
 directory(s).
 
 The default value is `2.0 seconds`.
+
+
+
+# scripting.maxRuntime
+
+This setting specifies the maximum runtime, in seconds, for a script execution.
+
+The default value is `60 seconds`. `0.0 seconds` means no timeout.
 
 
 

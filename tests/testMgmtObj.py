@@ -1134,7 +1134,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_updateDATCrpscInvalidSchedule2Fail(self) -> None:
 		"""	UPDATE [dataCollection] rpsc with an invalid schedule -> FAIL"""
 		dct =  { 'dcfg:datc' : {
-					'rpsc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
+					'rpsc':	[ { 'sce': [ '10 * * * *' ] } ],	# invalid format, must be 7
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
@@ -1144,7 +1144,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_updateDATCrpscValidSchedule(self) -> None:
 		"""	UPDATE [dataCollection] rpsc with a valid schedule"""
 		dct =  { 'dcfg:datc' : {
-					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
+					'rpsc':	[ { 'sce': [ '10 * * * * * *' ] } ],
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
@@ -1187,7 +1187,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_updateDATCmescInvalidSchedule2Fail(self) -> None:
 		"""	UPDATE [dataCollection] mesc with an invalid schedule -> FAIL"""
 		dct =  { 'dcfg:datc' : {
-					'mesc':	[ { 'sce': '10 * * * *' } ],	# invalid format, must be 7
+					'mesc':	[ { 'sce': [ '10 * * * *' ] } ],	# invalid format, must be 7
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
@@ -1197,7 +1197,7 @@ class TestMgmtObj(unittest.TestCase):
 	def test_updateDATCmescValidSchedule(self) -> None:
 		"""	UPDATE [dataCollection] mesc with a valid schedule"""
 		dct =  { 'dcfg:datc' : {
-					'mesc':	[ { 'sce': '10 * * * * * *' } ],
+					'mesc':	[ { 'sce': [ '10 * * * * * *' ] } ],
 				}}
 		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
@@ -1259,7 +1259,7 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(len(rpsc), 1, r)
 		self.assertIsInstance((rpsce := rpsc[0]), dict, r)
 		self.assertIsNotNone((sce := rpsce.get('sce')), r)
-		self.assertEqual(sce, '10 * * * * * *', r)
+		self.assertEqual(sce, [ '10 * * * * * *' ], r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

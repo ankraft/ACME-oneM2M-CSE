@@ -4,7 +4,7 @@
 
 ### Python
 
-ACME requires **Python 3.8** or newer. Install it with your favorite package manager.
+ACME requires **Python 3.10** or newer. Install it with your favorite package manager.
 
 You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 
@@ -25,7 +25,13 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 		python3 -m pip install cbor2 flask flask-cors InquirerPy isodate paho-mqtt plotext rdflib requests rich tinydb
 
 1. Run the CSE for the first time.  
-If no configuration file is found then an interactive configuration process is started. The
+You can start the CSE by simply running it from the command line:
+
+		python3 -m acme
+
+	Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
+
+	If no configuration file is found then an interactive configuration process is started. The
 configuration is saved to a configuration file. e.g. *acme.ini* by default.  
 &nbsp;  
 ![](images/bootstrapConfig.gif)
@@ -34,15 +40,6 @@ configuration is saved to a configuration file. e.g. *acme.ini* by default.
 	There are a lot of individual settings to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
 	See the [Configuration](docs/Configuration.md) documentation for further details, and the defaults configuration file [acme.ini.default](../acme.ini.default).
 
-
-
-## Running the CSE
-
-You can start the CSE by simply running it from the command line:
-
-	python3 -m acme
-
-Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
 
 ---
 ## Certificates and Support for https
@@ -77,7 +74,9 @@ The following third-party components are used by the ACME CSE.
 - [rdflib](https://github.com/RDFLib/rdflib) is a Python library for working with RDF. BSD 3-Clause License.
 - The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http. Apache2 License
 - The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output. MIT License 
+- [shapely](https://github.com/shapely/shapely) is a library for manipulation and analysis of geometric objects. BSD 3-Clause License 
 - [Textual](https://github.com/textualize/textual) is a Rapid Application Development framework for to build textual user interfaces in Python. MIT License
+- [waitress](https://github.com/Pylons/waitress) is a production-quality pure-Python WSGI server with very acceptable performance. ZPL 2.1 License
 - To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. MIT License
 
 

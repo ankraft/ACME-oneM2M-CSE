@@ -31,6 +31,7 @@ class FCI(Resource):
 		'ct': None,
 		'et': None,
 		'lbl': None,
+		'loc': None,
 
 		# Resource attributes
 		'cs': None,

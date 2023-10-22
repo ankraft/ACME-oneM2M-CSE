@@ -149,6 +149,63 @@ class TestRemote_Annc(unittest.TestCase):
 	#	create an announced AE, including announced attribute
 	#
 
+	#
+	#	Perhaps the following three (fail) tests should be moved to somewhere else
+	#	But using the "aa" attribute seems to be the easiest way to test the
+	#	"ncname" validation.
+	#
+
+	# Create an AE with AT and AA, but wrong char in attribute
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnounceAEwithATwithWrongAA1Fail(self) -> None:
+		""" Create and announce <AE> (AT, AA) with wrong char in attribute -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+				 	'rr': 	False,
+				 	'srv': 	[ RELEASEVERSION ],
+				 	'lbl':	[ 'aLabel'],
+				 	'at': 	[ REMOTECSEID ],
+				 	'aa': 	[ 'lbl', 'lb+l']	# wrong attribute
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	# Create an AE with AT and AA, but space in attribute
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnounceAEwithATwithWrongAA2Fail(self) -> None:
+		""" Create and announce <AE> (AT, AA) with space in attribute -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+				 	'rr': 	False,
+				 	'srv': 	[ RELEASEVERSION ],
+				 	'lbl':	[ 'aLabel'],
+				 	'at': 	[ REMOTECSEID ],
+				 	'aa': 	[ 'lbl', 'lb l']	# wrong attribute
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	# Create an AE with AT and AA, but leading digit in attribute
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnounceAEwithATwithWrongAA3Fail(self) -> None:
+		""" Create and announce <AE> (AT, AA) with space in attribute -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+				 	'rr': 	False,
+				 	'srv': 	[ RELEASEVERSION ],
+				 	'lbl':	[ 'aLabel'],
+				 	'at': 	[ REMOTECSEID ],
+				 	'aa': 	[ 'lbl', '1lbl']	# wrong attribute
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
 	# Create an AE with AT and AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithAA(self) -> None:
@@ -789,6 +846,9 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced AE, including announced attribute
+	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA1Fail'))
+	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA2Fail'))
+	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA3Fail'))
 	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithAA'))
 	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedAEwithATwithAA'))
 	addTest(suite, TestRemote_Annc('test_deleteAnnounceAE'))

@@ -15,7 +15,7 @@ from typing import Optional, cast
 
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Types import Result, JSON
+from ..etc.Types import JSON
 from ..etc.Utils import pureResource
 from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
@@ -49,6 +49,8 @@ from ..resources.FCNT_OL import FCNT_OL
 from ..resources.GRP import GRP
 from ..resources.GRPAnnc import GRPAnnc
 from ..resources.GRP_FOPT import GRP_FOPT
+from ..resources.LCP import LCP
+from ..resources.LCPAnnc import LCPAnnc
 from ..resources.NOD import NOD
 from ..resources.NODAnnc import NODAnnc
 from ..resources.PCH import PCH
@@ -57,6 +59,8 @@ from ..resources.REQ import REQ
 from ..resources.SUB import SUB
 from ..resources.SMD import SMD
 from ..resources.SMDAnnc import SMDAnnc
+from ..resources.SCH import SCH
+from ..resources.SCHAnnc import SCHAnnc
 from ..resources.TS import TS
 from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
@@ -124,11 +128,15 @@ addResourceFactoryCallback(ResourceTypes.FCNT_OL,		FCNT_OL,		lambda dct, tpe, pi
 addResourceFactoryCallback(ResourceTypes.GRP,			GRP,			lambda dct, tpe, pi, create : GRP(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.GRPAnnc,		GRPAnnc,		lambda dct, tpe, pi, create : GRPAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.GRP_FOPT,		GRP_FOPT,		lambda dct, tpe, pi, create : GRP_FOPT(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.LCP,			LCP,			lambda dct, tpe, pi, create : LCP(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.LCPAnnc,		LCPAnnc,		lambda dct, tpe, pi, create : LCPAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.NOD,			NOD,			lambda dct, tpe, pi, create : NOD(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.NODAnnc,		NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH_PCU,		PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.REQ,			REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.SCH,			SCH,			lambda dct, tpe, pi, create : SCH(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.SCHAnnc,		SCHAnnc,		lambda dct, tpe, pi, create : SCHAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.SMD,			SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SMDAnnc,		SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SUB,			SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)) 
@@ -227,14 +235,16 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	# Determine a factory and call it
 	factory:FactoryCallableT = None
 
-	if typ == ResourceTypes.MGMTOBJ:										# for <mgmtObj>
-		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = ResourceTypes(resDict['mgd']).resourceFactory()
-	elif typ == ResourceTypes.MGMTOBJAnnc:									# for <mgmtObjA>
-		# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
-	else:
-		factory = typ.resourceFactory()
+	match typ:
+		case ResourceTypes.MGMTOBJ:
+			# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+			factory = ResourceTypes(resDict['mgd']).resourceFactory()
+		case ResourceTypes.MGMTOBJAnnc:
+			# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+			factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
+		case _:
+			factory = typ.resourceFactory()
+	
 	if factory:
 		return cast(Resource, factory(resDict, tpe, pi, create))
 

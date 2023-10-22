@@ -70,12 +70,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;http&#93; - HTTP Server Settings](#http)  
 [&#91;http.security&#93; - HTTP Security Settings](#security_http)  
 [&#91;http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
+[&#91;http.wsgi&#93; - HTTP WSGI (Web Server Gateway Interface) Settings](#http_wsgi)  
 [&#91;logging&#93; - Logging Settings](#logging)  
 [&#91;mqtt&#93; - MQTT Client Settings](#client_mqtt)  
 [&#91;mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
 [&#91;resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
 [&#91;resource.actr&#93; - Resource defaults: Action](#resource_actr)  
 [&#91;resource.cnt&#93; - Resource Defaults: Container](#resource_cnt)  
+[&#91;resource.grp&#93; - Resource Defaults: Group](#resource_grp)  
+[&#91;resource.lcp&#93; - Resource Defaults: LocationPolicy](#resource_lcp)  
 [&#91;resource.req&#93; - Resource Defaults: Request](#resource_req)  
 [&#91;resource.sub&#93; - Resource Defaults: Subscription](#resource_sub)  
 [&#91;resource.ts&#93; - Resource Defaults: TimeSeries](#resource_ts)  
@@ -164,7 +167,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting                   | Description                                                                                                                                                                                                                                                                                                                             | Configuration Name             |
 |:--------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
 | port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                                                                                                                                    | http.port                      |
-| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                                                                                                                                         | http.listenIF                  |
+| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:0.0.0.0                                                                                                                                                                                                                                                         | http.listenIF                  |
 | address                   | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080                                                                                                                                                                                                                                            | http.address                   |
 | root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                                                                                                                                  | http.root                      |
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                                                                                                            | http.enableRemoteConfiguration |
@@ -188,6 +191,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                         | http.security.verifyCertificate |
 | caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | http.security.caCertificateFile |
 | caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | http.security.caPrivateKeyFile  |
+| enableBasicAuth   | Enable basic authentication for the HTTP binding.<br />Default: false                                                                                                                                                                            | http.security.enableBasicAuth   |
+| enableTokenAuth   | Enable token authentication for the HTTP binding.<br />Default: false                                                                                                                                                                            | http.security.enableTokenAuth   |
+| basicAuthFile     | Path and filename of the http basic authentication file. The file must contain lines with the format "username:password". Comments are lines starting with a #.<br />Default: certs/http_basic_auth.txt                                          | http.security.basicAuthFile     |
+| tokenAuthFile     | Path and filename of the http bearer token authentication file. The file must contain lines with the format "token". Comments are lines starting with a #.<br />Default: certs/http_token_auth.txt                                               | http.security.tokenAuthFile     |
 
 [top](#sections)
 
@@ -205,7 +212,21 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [top](#sections)
 
 ---
+<a name="http_wsgi"></a>
 
+### [http.wsgi] - HTTP WSGI (Web Server Gateway Interface) Settings
+
+| Setting         | Description                                                                                                                                                  | Configuration Name        |
+|:----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
+| enable          | Enable WSGI support for the HTTP binding.<br />Default: false                                                                                                | http.wsgi.enable          |
+| threadPoolSize  | The number of threads used to process requests. This number should be of similar size as the *connectionLimit* setting.<br />Default: 100                    | http.wsgi.threadPoolSize  |
+| connectionLimit | The number of possible parallel connections that can be accepted by the WSGI server. Note: One connection uses one system file descriptor.<br />Default: 100 | http.wsgi.connectionLimit |
+
+
+
+[top](#sections)
+
+---
 <a name="client_mqtt"></a>
 
 ###	[mqtt] - MQTT Client Settings
@@ -213,9 +234,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | Setting     | Description                                                                               | Configuration Name |
 |:------------|:------------------------------------------------------------------------------------------|:-------------------|
 | enable      | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable        |
-| address     | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address       |
+| address     | The hostname of the MQTT broker.<br />Default; 127.0.0.1                                  | mqtt.address       |
 | port        | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port          |
-| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
+| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:0.0.0.0             | mqtt.listenIF      |
 | keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
 | topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
 | timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 10.0 seconds  | mqtt.timeout       |
@@ -269,10 +290,11 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | level                 | Loglevel. Allowed values: debug, info, warning, error, off.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug                | logging.level                 |
 | count                 | Number of files for log rotation.<br/>Default: 10                                                                                                           | logging.count                 |
 | size                  | Size per log file.<br/>Default: 100.000 bytes                                                                                                               | logging.size                  |
+| maxLogMessageLength   | Maximum length of a log message. Longer messages will be truncated. A value of 0 means no truncation.<br />Default: 1000 characters                         | logging.maxLogMessageLength   |
 | stackTraceOnError     | Print a stack trace when logging an 'error' level message.<br />Default: True                                                                               | logging.stackTraceOnError     |
 | enableBindingsLogging | Enable logging of low-level HTTP & MQTT client events.<br />Default: False                                                                                  | logging.enableBindingsLogging |
 | queueSize             | Number of log entries that can be added to the asynchronous queue before blocking. A queue size of 0 means disabling the queue.<br />Default: F5000 entries | logging.queueSize             |
-| filter           		| List of component names to exclude from logging.<br />Default: werkzeug,markdown_it                                                                         | logging.filter                |
+| filter                | List of component names to exclude from logging.<br />Default: werkzeug,markdown_it                                                                         | logging.filter                |
 
 [top](#sections)
 
@@ -376,6 +398,31 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
+<a name="resource_grp"></a>
+
+### [resource.grp] - Resource Defaults: Group
+
+| Setting              | Description                                                                                                                                                         | Configuration Name                |
+|:---------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------|
+| resultExpirationTime | Set the time for aggregating the results of a group request before interrupting. The format is the time in ms. A value of 0 ms means no timeout.</br >Default: 0 ms | resource.grp.resultExpirationTime |
+
+[top](#sections)
+
+---
+
+<a name="resource_lcp"></a>
+
+### [resource.lcp] - Resource Defaults: 
+
+| Setting | Description                                                                           | Configuration Name |
+|:--------|:--------------------------------------------------------------------------------------|:-------------------|
+| mni     | Default for maxNrOfInstances for the LocationPolicy's container.<br/> Default: 10     | resource.lcp.mni   |
+| mbs     | Default for maxByteSize for the LocationPolicy's container.<br/>Default: 10.000 bytes | resource.lcp.mbs   |
+
+[top](#sections)
+
+---
+
 <a name="resource_req"></a>
 
 ### [resource.req] - Resource Defaults: Request
@@ -470,6 +517,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | scriptDirectories      | Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory. Must be a comma-separated list.<br/>Default: not set | scripting.scriptDirectories      |
 | verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | scripting.verbose                |
 | fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | scripting.fileMonitoringInterval |
+| maxRuntime             | Set the timeout for script execution in seconds. 0.0 seconds means no timeout.<br/>Must be >= 0.0.<br/>Default: 60.0 seconds                                   | scripting.maxRuntime |
 
 [top](#sections)
 

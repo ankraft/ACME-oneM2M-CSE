@@ -7,6 +7,9 @@
 #	Implementation of a simple s-expression-based command processor.
 #
 """	The interpreter module implements an extensible lisp-based scripting runtime.
+
+	See:
+		`PContext` for the main class to run a script.
 """
 from __future__ import annotations
 
@@ -176,11 +179,13 @@ class SType(IntEnum):
 			Return:
 				The unquotde version of a quoted type. If the type is not a quoted type then return the same type.
 		"""
-		if self == SType.tListQuote:
-			return SType.tList
-		elif self == SType.tSymbolQuote:
-			return SType.tSymbol
-		return self
+		match self:
+			case SType.tListQuote:
+				return SType.tList
+			case SType.tSymbolQuote:
+				return SType.tSymbol
+			case _:
+				return self
 
 
 class SSymbol(object):
@@ -237,20 +242,19 @@ class SSymbol(object):
 
 		# Try to determine an unknown type
 		if value:
-			if isinstance(value, bool):
-				boolean = value
-			elif isinstance(value, str):
-				string = value
-			elif isinstance(value, (int, float)):
-				number = Decimal(value)
-			# elif isinstance(value, list):
-			# 	lstQuote = value
-			elif isinstance(value, dict):
-				jsn = value
-			elif isinstance(value, list):
-				lstQuote = [ SSymbol(value = _v) for _v in value ]
-			else:
-				raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
+			match value:
+				case bool():
+					boolean = value
+				case str():
+					string = value
+				case int() | float():
+					number = Decimal(value)
+				case dict():
+					jsn = value
+				case list():
+					lstQuote = [ SSymbol(value = _v) for _v in value ]
+				case _:
+					raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
 		# Assign known types
 		if string is not None:	# could be empty string
@@ -299,7 +303,7 @@ class SSymbol(object):
 			self.length = 1
 		else:
 			self.type = SType.tNIL
-			self.value = False
+			self.value = None	# was: False
 			self.length = 0
 
 
@@ -358,25 +362,27 @@ class SSymbol(object):
 	
 
 	def toString(self, quoteStrings:bool = False, pythonList:bool = False) -> str:
-		if self.type in [ SType.tList, SType.tListQuote ]:
-			# Set the list chars
-			lchar1 = '[' if pythonList else '('
-			lchar2 = ']' if pythonList else ')'
-			return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
-			# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
-		elif self.type == SType.tLambda:
-			return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
-		elif self.type == SType.tBool:
-			return str(self.value).lower()
-		elif self.type == SType.tString:
-			if quoteStrings:
-				return f'"{str(self.value)}"'
-			return str(self.value)
-		elif self.type == SType.tJson:
-			return json.dumps(self.value)
-		elif self.type == SType.tNIL:
-			return 'nil'
-		return str(self.value)
+		match self.type:
+			case SType.tList | SType.tListQuote:
+				# Set the list chars
+				lchar1 = '[' if pythonList else '('
+				lchar2 = ']' if pythonList else ')'
+				return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
+				# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
+			case SType.tLambda:
+				return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
+			case SType.tBool:
+				return str(self.value).lower()
+			case SType.tString:
+				if quoteStrings:
+					return f'"{str(self.value)}"'
+				return str(self.value)
+			case SType.tJson:
+				return json.dumps(self.value)
+			case SType.tNIL:
+				return 'nil'
+			case _:
+				return str(self.value)
 
 
 	def append(self, arg:SSymbol) -> SSymbol:
@@ -400,16 +406,18 @@ class SSymbol(object):
 			Return:
 				The raw value. For types that could not be converted directly the stringified version is returned.
 		"""
-		if self.type in [ SType.tList, SType.tListQuote ]:
-			return [ v.raw() for v in cast(list, self.value) ]
-		elif self.type in [ SType.tBool, SType.tString, SType.tSymbol, SType.tSymbolQuote, SType.tJson ]:
-			return self.value
-		if self.type == SType.tNumber:
-			if '.' in str(self.value):	# float or int?
-				return float(cast(Decimal, self.value))
-			return int(cast(Decimal, self.value))
-		return str(self.value)
-	
+		match self.type:
+			case SType.tList | SType.tListQuote:
+				return [ v.raw() for v in cast(list, self.value) ]
+			case SType.tBool | SType.tString | SType.tSymbol | SType.tSymbolQuote | SType.tJson:
+				return self.value
+			case SType.tNumber:
+				if '.' in str(self.value):	# float or int?
+					return float(cast(Decimal, self.value))
+				return int(cast(Decimal, self.value))
+			case _:
+				return str(self.value)
+
 
 class SExprParser(object):
 	"""	Class that implements an S-Expression parser. """
@@ -552,45 +560,51 @@ class SExprParser(object):
 				index += 1
 				continue
 
-			if symbol.type == SType.tListBegin:	# Start of another list
-				startIndex = index + 1
-				matchCtr = 1 # If 0, parenthesis has been matched.
-				# Determine the matching closing paranthesis on the same level
-				while matchCtr != 0:
-					index += 1
-					if index >= len(input):
-						self.errorExpression = input	# type:ignore[assignment]
-						raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
-					symbol = input[index]
-					if symbol.type == SType.tListBegin:
-						matchCtr += 1
-					elif symbol.type == SType.tListEnd:
-						matchCtr -= 1
-			
-				if isQuote:	# escaped with ' -> plain list
-					ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
-				else:		# normal list
-					ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
-			elif symbol.type == SType.tListEnd:
+			match symbol.type:
+				case SType.tListBegin:
+					startIndex = index + 1
+					matchCtr = 1 # If 0, parenthesis has been matched.
+					# Determine the matching closing paranthesis on the same level
+					while matchCtr != 0:
+						index += 1
+						if index >= len(input):
+							self.errorExpression = input	# type:ignore[assignment]
+							raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
+						symbol = input[index]
+						
+						match symbol.type:
+							case SType.tListBegin:
+								matchCtr += 1
+							case SType.tListEnd:
+								matchCtr -= 1
+							# ignore other types
+				
+					if isQuote:	# escaped with ' -> plain list
+						ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
+					else:		# normal list
+						ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
+				
+				case SType.tListEnd:
 					self.errorExpression = input	# type:ignore[assignment]
 					raise ValueError('Invalid input: Unmatched closing parenthesis.')
-			elif symbol.type == SType.tJson:
-				ast.append(symbol)
-			elif symbol.type == SType.tString:
-				ast.append(symbol)
-			else:
-				try:
-					ast.append(SSymbol(number = Decimal(symbol.value))) # type:ignore [arg-type]
-				except InvalidOperation:
-					if symbol.type == SType.tSymbol and symbol.value in [ 'true', 'false' ]:
-						ast.append(SSymbol(boolean = (symbol.value == 'true')))
-					elif symbol.type == SType.tSymbol and symbol.value == 'nil':
-						ast.append(SSymbol())
-					else:
-						if (_s := cast(str, symbol.value)).startswith('\''):
-							ast.append(SSymbol(symbolQuote = _s))
-						else:
-							ast.append(symbol)
+			
+				case SType.tJson | SType.tString:
+					ast.append(symbol)
+
+				case _:				
+					try:
+						ast.append(SSymbol(number = Decimal(symbol.value))) # type:ignore [arg-type]
+					except InvalidOperation:
+						match symbol.type:
+							case SType.tSymbol if symbol.value in [ 'true', 'false' ]:
+								ast.append(SSymbol(boolean = (symbol.value == 'true')))
+							case SType.tSymbol if symbol.value == 'nil':
+								ast.append(SSymbol())
+							case _:
+								if (_s := cast(str, symbol.value)).startswith('\''):
+									ast.append(SSymbol(symbolQuote = _s))
+								else:
+									ast.append(symbol)
 			index += 1
 			isQuote = False
 		
@@ -684,38 +698,24 @@ class PCall():
 		Attributes:
 			name: Function name.
 			arguments: Dictionary of arguments (name -> `SSymbol`) for a call.
+			variables: Dictionary of variables (name -> `SSymbol`) for a call.
 	"""
 	name:str						= None
 	arguments:dict[str, SSymbol]	= field(default_factory = dict)
+	variables:dict[str,SSymbol]		= field(default_factory = dict)
+
 
 
 class PContext():
-	"""	Process context for a single script. Can be re-used.
+	"""	Process context for a single script. 
+	
+		This is the main runtime object for the interpreter. 
+		To run a script, create a `PContext` object, and call its `run()` method.
 
-		Attributes:
-			argv: List of string that are arguments to the script.
-			ast: The script' abstract syntax tree.
-			environment: Dictionary of variables that are passed by the application to the script. Similar to `variables`, but the environment is not cleared.
-			error: Error state.
-			errorFunc: An optional function that is called when an error occured.
-			evaluateInline: Check and execute inline expressions in strings.
-			functions: Dictoonary of defined script functions.
-			logErrorFunc: An optional function that receives error log messages.
-			logFunc: An optional function that receives non-error log messages.
-			matchFunc: An optional function that is used to run regex comparisons.
-			maxRuntime: Number of seconds that is a script allowed to run.
-			meta: Dictionary of the script's meta tags and their arguments.
-			postFunc: An optional function that is called after running a script.
-			preFunc: An optional function that is called before running a script.
-			printFunc: An optional function for printing messages to the screen, console, etc.
-			result: Intermediate and final results during the execution.
-			script: The script to run.
-			state: The internal state of a script.
-			symbols: A dictionary of new symbols / functions to add to the interpreter.
-			variables: Dictionary of variables.
-			_maxRTimestamp: The max timestamp until the script may run (internal).
-			_callStack: The internal call stack (internal).
-			_symbolds: Dictionary with all build-in and provided functions (internal).
+		To add new symbols to the interpreter, inherit from `PContext` 
+		and add them to the `symbols` dictionary during initialization.	
+		
+		A `PContext` object can be re-used.
 	"""
 
 	__slots__ = (
@@ -738,7 +738,6 @@ class PContext():
 		'state',
 		'error',
 		'meta',
-		'variables',
 		'functions',
 		'environment',
 		'argv',
@@ -746,7 +745,8 @@ class PContext():
 		'verbose',
 		'_maxRTimestamp',
 		'_callStack',
-		'_symbolds',
+		'_symbols',
+		'_variables',
 	)
 	""" Slots of class attributes. """
 
@@ -755,24 +755,24 @@ class PContext():
 
 	def __init__(self, 
 				 script:str,
-				 symbols:PSymbolDict				= None,
-				 logFunc:PLogCallable 				= lambda pcontext, msg: print(f'** {msg}'),
-				 logErrorFunc:PErrorLogCallable		= lambda pcontext, msg, exception: print(f'!! {msg}'),
-				 printFunc:PLogCallable 			= lambda pcontext, msg: print(msg),
-				 preFunc:PFuncCallable				= None,
-				 postFunc:PFuncCallable				= None,
-			 	 errorFunc:PFuncCallable			= None,
-				 matchFunc:PMatchCallable			= lambda pcontext, l, r: l == r,
-				 maxRuntime:float					= None,
-				 fallbackFunc:PSymbolCallable		= None,
-				 monitorFunc:PSymbolCallable		= None,
-				 allowBrackets:bool					= False,
-				 verbose:bool						= False) -> None:
+				 symbols:Optional[PSymbolDict]				= None,
+				 logFunc:Optional[PLogCallable] 			= lambda pcontext, msg: print(f'** {msg}'),
+				 logErrorFunc:Optional[PErrorLogCallable]	= lambda pcontext, msg, exception: print(f'!! {msg}'),
+				 printFunc:Optional[PLogCallable] 			= lambda pcontext, msg: print(msg),
+				 preFunc:Optional[PFuncCallable]			= None,
+				 postFunc:Optional[PFuncCallable]			= None,
+			 	 errorFunc:Optional[PFuncCallable]			= None,
+				 matchFunc:Optional[PMatchCallable]			= lambda pcontext, l, r: l == r,
+				 maxRuntime:Optional[float]					= None,
+				 fallbackFunc:Optional[PSymbolCallable]		= None,
+				 monitorFunc:Optional[PSymbolCallable]		= None,
+				 allowBrackets:Optional[bool]				= False,
+				 verbose:Optional[bool]						= False) -> None:
 		"""	Initialization of a `PContext` object.
 
 			Args:
 				script: The script to run.
-				symbols: A dictionary of new symbols / functions to add to the interpreter.
+				symbols: An optional dictionary of new symbols / functions to add to the interpreter.
 				logFunc: An optional function that receives non-error log messages.
 				logErrorFunc: An optional function that receives error log messages.
 				printFunc: An optional function for printing messages to the screen, console, etc.
@@ -789,36 +789,66 @@ class PContext():
 
 		# Extra parameters that can be provided
 		self.script = script
+		""" The script to run. """
 		self.symbols = _builtinCommands
+		""" A dictionary of new symbols / functions to add to the interpreter. """
 		self.logFunc = logFunc
+		""" An optional function that receives non-error log messages. """
 		self.logErrorFunc = logErrorFunc
+		""" An optional function that receives error log messages. """
 		self.printFunc = printFunc
+		""" An optional function for printing messages to the screen, console, etc. """
 		self.preFunc = preFunc
+		""" An optional function that is called before running a script. """
 		self.postFunc = postFunc
+		""" An optional function that is called after running a script. """
 		self.errorFunc = errorFunc
+		""" An optional function that is called when an error occured. """
 		self.matchFunc = matchFunc
+		""" An optional function that is used to run regex comparisons. """
 		self.maxRuntime = maxRuntime
+		""" Number of seconds that is a script allowed to run. """
 		self.fallbackFunc = fallbackFunc
+		""" An optional function to retrieve unknown symbols from the caller. """
 		self.monitorFunc = monitorFunc
+		""" An optional function to monitor function calls, e.g. to forbid them during particular executions. """
 		self.allowBrackets = allowBrackets
+		""" Allow "[" and "]" for opening and closing lists as well. """
 
 		# State, result and error attributes	
 		self.ast:list[SSymbol] = None
+		""" The script's abstract syntax tree."""
 		self.result:SSymbol = None
+		""" Intermediate and final results during the execution. """
 		self.verbose:bool = verbose
+		""" Print more debug messages. """
 		self.state:PState = PState.created
+		""" The internal state of a script."""
 		self.error:PErrorState = PErrorState(PError.noError, 0, '', None )
+		""" Error state. """
 		self.meta:Dict[str, str] = {}
-		self.variables:Dict[str,SSymbol] = {}
+		""" Dictionary of the script's meta tags and their arguments. """
 		self.functions:dict[str, FunctionDefinition] = {}
-		self.environment:Dict[str,SSymbol] = {}		# Similar to variables, but not cleared
+		""" Dictoonary of defined script functions. """
+		self.environment:Dict[str, SSymbol] = {}		# Similar to variables, but not cleared
+		""" Dictionary of variables that are passed by the application to the script. Similar to `variables`, but the environment is not cleared. """
 		self.argv:list[str] = []
+		""" List of string that are arguments to the script. """
 		self.evaluateInline = True		# check and execute inline expressions
+		""" Check and execute inline expressions in strings. """
 
 		# Internal attributes that should not be accessed from extern
 		self._maxRTimestamp:float = None
-		self._callStack:list[PCall] = [PCall()]
-		self._symbolds:PSymbolDict = None		# builtins + provided commands
+		""" The max timestamp until the script may run (internal). """
+		self._callStack:list[PCall] = []
+		""" The internal call stack (internal). """
+		self._symbols:PSymbolDict = None		# builtins + provided commands
+		""" Dictionary with all build-in and provided functions (internal). """
+		# self._variables:Dict[str, SSymbol] = {}
+
+
+		# Add one to the callstack to add variables
+		self.pushCall()
 
 		# Add new commands
 		if symbols:
@@ -863,7 +893,6 @@ class PContext():
 			This method may also be implemented in a subclass, but that subclass must then call this method as well.
 		"""
 		self.error = PErrorState(PError.noError, 0, '', None)
-		self.variables.clear()
 		self._callStack.clear()
 		self.pushCall(name = self.meta.get('name'))
 		self.state = PState.ready
@@ -892,6 +921,16 @@ class PContext():
 		self.state = state
 		self.error = PErrorState(error, msg, expression, exception)
 		return self
+
+
+	def clearError(self, state:Optional[PState] = PState.running) -> None:
+		"""	Clear the error status.
+
+			Args:
+				state: `PState` to indicate the state of the script. Default is "running".
+		"""
+		self.state = state
+		self.error = PErrorState(PError.noError, 0, '', None)
 	
 
 	def copyError(self, pcontext:PContext) -> None:
@@ -914,7 +953,6 @@ class PContext():
 			
 			Return:
 				Self.
-				
 		"""
 		self.result = symbol
 		return self
@@ -941,6 +979,8 @@ class PContext():
 			raise PRuntimeError(self.setError(PError.maxRecursionDepth, f'Max level of function calls exceeded'))
 		call = PCall()
 		call.name = name
+		if len(self._callStack):
+			call.variables = deepcopy(self._callStack[-1].variables)	# copy variables from the previous scope
 		self._callStack.append(call)
 	
 
@@ -1012,10 +1052,35 @@ class PContext():
 				  if re.match(_expr, k) ]
 		return [ ( k, self.variables[k] ) 
 				 for k in _keys ]
+	
+	@property
+	def variables(self) -> dict[str, SSymbol]:
+		"""	The variables of the current scope.
+
+			Returns:
+				The variables of the current scope.
+		"""
+		return self._callStack[-1].variables
+
+
+	def setVariable(self, key:str, value:SSymbol) -> None:
+		"""	Set a variable for a name. If the variable exists in the global scope, it is updated or set in all scopes.
+			Otherwise, it is only updated or set in the current scope.
+
+			Args:
+				key: Variable name
+				value: Value to store
+		"""
+		if key in self._callStack[0].variables:
+			for eachCall in self._callStack:
+				eachCall.variables[key] = value
+		else:
+			self._callStack[-1].variables[key] = value
 
 
 	def delVariable(self, key:str) -> Optional[SSymbol]:
-		"""	Delete a variable for a case insensitive name.
+		"""	Delete a variable for a name. If the variable exists in the global scope, it is deleted in all scopes.
+			Otherwise, it is only deleted in the current scope.
 
 			Args:
 				key: Variable name
@@ -1023,12 +1088,17 @@ class PContext():
 			Return:
 				Variable content, or None if variable is not defined.		
 		"""
-		key = key.lower()
-		if key in self.variables:
-			v = self.variables[key]
-			del self.variables[key]
+		try:
+			if key in self._callStack[0].variables:
+				v = self._callStack[-1].variables[key]	# return latest value afterwards
+				for eachCall in self._callStack:
+					del eachCall.variables[key]	
+			else:
+				v = self._callStack[-1].variables.get(key)
+				del self._callStack[-1].variables[key]
 			return v
-		return None
+		except KeyError:
+			return None
 
 
 	def getEnvironmentVariable(self, key:str) -> SSymbol:
@@ -1040,17 +1110,17 @@ class PContext():
 			Return:
 				Environment variable content, or None.		
 		"""
-		return self.environment.get(key.lower())
+		return self.environment.get(key)
 	
 
 	def setEnvironmentVariable(self, key:str, value:SSymbol) -> None:
-		"""	Set an environment variable for a case insensitive name.
+		"""	Set an environment variable for a name.
 
 			Args:
 				key: Environment variable name
 				value: Value to store	
 		"""
-		self.environment[key.lower()] = value
+		self.environment[key] = value
 	
 
 	def clearEnvironment(self) -> None:
@@ -1095,6 +1165,17 @@ class PContext():
 				name: Name of the script.
 		"""
 		self.meta['name'] = name
+	
+
+	def setMaxRuntime(self, maxRuntime:float) -> None:
+		"""	Set the maximum runtime of the script.
+
+			Args:
+				maxRuntime: Maximum runtime in seconds.
+		"""
+		if self.state == PState.running:
+			raise PUnsupportedError(self.setError(PError.runtime, f'Cannot set runtime while script is running'))
+		self.maxRuntime = maxRuntime
 
 
 	def getMeta(self, key:str, default:Optional[str] = '') -> str:
@@ -1123,9 +1204,10 @@ class PContext():
 
 
 	def getArgument(self, symbol:SSymbol, 
-						  idx:int = None, 
-						  expectedType:SType|Tuple[SType, ...] = None, 
-						  doEval:bool = True) -> PContext:
+						  idx:Optional[int] = None, 
+						  expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  doEval:Optional[bool] = True,
+						  optional:Optional[bool] = False) -> PContext:
 		"""	Verify that an expression is a list and return an argument symbol,
 			while optionally verify the allowed type(s) for that argument.
 
@@ -1138,6 +1220,7 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be None.
 			
 			Return:
 				Result `PContext` object with the result, possible changed variable and other states.
@@ -1159,6 +1242,9 @@ class PContext():
 		if expectedType is not None:
 			if isinstance(expectedType, SType):
 				expectedType = ( expectedType, )
+			# add NIL if optional
+			if optional:
+				expectedType = expectedType + ( SType.tNIL, )
 			if pcontext.result is not None and pcontext.result.type not in expectedType: 
 				raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid type for argument: {_symbol}, expected type: {expectedType}, is: {pcontext.result.type}'))
 
@@ -1168,9 +1254,10 @@ class PContext():
 
 
 	def valueFromArgument(self, symbol:SSymbol, 
-								idx:int = None, 
-						  		expectedType:SType|Tuple[SType, ...] = None, 
-						  		doEval:bool = True) -> Tuple[PContext, Any]:
+								idx:Optional[int] = None, 
+						  		expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  		doEval:Optional[bool] = True,
+								optional:Optional[bool] = False) -> Tuple[PContext, Any]:
 		"""	Return the actual value from an argument symbol.
 			
 			Args:
@@ -1178,18 +1265,24 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be optional.
 			
 			Return:
 				Result tuple of the updated `PContext` object with the result and the value.
 		"""
-		p,r = self.resultFromArgument(symbol, idx, expectedType, doEval)
-		return (p, r.value)
+		if idx < symbol.length:
+			p, r = self.resultFromArgument(symbol, idx, expectedType, doEval, optional)
+			return (p, r.value)
+		elif optional:
+			return (self, None)
+		raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid argument index: {idx}'))
 		
 
 	def resultFromArgument(self, symbol:SSymbol, 
-								 idx:int = None, 
-						  		 expectedType:SType|Tuple[SType, ...] = None, 
-						  		 doEval:bool = True) -> Tuple[PContext, SSymbol]:
+								 idx:Optional[int] = None, 
+						  		 expectedType:Optional[SType|Tuple[SType, ...]] = None, 
+						  		 doEval:Optional[bool] = True,
+								 optional:Optional[bool] = False) -> Tuple[PContext, SSymbol]:
 		"""	Return the `SSymbol` result from an argument symbol.
 			
 			Args:
@@ -1197,11 +1290,12 @@ class PContext():
 				idx: Optional index if the symbol contains a list of symbols.
 				expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 				doEval: Optionally recursively evaluate the symbol.
+				optional: Allow the argument to be optional.
 			
 			Return:
 				Result tuple of the updated `PContext` object with the result and the symbol.
 		"""
-		return (p := self.getArgument(symbol, idx, expectedType, doEval), p.result)
+		return (p := self.getArgument(symbol, idx, expectedType, doEval, optional), p.result)
 
 
 	def executeSubexpression(self, expression:str) -> PContext:
@@ -1229,6 +1323,8 @@ class PContext():
 			raise PInvalidArgumentError(self)
 		self.result = None
 		self.run(arguments = self.argv, isSubCall = True)	# might throw exception
+		if self.state in(PState.terminated, PState.terminatedWithResult):	# Correct state for subcall
+			self.state = PState.running
 		self.ast = _ast
 		self.script = _script
 		return self
@@ -1332,7 +1428,7 @@ class PContext():
 
 		# Start running
 		self.state = PState.running
-		if self.maxRuntime is not None:	# set max runtime
+		if self.maxRuntime:	# > 0 or not None: set max runtime
 			self._maxRTimestamp = _utcTimestamp() + self.maxRuntime
 		if (scriptName := self.scriptName) and not isSubCall:
 			if self.verbose:
@@ -1376,6 +1472,7 @@ class PContext():
 
 			Args:
 				symbol: The symbol to execute.
+				parentSymbol: The parent symbol of the symbol to execute.
 
 			Return:
 				The updated `PContext` object with the result.
@@ -1396,62 +1493,61 @@ class PContext():
 			return self.setResult(SSymbol())
 		firstSymbol = symbol[0] if symbol.length and symbol.type == SType.tList else symbol
 
-		if firstSymbol.type == SType.tList:
-			if firstSymbol.length > 0:
-				# implicit progn
-				return _doProgn(self, SSymbol(lst = [ SSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
-			else:
-				self.result = SSymbol()
-				return self
+		match firstSymbol.type:
+			case SType.tString:
+				return self.checkInStringExpressions(firstSymbol)
+		
+			case SType.tNumber | SType.tBool | SType.tNIL:
+				return self.setResult(firstSymbol)	# type:ignore [arg-type]
+		
+			case SType.tJson:
+				return self.checkInStringExpressions(symbol)
 
-		elif firstSymbol.type == SType.tListQuote:
-			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(lst = firstSymbol.value)]))	
-
-		elif firstSymbol.type == SType.tSymbol:
-			_s = cast(str, firstSymbol.value)
-
-			# Just return already boolean values in the result here
-			if (_fn := self.functions.get(_s)) is not None:
-				return self._executeFunction(symbol, _s, _fn)
-			elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
-				if self.monitorFunc:
-					self.monitorFunc(self, firstSymbol)
-				return _cb(self, symbol)
-			elif _s in self.call.arguments:
-				self.result = deepcopy(self.call.arguments[_s])
-				return self
-			elif _s in self.variables:
-				self.result = deepcopy(self.variables[_s])
-				return self
-			elif _s in self.environment:
-				self.result = deepcopy(self.environment[_s])
-				return self
-
-			# Try to get the symbol's value from the caller, if possible
-			else:
-				if self.fallbackFunc:
-					return self.fallbackFunc(self, symbol)
-				raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
-
-		elif firstSymbol.type == SType.tSymbolQuote:
-			return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
-
-		elif firstSymbol.type == SType.tLambda:
-			return self._executeFunction(symbol, cast(str, firstSymbol.value))
-
-		elif firstSymbol.type == SType.tString:
-			return self.checkInStringExpressions(firstSymbol)
+			case SType.tList:
+				if firstSymbol.length > 0:
+					# implicit progn
+					return _doProgn(self, SSymbol(lst = [ SSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
+				else:
+					self.result = SSymbol()
+					return self
 			
-		elif firstSymbol.type == SType.tNumber:
-			return self.setResult(firstSymbol)	# type:ignore [arg-type]
+			case SType.tListQuote:
+				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(lst = firstSymbol.value)]))
 
-		elif firstSymbol.type == SType.tBool:
-			return self.setResult(firstSymbol)
+			case SType.tSymbol:
+				_s = cast(str, firstSymbol.value)
 
-		elif firstSymbol.type == SType.tJson:
-			return self.checkInStringExpressions(symbol)
-	
-		raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
+				# Execute function, if defined, or try to find the value in variables, environment, etc.
+				if (_fn := self.functions.get(_s)) is not None:
+					return self._executeFunction(symbol, _s, _fn)
+				elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
+					if self.monitorFunc:
+						self.monitorFunc(self, firstSymbol)
+					return _cb(self, symbol)
+				elif _s in self.call.arguments:
+					self.result = deepcopy(self.call.arguments[_s])
+					return self
+				elif _s in self.variables:
+					self.result = deepcopy(self.variables[_s])
+					return self
+				elif _s in self.environment:
+					self.result = deepcopy(self.environment[_s])
+					return self
+
+				# Try to get the symbol's value from the caller as a last resort
+				else:
+					if self.fallbackFunc:
+						return self.fallbackFunc(self, symbol)
+					raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
+
+			case SType.tSymbolQuote:
+				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
+
+			case SType.tLambda:
+				return self._executeFunction(symbol, cast(str, firstSymbol.value))
+					
+			case _:
+				raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
 
 
 	def checkInStringExpressions(self, symbol:SSymbol) -> PContext:
@@ -1569,7 +1665,7 @@ PFuncCallable = Callable[[PContext], PContext]
 PSymbolCallable = Callable[[PContext, SSymbol], PContext]
 """	Signature of a symbol callable. The callbacks are 
 	called with a `PContext` object	and is supposed to return
-	it again, or None in case of an error.
+	it again, updated with a return value, or *None* in case of an error.
 """
 
 PLogCallable = Callable[[PContext, str], None]
@@ -1860,12 +1956,14 @@ def _doCons(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# get second symbol
 	pcontext, _second = pcontext.valueFromArgument(symbol, 2)
 
-	if _second.type in [SType.tList, SType.tListQuote]:
-		pcontext.result = deepcopy(_second)
-	elif _second.type == SType.tNIL:
-		pcontext.result = SSymbol(lst = [])
-	else:
-		pcontext.result = SSymbol(lst = [ deepcopy(_second) ])
+	match _second.type:
+		case SType.tList | SType.tListQuote:
+			pcontext.result = deepcopy(_second)
+		case SType.tNIL:
+			pcontext.result = SSymbol(lst = [])
+		case _:
+			pcontext.result = SSymbol(lst = [ deepcopy(_second) ])
+	
 	cast(list, pcontext.result.value).insert(0, deepcopy(_first))
 	return pcontext
 
@@ -1892,8 +1990,11 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, maxLength = 2)
 	_format = '%Y%m%dT%H%M%S.%f'
-	if symbol.length == 2:
-		pcontext, _format = pcontext.valueFromArgument(symbol, 1, SType.tString)
+
+	# get format
+	pcontext, format = pcontext.valueFromArgument(symbol, 1, SType.tString, optional = True)
+	if format is None:
+		format = _format
 	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
 
 
@@ -1943,6 +2044,131 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires code list, got: {symbol[3].type}'))
 	_code = symbol[3]
 	pcontext.functions[str(_name)] = ( _argNames, _code )
+	return pcontext
+
+
+def _doDolist(pcontext:PContext, symbol:SSymbol) -> PContext:
+	pcontext.assertSymbol(symbol, 3)
+
+	# arguments
+	pcontext, _arguments = pcontext.valueFromArgument(symbol, 1, SType.tList, doEval = False)	# don't evaluate the argument
+	if 2 <= len(_arguments) <= 3:
+		# get loop variable
+		_loopvar = cast(SSymbol, _arguments[0])
+		if _loopvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "var" must be a symbol, got: {pcontext.result.type}'))
+
+		# get list to loop over
+		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		if pcontext.result.type not in (SType.tList, SType.tListQuote):
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "list" must be a (quoted) list, got: {pcontext.result.type}'))
+		_looplist = pcontext.result
+	else:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+
+	# Get result variable name	
+	if len(_arguments) == 3:
+		_resultvar = cast(SSymbol, _arguments[2])
+		if _resultvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "result" must be a symbol, got: {pcontext.result.type}'))
+		
+		# if the variable does not exist, create it as a nil symbol
+		if not str(_resultvar) in pcontext.variables:
+			pcontext.setVariable(str(_resultvar), SSymbol())
+	else:
+		_resultvar = None
+
+	# code
+	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
+	_code = SSymbol(lst = _code)	# We got a python list, but need a SSymbol list
+
+	# execute the code
+	pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(0)))
+	for i in _looplist.value: # type:ignore[union-attr]
+		pcontext.setVariable(str(_loopvar), i) # type:ignore[arg-type]
+		pcontext = pcontext._executeExpression(_code, symbol)
+
+	# set the result
+	if _resultvar:
+		pcontext.result = pcontext.variables[str(_resultvar)]
+	else:
+		pcontext.result = SSymbol()
+
+	# return
+	return pcontext
+
+
+
+def _doDotimes(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	This function executes a code block a number of times.
+
+		The first argument is a list that contains the loop counter symbol and the
+		loop limit. An optional third argument is the result variable for the loop.
+		The second argument is the code block to execute.
+
+		Example:
+			::
+
+				(dotimes (i 10) (print i))
+				(dotimes (i 10 result) (setq result i))
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result 
+
+	"""
+	pcontext.assertSymbol(symbol, 3)
+
+	# arguments
+	pcontext, _arguments = pcontext.valueFromArgument(symbol, 1, SType.tList, doEval = False)	# don't evaluate the argument
+	if 2 <= len(_arguments) <= 3:
+		# get loop variable
+		_loopvar = cast(SSymbol, _arguments[0])
+		if _loopvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "counter" must be a symbol, got: {pcontext.result.type}'))
+
+		# get loop count
+		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		if pcontext.result.type != SType.tNumber:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a number, got: {pcontext.result.type}'))
+		_loopcount = pcontext.result
+		if int(_loopcount.value) < 0:	# type:ignore[arg-type]
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a non-negative number, got: {_loopcount.value}'))
+	else:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+	
+	# Get result variable name	
+	if len(_arguments) == 3:
+		_resultvar = cast(SSymbol, _arguments[2])
+		if _resultvar.type != SType.tSymbol:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "result" must be a symbol, got: {pcontext.result.type}'))
+		
+		# if the variable does not exist, create it as a nil symbol
+		if not str(_resultvar) in pcontext.variables:
+			pcontext.setVariable(str(_resultvar), SSymbol())
+	else:
+		_resultvar = None
+
+	# code
+	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
+	_code = SSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
+
+	# execute the code
+	pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(0)))
+	for i in range(0, int(cast(Decimal, _loopcount.value))):
+		pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(i)))
+		pcontext = pcontext._executeExpression(_code, symbol)
+
+	# set the result
+	if _resultvar:
+		pcontext.result = pcontext.variables[str(_resultvar)]
+	else:
+		pcontext.result = SSymbol()
+
+	# return
 	return pcontext
 
 
@@ -2038,17 +2264,19 @@ def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 
 	def _toSymbol(value:Any) -> SSymbol:
-		if isinstance(value, str):
-			return SSymbol(string = value)
-		elif isinstance(value, (int, float)):
-			return SSymbol(number = Decimal(value))
-		elif isinstance(value, dict):
-			return SSymbol(jsn = value)
-		elif isinstance(value, bool):
-			return SSymbol(boolean = value)
-		elif isinstance(value, list):
-			return SSymbol(lst = [ _toSymbol(l) for l in value])
-		return SSymbol() # nil
+		match value:
+			case str():
+				return SSymbol(string = value)
+			case int(), float():
+				return SSymbol(number = Decimal(value))
+			case dict():
+				return SSymbol(jsn = value)
+			case bool():
+				return SSymbol(boolean = value)
+			case list():
+				return SSymbol(lst = [ _toSymbol(l) for l in value])
+			case _:
+				return SSymbol() # nil
 
 	pcontext.assertSymbol(symbol, 3)
 
@@ -2111,7 +2339,10 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, minLength = 3)
 
-	pcontext, _e = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+	pcontext, _e = pcontext.valueFromArgument(symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+	if isinstance(_e, (list, str)):
+		_e = len(_e) > 0
+
 	if _e:
 		_p = pcontext._executeExpression(symbol[2], symbol)
 	elif symbol.length == 4:
@@ -2145,7 +2376,6 @@ def _doIn(pcontext:PContext, symbol:SSymbol) -> PContext:
 	
 	# Get symbol (!) to check
 	pcontext, _s = pcontext.resultFromArgument(symbol, 2, (SType.tString, SType.tList, SType.tListQuote))
-
 	# check
 	return pcontext.setResult(SSymbol(boolean = _v in _s))
 
@@ -2193,7 +2423,7 @@ def _doIncDec(pcontext:PContext, symbol:SSymbol, isInc:Optional[bool] = True) ->
 	
 	# Increment / decrement and Re-assign variable
 	value.value = (cast(Decimal, value.value) + idValue) if isInc else (cast(Decimal, value.value) - idValue)
-	pcontext.variables[variable.value] = value
+	pcontext.setVariable(variable.value, value)
 	return pcontext.setResult(deepcopy(value))
 
 
@@ -2405,7 +2635,7 @@ def _doLet(pcontext:PContext, symbol:SSymbol, sequential:bool = True) -> PContex
 
 			# get value and assign variable (symbol!)
 			pcontext, result = pcontext.resultFromArgument(cast(SSymbol, symbol.value), 1)
-			pcontext.variables[variablename] = result
+			pcontext.setVariable(variablename, result)
 
 	return pcontext
 
@@ -2626,7 +2856,7 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 
 	"""
 	pcontext.assertSymbol(symbol, minLength = 2)
-	r1 = pcontext._executeExpression(symbol[1], symbol).result
+	r1 = deepcopy(pcontext._executeExpression(symbol[1], symbol).result)
 
 	for i in range(2, symbol.length):
 		try:
@@ -2950,7 +3180,7 @@ def _doSetq(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# value
 	pcontext, _value = pcontext.resultFromArgument(symbol, 2)
-	pcontext.variables[_var] = _value
+	pcontext.setVariable(_var, _value)
 
 	return pcontext
 
@@ -3240,7 +3470,9 @@ def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
 	while True:
 		
 		# evaluate while expression
-		pcontext, _e = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+		pcontext, _e = pcontext.valueFromArgument(symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+		if isinstance(_e, (list, str)):
+			_e = len(_e) > 0
 		if not _e:
 			break
 
@@ -3288,6 +3520,8 @@ _builtinCommands:PSymbolDict = {
 	'datetime':				_doDatetime,
 	'dec':					lambda p, a: _doIncDec(p, a, False),
 	'defun':				_doDefun,
+	'dolist':				_doDolist,
+	'dotimes':				_doDotimes,
 	'eval':					_doEval,
 	'evaluate-inline':		_doEvaluateInline,
 	'false':				lambda p, a: _doBoolean(p, a, False),

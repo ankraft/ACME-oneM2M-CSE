@@ -18,7 +18,7 @@
 			"lname": "attribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",		//m2m:attributeList
+			"ltype": "m2m:attribute",
 			"car": "01L"
 		},
 		{
@@ -26,8 +26,8 @@
 			"ctype": "m2m:eventNotificationCriteria",
 			"lname": "attribute",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "string",		//m2m:attributeList
+			"type": "list",		//m2m:attributeList
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
@@ -112,10 +112,10 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:requestPrimitive",
-			"lname": "resourceType",
+			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
 			"type": "enum",
-			"etype": "m2m:resourceType",
+			"etype": "m2m:desIdResType",
 			"car": "01"
 		}
 	],
@@ -219,7 +219,7 @@
 			"ctype": "m2m:operationResult",
 			"lname": "from",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01"
 		},
 		{
@@ -227,14 +227,14 @@
 			"ctype": "m2m:requestPrimitive",
 			"lname": "from",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		},
 		{
 			"rtypes": [ "REQRESP" ],
 			"lname": "from",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01",
 			"oc": "M",
 			"ou": "NP",
@@ -274,7 +274,7 @@
 			"ctype": "m2m:contentRef",
 			"lname": "name",
 			"ns": "m2m",
-			"type": "string",	// xs:NCName
+			"type": "ncname",
 			"car": "1"
 		},
 		{
@@ -282,7 +282,7 @@
 			"ctype": "m2m:attribute",
 			"lname": "name",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ncname",
 			"car": "1"
 		}
 	],
@@ -360,17 +360,17 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:filterCriteria",
-			"lname": "accessControlOperations",
+			"lname": "operations",
 			"ns": "m2m",
-			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"type": "nonNegInteger",
 			"car": "01"
 		},
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:operationMonitor",
-			"lname": "accessControlOperations",
+			"lname": "operations",
 			"ns": "m2m",
-			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"type": "nonNegInteger",
 			"car": "01"
 		}
 	],
@@ -535,7 +535,15 @@
 			"ns": "m2m",
 			"type": "absRelTimestamp",
 			"car": "01"
+		},
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
 		}
+
 	],
 	"rt": [
 		{
@@ -634,7 +642,7 @@
 			"ctype": "m2m:operationResult",
 			"lname": "to",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		},
 		{
@@ -642,14 +650,14 @@
 			"ctype": "m2m:requestPrimitive",
 			"lname": "to",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "1"
 		},
 		{
 			"rtypes": [ "REQRESP" ],
 			"lname": "to",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -941,7 +949,7 @@
 			"lname": "accessControlAttributes",
 			"ns": "m2m",
 			"type": "list", 	// m2m:attributeList
-			"ltype": "string",
+			"ltype": "ncname",
 			"car": "01"
 		}
 	],
@@ -956,15 +964,15 @@
 			"ctype": "m2m:actionInput",
 			"lname": "contentString",
 			"ns": "m2m",
-			"type": "string",	// xs:NCName
+			"type": "ncname",
 			"car": "01"
 		}
 	],
-	"ri": [
+	"rsid": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:actionInput",
-			"lname": "resourceID",
+			"lname": "ID",
 			"ns": "m2m",
 			"type": "anyURI",
 			"car": "01"
@@ -1191,7 +1199,7 @@
 			"ctype": "m2m:evalCriteria",
 			"lname": "subject",
 			"ns": "m2m",
-			"type": "string", 			// TODO "type": "xs:NCName", 
+			"type": "ncname",
 			"car": "1"
 		}
 	],
@@ -1418,16 +1426,16 @@
 			"car": "01"
 		}
 	],
-	"gq": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:filterCriteria",
-			"lname": "geoQuery",
-			"ns": "m2m",
-			"type": "m2m:geoQuery",
-			"car": "01"
-		}
-	],
+	// "gq": [
+	// 	{
+	// 		"rtypes": [ "COMPLEX" ],
+	// 		"ctype": "m2m:filterCriteria",
+	// 		"lname": "geoQuery",
+	// 		"ns": "m2m",
+	// 		"type": "m2m:geoQuery",
+	// 		"car": "01"
+	// 	}
+	// ],
 
 
 	//
@@ -1440,46 +1448,7 @@
 			"ctype": "m2m:geoCoordinates",
 			"lname": "coordinates",
 			"ns": "m2m",
-			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
-			"ltype": "string",
-			"car": "1"
-		}
-	],
-
-
-	//
-	//	m2m:geoQuery
-	//
-	"gmty": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geometryType",
-			"ns": "m2m",
-			"type": "enum", 
-			"etype": "m2m:geometryType",
-			"car": "1"
-		}
-	],
-	"geom": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geometryType",
-			"ns": "m2m",
-			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
-			"ltype": "string",
-			"car": "1"
-		}
-	],
-	"gsf": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:geoQuery",
-			"lname": "geoSpatialFunction",
-			"ns": "m2m",
-			"type": "enum",
-			"etype": "m2m:geoSpatialFunctionType",
+			"type": "geoJsonCoordinate",
 			"car": "1"
 		}
 	],
@@ -1596,7 +1565,7 @@
 			"lname": "tokenIDs",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", // 	m2m:tokenID TODO validate
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
@@ -1604,10 +1573,10 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:metaInformation",
-			"lname": "tokenIDs",
+			"lname": "localTokenIDs",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", // 	xs:NCName TODO validate
+			"ltype": "ncname",
 			"car": "01L"
 		}
 	],
@@ -1680,7 +1649,7 @@
 			"lname": "ontologyMappingResources",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "string", 	// m2m:listOfM2MID
+			"ltype": "ID", 	// m2m:listOfM2MID
 			"car": "01"
 		}
 	],
@@ -1738,7 +1707,7 @@
 			"ctype": "m2m:operationMonitor",
 			"lname": "originator",
 			"ns": "m2m",
-			"type": "string",	// m2m:ID
+			"type": "ID",
 			"car": "01"
 		}
 	],
@@ -1867,8 +1836,9 @@
 			"ctype": "m2m:scheduleEntries",
 			"lname": "scheduleEntry",
 			"ns": "m2m",
-			"type": "schedule",
-			"car": "01"
+			"type": "list",
+			"ltype": "schedule",
+			"car": "1LN"
 		}
 	],
 

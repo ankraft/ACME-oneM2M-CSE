@@ -132,7 +132,8 @@ size=200
 [http]
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
-; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+; Default:0.0.0.0
 listenIF=${basic.config:networkInterface}
 ; Own address. Should be a local/public reachable address.
 ; Default: http://127.0.0.1:8080
@@ -182,6 +183,22 @@ verifyCertificate=false
 caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. Default: None
 caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
+; Enable basic authentication for the HTTP binding.
+; Default: false
+enableBasicAuth=false
+; Enable token authentication for the HTTP binding.
+; Default: false
+enableTokenAuth=false
+; Path and filename of the http basic authentication file. 
+; The file must contain lines with the format "username:password".
+; Comments are lines starting with a #.
+; Default: certs/http_basic_auth.txt
+basicAuthFile=${basic.config:dataDirectory}/certs/http_basic_auth.txt
+; Path and filename of the http bearer token authentication file.
+; The file must contain lines with the format "token".
+; Comments are lines starting with a #.
+; Default: certs/http_token_auth.txt
+tokenAuthFile=${basic.config:dataDirectory}/certs/http_token_auth.txt
 
 
 [http.cors]
@@ -191,6 +208,20 @@ enable=false
 ; A comma separated list of allowed resource paths. The list elements could be regular exporessions.
 ; Default: "/*" , ie. all resources under the HTTP server's root
 resources=/*
+
+
+[http.wsgi]
+; Enable WSGI support for the HTTP binding.
+; Default: false
+enable=false
+; The number of threads used to process requests. 
+; This number should be of similar size as the "connectionLimit" setting.
+; Default: 100
+threadPoolSize=100
+; The number of possible parallel connections that can be accepted by the WSGI server.
+; One connection uses one system file descriptor.
+; Default: 100
+connectionLimit=100
 
 
 ;
@@ -211,7 +242,7 @@ port=1883
 ; Default: 60 seconds
 keepalive=60
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
-; Default: 127.0.0.1
+; Default: 0.0.0.0
 listenIF=${basic.config:networkInterface}
 ; Optional prefix for topics.
 ; Default: empty string
@@ -247,6 +278,41 @@ caCertificateFile=${basic.config:dataDirectory}/certs/m2mqtt_ca.crt
 ; Default: empty list
 allowedCredentialIDs=
 
+
+;
+;	CoAP client settings
+;
+
+[coap]
+; Enable the CoAP binding.
+; Default: false
+enable=false
+serverPort=5683
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+; Default:
+listenIF=${basic.config:networkInterface}
+
+
+;
+;	CoAP security settings
+;
+
+[coap.security]
+; Enable DTLS for communications with the CoAP server.
+; Default: False
+useDTLS=false
+; TLS version to be used in connections.
+; Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+; version negotiation.
+; Default: auto
+dtlsVersion=auto
+; Verify certificates in requests. Set to False when using self-signed certificates. 
+; Default: False
+verifyCertificate=False
+; Path and filename of the certificate file. Default: ${basic.config:dataDirectory}/certs/coap_cert.pem
+certificateFile=${basic.config:dataDirectory}/certs/coap_cert.pem
+; Path and filename of the private key file. Default: None
+privateKeyFile=${basic.config:dataDirectory}/certs/coap_key.pem
 
 ;
 ;	Database settings
@@ -314,19 +380,30 @@ excludeCSRAttributes=
 ;
 
 [logging]
-; Enable logging to file. Default: False
+; Enable logging to file. 
+; Default: False
 enableFileLogging=False
-; Enable logging to the screen. Default: True
+; Enable logging to the screen.
+; Default: True
 enableScreenLogging=true
-; Path to the log files. Default: ./logs
+; Path to the log files. 
+; Default: ./logs
 path=${basic.config:dataDirectory}/logs
-; Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
+; Loglevel. Allowed values: debug, info, warning, error, off. 
+; Default: debug
 level=${basic.config:logLevel}
-; Number of files for log rotation. Default: 10
+; Number of files for log rotation. 
+; Default: 10
 count=10
-; Size per log file. Default: 100.000 bytes
+; Size per log file. 
+; Default: 100.000 bytes
 size=100000
-; Print a stack trace when logging an 'error' level message. Default: True
+; Maximum length of a log message. Longer messages will be truncated.
+; A value of 0 means no truncation.
+; Default: 1000 characters
+maxLogMessageLength=1000
+; Print a stack trace when logging an 'error' level message. 
+; Default: True
 stackTraceOnError=False
 ; Enable logging of low-level HTTP & MQTT client events.
 ; Default: False
@@ -337,6 +414,7 @@ enableBindingsLogging=False
 queueSize=5000
 ; List of component names to exclude from logging
 filter=werkzeug,markdown_it,asyncio
+
 
 
 ;
@@ -405,6 +483,43 @@ mni=10
 mbs=10000
 
 
+[resource.grp]
+; Set the time for aggregating the results of a group request before interrupting. 
+; The format is the time in ms. A value of 0 ms means no timeout. 
+; Default: 0 ms
+resultExpirationTime=0
+
+;
+;	Resource defaults: LocationPolicy
+;
+
+[resource.lcp]
+; Default for maxNrOfInstances for the LocationPolicy's container.
+; Default: 10
+mni=10
+; Default for maxByteSize for the LocationPolicy's container. 
+; Default: 10.000 bytes
+mbs=10000
+
+
+;
+;	Resource defaults: Request
+;
+
+[resource.req]
+; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
+expirationTime=60
+
+
+;
+;	Resource defaults: Subscription
+;
+
+[resource.sub]
+; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
+batchNotifyDuration=60
+
+
 ;
 ;	Resource defaults: TimeSeries
 ;
@@ -433,24 +548,6 @@ bcni=PT1H
 ; is sent to an AE or CSE target.
 ; Default: 10.0 seconds
 bcnt=10.0
-
-
-;
-;	Resource defaults: Request
-;
-
-[resource.req]
-; A <request> resource's expiration time in seconds. Must be >0. Default: 60 
-expirationTime=60
-
-
-;
-;	Resource defaults: Subscription
-;
-
-[resource.sub]
-; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
-batchNotifyDuration=60
 
 
 ;
@@ -521,5 +618,9 @@ verbose=False
 ; 0 means disable monitoring.
 ; Default: 2.0 seconds
 fileMonitoringInterval=2.0
+; Set the timeout for script execution in seconds. 
+; 0.0 means no timeout.
+; Default: 60.0 seconds
+maxRuntime=60.0
 
 

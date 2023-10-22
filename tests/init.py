@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any, Callable, Tuple, cast, Optional
 
 from urllib.parse import ParseResult, urlparse, parse_qs
-import sys, io, atexit
+import sys, io, atexit, base64
 import unittest
 
 from rich.console import Console
@@ -222,11 +222,13 @@ cntRN	= 'testCNT'
 crsRN	= 'testCRS'
 csrRN	= 'testCSR'
 deprRN	= 'testDEPR'
-grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
+grpRN	= 'testGRP'
+lcpRN	= 'testLCP'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
 reqRN	= 'testREQ'
+schRN 	= 'testSCH'
 smdRN	= 'testSMD'
 subRN	= 'testSUB'
 tsRN	= 'testTS'
@@ -246,6 +248,7 @@ crsURL	= f'{aeURL}/{crsRN}'
 csrURL	= f'{cseURL}/{csrRN}'
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
+lcpURL 	= f'{aeURL}/{lcpRN}'	# under the <ae>
 nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
 pchURL 	= f'{aeURL}/{pchRN}'
 pcuURL 	= f'{pchURL}/pcu'
@@ -335,34 +338,54 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 		# 	return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		# elif operation == Operation.NOTIFY:
 		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		if operation == Operation.CREATE:
-			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.RETRIEVE:
-			return sendHttpRequest(httpSession.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.UPDATE:
-			return sendHttpRequest(httpSession.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.DELETE:
-			return sendHttpRequest(httpSession.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.NOTIFY:
-			return sendHttpRequest(httpSession.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		match operation:
+			case Operation.CREATE:
+				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			
 	elif url.startswith('mqtt'):
-		if operation == Operation.CREATE:
-			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.RETRIEVE:
-			return sendMqttRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.UPDATE:
-			return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.DELETE:
-			return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
-		elif operation == Operation.NOTIFY:
-			return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		match operation:
+			case Operation.CREATE:
+				return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendMqttRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+
 	else:
 		print('ERROR')
 		return None, 5103
 
 
+def addHttpAuthorizationHeader(headers:Parameters) -> Optional[Tuple[str, int]]:
+	global oauthToken
+
+	if doOAuth:
+		if (token := OAuth.getOAuthToken(oauthServerUrl, oauthClientID, oauthClientSecret, oauthToken)) is None:
+			return 'error retrieving oauth token', 5103
+		oauthToken = token
+		headers['Authorization'] = f'Bearer {oauthToken.token}'
+	elif doHttpBasicAuth:
+		_t = f'{httpUserName}:{httpPassword}'
+		headers['Authorization'] = f'Basic {base64.b64encode(_t.encode("utf-8")).decode("utf-8")}'
+	elif doHttpTokenAuth:
+		headers['Authorization'] = f'Bearer {httpAuthToken}'
+	return None
+
+
 def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
-	global oauthToken, httpSession
+	global httpSession
 
 	# correct url
 	url = RequestUtils.toHttpUrl(url)
@@ -398,11 +421,19 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		hds.update(headers)
 	
 	# authentication
-	if doOAuth:
-		if (token := OAuth.getOAuthToken(oauthServerUrl, oauthClientID, oauthClientSecret, oauthToken)) is None:
-			return 'error retrieving oauth token', 5103
-		oauthToken = token
-		hds['Authorization'] = f'Bearer {oauthToken.token}'
+	if (_r := addHttpAuthorizationHeader(hds)) is not None:
+		return _r
+
+	# if doOAuth:
+	# 	if (token := OAuth.getOAuthToken(oauthServerUrl, oauthClientID, oauthClientSecret, oauthToken)) is None:
+	# 		return 'error retrieving oauth token', 5103
+	# 	oauthToken = token
+	# 	hds['Authorization'] = f'Bearer {oauthToken.token}'
+	# elif doHttpBasicAuth:
+	# 	_t = f'{httpUserName}:{httpPassword}'
+	# 	hds['Authorization'] = f'Basic {base64.b64encode(_t.encode("utf-8")).decode("utf-8")}'
+	# elif doHttpTokenAuth:
+	# 	hds['Authorization'] = f'Bearer aRandomToken'
 
 	# Verbose output
 	if verboseRequests:
@@ -657,7 +688,9 @@ def enableShortResourceExpirations() -> None:
 	global _orgExpCheck, _maxExpiration, _tooLargeResourceExpirationDelta
 
 	# Send UT request
-	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortResourceExpiration {expirationCheckDelay}'})
+	headers = { UTCMD: f'enableShortResourceExpiration {expirationCheckDelay}'}
+	addHttpAuthorizationHeader(headers)
+	resp = requests.post(UTURL, headers = headers)
 	_maxExpiration = -1
 	_orgExpCheck = -1
 	if resp.status_code == 200:
@@ -677,7 +710,9 @@ def disableShortResourceExpirations() -> None:
 	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
 		# Send UT request
-		resp = requests.post(UTURL, headers = { UTCMD: f'disableShortResourceExpiration'})
+		headers = { UTCMD: f'disableShortResourceExpiration'}
+		addHttpAuthorizationHeader(headers)
+		resp = requests.post(UTURL, headers = headers)
 		if resp.status_code == 200:
 			_orgExpCheck = -1
 			_orgREQExpCheck = -1
@@ -709,7 +744,9 @@ def enableShortRequestExpirations() -> None:
 	global _orgRequestExpirationDelta
 
 	# Send UT request
-	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortRequestExpiration {requestExpirationDelay}'})
+	headers = { UTCMD: f'enableShortRequestExpiration {requestExpirationDelay}'}
+	addHttpAuthorizationHeader(headers)
+	resp = requests.post(UTURL, headers = headers)
 	if resp.status_code == 200:
 		if UTRSP in resp.headers:
 			_orgRequestExpirationDelta = float(resp.headers[UTRSP])
@@ -721,7 +758,9 @@ def disableShortRequestExpirations() -> None:
 	global _orgRequestExpirationDelta
 	
 	# Send UT request
-	resp = requests.post(UTURL, headers = { UTCMD: f'disableShortRequestExpiration'})
+	headers = { UTCMD: f'disableShortRequestExpiration'}
+	addHttpAuthorizationHeader(headers)
+	resp = requests.post(UTURL, headers = headers)
 	if resp.status_code == 200:
 		_orgRequestExpirationDelta = -1.0
 	
@@ -742,7 +781,9 @@ def testCaseStart(name:str) -> None:
 			name: Name of the test case.
 	"""
 	if UPPERTESTERENABLED:
-		requests.post(UTURL, headers = { UTCMD: f'testCaseStart {name}'})
+		headers = { UTCMD: f'testCaseStart {name}'}
+		addHttpAuthorizationHeader(headers)
+		requests.post(UTURL, headers = headers)
 	if verboseRequests:
 		console.print('')
 		ln  = '=' * int((console.width - 11 - len(name)) / 2)
@@ -757,7 +798,9 @@ def testCaseEnd(name:str) -> None:
 			name: Name of the test case.
 	"""
 	if UPPERTESTERENABLED:
-		requests.post(UTURL, headers = { UTCMD: f'testCaseEnd {name}'})
+		headers = { UTCMD: f'testCaseEnd {name}'}
+		addHttpAuthorizationHeader(headers)
+		requests.post(UTURL, headers = headers)
 	if verboseRequests:
 		console.print('')
 		ln  = '=' * int((console.width - 9 - len(name)) / 2)
@@ -799,12 +842,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			contentType = ''
 			if (val := self.headers.get('Content-Type')) is not None:
 				contentType = val.lower()
-			if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
-				setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
-			elif contentType in [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ]:
-				setLastNotification(decoded_data := cbor2.loads(post_data))
-			# else:
-			# 	setLastNotification(post_data.decode('utf-8'))
+			match contentType:
+				case 'application/json' | 'application/vnd.onem2m-res+json':
+					setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
+				case 'application/cbor' | 'application/vnd.onem2m-res+cbor':
+					setLastNotification(decoded_data := cbor2.loads(post_data))
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
 		# make a dict out of the query arguments 
@@ -1109,10 +1151,20 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 if UPPERTESTERENABLED:
 	try:
-		if requests.post(UTURL, headers = { UTCMD: f'Status'}).status_code != 200:
-			console.print('[red]Upper Tester Interface not enabeled in CSE')
-			console.print('Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
-			quit(-1)
+		headers = { UTCMD: f'Status'}
+		addHttpAuthorizationHeader(headers)
+		response = requests.post(UTURL, headers = headers)
+		match response.status_code:
+			case 200:
+				pass
+			case 401:
+				console.print('[red]CSE requires authorization')
+				console.print('Add authorization settings to the test suite configuration file')
+				quit(-1)
+			case _:
+				console.print('[red]Upper Tester Interface not enabeled in CSE')
+				console.print('Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+				quit(-1)
 	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
 		quit(-1)

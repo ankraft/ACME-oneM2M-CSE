@@ -6,6 +6,7 @@
 #
 #	ResourceType: CSEBase
 #
+""" CSEBase (CSEBase) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -22,6 +23,7 @@ from ..services.Logging import Logging as L
 # TODO notificationCongestionPolicy
 
 class CSEBase(AnnounceableResource):
+	""" CSEBase (CSEBase) resource type. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACP,
@@ -32,12 +34,15 @@ class CSEBase(AnnounceableResource):
 								   ResourceTypes.CNT, 
 								   ResourceTypes.FCNT, 
 								   ResourceTypes.GRP, 
+								   ResourceTypes.LCP,
 								   ResourceTypes.NOD, 
 								   ResourceTypes.REQ, 
+								   ResourceTypes.SCH,
 								   ResourceTypes.SUB, 
 								   ResourceTypes.TS, 
 								   ResourceTypes.TSB, 
 								   ResourceTypes.CSEBaseAnnc ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -65,6 +70,8 @@ class CSEBase(AnnounceableResource):
 			'csz': None,
 			'ctm': None,
 	}
+	"""	Represent a dictionary of attribute policies used in validation. """
+
 
 
 	def __init__(self, dct:JSON, create:Optional[bool] = False) -> None:
@@ -129,6 +136,12 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('srv', CSE.supportedReleaseVersions)
 
 
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
+				raise BAD_REQUEST('Only one <schedule> resource is allowed for the CSEBase')
+
 
 def getCSE() -> CSEBase:	# Actual: CSEBase Resource
 	"""	Return the <CSEBase> resource.
@@ -136,5 +149,4 @@ def getCSE() -> CSEBase:	# Actual: CSEBase Resource
 		Return:
 			<CSEBase> resource.
 	"""
-	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
 	return resourceFromCSI(CSE.cseCsi)

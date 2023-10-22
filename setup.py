@@ -34,11 +34,15 @@ setup(
 		'isodate',
 		'paho-mqtt',
 		'plotext',
+        'python3-dtls',
 		'rdflib',
 		'requests', 
 		'rich', 
+        'shapely',
 		'textual',
+		'textual-plotext',
 		'tinydb',
+		'waitress',
 	],
     entry_points={
         'console_scripts': [

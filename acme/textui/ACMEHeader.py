@@ -6,8 +6,6 @@
 #
 """	This module defines the header for the ACME text UI.
 """
-from datetime import datetime, timezone
-
 from rich.text import Text
 from textual.app import ComposeResult, RenderResult
 from textual.widgets import Header, Label
@@ -17,6 +15,7 @@ from textual.containers import Horizontal, Middle
 from ..services import CSE
 from ..etc.Constants import Constants
 from ..etc.DateUtils import toISO8601Date
+from ..etc.DateUtils import utcDatetime
 
 
 class ACMEHeaderClock(HeaderClock):
@@ -26,10 +25,8 @@ class ACMEHeaderClock(HeaderClock):
 	DEFAULT_CSS = """
 ACMEHeaderClock {
 	background: transparent;
-}
-
-HeaderClockSpace {
 	width: 26;
+
 }
 """
 	
@@ -39,7 +36,7 @@ HeaderClockSpace {
 		Returns:
 			The rendered clock.
 		"""
-		return Text(f'{toISO8601Date(datetime.now(tz = timezone.utc), readable = True)[:19]} UTC')	
+		return Text(f'{toISO8601Date(utcDatetime(), readable = True)[:19]} UTC')	
 
 
 class ACMEHeaderTitle(HeaderTitle):

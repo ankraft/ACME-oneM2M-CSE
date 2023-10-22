@@ -6,6 +6,7 @@
 #
 #	CNT : Announceable variant
 #
+""" CSEBase announced (CSEBaseA) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -23,7 +24,9 @@ class CSEBaseAnnc(AnnouncedResource):
 									ResourceTypes.CNTAnnc, 
 									ResourceTypes.FCNTAnnc, 
 									ResourceTypes.GRPAnnc,
+									ResourceTypes.LCPAnnc,
 									ResourceTypes.NODAnnc, 
+									ResourceTypes.SCHAnnc,
 									ResourceTypes.SUB, 
 									ResourceTypes.TSAnnc, 
 									ResourceTypes.TSBAnnc ]

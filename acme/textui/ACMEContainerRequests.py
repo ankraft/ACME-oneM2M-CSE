@@ -61,7 +61,9 @@ class ACMEViewRequests(Vertical):
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
-				  Binding('e', 'enable_requests', '')
+				  Binding('e', 'enable_requests', ''),
+				  Binding('t', 'toggle_list_details', 'List Details'),
+				  Binding('ctrl+t', 'toggle_comment_style', 'Comments Style'),
 				]
 
 	DEFAULT_CSS = """
@@ -82,7 +84,7 @@ class ACMEViewRequests(Vertical):
 #request-list-header {
 	/* overflow: auto hidden; */
 	width: 1fr;
-	height: 3;
+	height: 1;
 	align-vertical: middle;
 	background: $panel;
 }
@@ -95,7 +97,7 @@ class ACMEViewRequests(Vertical):
 
 #request-list-details-header {
 	overflow: auto;
-	height: 3;
+	height: 1;
 	align-vertical: middle;
 	background: $panel;
 }
@@ -132,10 +134,12 @@ class ACMEViewRequests(Vertical):
 
 		# Request List
 		self.requestList = ListView(id = 'request-list-list')
+		self.listDetails = False
 
 		# Request view: request + response
 		self.requestListRequest = Static(id = 'request-list-request')
 		self.requestListResponse = Static(id = 'request-list-response')
+		self.commentsOneLine = True
 		
 	
 	@property
@@ -197,19 +201,26 @@ class ACMEViewRequests(Vertical):
 		"""
 		# Get the request's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName,	# type: ignore [attr-defined]
-					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		_l1 = jsns.count('\n')
 		
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
-					explanations = self.app.attributeExplanations,					# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName, 	# type: ignore [attr-defined]
-					width = self.requestListRequest.size[0] - 2)					# type: ignore [attr-defined]
+					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
+					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		_l2 = jsns.count('\n')
 
+		# Make sure the response has the same number of lines as the request
+		# (This is a hack to make sure the separator line covers the entire height of the view)
+		if _l1 > _l2:
+			jsns += '\n' * (_l1 - _l2)
+			
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
@@ -230,6 +241,16 @@ class ACMEViewRequests(Vertical):
 	def action_disable_requests(self) -> None:
 		CSE.request.enableRequestRecording = False
 		self.updateBindings()
+	
+
+	def action_toggle_list_details(self) -> None:
+		self.listDetails = not self.listDetails
+		self.updateRequests()
+
+
+	def action_toggle_comment_style(self) -> None:
+		self.commentsOneLine = not self.commentsOneLine
+		self.updateRequests()
 
 
 	def updateBindings(self) -> None:
@@ -271,11 +292,18 @@ class ACMEViewRequests(Vertical):
 			# _to = _to if _to else ''
 			_srn = r.get('srn', '')
 			# _srn = _srn if _srn else ''
-			self.requestList.append(_l := ACMEListItem(
-				Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]')))
+			match self.listDetails:
+				case True:
+					_l = ACMEListItem(Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]'))
+				case False:
+					_l = ACMEListItem(Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}'))
+				
 			_l._data = i
 			if r['out']:
 				_l.set_class(True, '--outgoing')
+			self.requestList.append(_l)
+			# self.requestList.append(_l := ACMEListItem(
+			# 	Label(f' {i:4}  -  {_ts[1]}   {Operation(r["op"]).name:10.10}   {str(r.get("org", "")):30.30}   {str(_to):30.30}   {rscFmt(r["rsc"])}\n          [dim]{_ts[0]}[/dim]                                                      [dim]{_srn}[/dim]')))
 
 
 	def deleteRequests(self) -> None:

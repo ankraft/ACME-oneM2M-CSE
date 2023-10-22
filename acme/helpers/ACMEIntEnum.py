@@ -90,6 +90,16 @@ class ACMEIntEnum(IntEnum):
 				The name of an enum value.		
 		"""
 		return self.name
+	
+	
+	def __int__(self) -> int:
+		"""	Get the integer value of an enum.
+
+			Return:
+				The value of an enum value.		
+		"""
+		return self.value
+
 
 
 	def __repr__(self) -> str:

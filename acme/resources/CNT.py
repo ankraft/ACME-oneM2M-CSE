@@ -6,6 +6,8 @@
 #
 #	ResourceType: Container
 #
+""" Container (CNT) resource type.
+"""
 
 from __future__ import annotations
 from typing import Optional, cast
@@ -23,6 +25,7 @@ from ..resources import Factory	# attn: circular import
 
 
 class CNT(ContainerResource):
+	""" Container resource type. """
 
 	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
 									ResourceTypes.CNT, 
@@ -33,6 +36,7 @@ class CNT(ContainerResource):
 									ResourceTypes.TS,
 									ResourceTypes.CNT_LA,
 									ResourceTypes.CNT_OL ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -69,6 +73,7 @@ class CNT(ContainerResource):
 			# EXPERIMENTAL
 			'subi': None,
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
@@ -76,10 +81,6 @@ class CNT(ContainerResource):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
 
-		# TODO optimize this
-		if Configuration.get('resource.cnt.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('resource.cnt.mni'), overwrite = False)
-			self.setAttribute('mbs', Configuration.get('resource.cnt.mbs'), overwrite = False)
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
@@ -89,7 +90,13 @@ class CNT(ContainerResource):
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
-		
+
+		# Set the limits for this container if enabled
+		# TODO optimize this
+		if Configuration.get('resource.cnt.enableLimits'):	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.get('resource.cnt.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('resource.cnt.mbs'), overwrite = False)
+
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
@@ -249,3 +256,20 @@ class CNT(ContainerResource):
 		# End validating
 		self.__validating = False
 
+
+	def setLCPLink(self, lcpRi:str) -> None:
+		"""	Set the link to the <lcp> resource. This is called from the <lcp> resource.
+			This also sets the link in the <latest> resource.
+		
+			Args:
+				lcpRi:	The resource id of the <lcp> resource.
+		"""
+
+		self.setAttribute('li', lcpRi)
+
+		# Also, set in the <latest> resource
+		if (latest := CSE.dispatcher.retrieveLocalResource(self.getLatestRI())) is not None:
+			latest.setLCPLink(lcpRi)
+			latest.dbUpdate()
+
+		self.dbUpdate()

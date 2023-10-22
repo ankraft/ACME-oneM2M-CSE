@@ -9,26 +9,24 @@
 
 BINDING						= 'http'	# possible values: http, https, mqtt
 
-if BINDING == 'mqtt':
-	PROTOCOL				= 'mqtt'	
-	CONFIGPROTOCOL			= 'http'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-elif BINDING == 'http':
-	PROTOCOL				= 'http'
-	CONFIGPROTOCOL			= 'http'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-elif BINDING == 'https':
-	PROTOCOL				= 'https'
-	CONFIGPROTOCOL			= 'https'
-	NOTIFICATIONPROTOCOL	= 'http'
-	REMOTEPROTOCOL			= 'http'
-
-else:
-	assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
+match BINDING:
+	case 'mqtt':
+		PROTOCOL				= 'mqtt'	
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'http':
+		PROTOCOL				= 'http'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'https':
+		PROTOCOL				= 'https'
+		CONFIGPROTOCOL			= 'https'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case _:
+		assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
 
 # TODO ENCODING 			= 
 
@@ -75,6 +73,7 @@ MQTTREGREQUESTTOPIC	= f'/oneM2M/reg_req/{mqttClientID}{CSEID}/json'
 MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 
 
+##############################################################################
 
 #
 #	OAuth2 authentication
@@ -85,6 +84,21 @@ doOAuth 			= False
 oauthServerUrl		= ''
 oauthClientID 		= ''
 oauthClientSecret 	= ''
+
+
+#
+#	HTTP Basic authentication
+#
+
+doHttpBasicAuth		= False
+httpUserName 		= 'test'
+httpPassword 		= 'testPassword'
+
+#
+#	HTTP Token authentication
+#
+doHttpTokenAuth		= False
+httpAuthToken		= 'testToken'
 
 
 #

@@ -12,7 +12,7 @@
 
 from typing import Optional, Any, Dict, Union, Callable, List
 
-import base64, binascii, re, json
+import base64, binascii, re, json, unicodedata
 
 _commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$|;;[^\r\n]*$)',
 						   re.MULTILINE|re.DOTALL)
@@ -58,7 +58,7 @@ def commentJson(data:Union[str, dict],
 		Args:
 			data: The JSON string or as a dictionary.
 			explanations: A dictionary with the explanations. The keys must match the JSON keys.
-			getAttributeValueNae: A function that returns the named value of an attribute. 
+			getAttributeValueName: A function that returns the named value of an attribute. 
 			width: Optional width of the output. If greater then the comment is put above the line.
 		
 		Return:
@@ -66,7 +66,7 @@ def commentJson(data:Union[str, dict],
 	"""
 
 	if isinstance(data, dict):
-		data = json.dumps(data, indent=4, sort_keys=True)
+		data = json.dumps(data, indent=2, sort_keys=True)
 
 	# find longest line
 	maxLineLength = 0
@@ -82,7 +82,7 @@ def commentJson(data:Union[str, dict],
 	maxLength:int = 0
 	for line in data.splitlines():
 		# Find the key
-		if len(_sp := line.strip().split(':')) == 1:
+		if len(_sp := re.split(r':(?=\ )', line.strip())) == 1:
 			if key:
 				previousKey = key
 				key = ''
@@ -130,6 +130,8 @@ def commentJson(data:Union[str, dict],
 	
 
 _decimalMatch = re.compile(r'{(\d+)}')
+"""	Compiled regex expression of recognize decimal numbers in a string. """
+
 def findXPath(dct:Dict[str, Any], key:str, default:Optional[Any] = None) -> Optional[Any]:
 	""" Find a structured *key* in the dictionary *dct*. If *key* does not exists then
 		*default* is returned.
@@ -286,6 +288,84 @@ def isNumber(string:Any) -> bool:
 	except:
 		return False
 	return True
+
+
+
+_soundexReplacements = (
+		('BFPV', '1'),
+		('CGJKQSXZ', '2'),
+		('DT', '3'),
+		('L', '4'),
+		('MN', '5'),
+		('R', '6'),
+	)
+"""	Replacement characters for the soundex algorithm. """
+
+def soundex(s:str, maxCount:Optional[int] = 4) -> str:
+	"""	Convert a string to a Soundex value.
+
+		Args:
+			s: The string to convert.
+
+		Return:
+			The Soundex value as a string.
+	"""
+
+	if not s:
+		return ''
+
+	s = unicodedata.normalize('NFKD', s).upper()
+
+	result = [s[0]]
+	count = 1
+
+	# find would-be replacement for first character
+	for lset, sub in _soundexReplacements:
+		if s[0] in lset:
+			last = sub
+			break
+	else:
+		last = None
+
+	for ch in s[1:]:
+		for lset, sub in _soundexReplacements:
+			if ch in lset:
+				if sub != last:
+					result.append(sub)
+					count += 1
+				last = sub
+				break
+		else:
+			if ch != 'H' and ch != 'W':
+				# leave last alone if middle letter is H or W
+				last = None
+		if count == maxCount:
+			break
+
+	result += '0' * (4 - count)
+	return ''.join(result)
+
+
+def soundsLike(s1:str, s2:str, maxCount:Optional[int] = 4) -> bool:
+	"""	Compare two strings using the soundex algorithm.
+
+		Args:
+			s1: First string to compare.
+			s2: Second string to compare.
+			maxCount: Maximum number of soundex result characters to compare.
+		
+		Return:
+			Boolean indicating the result of the comparison.
+	"""
+	# Remove 0 characters from the soundex result because they indicate a too short string
+	_s1 = soundex(s1, maxCount).replace('0', '')
+	_s2 = soundex(s2, maxCount).replace('0', '')
+
+	# Only take the smaller number of characters of the soundex result into account
+	_l = min(len(_s1), len(_s2))
+	return _s1[:_l] == _s2[:_l]	
+
+	return soundex(s1) == soundex(s2)
 
 
 def toHex(bts:bytes, toBinary:Optional[bool] = False, withLength:Optional[bool] = False) -> str:

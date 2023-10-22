@@ -28,9 +28,9 @@ fontfamily=Monospaced
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>208</x>
-      <y>120</y>
-      <w>408</w>
+      <x>336</x>
+      <y>248</y>
+      <w>416</w>
       <h>80</h>
     </coordinates>
     <panel_attributes>resources
@@ -47,9 +47,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>208</x>
-      <y>272</y>
-      <w>408</w>
+      <x>336</x>
+      <y>400</y>
+      <w>416</w>
       <h>104</h>
     </coordinates>
     <panel_attributes>identifiers
@@ -68,9 +68,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>208</x>
-      <y>392</y>
-      <w>408</w>
+      <x>336</x>
+      <y>520</y>
+      <w>416</w>
       <h>80</h>
     </coordinates>
     <panel_attributes>srn
@@ -87,9 +87,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>208</x>
-      <y>488</y>
-      <w>408</w>
+      <x>336</x>
+      <y>616</y>
+      <w>416</w>
       <h>88</h>
     </coordinates>
     <panel_attributes>children
@@ -107,9 +107,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>192</x>
-      <y>240</y>
-      <w>440</w>
+      <x>320</x>
+      <y>368</y>
+      <w>448</w>
       <h>352</h>
     </coordinates>
     <panel_attributes>identifiers-&lt;csi&gt;.json
@@ -120,10 +120,10 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>208</x>
-      <y>640</y>
-      <w>408</w>
-      <h>232</h>
+      <x>336</x>
+      <y>768</y>
+      <w>416</w>
+      <h>248</h>
     </coordinates>
     <panel_attributes>subscriptions
 --
@@ -138,6 +138,7 @@ PK ri   : string              // subscription resourceID
    nus  : list of string      // notification URLs
    bn   : batchNotify struct  // batch notification
    cr   : string              // creator
+   nec  : integer             // notification event category
    org  : string              // originator
    ma   : timestamp           // maxAge
    nse  : boolean             // notificationStats enabled
@@ -151,10 +152,10 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>192</x>
-      <y>608</y>
-      <w>440</w>
-      <h>280</h>
+      <x>320</x>
+      <y>736</y>
+      <w>448</w>
+      <h>296</h>
     </coordinates>
     <panel_attributes>subscriptions-&lt;csi&gt;.json
 fg=gray
@@ -164,9 +165,9 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>672</x>
-      <y>464</y>
-      <w>408</w>
+      <x>816</x>
+      <y>592</y>
+      <w>416</w>
       <h>104</h>
     </coordinates>
     <panel_attributes>batchNotifications
@@ -185,9 +186,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>712</x>
-      <y>960</y>
-      <w>408</w>
+      <x>1368</x>
+      <y>792</y>
+      <w>448</w>
       <h>64</h>
     </coordinates>
     <panel_attributes>halign=left
@@ -198,9 +199,9 @@ Why extra structs? Cheaper than full resources</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>656</x>
-      <y>432</y>
-      <w>440</w>
+      <x>800</x>
+      <y>560</y>
+      <w>448</w>
       <h>152</h>
     </coordinates>
     <panel_attributes>batchNotifications-&lt;csi&gt;.json
@@ -211,9 +212,9 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>656</x>
-      <y>88</y>
-      <w>440</w>
+      <x>800</x>
+      <y>216</y>
+      <w>448</w>
       <h>112</h>
     </coordinates>
     <panel_attributes>statistics-&lt;csi&gt;.json
@@ -224,9 +225,9 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>672</x>
-      <y>120</y>
-      <w>408</w>
+      <x>816</x>
+      <y>248</y>
+      <w>416</w>
       <h>64</h>
     </coordinates>
     <panel_attributes>statistics
@@ -242,9 +243,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>672</x>
-      <y>248</y>
-      <w>408</w>
+      <x>816</x>
+      <y>376</y>
+      <w>416</w>
       <h>152</h>
     </coordinates>
     <panel_attributes>actions
@@ -267,9 +268,9 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>656</x>
-      <y>216</y>
-      <w>440</w>
+      <x>800</x>
+      <y>344</y>
+      <w>448</w>
       <h>200</h>
     </coordinates>
     <panel_attributes>actions-&lt;csi&gt;.json
@@ -280,10 +281,10 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>672</x>
-      <y>632</y>
-      <w>408</w>
-      <h>168</h>
+      <x>816</x>
+      <y>760</y>
+      <w>416</w>
+      <h>184</h>
     </coordinates>
     <panel_attributes>requests
 --
@@ -294,6 +295,7 @@ PK ts  : float        // UTC timestamp
    op  : Operation    // request operation
    rsc : status code  // Response Status Code
    out : boolean      // CSE initiated request
+   ot  : string       // operation timestamp
    req : JSON         // request JSON
    rsp : JSON         // response JSON
 --
@@ -306,10 +308,10 @@ layer=1</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>656</x>
-      <y>600</y>
-      <w>440</w>
-      <h>216</h>
+      <x>800</x>
+      <y>728</y>
+      <w>448</w>
+      <h>232</h>
     </coordinates>
     <panel_attributes>requests	-&lt;csi&gt;.json
 fg=gray
@@ -319,12 +321,45 @@ bg=#dddddd</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>192</x>
-      <y>88</y>
-      <w>440</w>
+      <x>320</x>
+      <y>216</y>
+      <w>448</w>
       <h>136</h>
     </coordinates>
     <panel_attributes>resources-&lt;csi&gt;.json
+fg=gray
+bg=#dddddd</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>816</x>
+      <y>1008</y>
+      <w>416</w>
+      <h>96</h>
+    </coordinates>
+    <panel_attributes>schedules
+--
+PK ri  : string          // schedule's resourceID
+   pi  : string          // parent resource resourceID
+   sce : list of string  // list of schedule timestamps
+--
+
+bg=#ffffff
+transparency=0
+layer=1</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>800</x>
+      <y>976</y>
+      <w>448</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>schedules-&lt;csi&gt;.json
 fg=gray
 bg=#dddddd</panel_attributes>
     <additional_attributes/>

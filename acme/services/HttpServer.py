@@ -8,22 +8,24 @@
 #
 
 from __future__ import annotations
-from typing import Any, Callable, cast, Tuple, Optional
+from typing import Any, Callable, cast, Optional
 
 import logging, sys, urllib3, re
 from copy import deepcopy
 
 import flask
 from flask import Flask, Request, request
+
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+from waitress import serve
 from flask_cors import CORS
 import requests
 import isodate
 
 from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
@@ -48,6 +50,12 @@ FlaskHandler = 	Callable[[str], Response]
 """ Type definition for flask handler. """
 
 
+
+#########################################################################
+#
+#	HTTP Server
+#
+
 class HttpServer(object):
 
 	__close__ = (
@@ -63,11 +71,15 @@ class HttpServer(object):
 		'isStopped',
 		'corsEnable',
 		'corsResources',
+		'enableBasicAuth',
+		'enableTokenAuth',
+		'wsgiEnable',
+		'wsgiThreadPoolSize',
+		'wsgiConnectionLimit',
 		'backgroundActor',
 		'serverID',
 		'_responseHeaders',
 		'webui',
-		'mappeings',
 		'httpActor',
 
 		'_eventHttpRetrieve',
@@ -83,18 +95,14 @@ class HttpServer(object):
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
 		self.flaskApp			= Flask(CSE.cseCsi)
-		self.rootPath			= Configuration.get('http.root')
-		self.serverAddress		= Configuration.get('http.address')
-		self.listenIF			= Configuration.get('http.listenIF')
-		self.port 				= Configuration.get('http.port')
-		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
-		self.requestTimeout 	= Configuration.get('http.timeout')
-		self.webuiRoot 			= Configuration.get('webui.root')
-		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
-		self.isStopped			= False
-		self.corsEnable			= Configuration.get('http.cors.enable')
-		self.corsResources		= Configuration.get('http.cors.resources')
 
+		# Get the configuration settings
+		self._assignConfig()
+
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
+
+		self.isStopped					 = False
 		self.backgroundActor:BackgroundWorker = None
 
 		self.serverID			= f'ACME {Constants.version}' 	# The server's ID for http response headers
@@ -160,6 +168,56 @@ class HttpServer(object):
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 
 
+	def _assignConfig(self) -> None:
+		"""	Assign the configuration values to the http server.
+		"""
+		self.rootPath			= Configuration.get('http.root')
+		self.serverAddress		= Configuration.get('http.address')
+		self.listenIF			= Configuration.get('http.listenIF')
+		self.port 				= Configuration.get('http.port')
+		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
+		self.requestTimeout 	= Configuration.get('http.timeout')
+		self.webuiRoot 			= Configuration.get('webui.root')
+		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
+		self.corsEnable			= Configuration.get('http.cors.enable')
+		self.corsResources		= Configuration.get('http.cors.resources')
+		self.enableBasicAuth	= Configuration.get('http.security.enableBasicAuth')
+		self.enableTokenAuth 	= Configuration.get('http.security.enableTokenAuth')
+		self.wsgiEnable			= Configuration.get('http.wsgi.enable')
+		self.wsgiThreadPoolSize	= Configuration.get('http.wsgi.threadPoolSize')
+		self.wsgiConnectionLimit= Configuration.get('http.wsgi.connectionLimit')
+
+
+	def configUpdate(self, name:str, 
+						   key:Optional[str] = None,
+						   value:Any = None) -> None:
+		"""	Handle configuration updates.
+
+			Args:
+				name: The name of the configuration section.
+				key: The key of the configuration value.
+				value: The new value.
+		"""
+		if key not in ( 'http.root', 
+						'http.address',
+						'http.listenIF',
+						'http.port',
+						'http.allowPatchForDelete',
+						'http.timeout',
+						'webui.root',
+						'http.cors.enable',
+						'http.cors.resources',
+						'http.wsgi.enable',
+						'http.wsgi.threadPoolSize',
+						'http.wsgi.connectionLimit',
+						'http.security.enableBasicAuth',
+						'http.security.enableTokenAuth',
+						'mqtt.security.password'
+					  ):
+			return
+		self._assignConfig()
+
+
 	def run(self) -> bool:
 		"""	Run the http server in a separate thread.
 		"""
@@ -205,12 +263,21 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				self.flaskApp.run(host = self.listenIF, 
-								  port = self.port,
-								  threaded = True,
-								  request_handler = ACMERequestHandler,
-								  ssl_context = CSE.security.getSSLContext(),
-								  debug = False)
+				if self.wsgiEnable:
+					L.isInfo and L.log(f'HTTP server listening on {self.listenIF}:{self.port} (wsgi)')
+					serve(self.flaskApp, 
+		   				  host = self.listenIF, 
+						  port = self.port, 
+						  threads = self.wsgiThreadPoolSize, 
+						  connection_limit = self.wsgiConnectionLimit)
+				else:
+					L.isInfo and L.log(f'HTTP server listening on {self.listenIF}:{self.port} (flask http)')
+					self.flaskApp.run(host = self.listenIF, 
+									port = self.port,
+									threaded = True,
+									request_handler = ACMERequestHandler,
+									ssl_context = CSE.security.getSSLContext(),
+									debug = False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
@@ -277,12 +344,16 @@ class HttpServer(object):
 
 
 	def handleGET(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTRE')
 		self._eventHttpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		if self._hasContentType():
 			renameThread('HTCR')
 			self._eventHttpCreate()
@@ -294,12 +365,16 @@ class HttpServer(object):
 
 
 	def handlePUT(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTUP')
 		self._eventHttpUpdate()
 		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		renameThread('HTDE')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
@@ -308,6 +383,8 @@ class HttpServer(object):
 	def handlePATCH(self, path:Optional[str] = None) -> Response:
 		"""	Support instead of DELETE for http/1.0.
 		"""
+		if not self.handleAuthentication():
+			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
 		renameThread('HTDE')
@@ -349,6 +426,11 @@ class HttpServer(object):
 		"""
 		if self.isStopped:
 			return Response('Service not available', status = 503)
+
+		# Check, when authentication is enabled, the user is authorized, else return status 401
+		if not self.handleAuthentication():
+			return Response(status = 401)
+
 
 		def prepareUTResponse(rcs:ResponseStatusCode, result:str) -> Response:
 			"""	Prepare the Upper Tester Response.
@@ -541,6 +623,47 @@ class HttpServer(object):
 		self._eventResponseReceived(resp)
 		return res
 		
+	#########################################################################
+
+	#
+	#	Handle authentication
+	#
+
+	def handleAuthentication(self) -> bool:
+		"""	Handle the authentication for the current request.
+
+			Return:
+				True if the request is authenticated, False otherwise.
+		"""
+		if not (self.enableBasicAuth or self.enableTokenAuth):
+			return True
+		
+		if (authorization := request.authorization) is None:
+			L.isDebug and L.logDebug('No authorization header found.')
+			return False
+		
+		match authorization.type:
+			case 'basic':
+				return self._handleBasicAuthentication(authorization.parameters)
+			case 'bearer':
+				return self._handleTokenAuthentication(authorization.token)
+			case _:
+				L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization.type}')
+				return False
+	
+
+	def _handleBasicAuthentication(self, parameters:dict) -> bool:
+		if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
+			L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
+			return False
+		return True
+	
+
+	def _handleTokenAuthentication(self, token:str) -> bool:
+		if not CSE.security.validateHttpTokenAuth(token):
+			L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+			return False
+		return True
 
 	#########################################################################
 
@@ -573,6 +696,7 @@ class HttpServer(object):
 			result.request.rvi = originalRequest.rvi
 			result.request.vsi = originalRequest.vsi
 			result.request.ec  = originalRequest.ec
+			result.request.rset = originalRequest.rset
 	
 		#
 		#	Transform request to oneM2M request
@@ -596,6 +720,8 @@ class HttpServer(object):
 			headers[Constants().hfRVI] = rvi
 		if vsi := findXPath(cast(JSON, outResult.data), 'vsi'):
 			headers[Constants().hfVSI] = vsi
+		if rset := findXPath(cast(JSON, outResult.data), 'rset'):
+			headers[Constants().hfRST] = rset
 		headers[Constants().hfOT] = getResourceDate()
 
 		# HTTP status code
@@ -659,10 +785,11 @@ class HttpServer(object):
 		req['op']   				= operation.value		# Needed later for validation
 
 		# resolve http's /~ and /_ special prefixs
-		if path[0] == '~':
-			path = path[1:]			# ~/xxx -> /xxx
-		elif path[0] == '_':
-			path = f'/{path[1:]}'	# _/xxx -> //xxx
+		match path[0]:
+			case '~':
+				path = path[1:]			# ~/xxx -> /xxx
+			case '_':
+				path = f'/{path[1:]}'	# _/xxx -> //xxx
 		req['to'] 		 			= path
 
 
@@ -709,7 +836,6 @@ class HttpServer(object):
 
 		# parse accept header
 		cseRequest.httpAccept 	= [ a for a in _headers.getlist('accept') if a != '*/*' ]
-		cseRequest.originalHttpArgs	= deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking
 		_args = request.args.copy() 	# type: ignore [no-untyped-call]

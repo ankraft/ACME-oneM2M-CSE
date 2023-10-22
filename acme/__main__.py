@@ -7,6 +7,9 @@
 #	Starter for the ACME CSE
 #
 
+"""	This module contains the ACME CSE implementation. It is the main module of the ACME CSE.
+"""
+
 import os, re, sys
 if sys.version_info < (3, 8):
 	print('Python version >= 3.8 is required')
@@ -24,23 +27,43 @@ except ImportError as e:
 	if 'ACME_DEBUG' in os.environ:
 		raise e
 	
-	# Give hint to run ACME as a module
-	if 'attempted relative import' in e.msg:
-		print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
+	match e.msg:
+		# Give hint to run ACME as a module
+		case x if 'attempted relative import' in x:
+			print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
 	
-	# Give hint how to do the installation
-	elif 'No module named' in e.msg:
-		m = re.search("'(.+?)'", e.msg)
-		package = f' ({m.group(1)}) ' if m else ' '
-		print(f'\nOne or more required packages or modules{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
-	else:
-		print(f'\nError during import: {e.msg}\n')
+		# Give hint how to do the installation
+		case x if 'No module named' in x:
+			m = re.search("'(.+?)'", e.msg)
+			package = f' ({m.group(1)}) ' if m else ' '
+			print(f'\nOne or more required packages or modules{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+
+			# Ask if the user wants to install the missing packages
+			try:
+				if input('\nDo you want to install the missing packages now? [y/N] ') in ['y', 'Y']:
+					import os
+					os.system(f'{sys.executable} -m pip install -r requirements.txt')
+
+					# Ask if the user wants to start ACME
+					if input('\nDo you want to start ACME now? [Y/n] ') in ['y', 'Y', '']:
+						os.system(f'{sys.executable} -m acme {" ".join(sys.argv[1:])}')
+
+			except Exception as e2:
+				print(f'\nError during installation: {e2}\n')
+		
+		case _:
+			print(f'\nError during import: {e.msg}\n')
 
 	quit(1)
 
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
+	""" Parse the command line arguments.
+	
+		Returns:
+			The parsed arguments.
+	"""
 	parser = argparse.ArgumentParser(prog='acme')
 	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultUserConfigFile, metavar='<filename>', help='specify the configuration file')
 
@@ -48,6 +71,7 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableHttp = parser.add_mutually_exclusive_group()
 	groupEnableHttp.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
 	groupEnableHttp.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+	groupEnableHttp.add_argument('--http-wsgi', action='store_true', dest='httpWsgi', default=None, help='run CSE with http WSGI support')
 
 	groupEnableMqtt = parser.add_mutually_exclusive_group()
 	groupEnableMqtt.add_argument('--mqtt', action='store_true', dest='mqttenabled', default=None, help='enable mqtt binding')
@@ -76,6 +100,8 @@ def parseArgs() -> argparse.Namespace:
 
 
 def main() -> None:
+	""" Main function of the ACME CSE.
+	"""
 	#	Start the CSE with command line arguments.
 	#	In case the CSE should be started without command line parsing, the values
 	#	can be passed instead. Unknown arguments are ignored.

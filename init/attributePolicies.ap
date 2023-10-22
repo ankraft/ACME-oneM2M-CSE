@@ -21,7 +21,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -61,7 +61,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "parentID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -75,7 +75,7 @@
 			"lname": "accessControlPolicyIDs",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",
+			"ltype": "ID",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -182,7 +182,7 @@
 			"lname": "announcedAttribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",
+			"ltype": "ncname",
 			"car": "01L",
 			"oc": "NP",
 			"ou": "NP",
@@ -194,7 +194,7 @@
 			"lname": "announcedAttribute",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",
+			"ltype": "ncname",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -244,11 +244,11 @@
 	],
 	"loc": [
 		{
-			"rtypes": [ "ALL" ], 
+			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", "CIN", "CINAnnc", 
+					    "CNT", "CNTAnnc", "FCI", "FCNT", "FCNTAnnc", "TS", "TSAnnc", "TSI", "TSIAnnc", "REQRESP" ],	
 			"lname": "location",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "m2m:geoCoordinates",
+			"type": "m2m:geoCoordinates",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -256,7 +256,7 @@
 			"annc": "OA"
 		},
 		{
-			"rtypes": [ "DVI" ],
+			"rtypes": [ "DVI", "DVIAnnc" ],
 			"lname": "location",
 			"ns": "m2m",
 			"type": "string",
@@ -272,7 +272,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "custodian",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -315,7 +315,7 @@
 	"act": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "accessControWindow",
+			"lname": "activate",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "01",
@@ -357,11 +357,24 @@
 			"rtypes": [ "ALL" ],
 			"lname": "AE-ID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
 			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"aid": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "authID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "OA"
 		}
 	],
@@ -556,7 +569,7 @@
 			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
 			"lname": "beaconRequester",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -845,7 +858,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "creator",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -893,7 +906,7 @@
 			"rtypes": [ "CSEBase", "CSRAnnc" ],
 			"lname": "CSE-ID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -904,7 +917,7 @@
 			"rtypes": [ "CSR" ],
 			"lname": "CSE-ID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "O",
 			"ou": "NP",
@@ -1360,6 +1373,39 @@
 			"annc": "OA"
 		}
 	],
+	"gec": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "geofenceEventCriteria",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:geofenceEventCriteria",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"geom": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geometry",
+			"ns": "m2m",
+			"type": "geoJsonCoordinate",
+			"car": "1"
+		}
+	],
+	"gmty": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geometryType",
+			"ns": "m2m",
+			"type": "enum", 
+			"etype": "m2m:geometryType",
+			"car": "1"
+		}
+	],
 	"gn": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1386,6 +1432,29 @@
 			"annc": "NA"
 		}
 	],
+	"gsf": [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "geoSpatialFunction",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:geoSpatialFunctionType",
+			"car": "1"
+		}
+	],
+	"gta": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "geographicalTargetArea",
+			"ns": "m2m",
+			"type": "any",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"hael": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1405,7 +1474,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "hostedCSELink",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1575,6 +1644,20 @@
 			"annc": "OA"
 		}
 	],
+	"lit": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationInformationType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationInformationType",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"ln": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1606,8 +1689,8 @@
 		{
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
-						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
+						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "LCPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
+						"SCHAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
@@ -1619,6 +1702,114 @@
 			"annc": "MA"
 		}
 	],
+	"loi": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationContainerID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lon": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationContainerName",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"los": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationSource",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationSource",
+			"car": "01",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lost": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationStatus",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lor": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationServer",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lot": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationTargetID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01L",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
+	"lou": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationUpdatePeriod",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "duration",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"luec": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "locationUpdateEventCriteria",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:locationUpdateEventCriteria",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	// TODO Align later
 	// EXPERIMENTAL
 	"ma": [
@@ -1719,7 +1910,7 @@
 			"lname": "missingDataCurrentNr",
 			"ns": "m2m",
 			"type": "nonNegInteger",
-			"car": "01",
+			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
 			"od": "O",
@@ -2044,6 +2235,33 @@
 			"annc": "OA"
 		}
 	],
+	"nco": [
+		{
+			"rtypes": [ "SCH", "SCHAnnc", "REQRESP" ],
+			"lname": "networkCoordinated",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"nct": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "notificationContentType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:notificationContentType",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"nec": [
 		{
 			"rtypes": [ "CRS" ],
@@ -2068,17 +2286,12 @@
 			"annc": "NA"
 		}
 	],
-	"nct": [
+	"nev": [
 		{
-			"rtypes": [ "ALL" ],
-			"lname": "notificationContentType",
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "notificationEvent",
 			"ns": "m2m",
-			"type": "nonNegInteger",
-			"car": "1",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
+			"type": "any"
 		}
 	],
 	"nfu": [
@@ -2273,7 +2486,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "originator",
 			"ns": "m2m",
-			"type": "string",
+			"type": "ID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -2479,6 +2692,14 @@
 			"annc": "OA"
 		}
 	],
+	"rep": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "representation",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
 	"rid": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -2503,6 +2724,19 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"rlkl": [
+		{
+			"rtypes": [ "LCP", "LCPAnnc" ],
+			"lname": "retrieveLastKnownLocation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"rms": [
@@ -2671,9 +2905,22 @@
 			"lname": "sessionCapabilities",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",	// m2m:sessionCapabilities
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"se": [
+		{
+			"rtypes": [ "SCH", "SCHAnnc", "REQRESP" ],
+			"lname": "scheduleElement",
+			"ns": "m2m",
+			"type": "m2m:scheduleEntries",
+			"car": "1L",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -2690,6 +2937,14 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"m2m:sgn": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "notification",
+			"ns": "m2m",
+			"type": "any"
 		}
 	],
 	"sld": [
@@ -2915,6 +3170,14 @@
 			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"sur": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "subscriptionReference",
+			"ns": "m2m",
+			"type": "any"
 		}
 	],
 
@@ -3157,6 +3420,14 @@
 			"annc": "OA"
 		}
 	],
+	"m2m:uri": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
 	"url": [
 		{
 			"rtypes": [ "ALL" ],
@@ -3196,6 +3467,15 @@
 			"annc": "OA"
 		}
 	],
+	"vrq": [
+		{
+			"rtypes": [ "UNKNOWN" ],
+			"lname": "verificationRequest",
+			"ns": "m2m",
+			"type": "boolean"
+		}
+	],
+
 	"wcrds": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],

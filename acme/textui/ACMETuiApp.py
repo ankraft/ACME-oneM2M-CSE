@@ -8,12 +8,17 @@
 """
 
 from __future__ import annotations
+from typing import Callable
+from typing_extensions import Literal, get_args
+import asyncio
 from enum import IntEnum, auto
 from textual.app import App, ComposeResult
 from textual import on
 from textual.widgets import Tab, Footer, TabbedContent, TabPane, Static
 from textual.binding import Binding
 from textual.design import ColorSystem
+from textual.notifications import Notification, SeverityLevel
+
 from ..textui.ACMEHeader import ACMEHeader
 from ..textui.ACMEContainerAbout import ACMEContainerAbout
 from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations
@@ -23,7 +28,9 @@ from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
 from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..services import CSE
+from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+
 
 
 
@@ -91,12 +98,20 @@ class ACMETuiApp(App):
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
+
+		# Add the resource types to the attribute explanations
+		for n in ResourceTypes:
+			self.attributeExplanations[ResourceTypes(n).tpe()] = f'{ResourceTypes.fullname(n)} resource type'
+
 		# This is used to keep track of the current tab.
 		# This is a bit different from the actual current tab from the self.tabs
 		# attribute because at one point it is used to determine the previous tab.
 		self.currentTab:Tab = None	
-		#self.app.DEFAULT_COLORS = CUSTOM_COLORS
-		# _app.DEFAULT_COLORS = CUSTOM_COLORS
+
+		# This is used to keep a pointer to the current event loop to use it
+		# for async calls from non-async functions.
+		# This is set in the on_load() function.
+		self.event_loop:asyncio.AbstractEventLoop = None
 
 		self.tabs = TabbedContent()
 		self.containerTree = ACMEContainerTree()
@@ -107,6 +122,7 @@ class ACMETuiApp(App):
 		self.containerTools = ACMEContainerTools(self)
 		self.containerAbout = ACMEContainerAbout()
 		self.debugConsole = Static('', id = 'debug-console')
+
 
 	def compose(self) -> ComposeResult:
 		"""Build the Main UI."""
@@ -134,6 +150,7 @@ class ACMETuiApp(App):
 	def on_load(self) -> None:
 		self.dark = self.textUI.theme == 'dark'
 		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
+		self.event_loop = asyncio.get_event_loop()
 		# self.design = CUSTOM_COLORS
 		# self.refresh_css()
 
@@ -178,29 +195,61 @@ class ACMETuiApp(App):
 	
 	
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptPrint(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptPrint(scriptName, msg)
 
 
 	def scriptLog(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptLog(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptLog(scriptName, msg)
 
 
 	def scriptLogError(self, scriptName:str, msg:str) -> None:
-		self.containerTools.scriptLogError(scriptName, msg)
+		if self.containerTools:
+			self.containerTools.scriptLogError(scriptName, msg)
 	
 
 	def scriptClearConsole(self, scriptName:str) -> None:
-		self.containerTools.scriptClearConsole(scriptName)
+		if self.containerTools:
+			self.containerTools.scriptClearConsole(scriptName)
 	
 
+	def scriptShowNotification(self, message:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:
+
+		async def _call() -> None:
+			self.notify(message = message, title = title, severity = severity, timeout = timeout)
+		
+		if timeout is None:
+			timeout = Notification.timeout
+		
+		if severity is None:
+			severity = 'information'
+		elif severity not in get_args(SeverityLevel):
+			raise ValueError(f'Invalid severity level: {severity}')
+
+		self.runAsyncTask(_call)
+
+
 	def scriptVisualBell(self, scriptName:str) -> None:
-		BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
-		# self.containerTools.scriptVisualBell(scriptName)
+		if self.containerTools:
+			BackgroundWorkerPool.runJob(lambda:self.containerTools.scriptVisualBell(scriptName))
 
 	def refreshResources(self) -> None:
-		self.containerTree.update()
+		if self.containerTree:
+			self.containerTree.update()
 
 	#########################################################################
+
+
+	def runAsyncTask(self, task:Callable) -> None:
+		"""	Run an async task from a non-async function.
+
+			Args:
+				task: The async task to run.
+		"""
+		if self.event_loop:
+			self.event_loop.create_task(task())
+
 
 	def restart(self) -> None:
 		self.quitReason = ACMETuiQuitReason.restart
@@ -211,6 +260,7 @@ class ACMETuiApp(App):
 		"""	Clean up the UI before exiting.
 		"""
 		self.containerTools.cleanUp()
+		self.event_loop = None
 
 
 #

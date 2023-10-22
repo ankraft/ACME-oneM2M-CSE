@@ -22,8 +22,8 @@ from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
-from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY
-from ..etc.DateUtils import fromDuration, getResourceDate
+from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND
+from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
 from ..etc.Utils import toSPRelative, pureResource, isAcmeUrl, compareIDs
 from ..helpers.TextTools import setXPath, findXPath
 from ..services import CSE
@@ -179,8 +179,11 @@ class NotificationManager(object):
 			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
-		if not CSE.storage.removeSubscription(subscription):
-			raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
+		try:
+			if not CSE.storage.removeSubscription(subscription):
+				raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
+		except NOT_FOUND:
+			pass	# ignore, could be expected
 
 
 	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> None:
@@ -232,7 +235,7 @@ class NotificationManager(object):
 
 
 	def checkSubscriptions(	self, 
-							resource:Resource, 
+							resource:Optional[Resource], 
 							reason:NotificationEventType, 
 							childResource:Optional[Resource] = None, 
 							modifiedAttributes:Optional[JSON] = None,
@@ -276,74 +279,88 @@ class NotificationManager(object):
 				# TODO ensure uniqueness
 				subs.append(sub)
 
-
-
-		# TODO: Add access control check here. Perhaps then the special subscription
-		#		DB data structure should go away and be replaced by the normal subscriptions
-
-
 		for sub in subs:
+
+			if reason not in sub['net']:	# check whether reason is actually included in the subscription
+				continue
+
 			# Prevent own notifications for subscriptions 
 			ri = sub['ri']
+
+			# Check whether reason is included in the subscription
 			if childResource and \
 				ri == childResource.ri and \
 				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
 					continue
-			if reason not in sub['net']:	# check whether reason is actually included in the subscription
-				continue
-			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
-				chty = sub['chty']
-				if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
-					continue
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource = childResource, 
-													 modifiedAttributes = modifiedAttributes, 
-													 asynchronous = self.asyncSubscriptionNotifications)
-				self.countNotificationEvents(ri)
-			
-			# Check Update and enc/atr vs the modified attributes 
-			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) and modifiedAttributes:
-				found = False
-				for k in atr:
-					if k in modifiedAttributes:
-						found = True
-				if found:
+
+			# Check the subscription's schedule, but only if it is not an immediate notification
+			if not ((nec := sub['nec']) and nec == EventCategory.Immediate):
+				if (_sc := CSE.storage.searchScheduleForTarget(ri)):
+					_ts = utcDatetime()
+
+					# Check whether the current time matches the schedule
+					for s in _sc:
+						if cronMatchesTimestamp(s, _ts):
+							break
+					else:
+						# No schedule matches the current time, so continue with the next subscription
+						continue
+
+			match reason:
+				case NotificationEventType.createDirectChild | NotificationEventType.deleteDirectChild:	# reasons for child resources
+					chty = sub['chty']
+					if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
+						continue
 					self._handleSubscriptionNotification(sub, 
 														 reason, 
-														 resource = resource, 
-														 modifiedAttributes = modifiedAttributes,
+														 resource = childResource, 
+														 modifiedAttributes = modifiedAttributes, 
 														 asynchronous = self.asyncSubscriptionNotifications)
 					self.countNotificationEvents(ri)
-				else:
-					L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
 			
-			# Check for missing data points (only for <TS>)
-			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData:
-				md = missingData[sub['ri']]
-				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
+				# Check Update and enc/atr vs the modified attributes 
+				case NotificationEventType.resourceUpdate if (atr := sub['atr']) and modifiedAttributes:
+					found = False
+					for k in atr:
+						if k in modifiedAttributes:
+							found = True
+					if found:	# any one found
+						self._handleSubscriptionNotification(sub, 
+															 reason, 
+															 resource = resource, 
+															 modifiedAttributes = modifiedAttributes,
+															 asynchronous = self.asyncSubscriptionNotifications)
+						self.countNotificationEvents(ri)
+					else:
+						L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
+			
+				#  Check for missing data points (only for <TS>)
+				case NotificationEventType.reportOnGeneratedMissingDataPoints if missingData:
+					md = missingData[sub['ri']]
+					if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
+						self._handleSubscriptionNotification(sub, 
+															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
+															 missingData = copy.deepcopy(md),
+															 asynchronous = self.asyncSubscriptionNotifications)
+						self.countNotificationEvents(ri)
+						md.clearMissingDataList()
+
+				case NotificationEventType.blockingUpdate | NotificationEventType.blockingRetrieve | NotificationEventType.blockingRetrieveDirectChild:
 					self._handleSubscriptionNotification(sub, 
-														 NotificationEventType.reportOnGeneratedMissingDataPoints, 
-														 missingData = copy.deepcopy(md),
-														 asynchronous = self.asyncSubscriptionNotifications)
+														reason, 
+														resource, 
+														modifiedAttributes = modifiedAttributes,
+														asynchronous = False)	# blocking NET always synchronous!
 					self.countNotificationEvents(ri)
-					md.clearMissingDataList()
 
-			elif reason in [NotificationEventType.blockingUpdate, NotificationEventType.blockingRetrieve, NotificationEventType.blockingRetrieveDirectChild]:
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource, 
-													 modifiedAttributes = modifiedAttributes,
-													 asynchronous = False)	# blocking NET always synchronous!
-				self.countNotificationEvents(ri)
-
-			else: # all other reasons that target the resource
-				self._handleSubscriptionNotification(sub, 
-													 reason, 
-													 resource, 
-													 modifiedAttributes = modifiedAttributes,
-													 asynchronous = self.asyncSubscriptionNotifications)
-				self.countNotificationEvents(ri)
+				# all other reasons that target the resource
+				case _:
+					self._handleSubscriptionNotification(sub, 
+														reason, 
+														resource, 
+														modifiedAttributes = modifiedAttributes,
+														asynchronous = self.asyncSubscriptionNotifications)
+					self.countNotificationEvents(ri)
 
 
 	def checkPerformBlockingUpdate(self, resource:Resource, 
@@ -596,7 +613,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, max expected count: {subCount}, eem: {eem}')
 
 		# Test for conditions
-		if	(eem == EventEvaluationMode.ALL_EVENTS_PRESENT and len(data) == subCount) or \
+		if	((eem is None or eem == EventEvaluationMode.ALL_EVENTS_PRESENT) and len(data) == subCount) or \
 			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_PRESENT and 1 <= len(data) <= subCount) or \
 			(eem == EventEvaluationMode.SOME_EVENTS_MISSING and 1 <= len(data) < subCount) or \
 			(eem == EventEvaluationMode.ALL_OR_SOME_EVENTS_MISSING and 0 <= len(data) < subCount) or \
@@ -604,11 +621,23 @@ class NotificationManager(object):
 
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
+			# Check the crossResourceSubscription's schedule, if there is one
+			if (_sc := CSE.storage.searchScheduleForTarget(crsRi)):
+				_ts = utcDatetime()
+
+				# Check whether the current time matches any schedule
+				for s in _sc:
+					if cronMatchesTimestamp(s, _ts):
+						break
+				else:
+					# No schedule matches the current time, so clear the data and just return
+					L.isDebug and L.logDebug(f'No matching schedule found for <crs>: {crsRi}')
+					return
+
 			try:
 				resource = CSE.dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
-				data.clear()
 				return
 
 			crs = cast(CRS, resource)
@@ -640,7 +669,6 @@ class NotificationManager(object):
 
 		else:
 			L.isDebug and L.logDebug(f'No notification sent')
-		data.clear()
 
 
 	# Time Window Monitor : Periodic
@@ -679,11 +707,13 @@ class NotificationManager(object):
 
 
 	def _crsPeriodicWindowMonitor(self, _data:list[str], 
+							   			_worker:BackgroundWorker,
 			       						crsRi:str, 
 										expectedCount:int,
 										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
+		_worker.data = []
 		return True
 
 
@@ -721,12 +751,15 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any, 
+	def _crsSlidingWindowMonitor(self, _data:Any,
+							  		   _worker:BackgroundWorker,
 			      					   crsRi:str, 
 									   subCount:int, 
 									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, subCount, eem)
+		_worker.data = []
+		# _data.clear()
 		return True
 
 
@@ -737,17 +770,19 @@ class NotificationManager(object):
 		crsTwt = crs.twt
 		crsTws = crs.tws
 		L.isDebug and L.logDebug(f'Received notification for <crs>: {crsRi}, twt: {crsTwt}, tws: {crsTws}')
-		if crsTwt == TimeWindowType.SLIDINGWINDOW:
-			if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
-				L.isDebug and L.logDebug(f'Adding notification to worker: {workers[0].name}')
-				if sur not in workers[0].data:
-					workers[0].data.append(sur)
-			else:
-				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
-		elif crsTwt == TimeWindowType.PERIODICWINDOW:
-			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
-				if sur not in workers[0].data:
-					workers[0].data.append(sur)
+		match crsTwt:
+			case TimeWindowType.SLIDINGWINDOW:
+				if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
+					L.isDebug and L.logDebug(f'Adding notification to worker: {workers[0].name}')
+					if sur not in workers[0].data:
+						workers[0].data.append(sur)
+				else:
+					workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions(), crs.eem) ]	# sur is added automatically when creating actor
+
+			case TimeWindowType.PERIODICWINDOW:
+				if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
+					if sur not in workers[0].data:
+						workers[0].data.append(sur)
 
 			# No else: Periodic is running or not
 
@@ -811,7 +846,7 @@ class NotificationManager(object):
 	#	Notification Statistics
 	#
 
-	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS) -> None:
+	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS, add:Optional[bool] = True) -> None:
 		"""	Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
 
 			This method adds, if necessary, the necessarry stat info structures for each notification
@@ -822,7 +857,12 @@ class NotificationManager(object):
 			
 			Args:
 				sub: The \<sub> or \<crs> resource for whoich to validate the attribute.
+				add: If True, add the *notificationStatsInfo* attribute if not present.
 		"""
+
+		# Optionally add the attribute
+		if add:
+			sub.setAttribute('nsi', [], overwrite = False)
 
 		if (nsi := sub.nsi) is None:	# nsi attribute must be at least an empty list
 			return
@@ -861,7 +901,7 @@ class NotificationManager(object):
 				isResponse: Indicates whether a sent notification or a received response should be counted for.
 				count: Number of notifications to count.
 		"""
-		if not sub or not sub.nse:	# Don't count if disabled
+		if not sub or not sub.nse:	# Don't count if not present or disabled
 			return
 		
 		L.isDebug and L.logDebug(f'Incrementing notification stats for: {sub.ri} ({"response" if isResponse else "request"})')
@@ -872,6 +912,11 @@ class NotificationManager(object):
 		# We have to lock this to prevent race conditions in some cases with CRS handling
 		with self.lockNotificationEventStats:
 			sub.dbReloadDict()	# get a fresh copy of the subscription
+
+			# Add nsi if not present. This happens when the first notification is sent after enabling the recording
+			if sub.nsi is None:
+				self.validateAndConstructNotificationStatsInfo(sub, True)	# nsi is filled here again
+
 			for each in sub.nsi:
 				if each['tg'] == target:
 					each[activeField] += count
@@ -895,7 +940,7 @@ class NotificationManager(object):
 				# TODO check resource type?
 			except ResponseException as e:
 				return
-		if not sub.nse:	# Don't count if disabled
+		if not sub.nse:	# Don't count if not present or disabled
 			return
 		
 		L.isDebug and L.logDebug(f'Incrementing notification event stat for: {sub.ri}')
@@ -904,6 +949,11 @@ class NotificationManager(object):
 		# We have to lock this to prevent race conditions in some cases with CRS handling
 		with self.lockNotificationEventStats:
 			sub.dbReloadDict()	# get a fresh copy of the subscription
+
+			# Add nsi if not present. This happens when the first notification is sent after enabling the recording
+			if sub.nsi is None:
+				self.validateAndConstructNotificationStatsInfo(sub, True)	# nsi is filled here again
+
 			for each in sub.nsi:
 				each['noec'] += 1
 			sub.dbUpdate(True)
@@ -930,12 +980,13 @@ class NotificationManager(object):
 				if newNse == False:
 					pass # Stop collecting, but keep notificationStatsInfo
 				else: # Both are True
-					sub.setAttribute('nsi', [])
-					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
+					# Remove the nsi
+					sub.delAttribute('nsi')
+					# After SDS-2022-184R01: nsi is not added yet, but when the first statistics are collected. See countNotificationEvents()
 			else:	# self.nse == False
 				if newNse == True:
-					sub.setAttribute('nsi', [])
-					self.validateAndConstructNotificationStatsInfo(sub)	# nsi is filled here again
+					sub.delAttribute('nsi')
+					# After SDS-2022-184R01: nsi is not added yet, but when the first statistics are collected. See countNotificationEvents()
 		else:
 			# nse is removed (present in resource, but None, and neither True or False)
 			sub.delAttribute('nsi')
@@ -977,7 +1028,7 @@ class NotificationManager(object):
 						raise SUBSCRIPTION_VERIFICATION_INITIATION_FAILED(f'Verification request failed for: {nu}')
 
 		# Add/Update NotificationStatsInfo structure
-		self.validateAndConstructNotificationStatsInfo(subscription)
+		self.validateAndConstructNotificationStatsInfo(subscription, False) # DON'T add nsi here if not present
 
 
 	#########################################################################
@@ -986,7 +1037,7 @@ class NotificationManager(object):
 	def sendVerificationRequest(self, uri:Union[str, list[str]], 
 									  ri:str, 
 									  originator:Optional[str] = None) -> bool:
-		""""	Define the callback function for verification notifications and send
+		"""	Define the callback function for verification notifications and send
 				the notification. 
 
 				Args:

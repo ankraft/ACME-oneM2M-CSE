@@ -1,4 +1,4 @@
- #
+#
 #	ACMEContainerDelete.py
 #
 #	(c) 2023 by Andreas Kraft
@@ -49,7 +49,7 @@ class ACMEContainerDelete(Container):
 		width: 1fr;
 		display: block;
 		overflow: auto;
-		height: 3;
+		height: 1;
 		content-align: center middle;
 		background: $panel;
 	}
@@ -61,6 +61,8 @@ class ACMEContainerDelete(Container):
 	"""
 
 	def __init__(self) -> None:
+		"""	Initialize the view.
+		"""
 		super().__init__(id = idRequestDelete)
 		self.requestOriginator = 'CAdmin'
 		self.response = Static('', id = 'request-delete-response-response')
@@ -70,6 +72,11 @@ class ACMEContainerDelete(Container):
 
 
 	def compose(self) -> ComposeResult:
+		""" Compose the view.
+
+			Returns:
+				The ComposeResult
+		"""
 		with Vertical(id = 'request-delete-view'):
 			yield self.fieldOriginator
 			with Center():
@@ -85,7 +92,10 @@ class ACMEContainerDelete(Container):
 
 	def updateResource(self, resource:Resource) -> None:
 		self.requestOriginator = resource.getOriginator()
-		self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+		if self.requestOriginator:	
+			self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+		else: # No originator, use CSE originator
+			self.fieldOriginator.update(CSE.cseOriginator, [CSE.cseOriginator])
 		self.resource = resource
 		self.response.update('')
 	
@@ -112,3 +122,6 @@ class ACMEContainerDelete(Container):
 			self.response.update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
 
 
+	@on(ACMEFieldOriginator.Submitted)
+	def inputFieldSubmitted(self, value:str) -> None:
+		self.buttonExecute()

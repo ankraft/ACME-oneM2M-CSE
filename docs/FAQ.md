@@ -98,24 +98,37 @@
 	writeDelay=10
 	```
 
+
 ## Web UI
 
 1. **Can I use the web UI also with other CSE implementations?**  
     The web UI can also be run as an independent application.  Since it communicates with the CSE via the Mca interface it should be possible to use it with other CSE implementations as well as long as those third party CSEs follow the oneM2M http binding specification. It only supports the resource types that the ACME CSE supports, but at least it will present all other resource types as *unknown*.
 
 
-## Console
+## Console and Text UI
 
 1. **Some of the tables, text graphics etc are not aligned or correctly displayed in the console**  
 	Some mono-spaced fonts don't work well with UTF-8 character sets and graphic elements. Especially the MS Windows *cmd.exe* console seems to have problems.
 	Try one of the more extended fonts like *JuliaMono* or *DejaVu Sans Mono*.
+1. **There is an error message "UnicodeEncodeError: 'latin-1' codec can't encode character"**  
+	This error message is shown when the console tries to display a character that is not supported by the current console encoding. Try to set the console encoding to UTF-8 by setting the environment variable *PYTHONIOENCODING* to *utf-8*, for example:
 
+	```bash
+	export PYTHONIOENCODING=utf-8
+	``` 
+	
 ## Operating Systems
 
 ### RaspberryPi
 
-1. **Restrictions**  
+1. **Restrictions on 32 bit Systems**  
 	Currently, the normally installed Raspbian OS is a 32 bit system. This means that several restrictions apply here, such as the maximum date supported (~2038). It needs to be determined whether these restrictions still apply when the 64 bit version of Raspbian is available.
+1. **The console or the text UI is not displayed correctly**  
+	It could be that the OS's terminal applications doesn't support rendering of extra characters, like line graphics. One recommendation on Linux systems is to install the [Mate Terminal](https://wiki.mate-desktop.org/mate-desktop/applications/mate-terminal/), which supports UTF-8 and line graphics. It also renders the output much faster.
+
+	```bash
+	sudo apt-get install mate-terminal
+	```
 1. **Timing Issues**  
 	 Also, the resolution of the available Python timers is rather low on Raspbian, and background tasks might not run exactly on the desired time.  
 	 Unfortunately, this is also why sometimes a couple of the CSE's tests cases may fail randomly.

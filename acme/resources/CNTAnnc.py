@@ -6,6 +6,7 @@
 #
 #	CNT : Announceable variant
 #
+""" Container announced (CNTA) resource type."""
 
 from __future__ import annotations
 from typing import Optional
@@ -15,6 +16,7 @@ from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class CNTAnnc(AnnouncedResource):
+	""" Container announced (CNTA) resource type. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
@@ -28,6 +30,7 @@ class CNTAnnc(AnnouncedResource):
 								   ResourceTypes.SUB, 
 								   ResourceTypes.TS, 
 								   ResourceTypes.TSAnnc ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -55,6 +58,7 @@ class CNTAnnc(AnnouncedResource):
 		'or': None,
 		'disr': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 

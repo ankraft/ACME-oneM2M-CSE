@@ -10,6 +10,7 @@ The \[ACME] CSE supports a lisp-based scripting language, called ACMEScript, tha
 - Update CSE configuration settings.
 - Call internal CSE functions.
 - Run scheduled script jobs.
+- Implement tool scripts for the [Text UI](TextUI.md).
 
 **Table of Contents**
 
@@ -75,9 +76,13 @@ Example:
 
 ### Variables and Function Scopes
 
-The scope of variables is global to a script execution, and variables are removed between script runs.
+Variables are global to a script execution. Global variables that are updated in a function call are updated globally. Variables that are not defined globally but are defined in a function's scope do only exist in the scope of the function and sub-functions calls.
 
-In addition to the normal script variables the runtime environment may pass extra environment variables to the script.
+In addition to the normal script variables the runtime environment may pass extra environment variables to the script. They are mapped to the script's global variables and can be retrieved like any other global variable (but not updated or deleted). Variables that are set during the execution of a script have precedence over environment variables with the same name.
+
+Variables are removed between script runs.
+
+Variable names are case-sensitive.
 
 
 ### Quoting
@@ -113,17 +118,19 @@ Meta tags are described in [a separate document](ACMEScript-metatags.md).
 
 ## Loading and Running Scripts
 
-Scripts are stored in the *init* directory, and ind a list of directories that [can be specified](Configuration.md#scripting) in the configuration file. 
+Scripts are stored in and are imported from the *init* directory and in sub-directories, which names end with *.scripts*, of the *init* directory. 
+One can also specify a [list of directories](Configuration.md#scripting) in the configuration file with additional scripts that will be imported.
 All files with the extension "*.as*" are treated as ACMEScript files and are automatically imported during CSE startup and also imported and updated during runtime. 
 
 There are different ways to run scripts:
 
-- They can be run from the console interface with the `R` (Run) command.
-- They can be run by a keypress from the console interface (see [onKey](ACMEScript-metatags.md#meta_onkey) meta tag).
-- They can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see [at](ACMEScript-metatags.md#meta_at) meta tag).
-- They can be scheduled to run at certain events. Currently, the CSE  [init](ACMEScript-metatags.md#meta_init), [onStartup](ACMEScript-metatags.md#meta_onstartup), [onRestart](ACMEScript-metatags.md#meta_onrestart), and [onShutdown](ACMEScript-metatags.md#meta_onshutdown) events are supported.
-- They can be run as a receiver of a NOTIFY request from the CSE. See [onNotification](ACMEScript-metatags.md#meta_onnotification) meta tag.
+- Scripts can be run from the console interface with the `R` (Run) command.
+- They can also be run by a keypress from the console interface (see [onKey](ACMEScript-metatags.md#meta_onkey) meta tag).
+- Scripts can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see [at](ACMEScript-metatags.md#meta_at) meta tag).
+- It is possible to schedule scripts to run at certain events. Currently, the CSE  [init](ACMEScript-metatags.md#meta_init), [onStartup](ACMEScript-metatags.md#meta_onstartup), [onRestart](ACMEScript-metatags.md#meta_onrestart), and [onShutdown](ACMEScript-metatags.md#meta_onshutdown) events are supported.
+- Scrips can be run as a receiver of a NOTIFY request from the CSE. See [onNotification](ACMEScript-metatags.md#meta_onnotification) meta tag.
 - They can also be run as a command of the [Upper Tester Interface](Operation.md#upper_tester).
+- Scripts can be integrated as tools in the [Text UI](TextUI.md). See also the available [meta-tags](ACMEScript-metatags.md#_textui) for available tags.
 
 
 <a name="arguments"></a>
@@ -175,7 +182,7 @@ In the following example the s-expression `(+ 1 2)` is evaluated when the string
 Evaluation can be locally disabled by escaping the opening part:
 
 ```lisp
- (print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = [(+ 1 2)]"
+ (print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = ${ + 1 2 )}"
 ```
 
 Evaluation can also be disabled and enabled by using the [evaluate-inline](ACMEScript-functions.md#evaluate-inline) function.

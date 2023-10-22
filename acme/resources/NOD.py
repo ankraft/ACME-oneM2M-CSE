@@ -25,6 +25,7 @@ class NOD(AnnounceableResource):
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
 								   ResourceTypes.MGMTOBJ, 
+								   ResourceTypes.SCH,
 								   ResourceTypes.SMD, 
 								   ResourceTypes.SUB ]
 

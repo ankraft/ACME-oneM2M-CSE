@@ -13,6 +13,10 @@
 	(	(logError "Wrong number of arguments: testCaseStart <test case name>")
 		(quit-with-error)))
 
+(if (== (get-loglevel) "OFF")
+	(quit))
+
 ;; Print start line to the debug log
 (log-divider "Start of ${(argv 1)}")
+;;(tui-notify (argv 1) "Running Test Case")
 

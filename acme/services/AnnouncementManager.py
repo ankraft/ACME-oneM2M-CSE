@@ -293,8 +293,8 @@ class AnnouncementManager(object):
 
 					# Don't allow instances to be announced without their parents
 					if resource.ty in [ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI]:
-						raise OPERATION_NOT_ALLOWED(L.logDebug('announcing instances without their parents is not allowed'))
-
+						L.logWarn('Announcing instances without their parents is not allowed. Unsuccessful announcement')
+						return
 					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
 					# and set the announced CSEBase as new parent
 					checkCSEBaseAnnouncement(parentResource := getCSE())
@@ -422,17 +422,15 @@ class AnnouncementManager(object):
 
 		# Update the annoucned remote resources 
 		announcedCSIs = []
-		remoteRIs = []
 		for (csi, remoteRI) in resource.getAnnouncedTo():
 			if csi == originator:	# Skip the announced resource at the originator !!
 				continue
 			announcedCSIs.append(csi)	# build a list of already announced CSIs
-			remoteRIs.append(csi) 		# build a list of remote RIs
 			self.updateResourceOnCSI(resource, csi, remoteRI)
 
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
-			if csi not in announcedCSIs and csi not in remoteRIs:
+			if csi not in announcedCSIs:
 				self.announceResourceToCSI(resource, csi)
 
 

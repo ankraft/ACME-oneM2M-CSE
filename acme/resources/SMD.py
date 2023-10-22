@@ -141,7 +141,7 @@ class SMD(AnnounceableResource):
 		try:
 			CSE.semantic.validateDescriptor(self)
 		except ResponseException as e:
-			raise BAD_REQUEST(dbg = e.dbg)
+			raise BAD_REQUEST(e.dbg)
 		
 		# Perform Semantic validation process and add descriptor
 		if findXPath(dct, 'm2m:smd/dsp') or dct is None:	# only on create or when descriptor is present in the UPDATE request

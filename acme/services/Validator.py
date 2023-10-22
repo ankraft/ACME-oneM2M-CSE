@@ -11,16 +11,16 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional
 
 from copy import deepcopy
-import re
+import re, json
 import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
-from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
-from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, NotificationContentType, NotificationEventType
+from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.Utils import pureResource, strToBool
-from ..helpers.TextTools import findXPath
+from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
@@ -54,6 +54,9 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 complexTypeAttributes:dict[str, list[str]] = {}
 # TODO doc
 
+attributesComplexTypes:dict[str, list[str]] = {}
+# TODO doc
+
 
 # TODO make this more generic!
 _valueNameMappings = {
@@ -61,8 +64,10 @@ _valueNameMappings = {
 	'bts': lambda v: BatteryStatus(int(v)).name,
 	'chty': lambda v: ResourceTypes.fullname(int(v)),
 	'cst': lambda v: CSEType(int(v)).name,
-	'nct': lambda v: NotificationContentType(int(v)).name,
-	'net': lambda v: NotificationEventType(int(v)).name,
+	#'nct': lambda v: NotificationContentType(int(v)).name,
+	#'net': lambda v: NotificationEventType(int(v)).name,
+	'gmty': lambda v: GeometryType(int(v)).name,
+	'gsf': lambda v: GeoSpatialFunctionType(int(v)).name,
 	'op': lambda v: Operation(int(v)).name,
 	'rcn': lambda v: ResultContentType(int(v)).name,
 	'rsc': lambda v: ResponseStatusCode(int(v)).name,
@@ -277,7 +282,7 @@ class Validator(object):
 			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', tpe = 'm2m:rqi'),
 			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', tpe = 'm2m:pc'),
 			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', tpe = 'm2m:to'),
-			'fr' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', tpe = 'm2m:fr'),
+			'fr' : AttributePolicy(type = BasicType.ID,			       cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', tpe = 'm2m:fr'),
 			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', tpe = 'm2m:or'),
 			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', tpe = 'm2m:rset'),
 			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', tpe = 'm2m:ec'),
@@ -319,10 +324,11 @@ class Validator(object):
 	def validatePvs(self, dct:JSON) -> None:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
-		if (l :=len(dct['pvs'])) == 0:
-			raise BAD_REQUEST(L.logWarn('Attribute pvs must not be an empty list'))
-		elif l > 1:
-			raise BAD_REQUEST(L.logWarn('Attribute pvs must contain only one item'))
+		match len(dct['pvs']):
+			case 0:
+				raise BAD_REQUEST(L.logWarn('Attribute pvs must not be an empty list'))
+			case l if l > 1:
+				raise BAD_REQUEST(L.logWarn('Attribute pvs must contain only one item'))
 		if not (acr := findXPath(dct, 'pvs/acr')):
 			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr not found'))
 		if not isinstance(acr, list):
@@ -355,6 +361,102 @@ class Validator(object):
 		if not val.startswith('/'):
 			raise BAD_REQUEST(L.logDebug(f"{name} must start with '/': {val}"))
 		# fall-through
+
+
+	def validateGeoPoint(self, geo:dict) -> bool:
+		""" Validate a GeoJSON point. A point is a list of two or three floats.
+
+			Args:
+				geo: GeoJSON point.
+			
+			Return:
+				Boolean, indicating whether the point is valid.
+		"""
+		if not isinstance(geo, list) or 2 > len(geo) > 3:
+			return False
+		for g in geo:
+			if not isinstance(g, float):
+				return False
+		return True
+
+
+	def validateGeoLinePolygon(self, geo:dict, isPolygon:Optional[bool] = False) -> bool:
+		""" Validate a GeoJSON line or polygon. 
+			A line or polygon is a list of lists of two or three floats.
+
+			Args:
+				geo: GeoJSON string line or polygon.
+				isPolygon: Boolean, indicating whether the coordinates describe a polygon.
+			
+			Return:
+				Boolean, indicating whether the line or polygon is valid.
+		"""
+		if not isinstance(geo, list) or len(geo) < 2:
+			return False
+		for g in geo:
+			if not self.validateGeoPoint(g):
+				return False
+		if isPolygon and geo[0] != geo[-1]:
+			return False
+		return True
+
+
+	def validateGeoMultiLinePolygon(self, geo:dict, isPolygon:Optional[bool] = False) -> bool:
+		""" Validate a GeoJSON multi line or polygon. 
+			A line or polygon is a list of list of lists of two or three floats.
+
+			Args:
+				geo: GeoJSON string multi line or polygon.
+				isPolygon: Boolean, indicating whether the coordinates describe a polygon.
+	
+			Return:
+				Boolean, indicating whether the line or polygon is valid.
+		"""
+		if not isinstance(geo, list):
+			return False
+		
+		for g in geo:
+			if not isinstance(g, list) or len(g) < 2:
+				return False
+			if not self.validateGeoLinePolygon(g, isPolygon):
+				return False
+		return True
+
+
+	def validateGeoLocation(self, loc:dict) -> dict:
+		""" Validate a GeoJSON location. A location is a dictionary with a type and coordinates.
+
+			Args:
+				loc: GeoJSON location.
+			
+			Return:
+				The validated location dictionary.
+			
+			Raises:
+				BAD_REQUEST: If the location definition is invalid.
+		"""
+		crd = json.loads(loc.get('crd')) # was validated before
+		match loc.get('typ'):
+			case GeometryType.Point:
+				if not self.validateGeoPoint(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON point: {crd}'))
+			case GeometryType.LineString:	
+				if not self.validateGeoLinePolygon(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON LineString: {crd}'))
+			case GeometryType.Polygon:
+				if not self.validateGeoLinePolygon(crd, True):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON Polygon: {crd}'))
+			case GeometryType.MultiPoint:
+				for p in crd:
+					if not self.validateGeoPoint(p):
+						raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiPoint: {crd}'))
+			case GeometryType.MultiLineString:
+				if not self.validateGeoMultiLinePolygon(crd):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiLineString: {crd}'))
+			case GeometryType.MultiPolygon:
+				if not self.validateGeoMultiLinePolygon(crd, True):
+					raise BAD_REQUEST(L.logWarn(f'Invalid GeoJSON MultiPolygon: {crd}'))
+		return crd
 
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
@@ -487,9 +589,21 @@ class Validator(object):
 			else:
 				complexTypeAttributes[attrPolicy.ctype] = [ attr ]
 
+			if (ctypes := attributesComplexTypes.get(attr)):
+				ctypes.append(attrPolicy.ctype)
+			else:
+				attributesComplexTypes[attr] = [ attrPolicy.ctype ]
+
 
 	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
+
+			Args:
+				rtype: Resource type.
+				attr: Attribute name.
+			
+			Return:
+				AttributePolicy or None.
 		"""
 		# Search for the specific type first
 		if (ap := attributePolicies.get((rtype, attr))):
@@ -501,6 +615,47 @@ class Validator(object):
 		
 		# TODO look for other types, requests, filter...
 		return None
+	
+
+	def getAttributePoliciesByName(self, attr:str) -> Optional[list[AttributePolicy]]:
+		"""	Return the attribute policies for an attribute name.
+
+			Args:
+				attr: Attribute name.
+			
+			Return:
+				List of AttributePolicy or None.
+		"""
+		result = { }
+		keys = attributePolicies.keys()
+		_attrlower = attr.lower()
+
+		# First search for the specific attribute name
+		for each in keys:
+			s = each[1]
+			if s == _attrlower:
+				result[s] = attributePolicies[each]
+				break
+
+		# If it couldn't be found, search for similar full attribute names
+		if not result:
+			for each in keys:
+				s = each[1]
+				v = attributePolicies[each]
+				if soundsLike(_attrlower, v.lname, 99):
+					if s not in result:
+						result[s] = v
+		
+			# If it couldn't be found, search for parts of the attribute name
+			for each in keys:
+				s = each[1]
+				v = attributePolicies[each]
+				if _attrlower in v.lname.lower():
+					if s not in result:
+						result[s] = v
+
+
+		return [ each for each in result.values() ]
 	
 
 	def getComplexTypeAttributePolicies(self, ctype:str) -> Optional[list[AttributePolicy]]:
@@ -532,28 +687,55 @@ class Validator(object):
 		return result
 
 
-	def getAttributeValueName(self, key:str, value:str) -> str:
+	def getAttributeValueName(self, attr:str, value:int, rtype:Optional[ResourceTypes] = None) -> str:
 		"""	Return the name of an attribute value. This is usually used for
 			enumerations, where the value is a number and the name is a string.
 
 			Args:
-				key: String, attribute name.
-				value: String, attribute value.	
+				attr: Attribute name.
+				value: Attribute value.	
 			
 			Return:
 				String, name of the attribute value.
 		"""
 		try:
-			if key in _valueNameMappings:
-				return _valueNameMappings[key](value) # type: ignore [no-untyped-call]
+			if attr in _valueNameMappings:
+				return _valueNameMappings[attr](value) # type: ignore [no-untyped-call]
+			from ..services import CSE
+			return CSE.validator.getEnumInterpretation(rtype, attr, value)
 		except Exception as e:
 			return str(e)
+
+
+	def getEnumInterpretation(self, rtype: ResourceTypes, attr:str, value:int) -> str:
+		"""	Return the interpretation of an enumeration.
+
+			Args:
+				rtype: Resource type. May be None.
+				attr: Attribute name.
+				value: Enumeration value.
+			
+			Return:
+				String, interpretation of the enumeration, or the value itself if no interpretation is available.
+		"""
+		if rtype is not None:
+			if (policy := self.getAttributePolicy(rtype, attr)) and policy.evalues:
+				return policy.evalues.get(int(value), str(value))
+
+		if (ctype := attributesComplexTypes.get(attr)):
+			if (policy := self.getAttributePolicy(ctype[0], attr)) and policy.evalues:	# just any policy for the complex type
+				return policy.evalues.get(int(value), str(value))
 		return ''
-	
+		return str(value)
+
 
 	#
 	#	Internals.
 	#
+
+	_ncNameDisallowedChars = (	'!', '"', '#', '$', '%', '&', '\'', '(', ')', 
+						   		'*', '+', ',', '/', ':', ';', '<', '=', '>', 
+								'?', '@', '[', ']', '^', '´' , '`', '{', '|', '}', '~' )
 
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 
@@ -568,7 +750,7 @@ class Validator(object):
 					value and the method will attempt to convert the value to its target type; otherwise this
 					is an error. 
 			Return:
-				Result. If the check is positive then Result.data is set to a tuple (the determined data type, the converted value).
+				Result. If the check is positive then a tuple is returned: (the determined data type, the converted value).
 		"""
 
 		# Ignore None values
@@ -578,144 +760,164 @@ class Validator(object):
 
 		# convert some types if necessary
 		if convert:
-			if dataType in ( BasicType.positiveInteger, 
-							 BasicType.nonNegInteger, 
-							 BasicType.unsignedInt, 
-							 BasicType.unsignedLong, 
-							 BasicType.integer, 
-							 BasicType.enum ) and isinstance(value, str):
+			if isinstance(value, str):
 				try:
-					value = int(value)
-				except Exception as e:
-					raise BAD_REQUEST(str(e))
-			elif dataType == BasicType.boolean and isinstance(value, str):	# "true"/"false"
-				try:
-					value = strToBool(value)
-				except Exception as e:
-					raise BAD_REQUEST(str(e))
-			elif dataType == BasicType.float and isinstance(value, str):
-				try:
-					value = float(value)
+					match dataType:
+						case BasicType.positiveInteger |\
+							 BasicType.nonNegInteger |\
+							 BasicType.unsignedInt |\
+							 BasicType.unsignedLong |\
+							 BasicType.integer |\
+							 BasicType.enum:
+							value = int(value)
+
+						case BasicType.boolean:
+							value = strToBool(value)
+
+						case BasicType.float:
+							value = float(value)
+
 				except Exception as e:
 					raise BAD_REQUEST(str(e))
 
 		# Check types and values
 
-		if dataType == BasicType.positiveInteger:
-			if isinstance(value, int):
-				if value > 0:
+		match dataType:
+			case BasicType.positiveInteger:
+				if isinstance(value, int) and value > 0:
 					return (dataType, value)
-				raise BAD_REQUEST('value must be > 0')
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+
+			case BasicType.enum:
+				if isinstance(value, int):
+					if policy is not None and len(policy.evalues) and value not in policy.evalues:
+						raise BAD_REQUEST('undefined enum value')
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
+			
+			case BasicType.nonNegInteger:
+				if isinstance(value, int) and value >= 0:
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+			
+			case BasicType.unsignedInt | BasicType.unsignedLong:
+				if isinstance(value, int):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
+
+			case BasicType.timestamp if isinstance(value, str):
+				if fromAbsRelTimestamp(value) == 0.0:
+					raise BAD_REQUEST(f'format error in timestamp: {value}')
+				return (dataType, value)
 		
-		if dataType == BasicType.enum:
-			if isinstance(value, int):
-				if policy is not None and len(policy.evalues) and value not in policy.evalues:
-					raise BAD_REQUEST('undefined enum value')
-				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
+			case BasicType.absRelTimestamp:
+				match value:
+					case str():
+						try:
+							int(value)
+							# fallthrough
+						except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
+							if fromAbsRelTimestamp(value) == 0.0:
+								raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
+						# fallthrough
+					case int():
+						pass
+						# fallthrough
+					case _:
+						raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
+				return (dataType, value)		# int/long is ok
 
-		if dataType == BasicType.nonNegInteger:
-			if isinstance(value, int):
-				if value >= 0:
+			case BasicType.string | BasicType.anyURI if isinstance(value, str):
+				return (dataType, value)
+
+			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+				return (dataType, value)
+			
+			case BasicType.ncname if isinstance(value, str):
+				if len(value) == 0 or value[0].isdigit() or value[0] in ('-', '.'):
+					raise BAD_REQUEST(f'invalid NCName: {value} (must not start with a digit, "-", or ".")')
+				for v in value:
+					if v.isspace():
+						raise BAD_REQUEST(f'invalid NCName: {value} (must not contain whitespace)')
+					if v in self._ncNameDisallowedChars:
+						raise BAD_REQUEST(f'invalid NCName: {value} (must not contain any of {",".join(self._ncNameDisallowedChars)})')
+				return (dataType, value)
+
+			case BasicType.list | BasicType.listNE if isinstance(value, list):
+				if dataType == BasicType.listNE and len(value) == 0:
+					raise BAD_REQUEST('empty list is not allowed')
+				if policy is not None and policy.ltype is not None:
+					for each in value:
+						self._validateType(policy.ltype, each, convert = convert, policy = policy)
+				return (dataType, value)
+
+			case BasicType.complex:
+				# Check complex types
+				if not policy:
+					raise BAD_REQUEST(L.logErr(f'internal error: policy is missing for validation of complex attribute'))
+
+				if isinstance(value, dict):
+					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+					for k, v in value.items():
+						if not (p := self.getAttributePolicy(typeName, k)):
+							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+						# recursively validate a dictionary attribute
+						self._validateType(p.type, v, convert = convert, policy = p)
+
+					# Check that all mandatory attributes are present
+					attributeNames = value.keys()
+					for ap in self.getComplexTypeAttributePolicies(typeName):
+						if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
+							raise BAD_REQUEST(f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
 					return (dataType, value)
-				raise BAD_REQUEST('value must be >= 0')
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+				raise BAD_REQUEST(f'Expected complex type, found: {value}')
 
-		if dataType in ( BasicType.unsignedInt, BasicType.unsignedLong ):
-			if isinstance(value, int):
+			case BasicType.dict if isinstance(value, dict):
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
-		if dataType == BasicType.timestamp and isinstance(value, str):
-			if fromAbsRelTimestamp(value) == 0.0:
-				raise BAD_REQUEST(f'format error in timestamp: {value}')
-			return (dataType, value)
+			case BasicType.boolean:
+				if isinstance(value, bool):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: bool')
 
-		if dataType == BasicType.absRelTimestamp:
-			if isinstance(value, str):
+			case BasicType.integer:			
+				if isinstance(value, int):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
+			
+			case BasicType.float:
+				if isinstance(value, (float, int)):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
+
+			case BasicType.geoJsonCoordinate if isinstance(value, str):					
 				try:
-					rel = int(value)
-					# fallthrough
-				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
-					if fromAbsRelTimestamp(value) == 0.0:
-						raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
-				# fallthrough
-			elif not isinstance(value, int):
-				raise BAD_REQUEST(f'unsupported data type for absRelTimestamp')
-			return (dataType, value)		# int/long is ok
+					geo = json.loads(value)
+				except Exception as e:
+					raise BAD_REQUEST(f'Invalid geoJsonCoordinate: {str(e)}')
+				if self.validateGeoPoint(geo) or self.validateGeoLinePolygon(geo) or self.validateGeoMultiLinePolygon(geo):
+					return (dataType, geo)
+				raise BAD_REQUEST(f'Invalid geoJsonCoordinate: {value}')
 
-		if dataType in ( BasicType.string, BasicType.anyURI ) and isinstance(value, str):
-			return (dataType, value)
-
-		if dataType in ( BasicType.list, BasicType.listNE ) and isinstance(value, list):
-			if dataType == BasicType.listNE and len(value) == 0:
-				raise BAD_REQUEST('empty list is not allowed')
-			if policy is not None and policy.ltype is not None:
-				for each in value:
-					self._validateType(policy.ltype, each, convert = convert, policy = policy)
-			return (dataType, value)
-
-		if dataType == BasicType.dict and isinstance(value, dict):
-			return (dataType, value)
-		
-		if dataType == BasicType.boolean:
-			if isinstance(value, bool):
+			case BasicType.duration:
+				try:
+					isodate.parse_duration(value)
+				except Exception as e:
+					raise BAD_REQUEST(f'must be an ISO duration (e.g. "PT2S"): {str(e)}')
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: bool')
 
-		if dataType == BasicType.float:
-			if isinstance(value, (float, int)):
+			case BasicType.base64:
+				if not TextTools.isBase64(value):
+					raise BAD_REQUEST(f'value is not base64-encoded')
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: float')
 
-		if dataType == BasicType.integer:
-			if isinstance(value, int):
+			case BasicType.schedule:
+				if isinstance(value, str) and re.match(self._scheduleRegex, value):
+					return (dataType, value)
+				raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
+
+			case BasicType.any:
 				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
-
-		if dataType == BasicType.geoCoordinates and isinstance(value, dict):
-			return (dataType, value)
-		
-		if dataType == BasicType.duration:
-			try:
-				isodate.parse_duration(value)
-			except Exception as e:
-				raise BAD_REQUEST(f'must be an ISO duration: {str(e)}')
-			return (dataType, value)
-		
-		if dataType == BasicType.base64:
-			if not TextTools.isBase64(value):
-				raise BAD_REQUEST(f'value is not base64-encoded')
-			return (dataType, value)
-		
-		if dataType == BasicType.schedule:
-			if isinstance(value, str) and re.match(self._scheduleRegex, value):
-				return (dataType, value)
-			raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
-
-		if dataType == BasicType.any:
-			return (dataType, value)
-		
-		if dataType == BasicType.complex:
-			if not policy:
-				raise BAD_REQUEST(L.logErr(f'internal error: policy is missing for validation of complex attribute'))
-
-			if isinstance(value, dict):
-				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
-				for k, v in value.items():
-					if not (p := self.getAttributePolicy(typeName, k)):
-						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
-					# recursively validate a dictionary attribute
-					self._validateType(p.type, v, convert = convert, policy = p)
-
-				# Check that all mandatory attributes are present
-				attributeNames = value.keys()
-				for ap in self.getComplexTypeAttributePolicies(typeName):
-					if Cardinality.isMandatory(ap.cardinality) and ap.sname not in attributeNames:
-						raise BAD_REQUEST(f'attribute is mandatory for complex type : {typeName}.{ap.sname}')
-				return (dataType, value)
-			raise BAD_REQUEST(f'Expected complex type, found: {value}')
 
 		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 

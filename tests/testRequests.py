@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, ResponseType
 from init import *
 
 # TODO transfer requests
@@ -34,6 +34,7 @@ class TestRequests(unittest.TestCase):
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+		enableShortResourceExpirations()
 		testCaseEnd('Setup TestRequests')
 
 
@@ -46,6 +47,7 @@ class TestRequests(unittest.TestCase):
 		testCaseStart('TearDown TestRequests')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
+		disableShortResourceExpirations()
 		testCaseEnd('TearDown TestRequests')
 
 
@@ -102,14 +104,14 @@ class TestRequests(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_RETnow(self) -> None:
+	def test_RETnowFail(self) -> None:
 		"""	RETRIEVE <AE> with RQET absolute now -> FAIL """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : DateUtils.getResourceDate()})
 		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_RETpast(self) -> None:
+	def test_RETpastFail(self) -> None:
 		"""	RETRIEVE <AE> with RQET absolute in the past -> FAIL """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : DateUtils.getResourceDate(-10)})
 		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
@@ -123,8 +125,8 @@ class TestRequests(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_RETpastSeconds(self) -> None:
-		"""	RETRIEVE <AE> with RQET seconds in the past """
+	def test_RETpastSecondsFail(self) -> None:
+		"""	RETRIEVE <AE> with RQET seconds in the past -> Fail"""
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{-expirationCheckDelay*1000}'})
 		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
 
@@ -144,10 +146,45 @@ class TestRequests(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_OETRETfutureSecondsWrong(self) -> None:
-		"""	RETRIEVE <AE> with OET > RQET seconds in the future """
+	def test_OETRETfutureSecondsWrongFail(self) -> None:
+		"""	RETRIEVE <AE> with OET > RQET seconds in the future -> Fail"""
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{expirationCheckDelay*1000/2}', C.hfOET : f'{expirationCheckDelay*1000}'})
 		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_RSETsmallerThanRETFail(self) -> None:
+		"""	RETRIEVE <AE> with RET < RSET - Fail """
+		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{expirationCheckDelay*2000}', C.hfRST : f'{expirationCheckDelay*1000}'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_RSETpastFail(self) -> None:
+		"""	RETRIEVE <AE> with RSET < now - Fail """
+		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRST : f'-{expirationCheckDelay*2000}'})
+		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_RSETNonBlockingSynchFail(self) -> None:
+		""" Retrieve <AE> non-blocking synchronous with short RSET -> Fail"""
+
+		_rset = expirationCheckDelay * 1000
+		r, rsc = RETRIEVE(f'{aeURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', 
+						  TestRequests.originator,
+						  headers={ C.hfRST : f'{_rset}'})
+		headers = lastHeaders()
+		self.assertEqual(rsc, RC.ACCEPTED_NON_BLOCKING_REQUEST_SYNC, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		self.assertIn(C.hfRST, headers)
+		self.assertEqual(headers[C.hfRST], f'{_rset}')
+		requestURI = findXPath(r, 'm2m:uri')
+	
+		# get and check resource
+		testSleep(requestExpirationDelay * 2)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestRequests.originator)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -158,13 +195,20 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestRequests('test_OETfuture'))
 	addTest(suite, TestRequests('test_OETfuturePeriod'))
 	addTest(suite, TestRequests('test_OETfutureSeconds'))
-	addTest(suite, TestRequests('test_RETnow'))
-	addTest(suite, TestRequests('test_RETpast'))
+
+	addTest(suite, TestRequests('test_RETnowFail'))
+	addTest(suite, TestRequests('test_RETpastFail'))
 	addTest(suite, TestRequests('test_RETfuture'))
-	addTest(suite, TestRequests('test_RETpastSeconds'))
+	addTest(suite, TestRequests('test_RETpastSecondsFail'))
 	addTest(suite, TestRequests('test_RETfutureSeconds'))
+
 	addTest(suite, TestRequests('test_OETRETfutureSeconds'))
-	addTest(suite, TestRequests('test_OETRETfutureSecondsWrong'))
+	addTest(suite, TestRequests('test_OETRETfutureSecondsWrongFail'))
+
+	addTest(suite, TestRequests('test_RSETsmallerThanRETFail'))
+	addTest(suite, TestRequests('test_RSETpastFail'))
+
+	addTest(suite, TestRequests('test_RSETNonBlockingSynchFail'))
 	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	

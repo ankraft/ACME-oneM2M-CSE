@@ -27,8 +27,6 @@ from ..resources.ACP import ACP
 from ..services.Logging import Logging as L
 
 
-# TODO move configurations to extra functions and support reconfigure event
-
 class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
@@ -47,6 +45,10 @@ class SecurityManager(object):
 		'usernameMqtt',
 		'passwordMqtt',
 		'allowedCredentialIDsMqtt',
+		'httpBasicAuthFile',
+		'httpTokenAuthFile',
+		'httpBasicAuthData',
+		'httpTokenAuthData'
 	)
 
 
@@ -54,6 +56,11 @@ class SecurityManager(object):
 
 		# Get the configuration settings
 		self._assignConfig()
+		self._readHttpBasicAuthFile()
+		self._readHttpTokenAuthFile()
+
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
@@ -68,6 +75,15 @@ class SecurityManager(object):
 	def shutdown(self) -> bool:
 		L.isInfo and L.log('SecurityManager shut down')
 		return True
+	
+
+	def restart(self, name:str) -> None:
+		"""	Restart the Security manager service.
+		"""
+		self._assignConfig()
+		self._readHttpBasicAuthFile()
+		self._readHttpTokenAuthFile()
+		L.logDebug('SecurityManager restarted')
 
 
 	def _assignConfig(self) -> None:
@@ -92,13 +108,23 @@ class SecurityManager(object):
 		self.passwordMqtt				= Configuration.get('mqtt.security.password')
 		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
 
+		# HTTP authentication
+		self.httpBasicAuthFile			= Configuration.get('http.security.basicAuthFile')
+		self.httpTokenAuthFile			= Configuration.get('http.security.tokenAuthFile')
+
+
 
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None,
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
+
+			Args:
+				name: The name of the configuration section.
+				key: The key of the configuration value.
+				value: The new value of the configuration value.
 		"""
-		if key not in [ 'cse.security.enableACPChecks', 
+		if key not in ( 'cse.security.enableACPChecks', 
 						'cse.security.fullAccessAdmin',
 						'http.security.useTLS',
 						'http.security.verifyCertificate',
@@ -111,10 +137,13 @@ class SecurityManager(object):
 						'mqtt.security.username',
 						'mqtt.security.password',
 						'mqtt.security.allowedCredentialIDs',
-					  ]:
+						'http.security.basicAuthFile'
+					  ):
 			return
 		self._assignConfig()
-		return
+		self._readHttpBasicAuthFile()
+		self._readHttpTokenAuthFile()
+
 
 	###############################################################################################
 
@@ -471,6 +500,79 @@ class SecurityManager(object):
 						)
 			context.load_cert_chain(self.caCertificateFileHttp, self.caPrivateKeyFileHttp)
 		return context
+
+
+	##########################################################################
+	#
+	#	User authentication
+	#
+
+	def validateHttpBasicAuth(self, username:str, password:str) -> bool:
+		"""	Validate the provided username and password against the configured basic authentication file.
+
+			Args:
+				username: The username to validate.
+				password: The password to validate.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return self.httpBasicAuthData.get(username) == password
+
+
+	def validateHttpTokenAuth(self, token:str) -> bool:
+		"""	Validate the provided token against the configured token authentication file.
+
+			Args:
+				token: The token to validate.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return token in self.httpTokenAuthData
+
+
+	def _readHttpBasicAuthFile(self) -> None:
+		"""	Read the HTTP basic authentication file and store the data in a dictionary.
+			The authentication information is stored as username:password.
+
+			The data is stored in the `httpBasicAuthData` dictionary.
+		"""
+		self.httpBasicAuthData = {}
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.get('http.security.enableBasicAuth') and self.httpBasicAuthFile:
+			try:
+				with open(self.httpBasicAuthFile, 'r') as f:
+					for line in f:
+						if line.startswith('#'):
+							continue
+						if len(line.strip()) == 0:
+							continue
+						(username, password) = line.strip().split(':')
+						self.httpBasicAuthData[username] = password.strip()
+			except Exception as e:
+				L.logErr(f'Error reading basic authentication file: {e}')
+
+
+	def _readHttpTokenAuthFile(self) -> None:
+		"""	Read the HTTP token authentication file and store the data in a dictionary.
+			The authentication information is stored as a single token per line.
+
+			The data is stored in the `httpTokenAuthData` list.
+		"""
+		self.httpTokenAuthData = []
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.get('http.security.enableTokenAuth') and self.httpTokenAuthFile:
+			try:
+				with open(self.httpTokenAuthFile, 'r') as f:
+					for line in f:
+						if line.startswith('#'):
+							continue
+						if len(line.strip()) == 0:
+							continue
+						self.httpTokenAuthData.append(line.strip())
+			except Exception as e:
+				L.logErr(f'Error reading token authentication file: {e}')
 
 
 	# def getSSLContextMqtt(self) -> ssl.SSLContext:

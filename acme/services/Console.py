@@ -358,9 +358,9 @@ class Console(object):
 		]
 
 		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Key', no_wrap = True, justify = 'left')
-		table.add_column('Description', no_wrap = True)
-		table.add_column('Script', no_wrap = True, justify = 'center')
+		table.add_column('Key', no_wrap = True, justify = 'left', min_width = 10)
+		table.add_column('Description', no_wrap = False)
+		table.add_column('Script', no_wrap = True, justify = 'center', min_width = 6)
 		for each in commands:
 			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
 
@@ -825,7 +825,7 @@ Available under the BSD 3-Clause License
 			
 		# plot
 		try:
-			cins = CSE.dispatcher.directChildResources(resource.ri, ResourceTypes.CIN)
+			cins = CSE.dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
 			x = range(1, (lcins := len(cins)) + 1)
 			y = [ float(each.con) for each in cins ]
 			cols, rows = plotext.terminal_size()
@@ -1260,10 +1260,12 @@ Available under the BSD 3-Clause License
 			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(ResourceTypes.FCNT)}\n'
 			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(ResourceTypes.FCI)}\n'
 			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(ResourceTypes.GRP)}\n'
+			resourceTypes += f'LCP     : {CSE.dispatcher.countResources(ResourceTypes.LCP)}\n'
 			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ)}\n'
 			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(ResourceTypes.NOD)}\n'
 			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(ResourceTypes.PCH)}\n'
 			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(ResourceTypes.REQ)}\n'
+			resourceTypes += f'SCH     : {CSE.dispatcher.countResources(ResourceTypes.SCH)}\n'
 			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(ResourceTypes.SMD)}\n'
 			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(ResourceTypes.SUB)}\n'
 			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
@@ -1273,7 +1275,7 @@ Available under the BSD 3-Clause License
 			resourceTypes += '\n'
 			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
 			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 6)
+			resourceTypes += '\n' * (tableWorkers.row_count + 4)
 
 
 			result = Table.grid(expand = True)
@@ -1373,36 +1375,39 @@ Available under the BSD 3-Clause License
 			if self.treeMode not in [ TreeMode.COMPACT, TreeMode.CONTENTONLY ]: 
 				# if res.ty in [ T.FCNT, T.FCI] :
 				# 	extraInfo = f' (cnd={res.cnd})'
-				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TS ]:
-					extraInfo = f' ({res.cnf})' if res.cnf else ''
-				elif res.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSEBaseAnnc, ResourceTypes.CSR ]:
-					extraInfo = f' (csi={res.csi})'
-			
+				match res.ty:
+					case ResourceTypes.FCNT | ResourceTypes.FCI:
+						extraInfo = f' ({res.cnf})' if res.cnf else ''
+					case ResourceTypes.CSEBase | ResourceTypes.CSEBaseAnnc | ResourceTypes.CSR:
+						extraInfo = f' (csi={res.csi})'
+
 			# Determine content
 			contentInfo = ''
 			if self.treeMode in [ TreeMode.CONTENT, TreeMode.CONTENTONLY ]:
-				if res.ty in [ ResourceTypes.CIN, ResourceTypes.TSI ]:
-					contentInfo = f'{res.con}' if res.con else ''
-				elif res.ty in [ ResourceTypes.FCNT, ResourceTypes.FCI ]:	# All the custom attributes
-					contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
+				match res.ty:
+					case ResourceTypes.CIN | ResourceTypes.TSI:
+						contentInfo = f'{res.con}' if res.con else ''
+					case ResourceTypes.FCNT | ResourceTypes.FCI:
+						contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
 
 			# construct the info
 			info = ''
-			if self.treeMode == TreeMode.COMPACT:
-				info = f'-> {res.__rtype__}'
-			elif self.treeMode == TreeMode.CONTENT:
-				if len(contentInfo) > 0:
-					info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
-				else:
-					info = f'-> {res.__rtype__}{extraInfo}'
-			elif self.treeMode == TreeMode.CONTENTONLY:
-				if len(contentInfo) > 0:
-					info = f'-> {contentInfo}'
-			else: # self.treeMode == NORMAL
-				if res.isVirtual():
-					info = f'-> {res.__rtype__}{extraInfo} (virtual)'
-				else:
-					info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+			match self.treeMode:
+				case TreeMode.COMPACT:
+					info = f'-> {res.__rtype__}'
+				case TreeMode.CONTENT:
+					if len(contentInfo) > 0:
+						info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
+					else:
+						info = f'-> {res.__rtype__}{extraInfo}'
+				case TreeMode.CONTENTONLY:
+					if len(contentInfo) > 0:
+						info = f'-> {contentInfo}'
+				case _: # self.treeMode == NORMAL
+					if res.isVirtual():
+						info = f'-> {res.__rtype__}{extraInfo} (virtual)'
+					else:
+						info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
 
@@ -1417,7 +1422,7 @@ Available under the BSD 3-Clause License
 			"""
 			if maxLevel > 0 and level == maxLevel:
 				return
-			chs = CSE.dispatcher.directChildResources(res.ri)
+			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
 				if ch.isVirtual() and not self.treeIncludeVirtualResources:	# Ignore virual resources
 					continue

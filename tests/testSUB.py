@@ -313,8 +313,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBByAssignedOriginator(self) -> None:
 		""" DELETE <SUB> with correct originator -> Succeed. Send deletion notification. """
-		_, rsc = DELETE(subURL, TestSUB.originator)
-		self.assertEqual(rsc, RC.DELETED)
+		r, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 
@@ -1441,9 +1441,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/nse'))
 		self.assertEqual(findXPath(r, 'm2m:sub/nse'), True)
-		self.assertIsNotNone(findXPath(r, 'm2m:sub/nsi'))
-		self.assertIsInstance(findXPath(r, 'm2m:sub/nsi'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1)	# Verification request doesn't count
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'))
 		
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
@@ -1476,6 +1474,7 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.UPDATED, r)
+		# nsi is kept after nse update to FALSE
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 1, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 1, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 1, r)
@@ -1489,11 +1488,8 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.UPDATED, r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)	
-		# Must be empty
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)	
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)	
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)	
+		# nsi must be empty
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1522,10 +1518,8 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.UPDATED, r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)		# Change counts if order of TC changes
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)
+		# nsi must be empty
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1542,10 +1536,9 @@ class TestSUB(unittest.TestCase):
 		r, rsc = UPDATE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn/num'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:sub/nsi')), 1, r)	# 
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 0, r)
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 0, r)
-		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 0, r)
+		# nsi must be empty
+		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
+
 
 		# Make some Updates and cause a batch notification
 		for _ in range(numberOfBatchNotifications):
@@ -1564,6 +1557,8 @@ class TestSUB(unittest.TestCase):
 		# retrieve <sub> to get the stats
 		r, rsc = RETRIEVE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa)	
 		self.assertEqual(rsc, RC.OK, r)
+		# nsi must now be set
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/nsi'), r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rqs'), 5, r)		# Change counts if order of TC changes
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/rsr'), 5, r)
 		self.assertEqual(findXPath(r, 'm2m:sub/nsi/{0}/noec'), 5, r)
@@ -1596,8 +1591,8 @@ class TestSUB(unittest.TestCase):
 					'su': NOTIFICATIONSERVER,
 					'nse': True
 				}}
-		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 	
 
 #

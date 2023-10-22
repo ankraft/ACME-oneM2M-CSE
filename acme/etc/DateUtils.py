@@ -46,6 +46,17 @@ def toISO8601Date(ts:Union[float, datetime], readable:Optional[bool] = False) ->
 	return ts.strftime('%Y-%m-%dT%H:%M:%S,%f' if readable else '%Y%m%dT%H%M%S,%f')
 
 
+def fromISO8601Date(date:str) -> datetime:
+	"""	Convert an ISO 8601 date time string to a *datetime* object.
+
+		Args:
+			date: ISO 8601 datetime string.
+		Return:
+			Datetime object.
+	"""
+	return isodate.parse_datetime(date)
+
+
 def fromAbsRelTimestamp(absRelTimestamp:str, 
 						default:Optional[float] = 0.0, 
 						withMicroseconds:Optional[bool] = True) -> float:
@@ -77,11 +88,12 @@ def fromAbsRelTimestamp(absRelTimestamp:str,
 			return default
 
 
-def fromDuration(duration:str) -> float:
+def fromDuration(duration:str, allowMS:bool = True) -> float:
 	"""	Convert a duration to a number of seconds (float). 
 
 		Args:
 			duration: String with either an ISO 8601 period or a string with a number of ms.
+			allowMS: If True, the function tries to convert the string as if it contains a number of ms.
 		Return:
 			Float, number of seconds.
 		Raise:
@@ -93,7 +105,9 @@ def fromDuration(duration:str) -> float:
 		try:
 			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
 			# the string and return an absolute UTC-based duration
-			return float(duration) / 1000.0
+			if allowMS:
+				return float(duration) / 1000.0
+			raise
 		except Exception as e:
 			#if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
 			raise
@@ -125,13 +139,22 @@ def rfc1123Date(timeval:Optional[float] = None) -> str:
 	return formatdate(timeval = timeval, localtime = False, usegmt = True)
 
 
+def utcDatetime() -> datetime:
+	"""	Return the current datetime, but relative to UTC.
+
+		Returns:
+			Datetime with current UTC-based time.
+	"""
+	return datetime.now(tz = timezone.utc)
+
+
 def utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 
 		Returns:
 			Float with current UTC-based POSIX time.
 	"""
-	return datetime.now(tz = timezone.utc).timestamp()
+	return utcDatetime().timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
@@ -222,14 +245,13 @@ def waitFor(timeout:float,
 #	Cron
 #
 
-def cronMatchesTimestamp(cronPattern:Union[str, 
-						 list[str]], 
+def cronMatchesTimestamp(cronPattern:Union[str, list[str]], 
 						 ts:Optional[datetime] = None) -> bool:
 	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
 
-		The cronPattern must follow the usual crontab pattern of 5 fields:
+		The cronPattern must follow the usual crontab pattern of 7 fields:
 	
-			minute hour dayOfMonth month dayOfWeek
+			second minute hour dayOfMonth month dayOfWeek year
 
 		which each must comply to the following patterns:
 
@@ -324,18 +346,20 @@ def cronMatchesTimestamp(cronPattern:Union[str,
 		return False
 
 	if ts is None:
-		ts = datetime.now(tz = timezone.utc)
+		ts = utcDatetime()
 	
 	cronElements = cronPattern.split() if isinstance(cronPattern, str) else cronPattern
-	if len(cronElements) != 5:
-		raise ValueError(f'Invalid or empty cron pattern: "{cronPattern}". Must have 5 elements.')
+	if len(cronElements) != 7:
+		raise ValueError(f'Invalid or empty cron pattern: "{cronPattern}". Must have 7 elements.')
 
 	weekday = ts.isoweekday()
-	return  _parseMatchCronArg(cronElements[0], ts.minute) \
-		and _parseMatchCronArg(cronElements[1], ts.hour) \
-		and _parseMatchCronArg(cronElements[2], ts.day) \
-		and _parseMatchCronArg(cronElements[3], ts.month) \
-		and _parseMatchCronArg(cronElements[4], 0 if weekday == 7 else weekday)
+	return  _parseMatchCronArg(cronElements[0], ts.second) \
+		and _parseMatchCronArg(cronElements[1], ts.minute) \
+		and _parseMatchCronArg(cronElements[2], ts.hour) \
+		and _parseMatchCronArg(cronElements[3], ts.day) \
+		and _parseMatchCronArg(cronElements[4], ts.month) \
+		and _parseMatchCronArg(cronElements[5], 0 if weekday == 7 else weekday) \
+		and _parseMatchCronArg(cronElements[6], ts.year)
 
 
 def cronInPeriod(cronPattern:Union[str, 
@@ -367,7 +391,7 @@ def cronInPeriod(cronPattern:Union[str,
 
 	# Fill in the default
 	if endTs is None:
-		endTs =  datetime.now(tz = timezone.utc)
+		endTs =  utcDatetime()
 
 	# Check the validity of the range
 	if endTs < startTs:

@@ -1,10 +1,10 @@
 #
-#	GRPAnnc.py
+#	NODAnnc.py
 #
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	GRP : Announceable variant
+#	NODAnnc : Announceable variant
 #
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ class NODAnnc(AnnouncedResource):
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.ACTRAnnc, 
 								   ResourceTypes.MGMTOBJAnnc, 
+								   ResourceTypes.SCHAnnc,
 								   ResourceTypes.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
@@ -37,7 +38,6 @@ class NODAnnc(AnnouncedResource):
 		'acpi':None,
 		'daci': None,
 		'ast': None,
-		'loc': None,
 		'lnk': None,
 
 		# Resource attributes

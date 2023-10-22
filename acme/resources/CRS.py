@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Optional, cast
 
 from copy import deepcopy
+
 from ..etc.Utils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
@@ -33,7 +34,7 @@ class CRS(Resource):
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -117,10 +118,7 @@ class CRS(Resource):
 		if self.twt == TimeWindowType.PERIODICWINDOW:
 			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions(), self.eem)
 
-		# nsi is at least an empty list if nse is present, otherwise it must not be present
-		if self.nse is not None:
-			self.setAttribute('nsi', [], overwrite = False)
-			CSE.notification.validateAndConstructNotificationStatsInfo(self)
+		# "nsi" will be added later during the first stat recording
 		
 		# Set twi default if not present
 		self.setAttribute('eem', EventEvaluationMode.ALL_EVENTS_PRESENT.value, False)
@@ -179,10 +177,11 @@ class CRS(Resource):
 	def deactivate(self, originator:str) -> None:
 
 		# Deactivate time windows
-		if self.twt == TimeWindowType.PERIODICWINDOW:
-			CSE.notification.stopCRSPeriodicWindow(self.ri)
-		elif self.twt == TimeWindowType.SLIDINGWINDOW:
-			CSE.notification.stopCRSSlidingWindow(self.ri)
+		match self.twt:
+			case TimeWindowType.PERIODICWINDOW:
+				CSE.notification.stopCRSPeriodicWindow(self.ri)
+			case TimeWindowType.SLIDINGWINDOW:
+				CSE.notification.stopCRSSlidingWindow(self.ri)
 
 		# Delete rrat and srat subscriptions
 		self._deleteSubscriptions(originator)
@@ -218,6 +217,15 @@ class CRS(Resource):
 										   EventEvaluationMode.ALL_EVENTS_MISSING):
 				raise BAD_REQUEST(L.logDebug(f'eem = {eem} is not allowed with twt = SLIDINGWINDOW'))
 
+
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
+		super().childWillBeAdded(childResource, originator)
+		if childResource.ty == ResourceTypes.SCH:
+			if (rn := childResource._originalDict.get('rn')) is None:
+				childResource.setResourceName('notificationSchedule')
+			elif rn != 'notificationSchedule':
+				raise BAD_REQUEST(L.logDebug(f'rn of <schedule> under <subscription> must be "notificationSchedule"'))
+			
 
 	def handleNotification(self, request:CSERequest, originator:str) -> None:
 		"""	Handle a notification request to a CRS resource.
@@ -409,8 +417,9 @@ class CRS(Resource):
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
 			try:
 				CSE.dispatcher.deleteResource(subRI, originator = originator)
-			except NOT_FOUND as e:
-				pass # ignore not found resources here
+			except Exception as e:
+				# ignore not found resources here
+				L.logWarn(f'Cannot delete subscription for {subRI}: {e}')
 
 			# To be sure: Set the RI in the rrats list to None
 			_rrats = self.rrats
@@ -424,8 +433,8 @@ class CRS(Resource):
 		if (subRI := _subRIs.get(srat)) is not None:
 			try:
 				resource = CSE.dispatcher.retrieveResource(subRI, originator = originator)
-			except:
-				raise BAD_REQUEST(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
+			except Exception as e:
+				L.logWarn(f'Cannot retrieve subscription for {subRI}: {e}')
 
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
@@ -447,7 +456,7 @@ class CRS(Resource):
 			try:
 				resource = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
 			except ResponseException as e:
-				raise BAD_REQUEST(L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e.dbg}'))
+				L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e} {e.dbg}')
 
 			del _subRIs[srat]
 			self.setAttribute(self._subSratRIs, _subRIs)

@@ -16,16 +16,6 @@ from tinydb.storages import JSONStorage
 
 class TinyDBBufferedStorage(JSONStorage):
 	"""	Storage driver class for TinyDB that implements a buffered disk write.
-
-		Attributes:
-			__slots__: Define slots for instance variables.
-			_writeEvent: Event instance to notify when a write happened.
-			_writeDelay: Delay before writing the data to disk.
-			_shutdownLock: Internal lock when shutting down the database.
-			_running: Indicating that the database is open and in use.
-			_shutting_down: Indicator that the database is closing. This is different from `_running`.
-			_changed: Indicator that the write buffer is *dirty* and needs to be written.
-			_data: The actual database data, which is also strored in memory as a buffer.
 	"""
 
 	__slots__ = (
@@ -37,6 +27,8 @@ class TinyDBBufferedStorage(JSONStorage):
 		'_changed',
 		'_data',
 	)
+	""" Define slots for instance variables. """
+	
 
 	def __init__(self, path:str, create_dirs:bool = False, encoding:str = None, access_mode:str = 'r+', write_delay:int = 1, **kwargs:Any) -> None:
 		"""	Initialization of the storage driver.
@@ -54,12 +46,19 @@ class TinyDBBufferedStorage(JSONStorage):
 		super().__init__(path, create_dirs, encoding, access_mode, **kwargs)
 
 		self._shutdownLock = Thread.allocate_lock()
+		""" Internal lock when shutting down the database. """
 		self._writeEvent = Event()
+		""" Event instance to notify when a write happened. """
 		self._running = True
+		""" Indicating that the database is open and in use. """
 		self._shutting_down = False
+		""" Indicator that the database is closing. This is different from `_running`. """
 		self._changed = False
+		""" Indicator that the write buffer is *dirty* and needs to be written. """
 		self._writeDelay:int = write_delay
+		""" Time to wait before writing a changed database buffer, in seconds. """
 		self._data:Dict[str, Dict[str, Any]] = {}
+		""" The actual database data, which is also strored in memory as a buffer. """
 
 		# finishing init. Read the data for the first time
 		self._data = super().read()

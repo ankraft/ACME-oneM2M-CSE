@@ -355,7 +355,7 @@ class Statistics(object):
 			result = ''
 			if maxLevel > 0 and level == maxLevel:
 				return result
-			chs = CSE.dispatcher.directChildResources(res.ri)
+			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
 				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).tpe()} ></color>\n'
 				result += getChildren(ch, level+1)

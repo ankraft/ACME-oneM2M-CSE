@@ -19,9 +19,9 @@ from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, Req
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
-from ..etc.ResponseStatusCodes import ResponseException, exceptionFromRSC
+from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
-from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED
+from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
 from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
@@ -277,7 +277,7 @@ class RequestManager(object):
 				Request result
 		"""
 		return self.requestHandlers[request.op].dispatcherRequest(request, originator, id)
-		
+	
 
 	def handleReceivedNotifyRequest(self, id:str, request:CSERequest, originator:str) -> Result:
 		"""	Handle a NOTIFY request to resource.
@@ -306,17 +306,16 @@ class RequestManager(object):
 	def retrieveRequest(self, request:CSERequest) ->  Result:
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processRetrieveRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
-				return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
-			else:									# flexBlocking as non-blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
+				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -333,17 +332,16 @@ class RequestManager(object):
 		if request.ty == None:
 			raise BAD_REQUEST('missing or wrong resourceType in request')
 
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processCreateRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processCreateRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processCreateRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -361,17 +359,16 @@ class RequestManager(object):
 			raise OPERATION_NOT_ALLOWED('operation not allowed for CSEBase')
 
 		# Check contentType and resourceType
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processUpdateRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processUpdateRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processUpdateRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -387,20 +384,19 @@ class RequestManager(object):
 
 		# Don't delete the CSEBase
 		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
-			raise OPERATION_NOT_ALLOWED(dbg = 'DELETE operation is not allowed for CSEBase')
+			raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
-		if request.rt == ResponseType.blockingRequest or (request.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
-			return CSE.dispatcher.processDeleteRequest(request, request.originator)
-
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processDeleteRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
-
+			case ResponseType.flexBlocking:								# flexBlocking as non-blocking
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processDeleteRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
+			
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
 
@@ -412,18 +408,17 @@ class RequestManager(object):
 	def notifyRequest(self, request:CSERequest) -> Result:
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
-		# Check contentType and resourceType
-		if request.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processNotifyRequest(request, request.originator)
 
-		elif request.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
-			return self._handleNonBlockingRequest(request)
-
-		elif request.rt == ResponseType.flexBlocking:
-			if self.flexBlockingBlocking:			# flexBlocking as blocking
+		match request.rt:
+			case ResponseType.blockingRequest:
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)
-			else:									# flexBlocking as non-blocking
+			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
+			case ResponseType.flexBlocking:
+				if self.flexBlockingBlocking:			# flexBlocking as blocking
+					return CSE.dispatcher.processNotifyRequest(request, request.originator)
+				else:									# flexBlocking as non-blocking
+					return self._handleNonBlockingRequest(request)
 
 		raise BAD_REQUEST(f'Unknown or unsupported ResponseType: {request.rt}')
 
@@ -537,16 +532,37 @@ class RequestManager(object):
 	def _executeOperation(self, request:CSERequest, reqRi:str) -> REQ:
 		"""	Execute a request operation and fill the respective request resource
 			accordingly.
+
+			Args:
+				request: The request to execute.
+				reqRi: The <request> resource id.
+			
+			Return:	
+				The <request> resource.
 		"""
 		# Execute the actual operation in the dispatcher
 		pc = None
 		try:
-			operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.originator)
+			try:
+				operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.originator)
+			except REQUEST_TIMEOUT:
+				pass
+			except ResponseException as e:
+				raise e
+
 			# attributes set below in the request
 			rs = RequestStatus.COMPLETED
 			rsc = operationResult.rsc
 			if operationResult.resource:
-				pc = operationResult.resource.asDict()
+				if isinstance(operationResult.resource, Resource):
+					pc = operationResult.resource.asDict()
+				else:
+					# Handle and remove the internal incomplete indicator
+					if operationResult.resource.get('acme:incomplete'):
+						rs = RequestStatus.PARTIALLY_COMPLETED
+						del operationResult.resource['acme:incomplete']
+					pc = operationResult.resource
+
 		
 		except ResponseException as e:
 			# attributes set below in the request
@@ -642,28 +658,6 @@ class RequestManager(object):
 		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
-	# def _getForwardURL(self, path:str) -> Optional[str]:		# FIXME DELETE ME This may be removed due to the new request handling 
-	# 	""" Get the new target URL when forwarding. 
-	# 	"""
-	# 	# L.isDebug and L.logDebug(path)
-	# 	csr, pe = CSE.remote.getCSRFromPath(path)
-	# 	# L.isDebug and L.logDebug(csr)
-	# 	if csr and (poas := csr.poa) and len(poas) > 0:
-	# 		return f'{poas[0]}//{"/".join(pe[1:])}'	# TODO check all available poas.
-	# 	return None
-
-
-	# def _constructForwardURL(self, request:CSERequest) -> str:
-	# 	"""	Construct the target URL for the forward request. Add the original
-	# 		arguments. The URL is returned in Result.data .
-	# 	"""
-	# 	if not (url := self._getForwardURL(request.id)):
-	# 		raise NOT_FOUND(f'forward URL not found for id: {request.id}')
-	# 	if request.originalHttpArgs is not None and len(request.originalHttpArgs) > 0:	# pass on other arguments, for discovery. Only http
-	# 		url += '?' + urllib.parse.urlencode(request.originalHttpArgs)
-	# 	return url
-
-
 	def _originatorToSPRelative(self, request:CSERequest) -> None:
 		"""	Convert *from* to SP-relative format in the request. The *from* is converted in
 			*request.originator* and *request.originalRequest*, but NOT in 
@@ -710,6 +704,10 @@ class RequestManager(object):
 			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
 			request.rqet = ret
 			request._rqetUTCts = fromAbsRelTimestamp(ret)
+		
+		# Why don't we handle the Result Expiration Timestamo request parameter here? Because it must be
+		# greater than the Request Expiration Timestamp, so the reqeust expires at that timestamp first anyway.
+
 		if not request.rqi:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
@@ -853,7 +851,6 @@ class RequestManager(object):
 			# If the request has no id, then use the to field
 			if not request.id:
 				request.id = request.to
-			L.logErr(f'Internal error. {request}')
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
@@ -1169,7 +1166,7 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Request Expiration Timestamp'), data = cseRequest)
 				else:
 					if _ts < utcTime():
-						raise REQUEST_TIMEOUT(L.logDebug(f'request timeout: rqet {_ts} < {utcTime()}'), data = cseRequest)
+						raise REQUEST_TIMEOUT(L.logDebug(f'request timeout reached: rqet {_ts} < {utcTime()}'), data = cseRequest)
 					else:
 						cseRequest._rqetUTCts = _ts		# Re-assign "real" ISO8601 timestamp
 						cseRequest.rqet = toISO8601Date(_ts)
@@ -1180,9 +1177,14 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Result Expiration Timestamp'), data = cseRequest)
 				else:
 					if _ts < utcTime():
-						raise REQUEST_TIMEOUT(L.logDebug('result timeout'), data = cseRequest)
+						raise REQUEST_TIMEOUT(L.logDebug(f'result timeout reached: rset {_ts} < {utcTime()}'), data = cseRequest)
 					else:
-						cseRequest.rset = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+						cseRequest._rsetUTCts = _ts	# Re-assign "real" ISO8601 timestamp
+						# Re-assign "real" ISO8601 timestamp
+						try: 
+							cseRequest.rset = int(rset)	# type: ignore [assignment]
+						except ValueError:
+							cseRequest.rset = toISO8601Date(_ts)
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
@@ -1232,10 +1234,11 @@ class RequestManager(object):
 				# assign defaults when not provided
 				if cseRequest.fc.fu != FilterUsage.discoveryCriteria:	
 					# Different defaults for each operation
-					if cseRequest.op in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
-						rcn = ResultContentType.attributes
-					elif cseRequest.op == Operation.DELETE:
-						rcn = ResultContentType.nothing
+					match cseRequest.op:
+						case Operation.RETRIEVE | Operation.CREATE | Operation.UPDATE:
+							rcn = ResultContentType.attributes
+						case Operation.DELETE:
+							rcn = ResultContentType.nothing
 				else:
 					# discovery-result-references as default for Discovery operation
 					rcn = ResultContentType.discoveryResultReferences
@@ -1277,18 +1280,34 @@ class RequestManager(object):
 			#	Discovery and FilterCriteria
 			#
 			if fcAttrs:	# only when there is a filterCriteria, copy the available attribute to the FilterCriteria structure
-				for h in [ 'lim', 'lvl', 'ofst', 'arp',
+				for h in ( 'lim', 'lvl', 'ofst', 'arp',
 						   'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr',
 						   'smf', 
-						   'aq']:
+						   'aq'):
 					if (v := gget(fcAttrs, h)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
-				for h in [ 'lbl', 'cty' ]: # different handling of list attributes
+				for h in ( 'lbl', 'cty' ): # different handling of list attributes
 					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = False)) is not None:
 						cseRequest.fc.set(h, v)
-				for h in [ 'ty' ]: # different handling of list attributes that are normally non-lists
+				for h in ( 'ty', ): # different handling of list attributes that are normally non-lists
 					if (v := gget(fcAttrs, h, attributeType = BasicType.list, checkSubType = True)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
+
+				# Handling of geo-query attributes
+				match len([a for a in ('gmty', 'geom', 'gsf') if a in fcAttrs]):
+					case 0:
+						pass
+					case 1 | 2:
+						raise BAD_REQUEST(L.logDebug('gmty, geom and gsf must be specified together'), data = cseRequest)
+					case 3:
+						if (v := gget(fcAttrs, 'gmty')) is not None:
+							cseRequest.fc.gmty = v
+						geom = fcAttrs.get('geom')
+						if (v := gget(fcAttrs, 'geom')) is not None:
+							cseRequest.fc.geom = geom
+							cseRequest.fc._geom = v
+						if (v := gget(fcAttrs, 'gsf')) is not None:
+							cseRequest.fc.gsf = v
 				
 				# Copy all remaining attributes as filter criteria!
 
@@ -1508,7 +1527,7 @@ class RequestManager(object):
 		pollingChannelResources = []
 		if targetResource.rr == False:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
-			if not len(pollingChannelResources := CSE.dispatcher.directChildResources(targetResource.ri, ResourceTypes.PCH)):
+			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
@@ -1553,14 +1572,15 @@ class RequestManager(object):
 			return
 		
 		# Construct and store request & response
-		if result.resource and isinstance(result.resource, Resource):
-			pc = result.resource.asDict()
-		elif isinstance(result.resource, dict):
-			pc = result.resource
-		elif result.data:
-			pc = result.data # type:ignore
-		else:
-			pc = None
+		match _resource := result.resource:
+			case Resource():
+				pc = _resource.asDict()
+			case dict():
+				pc = _resource
+			case x if result.data:
+				pc = result.data # type:ignore
+			case _:
+				pc = None
 		
 		# Determine the structure address
 		if not (srn := request.srn):
@@ -1576,6 +1596,16 @@ class RequestManager(object):
 		else:
 			rid = 'unknown'
 		
+		# Map the response
+		response =  { 'rsc': result.rsc,
+					  'pc': pc,
+					  'dbg': result.dbg,
+					  'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
+					}
+		if request.rset:
+			response['rset'] = request.rset
+
+		
 		request.fillOriginalRequest(update = True)
 
 		CSE.storage.addRequest(request.op,
@@ -1585,9 +1615,5 @@ class RequestManager(object):
 							   request._outgoing,
 							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
 							   request.originalRequest,
-							   { 'rsc': result.rsc,
-							   	 'pc': pc,
-								 'dbg': result.dbg,
-								 'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
-							   })
+							   response)
 	

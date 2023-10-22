@@ -7,13 +7,12 @@
 #	ResourceType: Action
 #
 
-""" Action (ACTRA) resource type. """
+""" Action (ACTR) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Tuple, Any, cast
+from typing import Optional, Tuple
 
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
-from ..etc.Types import BasicType
+from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.Utils import riFromID
 from ..helpers.TextTools import findXPath
@@ -24,7 +23,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class ACTR(AnnounceableResource):
-	""" Action (ACTRA) resource type. """
+	""" Action (ACTR) resource type. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
@@ -221,13 +220,13 @@ class ACTR(AnnounceableResource):
 			try:
 				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(dbg = e.dbg)
+				raise BAD_REQUEST(e.dbg)
 
 		if orc is not None:
 			try:
 				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, Permission.RETRIEVE)
 			except ResponseException as e:
-				raise BAD_REQUEST(dbg = e.dbg)
+				raise BAD_REQUEST(e.dbg)
 
 		return (resSri, resOrc)
 

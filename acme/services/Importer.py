@@ -11,7 +11,7 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
-from typing import cast, Sequence, Optional
+from typing import cast, Sequence, Optional, Tuple
 
 import json, os, fnmatch, re
 from copy import deepcopy
@@ -37,6 +37,7 @@ class Importer(object):
 
 	__slots__ = (
 		'resourcePath',
+		'extendedResourcePath',
 		'macroMatch',
 		'isImporting',
 
@@ -46,12 +47,13 @@ class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
 	_firstImporters = [ 'csebase.json']
-	_enumValues:dict[str, list[int]] = {}
+	_enumValues:dict[str, dict[int, str]] = {}
 
 	def __init__(self) -> None:
 		"""	Initialization of an *Importer* instance.
 		"""
 		self.resourcePath = Configuration.get('cse.resourcesPath')
+		self.extendedResourcePath = None
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
 		L.isInfo and L.log('Importer initialized')
@@ -95,7 +97,7 @@ class Importer(object):
 	#	Scripts
 	#
 
-	def importScripts(self, path:Optional[str] = None) -> bool:
+	def importScripts(self, path:Optional[str|list[str]] = None) -> bool:
 		"""	Import the ACME script from a directory.
 		
 			Args:
@@ -110,6 +112,12 @@ class Importer(object):
 			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
+			path = [ path ]
+			for _e in os.scandir(self.resourcePath):
+				if _e.is_dir() and _e.name.endswith('.scripts'):
+					path.append(_e.path)
+			self.extendedResourcePath = path	# save for later use
+
 		self._prepareImporting()
 		try:
 			L.isInfo and L.log(f'Importing scripts from directory(s): {path}')
@@ -117,21 +125,21 @@ class Importer(object):
 				return False
 		
 			# Check that there is only one startup script, then execute it
-			if len(scripts := CSE.script.findScripts(meta = _metaInit)) > 1:
-				L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
-				return False
-
-			elif len(scripts) == 1:
-				# Check whether there is already a filled DB, then skip the imports
-				if CSE.dispatcher.countResources() > 0:
-					L.isInfo and L.log('Resources already imported, skipping boostrap')
-				else:
-					# Run the startup script. There shall only be one.
-					s = scripts[0]
-					L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
-					if not CSE.script.runScript(s):	
-						L.logErr(f'Error during startup: {s.error}')
-						return False
+			match len(scripts := CSE.script.findScripts(meta = _metaInit)):
+				case l if l > 1:
+					L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
+					return False
+				case 1:
+					# Check whether there is already a filled DB, then skip the imports
+					if CSE.dispatcher.countResources() > 0:
+						L.isInfo and L.log('Resources already imported, skipping boostrap')
+					else:
+						# Run the startup script. There shall only be one.
+						s = scripts[0]
+						L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
+						if not CSE.script.runScript(s):	
+							L.logErr(f'Error during startup: {s.error}')
+							return False
 		finally:
 			# This is executed no matter whether the code above returned or just succeeded
 			self._finishImporting()
@@ -243,10 +251,38 @@ class Importer(object):
 					return False
 
 				for enumName, enumDef in enums.items():
-					if not (evalues := enumDef.get('evalues')):
-						L.logErr(f'Missing or empty enumeration values (evalues) in file: {fn}')
+					if not isinstance(enumDef, dict):
+						L.logErr(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}')
 						return False
-					self._enumValues[enumName] = self._expandEnumValues(evalues, enumName, fn)
+					
+					enm:dict[int, str] = {}
+					for enumValue, enumInterpretation in enumDef.items():
+						s, found, e = enumValue.partition('..')
+						if not found:
+							# Single value
+							try:
+								value = int(enumValue)
+							except ValueError:
+								L.logErr(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer)')
+								return False
+							if not isinstance(enumInterpretation, str):
+								L.logErr(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}')
+								return False
+							enm[value] = enumInterpretation
+
+						else:
+							# Range
+							try:
+								si = int(s)
+								ei = int(e)
+							except ValueError:
+								L.logErr(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', showStackTrace=False)
+								return None
+							for i in range(si, ei+1):
+								enm[i] = enumInterpretation
+
+					self._enumValues[enumName] = enm
+
 		return True
 
 
@@ -387,21 +423,22 @@ class Importer(object):
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
 		for p in CSE.validator.getAllAttributePolicies().values():
-			if p.type == BasicType.complex:
-				for each in CSE.validator.getAllAttributePolicies().values():
-					if p.typeName == each.ctype:	# found a definition
-						break
-				else:
-					L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
-					return False
-			elif p.type == BasicType.list and p.ltype is not None:
-				if p.ltype == BasicType.complex:
+			match p.type:
+				case BasicType.complex:
 					for each in CSE.validator.getAllAttributePolicies().values():
-						if p.lTypeName == each.ctype:	# found a definition
+						if p.typeName == each.ctype:	# found a definition
 							break
 					else:
-						L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
-						return False			
+						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+						return False
+				case BasicType.list if p.ltype is not None:
+					if p.ltype == BasicType.complex:
+						for each in CSE.validator.getAllAttributePolicies().values():
+							if p.lTypeName == each.ctype:	# found a definition
+								break
+						else:
+							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+							return False			
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
 		return True
@@ -517,6 +554,8 @@ class Importer(object):
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BasicType = None
+		etype:str = None
+		evalues:dict[int, str] = None
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
 			if lTypeName := findXPath(attr, 'ltype'):
 				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
@@ -528,15 +567,14 @@ class Importer(object):
 				if not (ltype := BasicType.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BasicType.complex
 				if ltype == BasicType.enum:	# check sub-type enums
-					evalues:Sequence[int|str]
 					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 						evalues = self._enumValues.get(etype)
 					else:
-						evalues = findXPath(attr, 'evalues')
-					if not evalues or not isinstance(evalues, list):
+						evalues = findXPath(attr, 'evalues')	# TODO?
+					if not evalues or not isinstance(evalues, dict):
 						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
 						return None
-					evalues = self._expandEnumValues(evalues, tpe, fn)
+					# evalues = self._expandEnumValues(evalues, tpe, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
@@ -546,11 +584,11 @@ class Importer(object):
 			if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
 				evalues = self._enumValues.get(etype)
 			else:
-				evalues = findXPath(attr, 'evalues')
-			if not evalues or not isinstance(evalues, list):
+				evalues = findXPath(attr, 'evalues')	# TODO?
+			if not evalues or not isinstance(evalues, dict):
 				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} etype: {etype} in file: {fn}', showStackTrace=False)
 				return None
-			evalues = self._expandEnumValues(evalues, tpe, fn)
+			# evalues = self._expandEnumValues(evalues, tpe, fn)
 
 		#	Check missing complex type definition
 		if typ == BasicType.dict or ltype == BasicType.dict:
@@ -582,6 +620,7 @@ class Importer(object):
 								ctype = ctype,
 								fname = fn,
 								ltype = ltype,
+								etype = etype,
 								lTypeName = lTypeName,
 								evalues = evalues
 							)
