@@ -40,25 +40,6 @@ class BackgroundWorker(object):
 		worker callback.
 
 		Background workers can be stopped and started again. They can also be paused and resumed.
-
-		Attributes:
-			interval: Interval in seconds to run the worker callback.
-			runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.
-			runPastEvents: If True then runs in the past are executed, otherwise they are dismissed.
-			nextRunTime: Timestamp of the next execution.
-			callback: Callback to run as a worker.
-			running: True if the worker is running.
-			executing: True if the worker is currently executing.
-			name: Name of the worker.
-			startWithDelay: If True then start the worker after a `interval` delay.
-			maxCount: Maximum number runs.
-			numberOfRuns: Number of runs.
-			dispose: If True then dispose the worker after finish.
-			finished: Callable that is executed after the worker finished.
-			ignoreException: Restart the actor in case an exception is encountered.
-			id: Unique ID of the worker.
-			data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
-			args: Additional arguments passed to the worker callback.
 	"""
 
 	__slots__ = (
@@ -80,6 +61,7 @@ class BackgroundWorker(object):
 		'data',
 		'args',
 	)
+	"""	Slots for the class. """
 
 	# Holds a reference to an specific logging function.
 	# This must have the same signature as the `logging.log` method.
@@ -118,21 +100,39 @@ class BackgroundWorker(object):
 				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
 		"""
 		self.interval 				= interval
+		""" Interval in seconds to run the worker callback. """
 		self.runOnTime				= runOnTime			# Compensate for processing time
+		""" If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution. """
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
+		""" If True then missed worker runs in the past are executed, otherwise they are dismissed. """
 		self.nextRunTime:float		= None				# Timestamp
+		""" Timestamp of the next execution. """
 		self.callback 				= callback			# Actual callback to process
+		""" Callback function to run as a worker. """
 		self.running 				= False				# Indicator that a worker is running or will be stopped
+		""" True if the worker is running. """
 		self.executing				= False				# Indicator that the worker callback is currently executed
+		""" True if the worker is currently executing. """
 		self.name 					= name
+		""" Name of the worker. """
 		self.startWithDelay 		= startWithDelay
+		""" If True then start the worker after a `interval` delay. """
 		self.maxCount 				= maxCount			# max runs
+		""" Maximum number runs. """
 		self.numberOfRuns 			= 0					# Actual runs
+		""" Number of runs. """
 		self.dispose 				= dispose			# Only run once, then remove itself from the pool
+		""" If True then dispose the worker after finish. """
 		self.finished				= finished			# Callback after worker finished
+		""" Callback that is executed after the worker finished. """
 		self.ignoreException		= ignoreException	# Ignore exception when running workers
+		""" Restart the actor in case an exception is encountered. """
 		self.id 					= id
+		""" Unique ID of the worker. """
 		self.data					= data				# Any extra data
+		""" Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*. """
+		self.args:Dict[str, Any]	= {}				# Arguments for the callback
+		""" Arguments for the callback. """
 
 
 
@@ -342,18 +342,26 @@ class Job(Thread):
 		'Callable',
 		'finished',
 	)
+	"""	Slots for the class."""
 
-	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
+	jobListLock	= RLock()
+	"""	Lock for the job lists. """
 
 	# Paused and running job lists
 	pausedJobs:list[Job] = []
+	""" List of paused jobs. """
 	runningJobs:list[Job] = []
+	""" List of running jobs. """
 
 	# Defaults for reducing overhead jobs
-	_balanceTarget:float = 3.0			# Target balance between paused and running jobs (n paused for 1 running)
-	_balanceLatency:int = 1000			# Number of requests for getting a new Job before a check
-	_balanceReduceFactor:float = 2.0	# Factor to reduce the paused jobs (number of paused / balanceReduceFactor)
-	_balanceCount:int = 0				# Counter for current runs. Compares against balance
+	_balanceTarget:float = 3.0	
+	""" Target balance between paused and running jobs (n paused for 1 running). """
+	_balanceLatency:int = 1000
+	""" Number of requests for getting a new Job before a balance check. """
+	_balanceReduceFactor:float = 2.0
+	""" Factor to reduce the paused jobs (number of paused / balanceReduceFactor). """
+	_balanceCount:int = 0
+	""" Counter for current runs. Compares against balance. """
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
@@ -519,11 +527,6 @@ class Job(Thread):
 
 class WorkerEntry(object):
 	"""	Internal class for a worker entry in the priority queue.
-
-		Attributes:
-			timestamp: Timestamp of the next execution.
-			workerID: ID of the worker.
-			workerName: Name of the worker.
 	"""
 
 	__slots__ = (
@@ -531,6 +534,7 @@ class WorkerEntry(object):
 		'workerID',
 		'workerName',
 	)
+	"""	Slots for the class. """
 
 	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
 		"""	Initialize a WorkerEntry.
@@ -541,8 +545,11 @@ class WorkerEntry(object):
 				workerName: Name of the worker.
 		"""
 		self.timestamp = timestamp
+		""" Timestamp of the next execution. """
 		self.workerID = workerID
+		""" ID of the worker. """
 		self.workerName = workerName
+		""" Name of the worker. """
 
 
 	def __lt__(self, other:WorkerEntry) -> bool:
@@ -580,13 +587,16 @@ class BackgroundWorkerPool(object):
 	"""
 	
 	backgroundWorkers:Dict[int, BackgroundWorker]	= {}
+	"""	All background workers. """
 	workerQueue:list[WorkerEntry] 					= []
 	""" Priority queue. Contains tuples (next execution timestamp, worker ID, worker name). """
 	workerTimer:Timer								= None
 	"""	A single timer to run the next task in the *workerQueue*. """
 
 	queueLock:Lock					 				= Lock()
+	"""	Lock for the *workerQueue*. """
 	timerLock:Lock					 				= Lock()
+	"""	Lock for the *workerTimer*. """
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:

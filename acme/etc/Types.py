@@ -209,10 +209,22 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def tpe(self) -> str:
+		"""	Get the resource type name.
+		
+			Return:
+				The resource type name.
+		"""
 		return _ResourceTypesNames.get(self)
 
 
 	def announced(self, mgd:Optional[ResourceTypes] = None) -> ResourceTypes:
+		"""	Get the announced resource type for a resource type.
+		
+			Args:
+				mgd: The mgmtObj specialization type. Only used for mgmtObjs.
+			Return:
+				The announced resource type, or UNKNOWN.
+		"""
 
 		if self != ResourceTypes.MGMTOBJ:
 			# Handling for non-mgmtObjs
@@ -502,6 +514,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
 
 }
+"""	Mapping between resource types and their description. """
 
 
 def addResourceFactoryCallback(ty:ResourceTypes, clazz:Resource, factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
@@ -1029,6 +1042,7 @@ _ResultContentTypeForOperations = {
 							  ResultContentType.childResourceReferences ],
 	Operation.NOTIFY:		[ ResultContentType.nothing ],
 }
+"""	Mappings between request operations and allowed Result Content """
 
 _ResultContentTypeDefaults = {
 	Operation.RETRIEVE:	ResultContentType.attributes, 					
@@ -1038,6 +1052,7 @@ _ResultContentTypeDefaults = {
 	Operation.DELETE: ResultContentType.nothing,
 	Operation.NOTIFY: None,
 }
+"""	Mappings between request operations and default Result Content """
 
 
 	# ResultContentType.discoveryRCN = [ ResultContentType.discoveryResultReferences,		 #  type: ignore
@@ -1405,6 +1420,7 @@ _defaultNCT = {
 	NotificationEventType.blockingUpdate:						NotificationContentType.modifiedAttributes,
 	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
 }
+"""	Mappings between NotificationEventType and default NotificationContentType """
 
 ##############################################################################
 #
@@ -1676,6 +1692,7 @@ _SemanticFormatAsString = {
 	SemanticFormat.FF_Manchester:		'manchester',
 	SemanticFormat.FF_JsonLD:			'json-ld',
 }
+"""	Mappings between semantic formats and strings representations. """
 
 
 ##############################################################################
@@ -1814,6 +1831,14 @@ class Result:
 
 
 	def toData(self, ct:Optional[ContentSerializationType] = None) -> str|bytes|JSON:
+		"""	Return the result data as a string or bytes or JSON.
+
+			Args:
+				ct: The content serialization type to use. If not given, the default serialization type is used.
+
+			Return:
+				The result data as a string or bytes or JSON.
+		"""
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
 		from ..services.CSE import defaultSerialization
