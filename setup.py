@@ -10,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.12.0',
+    version='2023.10',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
@@ -20,7 +20,7 @@ setup(
     license='BSD',
     classifiers=[
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.10',
     ],
     #packages=find_packages(),
     packages=[ 'acme' ],

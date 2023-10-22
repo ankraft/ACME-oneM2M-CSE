@@ -5,7 +5,41 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Calendar Versioning](https://calver.org).
+
+
+## [2023.10] - 2023-10-23
+
+### Added
+- [CSE] Added automatic "pip install" of missing dependencies during startup.
+- [CSE] Added support for the &lt;schedule> resource type.
+- [CSE] Added support for *Result Expiration Timestamp* request parameter for handling timeouts in fanoutPoint request aggregations.
+- [CSE] Added (limited) support for &lt;locationPolicy> resource type and location management for *device based* location policies.
+- [CSE] Added support *location* attribute and *geo-query* request parameters and functionality 
+- [SCRIPTS] Added "dolist", "dotimes", "tui-notify", "cse-attribute-info", sand "get-loglevel" functions to the script interpreter. 
+- [SCRIPTS] Added *maxRuntime* configuration setting to limit the execution time of scripts.
+- [SCRIPTS] Functions now have their own variable scope.
+- [TUI] Improved resource view in the text UI. Enumeration interpretations are now shown.
+- [TUI] Added utility "Attribute Info Search".
+- [TUI] Added diagram view for &lt;containers> that &lt;contentInstance> child resources with numerical values.
+- [HTTP] Added support for http authorization for *basic* and *bearer* (token) methods.
+- [HTTP] Support for the Python *Web Server Gateway Interface* to improve integration with a reverse proxy or API gateway, ie. nginx. Thanks to @samuelbles07 for the idea.
+- [LOGGING] Added limiting the size of a single log message. Messages that are too large are truncated. This feature is configurable (ie. length and whether to truncate or not).
+- [MISC] Added tool to generate documentation from the source code. See [tools/apidocs/README.md](tools/apidocs/README.md).
+
+### Changed
+- [MISC] The project now follows the [Calendar Versioning](https://calver.org) scheme.
+- [CSE] Changed the *operationResult* of &lt;request> according to SDS-2022-0010R02.
+- [CSE] Changed the oneM2M enumeration definition format. Each enumeration type is now a dictionary of enumeration values and their interpretations.
+- [CSE] Changed procedure for *notifictionStatsInfo* attribute for &lt;subscription> and &lt;crossResourceSubscription; resources according to SDS-2022-0183R01 and SDS-2022-0184R01.
+- [HTTP] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
+- [MQTT] The default network interface has been changed from "127.0.0.1" to "0.0.0.0".
+- [SCRIPTS] Moved utilities and system scripts to sub-directories. Now all scripts from directories "*.scripts" in the "init" directory are automatically imported.
+- [TUI] Simplified the request list view in the text UI.
+
+### Fixed
+- [CSE] Removed superfluous code when announcing resources (see issue #122).
+- [CSE] Added support and validation for 'xs:NCName' type in attribute policies.
 
 
 ## [0.12.0] - 2023-06-24
