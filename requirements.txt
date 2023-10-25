@@ -97,7 +97,7 @@ waitress==2.1.2
     # via ACME-oneM2M-CSE (setup.py)
 wcwidth==0.2.8
     # via prompt-toolkit
-werkzeug==3.0.0
+werkzeug==3.0.1
     # via flask
 zipp==3.17.0
     # via importlib-metadata
