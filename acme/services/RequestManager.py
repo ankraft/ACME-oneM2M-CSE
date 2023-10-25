@@ -1009,24 +1009,29 @@ class RequestManager(object):
 	#	Various support methods
 	#
 
-	def deserializeContent(self, data:bytes, mediaType:str) -> Tuple[JSON, ContentSerializationType]:
+	def deserializeContent(self, data:bytes, contentType:ContentSerializationType) -> JSON:
 		"""	Deserialize a data structure.
 			Supported media serialization types are JSON and cbor.
 
-			If successful then the Result.data contains a tuple (dict, contentType)
+			Args:
+				data: The data to deserialize.
+				contentType: The content type of the data.
+			
+			Return:
+				The deserialized data structure.
 		"""
 		dct = None
-		ct = ContentSerializationType.getType(mediaType, default = CSE.defaultSerialization)
+		# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
 		if data:
 			try:
-				if (dct := deserializeData(data, ct)) is None:
-					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {ct.name}', data = (None, ct))
+				if (dct := deserializeData(data, contentType)) is None:
+					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = contentType)
 			except UNSUPPORTED_MEDIA_TYPE as e:
 				raise
 			except Exception as e:
-				raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = (None, ct))
+				raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
 		
-		return (dct, ct)
+		return dct
 
 
 	def fillAndValidateCSERequest(self, cseRequest:Union[CSERequest, JSON], 
@@ -1363,20 +1368,28 @@ class RequestManager(object):
 
 
 	def dissectRequestFromBytes(self, data:bytes, 
-									  contenType:str, 
+									  contenType:ContentSerializationType, 
 									  isResponse:Optional[bool] = False) -> Result:
-		"""	Dissect a request in a byte string and build up a . Return it in `Result.request` .
+		"""	Dissect a request in a byte string and build up a CSERequest instance.
+
+			Args:
+				data: The data to dissect.
+				contenType: The content type of the data.
+				isResponse: If True then the data is a response, otherwise it is a request.
+
+			Return:
+				A Result instance with the dissected request in `Result.request` .
 		"""
 		cseRequest = CSERequest()
 		cseRequest.originalData = data
-		cseRequest.mediaType = contenType.lower()
+		cseRequest.ct = contenType
+
 
 		# De-Serialize the content
 		try:
-			cseRequest.originalRequest, cseRequest.ct = self.deserializeContent(cseRequest.originalData, cseRequest.mediaType)
+			cseRequest.originalRequest = self.deserializeContent(cseRequest.originalData, cseRequest.ct)
 		except ResponseException as e:
 			# re-use the exception and raise it again
-			_, cseRequest.ct = e.data # Attn: data contains a tuple
 			e.data = cseRequest
 			raise e
 

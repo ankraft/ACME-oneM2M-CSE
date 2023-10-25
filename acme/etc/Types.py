@@ -1228,27 +1228,6 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
-	def toContentSerialization(cls, t:str) -> ContentSerializationType:
-		"""	Return the enum from a string for a content serialization.
-
-			Args:
-				t: String to convert.
-
-			Return:
-				The enum value.
-		"""
-		match t.lower():
-			case 'json' | 'application/json':
-				return cls.JSON
-			case 'cbor' | 'application/cbor':
-				return cls.CBOR
-			case 'xml' | 'application/xml':
-				return cls.XML
-			case _:
-				return cls.UNKNOWN
-
-	
-	@classmethod
 	def getType(cls, t:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
 		"""	Return the enum from a content-type header definition.
 
@@ -1283,6 +1262,27 @@ class ContentSerializationType(ACMEIntEnum):
 				 'application/vnd.onem2m-res+json', 
 				 'application/cbor',
 				 'application/vnd.onem2m-res+cbor' ]
+
+
+	@classmethod
+	def fromWebSocketSubProtocol(cls, t:str) -> ContentSerializationType:
+		"""	Return the enum from a string for a content serialization.
+
+			Args:
+				t: String to convert.
+
+			Return:
+				The enum value.
+		"""
+		match t:
+			case 'oneM2M.json':
+				return cls.JSON
+			case 'oneM2M.cbor':
+				return cls.CBOR
+			case 'oneM2M.xml':
+				return cls.XML
+			case _:
+				return cls.UNKNOWN
 
 
 	@classmethod
@@ -1878,8 +1878,6 @@ class Result:
 				self.request.vsi = originalRequest.vsi
 			if not self.request.httpAccept:
 				self.request.httpAccept = originalRequest.httpAccept
-			if not self.request.mediaType:
-				self.request.mediaType = originalRequest.mediaType
 			if not self.request.originator:
 				self.request.originator = originalRequest.originator
 			if not self.request.ec:
@@ -2226,11 +2224,6 @@ class CSERequest:
 	pc:JSON = None
 	""" The request's primitive content as a dictionary. """
 	
-	# HTTP specifics
-
-	mediaType:str = None
-	""" Transmitted media type (http ->'Content-Type'). """
-
 	# Generics, internals
 	originalData:bytes = None 
 	""" The request's original data. """

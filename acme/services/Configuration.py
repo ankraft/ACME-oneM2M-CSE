@@ -591,13 +591,13 @@ class Configuration(object):
 
 		# CSE Serialization
 		if isinstance(ct := _get('cse.defaultSerialization'), str):
-			_put('cse.defaultSerialization', ContentSerializationType.toContentSerialization(ct))
+			_put('cse.defaultSerialization', ContentSerializationType.getType(ct))
 			if _get('cse.defaultSerialization') == ContentSerializationType.UNKNOWN:
 				return False, f'Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}'
 		
 		# Registrar Serialization
 		if isinstance(ct := _get('cse.registrar.serialization'), str):
-			_put('cse.registrar.serialization', ContentSerializationType.toContentSerialization(ct))
+			_put('cse.registrar.serialization', ContentSerializationType.getType(ct))
 			if _get('cse.registrar.serialization') == ContentSerializationType.UNKNOWN:
 				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 

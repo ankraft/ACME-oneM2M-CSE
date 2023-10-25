@@ -153,8 +153,9 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# Dissect Body
 		contentType:str = ts[-1]
+		ct = ContentSerializationType.getType(contentType)
 		try:
-			dissectResult = CSE.request.dissectRequestFromBytes(data, contentType, isResponse = True)
+			dissectResult = CSE.request.dissectRequestFromBytes(data, ct, isResponse = True)
 		except ResponseException as e:
 			e.dbg = L.logWarn(f'Error receiving MQTT response: {e.dbg}')
 			raise e
@@ -218,7 +219,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# dissect and validate request (calls: fillAndValidateCSERequest())
 		try:
-			dissectResult = CSE.request.dissectRequestFromBytes(data, contentType)
+			dissectResult = CSE.request.dissectRequestFromBytes(data, ContentSerializationType.getType(contentType))
 			request = dissectResult.request
 		except ResponseException as e:
 			# something went wrong during dissection
@@ -637,12 +638,12 @@ def logRequest(reqResult:Result,
 
 	body   = ''
 	if reqResult.request:
-		if reqResult.request.mediaType == ContentSerializationType.CBOR or reqResult.request.ct == ContentSerializationType.CBOR:
+		if reqResult.request.ct == ContentSerializationType.CBOR:
 			if isResponse and reqResult.request.originalData:
 				body = f'\nBody: \n{TextTools.toHex(reqResult.request.originalData)}\n=>\n{str(reqResult.request.originalRequest)}'
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
-		elif reqResult.request.mediaType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
+		elif reqResult.request.ct == ContentSerializationType.JSON:
 
 			if reqResult.data:
 				if isinstance(reqResult.data, tuple):

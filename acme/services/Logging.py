@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Any, Union, Optional
+from typing import List, Any, Union, Optional, cast
 
 import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
@@ -35,7 +35,8 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.syntax import Syntax
 
-from ..etc.Types import JSON, ACMEIntEnum
+from ..etc.Types import JSON, ACMEIntEnum, Result, ContentSerializationType
+from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..services.Configuration import Configuration
 
@@ -406,6 +407,21 @@ class Logging:
 		ln  = '=' * int((Logging.consoleWidth() - 50 - len(message)) / 2)
 		Logging.logWithLevel(level if level is not None else Logging.logLevel, 
 							 f'{ln}{message}{ln}')
+
+
+	@staticmethod
+	def logRequest(result:Result, data:bytes) -> None:
+		"""	Log request.
+
+			Args:
+				result: The result of the request.
+				data: The data of the request.
+		"""
+		Logging.isDebug and Logging.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
+		if result.request.ct == ContentSerializationType.JSON:
+			Logging.isDebug and Logging.logDebug(f'Body: \n{cast(str, data.decode())}')
+		else:
+			Logging.isDebug and Logging.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
 
 
 	@staticmethod

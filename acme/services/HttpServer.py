@@ -832,7 +832,8 @@ class HttpServer(object):
 					except:
 						raise BAD_REQUEST(L.logWarn(f'resource type must be an integer: {t}'), data = cseRequest)
 
-		cseRequest.mediaType = contentType
+		# Get the media type from the content-type header
+		cseRequest.ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
 
 		# parse accept header
 		cseRequest.httpAccept 	= [ a for a in _headers.getlist('accept') if a != '*/*' ]
@@ -887,14 +888,13 @@ class HttpServer(object):
 		else:
 
 			# De-Serialize the content
-			pc, ct = CSE.request.deserializeContent(cseRequest.originalData, cseRequest.mediaType) # may throw an exception
+			pc = CSE.request.deserializeContent(cseRequest.originalData, cseRequest.ct) # may throw an exception
 			
 			# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 			req = removeNoneValuesFromDict(req)
 
 			# Add the primitive content and 
 			req['pc'] = pc		# The actual content
-			cseRequest.ct = ct	# The conten serialization type
 
 		cseRequest.originalRequest	= req	# finally store the oneM2M request object in the cseRequest
 		
