@@ -15,7 +15,7 @@
 from __future__ import annotations
 from typing import List, Any, Union, Optional, cast
 
-import traceback
+import traceback, json
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from logging import LogRecord
@@ -270,7 +270,7 @@ class Logging:
 
 
 	@staticmethod
-	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, thread:threading.Thread) -> None:
+	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, threadName:str) -> None:
 		if isinstance(msg, str):
 			
 			# optimize determining the source file's basename
@@ -278,7 +278,7 @@ class Logging:
 				basename = os.path.basename(caller.filename)
 				Logging._basenames[caller.filename] = basename
 
-			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{thread.name:<10.10}\x04{msg}')
+			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{threadName:<10.10}\x04{msg}')
 		else:
 			try:
 				richInspect(msg, private = True, docs = False, dunder = False)
@@ -292,11 +292,11 @@ class Logging:
 			if Logging.queue.empty():
 				time.sleep(0.1)
 				continue
-			level, msg, caller, thread = Logging.queue.get(block = True)
+			level, msg, caller, threadName = Logging.queue.get(block = True)
 			# if msg is None or (isinstance(msg, str) and not len(msg)):
 			if msg is None:
 				continue
-			Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+			Logging._logMessageToLoggerConsole(level, msg, caller, threadName)
 
 		return True
 
@@ -410,18 +410,25 @@ class Logging:
 
 
 	@staticmethod
-	def logRequest(result:Result, data:bytes) -> None:
+	def logRequest(result:Result, data:bytes|JSON) -> None:
 		"""	Log request.
 
 			Args:
 				result: The result of the request.
-				data: The data of the request.
+				data: The request data. Either bytes or JSON dictionary.
 		"""
-		Logging.isDebug and Logging.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
+
+		if result.request.originalRequest:
+			Logging.isDebug and Logging.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
+		# data = data if isinstance(data, bytes) else json.dumps(data, indent = 2).encode()
 		if result.request.ct == ContentSerializationType.JSON:
-			Logging.isDebug and Logging.logDebug(f'Body: \n{cast(str, data.decode())}')
+			# Logging.isDebug and Logging.logDebug(f'Body: \n{cast(str, data.decode())}')
+			Logging.isDebug and Logging.logDebug(f'Body: \n{data}')
 		else:
-			Logging.isDebug and Logging.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
+			Logging.isDebug and Logging.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}')
+			if result.request.originalRequest:
+				Logging.isDebug and Logging.logDebug(f'=>\n{result.request.originalRequest}')
+			# Logging.isDebug and Logging.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
 
 
 	@staticmethod
@@ -445,11 +452,12 @@ class Logging:
 				# Queue a log message : (level, message, caller from stackframe, current thread)
 				caller = inspect.getframeinfo(inspect.stack()[stackOffset + 2][0])
 				thread = threading.current_thread()
-				msg = msg[:Logging.maxLogMessageLength] if Logging.maxLogMessageLength else msg	# truncate message if necessary
+				if isinstance(msg, str) and Logging.maxLogMessageLength:
+					msg = msg[:Logging.maxLogMessageLength]	# truncate message if necessary
 				if Logging.enableQueue and not immediate:
-					Logging.queue.put((level, msg, caller, thread))
+					Logging.queue.put((level, msg, caller, thread.name))
 				else:
-					Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+					Logging._logMessageToLoggerConsole(level, msg, caller, thread.name)
 			except Exception as e:
 				print(e)
 				# sometimes this raises an exception. Just ignore it.
