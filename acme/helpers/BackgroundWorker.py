@@ -405,6 +405,7 @@ class Job(Thread):
 			if self.finished:
 				self.finished(self)
 				self.finished = None
+			self.name = None
 			self.pause()
 
 
@@ -463,7 +464,7 @@ class Job(Thread):
 			Return:
 				The Job object.
 		"""
-		self.setName(name)
+		self.name = name
 		self.task = task
 		self.finished = finished
 		return self
