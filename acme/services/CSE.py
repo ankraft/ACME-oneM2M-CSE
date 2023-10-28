@@ -44,6 +44,7 @@ from ..services.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
+from ..services.WebSocketServer import WebSocketServer
 from .AnnouncementManager import AnnouncementManager
 from ..services.Logging import Logging as L
 
@@ -51,135 +52,141 @@ from ..services.Logging import Logging as L
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
-action:ActionManager							= None
+
+action:ActionManager = None
 """	Runtime instance of the `ActionManager`. """
-announce:AnnouncementManager					= None
+
+announce:AnnouncementManager = None
 """	Runtime instance of the `AnnouncementManager`. """
 
-console:Console									= None
+console:Console = None
 """ Runtime instance of the `Console`. """
 
-dispatcher:Dispatcher							= None
+dispatcher:Dispatcher = None
 """	Runtime instance of the `Dispatcher`. """
 
-event:EventManager								= None
+event:EventManager = None
 """	Runtime instance of the `EventManager`. """
 
-groupResource:GroupManager								= None
+groupResource:GroupManager = None
 """	Runtime instance of the `GroupManager`. """
 
-httpServer:HttpServer							= None
+httpServer:HttpServer = None
 """	Runtime instance of the `HttpServer`. """
 
-importer:Importer								= None
+importer:Importer = None
 """	Runtime instance of the `Importer`. """
 
-location:LocationManager						= None
+location:LocationManager = None
 """	Runtime instance of the `LocationManager`. """
 
-mqttClient:MQTTClient							= None
+mqttClient:MQTTClient = None
 """	Runtime instance of the `MQTTClient`. """
 
-notification:NotificationManager				= None
+notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
 
-registration:RegistrationManager 				= None
+registration:RegistrationManager = None
 """	Runtime instance of the `RegistrationManager`. """
 
-remote:RemoteCSEManager							= None
+remote:RemoteCSEManager = None
 """	Runtime instance of the `RemoteCSEManager`. """
 
-request:RequestManager							= None
+request:RequestManager = None
 """	Runtime instance of the `RequestManager`. """
 
-script:ScriptManager							= None
+script:ScriptManager = None
 """	Runtime instance of the `ScriptManager`. """
 
-security:SecurityManager 						= None
+security:SecurityManager = None
 """	Runtime instance of the `SecurityManager`. """
 
-semantic:SemanticManager 						= None
+semantic:SemanticManager = None
 """	Runtime instance of the `SemanticManager`. """
 
-statistics:Statistics							= None
+statistics:Statistics = None
 """	Runtime instance of the `Statistics`. """
 
-storage:Storage									= None
+storage:Storage = None
 """	Runtime instance of the `Storage`. """
 
-textUI:TextUI								= None
+textUI:TextUI = None
 """	Runtime instance of the `TextUI`. """
 
-time:TimeManager								= None
+time:TimeManager = None
 """	Runtime instance of the `TimeManager`. """
 
-timeSeries:TimeSeriesManager					= None
+timeSeries:TimeSeriesManager = None
 """	Runtime instance of the `TimeSeriesManager`. """
 
-validator:Validator 							= None
+validator:Validator = None
 """	Runtime instance of the `Validator`. """
+
+webSocketServer:WebSocketServer	= None
+"""	Runtime instance of the `WebSocketServer`. """
 
 
 # Global variables to hold various (configuation) values.
 
-supportedReleaseVersions:list[str]				= None
+supportedReleaseVersions:list[str] = None
 """	List of the supported release versions. """
 
-cseType:CSEType									= None
+cseType:CSEType = None
 """ The kind of CSE: IN, MN, or ASN. """
 
-cseCsi:str										= None
+cseCsi:str = None
 """ The CSE-ID. """
 
-cseCsiSlash:str  								= None
+cseCsiSlash:str = None
 """ The CSE-ID with an additional trailing /. """
 
-cseCsiSlashLess:str  							= None
+cseCsiSlashLess:str = None
 """ The CSE-ID without the leading /. """
 
-cseSpid:str										= None
+cseSpid:str = None
 """ The Service Provider ID. """
 
-cseSPRelative:str								= None
+cseSPRelative:str = None
 """	The SP-Relative CSE-ID. """
 
-cseAbsolute:str									= None
+cseAbsolute:str = None
 """ The CSE's Absolute prefix (SP-ID/CSE-ID). """
 
-cseAbsoluteSlash:str							= None
+cseAbsoluteSlash:str = None
 """ The CSE's Absolute prefix with an additional trailing /. """
 
-cseRi:str 										= None
+cseRi:str = None
 """ The CSE's Resource ID. """
 
-cseRn:str										= None
+cseRn:str = None
 """ The CSE's Resource Name. """
 
-cseOriginator:str								= None
+cseOriginator:str = None
 """	The CSE's admin originator. """
 
-csePOA:list[str]								= []
+csePOA:list[str] = []
 """ The CSE's point-of-access's. """
 
-defaultSerialization:ContentSerializationType	= None
+defaultSerialization:ContentSerializationType = None
 """ The default / preferred content serialization type. """
 
-releaseVersion:str								= None
+releaseVersion:str = None
 """ The default / preferred release version. """
 
-isHeadless 										= False
+isHeadless = False
 """ Indicator whether the CSE is running in headless mode. """
 
-cseStatus:CSEStatus								= CSEStatus.STOPPED
+cseStatus:CSEStatus = CSEStatus.STOPPED
 """ The CSE's internal runtime status. """
 
-cseActiveSchedule:list[str]						= []
+cseActiveSchedule:list[str] = []
 """ List of active schedules when the CSE is active and will process requests. """
 
-_cseResetLock									= Lock()	# lock for resetting the CSE
+_cseResetLock = Lock()
 """ Internal CSE's lock when resetting. """
 
-_cseStartupDelay:float							= 2.0		# delay for CSE startup
+_cseStartupDelay:float = 2.0
+""" Internal CSE's startup delay. """
 
 ##############################################################################
 
@@ -194,7 +201,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient, notification, registration
-	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator
+	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator, webSocketServer
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
@@ -273,6 +280,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	security = SecurityManager()			# Initialize the security manager
 	httpServer = HttpServer()				# Initialize the HTTP server
 	mqttClient = MQTTClient()				# Initialize the MQTT client
+	webSocketServer = WebSocketServer()		# Initialize the WebSocket server
 	notification = NotificationManager()	# Initialize the notification manager
 	groupResource = GroupManager()					# Initialize the group manager
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
@@ -302,7 +310,13 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	if not mqttClient.run():				# This does return
 		L.logErr('Terminating', showStackTrace = False)
 		cseStatus = CSEStatus.STOPPED
-		return False 					
+		return False 
+
+	# Start the WebSocket server
+	if not webSocketServer.run():			# This does return
+		L.logErr('Terminating', showStackTrace = False)
+		cseStatus = CSEStatus.STOPPED
+		return False	
 
 	# Enable log queuing
 	L.queueOn()	
@@ -370,6 +384,7 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
+	webSocketServer and webSocketServer.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
 	script and script.shutdown()
@@ -408,6 +423,7 @@ def resetCSE() -> None:
 		
 		httpServer.pause()
 		mqttClient.pause()
+		webSocketServer.pause()
 
 		storage.purge()
 
@@ -419,6 +435,7 @@ def resetCSE() -> None:
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 		remote.restart()
+		webSocketServer.unpause()
 		mqttClient.unpause()
 		httpServer.unpause()
 

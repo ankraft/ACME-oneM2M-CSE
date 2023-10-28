@@ -43,6 +43,7 @@ setup(
 		'textual-plotext',
 		'tinydb',
 		'waitress',
+		'websockets',
 	],
     entry_points={
         'console_scripts': [

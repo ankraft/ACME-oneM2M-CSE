@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import cbor2, json
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Tuple
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
 from .DateUtils import getResourceDate
@@ -150,7 +150,7 @@ def requestFromResult(inResult:Result,
 			isResponse: Whether the result is actually a response, and not a request.
 		
 		Return:
-			`Result` object with the response.
+			`Result` object with the response. The request or response is in *data*.
 
 		See Also:
 			`responseFromResult`
@@ -265,6 +265,25 @@ def requestFromResult(inResult:Result,
 				  request = inResult.request, 
 				  embeddedRequest = inResult.embeddedRequest, 
 				  rsc = inResult.rsc)
+
+
+def prepareResultForSending(inResult:Result, 
+					   		isResponse:Optional[bool] = False,) -> Tuple[Result, bytes]:
+	"""	Prepare a new request for MQTT or WebSocket sending. 
+	
+		Attention:
+			Remember, a response is actually just a new request. This takes care of the fact that in MQTT or WebSockets
+			a response is very similar to a response.
+	
+		Args:
+			inResult: A `Result` object, that contains a request in its *request* attribute.
+			isResponse: Indicater whether the `Result` object is actually a response or a request.
+
+		Return:
+			A tuple with an updated `Result` object and the serialized content.
+	"""
+	result = requestFromResult(inResult, isResponse = isResponse)
+	return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 
 
 def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Result:

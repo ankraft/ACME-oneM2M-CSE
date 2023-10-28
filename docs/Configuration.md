@@ -72,7 +72,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
 [&#91;http.wsgi&#93; - HTTP WSGI (Web Server Gateway Interface) Settings](#http_wsgi)  
 [&#91;logging&#93; - Logging Settings](#logging)  
-[&#91;mqtt&#93; - MQTT Client Settings](#client_mqtt)  
+[&#91;mqtt&#93; - MQTT Binding Settings](#client_mqtt)  
 [&#91;mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
 [&#91;resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
 [&#91;resource.actr&#93; - Resource defaults: Action](#resource_actr)  
@@ -85,7 +85,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;resource.tsb&#93; - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
 [&#91;scripting&#93; - Scripting Settings](#scripting)  
 [&#91;textui&#93; - Text UI Settings](#textui)  
+[&#91;websocket&#93; - WebSocket Binding Settings](#websocket)  
 [&#91;webui&#93; - Web UI Settings](#webui)  
+
 	
 
 <a name="general"></a>
@@ -523,6 +525,19 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
+<a name="websocket"></a>
+
+###	[websocket] - WebSocket Binding Settings
+
+| Setting  | Description                                                                                                                 | Configuration Name |
+|:---------|:----------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| enable   | Enable the WebSocket binding.<br />Default: False                                                                           | websocket.enable   |
+| port     | Set the port for the WebSocket server.<br />Default: 8180                                                                   | websocket.port     |
+| listenIF | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br />Default:0.0.0.0                                              | websocket.listenIF |
+| loglevel | Loglevel for the WebSocket server. Allowed values: debug, info, warning, error, off.<br />; Default: Basic config log level | websocket.loglevel |
+
+---
+
 <a name="webui"></a>
 
 ###	[webui] - Web UI Settings
@@ -534,6 +549,8 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [top](#sections)
 
 ---
+
+
 
 <a name="advanced"></a>
 

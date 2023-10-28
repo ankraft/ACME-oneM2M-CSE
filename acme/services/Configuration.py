@@ -20,6 +20,7 @@ from rich.console import Console
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
+from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..services import Onboarding
 
 
@@ -310,6 +311,25 @@ class Configuration(object):
 
 
 				#
+				#	CoAP Client
+				#
+
+				'coap.enable'							: config.getboolean('coap', 'enable', 								fallback = False),
+				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '0.0.0.0'),
+				'coap.port' 							: config.getint('coap', 'port', 									fallback = None),	# Default will be determined later (s.b.)
+
+				#
+				#	CoAP Client Security
+				#
+
+				'coap.security.certificateFile'			: config.get('coap.security', 'certificateFile', 					fallback = None),
+				'coap.security.privateKeyFile'			: config.get('coap.security', 'privateKeyFile', 					fallback = None),
+				'coap.security.dtlsVersion'				: config.get('coap.security', 'dtlsVersion', 						fallback = 'auto'),
+				'coap.security.useDTLS'					: config.getboolean('coap.security', 'useDTLS', 					fallback = False),
+				'coap.security.verifyCertificate'		: config.getboolean('coap.security', 'verifyCertificate',			fallback = False),
+
+
+				#
 				#	Console
 				#
 
@@ -416,24 +436,6 @@ class Configuration(object):
 				'mqtt.security.useTLS'					: config.getboolean('mqtt.security', 'useTLS', 						fallback = False),
 				'mqtt.security.verifyCertificate'		: config.getboolean('mqtt.security', 'verifyCertificate', 			fallback = False),
 
-				#
-				#	CoAP Client
-				#
-
-				'coap.enable'							: config.getboolean('coap', 'enable', 								fallback = False),
-				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '0.0.0.0'),
-				'coap.port' 							: config.getint('coap', 'port', 									fallback = None),	# Default will be determined later (s.b.)
-
-				#
-				#	CoAP Client Security
-				#
-
-				'coap.security.certificateFile'			: config.get('coap.security', 'certificateFile', 					fallback = None),
-				'coap.security.privateKeyFile'			: config.get('coap.security', 'privateKeyFile', 					fallback = None),
-				'coap.security.dtlsVersion'				: config.get('coap.security', 'dtlsVersion', 						fallback = 'auto'),
-				'coap.security.useDTLS'					: config.getboolean('coap.security', 'useDTLS', 					fallback = False),
-				'coap.security.verifyCertificate'		: config.getboolean('coap.security', 'verifyCertificate',			fallback = False),
-
 
 				#
 				#	Defaults for Access Control Policies
@@ -523,6 +525,15 @@ class Configuration(object):
 				'textui.theme'							: config.get('textui', 'theme', 									fallback = 'dark'),
 
 				#
+				#	WebSocket Server
+				#
+
+				'websocket.enable'						: config.getboolean('websocket', 'enable', 							fallback = False),
+				'websocket.listenIF'					: config.get('websocket', 'listenIF', 								fallback = '0.0.0.0'),
+				'websocket.port' 						: config.getint('websocket', 'port', 								fallback = 8180),
+				'websocket.loglevel'					: config.get('websocket', 'loglevel', 								fallback = 'debug'),
+
+				#
 				#	Web UI
 				#
 
@@ -572,7 +583,26 @@ class Configuration(object):
 					key:	The configuration key to set.
 			"""
 			Configuration._configuration[key] = value
+		
 
+		def _getLoglevel(logLevel:str) -> Optional[int]:
+			from ..services.Logging import LogLevel
+			logLevel = logLevel.lower()
+			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
+			match logLevel:
+				case 'off':
+					return LogLevel.OFF
+				case 'info':
+					return LogLevel.INFO
+				case 'warn' | 'warning':
+					return LogLevel.WARNING
+				case 'error':
+					return LogLevel.ERROR
+				case 'debug':
+					return LogLevel.DEBUG
+				case _:
+					return None
+				
 
 		from ..etc.Utils import normalizeURL, isValidCSI	# cannot import at the top because of circel import
 
@@ -602,24 +632,30 @@ class Configuration(object):
 				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 
 		# Loglevel and various overrides from command line
-		from ..services.Logging import LogLevel
-		if isinstance(logLevel := _get('logging.level'), str):	
-			logLevel = logLevel.lower()
-			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
+		if isinstance(logLevel := _get('logging.level'), str):
+			if (ll := _getLoglevel(logLevel)) is None:
+				return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+			_put('logging.level', ll)
+		else:
+			return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+		# from ..services.Logging import LogLevel
+		# if isinstance(logLevel := _get('logging.level'), str):	
+		# 	logLevel = logLevel.lower()
+		# 	logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
 
-			match logLevel:
-				case 'off':
-					_put('logging.level', LogLevel.OFF)
-				case 'info':
-					_put('logging.level', LogLevel.INFO)
-				case 'warn' | 'warning':
-					_put('logging.level', LogLevel.WARNING)
-				case 'error':
-					_put('logging.level', LogLevel.ERROR)
-				case 'debug':
-					_put('logging.level', LogLevel.DEBUG)
-				case _:
-					return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+		# 	match logLevel:
+		# 		case 'off':
+		# 			_put('logging.level', LogLevel.OFF)
+		# 		case 'info':
+		# 			_put('logging.level', LogLevel.INFO)
+		# 		case 'warn' | 'warning':
+		# 			_put('logging.level', LogLevel.WARNING)
+		# 		case 'error':
+		# 			_put('logging.level', LogLevel.ERROR)
+		# 		case 'debug':
+		# 			_put('logging.level', LogLevel.DEBUG)
+		# 		case _:
+		# 			return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
 				
 		
 		# Test for correct logging queue size
@@ -679,6 +715,12 @@ class Configuration(object):
 		#	Some sanity and validity checks
 		#
 
+		# HTTP server
+		if not isValidPort(_get('http.port')):
+			return False, f'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {_get("http.port")}'
+		if not (isValidateHostname(_get('http.listenIF')) or isValidateIpAddress(_get('http.listenIF'))):
+			return False, f'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {_get("http.listenIF")}'
+		
 		# HTTP TLS & certificates
 		if not _get('http.security.useTLS'):	# clear certificates configuration if not in use
 			_put('http.security.verifyCertificate', False)
@@ -729,7 +771,23 @@ class Configuration(object):
 			return False, f'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]'
 		# remove empty cid from the list
 		_put('mqtt.security.allowedCredentialIDs', [ cid for cid in _get('mqtt.security.allowedCredentialIDs') if len(cid) ])
-		
+
+
+		#
+		#	WebSocket server
+		#
+		if not isValidPort(_get('websocket.port')):
+			return False, f'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {_get("websocket.port")}'	
+		if not (isValidateHostname(_get('websocket.listenIF')) or isValidateIpAddress(_get('websocket.listenIF'))):
+			return False, f'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {_get("websocket.listenIF")}'
+		if isinstance(logLevel := _get('websocket.loglevel'), str):
+			if (ll := _getLoglevel(logLevel)) is None:
+				return False, f'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
+			_put('websocket.loglevel', ll)
+		else:
+			return False, f'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
+
+
 
 		# COAP TLS & certificates
 		if not _get('coap.security.useDTLS'):	# clear certificates configuration if not in use

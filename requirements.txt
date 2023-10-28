@@ -10,7 +10,7 @@ cbor2==5.5.0
     # via ACME-oneM2M-CSE (setup.py)
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via requests
 click==8.1.7
     # via flask
@@ -83,7 +83,7 @@ textual==0.40.0
     # via
     #   ACME-oneM2M-CSE (setup.py)
     #   textual-plotext
-textual-plotext==0.1.0
+textual-plotext==0.2.1
     # via ACME-oneM2M-CSE (setup.py)
 tinydb==4.8.0
     # via ACME-oneM2M-CSE (setup.py)
@@ -97,7 +97,9 @@ waitress==2.1.2
     # via ACME-oneM2M-CSE (setup.py)
 wcwidth==0.2.8
     # via prompt-toolkit
-werkzeug==3.0.0
+websockets==12.0
+    # via ACME-oneM2M-CSE (setup.py)
+werkzeug==3.0.1
     # via flask
 zipp==3.17.0
     # via importlib-metadata

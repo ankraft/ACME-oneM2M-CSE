@@ -280,6 +280,28 @@ allowedCredentialIDs=
 
 
 ;
+;	WebSocket client settings
+;
+
+[websocket]
+; Enable the WebSocket binding.
+; Default: false
+enable=false
+; The listening port for the WebSocket server.
+; Default: 8180
+port=8180
+; Interface to listen to. Use '0.0.0.0' for "all" interfaces.
+; Default: 0.0.0.0
+listenIF=0.0.0.0
+; Loglevel for the WebSocket server. Allowed values: debug, info, warning, error, off.
+; Default: Basic config log level
+loglevel=${basic.config:logLevel}
+
+
+
+
+
+;
 ;	CoAP client settings
 ;
 

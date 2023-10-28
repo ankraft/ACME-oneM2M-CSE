@@ -1466,6 +1466,50 @@ The default value is the same value as the `console.theme` setting.
 
 
 
+# websocket
+
+This section contains settings that control the CSE's WebSocket server.
+
+Settings in this section are listed under the `[websocket]` section.
+
+
+
+# websocket.enable
+
+This setting enables or disables the CSE's WebSocket binding.
+
+The default value is `False`.
+
+
+
+# websocket.listenIF
+
+This setting specifies the network interface on which the CSE's WebSocket server is listening.
+Use `0.0.0.0` to listen on all available interfaces.
+
+The default value is `0.0.0.0`.
+
+
+
+# websocket.loglevel
+
+This setting specifies the CSE's WebSocket server's log level.
+
+**Allowed values**: `debug`, `info`, `warning`, `error`, `off`.
+
+The default value is the same value as the *basic config log level* setting.
+
+
+
+# websocket.port
+
+This setting specifies the port on which the CSE's WebSocket server is listening.
+
+The default value is `8180`.
+
+
+
+
 # webui
 
 This section contains settings that control the CSE's web user interface.

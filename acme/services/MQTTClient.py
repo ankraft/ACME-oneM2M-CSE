@@ -15,9 +15,9 @@ from threading import Lock
 
 from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.RequestUtils import requestFromResult, serializeData
+from ..etc.RequestUtils import prepareResultForSending
 from ..etc.DateUtils import getResourceDate, waitFor
-from ..etc.Utils import exceptionToResult, uniqueRI, toSPRelative, renameThread, csiFromSPRelative, getIdFromOriginator
+from ..etc.Utils import exceptionToResult, uniqueRI, renameThread, csiFromSPRelative
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..services.Configuration import Configuration
@@ -177,13 +177,13 @@ class MQTTClientHandler(MQTTHandler):
 		def _sendResponse(result:Result) -> None:
 			"""	Send a response for a request.
 			"""
-			response = prepareMqttRequest(result, isResponse = True)	# may throw an exception
+			(_r, _data) = prepareResultForSending(result, isResponse = True)	# may throw an exception
 			topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
-			logRequest(response, topic, isResponse=True, isIncoming=False)
-			if isinstance(cast(Tuple, response.data)[1], bytes):
-				connection.publish(topic, cast(Tuple, response.data)[1])
-			else:
-				connection.publish(topic, cast(str, cast(Tuple, response.data)[1]).encode())
+			logRequest(_r, _data, topic, isResponse=True, isIncoming=False)
+			connection.publish(topic, _data)
+			# if isinstance(data, bytes):
+			# else:
+			# 	connection.publish(topic, cast(str, data).encode())
 		
 
 		def _logRequest(result:Result) -> None:
@@ -287,15 +287,10 @@ class MQTTClientHandler(MQTTHandler):
 			responseResult = exceptionToResult(e)
 		# Send response
 
+		# add, copy and update some fields from the original request
 		# TODO Also change in http
-		responseResult.prepareResultFromRequest(request)	# Add and change some fields from the original request
-		#Overwrite some attributes
-		responseResult.request.rqi = request.rqi
+		responseResult.prepareResultFromRequest(request)	
 
-		# Add Originating Timestamp if present in request
-		if request.ot:
-			responseResult.request.ot = getResourceDate()
-		
 		#	Transform request to oneM2M request
 		_sendResponse(responseResult)
 	
@@ -512,7 +507,7 @@ class MQTTClient(object):
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL for the address
-		preq = prepareMqttRequest(req)
+		(preq, _data) = prepareResultForSending(req)
 		topic = u.path
 		pathSplit = u.path.split('/')
 
@@ -552,10 +547,10 @@ class MQTTClient(object):
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
-		logRequest(preq, topic, isResponse=False, isIncoming=False)
+		logRequest(preq, _data, topic, isResponse = False, isIncoming = False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
 		response, responseTopic = self.waitForResponse(preq.request.rqi, self.requestTimeout)
-		logRequest(response, responseTopic, isResponse = True, isIncoming = True)
+		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response
 
 
@@ -596,30 +591,8 @@ class MQTTClient(object):
 ##############################################################################
 
 
-# TODO check whether this still needs to be this complicated after we refactored request sending
-def prepareMqttRequest(inResult:Result, 
-					   isResponse:Optional[bool] = False,) -> Result:
-	"""	Prepare a new request for MQTT. 
-	
-		Attention:
-			Remember, a response is actually just a new request. This takes care of the fact that in MQTT
-			a response is very similar to a response.
-	
-		Args:
-			inResult: A `Result` object, that contains a request in its *request* attribute.
-			isResponse: Indicater whether the `Result` object is actually a response or a request.
-
-		Return:
-			The constructed and serialized content is returned in a tuple in the `Result.data` attribute:
-		    the content as a dictionary and the serialized content.
-	"""
-	# result = requestFromResult(inResult, originator, ty, op = op, isResponse = isResponse)
-	result = requestFromResult(inResult, isResponse = isResponse)
-	result.data = (result.data, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
-	return result
-
-
 def logRequest(reqResult:Result, 
+			   data:bytes,
 			   topic:str, 
 			   isResponse:Optional[bool] = False, 
 			   isIncoming:Optional[bool] = False) -> None:
@@ -642,14 +615,11 @@ def logRequest(reqResult:Result,
 			if isResponse and reqResult.request.originalData:
 				body = f'\nBody: \n{TextTools.toHex(reqResult.request.originalData)}\n=>\n{str(reqResult.request.originalRequest)}'
 			else:
-				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
+				body = f'\nBody: \n{TextTools.toHex(data)}\n=>\n{reqResult.data}'
 		elif reqResult.request.ct == ContentSerializationType.JSON:
 
 			if reqResult.data:
-				if isinstance(reqResult.data, tuple):
-					bodyPrint = str(cast(Tuple, reqResult.data)[0])
-				else:
-					bodyPrint = str(reqResult.data)
+				bodyPrint = str(reqResult.data)
 			else:
 				bodyPrint = str(reqResult.request.originalRequest)
 

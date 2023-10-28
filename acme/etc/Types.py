@@ -17,7 +17,7 @@ from enum import auto
 from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.ResponseStatusCodes import ResponseStatusCode
-from ..etc.DateUtils import utcTime
+from ..etc.DateUtils import utcTime, getResourceDate
 
 
 #
@@ -1265,6 +1265,17 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
+	def supportedContentSerializationsWS(cls) -> list[str]:
+		"""	Return a list of supported media types for content serialization
+			for WebSocket communication.
+
+			Return:
+				A list of supported media types for content serialization.
+		"""
+		return [ 'oneM2M.json', 'oneM2M.cbor' ]
+
+
+	@classmethod
 	def fromWebSocketSubProtocol(cls, t:str) -> ContentSerializationType:
 		"""	Return the enum from a string for a content serialization.
 
@@ -1861,9 +1872,17 @@ class Result:
 		return r
 
 
-	def prepareResultFromRequest(self, originalRequest:CSERequest) -> None:
+	def prepareResultFromRequest(self, originalRequest:CSERequest) -> Result:
 		"""	Copy the necessary fields from an original request. Existing
 			fields will not be overwritten.
+
+			This can be used to prepare a response from a request.
+
+			Args:
+				originalRequest: The original request to copy from.
+
+			Return:
+				Self.
 		"""
 		if not self.request:
 			self.request = CSERequest()
@@ -1882,6 +1901,16 @@ class Result:
 				self.request.originator = originalRequest.originator
 			if not self.request.ec:
 				self.request.ec = originalRequest.ec
+		
+			# Add Originating Timestamp if present in the original request
+			if originalRequest.ot:
+				self.request.ot = getResourceDate()
+
+			# Copy request ID
+			if originalRequest.rqi:
+				self.request.rqi = originalRequest.rqi
+		
+		return self
 			
 
 # Result instance to be re-used all over the place

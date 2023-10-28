@@ -47,7 +47,7 @@ def isValidateHostname(hostname:str) -> bool:
 	return all(_allowedPart.match(x) for x in hostname.split("."))
 
 
-def isValidPort(port:str) -> bool:
+def isValidPort(port:str|int) -> bool:
 	"""	Validate a port number.
 	
 		Args:
@@ -56,10 +56,13 @@ def isValidPort(port:str) -> bool:
 		Return:
 			True if *port* is valid, or False otherwise.
 	"""
-	try:
-		_port = int(port)
-	except ValueError:
-		return False
+	if isinstance(port, int):
+		_port = port
+	else:
+		try:
+			_port = int(port)
+		except ValueError:
+			return False
 	return 0 < _port <= 65535
 
 
