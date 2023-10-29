@@ -41,6 +41,8 @@ class CSR(AnnounceableResource):
 									ResourceTypes.MGMTOBJAnnc,
 									ResourceTypes.NODAnnc,
 									ResourceTypes.PCH,
+								    ResourceTypes.PRMR,
+								    ResourceTypes.PRMRAnnc,
 									ResourceTypes.SMDAnnc,
 									ResourceTypes.SUB,
 									ResourceTypes.TS,
