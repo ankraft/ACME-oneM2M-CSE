@@ -53,10 +53,10 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [round](#round)                                         | Return a round number                                                            |
 |                            | [set-json-attribute](#set-json-attribute)               | Set a JSON attribute in a JSON structure to a new value                          |
 |                            | [setq](#setq)                                           | Assigns a value to a variable                                                    |
-|                            | [sleep](#sleep)                                         | Sleep during script exection                                                     |
+|                            | [sleep](#sleep)                                         | Sleep during script execution                                                     |
 |                            | [slice](#slice)                                         | Returns the slice of a list or string                                            |
 |                            | [sp](#sp)                                               | Returns a space character                                                        |
-|                            | [string-to-json](#string-to-json)                       | Convert a string to a JSON structure                                             |
+|                            | [string-to-json](#string-to-json)                       | Converts a string to a JSON structure                                             |
 |                            | [to-number](#to-number)                                 | Converts a string to a number                                                    |
 |                            | [to-string](#to-string)                                 | Returns a string representation of a symbol                                      |
 |                            | [to-symbol](#to-symbol)                                 | Converts a string to a symbol                                                    |
@@ -82,7 +82,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [run-script](#run-script)                               | Removes a key/value pair from the CSE's internal script-data storage             |
 |                            | [runs-in-ipython](#runs-in-ipython)                     | Determine whether the CSE runs in an iPython environment                         |
 |                            | [schedule-next-script](#schedule-next-script)           | Schedule the nest running script and its arguments                               |
-|                            | [set-config](#set-config)                               | Set a CSE's configuation setting                                                 |
+|                            | [set-config](#set-config)                               | Set a CSE's configuration setting                                                 |
 |                            | [set-console-logging](#set-console-logging)             | Switch on or off console logging                                                 |
 | [oneM2M](#_onem2m)         | [create-resource](#create-resource)                     | Send a oneM2M CREATE request                                                     |
 |                            | [delete-resource](#delete-resource)                     | Send a oneM2M DELETE request                                                     |

@@ -357,7 +357,7 @@ class MQTTClient(object):
 	def shutdown(self) -> bool:
 		"""	Shutdown the MQTTClient.
 		"""
-		L.isInfo and L.log('Shutdown MQTT client')
+		L.isInfo and L.log('MQTT client shut down')
 		self.isStopped = True
 		for id in list(self.mqttConnections):
 			self.disconnectFromMqttBroker(id[0], id[1])	# 0 = address, 1 = port

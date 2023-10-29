@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Optional, Any
-import logging
+import logging, uuid
 
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
@@ -53,8 +53,10 @@ class WebSocketServer(object):
 
 		self.isPaused = False
 		self.websocketServer:Optional[WSServer] = None
-		self.wsConnections:dict[str, ServerConnection] = {}
-		self.associations:dict[str, str] = {}	# originator -> websocket.id
+		self.wsConnections:dict[uuid.UUID, ServerConnection] = {}
+		self.associations:dict[str, uuid.UUID] = {}	# originator -> websocket.id
+		L.isInfo and L.log('WebSocket server initialized')
+
 
 # TODO restart: close all connections, restart server (shutdown and run again)
 
@@ -62,7 +64,7 @@ class WebSocketServer(object):
 	def shutdown(self) -> bool:
 		"""	Shutdown the WebSocket server.
 		"""
-		L.isInfo and L.log('Shutdown WebSocket server')
+		L.isInfo and L.log('WebSocket server shut down')
 		# TODO close all connections
 		self._stop()
 		return True
@@ -139,14 +141,14 @@ class WebSocketServer(object):
 		"""	Stop handling requests.
 		"""
 		L.isInfo and L.log('WS server paused')
-		self.isStopped = True
+		self.isPaused = True
 		
 	
 	def unpause(self) -> None:
 		"""	Continue handling requests.
 		"""
 		L.isInfo and L.log('WS server unpaused')
-		self.isStopped = False
+		self.isPaused = False
 
 
 	def addConnection(self, websocket:ServerConnection) -> None:
@@ -201,7 +203,6 @@ class WebSocketServer(object):
 					websocket: The WebSocket connection.
 					message: The received message.
 			"""
-			nonlocal originator
 
 			# TODO improve originator handling: add originator after registration as well!
 

@@ -33,7 +33,7 @@
 (defun get-lightswitch-status ()
   ((setq response (retrieve-resource "CDemoLightbulb" "${get-config \"cse.resourceName\"}/CDemoLightswitch/switchContainer/la"))
    (if (== (get-response-status response) 2000)
-     ;; If the response is OK, get the content attribute
+     ;; If the response is OK, get and return the content attribute
      ((setq cin (get-response-resource response))
       (if (has-json-attribute cin "m2m:cin/con")
         (get-json-attribute cin "m2m:cin/con")))
