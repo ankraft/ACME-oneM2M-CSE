@@ -30,6 +30,7 @@ class AE(AnnounceableResource):
 													   ResourceTypes.GRP,
 													   ResourceTypes.LCP,
 													   ResourceTypes.PCH,
+													   ResourceTypes.PRMR,
 													   ResourceTypes.SMD,
 													   ResourceTypes.SUB,
 													   ResourceTypes.TS,

@@ -55,12 +55,16 @@ from ..resources.NOD import NOD
 from ..resources.NODAnnc import NODAnnc
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
+from ..resources.PRMR import PRMR
+# TODO from ..resources.PRMRAnnc import PRMRAnnc
 from ..resources.REQ import REQ
 from ..resources.SUB import SUB
-from ..resources.SMD import SMD
-from ..resources.SMDAnnc import SMDAnnc
 from ..resources.SCH import SCH
 from ..resources.SCHAnnc import SCHAnnc
+from ..resources.SMD import SMD
+from ..resources.SMDAnnc import SMDAnnc
+from ..resources.STTE import STTE
+# TODO from ..resources.STTEAnnc import STTEAnnc
 from ..resources.TS import TS
 from ..resources.TSAnnc import TSAnnc
 from ..resources.TS_LA import TS_LA
@@ -134,11 +138,15 @@ addResourceFactoryCallback(ResourceTypes.NOD,			NOD,			lambda dct, tpe, pi, crea
 addResourceFactoryCallback(ResourceTypes.NODAnnc,		NODAnnc,		lambda dct, tpe, pi, create : NODAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, tpe, pi, create : PCH(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH_PCU,		PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.PRMR,			PRMR,			lambda dct, tpe, pi, create : PRMR(dct, pi = pi, create = create))
+# TODO addResourceFactoryCallback(ResourceTypes.PRMRAnnc,	PRMRAnnc,		lambda dct, tpe, pi, create : PRMRAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.REQ,			REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SCH,			SCH,			lambda dct, tpe, pi, create : SCH(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SCHAnnc,		SCHAnnc,		lambda dct, tpe, pi, create : SCHAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.SMD,			SMD,			lambda dct, tpe, pi, create : SMD(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SMDAnnc,		SMDAnnc,		lambda dct, tpe, pi, create : SMDAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.STTE,			STTE,			lambda dct, tpe, pi, create : STTE(dct, pi = pi, create = create))
+# TODO addResourceFactoryCallback(ResourceTypes.STTEAnnc,	STTEAnnc,		lambda dct, tpe, pi, create : STTEAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SUB,			SUB,			lambda dct, tpe, pi, create : SUB(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TS,			TS,				lambda dct, tpe, pi, create : TS(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.TSAnnc,		TSAnnc,			lambda dct, tpe, pi, create : TSAnnc(dct, pi = pi, create = create)) 

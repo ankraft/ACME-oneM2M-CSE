@@ -498,12 +498,26 @@
 			"annc": "OA"
 		}
 	],
+	"atcos": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "activateConditions",
+			"ns": "m2m",
+			"type": "listNE",
+			"ltype": "m2m:evalCriteria",
+			"car": "1",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"atrl": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "attributeList",
 			"ns": "m2m",
-			"type": "listne", 	// m2m:attributeList
+			"type": "listNE", 	// m2m:attributeList
 			"ltype": "string",
 			"car": "01L",
 			"oc": "O",
@@ -978,6 +992,19 @@
 			"annc": "OA"
 		}
 	],
+	"cust": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "currentState",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"dc": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1255,6 +1282,20 @@
 			"annc": "NA"
 		}
 	],
+	"encos": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "endConditions",
+			"ns": "m2m",
+			"type": "listNE",
+			"ltype": "m2m:evalCriteria",
+			"car": "1",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"encs": [
 		{
 			"rtypes": [ "CRS", "REQRESP" ],
@@ -1282,6 +1323,7 @@
 		}
 	],
 	"evc": [
+		// See also the attribute of the same name in complexTypePolicies.ap
 		{
 			"rtypes": [ "ACTR", "ACTRAnnc", "DEPR", "DEPRAnnc", "REQRESP" ],
 			"lname": "evalCriteria",
@@ -1535,6 +1577,20 @@
 			"annc": "NA"
 		}
 	],
+	"inst": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "initialState",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	"ipu": [
 		{
 			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
@@ -2573,6 +2629,34 @@
 			"annc": "OA"
 		}
 	],
+	"prct": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "processControl",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:processControl",
+			"car": "1",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"prst": [
+		{
+			"rtypes": [ "PRMR", "REQRESP" ],
+			"lname": "processStatus",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:processStatus",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"psn": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2872,6 +2956,19 @@
 			"annc": "NA"
 		}
 	],
+	"sact": [
+		{
+			"rtypes": [ "STTE", "REQRESP" ],
+			"lname": "stateActive",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"scan": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
@@ -3154,6 +3251,33 @@
 			"type": "string",
 			"car": "1",
 			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"stac": [
+		{
+			"rtypes": [ "STTE", "REQRESP" ],
+			"lname": "stateAction",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"sttrs": [
+		{
+			"rtypes": [ "STTE", "REQRESP" ],
+			"lname": "stateTranistions",
+			"ns": "m2m",
+			"type": "listNE",
+			"ltype":"m2m:stateTransition",
+			"car": "01L",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"

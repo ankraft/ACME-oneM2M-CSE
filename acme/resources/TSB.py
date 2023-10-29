@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.DateUtils import fromDuration
 from ..resources.Resource import Resource
@@ -65,9 +65,6 @@ class TSB(AnnounceableResource):
 
 # DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
-
-
-# TODO Implement Annc
 
 
 	def __init__(self, dct:Optional[JSON] = None, 

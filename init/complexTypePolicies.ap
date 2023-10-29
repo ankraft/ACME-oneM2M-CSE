@@ -1910,6 +1910,32 @@
 			"etype": "m2m:mgmtDefinition",
 			"car": "01"
 		}
+	],
+
+
+	//
+	//	m2m:stateTransition
+	//
+	"evc": [
+		// See also the attribute of the same name in attributePolicies.ap
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:stateTransition",
+			"lname": "evalCriteria",
+			"ns": "m2m",
+			"type": "m2m:evalCriteria",
+			"car": "1"
+		}
+	],
+	"nxst": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:stateTransition",
+			"lname": "nextState",
+			"ns": "m2m",
+			"type": "ID"
+		}
 	]
+
 
 }

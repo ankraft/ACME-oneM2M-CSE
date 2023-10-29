@@ -86,6 +86,10 @@ class ResourceTypes(ACMEIntEnum):
 	""" FlexContainerInstance resource type. """
 	TSB				= 60
 	"""	TimeSyncBeacon resource type. """
+	PRMR 			= 63
+	""" ProcessManagement resource type. """
+	STTE 			= 64
+	"""	State resource type. """
 	ACTR			= 65
 	""" Action resource type. """
 	DEPR			= 66
@@ -176,6 +180,10 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
+	PRMRAnnc		= 10063
+	"""	Announced ProcessManagement resource type. """
+	STTEAnnc		= 10064
+	"""	Announced State resource type. """
 	ACTRAnnc		= 10065
 	"""	Announced Action resource type. """
 	DEPRAnnc		= 10066
@@ -463,11 +471,15 @@ _ResourceTypeDetails = {
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
+	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
+	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
 	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
 	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),
 	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc, fullName='SemanticDescriptor'),
 	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True, fullName='SemanticDescriptor Announced'),
+	ResourceTypes.STTE			: ResourceDescription(typeName = 'm2m:stte', announcedType = ResourceTypes.STTEAnnc, fullName='State'),
+	ResourceTypes.STTEAnnc		: ResourceDescription(typeName = 'm2m:stteA', isAnnouncedResource = True, fullName='State Announced'),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
 	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, fullName='TimeSeries'),
 	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, fullName='TimeSeries Announced'),

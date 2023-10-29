@@ -175,6 +175,20 @@
 		"4": "Delete",
 		"5": "Notify"
 	},
+	"m2m:processControl" : {
+		"1": "Enable",
+		"2": "Disable",
+		"3": "Pause",
+		"4": "Reactivate"
+	},
+	"m2m:processStatus" : {
+		"1": "Disabled",
+		"2": "Enabled",
+		"3": "Activated",
+		"4": "Paused",
+		"5": "Completed",
+		"6": "Aborted"
+	},
 	"m2m:responseType" : {
 		"1": "Non-blocking Request Synch",
 		"2": "Non-blocking Request Asynch",

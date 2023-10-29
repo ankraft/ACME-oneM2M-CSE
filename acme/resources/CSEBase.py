@@ -82,11 +82,11 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('csi', '/cse', overwrite = False)
 
 		self.setAttribute('rr', False, overwrite = False)
-		self.setAttribute('srt', ResourceTypes.supportedResourceTypes(), overwrite = False)			#  type: ignore
-		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations(), overwrite = False)	# Will be replaced when retrieved
-		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite = False)			# This must be a list
 		self.setAttribute('poa', CSE.csePOA, overwrite = False)	
 		self.setAttribute('cst', CSE.cseType, overwrite = False)
+		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
+		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations())
+		self.setAttribute('srv', CSE.supportedReleaseVersions)			# This must be a list
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
 		self.delAttribute('et', setNone = False)	
@@ -131,9 +131,6 @@ class CSEBase(AnnounceableResource):
 
 		# add the current time to this resource instance
 		self.setAttribute('ctm', CSE.time.getCSETimestamp())
-
-		# add the supported release versions
-		self.setAttribute('srv', CSE.supportedReleaseVersions)
 
 
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
