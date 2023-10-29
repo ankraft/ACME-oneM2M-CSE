@@ -431,7 +431,7 @@ class Importer(object):
 					else:
 						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
 						return False
-				case BasicType.list if p.ltype is not None:
+				case BasicType.list | BasicType.listNE if p.ltype is not None:
 					if p.ltype == BasicType.complex:
 						for each in CSE.validator.getAllAttributePolicies().values():
 							if p.lTypeName == each.ctype:	# found a definition
