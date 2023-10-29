@@ -423,7 +423,7 @@ class Logging:
 		# data = data if isinstance(data, bytes) else json.dumps(data, indent = 2).encode()
 		if result.request.ct == ContentSerializationType.JSON:
 			# Logging.isDebug and Logging.logDebug(f'Body: \n{cast(str, data.decode())}')
-			Logging.isDebug and Logging.logDebug(f'Body: \n{data}')
+			Logging.isDebug and Logging.logDebug(f'Body: \n{cast(str, data)}')
 		else:
 			Logging.isDebug and Logging.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}')
 			if result.request.originalRequest:
