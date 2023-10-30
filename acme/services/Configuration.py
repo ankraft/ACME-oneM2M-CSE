@@ -11,7 +11,7 @@
 
 
 from __future__ import annotations
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, cast
 
 import configparser, argparse, os, os.path, pathlib
 import isodate
@@ -565,6 +565,8 @@ class Configuration(object):
 			Returns:
 				A tuple (bool, str) with the result and an error message if applicable.
 		"""
+		from ..services.Logging import LogLevel
+
 		# Some clean-ups and overrides
 
 		def _get(key:str) -> Any:
@@ -586,7 +588,6 @@ class Configuration(object):
 		
 
 		def _getLoglevel(logLevel:str) -> Optional[int]:
-			from ..services.Logging import LogLevel
 			logLevel = logLevel.lower()
 			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
 			match logLevel:
@@ -632,7 +633,9 @@ class Configuration(object):
 				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 
 		# Loglevel and various overrides from command line
-		if isinstance(logLevel := _get('logging.level'), str):
+		logLevel = _get('logging.level')
+		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
+		if isinstance(logLevel, str):
 			if (ll := _getLoglevel(logLevel)) is None:
 				return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
 			_put('logging.level', ll)
@@ -780,7 +783,10 @@ class Configuration(object):
 			return False, f'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {_get("websocket.port")}'	
 		if not (isValidateHostname(_get('websocket.listenIF')) or isValidateIpAddress(_get('websocket.listenIF'))):
 			return False, f'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {_get("websocket.listenIF")}'
-		if isinstance(logLevel := _get('websocket.loglevel'), str):
+
+		logLevel = _get('websocket.loglevel')
+		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
+		if isinstance(logLevel, str):
 			if (ll := _getLoglevel(logLevel)) is None:
 				return False, f'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
 			_put('websocket.loglevel', ll)
