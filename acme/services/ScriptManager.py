@@ -1185,7 +1185,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(setConfig <configuration key> <value>)
+					(set-config <configuration key> <value>)
 
 			Args:
 				pcontext: `PContext` object of the running script.

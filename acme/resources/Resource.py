@@ -234,6 +234,24 @@ class Resource(object):
 		self.setAttribute(_rtype, self.tpe, overwrite = False) 
 
 
+	def willBeDeactivated(self, originator:str) -> None:
+		""" This method is called before a resource will be deactivated.
+			
+			This method is implemented in some sub-classes, which may throw an
+			execption if the resource cannot be deactivated.
+
+			Args:
+				originator: The request originator.
+		"""
+		L.isDebug and L.logDebug(f'Perform deactivation check for: {self.ri}')
+
+		# Check all child resources
+		rs = CSE.dispatcher.retrieveDirectChildResources(self.ri)
+		for r in rs:
+			r.willBeDeactivated(originator)
+
+
+
 	def deactivate(self, originator:str) -> None:
 		"""	Deactivate an active resource.
 

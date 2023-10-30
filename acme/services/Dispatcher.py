@@ -1201,6 +1201,11 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
+		# Check whether the resource and all its children can be deleted
+		# might throw an exception if not possible
+		if doDeleteCheck:
+			resource.willBeDeactivated(originator)	
+
 		resource.deactivate(originator)	# deactivate it first
 
 		# Check resource deletion
@@ -1336,7 +1341,7 @@ class Dispatcher(object):
 				targetResource.handleNotification(request, originator)
 				return Result(rsc = ResponseStatusCode.OK)
 			except ResponseException as e:
-				L.isWarn and L.logWarn(f'error handling notificatuin: {e.dbg}')
+				L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
 				raise
 
 		# error
