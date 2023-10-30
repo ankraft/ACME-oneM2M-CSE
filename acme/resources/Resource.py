@@ -717,7 +717,7 @@ class Resource(object):
 				dct: The dictionary with updated attributes.
 			
 			Return:
-				The either updated attribute, or old value if the attribute is not updated. The method- returns *None* if the attribute does not exists.
+				The either updated attribute, or old value if the attribute is not updated. The method returns *None* if the attribute does not exists.
 		"""
 		value = self.attribute(key)	# old value
 		if dct is not None:

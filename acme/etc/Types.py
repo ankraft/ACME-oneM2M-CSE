@@ -1800,6 +1800,40 @@ class GeoSpatialFunctionType(ACMEIntEnum):
 	"""	Intersects."""
 
 
+##############################################################################
+#
+#	ProcessManagement related
+#
+
+class ProcessState(ACMEIntEnum):
+	"""	ProcessManager Process States.
+	"""
+	Disabled = 1
+	"""	Disabled. """
+	Enabled = 2
+	"""	Enabled. """
+	Activated = 3
+	"""	Activated. """
+	Paused = 4
+	"""	Paused. """
+	Completed = 5
+	"""	Completed. """
+	Aborted = 6
+	"""	Aborted. """
+
+
+class ProcessControl(ACMEIntEnum):
+	"""	ProcessManager Process Control
+	"""
+	Enable = 1
+	"""	Enable. """
+	Disable = 2
+	"""	Disable. """
+	Pause = 3
+	"""	Pause. """
+	Reactivate = 4
+	"""	Reactivate. """
+
 
 ##############################################################################
 #

@@ -10,8 +10,12 @@
 from __future__ import annotations
 from typing import Optional, Any, Union
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..resources.Resource import Resource
+
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, ProcessControl
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..helpers.TextTools import findXPath
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 
 # TODO annc version
 # TODO add to UML diagram
@@ -60,3 +64,50 @@ class PRMR(AnnounceableResource):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.PRMR, dct, pi, create = create)
 
+
+	def activate(self, parentResource: Resource, originator: str) -> None:
+		super().activate(parentResource, originator)
+
+		# Set the initial processStatus to Disabled
+		self.setAttribute('prst', ProcessState.Disabled.value)
+
+		# Set the initial processControl to Disable
+		self.setAttribute('prct', ProcessControl.Disable.value)
+
+	
+	def update(self, dct: JSON = None, originator: str | None = None, doValidateAttributes: bool | None = True) -> None:
+
+
+		#
+		# Check processControl updates
+		#
+		
+		prst = self.prst
+		match (newPrct := findXPath(dct, f'm2m:prmr/prct')):
+			
+			# Failure
+			case ProcessControl.Enable if prst != ProcessState.Disabled:
+				raise OPERATION_NOT_ALLOWED('Process state must be "disabled" to enable the process')
+			case ProcessControl.Disable if prst == ProcessState.Disabled:
+				raise OPERATION_NOT_ALLOWED('Process state must not be "disabled" to disable the process')
+			case ProcessControl.Pause if prst != ProcessState.Activated:
+				raise OPERATION_NOT_ALLOWED('Process state must be "activated" to pause the process')
+			
+			# Success
+			case ProcessControl.Pause if prst == ProcessState.Activated:
+				self.setAttribute('prst', ProcessState.Paused.value)
+				# TODO pause the process
+			
+			case ProcessControl.Reactivate if prst == ProcessState.Paused:
+				self.setAttribute('prst', ProcessState.Activated.value)
+				# TODO reactivate the process
+			
+			case ProcessControl.Disable if prst != ProcessState.Disabled:
+				self.setAttribute('prst', ProcessState.Disabled.value)
+				self.delAttribute('cust')
+				# TODO disable the process
+
+			# TODO continue with step 9)
+
+
+		super().update(dct, originator, doValidateAttributes)	

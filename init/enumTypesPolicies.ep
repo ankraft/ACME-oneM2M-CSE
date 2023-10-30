@@ -219,6 +219,8 @@
 		"48": "crossResourceSubscription",
 		"58": "flexContainerInstance",
 		"60": "timeSyncBeacon",
+		"63": "processManagement",
+		"64": "state",
 		"65": "action",
 		"66": "dependency",
 
@@ -238,6 +240,8 @@
 		"10029": "timeSeriesAnnc",
 		"10030": "timeSeriesInstanceAnnc",
 		"10060": "timeSyncBeaconAnnc",
+		"10063": "processManagementAnnc",
+		"10064": "stateAnnc",
 		"10065": "actionAnnc",
 		"10066": "dependencyAnnc"
 	},
