@@ -238,7 +238,9 @@ class Resource(object):
 		""" This method is called before a resource will be deactivated.
 			
 			This method is implemented in some sub-classes, which may throw an
-			execption if the resource cannot be deactivated.
+			execption if the resource cannot be deactivated. If it is implemented
+			it should call the super class' `willBeDeactivated()` method to check
+			for child resources.			
 
 			Args:
 				originator: The request originator.
@@ -246,10 +248,8 @@ class Resource(object):
 		L.isDebug and L.logDebug(f'Perform deactivation check for: {self.ri}')
 
 		# Check all child resources
-		rs = CSE.dispatcher.retrieveDirectChildResources(self.ri)
-		for r in rs:
+		for r in CSE.dispatcher.retrieveDirectChildResources(self.ri):
 			r.willBeDeactivated(originator)
-
 
 
 	def deactivate(self, originator:str) -> None:
