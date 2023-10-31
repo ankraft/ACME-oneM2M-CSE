@@ -296,34 +296,48 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCINwithDISR(self) -> None:
+	def test_retrieveCINwithDISRFail(self) -> None:
 		"""	Retrieve <CIN> with disr = True -> FAIL """
 		r, rsc = RETRIEVE(f'{cntURL}/3', TestCNT_CIN.originator)	# Retrieve some <cin>
 		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveLAwithDISR(self) -> None:
+	def test_retrieveLAwithDISRFail(self) -> None:
 		"""	Retrieve <CNT>.LA with disr = True -> FAIL """
 		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
 		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveOLwithDISR(self) -> None:
+	def test_retrieveOLwithDISRFail(self) -> None:
 		"""	Retrieve <CNT>.OL with disr = True -> FAIL """
 		r, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
 		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCINwithDISR(self) -> None:
+	def test_discoverCINwithDISRFail(self) -> None:
 		"""	Discover <CIN> with disr = True -> FAIL """
 		r, rsc = RETRIEVE(f'{cntURL}?rcn={int(ResultContentType.childResourceReferences)}', TestCNT_CIN.originator)	# Discover
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 0)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCINwithDISRFail(self) -> None:
+		"""	Delete <CIN> with disr = True -> Fail"""
+		r, rsc = DELETE(f'{cntURL}/3', TestCNT_CIN.originator)	# delete a <cin>
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteLAwithDISRFail(self) -> None:
+		"""	Delete <la> with disr = True -> Fail"""
+		r, rsc = DELETE(f'{cntURL}/la', TestCNT_CIN.originator)	# delete latest <cin>
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -381,6 +395,45 @@ class TestCNT_CIN(unittest.TestCase):
 		"""	Retrieve <CIN> with disr = False"""
 		r, rsc = RETRIEVE(f'{cntURL}/3', TestCNT_CIN.originator)	# Retrieve some <cin>
 		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTwithCINandDisr(self) -> None:
+		"""	Delete <CNT> with <CIN> and disr = True """
+		
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN + '_1',
+					'disr' : True
+				}}
+		TestCNT_CIN.cnt, rsc = CREATE(aeURL, TestCNT_CIN.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertIsNotNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'))
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'), True)
+
+		# Add CINs
+		for i in range(5):
+			dct = 	{ 'm2m:cin' : {
+						'rn'  : f'{i}',
+						'con' : f'{i}',
+					}}
+			_, rsc = CREATE(cntURL + '_1', TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.CREATED)
+
+		# Delete <CNT> again -> Fail
+		r, rsc = DELETE(cntURL + '_1', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
+
+		# Update CNT now with False
+		dct = 	{ 'm2m:cnt' : {
+					'disr' : False,
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL + '_1', TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, TestCNT_CIN.cnt)
+		
+		# Delete <CNT> again
+		r, rsc = DELETE(cntURL + '_1', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -516,14 +569,17 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
 	addTest(suite, TestCNT_CIN('test_createCNTwithDISR'))
-	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISR'))
-	addTest(suite, TestCNT_CIN('test_retrieveLAwithDISR'))
-	addTest(suite, TestCNT_CIN('test_retrieveOLwithDISR'))
-	addTest(suite, TestCNT_CIN('test_discoverCINwithDISR'))
+	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISRFail'))
+	addTest(suite, TestCNT_CIN('test_retrieveLAwithDISRFail'))
+	addTest(suite, TestCNT_CIN('test_retrieveOLwithDISRFail'))
+	addTest(suite, TestCNT_CIN('test_discoverCINwithDISRFail'))
+	addTest(suite, TestCNT_CIN('test_deleteCINwithDISRFail'))
+	addTest(suite, TestCNT_CIN('test_deleteLAwithDISRFail'))
 	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRFalse'))
 	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
 	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
 	addTest(suite, TestCNT_CIN('test_deleteCNT'))
+	addTest(suite, TestCNT_CIN('test_deleteCNTwithCINandDisr'))
 
 	addTest(suite, TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
 	addTest(suite, TestCNT_CIN('test_deleteCNT'))

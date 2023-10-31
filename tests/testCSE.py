@@ -15,6 +15,7 @@ from typing import Tuple
 from acme.etc.Types import ResponseStatusCode as RC
 from acme.etc.Types import ResourceTypes as T
 from init import *
+from acme.services.CSE import supportedReleaseVersions
 
 
 class TestCSE(unittest.TestCase):
@@ -76,7 +77,12 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cb/ri'), CSEID[1:])
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/cst'))
-		self.assertIsNotNone(findXPath(r, 'm2m:cb/srt'))
+
+		self.assertIsNotNone(srt := findXPath(r, 'm2m:cb/srt'))
+		self.assertIsInstance(srt, list)
+		for t in T.supportedResourceTypes():
+			self.assertIn(t, srt)
+		
 		self.assertIsNotNone(srv := findXPath(r, 'm2m:cb/srv'))
 		self.assertIsInstance(srv, list)
 

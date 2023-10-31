@@ -234,7 +234,7 @@ class Resource(object):
 		self.setAttribute(_rtype, self.tpe, overwrite = False) 
 
 
-	def willBeDeactivated(self, originator:str) -> None:
+	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
 		""" This method is called before a resource will be deactivated.
 			
 			This method is implemented in some sub-classes, which may throw an
@@ -244,12 +244,19 @@ class Resource(object):
 
 			Args:
 				originator: The request originator.
+				parentResource: The resource's parent resource.
 		"""
 		L.isDebug and L.logDebug(f'Perform deactivation check for: {self.ri}')
+		
+		# Don't do anything when the resource is virtual
+		if self.isVirtual():
+			return
 
 		# Check all child resources
 		for r in CSE.dispatcher.retrieveDirectChildResources(self.ri):
-			r.willBeDeactivated(originator)
+			if r.isVirtual():
+				continue
+			r.willBeDeactivated(originator, self)
 
 
 	def deactivate(self, originator:str) -> None:

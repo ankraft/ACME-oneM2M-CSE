@@ -88,6 +88,15 @@ class CIN(AnnounceableResource):
 		self.setAttribute('st', st)
 
 
+	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
+		super().willBeDeactivated(originator, parentResource)
+		
+		# Check whether the parent container's *disableRetrieval* attribute is set to True.
+		L.logDebug(parentResource)
+		if parentResource.disr:
+			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Retrieval is disabled for the parent <container>'))
+
+
 	# Forbid updating
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 

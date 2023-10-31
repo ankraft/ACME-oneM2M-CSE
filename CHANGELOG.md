@@ -12,12 +12,14 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2023.DEV] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added internal check before executing a DELETE operation that all resources are allowed to be deleted.
 
 ### Experimental
 
 ### Changed
 
 ### Fixed
+- [CSE] Added missing &lt;CIN> DELETE procedure: Delete is forbidden if the parent &lt;CNT> has the *disableRetrieval* attribute set to True.
 
 ### Removed
 

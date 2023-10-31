@@ -127,7 +127,6 @@ class CNT(ContainerResource):
 		super().update(dct, originator, doValidateAttributes)
 		
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
-		#if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
 		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
 

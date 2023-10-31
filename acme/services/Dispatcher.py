@@ -1201,20 +1201,22 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
+		# Retrieve the parent resource now, because we need it later
+		if not parentResource:
+			parentResource = resource.retrieveParentResource()
+
 		# Check whether the resource and all its children can be deleted
 		# might throw an exception if not possible
 		if doDeleteCheck:
-			resource.willBeDeactivated(originator)	
+			resource.willBeDeactivated(originator, parentResource)	
 
-		resource.deactivate(originator)	# deactivate it first
+		# Deactivate the resource
+		resource.deactivate(originator)
 
 		# Check resource deletion
 		if withDeregistration:
 			CSE.registration.checkResourceDeletion(resource)
 
-		# Retrieve the parent resource now, because we need it later
-		if not parentResource:
-			parentResource = resource.retrieveParentResource()
 
 		# delete the resource from the DB. Save the result to return later
 		try:
