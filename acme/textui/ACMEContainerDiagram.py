@@ -248,6 +248,7 @@ class ACMEContainerDiagram(Container):
 		# Create a new plot and configure its timestamp format
 		self.plot = PlotextPlot()
 		self.plot.plt.date_form('d/m/Y H:M:S', 'Y-m-d H:M:S')
+		# TODO the output date format doesn't seem to work with the bar diagram
 
 		# Add the plot to the container and refresh the container
 		self.plotContainer._add_child(self.plot)

@@ -245,10 +245,26 @@ class ACMEContainerTree(Container):
 				if resource.ty in (ResourceTypes.CNT, ResourceTypes.TS):
 					instances = CSE.dispatcher.retrieveDirectChildResources(resource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
 					
-					# The following line may fail if the content cannot be converted to a float.
+					# The following lines may fail if the content cannot be converted to a float or a boolean.
 					# This is expected! This just means that any content is not a number and we cannot raw a diagram.
 					# The exception is caught below and the diagram view is hidden.
-					values = [float(r.con) for r in instances]
+					try:
+						values = [float(r.con) for r in instances]
+					except ValueError:
+						# Number (int or float) failed. Now try boolean
+						values = []
+						for r in instances:
+							_con = r.con
+							if isinstance(_con, str):
+								if _con.lower() in ['true', 'on', 'yes', 'high']:
+									values.append(1)
+								elif _con.lower() in ['false', 'off', 'no', 'low']:
+									values.append(0)
+								else:
+									self.app.bell()
+									raise ValueError	# not a "boolean" value
+							else:
+								raise ValueError	# Not a string in the first place
 
 					dates = [r.ct for r in instances]
 					# values = [float(r.con)

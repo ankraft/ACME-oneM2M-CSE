@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 
 ### Changed
+- [TUI] Diagrams now support containers that contain boolean-kind values (true/false, on/off, yes/no, high/low).
 
 ### Fixed
 - [CSE] Added missing &lt;CIN> DELETE procedure: Delete is forbidden if the parent &lt;CNT> has the *disableRetrieval* attribute set to True.
