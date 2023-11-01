@@ -177,6 +177,14 @@ class ACMEContainerDiagram(Container):
 		if self.refreshCallback:
 			self.refreshCallback()
 			self.plotGraph()
+	
+
+	def refreshPlot(self) -> None:
+		"""	Refresh the diagram.
+		"""
+		self.plotGraph()
+
+
 
 	
 	def plotGraph(self) -> None:

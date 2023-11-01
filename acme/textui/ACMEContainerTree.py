@@ -275,6 +275,7 @@ class ACMEContainerTree(Container):
 					# 		if r.ty in (ResourceTypes.CIN, ResourceTypes.TSI)]
 
 					self.diagram.setData(values, dates)
+					self.diagram.plotGraph()
 					self.tabs.show_tab('tree-tab-diagram') 
 				else:
 					self.tabs.hide_tab('tree-tab-diagram') 
@@ -293,7 +294,6 @@ class ACMEContainerTree(Container):
 		# Add syntax highlighting and add to the view
 		self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
 
-
 		# TODO update the create, retrieve, update, delete views
 
 	
@@ -307,6 +307,8 @@ class ACMEContainerTree(Container):
 				self._update_requests()
 				self.requestView.updateBindings()
 			case 'tree-tab-resource':
+				pass
+			case 'tree-tab-diagram':
 				pass
 			case 'tree-tab-delete':
 				pass
