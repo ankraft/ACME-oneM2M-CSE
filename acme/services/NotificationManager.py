@@ -281,11 +281,11 @@ class NotificationManager(object):
 
 		for sub in subs:
 
-			if reason not in sub['net']:	# check whether reason is actually included in the subscription
+			if reason not in sub.get('net'):	# check whether reason is actually included in the subscription
 				continue
 
 			# Prevent own notifications for subscriptions 
-			ri = sub['ri']
+			ri = sub.get('ri')
 
 			# Check whether reason is included in the subscription
 			if childResource and \
@@ -294,7 +294,7 @@ class NotificationManager(object):
 					continue
 
 			# Check the subscription's schedule, but only if it is not an immediate notification
-			if not ((nec := sub['nec']) and nec == EventCategory.Immediate):
+			if not ((nec := sub.get('nec')) and nec == EventCategory.Immediate):
 				if (_sc := CSE.storage.searchScheduleForTarget(ri)):
 					_ts = utcDatetime()
 
@@ -319,7 +319,7 @@ class NotificationManager(object):
 					self.countNotificationEvents(ri)
 			
 				# Check Update and enc/atr vs the modified attributes 
-				case NotificationEventType.resourceUpdate if (atr := sub['atr']) and modifiedAttributes:
+				case NotificationEventType.resourceUpdate if (atr := sub.get('atr')) and modifiedAttributes:
 					found = False
 					for k in atr:
 						if k in modifiedAttributes:
@@ -336,7 +336,7 @@ class NotificationManager(object):
 			
 				#  Check for missing data points (only for <TS>)
 				case NotificationEventType.reportOnGeneratedMissingDataPoints if missingData:
-					md = missingData[sub['ri']]
+					md = missingData[sub.get('ri')]
 					if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
 						self._handleSubscriptionNotification(sub, 
 															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
