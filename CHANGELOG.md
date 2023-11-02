@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added internal check before executing a DELETE operation that all resources are allowed to be deleted.
+- [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 
 ### Experimental
 

@@ -114,7 +114,7 @@ class ACMETuiApp(App):
 		self.event_loop:asyncio.AbstractEventLoop = None
 
 		self.tabs = TabbedContent()
-		self.containerTree = ACMEContainerTree()
+		self.containerTree = ACMEContainerTree(self)
 		self.containerRequests = ACMEContainerRequests(self)
 		self.containerRegistrations = ACMEContainerRegistrations(self)
 		self.containerConfigs = ACMEContainerConfigurations(self)

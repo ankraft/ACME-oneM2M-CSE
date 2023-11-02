@@ -141,7 +141,9 @@ class ACMEContainerTree(Container):
 
 '''
 
-	def __init__(self) -> None:
+	from ..textui import ACMETuiApp
+
+	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
 		super().__init__(id = idTree)
 		self.resourceTree = ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view')
 		self.resourceTree.parentContainer = self
@@ -153,7 +155,7 @@ class ACMEContainerTree(Container):
 
 		# Various Resource and Request views
 		self.deleteView = ACMEContainerDelete()
-		self.diagram = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource())
+		self.diagram = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), tuiApp = tuiApp)
 
 		# For some reason, the markdown header is not refreshed the very first time
 		self.header = Markdown('')

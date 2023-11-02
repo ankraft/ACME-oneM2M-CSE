@@ -7,14 +7,15 @@
 """	This module defines the Diagram view for for *Container* resources for the ACME text UI.
 """
 from __future__ import annotations
-from typing import Optional, Callable
-from enum import IntEnum
 
+from enum import IntEnum
+from typing import Callable, Optional
+
+from textual import events, on
 from textual.app import ComposeResult
-from textual import on
-from textual.containers import Container, Vertical, Center, Horizontal, Middle
-from textual.binding import Binding
-from textual.widgets import Button, RadioSet, RadioButton
+from textual.containers import Center, Container, Horizontal, Vertical
+from textual.widgets import Button, Checkbox
+from textual.timer import Timer
 from textual_plotext import PlotextPlot
 
 from ..etc.DateUtils import fromISO8601Date
@@ -96,12 +97,64 @@ class ACMEContainerDiagram(Container):
 	margin-right: 0;
 	min-width: 13;
 }
+
+#diagram-autorefresh-checkbox {
+	height: 1;
+	border: none;
+	margin-left: 2;
+	margin-right: 0;
+	min-width: 17;
+}
+
+/* Toggle Button */
+
+ToggleButton > .toggle--button {
+	color: $background;
+	text-style: bold;
+	background: $foreground 15%;
+}
+
+ToggleButton:focus > .toggle--button {
+	background: $foreground 25%;
+}
+
+ToggleButton.-on > .toggle--button {
+	background: $success 75%;
+}
+
+ToggleButton.-on:focus > .toggle--button {
+	background: $success;
+}
+
+
+ToggleButton:light > .toggle--button {
+        color: $background;
+		text-style: bold;
+        background: $foreground 15%;
+}
+
+ToggleButton:light:focus > .toggle--button {
+	background: $foreground 25%;
+}
+
+ToggleButton:light.-on > .toggle--button {
+	color: $foreground 10%;
+	background: $success;
+}
+
+ToggleButton:light.-on:focus > .toggle--button {
+	color: $foreground 10%;
+	background: $success 75%;
+}
+
 '''
 
-# TODO perhaps replace the PlotextPlot instance every time one chooses another diagram type
 
-	def __init__(self, refreshCallback:Callable) -> None:
+	from ..textui import ACMETuiApp
+
+	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
 		super().__init__()
+		self.tuiApp = tuiApp
 		self.color = (0, 120, 212)
 		self.type = DiagramTypes.Line
 		self.plotContainer:Container = None
@@ -109,6 +162,9 @@ class ACMEContainerDiagram(Container):
 		self.values:list[float] = []
 		self.dates:Optional[list[str]] = []
 		self.refreshCallback = refreshCallback
+		self.autoRefresh = False
+		self.autoRefreshInterval = self.tuiApp.textUI.refreshInterval
+		self.refreshTimer:Timer = None
 		self.buttons = {
 			DiagramTypes.Line: Button('Line', variant = 'success', id = 'diagram-line-button'),
 			DiagramTypes.Graph: Button('Graph', variant = 'primary', id = 'diagram-graph-button'),
@@ -128,11 +184,26 @@ class ACMEContainerDiagram(Container):
 					for button in self.buttons.values():
 						yield button
 					yield Button('Refresh', variant = 'primary', id = 'diagram-refresh-button')
+					_refreshCheckbox = Checkbox('Auto Refresh', self.autoRefresh, id = 'diagram-autorefresh-checkbox')
+					_refreshCheckbox.BUTTON_INNER = ' '
+					yield _refreshCheckbox
+
+
+	def on_mount(self) -> None:
+		self.refreshTimer = self.set_interval(self.autoRefreshInterval, 
+											  self._refreshChart, 
+											  pause = True)
 
 
 	def on_show(self) -> None:
 		self._activateButton(self.type)
 		self.plotGraph()
+		if self.autoRefresh:
+			self._startRefreshTimer()
+	
+	
+	def on_hide(self) -> None:
+		self._stopRefreshTimer()
 
 
 	@on(Button.Pressed, '#diagram-line-button')
@@ -174,17 +245,24 @@ class ACMEContainerDiagram(Container):
 	def refreshButtonExecute(self) -> None:
 		"""	Callback to refresh the diagram.
 		"""
-		if self.refreshCallback:
-			self.refreshCallback()
-			self.plotGraph()
+		self._refreshChart()
 	
+
+	def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+		"""	Callback to refresh the diagram.
+		"""
+		
+		self.autoRefresh = event.value
+		if self.autoRefresh:
+			self._startRefreshTimer()
+		else:
+			self._stopRefreshTimer()
+
 
 	def refreshPlot(self) -> None:
 		"""	Refresh the diagram.
 		"""
 		self.plotGraph()
-
-
 
 	
 	def plotGraph(self) -> None:
@@ -275,3 +353,22 @@ class ACMEContainerDiagram(Container):
 				b.variant = 'primary'
 			self.buttons[type].variant = 'success'
 			self.plotGraph()
+
+
+	def _refreshChart(self) -> None:
+		"""	Refresh the chart.
+		"""
+		if self.refreshCallback:
+			self.refreshCallback()
+			self.plotGraph()
+
+
+	def _startRefreshTimer(self) -> None:
+		"""	Start the refresh timer.
+		"""
+		self.refreshTimer.resume()
+
+	def _stopRefreshTimer(self) -> None:
+		"""	Stop the refresh timer.
+		"""
+		self.refreshTimer.pause()
