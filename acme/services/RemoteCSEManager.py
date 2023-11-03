@@ -434,6 +434,10 @@ class RemoteCSEManager(object):
 					self._updateCSRonRegistrarCSE(localCSE)
 					L.isDebug and L.logDebug('Remote CSR updated')
 
+			except TARGET_NOT_REACHABLE:
+				L.isWarn and L.logWarn('Registrar CSE unreachable - assuming it is still there')
+
+
 			# No CSR on registrar CSE found, try to register
 			except Exception as e:
 				# L.logErr(str(e), exc = e)

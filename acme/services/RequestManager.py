@@ -1019,13 +1019,17 @@ class RequestManager(object):
 			
 			Return:
 				The deserialized data structure.
+
+			Raises:
+				*UNSUPPORTED_MEDIA_TYPE* if the content type is not supported.
+				*BAD_REQUEST* if the data is malformed.
 		"""
 		dct = None
 		# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
 		if data:
 			try:
 				if (dct := deserializeData(data, contentType)) is None:
-					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = contentType)
+					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = None)
 			except UNSUPPORTED_MEDIA_TYPE as e:
 				raise
 			except Exception as e:

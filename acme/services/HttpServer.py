@@ -316,7 +316,7 @@ class HttpServer(object):
 
 
 		# log Body, if there is one
-		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.originalData:
+		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request and dissectResult.request.originalData:
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.originalData)}')
 			else:
@@ -332,7 +332,8 @@ class HttpServer(object):
 
 		if dissectResult.rsc != ResponseStatusCode.UNKNOWN:	# any other value right now indicates an error condition
 			# Something went wrong during dissection
-			CSE.request.recordRequest(dissectResult.request, dissectResult)
+			if dissectResult.request:
+				CSE.request.recordRequest(dissectResult.request, dissectResult)
 			return self._prepareResponse(dissectResult)
 
 		try:
@@ -835,8 +836,10 @@ class HttpServer(object):
 		# Get the media type from the content-type header
 		cseRequest.ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
 
-		# parse accept header
-		cseRequest.httpAccept 	= [ a for a in _headers.getlist('accept') if a != '*/*' ]
+		# parse accept header. Ignore */* and variants thereof
+		cseRequest.httpAccept = []
+		for h in _headers.getlist('accept'):
+			cseRequest.httpAccept.extend([ a.strip() for a in h.split(',') if not a.startswith('*/*')])
 
 		# copy request arguments for greedy attributes checking
 		_args = request.args.copy() 	# type: ignore [no-untyped-call]

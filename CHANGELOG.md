@@ -22,6 +22,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Added missing &lt;CIN> DELETE procedure: Delete is forbidden if the parent &lt;CNT> has the *disableRetrieval* attribute set to True.
+- [CSE] Fixed wrong http response for some cases when the *Accept* http header contains a wildcard.
 
 ### Removed
 
