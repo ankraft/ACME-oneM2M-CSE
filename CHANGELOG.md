@@ -27,6 +27,14 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Removed
 
 
+## [2023.10.1] - 2023-11-04
+
+### Changed
+- [CSE] Added &lt;FCNT> as child resource type for &lt;NOD>. Thanks to @BobFIV for the contribution.
+
+### Security
+- [MISC] Bumped referenced library werkzeug to version 3.0.1
+
 
 ## [2023.10] - 2023-10-23
 

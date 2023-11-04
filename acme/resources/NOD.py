@@ -27,6 +27,7 @@ class NOD(AnnounceableResource):
 								   ResourceTypes.MGMTOBJ, 
 								   ResourceTypes.SCH,
 								   ResourceTypes.SMD, 
+								   ResourceTypes.FCNT,
 								   ResourceTypes.SUB ]
 
 
