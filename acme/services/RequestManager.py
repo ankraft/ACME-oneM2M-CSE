@@ -487,10 +487,13 @@ class RequestManager(object):
 			In addition notify the notification targets.
 		"""
 		L.isDebug and L.logDebug('Executing nonBlockingRequestAsync')
+		_originalRtu = request.rtu
+		request.rtu = None	# remove and store RTU. We don't want to forward this attribute
 		try:
 			req = self._executeOperation(request, reqRi)
 		except ResponseException:
 			return False
+		request.rtu = _originalRtu	# restore RTU
 
 		L.isDebug and L.logDebug('Sending result notifications for nonBlockingRequestAsynch')
 		# TODO move the notification to the notificationManager
@@ -553,6 +556,8 @@ class RequestManager(object):
 			# attributes set below in the request
 			rs = RequestStatus.COMPLETED
 			rsc = operationResult.rsc
+
+			# Check whether the response contains a resource
 			if operationResult.resource:
 				if isinstance(operationResult.resource, Resource):
 					pc = operationResult.resource.asDict()
@@ -562,6 +567,11 @@ class RequestManager(object):
 						rs = RequestStatus.PARTIALLY_COMPLETED
 						del operationResult.resource['acme:incomplete']
 					pc = operationResult.resource
+			
+			# Check whether the response is a request. This could be the
+			# case when forwarding a request to a remote CSE.
+			elif operationResult.request:
+				pc = operationResult.request.pc
 
 		
 		except ResponseException as e:
@@ -1270,9 +1280,10 @@ class RequestManager(object):
 			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
 			if (rt := gget(cseRequest.originalRequest, 'rt', greedy = False)) is not None: # rt is an int
 				cseRequest.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
-				# TODO nu should only be set when responseType=non-blocking async
-				if (nu := gget(rt, 'nu', greedy = False)) is not None:
+				if rt (nu := gget(rt, 'nu', greedy = False)) is not None:
 					cseRequest.rtu = nu	#  TODO validate for url?
+				if cseRequest.rtu and cseRequest.rt != ResponseType.nonBlockingRequestAsynch:
+					raise BAD_REQUEST(L.logDebug('nu is only allowed when rt=nonBlockingRequestAsynchronous'), data = cseRequest)
 
 			# RP - resultPersistence (also as timestamp)
 			if (rp := gget(cseRequest.originalRequest, 'rp', greedy=False)): 

@@ -537,7 +537,8 @@ class HttpServer(object):
 		if request.oet:
 			hds[Constants.hfOET] = request.oet
 		if request.rt and request.rt != ResponseType.blockingRequest:
-			hds[Constants.hfRTU] = str(request.rt.value)
+			if (nu := request.originalRequest.get('nu')):
+				hds[Constants.hfRTU] = '&'.join(nu)
 		if request.vsi:
 			hds[Constants.hfVSI] = request.vsi
 
