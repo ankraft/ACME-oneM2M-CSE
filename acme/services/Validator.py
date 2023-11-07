@@ -264,7 +264,7 @@ class Validator(object):
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
 			return self._validateType(policy.type, value, True, policy = policy)
-		raise BAD_REQUEST(f'validation for attribute {attribute} not defined')
+		raise BAD_REQUEST(f'validation for attribute {attribute} not defined for resource type: {rtype}')
 
 
 	#

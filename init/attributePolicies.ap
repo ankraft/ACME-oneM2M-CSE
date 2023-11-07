@@ -244,8 +244,12 @@
 	],
 	"loc": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", "CIN", "CINAnnc", 
-					    "CNT", "CNTAnnc", "FCI", "FCNT", "FCNTAnnc", "TS", "TSAnnc", "TSI", "TSIAnnc", "REQRESP" ],	
+			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", 
+						"CIN", "CINAnnc",
+					    "CNT", "CNTAnnc", "CNT_LA", "CNT_OL",
+						"FCI", "FCNT", "FCNTAnnc", "FCNT_LA", "FCNT_OL",
+						"TS", "TSAnnc", "TS_LA", "TS_OL", "TSI", "TSIAnnc", 
+						"REQRESP" ],	
 			"lname": "location",
 			"ns": "m2m",
 			"type": "m2m:geoCoordinates",
@@ -817,7 +821,7 @@
 	],
 	"con": [
 		{
-			"rtypes": [ "CIN", "CINAnnc", "REQRESP" ],
+			"rtypes": [ "CIN", "CINAnnc", "CNT_LA", "CNT_OL", "REQRESP" ],
 			"lname": "content",
 			"ns": "m2m",
 			"type": "string",
@@ -828,7 +832,7 @@
 			"annc": "OA"
 		},
 		{
-			"rtypes": [ "TSI", "TSIAnnc" ],
+			"rtypes": [ "TSI", "TSIAnnc", "TS_LA", "TS_OL" ],
 			"lname": "content",
 			"ns": "m2m",
 			"type": "string",
@@ -882,7 +886,10 @@
 	],
 	"cs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "FCNT", "FCNTAnnc", "FCI", "FCNT_LA", "FCNT_OL",
+						"CIN", "CNT_LA", "CNT_OL",
+						"TSI", "TSIAnnc", "TS_LA", "TS_OL",
+						"REQRESP"],
 			"lname": "contentSize",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -1074,7 +1081,7 @@
 	],
 	"dgt": [
 		{
-			"rtypes": [ "CIN", "FCNT", "REQRESP" ],
+			"rtypes": [ "CIN", "FCNT", "CNT_LA", "CNT_OL", "REQRESP" ],
 			"lname": "dataGenerationTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
@@ -1085,7 +1092,7 @@
 			"annc": "OA"
 		},
 		{
-			"rtypes": [ "TSI", "TSIAnnc" ],
+			"rtypes": [ "TSI", "TSIAnnc", "TS_LA", "TS_OL" ],
 			"lname": "dataGenerationTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
@@ -2512,8 +2519,10 @@
 	],
 	"or": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CIN", "CINAnnc", "CNT", "CNTAnnc", 
-						"FCNT", "FCNTAnnc", "SMD", "SMDAnnc", "TS", "TSAnnc" ],
+			"rtypes": [ "AE", "AEAnnc", 
+						"CIN", "CINAnnc", "CNT", "CNTAnnc", "CNT_LA", "CNT_OL",
+						"FCNT", "FCNTAnnc", "SMD", "SMDAnnc", 
+						"TS", "TSAnnc" ],
 			"lname": "ontologyRef",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -3098,7 +3107,7 @@
 	],
 	"snr": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "TSI", "TSIAnnc", "TS_LA", "TS_OL", "REQRESP" ],
 			"lname": "sequenceNr",
 			"ns": "m2m",
 			"type": "nonNegInteger",

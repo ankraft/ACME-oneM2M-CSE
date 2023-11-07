@@ -12,8 +12,8 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
-from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED
+from ..etc.Types import AttributePolicyDict, ResourceTypes,  JSON, CSERequest
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
 from ..services import CSE
 from ..etc.Utils import getAttributeSize
@@ -32,35 +32,35 @@ class CIN(AnnounceableResource):
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-			'ast': None,
-			'daci': None,
-			'st': None,
-			'cr': None,
-			'loc': None,
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'cstn': None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'ast': None,
+		'daci': None,
+		'st': None,
+		'cr': None,
+		'loc': None,
 
 
-			# Resource attributes
-			'cnf': None,
-			'cs': None,
-			'conr': None,
-			'con': None,
-			'or': None,
-			'conr': None,
-			'dcnt': None,
-			'dgt': None
+		# Resource attributes
+		'cnf': None,
+		'cs': None,
+		'conr': None,
+		'con': None,
+		'or': None,
+		'conr': None,
+		'dcnt': None,
+		'dgt': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 

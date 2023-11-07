@@ -16,8 +16,10 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..resources.VirtualResource import VirtualResource
+from ..resources.CIN import CIN
 from ..services import CSE
 from ..services.Logging import Logging as L
+
 
 
 class CNT_OL(VirtualResource):
@@ -108,3 +110,6 @@ class CNT_OL(VirtualResource):
 		CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)
 		return Result(rsc = ResponseStatusCode.DELETED, resource = r)
 
+
+	def hasAttributeDefined(self, name: str) -> bool:
+		return name in CIN._attributes

@@ -18,6 +18,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED,
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
+from ..resources.CIN import CIN
 
 
 class CNT_LA(VirtualResource):
@@ -138,3 +139,7 @@ class CNT_LA(VirtualResource):
 				lcpRi: The resource ID of an `LCP` resource.
 		"""
 		self.setAttribute(self._li, lcpRi, overwrite = True)
+
+
+	def hasAttributeDefined(self, name: str) -> bool:
+		return name in CIN._attributes

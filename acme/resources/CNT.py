@@ -41,38 +41,38 @@ class CNT(ContainerResource):
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-			'daci': None,
-			'st': None,
-			'cr': None,
-			'loc': None,
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'cstn': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		'st': None,
+		'cr': None,
+		'loc': None,
 
-			# Resource attributes
-			'mni': None,
-			'mbs': None,
-			'mia': None,
-			'cni': None,
-			'cbs': None,
-			'li': None,
-			'or': None,
-			'disr': None,
+		# Resource attributes
+		'mni': None,
+		'mbs': None,
+		'mia': None,
+		'cni': None,
+		'cbs': None,
+		'li': None,
+		'or': None,
+		'disr': None,
 
-			# EXPERIMENTAL
-			'subi': None,
-	}
+		# EXPERIMENTAL
+		'subi': None,
+	}		
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
@@ -170,6 +170,12 @@ class CNT(ContainerResource):
 			if childResource.ty == ResourceTypes.CIN:
 				self.instanceAdded(childResource)
 			self.validate(originator)
+
+			# Send update event on behalf of the latest resources.
+			# The oldest resource might not be changed. That is handled in the validate() method.
+			L.logWarn("Added child resource: " + childResource.ri)
+			CSE.event.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
+
 
 
 	# Handle the removal of a CIN. 

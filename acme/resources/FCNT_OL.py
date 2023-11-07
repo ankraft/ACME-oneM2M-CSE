@@ -18,6 +18,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED,
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
+from ..resources.FCI import FCI
 
 
 class FCNT_OL(VirtualResource):
@@ -104,3 +105,7 @@ class FCNT_OL(VirtualResource):
 			raise NOT_FOUND('no instance for <oldest>')
 		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
 		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
+
+
+	def hasAttributeDefined(self, name: str) -> bool:
+		return name in FCI._attributes
