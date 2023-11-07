@@ -1995,7 +1995,7 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, format = pcontext.valueFromArgument(symbol, 1, SType.tString, optional = True)
 	if format is None:
 		format = _format
-	return pcontext.setResult(SSymbol(string = _utcNow().strftime(_format)))
+	return pcontext.setResult(SSymbol(string = _utcNow().strftime(format)))
 
 
 def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
