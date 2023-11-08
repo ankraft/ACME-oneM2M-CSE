@@ -168,9 +168,10 @@ class WebSocketServer(object):
 				websocket: The WebSocket connection.
 				originator: The originator.
 		"""
-		L.isDebug and L.logDebug(f'Associating WS connection {websocket.id} with originator {originator}')
-		# TODO check if originator is already associated with another connection ??? What should be the behaviour then?
-		self.associations[originator] = websocket.id	
+		if not originator in self.associations:
+			L.isDebug and L.logDebug(f'Associating WS connection {websocket.id} with originator {originator}')
+			# TODO check if originator is already associated with another connection ??? What should be the behaviour then?
+			self.associations[originator] = websocket.id	
 
 
 	def removeConnection(self, websocket:ServerConnection, originator:str) -> None:
@@ -204,9 +205,9 @@ class WebSocketServer(object):
 					message: The received message.
 			"""
 
-			# TODO improve originator handling: add originator after registration as well!
+			# TODO improve originator handling: add originator after registration as well
 
-			L.isDebug and L.logDebug(f'==> WS Request: {originator}')
+			L.isDebug and L.logDebug(f'==> WS Request: {wsOriginator}')
 			L.isDebug and L.logDebug(f'Body: {message}')
 
 			request:CSERequest = None
@@ -219,12 +220,13 @@ class WebSocketServer(object):
 
 				# Associate the connection with the originator
 				# TODO as well for registration (then this originator here is wrong)
-				if originator is None:
-					originator = request.originator
-					self.associateConnectionWithOriginator(websocket, originator)
+				requestOriginator = request.originator
+				self.associateConnectionWithOriginator(websocket, requestOriginator)
+
+				# TODO Check if requestOriginator is different from connection originator. Behaviour?
 
 				L.isDebug and L.logDebug(f'Operation: {request.op}')
-				L.isDebug and L.logDebug(f'Originator: {originator}')
+				L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
 
 				try:
 					responseResult = CSE.request.handleRequest(request)
@@ -268,13 +270,14 @@ class WebSocketServer(object):
 			return
 
 		# Variable for this connection originator
-		originator = None	# This is valid until the first message is received. Then the originator is determined from the message
+		wsOriginator = None	# This is valid until the first message is received. Then the originator is determined from the message
 
 
 		L.isDebug and L.logDebug('New WS connection')
-		L.logDebug(f'Received: {websocket.subprotocol}')
+		L.logDebug(f'Received subprotocol: {websocket.subprotocol}')
 		# L.logDebug(f'Received: {websocket.remote_address}')
-		L.logDebug(f'Received: {websocket.request}')
+		L.logDebug(f'Received headers: {websocket.request.headers}')
+		L.logDebug(f'Received request: {websocket.request}')
 
 		# Determine the content type.
 		# The negotiation is done by the server part already. The subprotocol is determined by the client.
@@ -297,5 +300,5 @@ class WebSocketServer(object):
 			L.isDebug and L.logDebug('Connection closed by client')
 		
 		# Remove the connection from the list of unassociated connections or from the list of associated connections
-		self.removeConnection(websocket, originator)
+		self.removeConnection(websocket, wsOriginator)
 
