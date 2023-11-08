@@ -2,6 +2,12 @@
 
 # FAQ
 
+
+## Installation and Running
+
+1. **Can I install the ACME CSE on a Raspberry Pi?**  
+   Yes, the ACME CSE can be installed and run on a Raspberry Pi. However, this usually requires to install a newer version of Python than the one that is installed by default on the Raspberry Pi, and to install some additional libraries, tools, and packages.  
+   See the HowTo [Install ACME on a Raspberry Pi](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/132) for further details.
 ## Network
 
 1. **How can I access the CSE from remote/another computer on my network?**  

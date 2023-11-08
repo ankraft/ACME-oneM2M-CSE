@@ -11,18 +11,19 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 <a name="first_setup"></a>
 ## Installation and First Setup
 
-1. Install the ACME CSE by cloning the repository, or by copying the whole distribution to a new directory.
+1. Install the ACME CSE by cloning the repository, or by downloading the [latest](https://github.com/ankraft/ACME-oneM2M-CSE/releases/latest) release package, unpacking it, and copying the whole distribution to a new directory.
 
 		git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
 		cd ACME-oneM2M-CSE
 
-1. **Either** install the required packages by running the following command (recommended):
+1. It is recommend to install the required packages by running the following command:
 
 		python3 -m pip install -r requirements.txt
 
-	**OR** install them individually:  
+	You may also install the packages manually, but make sure to install the exact versions as specified in the *requirements.txt* file.
 
-		python3 -m pip install cbor2 flask flask-cors InquirerPy isodate paho-mqtt plotext rdflib requests rich tinydb
+	An alternative is to let ACME handle the installation automatically when running it for the first time (see below).
+
 
 1. Run the CSE for the first time.  
 You can start the CSE by simply running it from the command line:
@@ -31,14 +32,24 @@ You can start the CSE by simply running it from the command line:
 
 	Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
 
+    If you have not installed the required packages manually, ACME will ask you to install them now. This can be done by ACME automatically, or you can do it manually (see above).
+
 	If no configuration file is found then an interactive configuration process is started. The
 configuration is saved to a configuration file. e.g. *acme.ini* by default.  
 &nbsp;  
 ![](images/bootstrapConfig.gif)
 
+	After the configuration is saved, the CSE is started. with this configuration.
+
 1.  After terminating the CSE again you can edit that configuration file and add more settings if necessary.
 	There are a lot of individual settings to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
 	See the [Configuration](docs/Configuration.md) documentation for further details, and the defaults configuration file [acme.ini.default](../acme.ini.default).
+
+
+---
+## Installation on a Raspberry Pi
+
+The ACME CSE can be installed on a Raspberry Pi. See the HowTo [Install ACME on a Raspberry Pi](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/132) for further details.
 
 
 ---
