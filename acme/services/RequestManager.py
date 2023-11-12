@@ -1280,7 +1280,7 @@ class RequestManager(object):
 			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
 			if (rt := gget(cseRequest.originalRequest, 'rt', greedy = False)) is not None: # rt is an int
 				cseRequest.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
-				if rt (nu := gget(rt, 'nu', greedy = False)) is not None:
+				if (nu := gget(rt, 'nu', greedy = False)) is not None:
 					cseRequest.rtu = nu	#  TODO validate for url?
 				if cseRequest.rtu and cseRequest.rt != ResponseType.nonBlockingRequestAsynch:
 					raise BAD_REQUEST(L.logDebug('nu is only allowed when rt=nonBlockingRequestAsynchronous'), data = cseRequest)
@@ -1341,7 +1341,7 @@ class RequestManager(object):
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
 			if not cseRequest.originalRequest.get('pc'):
-				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
+				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 					raise BAD_REQUEST(L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'), data = cseRequest)
 			else:
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content

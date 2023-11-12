@@ -762,7 +762,7 @@ class RemoteCSEManager(object):
 			if _id.startswith(eachCsr.csi):
 				break	# found a matching CSR
 		else: # Not found, so not registered
-			raise NOT_FOUND(L.logDebug(f'Not registered to remote CSE to retrieve: {id}'))
+			raise NOT_FOUND(L.logDebug(f'Not registered to remote CSE to send request: {id}'))
 			
 		# Assign fallback originator
 		if not originator:

@@ -86,16 +86,20 @@ class ContainerResource(AnnounceableResource):
 
 	
 	def instanceAdded(self, instance:Resource) -> None:
-		L.logDebug('Adding instance')
-		self.setAttribute('cni', self.cni + 1)	# Increment cni because an instance is added
-		self.setAttribute('cbs', self.cbs + instance.cs) # Add to sum of cbs
-		self.dbUpdate(True)
+		try:
+			self.setAttribute('cni', self.cni + 1)	# Increment cni because an instance is added
+			self.setAttribute('cbs', self.cbs + instance.cs) # Add to sum of cbs
+			self.dbUpdate(True)
+		except TypeError:
+			pass # Ignore if cni or cbs is not set
 
 
 
 	def instanceRemoved(self, instance:Resource) -> None:
-		L.logDebug('Removing instance')
-		self.setAttribute('cni', self.cni - 1)	# Decrement cni because an instance is added
-		self.setAttribute('cbs', self.cbs - instance.cs) # Substract from sum of cbs
-		self.dbUpdate(True)
+		try:
+			self.setAttribute('cni', self.cni - 1)	# Decrement cni because an instance is added
+			self.setAttribute('cbs', self.cbs - instance.cs) # Substract from sum of cbs
+			self.dbUpdate(True)
+		except TypeError:
+			pass # Ignore if cni or cbs is not set
 

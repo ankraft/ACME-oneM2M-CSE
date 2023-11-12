@@ -92,7 +92,6 @@ class CIN(AnnounceableResource):
 		super().willBeDeactivated(originator, parentResource)
 		
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
-		L.logDebug(parentResource)
 		if parentResource.disr:
 			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Retrieval is disabled for the parent <container>'))
 

@@ -166,14 +166,12 @@ class CNT(ContainerResource):
 					childResource.setAttribute('et', maxEt)
 					childResource.dbUpdate()
 
-			self.updateLaOlLatestTimestamp()	# EXPERIMENTAL TODO Also do in FCNT and TS
-			if childResource.ty == ResourceTypes.CIN:
-				self.instanceAdded(childResource)
+			self.instanceAdded(childResource)
 			self.validate(originator)
+			self.updateLaOlLatestTimestamp()	# EXPERIMENTAL TODO Also do in FCNT and TS
 
 			# Send update event on behalf of the latest resources.
 			# The oldest resource might not be changed. That is handled in the validate() method.
-			L.logWarn("Added child resource: " + childResource.ri)
 			CSE.event.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
 
 
@@ -222,7 +220,8 @@ class CNT(ContainerResource):
 		# Only get the CINs in raw format. Instantiate them as resources if needed
 		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
-			
+		cin:Resource = None
+
 		# Check number of instances
 		if mni is not None:
 			while cni > mni and cni > 0:
@@ -257,6 +256,13 @@ class CNT(ContainerResource):
 		self['cni'] = cni
 		self['cbs'] = cbs
 		self.dbUpdate(True)
+
+		# If cin is not None anymore then we have a new "oldest" resource.
+		# cin is NOT the oldest resource, but the one that was deleted last. The new
+		# oldest resource is the first in the list of cinsRaw.
+		# This means that we need to send an "update" event for the oldest resource.
+		if cin is not None and len(cinsRaw):
+			CSE.event.changeResource(Factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())	 # type: ignore [attr-defined]
 	
 		# End validating
 		self.__validating = False

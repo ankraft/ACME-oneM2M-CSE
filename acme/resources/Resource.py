@@ -16,8 +16,9 @@ import json
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, CONTENTS_UNACCEPTABLE, INTERNAL_SERVER_ERROR
-from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict, resourceDiff, normalizeURL, pureResource
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
+from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict
+from ..etc.Utils import resourceDiff, normalizeURL, toCSERelative, isValidCSI
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
 from ..services.Logging import Logging as L
@@ -218,6 +219,13 @@ class Resource(object):
 											 createdInternally = self.isCreatedInternally(), 
 											 isAnnounced = self.isAnnounced())
 
+		# Set the internal originator that created the resource.
+		# This is done slightly different for CSE and AE originators.
+		if isValidCSI(originator):
+			self.setAttribute(_originator, originator, overwrite = False)
+		else:
+			self.setAttribute(_originator, toCSERelative(originator), overwrite = False)
+
 		# validate the resource logic
 		self.validate(originator, parentResource = parentResource)
 		self.dbUpdate()
@@ -230,7 +238,6 @@ class Resource(object):
 				raise BAD_REQUEST('acpi must not be an empty list')
 			self.setAttribute('acpi', self._checkAndFixACPIreferences(self.acpi))
 
-		self.setAttribute(_originator, originator, overwrite = False)
 		self.setAttribute(_rtype, self.tpe, overwrite = False) 
 
 
@@ -706,7 +713,7 @@ class Resource(object):
 
 
 	def hasAttribute(self, key:str) -> bool:
-		"""	Check whether an attribute exists.
+		"""	Check whether an attribute exists for the resource.
 
 			Args:
 				key: Resource attribute name to look for.
@@ -876,6 +883,7 @@ class Resource(object):
 
 	def hasAttributeDefined(self, name:str) -> bool:
 		"""	Test whether a resource supports the specified attribute.
+			This method may be overwritten in sub-classes, for example for virtual resources.
 		
 			Args:
 				name: Attribute to test.

@@ -18,14 +18,14 @@ from ..services.Configuration import Configuration
 from ..services import CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
-from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.ContainerResource import ContainerResource
 from ..resources import Factory		# attn: circular import
 
 
 # CSE default:
 #	- peid is set to pei/2 if ommitted, and pei is set
 
-class TS(AnnounceableResource):
+class TS(ContainerResource):
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
@@ -104,12 +104,14 @@ class TS(AnnounceableResource):
 										    pi = self.ri, 
 										    ty = ResourceTypes.TS_LA)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
+		self.setLatestRI(resource.ri)	# Set the latest resource ID
 
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 										    pi = self.ri, 
 										    ty = ResourceTypes.TS_OL)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
+		self.setOldestRI(resource.ri)	# Set the oldest resource ID
 		
 		self._validateDataDetect()
 
@@ -250,16 +252,23 @@ class TS(AnnounceableResource):
 						childResource.setAttribute('et', maxEt)
 						childResource.dbUpdate(True)
 
+				self.instanceAdded(childResource)
 				self.validate(originator)	# Handle old TSI removals
-			
+				self.updateLaOlLatestTimestamp()	# EXPERIMENTAL
+
 				# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
 				if self.mdd and self.pei is not None and self.mdt is not None:
 					CSE.timeSeries.updateTimeSeries(self, childResource)
 			
+				# Send update event on behalf of the latest resources.
+				# The oldest resource might not be changed. That is handled in the validate() method.
+				CSE.event.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
+
 			case ResourceTypes.SUB:
 				# start monitoring
 				if childResource['enc/md']:
 					CSE.timeSeries.addSubscription(self, childResource)
+
 
 
 	# Handle the removal of a TSI. 
@@ -293,16 +302,18 @@ class TS(AnnounceableResource):
 
 		# TODO Optimize: Do we really need the resources?
 		tsis = self.timeSeriesInstances()	# retrieve TIS child resources
-		cni = len(tsis)			
+		cni = len(tsis)		
+		tsi:Resource = None
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:	# mni is an int
 			while cni > mni and cni > 0:
-				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {tsis[0].ri}')
+				tsi = tsis[0]
+				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {tsi.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(tsi, parentResource = self, doDeleteCheck = False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -312,12 +323,14 @@ class TS(AnnounceableResource):
 		# check size
 		if (mbs := self.mbs) is not None:
 			while cbs > mbs and cbs > 0:
-				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {tsis[0].ri}')
+				tsi = tsis[0]
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {tsi.ri}')
 				# remove oldest
-				cbs -= tsis[0]['cs']
+				# cbs -= tsis[0]['cs']
+				cbs -= tsi.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				CSE.dispatcher.deleteLocalResource(tsi, parentResource = self, doDeleteCheck = False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <tsi>
 
@@ -326,6 +339,13 @@ class TS(AnnounceableResource):
 		self['cbs'] = cbs
 		self.dbUpdate(True)
 	
+		# If tsi is not None anymore then we have a new "oldest" resource.
+		# tsi is NOT the oldest resource, but the one that was deleted last. The new
+		# oldest resource is the first in the list of tsis.
+		# This means that we need to send an "update" event for the oldest resource.
+		if tsi is not None and len(tsis) > 0:
+			CSE.event.changeResource(tsis[0], self.getOldestRI())	 # type: ignore [attr-defined]
+
 		# End validating
 		self.__validating = False
 
@@ -392,7 +412,10 @@ class TS(AnnounceableResource):
 		
 
 	def timeSeriesInstances(self) -> list[Resource]:
-		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
+		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct, oldest first) list.
+
+			Returns:
+				A sorted list of timeSeriesInstances.
 		""" 
 		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
 

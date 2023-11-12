@@ -708,6 +708,11 @@ class Dispatcher(object):
 		except ResponseException as e:
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
+		except Exception as e:
+			L.logErr(f'Exception during resource creation: {e}', exc = e)
+			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
+			raise e
+
 
 		# Post-creation
 		CSE.registration.postResourceCreation(_resource)
@@ -842,6 +847,9 @@ class Dispatcher(object):
 					raise TARGET_NOT_SUBSCRIBABLE(L.logWarn('Parent resource is not subscribable'))
 				else:
 					raise INVALID_CHILD_RESOURCE_TYPE(L.logWarn(f'Invalid child resource type: {ResourceTypes(resource.ty).value}'))
+			
+			# Assign the parent's originator if not provided
+			originator = originator if originator else parentResource.getOriginator()
 
 		# if not already set: determine and add the srn
 		if not resource.getSrn():
@@ -1571,9 +1579,10 @@ class Dispatcher(object):
 				`ORIGINATOR_HAS_NO_PRIVILEGE`: In case the originator has not the required permission to the resoruce.
 
 		"""
+		L.isDebug and L.logDebug(f'Retrieving resource with permissions: {ri} for originator: {originator} permission: {permission}')
 		resource = self.retrieveResource(riFromID(ri), originator)
 		if not CSE.security.hasAccess(originator, resource, permission):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator has no access to the resource: {ri}'))
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no access to the resource: {ri}'))
 		return resource
 	
 

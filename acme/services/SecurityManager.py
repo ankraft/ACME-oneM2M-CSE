@@ -361,7 +361,7 @@ class SecurityManager(object):
 				return True
 
 		# no fitting permission identified
-		L.isDebug and L.logDebug('Permission NOT granted')
+		L.isDebug and L.logDebug(f'Permission NOT granted. Originator: {originator} may not be listed in any of the linked ACPs')
 		return False
 
 
@@ -388,8 +388,9 @@ class SecurityManager(object):
 				raise BAD_REQUEST(L.logDebug('"acpi" must be the only attribute in update'))
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
+			_originator = getIdFromOriginator(originator)
 			if not targetResource.acpi:
-				if originator != targetResource.getOriginator():
+				if _originator != targetResource.getOriginator():
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'No access to update acpi for originator: {originator}'))
 				else:
 					pass	# allowed for creating originator
@@ -399,7 +400,7 @@ class SecurityManager(object):
 					if not (acp := CSE.dispatcher.retrieveResource(ri)):
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
 						continue
-					if acp.checkSelfPermission(originator, Permission.UPDATE):
+					if acp.checkSelfPermission(_originator, Permission.UPDATE):
 						break
 				else:
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}'))

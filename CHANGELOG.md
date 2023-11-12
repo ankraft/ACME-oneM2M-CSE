@@ -24,8 +24,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Fixed
 - [CSE] Added missing &lt;CIN> DELETE procedure: Delete is forbidden if the parent &lt;CNT> has the *disableRetrieval* attribute set to True.
 - [CSE] Fixed wrong http response for some cases when the *Accept* http header contains a wildcard.
-- [CSE] Fixed wrong http request when forwarding non-blocking requests.
+- [CSE] Fixed wrong http request header when forwarding non-blocking requests.
 - [CSE] Fixed empty result content in the &lt;REQ> instance when forwarding non-blocking requests to a remote CSE.
+- [CSE] Fixed wrong handling of *Originator* header in forwarded requests, especially when creating new remote resources.
 
 ### Removed
 
