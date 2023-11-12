@@ -522,9 +522,9 @@ def toCSERelative(id:str) -> str:
 			An ID in CSE-Relative format.
 	"""
 	_e = id.split('/')
-	if isSPRelative(id):
+	if isSPRelative(id) and len(_e) > 2:
 		return '/'.join(_e[2:])
-	elif isAbsolute(id):
+	elif isAbsolute(id) and len(_e) > 3:
 		return '/'.join(_e[3:])
 	return id
 
