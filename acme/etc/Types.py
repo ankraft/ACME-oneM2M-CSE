@@ -826,26 +826,37 @@ class EvalCriteriaOperator(ACMEIntEnum):
 					True if the BasicType is allowed for the current EvalCriteriaOperator, False otherwise.
 			"""
 			# Ordered types are allowed for all operators
-			if typ in [ BasicType.positiveInteger,
-						BasicType.nonNegInteger,
-						BasicType.unsignedInt,
-						BasicType.unsignedLong,
-						BasicType.timestamp,
-						BasicType.absRelTimestamp,
-						BasicType.float,
-						BasicType.integer,
-						BasicType.duration,
-						BasicType.enum,
-						BasicType.time,
-						BasicType.date ]:
+			if typ in _evalCriteriaOrderedTypes:
 				return True
 			# Equal and unequal are the only operators allowed for all other types
-			if self.value in [ EvalCriteriaOperator.equal,
-							   EvalCriteriaOperator.notEqual ]:
+			if self.value in _evalCriteriaComparisonEqualityOperators:
 				return True
 			# Not allowed
 			return False
 
+_evalCriteriaOrderedTypes = (
+	BasicType.positiveInteger,
+	BasicType.nonNegInteger,
+	BasicType.unsignedInt,
+	BasicType.unsignedLong,
+	BasicType.timestamp,
+	BasicType.absRelTimestamp,
+	BasicType.float,
+	BasicType.integer,
+	BasicType.duration,
+	BasicType.enum,
+	BasicType.time,
+	BasicType.date,
+	BasicType.string 
+)
+""" List of BasicTypes that are have an order. """
+
+
+_evalCriteriaComparisonEqualityOperators = (
+	EvalCriteriaOperator.equal,
+	EvalCriteriaOperator.notEqual,
+)
+""" List of EvalCriteriaOperators that test for equality or inequality. """
 
 
 class EvalMode(ACMEIntEnum):
