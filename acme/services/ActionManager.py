@@ -94,12 +94,12 @@ class ActionManager(object):
 	###############################################################################################
 
 
-	def evaluateActions(self, name:str, resource:Resource) -> None:
+	def evaluateActions(self, name:str, resource:Resource, realRi:Optional[str] = None) -> None:
 
 		if resource.isVirtual():
 			return
 		
-		_ri = resource.ri
+		_ri = realRi if realRi else resource.ri
 		_now = utcTime()
 		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {_ri}')
 
@@ -107,17 +107,17 @@ class ActionManager(object):
 		actions = CSE.storage.searchActionsForSubject(_ri)		
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
+		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {_ri}')
 
 		for action in actions:
 
-			# Some explnation why this is done in a critical section:
+			# Some explanation why this is done in a critical section:
 			# It might be that an action is triggered multiple times for a single resource change.
 			# to prevent sending multiple requests, the section is locked for a particular action
 			# while it is being executed. Other actions for the same or other resources are not affected.
 			# When the next action is allowed to execute, it is checked if the action is still valid
 			# and is allowed to execute (e.g. in the same period). If not, it is skipped.
-			with CriticalSection(action['ri'], 'execution'):
-				ri = action['ri']
+			with CriticalSection(ri := action['ri'], 'execution'):
 				# L.logWarn(f'Enter {ri}')
 				
 				# re-read the action document because it might have changed while waiting for the lock
@@ -326,12 +326,13 @@ class ActionManager(object):
 	#	Helper 
 	#
 
-	def checkAttributeThreshold(self, sbjt:str, thld:Any) -> BasicType:
+	def checkAttributeThreshold(self, sbjt:str, thld:Any, rtype:ResourceTypes) -> BasicType:
 		""" Check the threshold value for the given subject attribute.
 
 			Args:
 				sbjt: The subject attribute name
 				thld: The threshold value.
+				rtype: The resource type of the subject attribute.
 
 			Return:
 				The basic type of the attribute value.
@@ -340,7 +341,7 @@ class ActionManager(object):
 		
 		#	Check evalCriteria threshold attribute's value type and operation validity
 		try:
-			typ, _ = CSE.validator.validateAttribute(sbjt, thld)
+			typ, _ = CSE.validator.validateAttribute(sbjt, thld, rtype = rtype)
 		except ResponseException as e:
 			raise BAD_REQUEST(L.logDebug(f'thld - invalid threshold value: {thld} for attribute: {sbjt} : {e.dbg}'))
 		return typ

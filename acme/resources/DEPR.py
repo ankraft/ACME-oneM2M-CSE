@@ -73,7 +73,7 @@ class DEPR(AnnounceableResource):
 			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
 		
 		# Check the value space of the threshold attribute.
-		dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'])
+		dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'], resRri.ty)
 
 		# Check evalCriteria operator
 		CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
@@ -98,7 +98,7 @@ class DEPR(AnnounceableResource):
 				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
 
 			# Check the value space of the threshold attribute.
-			dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'])
+			dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'], resRri.ty)
 
 			# Check evalCriteria operator
 			CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)

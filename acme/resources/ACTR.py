@@ -12,9 +12,9 @@
 from __future__ import annotations
 from typing import Optional, Tuple
 
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator
+from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
-from ..etc.Utils import riFromID
+from ..etc.Utils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L
@@ -77,7 +77,10 @@ class ACTR(AnnounceableResource):
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
-		sriResource, orcResource = self._checkReferencedResources(originator, self.sri, self.orc)
+		sriResource, orcResource = self._checkReferencedResources(originator, 
+																  self.sri, 
+																  self.orc, 
+																  self._getApvOperation())
 		self.sri = riFromID(self.sri)
 		self.orc = riFromID(self.orc)
 
@@ -98,7 +101,7 @@ class ACTR(AnnounceableResource):
 			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {checkResource.ri}'))
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
-		dataType = CSE.action.checkAttributeThreshold(sbjt, (thld := self.evc['thld']))
+		dataType = CSE.action.checkAttributeThreshold(sbjt, (thld := self.evc['thld']), checkResource.ty)
 
 		#	Check evalCriteria operator
 		CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
@@ -117,7 +120,8 @@ class ACTR(AnnounceableResource):
 		# Check referenced resources
 		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))
 		orc = riFromID(findXPath(dct, 'm2m:actr/orc'))
-		self._checkReferencedResources(originator, sri, orc)
+		apvOperation = self.getFinalResourceAttribute('apv/op', dct)
+		self._checkReferencedResources(originator, sri, orc, apvOperation)
 
 		# Check not-NULL orc
 		if 'orc' in dct['m2m:actr'] and findXPath(dct, 'm2m:actr/orc') is None:
@@ -153,6 +157,7 @@ class ACTR(AnnounceableResource):
 
 		# Check that a new sbjt attribute exists in the (potentially new) subject target
 		# Also check when only the subject target changes
+		sriResource:Resource = None
 		if dctEvc or dctSri:
 			try:
 				sriResource = CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
@@ -161,12 +166,18 @@ class ACTR(AnnounceableResource):
 			sbjt = newEvc['sbjt']
 			if not sriResource.hasAttributeDefined(sbjt):
 				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {sriResource.ri}'))
+		
+		# Else use the current subject resource
+		elif self.sri:
+			sriResource = CSE.dispatcher.retrieveResource(self.sri)
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
-		if dctEvc:
-			dataType = CSE.action.checkAttributeThreshold(sbjt, (thld := dctEvc['thld']))
+		if dctEvc and sriResource:
 
-			#	Check evalCriteria operator
+			# Check the value space of the threshold attribute.
+			dataType = CSE.action.checkAttributeThreshold(sbjt, (dctEvc['thld']), sriResource.ty)
+
+			# Check evalCriteria operator
 			self._checkOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)
 
 		# Store some attributes for later evaluation
@@ -209,7 +220,7 @@ class ACTR(AnnounceableResource):
 	#	Internals
 	#
 
-	def _checkReferencedResources(self, originator:str, sri:str, orc:str) -> Tuple[Resource, Resource]:
+	def _checkReferencedResources(self, originator:str, sri:str, orc:str, apvOperation:Operation|int) -> Tuple[Resource, Resource]:
 		"""	Check whether all the referenced resources exists and we have access: subjectResourceID, objectResourceID
 		"""
 		# TODO doc
@@ -219,12 +230,15 @@ class ACTR(AnnounceableResource):
 		if sri is not None: # sri is optional
 			try:
 				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
+				L.isDebug and L.logDebug(f'Found subject resource sri: {resSri.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
 
 		if orc is not None:
 			try:
-				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, Permission.RETRIEVE)
+				apvOperation = Operation(apvOperation) if isinstance(apvOperation, int) else apvOperation
+				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, apvOperation.permission())
+				L.isDebug and L.logDebug(f'Found object resource orc: {resOrc.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
 
@@ -232,9 +246,23 @@ class ACTR(AnnounceableResource):
 
 
 	def _checkApvFrom(self, originator:str) -> None:
-		"""	Check that the from parameter of the actionPrimitive is the originator
+		"""	Check that the *from* parameter of the *actionPrimitive* is the originator.
+
+			Args:
+				originator:	The originator to check against.
+
+			Raises:
+				BAD_REQUEST: If the originator in the *actionPrimitive* does not match the *from* parameter.
 		"""
-		# TODO doc
-		if (apvFr := findXPath(self.apv, 'fr')) != originator:
+		if not compareIDs(apvFr := findXPath(self.apv, 'fr'), originator):
 			raise BAD_REQUEST(L.logDebug(f'invalid "apv.from": {apvFr}. Must be: {originator}'))
+
+
+	def _getApvOperation(self) -> Operation:
+		"""	Get the operation from the *actionPrimitive* attribute.
+
+			Returns:
+				The operation.
+		"""
+		return Operation(findXPath(self.apv, 'op'))
 
