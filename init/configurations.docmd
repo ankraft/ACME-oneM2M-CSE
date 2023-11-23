@@ -166,6 +166,15 @@ The default value is `CAdmin`.
 
 
 
+# cse.poa
+
+This setting specifies the CSE's Point-of-Access (PoA) URL. This is the URL under which the CSE is reachable.
+This can be a comma-separated list of URLs.
+
+The default value is the CSE's HTTP server's URL.
+
+
+
 # cse.releaseVersion
 
 The release version indicator for the CSE. Requests sent by the CSE will be marked with this release version.

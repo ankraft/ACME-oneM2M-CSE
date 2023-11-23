@@ -79,6 +79,9 @@ enableSubscriptionVerificationRequests=true
 ; Indicate whether the optional "to" and "from" parameters shall be sent in responses.
 ; Default: true
 sendToFromInResponses=true
+; Set the CSE's point-of-access. This is a comma-separated list of URLs.
+; Default: The configured HTTP server's address
+poa=${http:address}
 
 
 ;

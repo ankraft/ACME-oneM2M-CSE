@@ -239,6 +239,7 @@ class Configuration(object):
 				'cse.flexBlockingPreference'					: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
 				'cse.maxExpirationDelta'						: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
 				'cse.originator'								: config.get('cse', 'originator',									fallback = 'CAdmin'),
+				'cse.poa'										: config.getlist('cse', 'poa',										fallback = ['http://127.0.0.1:8080']),
 				'cse.releaseVersion'							: config.get('cse', 'releaseVersion',								fallback = '4'),
 				'cse.requestExpirationDelta'					: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
 				'cse.resourcesPath'								: config.get('cse', 'resourcesPath', 								fallback = './init'),

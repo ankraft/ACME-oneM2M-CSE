@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added internal check before executing a DELETE operation that all resources are allowed to be deleted.
+- [CSE] Added configuration value for the CSE's *poa* attribute. Before, the CSE's *poa* was always set to the *http* server's address.
 - [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
 

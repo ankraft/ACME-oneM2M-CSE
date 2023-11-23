@@ -24,18 +24,19 @@ They can usually only be executed from the console or text UI, or the Upper Test
 ;;	Create the CSEBase
 ;;
 
-(import-raw 
-	(get-config "cse.originator") 
-	{"m2m:cb": {
+(setq cb 
+	{ "m2m:cb": {
 		"ri":   "${get-config \"cse.resourceID\"}",
 		"rn":   "${get-config \"cse.resourceName\"}",
 		"csi":  "${get-config \"cse.cseID\"}",
 		"rr":   true,
 		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ],
-		"poa":  [ "${get-config \"http.address\"}" ]
-		;; "poa":  [ "mqtt://mqtt" ]
+		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ]
 	}})
+(setq cb (set-json-attribute cb "m2m:cb/poa" (get-config "cse.poa")))
+
+(import-raw (get-config "cse.originator") cb)
+
 
 ;;
 ;;	Allow all originators to create (only) <ACP> under the CSEBase
