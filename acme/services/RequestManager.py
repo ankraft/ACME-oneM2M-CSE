@@ -25,9 +25,10 @@ from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLO
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
 from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
-from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
+from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
 from ..etc.Utils import isStructured, structuredPathFromRI
 from ..helpers.TextTools import setXPath
+from ..etc.Constants import Constants
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -59,6 +60,9 @@ class RequestManager(object):
 		'_requests',
 		'_rqiOriginator',
 		'_pcWorker',
+		'_receivedResponses',
+		'_receivedResponsesLock',
+
 
 		'requestHandlers',
 		'flexBlockingBlocking',
@@ -79,6 +83,11 @@ class RequestManager(object):
 		'_eventMqttSendUpdate',
 		'_eventMqttSendDelete',
 		'_eventMqttSendNotify',
+		'_eventWsSendRetrieve',
+		'_eventWsSendCreate',
+		'_eventWsSendUpdate',
+		'_eventWsSendDelete',
+		'_eventWsSendNotify',
 		'_eventAcmeSendNotify',
 	)
 
@@ -94,6 +103,8 @@ class RequestManager(object):
 		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeests. Used for handling polling requests.
 		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
 		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * expirationCheckFactor, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
+		self._receivedResponses:Dict[str, Tuple[Result, str]] = {}
+		self._receivedResponsesLock = Lock()
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
@@ -113,6 +124,11 @@ class RequestManager(object):
 		self._eventMqttSendUpdate = CSE.event.httpSendUpdate		# type: ignore [attr-defined]
 		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
 		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
+		self._eventWsSendRetrieve = CSE.event.wsSendRetrieve		# type: ignore [attr-defined]
+		self._eventWsSendCreate = CSE.event.wsSendCreate			# type: ignore [attr-defined]
+		self._eventWsSendUpdate = CSE.event.wsSendUpdate			# type: ignore [attr-defined]
+		self._eventWsSendDelete = CSE.event.wsSendDelete			# type: ignore [attr-defined]
+		self._eventWsSendNotify = CSE.event.wsSendNotify			# type: ignore [attr-defined]
 		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
 
 
@@ -122,37 +138,43 @@ class RequestManager(object):
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve),
+												  self._eventMqttSendRetrieve,
+												  self._eventWsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve),
+												  self._eventMqttSendRetrieve,
+												  self._eventWsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.CREATE	: RequestCallback(self.createRequest,
 												  CSE.dispatcher.processCreateRequest,
 												  self._sendRequest,
 												  self._eventHttpSendCreate,
-												  self._eventMqttSendCreate),
+												  self._eventMqttSendCreate,
+												  self._eventWsSendCreate),
 												#   self.sendCreateRequest),
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
 												  CSE.dispatcher.processUpdateRequest,
 												  self._sendRequest,
 												  self._eventHttpSendUpdate,
-												  self._eventMqttSendUpdate),
+												  self._eventMqttSendUpdate,
+												  self._eventWsSendUpdate),
 												#   self.sendUpdateRequest),
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
 												  CSE.dispatcher.processDeleteRequest,
 												  self._sendRequest,
 												  self._eventHttpSendDelete,
-												  self._eventMqttSendDelete),
+												  self._eventMqttSendDelete,
+												  self._eventWsSendDelete),
 												#   self.sendDeleteRequest),
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
 												  CSE.dispatcher.processNotifyRequest,
 												  self._sendRequest,
 												  self._eventHttpSendNotify,
-												  self._eventMqttSendNotify),
+												  self._eventMqttSendNotify,
+												  self._eventWsSendNotify),
 												#   self.sendNotifyRequest),
 		}
 
@@ -911,7 +933,48 @@ class RequestManager(object):
 					del self._requests[originator]
 		return True
 					
-		
+	
+	###########################################################################
+	#
+	#	Request/Response async sequence helpers for polling asynch responses
+
+
+	def waitForResponse(self, rqi:str, timeOut:float) -> Tuple[ Optional[Result], Optional[str] ]:
+		"""	Wait for a response with a specific requestIdentifier *rqi*.
+
+		"""
+		resp = None
+		info = None
+
+		def _receivedResponse() -> bool:
+			nonlocal resp, info
+			with self._receivedResponsesLock:
+				if not self._receivedResponses:
+					return False
+				if rqi in self._receivedResponses:
+					resp, info = self._receivedResponses.pop(rqi)	# return the response (in a Result object), and remove it from the dict.
+					return True
+			return False
+			
+		if not waitFor(timeOut, _receivedResponse):
+			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, 
+						  dbg = 'Target not reachable or timeout'), None
+		# resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
+													# TODO perhaps unify the use of response values throughout the CSE
+		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
+		return resp, info
+
+
+	def addResponse(self, response:Result, info:Optional[str] = None) -> None:
+		"""	Add a response and topic to the response dictionary. The key is the *rqi* (requestIdentifier) of
+			the response. 
+		"""
+		if (rqi := response.request.rqi):
+			L.isDebug and L.logDebug(f'Adding response for rqi: {rqi}')
+			with self._receivedResponsesLock:
+				self._receivedResponses[rqi] = (response, info)
+
+
 	###########################################################################
 	#
 	#	Sending Requests
@@ -951,7 +1014,6 @@ class RequestManager(object):
 		# Determine all the details for one or multiple targets
 		if not (resolved := self.determineTargetDetails(request)):	# empty list?
 			raise BAD_REQUEST(L.logWarn('cannot determine target details for the request'))
-			
 		results:RequestResponseList = []
 		for url, csz, rvi, pch, requestOriginator, to, targetType in resolved:
 
@@ -998,6 +1060,14 @@ class RequestManager(object):
 			elif isMQTTUrl(url):
 				self.requestHandlers[_request.op].mqttEvent()	# send event
 				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+				continue
+
+			elif isWSUrl(url):
+				if url == Constants.unreachableWebSocketSchema:
+					L.isDebug and L.logDebug(f'WS request to unreachable target: {url}. Skipping.')
+					continue
+				self.requestHandlers[_request.op].wsEvent()	# send event
+				results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url)) )
 				continue
 
 			# Special handling for ACME internal events.
@@ -1099,6 +1169,12 @@ class RequestManager(object):
 		try:
 
 			earlyError:str = None
+
+			# Determine RSC as soon as possible. This determines whether this is a request or a response.
+			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy = False)): 
+				cseRequest.rsc = ResponseStatusCode(rsc)
+				cseRequest.requestType = RequestType.RESPONSE	# This is a response if there is an rsc
+				isResponse = True
 
 			# FR - originator 
 			# if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
@@ -1334,10 +1410,6 @@ class RequestManager(object):
 				for h in list(fcAttrs.keys()): 
 					cseRequest.fc.attributes[h] = gget(fcAttrs, h)
 
-			# Copy rsc
-			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy = False)): 
-				cseRequest.rsc = ResponseStatusCode(rsc)
-
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
 			if not cseRequest.originalRequest.get('pc'):
@@ -1393,7 +1465,7 @@ class RequestManager(object):
 				isResponse: If True then the data is a response, otherwise it is a request.
 
 			Return:
-				A Result instance with the dissected request in `Result.request` .
+				A Result instance with the dissected request in `Result.request`. The `Result.data` contains the *pc* of the request.
 		"""
 		cseRequest = CSERequest()
 		cseRequest.originalData = data
@@ -1415,7 +1487,8 @@ class RequestManager(object):
 			# re-use the exception and raise it again
 			e.data = cseRequest
 			raise e
-		return Result(rsc = cseRequest.rsc, request = cseRequest)
+		
+		return Result(data = cseRequest.pc, rsc = cseRequest.rsc, request = cseRequest)
 
 
 	###########################################################################
@@ -1593,10 +1666,10 @@ class RequestManager(object):
 #	Requests recording
 #
 
-	def recordRequest(self, request:CSERequest, result:Result) -> None:
+	def recordRequest(self, request:Optional[CSERequest], result:Result) -> None:
 
 		# Recoding enabled or disabled?
-		if not self.enableRequestRecording:
+		if not self.enableRequestRecording or not request:
 			return
 		
 		# Construct and store request & response

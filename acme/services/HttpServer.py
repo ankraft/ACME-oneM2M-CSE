@@ -516,7 +516,7 @@ class HttpServer(object):
 		hty = f';ty={int(request.ty):d}' if request.ty else ''
 		hds = {	'Date'			: rfc1123Date(),
 				'User-Agent'	: self.serverID,
-				'Content-Type' 	: f'{ct.toHeader()}{hty}',
+				'Content-Type' 	: f'{ct.toHttpContentType()}{hty}',
 				'cache-control'	: 'no-cache',
 		}
 		hds[Constants.hfOrigin]	= toSPRelative(request.originator)
@@ -730,7 +730,7 @@ class HttpServer(object):
 		statusCode = result.rsc.httpStatusCode()
 		
 		# Assign and encode content accordingly
-		headers['Content-Type'] = (cts := result.request.ct.toHeader())
+		headers['Content-Type'] = (cts := result.request.ct.toHttpContentType())
 		# (re-)add an empty pc if it is missing	
 
 

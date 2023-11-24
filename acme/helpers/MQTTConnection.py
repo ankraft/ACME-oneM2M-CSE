@@ -20,19 +20,23 @@ from ..helpers.TextTools import simpleMatch
 
 import paho.mqtt.client as mqtt
 
+
+MQTTClient = mqtt.Client
+""" Type for an MQTT Client. """
+
 @dataclass
 class MQTTTopic:
 	"""	Structure that represents a subscribed-to topic.
 	"""
-	topic:str				= None
+	topic:Optional[str]	= None
 	""" The MQTT topic. """
-	mid:int					= None
+	mid:Optional[int] = None
 	""" The message ID of the MQTT subscription. """
-	isSubscribed:bool		= False
+	isSubscribed:bool = False
 	""" Whether the topic is subscribed to. """
-	callback:MQTTCallback	= None
+	callback:Optional[MQTTCallback] = None
 	""" The callback function for the topic. """
-	callbackArgs:dict 		= None
+	callbackArgs:Optional[dict] = None
 	""" The callback arguments for the topic. """
 
 
@@ -112,7 +116,7 @@ class MQTTHandler(object):
 		return True
 
 
-	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
+	def logging(self, connection:Optional[MQTTConnection], level:int, message:str) -> bool:
 		"""	This method is called when a log message should be handled. 
 
 			Args:
@@ -171,19 +175,19 @@ class MQTTConnection(object):
 	#
 
 	def __init__(self, address:str, 
-					   port:int = None,
+					   port:Optional[int] = None,
 					   keepalive:int = 60,
 					   interface:str = '0.0.0.0', 
-					   clientID:str = None,
-					   username:str = None,
-					   password:str = None,
+					   clientID:Optional[str] = None,
+					   username:Optional[str] = None,
+					   password:Optional[str] = None,
 					   useTLS:bool = False, 
-					   caFile:str = None, 
+					   caFile:Optional[str] = None, 
 					   verifyCertificate:bool = False,
-					   certfile:str = None, 
-					   keyfile: str = None,
+					   certfile:Optional[str] = None, 
+					   keyfile:Optional[str] = None,
 					   lowLevelLogging:bool = True,
-					   messageHandler:MQTTHandler = None
+					   messageHandler:Optional[MQTTHandler] = None
 				) -> None:
 		"""	Constructor. Initialize the MQTT client.
 
@@ -212,9 +216,9 @@ class MQTTConnection(object):
 		""" The keepalive time for the MQTT connection. """
 		self.bindIF									= interface
 		""" The interface to bind to. """
-		self.username:str							= username
+		self.username:Optional[str]					= username
 		""" The username for the MQTT broker. """
-		self.password:str 							= password
+		self.password:Optional[str]					= password
 		""" The password for the MQTT broker. """
 		self.useTLS:bool							= useTLS
 		""" Whether to use TLS for the MQTT connection. """
@@ -239,11 +243,11 @@ class MQTTConnection(object):
 		""" The number of subscribed-to topics. """
 
 
-		self.mqttClient:mqtt.Client 				= None
+		self.mqttClient:Optional[MQTTClient]		= None
 		""" The MQTT client. """
-		self.messageHandler:MQTTHandler				= messageHandler
+		self.messageHandler:Optional[MQTTHandler]	= messageHandler
 		""" The message handler. """
-		self.actor:BackgroundWorker 				= None
+		self.actor:Optional[BackgroundWorker]		= None
 		""" The actor for the MQTT client. """
 		self.subscribedTopics:dict[str, MQTTTopic]	= {}
 		""" The list of subscribed-to topics. """
@@ -269,15 +273,15 @@ class MQTTConnection(object):
 			self.mqttClient.disconnect()
 			self.actor = None
 
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.INFO, 'MQTT client shut down')
+		self.messageHandler and self.messageHandler.logging(self, logging.INFO, 'MQTT client shut down')
 		return True
 
 
 	def run(self) -> None:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = mqtt.Client(client_id = self.clientID, 
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: client name: {self.clientID}')
+		self.mqttClient = MQTTClient(client_id = self.clientID, 
 									  clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
 		# Enable SSL see: https://pypi.org/project/paho-mqtt/
@@ -303,11 +307,11 @@ class MQTTConnection(object):
 		self.mqttClient.on_message		= self._onMessage
 
 		try:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive: {self.keepalive}, bind: {self.bindIF}')
+			self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive: {self.keepalive}, bind: {self.bindIF}')
 			self.mqttClient.connect(host = self.address, port = self.port, keepalive = self.keepalive, bind_address = self.bindIF)
 		except Exception as e:
 			if self.messageHandler:
-				self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot connect to broker: {e}')
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: cannot connect to broker: {e}')
 				self.messageHandler.onError(self, -1)
 				return
 
@@ -322,7 +326,7 @@ class MQTTConnection(object):
 				Always True.
 		"""
 		self.isStopped = False
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.INFO, 'MQTT: client started')
+		self.messageHandler and self.messageHandler.logging(self, logging.INFO, 'MQTT: client started')
 		while not self.isStopped:
 			self.mqttClient.loop_forever()	# Will return when disconnect() is called
 		if self.messageHandler:
@@ -334,7 +338,7 @@ class MQTTConnection(object):
 	#	MQTT/paho callbacks
 	#
 
-	def _onConnect(self, client:mqtt.Client, userdata:Any, flags:dict, rc:int) -> None:
+	def _onConnect(self, client:MQTTClient, userdata:Any, flags:dict, rc:int) -> None:
 		"""	Callback when the MQTT client connected to the broker.
 
 			Args:
@@ -354,7 +358,7 @@ class MQTTConnection(object):
 				self.messageHandler.onError(self, rc)
 
 
-	def _onDisconnect(self, client:mqtt.Client, userdata:Any, rc:int) -> None:
+	def _onDisconnect(self, client:MQTTClient, userdata:Any, rc:int) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 
 			Args:
@@ -382,7 +386,7 @@ class MQTTConnection(object):
 					self.messageHandler.onError(self, rc)
 
 
-	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
+	def _onLog(self, client:MQTTClient, userdata:Any, level:int, buf:str) -> None:
 		"""	Mapping of the paho MQTT client's log to the logging system. 
 			Also handles different log-level scheme.
 
@@ -395,7 +399,7 @@ class MQTTConnection(object):
 		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
-	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:
+	def _onSubscribe(self, client:MQTTClient, userdata:Any, mid:int, granted_qos:int) -> None:
 		"""	Callback when the client successfulle subscribed to a topic. The topic
 			is also added to the internal topic list.
 
@@ -413,7 +417,7 @@ class MQTTConnection(object):
 				break
 	
 
-	def _onUnsubscribe(self, client:mqtt.Client, userdata:Any, mid:int) -> None:
+	def _onUnsubscribe(self, client:MQTTClient, userdata:Any, mid:int) -> None:
 		"""	Callback when the client successfulle unsubscribed from a topic. The topic
 			is also removed from the internal topic list.
 			"""
@@ -433,7 +437,7 @@ class MQTTConnection(object):
 				break
 
 
-	def _onMessage(self, client:mqtt.Client, userdata:Any, message:mqtt.MQTTMessage) -> None:
+	def _onMessage(self, client:MQTTClient, userdata:Any, message:mqtt.MQTTMessage) -> None:
 		"""	Handle a received message. Forward it to the apropriate handler callback
 		 	(in another Thread).
 			 
@@ -472,16 +476,16 @@ class MQTTConnection(object):
 			"""	Handle subscription of a single topic.
 			"""
 			if topic in self.subscribedTopics:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: topic already subscribed: {topic}')
+				self.messageHandler and self.messageHandler.logging(self, logging.WARNING, f'MQTT: topic already subscribed: {topic}')
 				return
 			if (r := self.mqttClient.subscribe(topic))[0] == 0:
 				t = MQTTTopic(topic = topic, mid=r[1], callback=callback, callbackArgs=kwargs)
 				self.subscribedTopics[topic] = t
 			else:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot subscribe: {r[0]}')
+				self.messageHandler and self.messageHandler.logging(self, logging.ERROR, f'MQTT: cannot subscribe: {r[0]}')
 
 		if not self.mqttClient or not self.isConnected:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, 'MQTT: Client missing or not initialized')
+			self.messageHandler and self.messageHandler.logging(self, logging.ERROR, 'MQTT: Client missing or not initialized')
 			return
 
 		# either subscribe a list of topics or a single topic
@@ -498,27 +502,27 @@ class MQTTConnection(object):
 		"""
 		if isinstance(topic, MQTTTopic):
 			if topic.topic not in self.subscribedTopics:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: unknown topic: {topic.topic}')
+				self.messageHandler and self.messageHandler.logging(self, logging.WARNING, f'MQTT: unknown topic: {topic.topic}')
 				return
 			if (r := self.mqttClient.unsubscribe(topic.topic))[0] == 0:
 				topic.mid = r[1]
 			else:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot unsubscribe: {r[0]}')
+				self.messageHandler and self.messageHandler.logging(self, logging.ERROR, f'MQTT: cannot unsubscribe: {r[0]}')
 				return
 
 		else:	# if topic is just the name we need to subscribe to
 			if topic not in self.subscribedTopics:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: unknown topic: {topic}')
+				self.messageHandler and self.messageHandler.logging(self, logging.WARNING, f'MQTT: unknown topic: {topic}')
 				return
 			t = self.subscribedTopics[topic]
 			if t.isSubscribed:
 				if (r := self.mqttClient.unsubscribe(t.topic))[0] == 0:
 					t.mid = r[1]
 				else:
-					self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot unsubscribe: {r[0]}')
+					self.messageHandler and self.messageHandler.logging(self, logging.ERROR, f'MQTT: cannot unsubscribe: {r[0]}')
 					return
 			else:
-				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: topic not subscribed: {topic}')
+				self.messageHandler and self.messageHandler.logging(self, logging.WARNING, f'MQTT: topic not subscribed: {topic}')
 
 		# topic is removed in _onUnsubscribe() callback
 

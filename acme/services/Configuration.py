@@ -533,6 +533,7 @@ class Configuration(object):
 				'websocket.listenIF'					: config.get('websocket', 'listenIF', 								fallback = '0.0.0.0'),
 				'websocket.port' 						: config.getint('websocket', 'port', 								fallback = 8180),
 				'websocket.loglevel'					: config.get('websocket', 'loglevel', 								fallback = 'debug'),
+				'websocket.timeout' 					: config.getfloat('websocket', 'timeout',							fallback = 10.0),
 
 				#
 				#	Web UI

@@ -32,12 +32,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('httpSendUpdate')
 		self.addEvent('httpSendDelete')
 		self.addEvent('httpSendNotify')
-		self.addEvent('createResource')
-		self.addEvent('updateResource')
-		self.addEvent('deleteResource')
-		self.addEvent('expireResource')
-		self.addEvent('changeResource')	# whenever a resource is updated or changed in any way
-		self.addEvent('createChildResource')
+
 		self.addEvent('mqttRetrieve')
 		self.addEvent('mqttCreate')
 		self.addEvent('mqttDelete')
@@ -48,6 +43,20 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendUpdate')
 		self.addEvent('mqttSendDelete')
 		self.addEvent('mqttSendNotify')
+
+		self.addEvent('wsSendRetrieve')
+		self.addEvent('wsSendCreate')
+		self.addEvent('wsSendUpdate')
+		self.addEvent('wsSendDelete')
+		self.addEvent('wsSendNotify')
+
+		self.addEvent('createResource')
+		self.addEvent('updateResource')
+		self.addEvent('deleteResource')
+		self.addEvent('expireResource')
+		self.addEvent('changeResource')	# whenever a resource is updated or changed in any way
+		self.addEvent('createChildResource')
+
 		self.addEvent('requestReceived')								# Thrown whenever a request is received
 		self.addEvent('responseReceived')								# Thrown whenever a response is received
 		self.addEvent('cseStartup')										# After the CSE started

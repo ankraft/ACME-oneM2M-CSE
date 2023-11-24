@@ -116,7 +116,7 @@ class MQTTClientHandler(MQTTHandler):
 		return True
 	
 
-	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
+	def logging(self, connection:Optional[MQTTConnection], level:int, message:str) -> bool:
 		"""	Forwarding log events to the CSE's log system.
 		"""
 		L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
@@ -162,7 +162,7 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# Add it to a response queue in the manager
 		dissectResult.request.requestType = RequestType.RESPONSE
-		self.mqttClient.addResponse(dissectResult, topic)
+		CSE.request.addResponse(dissectResult, topic)
 	
 
 	def _handleIncommingRequest(self, connection:MQTTConnection, 
@@ -329,9 +329,6 @@ class MQTTClient(object):
 		self.isStopped												= False
 		self.topicsCount											= 0
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
-		self.receivedResponses:Dict[str, Tuple[Result, str]]		= {}
-		self.receivedResponsesLock									= Lock()
-
 
 		self.mqttConnection = self.connectToMqttBroker(address	= Configuration.get('mqtt.address'),
 													   port		= Configuration.get('mqtt.port'),
@@ -428,7 +425,7 @@ class MQTTClient(object):
 		return waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected)
 
 
-	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:str, password:str) -> Optional[MQTTConnection]:
+	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:Optional[str], password:Optional[str]) -> Optional[MQTTConnection]:
 		"""	Connect to a oneM2M MQTT Broker. The connection is cached and reused. The key for identifying the
 			broker is a tupple (*address*, *port*). A new MQTTClientHandler() object be used for handling
 			requests.
@@ -484,13 +481,13 @@ class MQTTClient(object):
 
 		# deconstruct URL
 		u = urlparse(url)
-		mqttHost = u.hostname
+		mqttHost:Optional[str] = u.hostname
 		mqttScheme = u.scheme.lower()
 		mqttSecurity = mqttScheme == 'mqtts'	# TODO Is it necessary to do something special here?
 		if not (mqttPort := u.port):
 			mqttPort = 1883 if mqttScheme == 'mqtt' else 8883
-		mqttUsername = u.username
-		mqttPassword = u.password
+		mqttUsername:Optional[str] = u.username
+		mqttPassword:Optional[str] = u.password
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
@@ -549,43 +546,9 @@ class MQTTClient(object):
 		# Then return the response as result
 		logRequest(preq, _data, topic, isResponse = False, isIncoming = False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
-		response, responseTopic = self.waitForResponse(preq.request.rqi, self.requestTimeout)
+		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, self.requestTimeout) # type: ignore
 		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response
-
-
-	def addResponse(self, response:Result, topic:str) -> None:
-		"""	Add a response and topic to the response dictionary. The key is the *rqi* (requestIdentifier) of
-			the response. 
-		"""
-		if (rqi := response.request.rqi):
-			with self.receivedResponsesLock:
-				self.receivedResponses[rqi] = (response, topic)
-
-
-	def waitForResponse(self, rqi:str, timeOut:float) -> Tuple[ Result, str ]:
-		"""	Wait for a response with a specific requestIdentifier *rqi*.
-		"""
-		resp = None
-		topic = None
-
-		def _receivedResponse() -> bool:
-			nonlocal resp, topic
-			with self.receivedResponsesLock:
-				if not self.receivedResponses:
-					return False
-				if rqi in self.receivedResponses:
-					resp, topic = self.receivedResponses.pop(rqi)	# return the response (in a Result object), and remove it from the dict.
-					return True
-			return False
-			
-		if not waitFor(timeOut, _receivedResponse):
-			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, 
-						  dbg = 'Target not reachable or timeout'), None
-		resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
-													# TODO perhaps unify the use of response values throughout the CSE
-		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
-		return resp, topic
 
 
 ##############################################################################

@@ -421,7 +421,6 @@ def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, None	# Early return. ri is the (un)structured path
-		
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
 			if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
 				ids[1] = CSE.cseRn
@@ -576,7 +575,7 @@ def riFromID(id:str) -> str:
 #	URL and Addressung related
 #
 _urlregex = re.compile(
-		r'^(?:http|ftp|mqtt)s?://|^(?:coap|acme)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
+		r'^(?:http|ftp|mqtt|ws)s?://|^(?:coap|acme)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
@@ -620,6 +619,17 @@ def isMQTTUrl(url:str) -> bool:
 			True if the argument is a URL, and is an mqtt or mqtts scheme.
 	"""
 	return isURL(url) and url.startswith(('mqtt', 'mqtts'))
+
+
+def isWSUrl(url:str) -> bool:
+	"""	Test whether a URL is a valid URL, and indicates a WebSocket URL. 
+
+		Args:
+			url: String to check.
+		Returns:
+			True if the argument is a URL, and is a ws or wss scheme.
+	"""
+	return isURL(url) and url.startswith(('ws', 'wss'))
 
 
 def isAcmeUrl(url:str) -> bool:

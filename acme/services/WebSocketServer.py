@@ -8,19 +8,24 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, cast
 import logging, uuid
+from urllib.parse import urlparse
 
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
+from websockets.sync.client import connect
+from websockets.protocol import State
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.RequestUtils import prepareResultForSending
-from ..etc.Utils import renameThread, exceptionToResult, uniqueID
-from ..etc.Types import ContentSerializationType, Result, CSERequest
+from ..etc.Utils import renameThread, exceptionToResult, uniqueID, isValidAEI, toSPRelative, csiFromSPRelative, uniqueRI
+from ..etc.DateUtils import getResourceDate
+from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ..services.Configuration import Configuration
 from ..services import CSE
+from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
 
 
@@ -28,6 +33,8 @@ from ..services.Logging import Logging as L
 # TODO security TLS etc
 # TODO record WS requests
 # TODO add WS to test suite
+# TODO add events for WS connections
+# TODO add statistics for WS connections
 
 class WebSocketServer(object):
 
@@ -36,10 +43,11 @@ class WebSocketServer(object):
 		'interface',
 		'port', 
 		'logLevel',
+		'requestTimeout',
 		'isPaused', 
 		'websocketServer', 
 		'wsConnections', 
-		'associations', 
+		'associatedConnections', 
 		'actor'
 	]
 
@@ -49,12 +57,15 @@ class WebSocketServer(object):
 		self._assignConfig()
 
 		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
+		# Add a handler for resource deletion
+		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)	# type: ignore
 
 		self.isPaused = False
 		self.websocketServer:Optional[WSServer] = None
-		self.wsConnections:dict[uuid.UUID, ServerConnection] = {}
-		self.associations:dict[str, uuid.UUID] = {}	# originator -> websocket.id
+		self.wsConnections:dict[uuid.UUID, ServerConnection] = {}	# websocket.id -> websocket
+		self.associatedConnections:dict[str, uuid.UUID] = {}		# originator -> websocket.id
 		L.isInfo and L.log('WebSocket server initialized')
 
 
@@ -77,6 +88,7 @@ class WebSocketServer(object):
 		self.port = Configuration.get('websocket.port')
 		self.interface = Configuration.get('websocket.listenIF')
 		self.logLevel = Configuration.get('websocket.loglevel')
+		self.requestTimeout = Configuration.get('websocket.timeout')
 
 
 	def configUpdate(self, name:str, 
@@ -92,7 +104,8 @@ class WebSocketServer(object):
 		if key not in [ 'websocket.enable', 
 						'websocket.port',
 						'websocket.listenIF',
-						'websocket.loglevel'
+						'websocket.loglevel',
+						'websocket.timeout'
 					  ]:
 			return
 
@@ -100,6 +113,21 @@ class WebSocketServer(object):
 		self._assignConfig()
 
 		# TODO restart server if necessary
+
+
+	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
+		"""	Callback for the `deleteResource` event.
+
+			In case of an AE deletion, the associated WS connection is dissociated, but left open.
+
+			Args:
+				name: Event name.
+				deletedResource: The deleted resource.
+		"""
+
+		if deletedResource.ty != ResourceTypes.AE or deletedResource.aei not in self.associatedConnections:
+			return
+		self.dissociateConnectionFromOriginator(deletedResource.aei)
 
 
 	def run(self) -> bool:
@@ -118,7 +146,7 @@ class WebSocketServer(object):
 	def _run(self) -> None:
 		"""	WebSocket server main loop.
 		"""
-		self.websocketServer = serve(self.handleConnection, 
+		self.websocketServer = serve(self.handleIncomingConnection, 
 							   		 self.interface, 
 									 self.port, 
 									 subprotocols = ContentSerializationType.supportedContentSerializationsWS()) # type:ignore[list-item]	
@@ -164,14 +192,40 @@ class WebSocketServer(object):
 	def associateConnectionWithOriginator(self, websocket:ServerConnection, originator:str) -> None:
 		"""	Associate a connection with an originator.
 
+			If the originator is already associated with another connection then that connection is closed.
+
 			Args:
 				websocket: The WebSocket connection.
 				originator: The originator.
+
 		"""
-		if not originator in self.associations:
-			L.isDebug and L.logDebug(f'Associating WS connection {websocket.id} with originator {originator}')
-			# TODO check if originator is already associated with another connection ??? What should be the behaviour then?
-			self.associations[originator] = websocket.id	
+		# Check if the originator is already associated with another connection. If so, close that connection
+		if originator in self.associatedConnections:
+			if self.associatedConnections[originator] != websocket.id:	# Not the same connection
+				L.isWarn and L.logWarn(f'WS connection {websocket.id} already associated with originator {originator}. Closing first connection.')
+				self.closeConnectionForOriginator(originator)
+			else:
+				return	# Already associated with this connection
+		
+		# Associate the connection with the originator
+		L.isDebug and L.logDebug(f'Associating WS connection {websocket.id} with originator {originator}')
+		self.associatedConnections[originator] = websocket.id
+
+	
+	def dissociateConnectionFromOriginator(self, originator:str) -> bool:
+		"""	Dissociate a connection from an originator.
+
+			Args:
+				originator: The originator to dissociate.
+			
+			Returns:
+				True if the originator was associated with a connection, False otherwise.
+		"""
+		if originator in self.associatedConnections:
+			L.isDebug and L.logDebug(f'Dissociating originator: {originator} from WS connection')
+			del self.associatedConnections[originator]
+			return True
+		return False
 
 
 	def removeConnection(self, websocket:ServerConnection, originator:str) -> None:
@@ -182,118 +236,121 @@ class WebSocketServer(object):
 				websocket: The WebSocket connection.
 				orignator: The originator.
 		"""
-		L.isDebug and L.logDebug(f'Removing WS connection: {websocket.id} and originator {originator}')
+		L.isDebug and L.logDebug(f'Removing WS connection: {websocket.id} and originator: {originator}')
 		if websocket.id in self.wsConnections:
 			del self.wsConnections[websocket.id]
-		if originator in self.associations:
-			del self.associations[originator]
+		if originator in self.associatedConnections:
+			del self.associatedConnections[originator]
 
 
-	def handleConnection(self, websocket:ServerConnection) -> None:
-		"""	Handle a new WebSocket connection. This connection stays open until the client closes it, or the
-			server is stopped.
+	def closeConnectionForOriginator(self, originator:str) -> None:
+		"""	Close a connection for an originator.
+
+			Args:
+				originator: The originator.
+		"""
+		L.isDebug and L.logDebug(f'Closing WS connection for originator {originator}')
+		if originator in self.associatedConnections:
+			websocketID = self.associatedConnections[originator]
+
+			# Also remove from the list of websocket connections
+			if websocketID in self.wsConnections:
+				websocket = self.wsConnections[websocketID]
+				websocket.close()
+				self.removeConnection(websocket, originator)
+			
+
+	def _checkIsServerRunning(self, websocket:ServerConnection) -> bool:
+		"""	Check if the server is running. If not, send an error message to the client.
+
+			Returns:
+				True if the server is running, False otherwise.
+		"""
+		if self.isPaused:
+			_, _data = prepareResultForSending(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+											 		  dbg = 'WebSocket server is not running').prepareResultFromRequest(),
+											   isResponse = True)	
+			websocket.send(_data)
+			return False
+		return True
+
+
+	def receiveLoop(self, websocket:ServerConnection, wsOriginator:str, ct:ContentSerializationType) -> None:
+		"""	Receive loop for the WebSocket server. This is the main entry point for handling a received message,
+			whether the connection was initiated by the server or the client.
+
+			Args:
+				websocket: The WebSocket connection.
+				wsOriginator: The originator of the connection.
+				ct: The content type.
+		"""
+		try:	
+			# Handle incoming requests in separate threads as long as there is no error or the server is stopped
+			# or the client closes the connection
+			while (message := websocket.recv()) is not None:	# recv() is blocking
+				# L.isDebug and L.logDebug(f'Received WS message: {message}')
+				if not self._checkIsServerRunning(websocket):
+					continue
+				# Run the message handling in a separate thread
+				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, ct), name = f'ws_{uniqueID()}')
+		except ConnectionClosedError as e:
+			L.isWarn and L.logWarn('Connection closed: {e}')
+		except ConnectionClosedOK:
+			L.isDebug and L.logDebug('Connection closed by client')
+		
+
+	def handleIncomingConnection(self, websocket:ServerConnection) -> None:
+		"""	Handle a new incoming WebSocket connection. This connection stays open until the client closes it, or the
+			server is stopped. 
+			
+			Note:
+				This method is not called for connections initiated by the server.
 
 			Args:
 				websocket: The WebSocket connection.
 		"""
 
-		def _handleReceivedMessage(websocket:ServerConnection, message:str|bytes) -> None:
-			"""	Handle a received message. This is the main entry point for handling a received message.
-
-				Args:
-					websocket: The WebSocket connection.
-					message: The received message.
-			"""
-
-			# TODO improve originator handling: add originator after registration as well
-
-			L.isDebug and L.logDebug(f'==> WS Request: {wsOriginator}')
-			L.isDebug and L.logDebug(f'Body: {message}')
-
-			request:CSERequest = None
-			try:
-				if isinstance(message, str):
-					message = message.encode()
-				
-				dissectResult = CSE.request.dissectRequestFromBytes(message, contentType)
-				request = dissectResult.request
-
-				# Associate the connection with the originator
-				# TODO as well for registration (then this originator here is wrong)
-				requestOriginator = request.originator
-				self.associateConnectionWithOriginator(websocket, requestOriginator)
-
-				# TODO Check if requestOriginator is different from connection originator. Behaviour?
-
-				L.isDebug and L.logDebug(f'Operation: {request.op}')
-				L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
-
-				try:
-					responseResult = CSE.request.handleRequest(request)
-				except Exception as e:
-					responseResult = exceptionToResult(e)
-
-				# add, copy and update some fields from the original request
-				responseResult.prepareResultFromRequest(request)
-
-			except ResponseException as e:
-				# something went wrong during dissection
-				responseResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
-				responseResult.prepareResultFromRequest(request)
-
-			# TODO	CSE.request.recordRequest(dissectResult.request, dissectResult)
-
-			_r, _data = prepareResultForSending(responseResult, isResponse = True)	
-			L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
-
-			L.logRequest(_r, _data) # type:ignore [arg-type]
-			websocket.send(_data)			
-
-
-		def _checkIsServerRunning() -> bool:
-			"""	Check if the server is running. If not, send an error message to the client.
-
-				Returns:
-					True if the server is running, False otherwise.
-			"""
-			if self.isPaused:
-				_, _data = prepareResultForSending(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = 'WebSocket server is not running').prepareResultFromRequest(),
-									   			isResponse = True)	
-				websocket.send(_data)
-				return False
-			return True
+		# Variable for this connection's originator
+		wsOriginator = None	# This is valid until the first message is received. Then the originator is determined from the message
 
 		# Rename thread
 		renameThread(prefix = 'ws')
 
-		if not _checkIsServerRunning():
+		if not self._checkIsServerRunning(websocket):
 			return
-
-		# Variable for this connection originator
-		wsOriginator = None	# This is valid until the first message is received. Then the originator is determined from the message
-
 
 		L.isDebug and L.logDebug('New WS connection')
 		L.logDebug(f'Received subprotocol: {websocket.subprotocol}')
-		# L.logDebug(f'Received: {websocket.remote_address}')
 		L.logDebug(f'Received headers: {websocket.request.headers}')
 		L.logDebug(f'Received request: {websocket.request}')
+
+		# Get the originator from the WS headers
+		if 'X-M2M-Origin' in websocket.request.headers:
+			wsOriginator = websocket.request.headers['X-M2M-Origin']
+			L.isDebug and L.logDebug(f'Originator from WS headers: {wsOriginator}')
 
 		# Determine the content type.
 		# The negotiation is done by the server part already. The subprotocol is determined by the client.
 		subprotocol = websocket.subprotocol
 		contentType = ContentSerializationType.fromWebSocketSubProtocol(subprotocol)
 
-		# Add the connection to the list of unassociated connections
+		# Add the connection to the list 
 		self.addConnection(websocket)
+
+		# Associate the connection with the originator
+		if wsOriginator is not None:
+			self.associateConnectionWithOriginator(websocket, wsOriginator)
 
 		try:
 			# Handle incoming requests in separate threads as long as there is no error or the server is stopped
 			# or the client closes the connection
-			while (message := websocket.recv()) is not None:	# rev() is blocking
-				if not _checkIsServerRunning():
+			while (message := websocket.recv()) is not None:	# recv() is blocking
+				L.isDebug and L.logDebug(f'Received WS message: {message}')
+				if not self._checkIsServerRunning(websocket):
 					continue
-				BackgroundWorkerPool.runJob(lambda: _handleReceivedMessage(websocket, message), name = f'ws_{uniqueID()}')
+				# Run the message handling in a separate thread
+				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, contentType),
+											name = f'ws_{uniqueID()}')
 		except ConnectionClosedError as e:
 			L.isWarn and L.logWarn('Connection closed: {e}')
 		except ConnectionClosedOK:
@@ -302,3 +359,160 @@ class WebSocketServer(object):
 		# Remove the connection from the list of unassociated connections or from the list of associated connections
 		self.removeConnection(websocket, wsOriginator)
 
+
+	def _handleReceivedMessage(self, websocket:ServerConnection, message:str|bytes, wsOriginator:str, contentType:ContentSerializationType) -> None:
+		"""	Handle a received message. This is the main entry point for handling a received message, whether the
+			message is a request or a response.
+
+			Args:
+				websocket: The WebSocket connection.
+				message: The received message.
+				wsOriginator: The originator of the connection.
+				contentType: The content type.
+		"""
+		if isinstance(message, str):
+			message = message.encode()	# Encode to bytes
+
+		request:CSERequest = None
+		try:
+			
+			dissectResult:Result = None
+			try:
+				dissectResult = CSE.request.dissectRequestFromBytes(message, contentType)
+			except ResponseException as e:
+				dissectResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+				CSE.request.addResponse(dissectResult)
+				return
+
+			request:CSERequest = dissectResult.request	# type:ignore [attr-defined]
+			requestOriginator:str = request.originator	# type:ignore [attr-defined]
+
+			# Check whether the message is a response or a request. If it is a response, then put it into the
+			# response queue and return. Another process might have sent the request and is waiting for the response.
+			if request.requestType == RequestType.RESPONSE:
+				L.isDebug and L.logDebug(f'<== WS response: {wsOriginator}')
+				L.isDebug and L.logDebug(f'Body: {message.decode()}')
+				CSE.request.addResponse(dissectResult)
+				return
+	
+			L.isDebug and L.logDebug(f'==> WS Request: {wsOriginator}')
+			L.isDebug and L.logDebug(f'Body: {message.decode()}')
+
+			# Allow empty wsOriginator for AE registrations
+			if wsOriginator is None:
+				if not (request.op == Operation.CREATE and request.ty == ResourceTypes.AE):
+					raise ResponseException(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
+											dbg = L.logWarn(f'Unknown WS connection (no X-M2M-Origin header) are only allowed for AE registrations'))
+				# Else, the request must be an AE registration
+
+			# Compare the originator and the from, only for Mca
+			if wsOriginator is not None and isValidAEI(wsOriginator):
+				if toSPRelative(requestOriginator) != toSPRelative(wsOriginator):
+					raise ResponseException(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
+											dbg = L.logWarn(f'Originator mismatch: {requestOriginator} != {wsOriginator}'))
+
+			L.isDebug and L.logDebug(f'Operation: {request.op}')
+			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
+
+			responseResult = CSE.request.handleRequest(request)
+
+			# Associate the connection with the originator, if not yet done.
+			# wsOriginator is None if the connection is not yet associated with an originator, and this
+			# can only be the case when the request is an AE registration
+			if wsOriginator is None and (res := responseResult.resource) is not None and res.ty == ResourceTypes.AE:
+				self.associateConnectionWithOriginator(websocket, res.aei)
+				wsOriginator = res.aei
+
+		except ResponseException as e:
+			# something went wrong during dissection
+			responseResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+
+		except Exception as e:
+				responseResult = exceptionToResult(e)
+
+		# add, copy and update some fields from the original request
+		responseResult.prepareResultFromRequest(request)
+
+		# TODO	CSE.request.recordRequest(dissectResult.request, dissectResult)
+
+		_r, _data = prepareResultForSending(responseResult, isResponse = True)	
+		L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
+
+		L.logRequest(_r, _data) # type:ignore [arg-type]
+		websocket.send(_data)
+	
+
+	def sendWSRequest(self, request:CSERequest, url:str) -> Result:
+
+		def connectWS(target:str, ct:ContentSerializationType) -> ServerConnection:
+			"""	Connect to a WebSocket server.
+
+				Args:
+					target: The target to connect to.
+					ct: The content type to use for the connection.
+				
+				Returns:
+					The WebSocket connection.
+			"""
+			# Check whether we already have an established connection to the target. Otherwise establish a new WS connection
+			if target not in self.associatedConnections:
+				websocket = connect(url, subprotocols=[ct.toWSContentType()], additional_headers = { 'X-m2m-origin': CSE.cseCsi})
+				self.addConnection(websocket)
+				self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
+				BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
+											name = f'ws_{uniqueID()}')
+			else:
+				websocket = self.wsConnections[self.associatedConnections[target]]
+			return websocket
+
+		try: 
+			# Get the serialization format first
+			ct = request.ct if request.ct is not None else CSE.defaultSerialization
+			target = csiFromSPRelative(request.to)
+
+			websocket = connectWS(target, ct)
+
+			if websocket is None:
+				return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
+			if websocket.protocol.state == State.CLOSED:
+				# Remove the connection and try to establish a new one once
+				L.isWarn and L.logWarn(f'WS connection to {target} was closed. Trying to re-establish connection')
+				self.removeConnection(websocket, target)
+				websocket = connectWS(target, ct)
+				if websocket is None or websocket.protocol.state == State.CLOSED:
+					return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
+
+		except ConnectionRefusedError as e:
+			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = f'WS connection refused: {e}')
+		
+		# TODO optimize this. Same code is in MQTTServer.py
+		u = urlparse(url)
+		req 					= Result(request = request)
+		req.request.id			= u.path[1:] if u.path[1:] else req.request.to
+		req.resource			= req.request.pc
+		req.request.rqi			= uniqueRI()
+		if req.request.rvi != '1':
+			req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		req.request.ot			= getResourceDate()
+		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
+		req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+
+
+		# Sending the request
+		try:
+			message = prepareResultForSending(req)[1]
+			L.isDebug and L.logDebug(f'WS Request ==>: {target}')
+			L.isDebug and L.logDebug(f'Body: {message}')
+			websocket.send(message)
+		except Exception as e:
+			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'Error sending WS request: {e}')	
+
+		# Receiving the response
+		resResp, _ = CSE.request.waitForResponse(req.request.rqi, self.requestTimeout)
+
+		if resResp is None:
+			return Result(rsc = ResponseStatusCode.REQUEST_TIMEOUT, dbg = 'No response received within timeout')
+
+		# TODO Log request
+
+		return resResp

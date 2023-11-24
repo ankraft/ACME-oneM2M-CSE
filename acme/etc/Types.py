@@ -1216,8 +1216,8 @@ class ContentSerializationType(ACMEIntEnum):
 	UNKNOWN				= auto()
 	"""	Unknown. """
 
-	def toHeader(self) -> str:
-		"""	Return the mime header for an enum value.
+	def toHttpContentType(self) -> str:
+		"""	Return the http mime header for an enum value.
 
 			Return:
 				The mime header for an enum value.
@@ -1229,6 +1229,23 @@ class ContentSerializationType(ACMEIntEnum):
 				return 'application/cbor'
 			case self.XML:	
 				return 'application/xml'
+			case _:
+				return None
+
+
+	def toWSContentType(self) -> str:
+		"""	Return the WebSocket content header for an enum value.
+
+			Return:
+				The mime header for an enum value.
+		"""
+		match self.value:
+			case self.JSON:	
+				return 'oneM2M.json'
+			case self.CBOR:	
+				return 'oneM2M.cbor'
+			case self.XML:	
+				return 'oneM2M.xml'
 			case _:
 				return None
 	
@@ -2221,100 +2238,100 @@ class CSERequest:
 	""" Filter Criteria complex structure. """
 	
 	# ID handling
-	to:str = None
+	to:Optional[str] = None
 	"""	The request's original target. """
 
-	id:str = None
+	id:Optional[str] = None
 	""" Target resource ID. Might be structured or unstructured. Based on the value of `to`. """
 
-	srn:str = None
+	srn:Optional[str] = None
 	""" The target's structured resource ID. Might not be present in a request. Based on the value of `to`. """
 	
-	csi:str = None
+	csi:Optional[str] = None
 	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
 
 	# Request attributes
-	op:Operation = None
+	op:Optional[Operation] = None
 	"""	Request Operation. """
 
-	originator:str = None 
+	originator:Optional[str] = None 
 	"""	Request originator (from, X-M2M-Origin). """
 
 	rsc:ResponseStatusCode = ResponseStatusCode.UNKNOWN
 	""" Response Status Code. """
 
-	rqi:str = None
+	rqi:Optional[str] = None
 	"""	Request Identifier (X-M2M-RI). """
 	
-	rvi:str = None
+	rvi:Optional[str] = None
 	"""	Release Version Identifier (X-M2M-RVI). """
 	
-	ty:ResourceTypes = None
+	ty:Optional[ResourceTypes] = None
 	""" Resource type. """
 
 	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
 	"""	Desired Indentifier Result Type (default: structured). """
 
 	_rcnDefault = ResultContentType.discoveryResultReferences
-	rcn:ResultContentType = None
+	rcn:Optional[ResultContentType] = None
 	""" Result Content Type. """
 
 	rt:ResponseType = ResponseType.blockingRequest
 	""" Response Type (default: blocking request)."""
 
-	rp:str = None
+	rp:Optional[str] = None
 	""" Result Persistence. """
 
-	_rpts:str = None
+	_rpts:Optional[str] = None
 	""" Internal: Result Persistence (rp) as a timestamp. """
 
-	vsi:str = None
+	vsi:Optional[str] = None
 	"""	Vendor Information (X-M2M-VSI). """
 	
-	rqet:str = None
+	rqet:Optional[str] = None
 	"""	Request Expiration Timestamp in ISO8901 format (X-M2M-RET). """
 	
-	_rqetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
+	_rqetUTCts:Optional[float] = None 	# X-M2M-RET as UTC based timestamp
 	""" Request Expiration Timestamp as UTC-based timestamp (internal). """
 	
-	rset:str = None 
+	rset:Optional[str] = None 
 	""" Result Expiration Time in ISO8901 format or as ms (X-M2M-RST). """
 
-	_rsetUTCts:float = None 	# X-M2M-RET as UTC based timestamp
+	_rsetUTCts:Optional[float] = None 	# X-M2M-RET as UTC based timestamp
 	""" Result Expiration Timestamp as UTC-based timestamp (internal). """
 
-	ot:str = None  
+	ot:Optional[str] = None  
 	"""	Originating Timestamp in ISO8901 format. """
 	
-	oet:str = None
+	oet:Optional[str] = None
 	""" Operation Execution Time in ISO8901 format or as ms (X-M2M-OET). """
 	
-	rtu:list[str] = None
+	rtu:Optional[list[str]] = None
 	""" The notificationURI element of the Response Type parameter(X-M2M-RTU). """
 
-	ct:ContentSerializationType = None
+	ct:Optional[ContentSerializationType] = None
 	"""	Content Serialization Type. """
 
-	ec:EventCategory = None
+	ec:Optional[EventCategory] = None
 	"""	Event Category. """
 
-	sqi:bool = None
+	sqi:Optional[bool] = None
 	""" Semantic Query Indicator """
 
-	ma:str = None
+	ma:Optional[str] = None
 	"""	maxAge """
 
-	_ma:float = None
+	_ma:Optional[float] = None
 	""" maxAge duration converted """
 
-	pc:JSON = None
+	pc:Optional[JSON] = None
 	""" The request's primitive content as a dictionary. """
 	
 	# Generics, internals
-	originalData:bytes = None 
+	originalData:Optional[bytes] = None 
 	""" The request's original data. """
 
-	originalRequest:JSON = None
+	originalRequest:Optional[JSON] = None
 	""" The original request after dissection as a dictionary. """
 
 	requestType:RequestType	= RequestType.NOTSET
@@ -2324,7 +2341,7 @@ class CSERequest:
 	#	HTTP specifics
 	#
 
-	httpAccept:list[str]			= None
+	httpAccept:Optional[list[str]] = None
 	"""	http Accept header media type. """
 
 	#
@@ -2334,10 +2351,10 @@ class CSERequest:
 	_outgoing:bool = False
 	""" Whether this is a request sent by the CSE. """
 
-	_directURL:str = None
+	_directURL:Optional[str] = None
 	""" The direct URL of the request. """
 
-	_ot:float = None
+	_ot:Optional[float] = None
 	""" The timestamp when this request object was created. """
 
 
@@ -2513,7 +2530,7 @@ JSONLIST = List[JSON]
 ReqResp = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """

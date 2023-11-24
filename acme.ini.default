@@ -299,6 +299,9 @@ listenIF=0.0.0.0
 ; Loglevel for the WebSocket server. Allowed values: debug, info, warning, error, off.
 ; Default: Basic config log level
 loglevel=${basic.config:logLevel}
+; Timeout when sending websocket requests and waiting for responses.
+; Default: see cse.requestExpirationDelta
+timeout=${cse:requestExpirationDelta}
 
 
 
