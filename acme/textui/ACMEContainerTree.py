@@ -13,6 +13,7 @@ from textual import events
 from textual.app import ComposeResult
 from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Markdown, Label, Button
 from textual.containers import Container, Vertical, Horizontal
+from textual.widgets.tree import TreeNode
 from textual.screen import ModalScreen
 from textual.binding import Binding
 from rich.syntax import Syntax
@@ -38,21 +39,36 @@ class ACMEResourceTree(TextualTree):
 		self.clear()
 		self.auto_expand = False
 		self.select_node(None)
+		prevType = ''
 		for r in self._retrieve_resource_children(CSE.cseRi):
+			ty = r[0].ty
+			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
+				self.root.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				prevType = ty
 			self.root.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
 		self._update_content(self.cursor_node.data)
 
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
 		try:
-			self._update_content(node.node.data)
+			if node.node.data:
+				self._update_content(node.node.data)
+			else:
+				# No data means this is a type section
+				self._update_type_section(node.node.label)
 		except ResponseException as e:
 			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
 
 
+
 	def on_tree_node_expanded(self, node:TextualTree.NodeSelected) -> None:
 		node.node._children = []	# no available method?
+		prevType = ''
 		for r in self._retrieve_resource_children(node.node.data):
+			ty = r[0].ty
+			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
+				node.node.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				prevType = ty
 			node.node.add(r[0].rn, data = r[0].ri, allow_expand = r[1])
 	
 
@@ -68,6 +84,7 @@ class ACMEResourceTree(TextualTree):
 		ResourceTypes.TS_OL: (ResourceTypes.TSI, True),
 		ResourceTypes.TS_LA: (ResourceTypes.TSI, False),
 	}
+
 
 	def _update_content(self, ri:str) -> None:
 		try:
@@ -87,18 +104,61 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)}' if resource else '## &nbsp;')
+		self.parentContainer.header.update(f'## {ResourceTypes.fullname(resource.ty)} - {resource.rn}' if resource else '## &nbsp;')
 
+		# Set the visibility of the tabs
+		self.parentContainer.tabs.show_tab('tree-tab-requests')
+		if ri == CSE.cseRi:	
+			# Don't allow to delete the CSE
+			self.parentContainer.tabs.hide_tab('tree-tab-delete')
+		else:
+			self.parentContainer.tabs.show_tab('tree-tab-delete')
+
+
+	def _update_type_section(self, label:str) -> None:
+		"""	Update the resource view with a type section.
+		
+			Args:
+				label: The label of the type section.
+		"""
+		self.parentContainer.header.update(f'## {label} Resources')
+		self.parentContainer.resourceView.update('')
+		self.parentContainer.requestView.display = False
+		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
+		self.parentContainer.tabs.hide_tab('tree-tab-requests')
+		self.parentContainer.tabs.hide_tab('tree-tab-delete')
 
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
+		"""	Retrieve the children of a resource and return a sorted list of tuples.
+		
+			Each tuple contains a resource and a boolean indicating if the resource
+			has children itself.
+
+			Sort order is: virtual and instance resources first, then by type and name.
+			
+			Args:
+				ri: The resource id of the parent resource.
+				
+			Returns:
+				A sorted list of tuples (resource, hasChildren).
+		"""
 		result:List[Tuple[Resource, bool]] = []
 		chs = [ x for x in CSE.dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
-		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
-		# chs = [ x for x in CSE.dispatcher.directChildResources(ri) if not x.isVirtual() ]
+		
+		# Sort resources: virtual and instance resources first, then by type and name
+		top = []
+		rest = []
+		for r in chs:
+			if ResourceTypes.isVirtualResource(r.ty) or ResourceTypes.isInstanceResource(r.ty):
+				top.append(r)
+			else:
+				rest.append(r)
+		rest.sort(key = lambda r: (r.ty, r.rn))
+		chs = top + rest
+
 		for r in chs:
 			result.append((r, len([ x for x in CSE.dispatcher.retrieveDirectChildResources(r.ri)  ]) > 0))
-			# result.append((r, len([ x for x in CSE.dispatcher.directChildResources(r.ri) if not x.isVirtual() ]) > 0))
 		return result
 
 

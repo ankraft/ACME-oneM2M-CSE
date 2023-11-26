@@ -43,10 +43,10 @@ class ACMEConfigurationTree(TextualTree):
 					break
 			else:	# not found
 				# Add new node to the tree. "data" contains the path to this node
-				_n = node.add(_s, f'{node.data}.{_s}' )
+				_n = node.add(f'[{CSE.textUI.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 			if level == len(splits) - 1:
 				_n.allow_expand = False
-				_n.label = f'[{CSE.textUI.objectColor}]{_s}[/]'
+				_n.label = _s
 			else:
 				_addSetting(splits, level + 1, _n)
 
@@ -107,7 +107,7 @@ class ACMEContainerConfigurations(Container):
 		self.tuiApp = tuiApp
 		self.documentationView = Markdown('')
 
-		self.configurationsTree = ACMEConfigurationTree('Configurations', id = 'tree-view')
+		self.configurationsTree = ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', id = 'tree-view')
 		self.configurationsTree.parentContainer = self
 
 

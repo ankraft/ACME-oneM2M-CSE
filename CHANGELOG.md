@@ -16,6 +16,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added configuration value for the CSE's *poa* attribute. Before, the CSE's *poa* was always set to the *http* server's address.
 - [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
+- [TUI] Added sorting of resource lists by resource type. Added resource type section headers.
 
 ### Experimental
 

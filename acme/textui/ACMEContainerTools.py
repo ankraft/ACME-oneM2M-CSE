@@ -60,9 +60,9 @@ class ACMEToolsTree(TextualTree):
 							break
 					else:	# not found
 						# Add new node to the tree for the category
-						_n = root.add(category, allow_expand = False, expand = True)
+						_n = root.add(f'[{CSE.textUI.objectColor}]{category}[/]', allow_expand = False, expand = True)
 				# Add the script to a category or to the root
-				_nn = _n.add(f'[{CSE.textUI.objectColor}]{name}[/]', allow_expand = False)
+				_nn = _n.add(name, allow_expand = False)
 				self.nodes[name] = _nn
 				self.logs[name] = []	# Create a log for each script
 
@@ -269,7 +269,7 @@ class ACMEContainerTools(Container):
 
 		self.toolsHeader = Markdown('')
 
-		self.toolsTree = ACMEToolsTree('Tools & Commands', id = 'tree-view')
+		self.toolsTree = ACMEToolsTree(f'[{CSE.textUI.objectColor}]Tools & Commands[/]', id = 'tree-view')
 		self.toolsTree.parentContainer = self
 
 		self.toolsInput = ACMEInputField(id = 'tools-argument')
