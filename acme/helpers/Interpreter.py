@@ -3089,6 +3089,39 @@ def _doRandom(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext.setResult(SSymbol(number = Decimal(random.uniform(float(start), float(end)))))
 
 
+def _doRemoveJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
+	""" Remove an attribute from a JSON structure via its key path.
+
+		One may remove multiple attributes at once by providing multiple key paths.
+
+		Example:
+			::
+			
+				(remove-json-attribute { "a" : { "b" : "c" }} "a/b") -> { "a" : {} }
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the operation result, ie a new JSON symbol.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# json
+	_json:dict
+	pcontext, _json = pcontext.valueFromArgument(symbol, 1, SType.tJson)
+	_json = deepcopy(_json)
+
+	for i in range(2, symbol.length):
+		# key path
+		pcontext, _key = pcontext.valueFromArgument(symbol, i, SType.tString)
+		# remove
+		setXPath(_json, _key.strip(), delete = True)
+
+	return pcontext.setResult(SSymbol(jsn = _json))
+
+
 def _doReturn(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	Return from a function call or break from *while* loop.
 
@@ -3527,6 +3560,7 @@ _builtinCommands:PSymbolDict = {
 	'false':				lambda p, a: _doBoolean(p, a, False),
 	'get-json-attribute':	_doGetJSONAttribute,
 	'has-json-attribute':	_doHasJSONAttribute,
+	''
 	'if':					_doIf,
 	'inc':					lambda p, a: _doIncDec(p, a, True),
 	'index-of':				_doIndexOf,
@@ -3549,6 +3583,7 @@ _builtinCommands:PSymbolDict = {
 	'quit-with-error':		_doError,
 	'quote':				_doQuote,
 	'random':				_doRandom,
+	'remove-json-attribute':_doRemoveJSONAttribute,
 	'return':				_doReturn,
 	'round':				_doRound,
 	'set-json-attribute':	_doSetJSONAttribute,

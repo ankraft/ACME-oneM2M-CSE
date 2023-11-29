@@ -49,14 +49,15 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [quit-with-error](#quit-with-error)                     | Ends the running script with an error status and returns a result                |
 |                            | [quote](#quote)                                         | Return a quoted version of an s-expression                                       |
 |                            | [random](#random)                                       | Generate a random number                                                         |
+|                            | [remove-json-attribute](#remove-json-attribute)         | Remove one or multiple JSON attributes in a JSON structure                       |
 |                            | [return](#return)                                       | Early return from a function or while loop                                       |
 |                            | [round](#round)                                         | Return a round number                                                            |
 |                            | [set-json-attribute](#set-json-attribute)               | Set a JSON attribute in a JSON structure to a new value                          |
 |                            | [setq](#setq)                                           | Assigns a value to a variable                                                    |
-|                            | [sleep](#sleep)                                         | Sleep during script execution                                                     |
+|                            | [sleep](#sleep)                                         | Sleep during script execution                                                    |
 |                            | [slice](#slice)                                         | Returns the slice of a list or string                                            |
 |                            | [sp](#sp)                                               | Returns a space character                                                        |
-|                            | [string-to-json](#string-to-json)                       | Converts a string to a JSON structure                                             |
+|                            | [string-to-json](#string-to-json)                       | Converts a string to a JSON structure                                            |
 |                            | [to-number](#to-number)                                 | Converts a string to a number                                                    |
 |                            | [to-string](#to-string)                                 | Returns a string representation of a symbol                                      |
 |                            | [to-symbol](#to-symbol)                                 | Converts a string to a symbol                                                    |
@@ -82,7 +83,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [run-script](#run-script)                               | Removes a key/value pair from the CSE's internal script-data storage             |
 |                            | [runs-in-ipython](#runs-in-ipython)                     | Determine whether the CSE runs in an iPython environment                         |
 |                            | [schedule-next-script](#schedule-next-script)           | Schedule the nest running script and its arguments                               |
-|                            | [set-config](#set-config)                               | Set a CSE's configuration setting                                                 |
+|                            | [set-config](#set-config)                               | Set a CSE's configuration setting                                                |
 |                            | [set-console-logging](#set-console-logging)             | Switch on or off console logging                                                 |
 | [oneM2M](#_onem2m)         | [create-resource](#create-resource)                     | Send a oneM2M CREATE request                                                     |
 |                            | [delete-resource](#delete-resource)                     | Send a oneM2M DELETE request                                                     |
@@ -494,7 +495,7 @@ The `get-json-attribute` function retrieves an attribute from a JSON structure v
 - If an element is specified as `{}` then all elements in that list are returned in a list.
 - If an element is specified as `{*}` and is targeting a dictionary then a single unknown key is skipped in the path. This can be used to skip, for example, unknown first elements in a structure. This is similar but not the same as `{0}` that works on lists.
 
-See also: [has-json-attribute](#has-json-attribute), [set-json-attribute](#set-json-attribute)
+See also: [has-json-attribute](#has-json-attribute), [remove-json-attribute](#remove-json-attribute), [set-json-attribute](#set-json-attribute)
 
 Examples:
 
@@ -517,7 +518,7 @@ Examples:
 
 The `has-json-attribute` function determines  whether an attribute exists in a JSON structure for a *key* path. This *key* may be a structured path to access elements deeper down in the JSON structure. See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
 
-See also: [get-json-attribute](#get-json-attribute), [set-json-attribute](#set-json-attribute)
+See also: [get-json-attribute](#get-json-attribute), [remove-json-attribute](#remove-json-attribute), [set-json-attribute](#set-json-attribute)
 
 Examples:
 
@@ -1074,6 +1075,29 @@ Example:
 
 ---
 
+<a name="remove-json-attribute"></a>
+
+### remove-json-attribute
+
+`(remove-json-attribute <JSON> <key:string>+)`
+
+The `remove-json-attribute` function removes one or more attributes and their values from a JSON structure via their *key* paths. This *key* may be a structured path to access elements deeper down in the JSON structure. See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
+
+The function doesn't change the original JSON structure, but returns an updated structure.
+
+See also: [get-json-attribute](#get-json-attribute), [has-json-attribute](#has-json-attribute), [set-json-attribute](#set-json-attribute)
+
+Examples:
+
+```lisp
+(remove-json-attribute { "a" : { "b" : "c" }} "a/b") ;; Returns { "a" : {} }
+```
+
+[top](#top)
+
+
+---
+
 <a name="return"></a>
 
 ### return
@@ -1089,6 +1113,7 @@ Example:
 ```lisp
 (if (< 1 2)      ;; Evaluates to "true"
     (return 23)  ;; Return the number 23
+)
 ```
 
 [top](#top)
@@ -1119,18 +1144,29 @@ Example:
 
 ### set-json-attribute
 
-`(set-json-attribute <JSON> <key:string> <value)`
+`(set-json-attribute <JSON> <key:string> <value>)`  
+`(set-json-attribute <JSON> '( '(<key:string> <value>)* )`
 
-The `set-json-attribute` function sets an attribute in a JSON structure via a *key* path to the new *value*. This *key* may be a structured path to access elements deeper down in the JSON structure. See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
+
+The `set-json-attribute` function adds or updates an attribute in a JSON structure via a *key* path to the new *value*. This *key* may be a structured path to access elements deeper down in the JSON structure. See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
+
+There are two forms to use this function:
+
+- The first form takes a JSON structure, a *key* path, and a *value* as arguments. The function sets the attribute in the JSON structure and returns the updated structure.
+- The second form takes a JSON structure and a list of list of key-value pairs as arguments. The function sets the attributes in the JSON structure and returns the updated structure. This form is useful when multiple attributes need to be set in one call.  
+Note, that the list as well as each list of key-value pairs need to be quoted if provided directly.
 
 The function doesn't change the original JSON structure, but returns an updated structure.
 
-See also: [get-json-attribute](#get-json-attribute), [has-json-attribute](#has-json-attribute)
+See also: [get-json-attribute](#get-json-attribute), [has-json-attribute](#has-json-attribute), [remove-json-attribute](#remove-json-attribute)
 
-Example:
+Examples:
 
 ```lisp
 (set-json-attribute { "a" : { "b" : "c" }} "a/b" "e")  ;; Returns {"a": {"b": "e"}}
+
+(set-json-attribute { "a" : { "b" : "c" }} '('("a/b" "d") '("a/c" "e"))) ;; Returns { "a" : { "b" : "d", "c" : "e"}
+
 ```
 
 [top](#top)
