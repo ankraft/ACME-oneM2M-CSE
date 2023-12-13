@@ -6,6 +6,9 @@
 
 ACME requires **Python 3.10** or newer. Install it with your favorite package manager.
 
+>[!Caution]
+> Python 3.12 is not fully supported yet. Please stick to 3.10.x or 3.11.x for the moment.
+
 You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 
 <a name="first_setup"></a>
