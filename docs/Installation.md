@@ -6,7 +6,7 @@
 
 ACME requires **Python 3.10** or newer. Install it with your favorite package manager.
 
-You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
+You may consider to use a virtual environment manager like pyenv + virtualenv (see [this HowTo](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/137) or [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 
 <a name="first_setup"></a>
 ## Installation and First Setup
