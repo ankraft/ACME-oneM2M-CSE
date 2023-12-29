@@ -227,6 +227,7 @@ grpRN	= 'testGRP'
 lcpRN	= 'testLCP'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
+prmrRN	= 'testPRMR'
 reqRN	= 'testREQ'
 schRN 	= 'testSCH'
 smdRN	= 'testSMD'
@@ -258,6 +259,7 @@ tsURL 	= f'{aeURL}/{tsRN}'
 tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{cntURL}/{actrRN}'
 deprURL = f'{actrURL}/{deprRN}'
+prmrURL = f'{aeURL}/{prmrRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
@@ -1163,7 +1165,7 @@ if UPPERTESTERENABLED:
 				quit(-1)
 			case _:
 				console.print('[red]Upper Tester Interface not enabeled in CSE')
-				console.print('Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+				console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
 				quit(-1)
 	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')

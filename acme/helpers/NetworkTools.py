@@ -28,7 +28,7 @@ def isValidateIpAddress(ip:str) -> bool:
 		return False
 	return True
 
-_allowedPart = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+_allowedPart = re.compile(r'(?!-)[A-Z\d-]{1,63}(?<!-)$', re.IGNORECASE)
 """	Regular expression for validating host names. """
 
 def isValidateHostname(hostname:str) -> bool:

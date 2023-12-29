@@ -4,7 +4,7 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""	This module implements a handler for keyboard inputs.
+r"""This module implements a handler for keyboard inputs.
 
 	It should run on \*IX-alikes and Windows OS.
 """

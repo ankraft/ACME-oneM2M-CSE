@@ -247,7 +247,7 @@ def waitFor(timeout:float,
 
 def cronMatchesTimestamp(cronPattern:Union[str, list[str]], 
 						 ts:Optional[datetime] = None) -> bool:
-	'''	A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
+	r"""A cron parser to determine if the *cronPattern* matches for a given timestamp *ts*.
 
 		The cronPattern must follow the usual crontab pattern of 7 fields:
 	
@@ -271,7 +271,7 @@ def cronMatchesTimestamp(cronPattern:Union[str, list[str]],
 		
 		Raises:
 			ValueError: If *cronPattern* is invalid.
-	'''
+	"""
 
 	def _parseMatchCronArg(element:str, target:int) -> bool:
 		"""	Parse and match a single cron element and match it against a target value.

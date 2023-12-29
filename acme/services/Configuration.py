@@ -212,7 +212,7 @@ class Configuration(object):
 
 		for o, n in _deprecatedSections:
 			if config.has_section(o):
-				Configuration._print(f'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
+				Configuration._print(fr'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
 				return False
 
 		#
@@ -621,29 +621,29 @@ class Configuration(object):
 				case 'in':
 					_put('cse.type', CSEType.IN)
 				case _:
-					return False, f'Configuration Error: Unsupported \[cse]:type: {cseType}'
+					return False, fr'Configuration Error: Unsupported \[cse]:type: {cseType}'
 
 		# CSE Serialization
 		if isinstance(ct := _get('cse.defaultSerialization'), str):
 			_put('cse.defaultSerialization', ContentSerializationType.getType(ct))
 			if _get('cse.defaultSerialization') == ContentSerializationType.UNKNOWN:
-				return False, f'Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}'
+				return False, fr'Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}'
 		
 		# Registrar Serialization
 		if isinstance(ct := _get('cse.registrar.serialization'), str):
 			_put('cse.registrar.serialization', ContentSerializationType.getType(ct))
 			if _get('cse.registrar.serialization') == ContentSerializationType.UNKNOWN:
-				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
+				return False, fr'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 
 		# Loglevel and various overrides from command line
 		logLevel = _get('logging.level')
 		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
 		if isinstance(logLevel, str):
 			if (ll := _getLoglevel(logLevel)) is None:
-				return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+				return False, fr'Configuration Error: Unsupported \[logging]:level: {logLevel}'
 			_put('logging.level', ll)
 		else:
-			return False, f'Configuration Error: Unsupported \[logging]:level: {logLevel}'
+			return False, fr'Configuration Error: Unsupported \[logging]:level: {logLevel}'
 		# from ..services.Logging import LogLevel
 		# if isinstance(logLevel := _get('logging.level'), str):	
 		# 	logLevel = logLevel.lower()
@@ -666,7 +666,7 @@ class Configuration(object):
 		
 		# Test for correct logging queue size
 		if (queueSize := Configuration._configuration['logging.queueSize']) < 0:
-			return False, f'Configuration Error: \[logging]:queueSize must be 0 or greater'
+			return False, fr'Configuration Error: \[logging]:queueSize must be 0 or greater'
 
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
@@ -692,7 +692,7 @@ class Configuration(object):
 		# Just in case: check the URL's
 		if _get('http.security.useTLS'):
 			if _get('http.address').startswith('http:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
+				Configuration._print(r'[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
 				_put('http.address', _get('http.address').replace('http:', 'https:'))
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
@@ -700,7 +700,7 @@ class Configuration(object):
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if _get('http.address').startswith('https:'):
-				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
+				Configuration._print(r'[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
 				_put('http.address', _get('http.address').replace('https:', 'http:'))
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
@@ -710,11 +710,11 @@ class Configuration(object):
 
 		# Operation
 		if _get('cse.operation.jobs.balanceTarget') <= 0.0:
-			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0'
+			return False, fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0'
 		if _get('cse.operation.jobs.balanceLatency') < 0:
-			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0'
+			return False, fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0'
 		if _get('cse.operation.jobs.balanceReduceFactor') < 1.0:
-			return False, f'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0'
+			return False, fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0'
 
 
 		#
@@ -723,9 +723,9 @@ class Configuration(object):
 
 		# HTTP server
 		if not isValidPort(_get('http.port')):
-			return False, f'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {_get("http.port")}'
+			return False, fr'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {_get("http.port")}'
 		if not (isValidateHostname(_get('http.listenIF')) or isValidateIpAddress(_get('http.listenIF'))):
-			return False, f'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {_get("http.listenIF")}'
+			return False, fr'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {_get("http.listenIF")}'
 		
 		# HTTP TLS & certificates
 		if not _get('http.security.useTLS'):	# clear certificates configuration if not in use
@@ -735,37 +735,37 @@ class Configuration(object):
 			_put('http.security.caPrivateKeyFile', '')
 		else:
 			if not (val := _get('http.security.tlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				return False, f'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}'
+				return False, fr'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}'
 			if not (val := _get('http.security.caCertificateFile')):
-				return False, 'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled'
+				return False, r'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
+				return False, fr'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
 			if not (val := _get('http.security.caPrivateKeyFile')):
-				return False, 'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
+				return False, r'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
+				return False, fr'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
 		
 
 		# HTTP CORS
 		if initial and _get('http.cors.enable') and not _get('http.security.useTLS'):
-			Configuration._print('[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
+			Configuration._print(r'[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
 
 
 		# HTTP authentication
 		if _get('http.security.enableBasicAuth') and not _get('http.security.basicAuthFile'):
-			return False, 'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled'
+			return False, r'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled'
 		if _get('http.security.enableTokenAuth') and not _get('http.security.tokenAuthFile'):
-			return False, 'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled'
+			return False, r'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled'
 	
 
 		# HTTP WSGI
 		if _get('http.wsgi.enable') and _get('http.security.useTLS'):
 			# WSGI and TLS cannot both be enabled
-			return False, 'Configuration Error: [i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).'
+			return False, r'Configuration Error: [i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).'
 		if _get('http.wsgi.threadPoolSize') < 1:
-			return False, 'Configuration Error: [i]\[http.wsgi]:threadPoolSize[/i] must be > 0'
+			return False, r'Configuration Error: [i]\[http.wsgi]:threadPoolSize[/i] must be > 0'
 		if _get('http.wsgi.connectionLimit') < 1:
-			return False, 'Configuration Error: [i]\[http.wsgi]:connectionLimit[/i] must be > 0'
+			return False, r'Configuration Error: [i]\[http.wsgi]:connectionLimit[/i] must be > 0'
 
 		
 		#
@@ -774,7 +774,7 @@ class Configuration(object):
 		if not _get('mqtt.port'):	# set the default port depending on whether to use TLS
 			_put('mqtt.port', 8883) if _get('mqtt.security.useTLS') else 1883
 		if not _get('mqtt.security.username') != (not _get('mqtt.security.password')):	# Hack: != -> either both are empty, or both are set
-			return False, f'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]'
+			return False, fr'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]'
 		# remove empty cid from the list
 		_put('mqtt.security.allowedCredentialIDs', [ cid for cid in _get('mqtt.security.allowedCredentialIDs') if len(cid) ])
 
@@ -783,18 +783,18 @@ class Configuration(object):
 		#	WebSocket server
 		#
 		if not isValidPort(_get('websocket.port')):
-			return False, f'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {_get("websocket.port")}'	
+			return False, fr'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {_get("websocket.port")}'	
 		if not (isValidateHostname(_get('websocket.listenIF')) or isValidateIpAddress(_get('websocket.listenIF'))):
-			return False, f'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {_get("websocket.listenIF")}'
+			return False, fr'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {_get("websocket.listenIF")}'
 
 		logLevel = _get('websocket.loglevel')
 		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
 		if isinstance(logLevel, str):
 			if (ll := _getLoglevel(logLevel)) is None:
-				return False, f'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
+				return False, fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
 			_put('websocket.loglevel', ll)
 		else:
-			return False, f'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
+			return False, fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
 
 
 
@@ -806,66 +806,66 @@ class Configuration(object):
 			_put('coap.security.caPrivateKeyFile', '')
 		else:
 			if not (val := _get('coap.security.dtlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				return False, f'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}'
+				return False, fr'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}'
 			if not (val := _get('coap.security.certificateFile')):
-				return False, 'Configuration Error: [i]\[coap.security]:certificateFile[/i] must be set when DTLS is enabled'
+				return False, r'Configuration Error: [i]\[coap.security]:certificateFile[/i] must be set when DTLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[coap.security]:certificateFile[/i] does not exists or is not accessible: {val}'
+				return False, fr'Configuration Error: [i]\[coap.security]:certificateFile[/i] does not exists or is not accessible: {val}'
 			if not (val := _get('coap.security.privateKeyFile')):
-				return False, 'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] must be set when TLS is enabled'
+				return False, r'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] must be set when TLS is enabled'
 			if not os.path.exists(val):
-				return False, f'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] does not exists or is not accessible: {val}'
+				return False, fr'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] does not exists or is not accessible: {val}'
 
 
 		# check the csi format and value
 		if not isValidCSI(val := _get('cse.cseID')):
-			return False, f'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
+			return False, fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {val}'
 		if _get('cse.cseID')[1:] == _get('cse.resourceName'):
-			return False, f'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
+			return False, fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]'
 
 		if _get('cse.registrar.address') and _get('cse.registrar.cseID'):
 			if not isValidCSI(val := _get('cse.registrar.cseID')):
-				return False, f'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
+				return False, fr'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}'
 			if len(_get('cse.registrar.cseID')) > 0 and len(_get('cse.registrar.resourceName')) == 0:
-				return False, 'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
+				return False, r'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]'
 
 		# Check default subscription duration
 		if _get('resource.sub.batchNotifyDuration') < 1:
-			return False, 'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0'
+			return False, r'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0'
 
 		# Check flexBlocking value
 		_put('cse.flexBlockingPreference', _get('cse.flexBlockingPreference').lower())
 		if _get('cse.flexBlockingPreference') not in ['blocking', 'nonblocking']:
-			return False, 'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"'
+			return False, r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"'
 
 		# Check release versions
 		if len(srv := _get('cse.supportedReleaseVersions')) == 0:
-			return False, 'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty'
+			return False, r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty'
 		if len(rvi := _get('cse.releaseVersion')) == 0:
-			return False, 'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty'
+			return False, r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty'
 		if rvi not in srv:
-			return False, f'Configuration Error: [i]\[cse]:releaseVersion[/i]: {rvi} not in [i]\[cse].supportedReleaseVersions[/i]: {srv}'
+			return False, fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {rvi} not in [i]\[cse].supportedReleaseVersions[/i]: {srv}'
 		# if any([s for s in srv if str(rvi) < s]):
 		#	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}. Either increase the [i]releaseVersion[/i] or reduce the set of [i]supportedReleaseVersions[/i].'
 
 		# Check various intervals
 		if _get('cse.checkExpirationsInterval') <= 0:
-			return False, 'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0'
+			return False, r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0'
 		if _get('console.refreshInterval') <= 0.0:
-			return False, 'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0'
+			return False, r'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0'
 		if _get('cse.maxExpirationDelta') <= 0:
-			return False, 'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
+			return False, r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
 
 		# Console settings
 		from ..services.Console import TreeMode
 		if isinstance(tm := _get('console.treeMode'), str):
 			if not (treeMode := TreeMode.to(tm)):
-				return False, f'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}'
+				return False, fr'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}'
 			_put('console.treeMode', treeMode)
 		
 		_put('console.theme', (theme := _get('console.theme').lower()))
 		if theme not in [ 'dark', 'light' ]:
-			return False, f'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"'
+			return False, fr'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"'
 
 		if _get('console.headless'):
 			_put('logging.enableScreenLogging', False)
@@ -874,16 +874,16 @@ class Configuration(object):
 
 		# Script settings
 		if _get('scripting.fileMonitoringInterval') < 0.0:
-			return False, f'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0'
+			return False, fr'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0'
 		if _get('scripting.maxRuntime') < 0.0:
-			return False, f'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0'
+			return False, fr'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0'
 		if (scriptDirs := _get('scripting.scriptDirectories')):
 			lst = []
 			for each in scriptDirs:
 				if not each:
 					continue
 				if not os.path.isdir(each):
-					return False, f'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
+					return False, fr'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible'
 				lst.append(each)
 			_put('scripting.scriptDirectories', lst)
 			
@@ -893,16 +893,16 @@ class Configuration(object):
 		try:
 			isodate.parse_duration(bcni)
 		except Exception as e:
-			return False, f'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
+			return False, fr'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration'
 		
 		# Check group resource defaults
 		if _get('resource.grp.resultExpirationTime') < 0:
-			return False, f'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0'
+			return False, fr'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0'
 		
 
 		# Text UI settings
 		if _get('textui.maxRequestSize') <= 0:
-			return False, 'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s'
+			return False, r'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s'
 		
 		# Everything is fine
 		return True, None
@@ -987,7 +987,7 @@ class Configuration(object):
 			Configuration._configuration[key] = value
 			if not (r := Configuration.validate())[0]:
 				Configuration._configuration[key] = original
-				return r[1].replace('\[', '[')	# unescape "\[" in error messages
+				return r[1].replace(r'\[', '[')	# unescape "\[" in error messages
 
 			from ..services import CSE
 			CSE.event.configUpdate(key, value)		# type:ignore [attr-defined]

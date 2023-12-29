@@ -440,7 +440,7 @@ class NotificationManager(object):
 									 resource:Resource, 
 									 request:CSERequest, 
 									 finished:Optional[Callable] = None) -> None:
-		"""	Perform a blocking RETRIEVE. If this notification event type is configured a RETRIEVE operation to
+		r"""Perform a blocking RETRIEVE. If this notification event type is configured a RETRIEVE operation to
 			a resource causes a notification to a target. It is expected that the target is updating the resource
 			**before** responding to the notification.
 
@@ -847,7 +847,7 @@ class NotificationManager(object):
 	#
 
 	def validateAndConstructNotificationStatsInfo(self, sub:SUB|CRS, add:Optional[bool] = True) -> None:
-		"""	Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
+		r"""Update and fill the *notificationStatsInfo* attribute of a \<sub> or \<crs> resource.
 
 			This method adds, if necessary, the necessarry stat info structures for each notification
 			URI. It also removes structures for notification URIs that are not present anymore.
@@ -926,7 +926,7 @@ class NotificationManager(object):
 
 	def countNotificationEvents(self, ri:str, 
 									  sub:Optional[SUB|CRS] = None) -> None:
-		"""	This method count and stores the number of notification events for a subscription.
+		r"""This method count and stores the number of notification events for a subscription.
 			It increments the count for each of the notification targets.
 
 			After handling the resource is updated in the database.
@@ -1077,7 +1077,7 @@ class NotificationManager(object):
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {e.dbg}')
 				return False
 			if res.rsc != ResponseStatusCode.OK:
-				L.isDebug and L.logDebug(f'Verification notification response if not OK: {res.rsc} for: {uri}: {res.dbg}')
+				L.isDebug and L.logDebug(f'Verification notification response is not OK: {res.rsc} for: {uri}: {res.dbg}')
 				return False
 			return True
 

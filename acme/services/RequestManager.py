@@ -1709,6 +1709,7 @@ class RequestManager(object):
 		
 		request.fillOriginalRequest(update = True)
 
+		# Store the request
 		CSE.storage.addRequest(request.op,
 							   rid, 
 							   srn,

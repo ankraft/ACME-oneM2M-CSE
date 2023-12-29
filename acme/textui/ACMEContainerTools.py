@@ -375,7 +375,7 @@ class ACMEContainerTools(Container):
 				msg: The message to print.
 		"""
 		# Escape "["" in log messages.
-		msg = msg.replace('[', '\[')
+		msg = msg.replace('[', r'\[')
 		self._logMessage(scriptName, f'[dim]{msg}[/dim]', 'L')
 
 
@@ -386,7 +386,7 @@ class ACMEContainerTools(Container):
 				scriptName: The name of the script.
 				msg: The message to print.	
 		"""
-		msg = msg.replace('[', '\[')
+		msg = msg.replace('[', r'\[')
 		self._logMessage(scriptName, f'[red1]{msg}[/red1]', 'E')
 	
 

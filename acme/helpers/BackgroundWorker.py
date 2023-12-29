@@ -866,13 +866,19 @@ class BackgroundWorkerPool(object):
 	def _startTimer(cls) -> None:
 		""" Start the workers queue timer.
 		"""
-		if cls.workerQueue:
+		if not sys.is_finalizing() and cls.workerQueue:
 			with cls.timerLock:
 				if cls.workerTimer is not None:	# don't start another timer!
 					return
-				cls.workerTimer = Timer(cls.workerQueue[0].timestamp - _utcTime(), cls._execQueue)
-				cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
-				cls.workerTimer.start()
+				try:
+					cls.workerTimer = Timer(cls.workerQueue[0].timestamp - _utcTime(), cls._execQueue)
+					cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
+					cls.workerTimer.start()
+				except RuntimeError:
+					# not allowed to start a new thread when the interpreter is shutting down.
+					# We ignore this error, because there is nothing we can do about it now.
+					pass
+
 	
 
 	@classmethod

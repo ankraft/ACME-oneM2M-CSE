@@ -15,8 +15,6 @@ from __future__ import annotations
 from typing import Any, Callable, Tuple, cast, Optional, Generator
 import random, string, sys, re, threading
 import traceback
-from distutils.util import strtobool
-
 
 from .Constants import Constants
 from .Types import ResourceTypes, ResponseStatusCode
@@ -244,7 +242,7 @@ def hasOnlyUnreserved(id:str) -> bool:
 	return re.match(_unreserved, id) is not None
 
 
-_csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+_csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 """	Regular expression to test for valid CSE-ID format. """
 
 def isValidCSI(csi:str) -> bool:
@@ -258,7 +256,7 @@ def isValidCSI(csi:str) -> bool:
 	return re.fullmatch(_csiRx, csi) is not None
 
 
-_aeRx = re.compile('^[^/\s]+') # Must not start with a / and must not contain a further / or white space
+_aeRx = re.compile(r'^[^/\s]+') # Must not start with a / and must not contain a further / or white space
 """	Regular expression to test for valid AE-ID format. """
 
 def isValidAEI(aei:str) -> bool:
@@ -665,7 +663,7 @@ def normalizeURL(url:str) -> str:
 _excludeFromRoot = [ 'pi' ]
 """	Attributes that are excluded from the root of a resource tree. """
 
-_pureResourceRegex = re.compile('[\w]+:[\w]')
+_pureResourceRegex = re.compile(r'[\w]+:[\w]')
 """	Regular expression to test for a pure resource name. """
 
 def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
@@ -828,8 +826,15 @@ def strToBool(value:str) -> bool:
 			value: Any string value that looks like a boolean *true* or *false*.
 		Return:
 			The boolean value.
+		Raises:
+			ValueError if the string does not look like a boolean.
 	"""
-	return bool(strtobool(str(value)))
+	val = val.lower()
+	if val in ('y', 'yes', 't', 'true', 'on', '1'):
+		return True
+	elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+		return False
+	raise ValueError("invalid truth value %r" % (val,))
 
 
 ##############################################################################

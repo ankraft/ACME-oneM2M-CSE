@@ -399,7 +399,7 @@ enable=True
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')
-		_jcnf = jcnf.replace("[", "\[")
+		_jcnf = jcnf.replace('[', r'\[')
 		_print(f'[dim]{_jcnf}\n')
 
 		if not inquirer.confirm	(message = f'Write configuration to file {configFile}?', 

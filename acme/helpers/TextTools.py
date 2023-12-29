@@ -19,7 +19,7 @@ _commentRegex = re.compile(r'(\".*?(?<!\\)\".*?(?<!\\))|(/\*.*?\*/|//[^\r\n]*$|#
 """	Compiled regex expression of recognize comments. """
 
 def removeCommentsFromJSON(data:str) -> str:
-	"""	Remove comments from JSON string input.
+	r"""	Remove comments from JSON string input.
 
 		This will remove:
 
@@ -423,7 +423,7 @@ def isBase64(value:str) -> bool:
 
 
 def simpleMatch(st:str, pattern:str, star:Optional[str] = '*') -> bool:
-	"""	Simple string match function. 
+	r"""	Simple string match function. 
 
 		This class supports the following expression operators:
 	
