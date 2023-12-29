@@ -630,6 +630,10 @@ theme=${console:theme}
 ; Interval for refreshing various views in the text UI.
 ; Default: 2.0
 refreshInterval=2.0
+; Max size of a request or response in bytes to display. 
+; Requests or responses larger than this threshold will not be displayed.
+; Default: 10000
+maxRequestSize=10000
 
 ;
 ;	Scripting settings

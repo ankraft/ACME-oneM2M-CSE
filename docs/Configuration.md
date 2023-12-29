@@ -500,11 +500,12 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[textui] - Text UI Settings
 
-| Setting         | Description                                                                                                           | Configuration Name     |
-|:----------------|:----------------------------------------------------------------------------------------------------------------------|:-----------------------|
-| startWithTUI    | Show the text UI after startup.<br />See also command line argument [–-textui](Running.md).<br />Default: False       | textui.startWithTUI    |
-| theme           | Set the color theme for the text UI. Allowed values are "dark" and "light".<br />Default: same as [console].theme     | textui.theme           |
-| refreshInterval | Interval for refreshing various views in the text UI.<br />Default: 2.0                                               | textui.refreshInterval |
+| Setting         | Description                                                                                                                                        | Configuration Name     |
+|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
+| startWithTUI    | Show the text UI after startup.<br />See also command line argument [–-textui](Running.md).<br />Default: False                                    | textui.startWithTUI    |
+| theme           | Set the color theme for the text UI. Allowed values are "dark" and "light".<br />Default: same as [console].theme                                  | textui.theme           |
+| refreshInterval | Interval for refreshing various views in the text UI.<br />Default: 2.0                                                                            | textui.refreshInterval |
+| maxRequestSize  | Max size of a request or response in bytes to display. Requests or responses larger than this threshold will not be displayed.<br />Default: 10000 | textui.maxRequestSize  |
 
 [top](#sections)
 

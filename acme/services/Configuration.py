@@ -524,6 +524,7 @@ class Configuration(object):
 				'textui.refreshInterval'				: config.getfloat('textui', 'refreshInterval', 						fallback = 2.0),
 				'textui.startWithTUI'					: config.getboolean('textui', 'startWithTUI',						fallback = False),
 				'textui.theme'							: config.get('textui', 'theme', 									fallback = 'dark'),
+				'textui.maxRequestSize'					: config.getint('textui', 'maxRequestSize',							fallback = 10000),
 
 				#
 				#	WebSocket Server
@@ -897,6 +898,11 @@ class Configuration(object):
 		# Check group resource defaults
 		if _get('resource.grp.resultExpirationTime') < 0:
 			return False, f'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0'
+		
+
+		# Text UI settings
+		if _get('textui.maxRequestSize') <= 0:
+			return False, 'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s'
 		
 		# Everything is fine
 		return True, None

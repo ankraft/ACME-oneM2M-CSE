@@ -21,6 +21,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
 from ..services import CSE
+from ..services.Configuration import Configuration
 from ..helpers.TextTools import commentJson
 
 idRequests = 'requests'
@@ -131,6 +132,7 @@ class ACMEViewRequests(Vertical):
 
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
+		self.maxRequestSize = Configuration.get('textui.maxRequestSize')
 
 		# Request List
 		self.requestList = ListView(id = 'request-list-list')
@@ -199,21 +201,29 @@ class ACMEViewRequests(Vertical):
 			Args:
 				item: The selected request item.
 		"""
+		type = 'json'
+
 		# Get the request's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
-					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+						explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+						getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+						width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		if len(jsns) > self.maxRequestSize:
+			jsns = 'Request is too large to display'
+			type = 'text'
 		_l1 = jsns.count('\n')
-		
+
 		# Add syntax highlighting and explanations, and add to the view
-		self.requestListRequest.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+		self.requestListRequest.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
 		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
 					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
 					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
 					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		if len(jsns) > self.maxRequestSize:
+			jsns = 'Response is too large to display'
+			type = 'text'
 		_l2 = jsns.count('\n')
 
 		# Make sure the response has the same number of lines as the request
@@ -222,7 +232,7 @@ class ACMEViewRequests(Vertical):
 			jsns += '\n' * (_l1 - _l2)
 			
 		# Add syntax highlighting and explanations, and add to the view
-		self.requestListResponse.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+		self.requestListResponse.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 
 	def action_refresh_requests(self) -> None:

@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
 - [TUI] Added sorting of resource lists by resource type. Added resource type section headers.
+- [TUI] Added configurable size limit for displaying requests and responses.
 - [SCRIPTS] Added "remove-json-attribute" function to the script interpreter. 
 
 
