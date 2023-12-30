@@ -829,12 +829,12 @@ def strToBool(value:str) -> bool:
 		Raises:
 			ValueError if the string does not look like a boolean.
 	"""
-	val = val.lower()
-	if val in ('y', 'yes', 't', 'true', 'on', '1'):
+	value = value.lower()
+	if value in ('y', 'yes', 't', 'true', 'on', '1'):
 		return True
-	elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+	elif value in ('n', 'no', 'f', 'false', 'off', '0'):
 		return False
-	raise ValueError("invalid truth value %r" % (val,))
+	raise ValueError("invalid truth value %r" % (value,))
 
 
 ##############################################################################
