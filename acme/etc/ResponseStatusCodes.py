@@ -204,6 +204,9 @@ class ResponseException(Exception):
 		""" An optional debug message. """
 		self.data = data
 		""" Optional data. """
+	
+	def __str__(self) -> str:
+		return f'{self.__class__.__name__}({self.rsc}, {self.dbg})'
 
 
 class ALREADY_EXISTS(ResponseException):
