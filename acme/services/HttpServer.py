@@ -211,8 +211,7 @@ class HttpServer(object):
 						'http.wsgi.threadPoolSize',
 						'http.wsgi.connectionLimit',
 						'http.security.enableBasicAuth',
-						'http.security.enableTokenAuth',
-						'mqtt.security.password'
+						'http.security.enableTokenAuth'
 					  ):
 			return
 		self._assignConfig()
