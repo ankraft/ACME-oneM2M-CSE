@@ -1305,7 +1305,7 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
-	def supportedContentSerializationsWS(cls) -> list[str]:
+	def supportedContentSerializationsWS(cls) -> Sequence[str]:
 		"""	Return a list of supported media types for content serialization
 			for WebSocket communication.
 
@@ -1975,6 +1975,8 @@ class Result:
 				self.request.originator = originalRequest.originator
 			if not self.request.ec:
 				self.request.ec = originalRequest.ec
+			if not self.request.rset:
+				self.request.rset = originalRequest.rset
 		
 			# Add Originating Timestamp if present in the original request
 			if originalRequest.ot:
