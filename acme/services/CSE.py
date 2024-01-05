@@ -249,6 +249,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	csePOA					 = [ Configuration.get('http.address') ]
 	if Configuration.get('mqtt.enable'):
 		csePOA.append(f'mqtt://{Configuration.get("mqtt.address")}:{Configuration.get("mqtt.port")}')
+	if Configuration.get('websocket.enable'):
+		csePOA.append(Configuration.get('websocket.address'))
 
 	#
 	# init Logging

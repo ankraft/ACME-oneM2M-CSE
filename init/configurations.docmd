@@ -1526,6 +1526,57 @@ The default value is `8180`.
 
 
 
+# websocket.security
+
+This section contains settings that control the CSE's WebSocket server's security.
+
+Settings in this section are listed under the `[websocket.security]` section.
+
+
+
+# websocket.security.caCertificateFile
+
+This setting specifies the path to the CSE's WebSocket server's CA certificate file.
+
+The default value is an empty string.
+
+
+
+# websocket.security.caPrivateKeyFile
+
+This setting specifies the path to the CSE's WebSocket server's CA private key file.
+
+The default value is an empty string.
+
+
+
+# websocket.security.tlsVersion
+
+This setting specifies the CSE's WebSocket server's TLS version.
+
+**Allowed values**: `TLS1.1`, `TLS1.2`, or `auto` (to allow client-server certificate version negotiation).
+
+The default value is `auto`.
+
+
+
+# websocket.security.useTLS
+
+This setting enables or disables the CSE's WebSocket server's TLS support.
+
+The default value is `False`.
+
+
+
+# websocket.security.verifyCertificate
+
+This setting enables or disables the CSE's WebSocket server's client certificate verification.
+
+Set to `False` when using self-signed certificates.
+
+The default value is `False`.
+
+
 
 # webui
 

@@ -275,7 +275,7 @@ class HttpServer(object):
 									port = self.port,
 									threaded = True,
 									request_handler = ACMERequestHandler,
-									ssl_context = CSE.security.getSSLContext(),
+									ssl_context = CSE.security.getSSLContextHttp(),
 									debug = False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened

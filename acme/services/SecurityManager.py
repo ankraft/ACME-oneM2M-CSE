@@ -48,7 +48,12 @@ class SecurityManager(object):
 		'httpBasicAuthFile',
 		'httpTokenAuthFile',
 		'httpBasicAuthData',
-		'httpTokenAuthData'
+		'httpTokenAuthData',
+		'useTLSWs',
+		'verifyCertificateWs',
+		'tlsVersionWs',
+		'caCertificateFileWs',
+		'caPrivateKeyFileWs'
 	)
 
 
@@ -100,6 +105,10 @@ class SecurityManager(object):
 		self.caCertificateFileHttp		= Configuration.get('http.security.caCertificateFile')
 		self.caPrivateKeyFileHttp		= Configuration.get('http.security.caPrivateKeyFile')
 
+		# HTTP authentication
+		self.httpBasicAuthFile			= Configuration.get('http.security.basicAuthFile')
+		self.httpTokenAuthFile			= Configuration.get('http.security.tokenAuthFile')
+
 		# TLS and other configuration (mqtt)
 		self.useTlsMqtt 				= Configuration.get('mqtt.security.useTLS')
 		self.verifyCertificateMqtt		= Configuration.get('mqtt.security.verifyCertificate')
@@ -108,9 +117,12 @@ class SecurityManager(object):
 		self.passwordMqtt				= Configuration.get('mqtt.security.password')
 		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
 
-		# HTTP authentication
-		self.httpBasicAuthFile			= Configuration.get('http.security.basicAuthFile')
-		self.httpTokenAuthFile			= Configuration.get('http.security.tokenAuthFile')
+		# TLS configurations (websocket)
+		self.useTLSWs	 				= Configuration.get('websocket.security.useTLS')
+		self.verifyCertificateWs		= Configuration.get('websocket.security.verifyCertificate')
+		self.tlsVersionWs				= Configuration.get('websocket.security.tlsVersion').lower()
+		self.caCertificateFileWs		= Configuration.get('websocket.security.caCertificateFile')
+		self.caPrivateKeyFileWs			= Configuration.get('websocket.security.caPrivateKeyFile')
 
 
 
@@ -131,13 +143,18 @@ class SecurityManager(object):
 						'http.security.tlsVersion',
 						'http.security.caCertificateFile',
 						'http.security.caPrivateKeyFile',
+						'http.security.basicAuthFile',
 						'mqtt.security.useTLS',
 						'mqtt.security.verifyCertificate',
 						'mqtt.security.caCertificateFile',
 						'mqtt.security.username',
 						'mqtt.security.password',
 						'mqtt.security.allowedCredentialIDs',
-						'http.security.basicAuthFile'
+						'websocket.security.useTLS',
+						'websocket.security.verifyCertificate',
+						'websocket.security.tlsVersion',
+						'websocket.security.caCertificateFile',
+						'websocket.security.caPrivateKeyFile',
 					  ):
 			return
 		self._assignConfig()
@@ -483,7 +500,7 @@ class SecurityManager(object):
 	#	Certificate handling
 	#
 
-	def getSSLContext(self) -> ssl.SSLContext:
+	def _getContext(self, useTLS:bool, verifyCertificate:bool, tlsVersion:str, caCertificateFile:str, caPrivateKeyFile:str) -> ssl.SSLContext:
 		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
 			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
 
@@ -491,16 +508,51 @@ class SecurityManager(object):
 				SSL / TLD context.
 		"""
 		context = None
-		if self.useTLSHttp:
-			L.isDebug and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFileHttp}, KeyFile:{self.caPrivateKeyFileHttp}, TLS version: {self.tlsVersionHttp}')
+		if useTLS:
+			L.isDebug and L.logDebug(f'Certfile: {caCertificateFile}, KeyFile:{caPrivateKeyFile}, TLS version: {tlsVersion}')
 			context = ssl.SSLContext(
 							{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 								'tls1.2' : ssl.PROTOCOL_TLSv1_2,
 								'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
-							}[self.tlsVersionHttp.lower()]
+							}[tlsVersion.lower()]
 						)
-			context.load_cert_chain(self.caCertificateFileHttp, self.caPrivateKeyFileHttp)
+			context.load_cert_chain(caCertificateFile, caPrivateKeyFile)
+			context.verify_mode = ssl.CERT_REQUIRED if verifyCertificate else ssl.CERT_NONE
 		return context
+	
+
+	def getSSLContextHttp(self) -> ssl.SSLContext:
+		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
+			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
+
+			This method is used for HTTP connections.
+
+			Return:
+				SSL / TLD context.
+		"""
+		L.isDebug and L.logDebug(f'Setup HTTPS SSL context.')
+		return self._getContext(self.useTLSHttp, 
+						  		self.verifyCertificateHttp, 
+								self.tlsVersionHttp, 
+								self.caCertificateFileHttp, 
+								self.caPrivateKeyFileHttp)	# type: ignore
+
+
+	def getSSLContextWs(self) -> ssl.SSLContext:
+		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
+			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
+
+			This method is used for WebSocket connections.
+
+			Return:
+				SSL / TLD context.
+		"""
+		L.isDebug and L.logDebug(f'Setup WSS SSL context.')
+		return self._getContext(self.useTLSWs,
+						  		self.verifyCertificateWs,
+								self.tlsVersionWs,
+								self.caCertificateFileWs,
+								self.caPrivateKeyFileWs)	# type: ignore
 
 
 	##########################################################################

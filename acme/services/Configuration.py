@@ -239,7 +239,7 @@ class Configuration(object):
 				'cse.flexBlockingPreference'					: config.get('cse', 'flexBlockingPreference',						fallback = 'blocking'),
 				'cse.maxExpirationDelta'						: config.getint('cse', 'maxExpirationDelta',						fallback = 60*60*24*365*5),	# 5 years, in seconds
 				'cse.originator'								: config.get('cse', 'originator',									fallback = 'CAdmin'),
-				'cse.poa'										: config.getlist('cse', 'poa',										fallback = ['http://127.0.0.1:8080']),
+				'cse.poa'										: config.getlist('cse', 'poa',										fallback = ['http://127.0.0.1:8080']),	 # type: ignore [attr-defined]
 				'cse.releaseVersion'							: config.get('cse', 'releaseVersion',								fallback = '4'),
 				'cse.requestExpirationDelta'					: config.getfloat('cse', 'requestExpirationDelta',					fallback = 10.0),	# 10 seconds
 				'cse.resourcesPath'								: config.get('cse', 'resourcesPath', 								fallback = './init'),
@@ -533,8 +533,19 @@ class Configuration(object):
 				'websocket.enable'						: config.getboolean('websocket', 'enable', 							fallback = False),
 				'websocket.listenIF'					: config.get('websocket', 'listenIF', 								fallback = '0.0.0.0'),
 				'websocket.port' 						: config.getint('websocket', 'port', 								fallback = 8180),
+				'websocket.address'						: config.get('websocket', 'address', 								fallback = 'ws://127.0.0.1:8180'),
 				'websocket.loglevel'					: config.get('websocket', 'loglevel', 								fallback = 'debug'),
 				'websocket.timeout' 					: config.getfloat('websocket', 'timeout',							fallback = 10.0),
+
+				#
+				#	WebSocket Server Security
+				#
+
+				'websocket.security.caCertificateFile'	: config.get('websocket.security', 'caCertificateFile', 			fallback = None),
+				'websocket.security.caPrivateKeyFile'	: config.get('websocket.security', 'caPrivateKeyFile', 				fallback = None),
+				'websocket.security.tlsVersion'			: config.get('websocket.security', 'tlsVersion', 					fallback ='auto'),
+				'websocket.security.useTLS'				: config.getboolean('websocket.security', 'useTLS', 				fallback = False),
+				'websocket.security.verifyCertificate'	: config.getboolean('websocket.security', 'verifyCertificate',		fallback = False),
 
 				#
 				#	Web UI
@@ -687,25 +698,31 @@ class Configuration(object):
 		_put('cse.registrar.address', normalizeURL(Configuration._configuration['cse.registrar.address']))
 		_put('http.address', normalizeURL(Configuration._configuration['http.address']))
 		_put('http.root', normalizeURL(Configuration._configuration['http.root']))
+		_put('websocket.address', normalizeURL(Configuration._configuration['websocket.address']))
 		_put('cse.registrar.root', normalizeURL(Configuration._configuration['cse.registrar.root']))
 
-		# Just in case: check the URL's
+		# Just in case: check the URL's (http, ws)
 		if _get('http.security.useTLS'):
 			if _get('http.address').startswith('http:'):
 				Configuration._print(r'[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
 				_put('http.address', _get('http.address').replace('http:', 'https:'))
-			# registrar might still be accessible vi another protocol
-			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
-			# 	_print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
-			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
+			# registrar might still be accessible via another protocol
 		else: 
 			if _get('http.address').startswith('https:'):
 				Configuration._print(r'[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
 				_put('http.address', _get('http.address').replace('https:', 'http:'))
-			# registrar might still be accessible vi another protocol
-			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
-			# 	_print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
-			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
+			# registrar might still be accessible via another protocol
+
+		if _get('websocket.security.useTLS'):
+			if _get('websocket.address').startswith('ws:'):
+				Configuration._print(r'[orange3]Configuration Warning: Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
+				_put('websocket.address', _get('websocket.address').replace('ws:', 'wss:'))
+			# registrar might still be accessible via another protocol
+		else: 
+			if _get('websocket.address').startswith('wss:'):
+				Configuration._print(r'[orange3]Configuration Warning: Changing "wss" to "ws" in [i]\[websocket]:address[/i]')
+				_put('websocket.address', _get('websocket.address').replace('wss:', 'ws:'))
+			# registrar might still be accessible via another protocol
 
 
 		# Operation
@@ -796,7 +813,23 @@ class Configuration(object):
 		else:
 			return False, fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}'
 
-
+		# WebSocket TLS & certificates
+		if not _get('websocket.security.useTLS'):	# clear certificates configuration if not in use
+			_put('websocket.security.verifyCertificate', False)
+			_put('websocket.security.tlsVersion', 'auto')
+			_put('websocket.security.caCertificateFile', '')
+			_put('websocket.security.caPrivateKeyFile', '')
+		else:
+			if not (val := _get('websocket.security.tlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				return False, fr'Configuration Error: Unknown value for [i]\[websocket.security]:tlsVersion[/i]: {val}'
+			if not (val := _get('websocket.security.caCertificateFile')):
+				return False, r'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] must be set when TLS is enabled'
+			if not os.path.exists(val):
+				return False, fr'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] does not exists or is not accessible: {val}'
+			if not (val := _get('websocket.security.caPrivateKeyFile')):
+				return False, r'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] must be set when TLS is enabled'
+			if not os.path.exists(val):
+				return False, fr'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}'
 
 		# COAP TLS & certificates
 		if not _get('coap.security.useDTLS'):	# clear certificates configuration if not in use

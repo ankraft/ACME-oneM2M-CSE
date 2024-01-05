@@ -293,6 +293,9 @@ enable=false
 ; The listening port for the WebSocket server.
 ; Default: 8180
 port=8180
+; Own address. Should be a local/public reachable address.
+; Default: ws://127.0.0.1:8080
+address=ws://${basic.config:cseHost}:${port}
 ; Interface to listen to. Use '0.0.0.0' for "all" interfaces.
 ; Default: 0.0.0.0
 listenIF=0.0.0.0
@@ -304,7 +307,24 @@ loglevel=${basic.config:logLevel}
 timeout=${cse:requestExpirationDelta}
 
 
-
+[websocket.security]
+; Enable TLS for websocket communications.
+; Default: False
+useTLS=false
+; TLS version to be used in connections.
+; Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+; version negotiation.
+; Default: auto
+tlsVersion=auto
+; Verify certificates in requests. Set to False when using self-signed certificates.
+; Default: False
+verifyCertificate=false
+; Path and filename of the certificate file. 
+; Default: None
+caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
+; Path and filename of the private key file. 
+; Default: None
+caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
 
 
 ;

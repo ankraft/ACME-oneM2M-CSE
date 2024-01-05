@@ -86,6 +86,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;scripting&#93; - Scripting Settings](#scripting)  
 [&#91;textui&#93; - Text UI Settings](#textui)  
 [&#91;websocket&#93; - WebSocket Binding Settings](#websocket)  
+[&#91;websocket.security&#93; - WebSocket Security Settings](#security_websocket)  
 [&#91;webui&#93; - Web UI Settings](#webui)  
 
 	
@@ -536,7 +537,24 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | enable   | Enable the WebSocket binding.<br />Default: False                                                                           | websocket.enable   |
 | port     | Set the port for the WebSocket server.<br />Default: 8180                                                                   | websocket.port     |
 | listenIF | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br />Default:0.0.0.0                                              | websocket.listenIF |
-| loglevel | Loglevel for the WebSocket server. Allowed values: debug, info, warning, error, off.<br />; Default: Basic config log level | websocket.loglevel |
+
+[top](#sections)
+
+---
+
+<a name="security_websocket"></a>
+
+###	[websocket.security] - WebSocket Security Settings
+
+| Setting           | Description                                                                                                                                                                 | Configuration Name                   |
+|:------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| useTLS            | Enable TLS for websocket communications.<br />Default: False                                                                                                                | websocket.security.useTLS            |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto | websocket.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False                                                                     | websocket.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                               | websocket.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                               | websocket.security.caPrivateKeyFile  |
+
+[top](#sections)
 
 ---
 
