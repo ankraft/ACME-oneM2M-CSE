@@ -112,7 +112,7 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeCSEIDFail(self) -> None:
-		""" Test SP-relative /<cse-id> -> Fail" """
+		""" Test SP-relative /<cse-id> -> Fail"""
 		url = f'{CSEURL}{CSEID}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)

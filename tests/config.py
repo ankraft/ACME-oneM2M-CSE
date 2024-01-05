@@ -7,7 +7,7 @@
 #	Configurations for unit tests
 #
 
-BINDING						= 'http'	# possible values: http, https, mqtt
+BINDING						= 'http'	# possible values: http, https, mqtt, ws
 
 match BINDING:
 	case 'mqtt':
@@ -25,8 +25,19 @@ match BINDING:
 		CONFIGPROTOCOL			= 'https'
 		NOTIFICATIONPROTOCOL	= 'http'
 		REMOTEPROTOCOL			= 'http'
+	case 'ws':
+		PROTOCOL				= 'ws'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'wss':
+		PROTOCOL				= 'wss'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+
 	case _:
-		assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
+		assert False, 'Supported values for BINDING are "mqtt", "ws", "http", and "https"'
 
 # TODO ENCODING 			= 
 
@@ -72,6 +83,15 @@ MQTTRESPONSETOPIC	= f'/oneM2M/resp/$ORIGINATOR${CSEID}/json'
 MQTTREGREQUESTTOPIC	= f'/oneM2M/reg_req/{mqttClientID}{CSEID}/json'
 MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 
+##############################################################################
+
+#
+#	WS (if configured)
+#
+
+wsAddress			= 'localhost'
+wsPort				= 8180
+wsSubProtocols		= ('oneM2M.json',)
 
 ##############################################################################
 

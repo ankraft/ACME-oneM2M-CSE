@@ -297,6 +297,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
 	def test_createSUB2underCNTAnswerWithWrongTargetFail(self) -> None:
 		"""	CREATE <SUB> under <CNT> with <PCH> (wrong target) -> Fail"""
 
@@ -380,6 +381,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
 	def test_aggregation(self) -> None:
 		"""	Test response aggregation"""
 

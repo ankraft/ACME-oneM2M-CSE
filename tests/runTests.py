@@ -105,6 +105,7 @@ if __name__ == '__main__':
 				console.print(f'[bright_blue]{m.__name__}')
 				for f in getTestFunctionsFromModule(m):
 					console.print(f'    {f[0]}')
+		init.shutdown()
 		quit()
 	
 	# List the test functions for all test suites (sorted). Then exit.
@@ -114,6 +115,7 @@ if __name__ == '__main__':
 				console.print(f'[bright_blue]{m.__name__}')
 				for f in getTestFunctionsFromModule(m, True):
 					console.print(f'    {f[0]}')
+		init.shutdown()
 		quit()
 		
 	# If test cases are given then only run those modules that contain the test cases
@@ -151,6 +153,7 @@ if __name__ == '__main__':
 								f()
 						except SkipTest:
 							pass
+		init.shutdown()
 		quit()
 			
 
@@ -195,6 +198,7 @@ if __name__ == '__main__':
 	# No test run?
 	if totalRunTests == 0 or init.requestCount == 0:
 		console.print('[yellow]0 tests run')
+		init.shutdown()
 		quit()
 		
 	# Print Summary
@@ -235,4 +239,4 @@ if __name__ == '__main__':
 						f'{v[5]}',
 						style=style)
 	console.print(table)
-
+	init.shutdown()

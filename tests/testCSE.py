@@ -93,6 +93,7 @@ class TestCSE(unittest.TestCase):
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		parameters = lastHeaders()
+		print(lastHeaders())
 		self.assertIsNotNone(parameters)
 		self.assertIn('X-M2M-RVI', parameters)
 		self.assertIsNotNone(rvi := parameters.get('X-M2M-RVI'))

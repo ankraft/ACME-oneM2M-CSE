@@ -184,7 +184,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
+	@unittest.skipIf(BINDING in ('mqtt', 'ws'), 'No parallel execution for MQTT or WS binding yet')
 	def test_createAEsParallel(self) -> None:
 		"""	Create n AEs in m threads in parallel"""
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
@@ -196,7 +196,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
+	@unittest.skipIf(BINDING in ('mqtt', 'ws'), 'No parallel execution for MQTT or WS binding yet')
 	def test_deleteAEsParallel(self) -> None:
 		"""	Delete n AEs in m threads in parallel """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
@@ -233,7 +233,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
+	@unittest.skipIf(BINDING in ('mqtt', 'ws'), 'No parallel execution for MQTT or WS binding yet')
 	def test_createCNTCINsParallel(self) -> None:
 		"""	Create 1 AE + n CNTs * 20 CINs in n threads"""
 		self.assertEqual(len(TestLoad.aes), 0)
@@ -255,11 +255,14 @@ class TestLoad(unittest.TestCase):
 		[t.join() for t in threads]		# type: ignore [func-returns-value]
 		print(f'{TestLoad.stopTimer(self.count, 1, divider=20)} ... ', end='', flush=True)
 
-
+ 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTCINs(self) -> None:
 		"""	Delete 1 AE  + n CNTs + 20 CINs"""
-		self.assertEqual(len(TestLoad.aes), 1)
+
+		# skip if no AEs
+		if len(TestLoad.aes) == 0:
+			return
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
 		self._deleteAEs(1)

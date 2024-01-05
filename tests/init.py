@@ -17,10 +17,12 @@ import unittest
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
 from datetime import datetime, timezone
-import cbor2
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
+from websockets.sync.client import connect, ClientConnection
+from websockets.sync.connection import Connection as WSConnection
+from websockets.exceptions import ConnectionClosed
 
 # sys.path.append('../acme')
 if '..' not in sys.path:
@@ -30,6 +32,7 @@ from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation
 import acme.helpers.OAuth as OAuth
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
+from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from config import *
 
 
@@ -274,8 +277,15 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
 @atexit.register
 def shutdown() -> None:
+	"""	Shutdown the system. 
+	"""
+	global mqttClient
 	if mqttClient:
 		mqttClient.shutdown()
+		mqttClient = None
+	
+	for _, websocket in websockets.items():
+		websocket.close()
 
 ###############################################################################
 
@@ -364,10 +374,110 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 				return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.NOTIFY:
 				return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+	
+	elif url.startswith(('ws', 'wss')):
+		match operation:
+			case Operation.CREATE:
+				return sendWsRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendWsRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendWsRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendWsRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendWsRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 
 	else:
 		print('ERROR')
 		return None, 5103
+
+
+def _packRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, headers:Parameters=None) -> Tuple[JSON, str, ParseResult]:
+	urlComponents:ParseResult = urlparse(url)
+	urlquery = parse_qs(urlComponents.query)
+	#print(urlquery)
+
+	req:dict	= dict()
+	fc:dict		= dict()
+	req['fr'] 	= originator
+	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
+	req['op'] 	= operation.value
+	req['rqi'] 	= (rqi := uniqueID())
+	req['rvi'] 	= RELEASEVERSION
+
+	# Various request parameters
+	if ty:	
+		req['ty'] = ty
+	if (rcn := urlquery.get('rcn')):
+		req['rcn'] = int(rcn[0])	# only first rcn
+		del urlquery['rcn']
+	if (rt := urlquery.get('rt')):
+		rt2 = dict()
+		rt2['rtv'] = int(rt[0])	# only first rt
+		req['rt'] = rt2
+		del urlquery['rt']
+	if (rp := urlquery.get('rp')):
+		req['rp'] = rp[0]	# only first rp
+		del urlquery['rp']
+	if (rp := urlquery.get('drt')):
+		req['drt'] = int(rp[0])	# only first drt
+		del urlquery['drt']
+	if (sqi := urlquery.get('sqi')):
+		req['sqi'] = sqi[0]	# only first sqi
+		del urlquery['sqi']
+
+	# FilterCriteria
+	if (fu := urlquery.get('fu')):
+		fc['fu'] = int(fu[0])
+		del urlquery['fu']
+	if (fcty := urlquery.get('ty')):
+		fc['ty'] = [ int(tt) for t in fcty for tt in t.split(' ') ]	# input may be: [ '1 2' , '3' ]
+		del urlquery['ty']
+	if (lbl := urlquery.get('lbl')):
+		fc['lbl'] = [ tt for t in lbl for tt in t.split(' ') ]	# s.a.
+		del urlquery['lbl']
+	if (cty := urlquery.get('cty')):
+		fc['cty'] = [ tt for t in cty for tt in t.split(' ') ]	# s.a.
+		del urlquery['cty']
+
+	# add some attributes to CONTENT
+	if (atrl := urlquery.get('atrl')):
+		if data is not None:
+			raise INTERNAL_SERVER_ERROR('data must be not set when using "atrl"')
+		data = dict()
+		data['m2m:atrl'] =  [ tt for t in atrl for tt in t.split(' ') ]
+		# Add CONTENT
+		del urlquery['atrl']
+
+	# add remaining arguments as attributes to filterCriteria
+	for k in urlquery.keys():	
+		fc[k] = urlquery.get(k)[0]
+
+	# Add filterCriteria to request
+	if len(fc):
+		req['fc'] = fc
+
+	if headers:			# extend with other headers
+		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet'), (C.hfOT, 'ot'), (C.hfRST, 'rset')]:
+			if (h := headers.get(hdr)) is not None:
+				req[attr] = h
+				del headers[hdr]
+		# Special handling for rtu/nu, which is a sub-structure for rt.
+		# Either get it (if exist), or create it. Then add nu, and add it again
+		if (h := headers.get(C.hfRTU)) is not None:
+			if (rtu := req.get('rt')) is None:
+				rtu = dict()
+			rtu['nu'] = h.split('&')	# -> list
+			req['rt'] = rtu
+			del headers[C.hfRTU]
+	if data:
+		req['pc'] = data	
+
+	setLastRequestID(rqi)
+
+	return req, rqi, urlComponents
+
 
 
 def addHttpAuthorizationHeader(headers:Parameters) -> Optional[Tuple[str, int]]:
@@ -484,90 +594,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 
 def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 
-	urlComponents:ParseResult = urlparse(url)
-	urlquery = parse_qs(urlComponents.query)
-	#print(urlquery)
+	req, rqi, urlComponents = _packRequest(operation, url, originator, ty, data, ct, headers)
 
-	req:dict	= dict()
-	fc:dict		= dict()
-	req['fr'] 	= originator
-	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
-	req['op'] 	= operation.value
-	req['rqi'] 	= (rqi := uniqueID())
-	req['rvi'] 	= RELEASEVERSION
-
-	# Various request parameters
-	if ty:	
-		req['ty'] = ty
-	if (rcn := urlquery.get('rcn')):
-		req['rcn'] = int(rcn[0])	# only first rcn
-		del urlquery['rcn']
-	if (rt := urlquery.get('rt')):
-		rt2 = dict()
-		rt2['rtv'] = int(rt[0])	# only first rt
-		req['rt'] = rt2
-		del urlquery['rt']
-	if (rp := urlquery.get('rp')):
-		req['rp'] = rp[0]	# only first rp
-		del urlquery['rp']
-	if (rp := urlquery.get('drt')):
-		req['drt'] = int(rp[0])	# only first drt
-		del urlquery['drt']
-	if (sqi := urlquery.get('sqi')):
-		req['sqi'] = sqi[0]	# only first sqi
-		del urlquery['sqi']
-
-	# FilterCriteria
-	if (fu := urlquery.get('fu')):
-		fc['fu'] = int(fu[0])
-		del urlquery['fu']
-	if (fcty := urlquery.get('ty')):
-		fc['ty'] = [ int(tt) for t in fcty for tt in t.split(' ') ]	# input may be: [ '1 2' , '3' ]
-		del urlquery['ty']
-	if (lbl := urlquery.get('lbl')):
-		fc['lbl'] = [ tt for t in lbl for tt in t.split(' ') ]	# s.a.
-		del urlquery['lbl']
-	if (cty := urlquery.get('cty')):
-		fc['cty'] = [ tt for t in cty for tt in t.split(' ') ]	# s.a.
-		del urlquery['cty']
-
-	# add some attributes to CONTENT
-	if (atrl := urlquery.get('atrl')):
-		if data is not None:
-			return ('data must be not set when using "atrl"', 5000)
-		data = dict()
-		data['m2m:atrl'] =  [ tt for t in atrl for tt in t.split(' ') ]
-		# Add CONTENT
-		del urlquery['atrl']
-
-	# add remaining arguments as attributes to filterCriteria
-	for k in urlquery.keys():	
-		fc[k] = urlquery.get(k)[0]
-
-	# Add filterCriteria to request
-	if len(fc):
-		req['fc'] = fc
-
-	if headers:			# extend with other headers
-		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet'), (C.hfOT, 'ot')]:
-			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
-				req[attr] = h
-				del headers[hdr]
-		# Special handling for rtu/nu, which is a sub-structure for rt.
-		# Either get it (if exist), or create it. Then add nu, and add it again
-		if (h := headers.get(C.hfRTU)) is not None:
-			if (rtu := req.get('rt')) is None:
-				rtu = dict()
-			rtu['nu'] = h.split('&')	# -> list
-			req['rt'] = rtu
-			del headers[C.hfRTU]
-	if data:
-		req['pc'] = data	
-
-	setLastRequestID(rqi)
-
-
-	# Which topic to use for request and response?
+	# MQTT: Which topic to use for request and response?
 	if ty == ResourceTypes.AE and operation == Operation.CREATE:
 	# if originator in [ 'C', 'S', '', None ]:
 		reqTopic  = MQTTREGREQUESTTOPIC
@@ -612,14 +641,81 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			# resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
 
 			# Since the tests usually work with http binding headers, some response attributes are mapped
-			hds = dict()
-			for f, k in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfOT, 'ot') ]:
-				if k in resp:
-					hds[f] = resp[k]
-			setLastHeaders(hds)
+			# hds = dict()
+			# for f, k in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfOT, 'ot') ]:
+			# 	if k in resp:
+			# 		hds[f] = resp[k]
+			setLastHeaders(fillLastHeaders(resp))
 
 			return resp['pc'] if 'pc' in resp else None, resp['rsc']
 
+
+websockets:dict[str, ClientConnection] = dict()
+wsin:int = 0
+
+def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=10.0, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+	req, rqi, urlComponents = _packRequest(operation, url, originator, ty, data, ct, headers)
+
+	def isWSOpen(websocket:WSConnection) -> bool:
+		try:
+			websocket.recv(timeout = 0)
+		except ConnectionClosed as e:
+			return False
+		except:
+			return True
+		return True
+
+	
+	# Verbose output
+	if verboseRequests:
+		console.print('\n[b u]Request')
+		console.print(f'[dark_orange]{PROTOCOL}://{wsAddress}:{wsPort}[/dark_orange]')
+		console.print(req)
+
+
+	# TODO addioanl headers: 'X-M2M-Origin': 'CAdmin'
+		
+	additionalHeaders = { }	if not originator else { 'X-M2M-Origin': originator }
+
+	websocket = websockets.get(originator)
+	if not isWSOpen(websocket):
+		websocket.close()
+		websockets.pop(originator)
+		websocket = None
+
+	if not websocket:
+		context:ssl.SSLContext = None
+		if urlComponents.scheme == 'wss':
+			context = ssl.create_default_context()
+			if not verifyCertificate:
+				context.check_hostname = False
+				context.verify_mode = ssl.CERT_NONE
+
+		websocket = connect(f'{PROTOCOL}://{wsAddress}:{wsPort}', 
+					  		subprotocols = wsSubProtocols, 	# type:ignore [arg-type]
+							additional_headers = additionalHeaders, 
+							ssl_context = context)
+		websockets[originator] = websocket
+
+	# TODO support cbor
+
+	websocket.send(cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))
+	# TODO Decouple WS receiving to support notifications via 
+	try:
+		while True:
+			if (response := websocket.recv(timeout = timeout)):
+				resp = RequestUtils.deserializeData(bytes(response, 'utf-8') if isinstance(response, str) else response,
+										 			ContentSerializationType.JSON)
+				setLastHeaders(fillLastHeaders(resp))
+				return resp['pc'] if 'pc' in resp else None, resp['rsc']
+			else:
+				print(response)
+				print('.', end='', flush=True)
+				return None
+	except TimeoutError:	# expected
+		print('timeout')
+		pass
+	return None
 
 
 _lastRequstID = None
@@ -663,6 +759,16 @@ def setLastHeaders(hds:Parameters) -> None:
 	global _lastHeaders
 	_lastHeaders = hds
 
+
+def fillLastHeaders(resp:JSON) -> JSON:
+	# Since the tests usually work with http binding headers, some response attributes are mapped
+	hds = dict()
+	for f, k in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfOT, 'ot'), (C.hfRST, 'rset') ]:
+		if k in resp:
+			hds[f] = str(resp[k])
+	return hds
+
+	
 def lastHeaders() -> Parameters:
 	return _lastHeaders
 
@@ -848,7 +954,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 				case 'application/json' | 'application/vnd.onem2m-res+json':
 					setLastNotification(decoded_data := json.loads(post_data.decode('utf-8')))
 				case 'application/cbor' | 'application/vnd.onem2m-res+cbor':
-					setLastNotification(decoded_data := cbor2.loads(post_data))
+					setLastNotification(decoded_data := cbor2.loads(post_data))	# type:ignore [assignment, arg-type]
 
 		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
 		# make a dict out of the query arguments 
@@ -1134,13 +1240,14 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 ###############################################################################
 
 
-# Start MQTT Client if test protocol is mqtt
-if PROTOCOL == 'mqtt':
-	mqttHandler = MQTTClientHandler()
-	mqttClient = MQTTConnection(mqttAddress, mqttPort, clientID=mqttClientID, username=mqttUsername, password=mqttPassword, messageHandler=mqttHandler)
-	mqttClient.run()
-	while not mqttHandler.connection:
-		testSleep(1)
+match PROTOCOL:
+	# Start MQTT Client if test protocol is mqtt
+	case 'mqtt':
+		mqttHandler = MQTTClientHandler()
+		mqttClient = MQTTConnection(mqttAddress, mqttPort, clientID=mqttClientID, username=mqttUsername, password=mqttPassword, messageHandler=mqttHandler)
+		mqttClient.run()
+		while not mqttHandler.connection:
+			testSleep(1)
 
 
 ###############################################################################
@@ -1169,5 +1276,6 @@ if UPPERTESTERENABLED:
 				quit(-1)
 	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+		shutdown()
 		quit(-1)
 
