@@ -9,7 +9,7 @@
 """ Implementation of an MQTT Client helper class. """
 
 from __future__ import annotations
-from typing import Callable, Any, Tuple, Optional
+from typing import Callable, Any, Tuple, Optional, TypeAlias
 
 import ssl, time
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ from ..helpers.TextTools import simpleMatch
 import paho.mqtt.client as mqtt
 
 
-MQTTClient = mqtt.Client
+MQTTClient:TypeAlias = mqtt.Client
 """ Type for an MQTT Client. """
 
 @dataclass
