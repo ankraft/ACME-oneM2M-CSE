@@ -193,6 +193,33 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCINCheckCNT(self) -> None:
+		""" Delete <CIN> resource and check whether cni and cbs are of the parent are updated """
+		dct = 	{ 'm2m:cin' : {
+			'rn'  : cinRN,
+			'con' : 'AnyValue'
+		}}
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Get cni and cbs from parent container
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(_cni := findXPath(r, 'm2m:cnt/cni'))
+		self.assertIsNotNone(_cbs := findXPath(r, 'm2m:cnt/cbs'))
+
+		# Check cni and cbs
+		_, rsc = DELETE(cinURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+		# Check cni and cbs again
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertNotEqual(_cni, findXPath(r, 'm2m:cnt/cni'))
+		self.assertNotEqual(_cbs, findXPath(r, 'm2m:cnt/cbs'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNT(self) -> None:
 		"""	Delete <CNT> """
 		_, rsc = DELETE(cntURL, TestCNT_CIN.originator)
@@ -560,6 +587,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestCNT_CIN('test_retrieveCNTLa'))
 	addTest(suite, TestCNT_CIN('test_retrieveCNTOl'))
 	addTest(suite, TestCNT_CIN('test_changeCNTMni'))
+	addTest(suite, TestCNT_CIN('test_deleteCINCheckCNT'))
 	addTest(suite, TestCNT_CIN('test_deleteCNT'))
 
 	addTest(suite, TestCNT_CIN('test_createCNTwithMBS'))

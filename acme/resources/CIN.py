@@ -94,6 +94,9 @@ class CIN(AnnounceableResource):
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		if parentResource.disr:
 			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Retrieval is disabled for the parent <container>'))
+		
+		# Check deletion Count: Update the cni and cbs attributes of the parent container
+		# This actually happens in the parent container's childRemoved() method
 
 
 	# Forbid updating
