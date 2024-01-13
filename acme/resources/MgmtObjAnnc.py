@@ -20,6 +20,8 @@ class MgmtObjAnnc(AnnouncedResource):
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
 
+	# The "mgd" attribute is mandatory must be the unaanounced variant!
+	
 	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.MGMTOBJAnnc, dct, pi, tpe = mgd.announced().tpe(), create = create)
 		self.setAttribute('mgd', int(mgd), overwrite = True)
