@@ -38,6 +38,8 @@ from ..services.Logging import Logging as L
 # TODO add statistics for WS connections
 
 class WebSocketServer(object):
+	"""	WebSocket Server implementation.
+	"""
 
 	__slots__ = [ 
 		'enable', 
@@ -51,8 +53,12 @@ class WebSocketServer(object):
 		'associatedConnections', 
 		'actor'
 	]
+	""" Define slots for instance variables. """
+
 
 	def __init__(self) -> None:
+		"""	Initialization of the WebSocket Server.
+		"""
 
 		# Get the configuration settings
 		self._assignConfig()
@@ -64,9 +70,13 @@ class WebSocketServer(object):
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)	# type: ignore
 
 		self.isPaused = False
+		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
 		self.websocketServer:Optional[WSServer] = None
+		"""	The WebSocket server object. """
 		self.wsConnections:dict[uuid.UUID, WSConnection] = {}	# websocket.id -> websocket
+		"""	The list of currently handled WebSocket connections. """
 		self.associatedConnections:dict[str, uuid.UUID] = {}		# originator -> websocket.id
+		"""	The list of currently handled WebSocket connections, associated with an originator. """
 		L.isInfo and L.log('WebSocket server initialized')
 
 
@@ -86,10 +96,19 @@ class WebSocketServer(object):
 		"""	Store relevant configuration values in the manager.
 		"""
 		self.enable = Configuration.get('websocket.enable')
+		"""	Flag whether the WebSocket server is enabled. """
+
 		self.port = Configuration.get('websocket.port')
+		"""	The port the WebSocket server is listening on."""
+
 		self.interface = Configuration.get('websocket.listenIF')
+		"""	The interface the WebSocket server is listening on."""
+
 		self.logLevel = Configuration.get('websocket.loglevel')
+		"""	The log level for the WebSocket server."""
+
 		self.requestTimeout = Configuration.get('websocket.timeout')
+		"""	The timeout for requests."""
 
 
 	def configUpdate(self, name:str, 
@@ -117,7 +136,7 @@ class WebSocketServer(object):
 
 
 	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
-		"""	Callback for the `deleteResource` event.
+		"""	Callback and handler for the *deleteResource* event.
 
 			In case of an AE deletion, the associated WS connection is dissociated, but left open.
 
@@ -139,6 +158,7 @@ class WebSocketServer(object):
 			return True
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'WSServer').start()
+		"""	The actor for running the synchronous WebSocket server in the background. """
 
 		L.isInfo and L.log('Start WebSocket server')
 		return True
@@ -236,7 +256,7 @@ class WebSocketServer(object):
 
 			Args:
 				websocket: The WebSocket connection.
-				orignator: The originator.
+				originator: The originator.
 		"""
 		L.isDebug and L.logDebug(f'Removing WS connection: {websocket.id} and originator: {originator}')
 		if websocket.id in self.wsConnections:
@@ -443,6 +463,15 @@ class WebSocketServer(object):
 	
 
 	def sendWSRequest(self, request:CSERequest, url:str) -> Result:
+		"""	Send a request to another WebSocket server.
+
+			Args:
+				request: The request to send.
+				url: The URL to send the request to.
+
+			Returns:
+				The result object of the request.
+		"""
 
 		def connectWS(target:str, ct:ContentSerializationType) -> WSConnection:
 			"""	Connect to a WebSocket server.

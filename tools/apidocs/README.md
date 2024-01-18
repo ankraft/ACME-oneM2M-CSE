@@ -12,7 +12,7 @@ Install the following packages via pip:
 
 		pip3 install pydoctor
 
-- To generate additionally a [Dash][1] docset:
+- [Optional] To generate a [Dash][1] docset:
 
 		pip3 install doc2dash
 
