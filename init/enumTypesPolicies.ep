@@ -15,9 +15,26 @@
 		"6": "Not installed",
 		"7": "Unknown"
 	},
+	"dcfg:cellularNetworkBearer" : {
+		"0": "GSM cellular network",
+		"1": "TD-SCDMA cellular network",
+		"2": "WCDMA cellular network",
+		"3": "CDMA2000 cellular network",
+		"4": "WiMAX cellular network",
+		"5": "LTE-TDD cellular network",
+		"6": "LTE-FDD cellular network",
+		"7": "NB-IoT"
+	},
 	"m2m:contentStatus" : {
 		"1": "Partial content",
 		"2": "Full content"
+	},
+	"dcfg:coverageEnhancementLevel" : {
+		"0": "No Coverage Enhancement in the serving cell",
+		"1": "Coverage Enhancement level 0",
+		"2": "Coverage Enhancement level 1",
+		"3": "Coverage Enhancement level 2",
+		"4": "Coverage Enhancement level 3"
 	},
 	"m2m:evalCriteriaOperator" : {
 		"1": "equal",
@@ -142,7 +159,9 @@
 		"1025": "MAFClientRegCfg",
 		"1026": "MEFClientRegCfg",
 		"1027": "OAuth2Authentication",
-		"1028": "wifiClient"
+		"1028": "wifiClient",
+		"1029": "SIM",
+		"1030": "mobileNetwork"
 	},
 	"m2m:multicastCapability" : {
 		"1": "MBMS",
@@ -373,11 +392,20 @@
 		"6": "Manchester",
 		"7": "JSON-LD"
 	},
+	"dcfg:simStatus" : {
+		"0": "inactive",
+		"1": "active"
+	},
+	"dcfg:simType" : {
+		"0": "UICC (removable)",
+		"1": "eUICC (removable)",
+		"2": "eUICC (non-removable)",
+		"3": "iUICC"
+	},
 	"m2m:stationaryIndication" : {
 		"1": "Stationary",
 		"2": "Mobile (Moving)"
 	},
-
 	"m2m:status" : {
 		"0": "Uninitialized",
 		"1": "Successful",

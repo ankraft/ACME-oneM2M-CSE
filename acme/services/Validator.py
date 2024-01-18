@@ -916,6 +916,22 @@ class Validator(object):
 					return (dataType, value)
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
 
+			case BasicType.imsi if isinstance(value, str):
+				# TODO check for valid IMSI
+				return (dataType, value)
+
+			case BasicType.iccid if isinstance(value, str):
+				# TODO check for valid ICCID
+				return (dataType, value)
+		
+			case BasicType.ipv4Address if isinstance(value, str):
+				# TODO check for valid IPv4 address
+				return (dataType, value)
+			
+			case BasicType.ipv6Address if isinstance(value, str):
+				# TODO check for valid IPv6 address
+				return (dataType, value)
+
 			case BasicType.any:
 				return (dataType, value)
 

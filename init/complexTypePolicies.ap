@@ -1083,63 +1083,6 @@
 
 
 	//
-	//	dcfg:wifiCredentials
-	//
-	// PRELIMINARY until agreed on sn
-	"enct": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "dcfg:wifiCredentials",
-			"lname": "encryptionType",
-			"ns": "dcfg",
-			"type": "enum",
-			"etype": "dcfg:wifiEncryptionType",
-			"car": "1"
-		}
-	],
-	"unm": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "dcfg:wifiCredentials",
-			"lname": "username",
-			"ns": "dcfg",
-			"type": "string",
-			"car": "01"
-		}
-	],
-	"pwd": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "dcfg:wifiCredentials",
-			"lname": "password",
-			"ns": "dcfg",
-			"type": "string",
-			"car": "01"
-		}
-	],
-	"wepk": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "dcfg:wifiCredentials",
-			"lname": "wepKey",
-			"ns": "dcfg",
-			"type": "string",
-			"car": "01"
-		}
-	],
-	"wpap": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "dcfg:wifiCredentials",
-			"lname": "wpaPsk",
-			"ns": "dcfg",
-			"type": "string",
-			"car": "01"
-		}
-	],
-
-
-	//
 	//	m2m:eventNotificationCriteria
 	//
 	//	See also "atr", "cra", "crb", "chty", "exa", "exb", "ms" "us",
@@ -1450,6 +1393,31 @@
 			"ns": "m2m",
 			"type": "geoJsonCoordinate",
 			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:ipAddress
+	//
+	"ip4": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:ipAddress",
+			"lname": "ipv4Address",
+			"ns": "m2m",
+			"type": "ipv4Address",
+			"car": "01"
+		}
+	],
+	"ip6": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:ipAddress",
+			"lname": "ipv6Address",
+			"ns": "m2m",
+			"type": "ipv6Address",
+			"car": "01"
 		}
 	],
 
@@ -1935,7 +1903,63 @@
 			"ns": "m2m",
 			"type": "ID"
 		}
-	]
+	],
 
+
+	//
+	//	dcfg:wifiCredentials
+	//
+	// PRELIMINARY until agreed on sn
+	"enct": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "dcfg:wifiCredentials",
+			"lname": "encryptionType",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:wifiEncryptionType",
+			"car": "1"
+		}
+	],
+	"unm": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "dcfg:wifiCredentials",
+			"lname": "username",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"pwd": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "dcfg:wifiCredentials",
+			"lname": "password",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"wepk": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "dcfg:wifiCredentials",
+			"lname": "wepKey",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"wpap": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "dcfg:wifiCredentials",
+			"lname": "wpaPsk",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "01"
+		}
+	]
 
 }

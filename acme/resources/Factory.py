@@ -102,6 +102,10 @@ from ..resources.SWR import SWR
 from ..resources.SWRAnnc import SWRAnnc
 from ..resources.WIFIC import WIFIC
 from ..resources.WIFICAnnc import WIFICAnnc
+from ..resources.SIM import SIM
+from ..resources.SIMAnnc import SIMAnnc
+from ..resources.MNWK import MNWK
+from ..resources.MNWKAnnc import MNWKAnnc
 
 
 # Adding factory callbacks to regular resource type details
@@ -183,7 +187,11 @@ addResourceFactoryCallback(ResourceTypes.RBOAnnc,		RBOAnnc,		lambda dct, tpe, pi
 addResourceFactoryCallback(ResourceTypes.SWR,			SWR,			lambda dct, tpe, pi, create : SWR(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SWRAnnc,		SWRAnnc,		lambda dct, tpe, pi, create : SWRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.WIFIC,			WIFIC,			lambda dct, tpe, pi, create : WIFIC(dct, pi = pi, create = create)) 
-addResourceFactoryCallback(ResourceTypes.WIFICAnnc,		WIFICAnnc,		lambda dct, tpe, pi, create : WIFICAnnc(dct, pi = pi, create = create)) 
+addResourceFactoryCallback(ResourceTypes.WIFICAnnc,		WIFICAnnc,		lambda dct, tpe, pi, create : WIFICAnnc(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.SIM,			SIM,			lambda dct, tpe, pi, create : SIM(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.SIMAnnc,		SIMAnnc,		lambda dct, tpe, pi, create : SIMAnnc(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.MNWK,			MNWK,			lambda dct, tpe, pi, create : MNWK(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.MNWKAnnc,		MNWKAnnc,		lambda dct, tpe, pi, create : MNWKAnnc(dct, pi = pi, create = create))
 
 
 _specResources = [ ResourceTypes.FCNT, 

@@ -145,6 +145,9 @@ class ResourceTypes(ACMEIntEnum):
 	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
 	"""	WifiClient ManagementObject specialization. """
+	SIM 			= 1029	# SIM
+	"""	SIM ManagementObject specialization. """
+	MNWK			= 1030	# mobileNetwork
 
 	# Announced Resources
 
@@ -214,6 +217,9 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
 	"""	Announced WifiClient ManagementObject specialization. """
+	SIMAnnc			= -30029
+	"""	Announced SIM ManagementObject specialization. """
+	MNWKAnnc		= -30030
 
 
 	def tpe(self) -> str:
@@ -517,6 +523,10 @@ _ResourceTypeDetails = {
 	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Software Announced'),
 	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True, fullName='WiFi Client'),
 	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='WiFi Client Announced'),
+	ResourceTypes.SIM			: ResourceDescription(typeName = 'dcfg:sim', announcedType = ResourceTypes.SIMAnnc, isMgmtSpecialization = True, fullName='SIM'),
+	ResourceTypes.SIMAnnc		: ResourceDescription(typeName = 'dcfg:simA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='SIM Announced'),
+	ResourceTypes.MNWK			: ResourceDescription(typeName = 'dcfg:mnwk', announcedType = ResourceTypes.MNWKAnnc, isMgmtSpecialization = True, fullName='Mobile Network'),
+	ResourceTypes.MNWKAnnc		: ResourceDescription(typeName = 'dcfg:mnwkA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Mobile Network Announced'),
 
 	# Internal resource types
 	ResourceTypes.UNKNOWN	: ResourceDescription(typeName = 'unknown', isInternalType = True),
@@ -679,10 +689,20 @@ class BasicType(ACMEIntEnum):
 	"""	Base64 encoded data. """
 	schedule			= auto()	# scheduleEntry
 	"""	Schedule entry. """
+
+	# Special string types
 	ID					= auto()	# m2m:ID
 	"""	oneM2M ID. """
 	ncname				= auto()	# xs:NCName
 	"""	XML NCName. """
+	imsi				= auto()	# dcfg:imsi
+	"""	IMSI compliant numerical representation. """
+	iccid				= auto()	# dcfg:iccid
+	"""	ICCID alphanumerical representation. """
+	ipv4Address			= auto()	# dcfg:ipv4Address
+	"""	IPv4 address. """
+	ipv6Address			= auto()	# dcfg:ipv6Address
+	"""	IPv6 address. """
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time

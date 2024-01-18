@@ -44,7 +44,7 @@
 		{
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc", "CNTAnnc",
 						"FCNTAnnc", "TSAnnc", "CSEBaseAnnc",
-						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
+						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc", "SIMAnnc",
 						"SWRAnnc" ],
 			"lname": "resourceName",
 			"ns": "m2m",
@@ -125,7 +125,7 @@
 		{
 			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
 						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SWRAnnc" ],
+						"SIMAnnc", "SWRAnnc" ],
 			"lname": "expirationTime",
 			"ns": "m2m",
 			"type": "timestamp",
@@ -462,6 +462,19 @@
 			"annc": "OA"
 		}
 	],
+	"apna": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "apn",
+			"ns": "dcfg",
+			"type": "string",	// TODO dcfg:apn
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"apri": [
 		{
 			"rtypes": [ "ALL" ],
@@ -714,6 +727,19 @@
 			"annc": "NA"
 		}
 	],
+	"ceid": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "cellID",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"chanl": [
 		{
 			"rtypes": [ "ALL" ],
@@ -736,6 +762,20 @@
 			"ltype": "m2m:mgmtLinkRef",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"cnb": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "cellularNetworkBearer",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:cellularNetworkBearer",
+			"car": "01",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -819,6 +859,21 @@
 			"annc": "OA"
 		}
 	],
+	"coel": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "coverageEnhancementLevel",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:coverageEnhancementLevel",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	"con": [
 		{
 			"rtypes": [ "CIN", "CINAnnc", "CNT_LA", "CNT_OL", "REQRESP" ],
@@ -1558,6 +1613,32 @@
 			"annc": "OA"
 		}
 	],
+	"icid": [
+		{
+			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
+			"lname": "iccid",
+			"ns": "dcfg",
+			"type": "iccid",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"imsi": [
+		{
+			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
+			"lname": "imsi",
+			"ns": "dcfg",
+			"type": "imsi",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"in": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1597,7 +1678,20 @@
 			"annc": "OA"
 		}
 	],
-
+	"ipad": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "ipAddresses",
+			"ns": "dcfg",
+			"type": "list",
+			"ltype": "m2m:ipAddress",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"ipu": [
 		{
 			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
@@ -1611,8 +1705,19 @@
 			"annc": "OA"
 		}
 	],
-
-
+	"lac": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "lac",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"ldv": [
 		{
 			"rtypes": [ "ALL" ],
@@ -1707,6 +1812,19 @@
 			"annc": "OA"
 		}
 	],
+	"liqu": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "linkQuality",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"lit": [
 		{
 			"rtypes": [ "LCP", "LCPAnnc" ],
@@ -1753,7 +1871,7 @@
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
 						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "LCPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SCHAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
+						"SCHAnnc", "SIMAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
@@ -1943,7 +2061,7 @@
 	],
 	"mcfc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "NYCFC", "NYCFCAnnc", "REQRESP" ],
 			"lname": "myCertFileContent",
 			"ns": "m2m",
 			"type": "string",
@@ -1956,7 +2074,7 @@
 	],
 	"mcff": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "NYCFC", "NYCFCAnnc", "REQRESP" ],
 			"lname": "myCertFileFormat",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2806,6 +2924,21 @@
 			"annc": "OA"
 		}
 	],
+	"ripa": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "routerIPAddresses",
+			"ns": "dcfg",
+			"type": "list",
+			"ltype": "m2m:ipAddress",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	"rl": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2965,6 +3098,19 @@
 			"annc": "NA"
 		}
 	],
+	"rss": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "radioSignalStrength",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"sact": [
 		{
 			"rtypes": [ "STTE", "REQRESP" ],
@@ -3053,6 +3199,34 @@
 			"type": "any"
 		}
 	],
+	"sist": [
+		{
+			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
+			"lname": "simStatus",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:simStatus",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"sity": [
+		{
+			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
+			"lname": "simType",
+			"ns": "dcfg",
+			"type": "enum",
+			"etype": "dcfg:simType",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"sld": [
 		{
 			"rtypes": [ "ALL" ],
@@ -3079,6 +3253,19 @@
 			"annc": "OA"
 		}
 	],
+	"smcc": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "smcc",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"smf": [
 		{
 			"rtypes": [ "REQRESP" ],
@@ -3090,6 +3277,19 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"smnc": [
+		{
+			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
+			"lname": "smnc",
+			"ns": "dcfg",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"smod": [
@@ -3129,6 +3329,19 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"spn": [
+		{
+			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
+			"lname": "serviceProviderName",
+			"ns": "dcfg",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"spty": [
@@ -3315,8 +3528,8 @@
 	],
 
 
-	// EXPERIMENTAL
 	"subi": [
+		// EXPERIMENTAL
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "subscriptionIDs",

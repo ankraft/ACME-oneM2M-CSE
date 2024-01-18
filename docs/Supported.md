@@ -71,8 +71,10 @@ The following table presents the supported management object specifications.
 | EventLog (EVL)           |
 | Firmware (FWR)           |
 | Memory (MEM)             |
+| MobileNetwork (MNWK)     |
 | MyCertFileCred (NYCFC)   |
 | Reboot (REB)             |
+| SIM (SIM)                |
 | Software (SWR)           |
 | WifiClient (WIFIC)       |
 
@@ -174,7 +176,7 @@ The following Protocol Bindings are supported:
 | http             |  &check;  | incl. TLS (https) and CORS support. *basic* and *bearer* authentication. <br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
 | coap             |  &cross;  |                                                                                                                                               |
 | mqtt             |  &check;  | incl. mqtts                                                                                                                                   |
-| WebSocket        |  &cross;  |                                                                                                                                               |
+| WebSocket        |  &check;  | incl. TLS (wss) support                                                                                                                       |
 
 The supported bindings can be used together, and combined and mixed in any way.
 

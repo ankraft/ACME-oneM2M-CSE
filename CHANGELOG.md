@@ -14,7 +14,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 - [CSE] Added internal check before executing a DELETE operation that all resources are allowed to be deleted.
 - [CSE] Added configuration value for the CSE's *poa* attribute. Before, the CSE's *poa* was always set to the *http* server's address.
-- [WS] Added support for the WebSocket protocol binding. This is fully functional, but still experimental because if differs from the oneM2M spec in some points, e.g. the new presence of the *Originator* header when establishing a WebSocket connection. The general functionality is the same, though.
+- [CSE] Added support for *SIM* ManagementObject specialization.
+- [CSE] Added support for *MobileNetwork* ManagementObject specialization.
+- [WS] Added support for the WebSocket protocol binding. This binding is fully functional but still experimental because it differs from the oneM2M spec in some points, e.g. the new presence of the *Originator* header when establishing a WebSocket connection. The general functionality is the same, though.
 - [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
 - [TUI] Added sorting of resource lists by resource type. Added resource type section headers.

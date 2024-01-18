@@ -1269,6 +1269,168 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	SIM
+	#
+
+	simRN	= 'SIM'
+	simURL	= f'{nodURL}/{simRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSIM(self) -> None:
+		"""	CREATE [SIM] """
+		dct =  { 'dcfg:sim' : {
+					'mgd' : T.SIM,
+					'rn'  : self.simRN,
+					'dc'  : 'aSim',
+					'imsi': '123456789012345',
+					'icid': '12345678901234567890',
+					'sist': 1,
+					'sity': 3,
+					'spn': 'ACMETel',
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(findXPath(r, 'dcfg:sim/mgd'), T.SIM)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveSIM(self) -> None:
+		"""	RETRIEVE [SIM] """
+		r, rsc = RETRIEVE(self.simURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:sim/mgd'), T.SIM)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesSIM(self) -> None:
+		"""	Test [SIM] attributes """
+		r, rsc = RETRIEVE(self.simURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:sim/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:sim/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/rn'), self.simRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/ct'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/lt'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/et'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/dc'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/dc'), 'aSim')
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/imsi'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/imsi'), '123456789012345')
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/icid'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/icid'), '12345678901234567890')
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/sist'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/sist'), 1)
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/sity'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/sity'), 3)
+		self.assertIsNotNone(findXPath(r, 'dcfg:sim/spn'))
+		self.assertEqual(findXPath(r, 'dcfg:sim/spn'), 'ACMETel')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSIM(self) -> None:
+		""" DELETE [SIM] """
+		_, rsc = DELETE(self.simURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	#
+	#	MNWK
+	#
+
+	mnwkRN	= 'MNWK'
+	mnwkURL	= f'{nodURL}/{mnwkRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createMNWK(self) -> None:
+		"""	CREATE [MNWK] """
+		dct =  { 'dcfg:mnwk' : {
+					'mgd' : T.MNWK,
+					'rn'  : self.mnwkRN,
+					'dc'  : 'aMnwk',
+					'cnb' : 7,
+					'rss' : -70,
+					'liqu' : 20,
+					'ipad' : [ 
+						{ 
+							'ip4' : '192.168.1.10' 
+						}
+					],
+					'ripa' : [ 
+						{
+							'ip4' : '192.168.1.1' 
+						}
+					],
+					'apna' : 't-mobile.net',
+					'ceid' : 12345,
+					'smnc' : 1,
+					'smcc' : 262,
+					'lac' : 2305,
+					'coel': 2
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/mgd'), T.MNWK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveMNWK(self) -> None:
+		"""	RETRIEVE [MNWK] """
+		r, rsc = RETRIEVE(self.mnwkURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/mgd'), T.MNWK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesMNWK(self) -> None:
+		"""	Test [MNWK] attributes """
+		r, rsc = RETRIEVE(self.mnwkURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/rn'), self.mnwkRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/ct'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/lt'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/et'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/dc'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/dc'), 'aMnwk')
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/cnb'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/cnb'), 7)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/rss'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/rss'), -70)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/liqu'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/liqu'), 20)
+		self.assertIsNotNone(_l := findXPath(r, 'dcfg:mnwk/ipad'))
+		self.assertIsInstance(_l, list)
+		self.assertEqual(len(_l), 1)
+		self.assertIsNotNone(_d := _l[0])
+		self.assertIsInstance(_d, dict)
+		self.assertEqual(_d.get('ip4'), '192.168.1.10')
+		self.assertIsNotNone(_l := findXPath(r, 'dcfg:mnwk/ripa'))
+		self.assertIsInstance(_l, list)
+		self.assertEqual(len(_l), 1)
+		self.assertIsNotNone(_d := _l[0])
+		self.assertIsInstance(_d, dict)
+		self.assertEqual(_d.get('ip4'), '192.168.1.1' )
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/apna'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/apna'), 't-mobile.net')
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/ceid'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/ceid'), 12345)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/smnc'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/smnc'), 1)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/smcc'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/smcc'), 262)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/lac'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/lac'), 2305)
+		self.assertIsNotNone(findXPath(r, 'dcfg:mnwk/coel'))
+		self.assertEqual(findXPath(r, 'dcfg:mnwk/coel'), 2)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteMNWK(self) -> None:
+		""" DELETE [MNWK] """
+		_, rsc = DELETE(self.mnwkURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
@@ -1367,6 +1529,17 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestMgmtObj('test_updateDATCremoveMescAddMeil'))
 	addTest(suite, TestMgmtObj('test_attributesDATC'))
 	addTest(suite, TestMgmtObj('test_deleteDATC'))
+
+	addTest(suite, TestMgmtObj('test_createSIM'))
+	addTest(suite, TestMgmtObj('test_retrieveSIM'))
+	addTest(suite, TestMgmtObj('test_attributesSIM'))
+	addTest(suite, TestMgmtObj('test_deleteSIM'))
+
+	addTest(suite, TestMgmtObj('test_createMNWK'))
+	addTest(suite, TestMgmtObj('test_retrieveMNWK'))
+	addTest(suite, TestMgmtObj('test_attributesMNWK'))
+	addTest(suite, TestMgmtObj('test_deleteMNWK'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
