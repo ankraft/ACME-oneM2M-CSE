@@ -40,9 +40,6 @@ _onErrorFunction = 'on-error'
 
 class PException(Exception):
 	"""	Baseclass for interpreter exceptions. 
-	
-		Attributes:
-			pcontext: `PContext` object with the error state.
 	"""
 
 	def __init__(self, pcontext:PContext) -> None:
@@ -52,6 +49,7 @@ class PException(Exception):
 				pcontext: `PContext` object with the interpreter state and error messages.
 		"""
 		self.pcontext = pcontext
+		"""	`PContext` object with the interpreter state and error messages."""
 	
 	def __str__(self) -> str:
 		"""	Nicely printable version of the exception.
@@ -190,12 +188,6 @@ class SType(IntEnum):
 
 class SSymbol(object):
 	"""	The basic class to store and handle symbols, lists, and values in the Interpreter. 
-
-		Attributes:
-			value:	The actual stored value. This is either one of the the basic data typs, of a `SSymbol`, list of `SSymbol`, dictionary, etc.
-			type: `SType` to indicate the type.
-			length: The length of the symbol. Could be the length of a string, number of items in a list etc.
-	
 	"""
 
 	__slots__ = (
@@ -238,7 +230,11 @@ class SSymbol(object):
 		"""
 
 		self.value:Union[str, Decimal, bool, list[SSymbol], Tuple[list[str], SSymbol], Dict[str, Any]] = None
+		"""	The actual stored value. This is either one of the the basic data typs, of a `SSymbol`, list of `SSymbol`, dictionary, etc."""
 		self.type:SType = SType.tNIL
+		""" `SType` to indicate the type. """
+		self.length:int = 0
+		""" The length of the symbol. Could be the length of a string, number of items in a list etc. """
 
 		# Try to determine an unknown type
 		if value:
@@ -362,6 +358,15 @@ class SSymbol(object):
 	
 
 	def toString(self, quoteStrings:bool = False, pythonList:bool = False) -> str:
+		"""	Return a string representation of the value.
+
+			Args:
+				quoteStrings: Quote strings.
+				pythonList: Return a Python list representation.
+			
+			Return:
+				A string representation of the value.
+		"""
 		match self.type:
 			case SType.tList | SType.tListQuote:
 				# Set the list chars
@@ -694,15 +699,13 @@ class PError(IntEnum):
 @dataclass
 class PCall():
 	"""	A dataclass that holds call-specific attributes.
-
-		Attributes:
-			name: Function name.
-			arguments: Dictionary of arguments (name -> `SSymbol`) for a call.
-			variables: Dictionary of variables (name -> `SSymbol`) for a call.
 	"""
 	name:str						= None
+	"""	Function name. """
 	arguments:dict[str, SSymbol]	= field(default_factory = dict)
+	"""	Dictionary of arguments (name -> `SSymbol`) for a call. """
 	variables:dict[str,SSymbol]		= field(default_factory = dict)
+	"""	Dictionary of variables (name -> `SSymbol`) for a call. """
 
 
 
@@ -2048,6 +2051,25 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 
 def _doDolist(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	This function executes a code block for each element in a list.
+
+		The first argument is a list that contains the loop variable symbol and the
+		list to loop over. An optional third argument is the result variable for the loop.
+		The second argument is the code block to execute.
+
+		Example:
+			::
+
+				(dolist (i (1 2 3)) (print i))
+				(dolist (i (1 2 3) result) (setq (+ result i))
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result is the last executed code block or NIL.
+	"""
 	pcontext.assertSymbol(symbol, 3)
 
 	# arguments

@@ -206,6 +206,11 @@ class ResponseException(Exception):
 		""" Optional data. """
 	
 	def __str__(self) -> str:
+		""" Return a string representation of the exception.
+
+			Returns:
+				A string representation of the exception.
+		"""
 		return f'{self.__class__.__name__}({self.rsc}, {self.dbg})'
 
 

@@ -334,6 +334,9 @@ class Job(Thread):
 
 		Job objects are not deleted immediately after they finished but pooled for reuse. They are
 		only destroyed when the pressure on the pool was low for a certain time.
+
+		Attributes:
+			name: Optional name of the job (from Thread).
 	"""
 
 	__slots__ = (

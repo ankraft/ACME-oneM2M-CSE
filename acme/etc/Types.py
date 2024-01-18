@@ -148,6 +148,7 @@ class ResourceTypes(ACMEIntEnum):
 	SIM 			= 1029	# SIM
 	"""	SIM ManagementObject specialization. """
 	MNWK			= 1030	# mobileNetwork
+	"""	MobileNetwork ManagementObject specialization. """
 
 	# Announced Resources
 
@@ -220,6 +221,7 @@ class ResourceTypes(ACMEIntEnum):
 	SIMAnnc			= -30029
 	"""	Announced SIM ManagementObject specialization. """
 	MNWKAnnc		= -30030
+	"""	Announced MobileNetwork ManagementObject specialization. """
 
 
 	def tpe(self) -> str:
