@@ -22,11 +22,12 @@ In additions, you can provide additional command line arguments that will overri
 |:--------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
 | -h, --help                                  | Show a help message and exit.                                                                                                                     |
 | --config &lt;filename>                      | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                |
+| --db-directory &lt;data-directory>          | Specify the directory where the CSE's data base files are stored.                                                                                 |
 | --db-reset                                  | Reset and clear the database when starting the CSE.                                                                                               |
 | --db-storage {memory,disk}                  | Specify the DB\'s storage mode.<br />This overrides the [inMemory](Configuration.md#database) configuration setting.                              |
 | --headless                                  | Operate the CSE in headless mode. This disables almost all screen output and also the build-in console interface.                                 |
 | --http, --https                             | Run the CSE with http or https server.<br />This overrides the [useTLS](Configuration.md#security) configuration setting.                         |
-| --http-wsgi                                 | Run CSE with http WSGI support.<br />This overrides the [http.wsgi.enable]() configuration setting.                                                                                                                    |
+| --http-wsgi                                 | Run CSE with http WSGI support.<br />This overrides the [http.wsgi.enable]() configuration setting.                                               |
 | --http-address &lt;server URL>              | Specify the CSE\'s http server URL.<br />This overrides the [address](Configuration.md#http_server) configuration setting.                        |
 | --http-port &lt;http port>                  | Specify the CSE\'s http server port.<br />This overrides the [address](Configuration.md#http_port) configuration setting.                         |
 | --import-directory &lt;directory>           | Specify the import directory.<br />This overrides the [resourcesPath](Configuration.md#general) configuration setting.                            |

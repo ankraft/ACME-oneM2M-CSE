@@ -102,6 +102,8 @@ class Configuration(object):
 	""" The reset DB flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsDBStorageMode:str = None
 	""" The DB storage mode passed as argument. This overrides the respective value in the configuration file. """
+	_argsDBDataDirectory:str = None
+	""" The DB data directory passed as argument. This overrides the respective value in the configuration file. """
 	_argsHeadless:bool = None
 	""" The headless flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsHttpAddress:str = None
@@ -152,11 +154,12 @@ class Configuration(object):
 		# The default ini file
 		Configuration._defaultConfigFile		= f'{pathlib.Path.cwd()}{os.sep}{C.defaultConfigFile}'
 
-		# resolve the args, of any
+		# resolve the args, if any
 		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultUserConfigFile
 		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
 		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
+		Configuration._argsDBDataDirectory		= args.dbdirectory if args and 'dbdirectory' in args else None
 		Configuration._argsHeadless				= args.headless if args and 'headless' in args else False
 		Configuration._argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
 		Configuration._argsHttpPort				= args.httpport if args and 'httpport' in args else None
@@ -682,6 +685,7 @@ class Configuration(object):
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
 		if Configuration._argsDBStorageMode is not None:		_put('database.inMemory', Configuration._argsDBStorageMode == 'memory')	# Override DB storage mode from command line
+		if Configuration._argsDBDataDirectory is not None:		_put('database.path', Configuration._argsDBDataDirectory)				# Override DB data directory from command line
 		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
 		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
 		if Configuration._argsImportDirectory is not None:		_put('cse.resourcesPath', Configuration._argsImportDirectory)			# Override import directory from command line
