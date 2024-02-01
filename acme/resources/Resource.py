@@ -741,6 +741,23 @@ class Resource(object):
 				del self.dict[key]
 	
 
+	def getAttributes(self, includingInternal:bool = False) -> dict[str, Any]:
+		""" Get all attributes of the resource. 
+
+			Args:
+				includingInternal: Optional indicator whether internal attributes shall be included.
+		
+			Return:
+				Dictionary with a copy of all attributes.
+		"""
+		_dct = deepcopy(self.dict)
+		if not includingInternal:
+			for key in self.internalAttributes:
+				if key in _dct:
+					del _dct[key]
+		return _dct
+	
+
 	def getFinalResourceAttribute(self, key:str, dct:Optional[JSON]) -> Any:
 		"""	Determine and return the final value of an attribute during an update.
 		

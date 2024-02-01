@@ -30,10 +30,11 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants
-from ..etc.Types import CSEType, ResourceTypes, Operation
+from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality
 from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
-from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date
+from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
+from ..etc.Utils import uniqueID
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..services import CSE, Statistics
@@ -137,6 +138,7 @@ class Console(object):
 		'previousArgument',
 		'previousGraphRi',
 		'previousRequestRi',
+		'previousExportRi',
 		'tuiApp',
 		
 		'refreshInterval',
@@ -167,6 +169,7 @@ class Console(object):
 		self.previousScript = ''
 		self.previousArgument = ''
 		self.previousGraphRi = ''
+		self.previousExportRi = ''
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
@@ -245,7 +248,7 @@ class Console(object):
 			'c'					: self.configuration,
 			'C'					: self.clearScreen,
 			'D'					: self.deleteResource,
-			# 'E'					: self.exportResources,
+			'E'					: self.exportResources,
 			'f'					: self.showRequests,
 			'F'					: self.showAllRequests,
 			FunctionKey.CTRL_F	: self.deleteRequests,
@@ -334,7 +337,7 @@ class Console(object):
 			('c', 'Show configuration'),
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
-			# ('E', 'Export resource tree to [i]init[/i] directory'),
+			('E', 'Export a resource and its children to the [i]data[/i] directory as [i]curl[/i] commands'),
 			('f', 'Show requests history for a resource'),
 			('F', 'Show all requests history'),
 			('^F', 'Clear requests history'),
@@ -624,8 +627,11 @@ Available under the BSD 3-Clause License
 
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
-			resource = CSE.dispatcher.retrieveResource(ri)
-			L.console(resource.asDict())
+			try:
+				resource = CSE.dispatcher.retrieveResource(ri)
+				L.console(resource.asDict())
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 		L.on()		
 
 
@@ -729,6 +735,78 @@ Available under the BSD 3-Clause License
 							  key,
 							  at )
 		L.console(table, nl = True)
+		L.on()
+
+
+	def exportResources(self, key:str) -> None:
+		"""	Export resources to the data directory.
+			The result is a shell script that can be used to re-build a previous resource tree.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+		L.console('Export Resource and Children', isHeader = True)
+		L.off()		
+		if (ri := L.consolePrompt('ri', default = self.previousExportRi)):
+			self.previousExportRi = ri
+			try:
+				if not (resdis := CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)):
+					L.console(resdis.dbg, isError=True)
+				else:
+					# insert the parent resource at the beginning of the list
+					resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
+					count = 0
+					path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(',', 1)[0]}.sh'
+					cseUrl = CSE.httpServer.serverAddress
+					with open(path, 'w') as f:
+
+						# Write shell file header
+						f.write(
+f'''#!/bin/bash
+# Exported {ri} from {CSE.cseRi} at {getResourceDate()}
+
+cseURL={cseUrl}
+
+function uniqueNumber() {{
+    unique_number=""
+    for i in {{1..10}}
+    do
+        unique_number+=$RANDOM
+    done
+    unique_number=${{unique_number:0:10}}
+    echo "$unique_number"
+}}
+
+function createResource() {{
+    printf '\\nCreating child resource under %s\\n' $cseURL/$4
+    printf 'Result: '		  
+    curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {CSE.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
+    printf '\\n'
+}}
+			  
+''')
+
+						# Write createResource commands for all resources
+						for r in resdis:
+							tpe = r.tpe
+							attributes = {}
+							for attr in r.getAttributes():
+								policy = CSE.validator.getAttributePolicy(r.ty, attr)
+								if policy.optionalCreate != RequestOptionality.NP:
+									attributes[attr] = r[attr]
+							
+							# Special handling for some attributes
+							if 'et' in attributes:
+								del attributes['et']
+
+							attributes = { tpe : attributes }
+							parentSrn = r.getSrn().rsplit('/', 1)[0]
+							f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("'", "\\'")}\' \'{parentSrn}\'\n')
+							count += 1
+					L.console(f'Exported {count} resources to {path}')
+
+			except ResponseException as e:
+				L.console(e.dbg, isError = True)
 		L.on()
 
 

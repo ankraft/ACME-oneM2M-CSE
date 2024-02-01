@@ -13,7 +13,7 @@ The CSE has a command console interface to execute build-in commands. The follow
 	│ c     │ Show configuration                                     │        │
 	│ C     │ Clear the console screen                               │        │
 	│ D     │ Delete resource                                        │        │
-	│ E     │ Export resource tree to *init* directory               │        │
+	│ E     │ Export resource tree to *data* directory               │        │
 	│ G     │ Plot graph (only for container)                        │        │
 	│ ^G    │ Plot & refresh graph continuously (only for container) │        │
 	│ i     │ Inspect resource                                       │        │
@@ -59,15 +59,15 @@ Example to hide all resources with resource identifiers starting with 'acp':
 
 ### Exporting Resources
 
-One of the tasks the CSE performs during start-up is that it imports resources located in the *init* directory. 
-This builds up an initial resource tree. See [Importing Resources](Importing.md#resources) for a more detailed description.
+With the console command "E - Export resource tree to *data* directory" one can export a resource and its child resources
+to the current *data* directory as a shell script. The shell script runs *curl* commands to create the resources in the
+same or another. It can be used to backup resources or to move resources from one CSE to another.
 
-With the console command "E - Export resource tree to *init* directory" one can export the current state of the resource 
-tree to the *init* directory as a [ACMEScript script](ACMEScript.md) so that it can be imported again automatically 
-during the next CSE start-up, or reset. The structured resource path and the resource type are taken for the filename of the 
-resources, and should be therefore easily identifiable.
+Note, that the shell script is not a backup of the CSE's database. It only contains the specified resources.
+The shell script does not contain any information about the CSE's configuration or the CSE's registrations at other CSEs.
+It is also possible that the shell script does not work for all resources, e.g. if referenced resources are missing or have
+other resource identifiers.
 
-Resource that have been imported this way are ignored in the export to avoid conflicts.
 
 <a name="function_keys"></a>
 ## Supported Function Keys

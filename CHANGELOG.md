@@ -16,6 +16,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added configuration value for the CSE's *poa* attribute. Before, the CSE's *poa* was always set to the *http* server's address.
 - [CSE] Added support for *SIM* ManagementObject specialization.
 - [CSE] Added support for *MobileNetwork* ManagementObject specialization.
+- [CSE] Added *--db-directory* command line argument to specify the directory where the CSE's data base files are stored.
+- [CSE] Re-Added support for exporting resources to the console. Resources are exported as *curl* commands.
 - [WS] Added support for the WebSocket protocol binding. This binding is fully functional but still experimental because it differs from the oneM2M spec in some points, e.g. the new presence of the *Originator* header when establishing a WebSocket connection. The general functionality is the same, though.
 - [TUI] Added auto-refreshing diagrams and checkbox to enable/disable auto-refreshing.
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
