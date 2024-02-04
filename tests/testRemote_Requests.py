@@ -101,6 +101,7 @@ class TestRemote_GRP(unittest.TestCase):
 	def test_forwardCreateCNT(self) -> None:
 		"""	CREATE <AE> and <CNT> on the remote CSE via a forwarded request"""
 
+		# Register AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN,
 					'api' : APPID,
@@ -114,9 +115,17 @@ class TestRemote_GRP(unittest.TestCase):
 					'rn' : cntRN
 				}}
 
+		_ae = f'{CSEURL}{REMOTECSEID}/{REMOTECSERN}/{aeRN}'
+
 		# CREATE a <CNT> on the remote CSE via a forwarded request
-		r, rsc = CREATE(f'{CSEURL}{REMOTECSEID}/{REMOTECSERN}/{aeRN}', '/id-mn/Cremote', ResourceTypes.CNT, dct)
+		r, rsc = CREATE(_ae, '/id-mn/Cremote', ResourceTypes.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Unregister AE
+		r, rsc = DELETE(_ae, '/id-mn/Cremote')
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
 
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
