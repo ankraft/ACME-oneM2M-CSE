@@ -171,6 +171,19 @@ def isStructured(uri:str) -> bool: # type: ignore[return]
 			return False
 
 
+def isCSI(uri:str) -> bool:
+	""" Test whether a URI is a CSE-ID.
+
+		Args:
+			uri: The URI to check
+
+		Return:
+			Boolean if the URI is a CSE-ID
+	"""
+	_r = csiFromRelativeAbsoluteUnstructured(uri)[1]
+	return len(_r) == 2 and _r[0] == ''
+
+
 def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 	""" Test whether an ID is a resource ID of the local CSE.
 	
@@ -326,8 +339,10 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 		Args:
 			id: unstructured ID.
 		Return:
-			Tuple (CSE ID (no leading slashes) without any SP-ID or CSE-ID, list of path elements)
-		"""
+			Tuple (CSE ID (no leading slashes) without any SP-ID or CSE-ID, list of path elements). If the ID is None or empty, the return value is ('', []).
+	"""
+	if not id:
+		return '', []
 	ids = id.split('/')
 	match id:
 		case x if isSPRelative(x):
@@ -356,7 +371,7 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	return srn, id
 
 
-def retrieveIDFromPath(id:str) -> Tuple[str, str, str, str]:
+def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 	""" Split a full path e.g. from a http request into its component and return a CSE local ri .
 		Also handle retargeting paths.
 
