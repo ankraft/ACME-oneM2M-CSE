@@ -1421,26 +1421,26 @@ class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
 
 	resourceUpdate						=  1 # A, default
-	""" Resource Update (the default)."""
+	""" Resource Update (1) - the default."""
 	resourceDelete						=  2 # B
-	""" Resource Delete. """
+	""" Resource Delete (2). """
 	createDirectChild					=  3 # C
-	""" Create Direct Child. """
+	""" Create Direct Child (3). """
 	deleteDirectChild					=  4 # D	
-	""" Delete Direct Child. """
+	""" Delete Direct Child (4). """
 	retrieveCNTNoChild					=  5 # E # TODO not supported yet
-	""" Retrieve CNT No Child. """
+	""" Retrieve CNT No Child (5). """
 	triggerReceivedForAE				=  6 # F # TODO not supported yet
-	""" Trigger Received For AE. """
+	""" Trigger Received For AE (6). """
 	blockingUpdate 						=  7 # G
-	""" Blocking Update. """
+	""" Blocking Update (7). """
 	# TODO spec and implementation for blockingUpdateDirectChild			=  ???
 	reportOnGeneratedMissingDataPoints	=  8 # H
-	""" Report On Generated Missing Data Points. """
+	""" Report On Generated Missing Data Points (8). """
 	blockingRetrieve					=  9 # I # EXPERIMENTAL
-	""" Blocking Retrieve. """
+	""" Blocking Retrieve (9). """
 	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL
-	""" Blocking Retrieve Direct Child. """
+	""" Blocking Retrieve Direct Child (10). """
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
