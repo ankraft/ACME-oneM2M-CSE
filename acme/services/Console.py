@@ -756,7 +756,7 @@ Available under the BSD 3-Clause License
 					# insert the parent resource at the beginning of the list
 					resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
 					count = 0
-					path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(',', 1)[0]}.sh'
+					path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(",", 1)[0]}.sh'
 					cseUrl = CSE.httpServer.serverAddress
 					with open(path, 'w') as f:
 
@@ -801,7 +801,8 @@ function createResource() {{
 
 							attributes = { tpe : attributes }
 							parentSrn = r.getSrn().rsplit('/', 1)[0]
-							f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("'", "\\'")}\' \'{parentSrn}\'\n')
+							# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
+							f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
 							count += 1
 					L.console(f'Exported {count} resources to {path}')
 
