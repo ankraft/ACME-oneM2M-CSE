@@ -1632,8 +1632,8 @@
 			"lname": "imsi",
 			"ns": "dcfg",
 			"type": "imsi",
-			"car": "1",
-			"oc": "M",
+			"car": "01",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -3206,8 +3206,8 @@
 			"ns": "dcfg",
 			"type": "enum",
 			"etype": "dcfg:simStatus",
-			"car": "1",
-			"oc": "M",
+			"car": "01",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -3220,8 +3220,8 @@
 			"ns": "dcfg",
 			"type": "enum",
 			"etype": "dcfg:simType",
-			"car": "1",
-			"oc": "M",
+			"car": "01",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
