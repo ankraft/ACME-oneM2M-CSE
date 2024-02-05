@@ -382,6 +382,7 @@ class Resource(object):
 		# store last modified attributes
 		self[_modified] = resourceDiff(dictOrg, self.dict, updatedAttributes)
 
+
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[_modified])
 		self.dbUpdate()

@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any, cast
+from typing import Optional, Any
 import logging, uuid
 from urllib.parse import urlparse
 
@@ -18,12 +18,13 @@ from websockets.sync.client import connect
 from websockets.protocol import State
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
+from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.RequestUtils import prepareResultForSending
-from ..etc.Utils import renameThread, exceptionToResult, uniqueID, isValidAEI, toSPRelative, csiFromSPRelative, uniqueRI
+from ..etc.Utils import renameThread, exceptionToResult, uniqueID, isValidAEI, toSPRelative, csiFromSPRelative, uniqueRI, isCSI
 from ..etc.DateUtils import getResourceDate
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -422,14 +423,17 @@ class WebSocketServer(object):
 			if wsOriginator is None:
 				if not (request.op == Operation.CREATE and request.ty == ResourceTypes.AE):
 					raise ResponseException(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
-											dbg = L.logWarn(f'Unknown WS connection (no X-M2M-Origin header) are only allowed for AE registrations'))
+											dbg = L.logWarn(f'Unknown WS connections (no X-M2M-Origin header) are only allowed for AE registrations'))
 				# Else, the request must be an AE registration
 
 			# Compare the originator and the from, only for Mca
-			if wsOriginator is not None and isValidAEI(wsOriginator):
-				if toSPRelative(requestOriginator) != toSPRelative(wsOriginator):
-					raise ResponseException(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
-											dbg = L.logWarn(f'Originator mismatch: {requestOriginator} != {wsOriginator}'))
+		
+			if wsOriginator is not None and not isCSI(wsOriginator):	# wsOriginator is not a CSE-ID, so it must be an AE-ID, ie. it is an Mca request
+				if isValidAEI(wsOriginator):
+					if toSPRelative(requestOriginator) != toSPRelative(wsOriginator):
+						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn(f'Originator mismatch: {requestOriginator} != {wsOriginator}'))
+				else:
+					raise BAD_REQUEST(L.logWarn(f'Invalid originator format: {wsOriginator}'))
 
 			L.isDebug and L.logDebug(f'Operation: {request.op}')
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
@@ -477,40 +481,78 @@ class WebSocketServer(object):
 			"""	Connect to a WebSocket server.
 
 				Args:
-					target: The target to connect to.
+					target: The target CSE to connect to, if any.
 					ct: The content type to use for the connection.
 				
 				Returns:
 					The WebSocket connection.
 			"""
-			# Check whether we already have an established connection to the target. Otherwise establish a new WS connection
-			websocket:WSConnection = None
-			if target not in self.associatedConnections:
-				websocket = connect(url, 
-									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-									additional_headers = { 'X-m2m-origin': CSE.cseCsi})
+
+			# Check whether the target is the default unreachable target
+			if url == Constants.defaultWebSocketSchema:
+				# Check whether the target is already associated with a connection
+				if target in self.associatedConnections:
+					return self.wsConnections[self.associatedConnections[target]]
+				else:
+					# No WS connection established
+					raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
+			else:
+				# Connect to the target WS server
+				try:
+					websocket = connect(url, 
+										subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
+										additional_headers = { 'X-m2m-origin': CSE.cseCsi})
+				except Exception as e:
+					raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
+				# Associate the WS connection with the originator
 				self.addConnection(websocket)
 				self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
 				BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
 											name = f'ws_{uniqueID()}')
-			else:
-				websocket = self.wsConnections[self.associatedConnections[target]]
-			return websocket
+				return websocket
+
+
+			# # Check whether we already have an established connection to the target. Otherwise establish a new WS connection
+			# websocket:WSConnection = None
+			# if target not in self.associatedConnections:
+
+			# 	# Check whether the target is not the special unreachable target
+			# 	if url == Constants.defaultWebSocketSchema:
+			# 		L.logWarn(f'No WS connection established. Target is not connectable.')
+			# 		raise TARGET_NOT_REACHABLE('No WS connection established')	# No WS connection established
+				
+			# 	try:
+			# 		websocket = connect(url, 
+			# 							subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
+			# 							additional_headers = { 'X-m2m-origin': CSE.cseCsi})
+			# 	except Exception as e:
+			# 		L.logWarn(f'Error connecting to WS server: {url} - {e}')
+			# 		raise TARGET_NOT_REACHABLE(f'Error connecting to WS: {e}')
+			# 	self.addConnection(websocket)
+			# 	self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
+			# 	BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
+			# 								name = f'ws_{uniqueID()}')
+			# else:
+			# 	websocket = self.wsConnections[self.associatedConnections[target]]
+			# return websocket
 
 		try: 
 			# Get the serialization format first
 			ct = request.ct if request.ct is not None else CSE.defaultSerialization
-			target = csiFromSPRelative(request.to)
+			targetOriginator = csiFromSPRelative(request.to)
+			if targetOriginator is None:
+				targetOriginator = request.to
 
-			websocket = connectWS(target, ct)
+			# Connect to the target WS server. If the connection is already established, then use the existing connection.
+			websocket = connectWS(targetOriginator, ct)
 
 			if websocket is None:
 				return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
 			if websocket.protocol.state == State.CLOSED:
 				# Remove the connection and try to establish a new one once
-				L.isWarn and L.logWarn(f'WS connection to {target} was closed. Trying to re-establish connection')
-				self.removeConnection(websocket, target)
-				websocket = connectWS(target, ct)
+				L.isWarn and L.logWarn(f'WS connection to {targetOriginator} was closed. Trying to re-establish connection')
+				self.removeConnection(websocket, targetOriginator)
+				websocket = connectWS(targetOriginator, ct)
 				if websocket is None or websocket.protocol.state == State.CLOSED:
 					return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
 
@@ -533,7 +575,7 @@ class WebSocketServer(object):
 		# Sending the request
 		try:
 			message = prepareResultForSending(req)[1]
-			L.isDebug and L.logDebug(f'WS Request ==>: {target}')
+			L.isDebug and L.logDebug(f'WS Request ==>: {targetOriginator}')
 			L.isDebug and L.logDebug(f'Body: {message!r}')
 			websocket.send(message)
 		except Exception as e:

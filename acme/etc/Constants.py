@@ -128,7 +128,7 @@ class Constants(object):
 	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts', 'ws', 'wss', 'acme']
 	""" The URL schemes supported by the CSE. """
 
-	unreachableWebSocketSchema = 'ws://unreachable'
+	defaultWebSocketSchema = 'ws://default'
 	""" The URL scheme used when a WebSocket connection cannot be established because the remote entity doesn't host a WebSocket server. """
 
 

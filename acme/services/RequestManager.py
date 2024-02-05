@@ -21,11 +21,11 @@ from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result,
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
-from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT
+from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
 from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
-from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl, localResourceID, retrieveIDFromPath, getIdFromOriginator
+from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl, localResourceID, getIDFromPath, getIdFromOriginator
 from ..etc.Utils import isStructured, structuredPathFromRI
 from ..helpers.TextTools import setXPath
 from ..etc.Constants import Constants
@@ -1063,11 +1063,11 @@ class RequestManager(object):
 				continue
 
 			elif isWSUrl(url):
-				if url == Constants.unreachableWebSocketSchema:
-					L.isDebug and L.logDebug(f'WS request to unreachable target: {url}. Skipping.')
-					continue
 				self.requestHandlers[_request.op].wsEvent()	# send event
-				results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url)) )
+				try:
+					results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url)) )
+				except TARGET_NOT_REACHABLE as e:
+					L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
 				continue
 
 			# Special handling for ACME internal events.
@@ -1206,7 +1206,7 @@ class RequestManager(object):
 						else:
 							earlyError = L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. ')
 					else:
-						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = retrieveIDFromPath(to)
+						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = getIDFromPath(to)
 						if dbg:
 							raise BAD_REQUEST(dbg, data = cseRequest)
 
