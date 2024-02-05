@@ -100,7 +100,8 @@ class AnnounceableResource(Resource):
 					continue	
 
 		# If announceableAttributes is now an empty list, set aa to None
-		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
+		if self.aa:
+			self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 
 	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:
