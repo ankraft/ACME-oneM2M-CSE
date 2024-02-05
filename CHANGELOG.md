@@ -24,6 +24,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added sorting of resource lists by resource type. Added resource type section headers.
 - [TUI] Added configurable size limit for displaying requests and responses.
 - [SCRIPTS] Added "remove-json-attribute" function to the script interpreter. 
+- [TESTS] Added support for the WebSocket protocol binding to the tests.
+- [TESTS] Added specific tests for the WebSocket protocol binding and special notification handling.
 
 
 ### Experimental
