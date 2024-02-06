@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, Tuple
 import logging, uuid
 from urllib.parse import urlparse
 
@@ -31,10 +31,7 @@ from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
 
 
-# TODO associations: originator -> websocket.id
-# TODO security TLS etc
 # TODO record WS requests
-# TODO add WS to test suite
 # TODO add events for WS connections
 # TODO add statistics for WS connections
 
@@ -65,10 +62,10 @@ class WebSocketServer(object):
 		self._assignConfig()
 
 		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
 
 		# Add a handler for resource deletion
-		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)	# type: ignore
+		CSE.event.addHandler(CSE.event.deleteResource, self._handleDeleteEvent)	# type: ignore
 
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
@@ -112,7 +109,7 @@ class WebSocketServer(object):
 		"""	The timeout for requests."""
 
 
-	def configUpdate(self, name:str, 
+	def _configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
 		"""	Callback for the `configUpdate` event.
@@ -136,7 +133,7 @@ class WebSocketServer(object):
 		# TODO restart server if necessary
 
 
-	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
+	def _handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
 		"""	Callback and handler for the *deleteResource* event.
 
 			In case of an AE deletion, the associated WS connection is dissociated, but left open.
@@ -150,6 +147,18 @@ class WebSocketServer(object):
 			return
 		self.dissociateConnectionFromOriginator(deletedResource.aei)
 
+
+	def _getWSSendingTargetName(self, target:str) -> str:
+		"""	Get the target name for sending a WebSocket request.
+
+			Args:
+				target: The target to send the request to.
+
+			Returns:
+				The target for sending the request.
+		"""
+		return target if target == Constants.defaultWebSocketSchema else f'{target} (2)'
+	
 
 	def run(self) -> bool:
 		"""	Initialize and run the WebSocket server as a BackgroundWorker/Actor.
@@ -272,15 +281,25 @@ class WebSocketServer(object):
 			Args:
 				originator: The originator.
 		"""
-		L.isDebug and L.logDebug(f'Closing WS connection for originator {originator}')
-		if originator in self.associatedConnections:
-			websocketID = self.associatedConnections[originator]
+		def _removeConnection(originator:str):
+			if originator in self.associatedConnections:
+				websocketID = self.associatedConnections[originator]
 
-			# Also remove from the list of websocket connections
-			if websocketID in self.wsConnections:
-				websocket = self.wsConnections[websocketID]
-				websocket.close()
-				self.removeConnection(websocket, originator)
+				# Also remove from the list of websocket connections
+				if websocketID in self.wsConnections:
+					websocket = self.wsConnections[websocketID]
+					websocket.close()
+					self.removeConnection(websocket, originator)
+				else:
+					del self.associatedConnections[originator]
+
+
+		L.isDebug and L.logDebug(f'Closing WS connection(s) for originator {originator}')
+		_removeConnection(originator)
+			
+		# Also remove an optional sending target connection
+		_removeConnection(self._getWSSendingTargetName(originator))
+
 			
 
 	def _checkIsServerRunning(self, websocket:WSConnection) -> bool:
@@ -477,7 +496,7 @@ class WebSocketServer(object):
 				The result object of the request.
 		"""
 
-		def connectWS(target:str, ct:ContentSerializationType) -> WSConnection:
+		def connectWS(target:str, ct:ContentSerializationType) -> Tuple[WSConnection, bool]:
 			"""	Connect to a WebSocket server.
 
 				Args:
@@ -485,18 +504,22 @@ class WebSocketServer(object):
 					ct: The content type to use for the connection.
 				
 				Returns:
-					The WebSocket connection.
+					The WebSocket connection and a flag whether the connection is one that is initiated by the CSE.
 			"""
 
 			# Check whether the target is the default unreachable target
 			if url == Constants.defaultWebSocketSchema:
 				# Check whether the target is already associated with a connection
 				if target in self.associatedConnections:
-					return self.wsConnections[self.associatedConnections[target]]
+					return self.wsConnections[self.associatedConnections[target]], False
 				else:
 					# No WS connection established
 					raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
 			else:
+				target = self._getWSSendingTargetName(target)
+				if target in self.associatedConnections:
+					return self.wsConnections[self.associatedConnections[target]], True
+
 				# Connect to the target WS server
 				try:
 					websocket = connect(url, 
@@ -509,7 +532,7 @@ class WebSocketServer(object):
 				self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
 				BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
 											name = f'ws_{uniqueID()}')
-				return websocket
+				return websocket, True
 
 
 			# # Check whether we already have an established connection to the target. Otherwise establish a new WS connection
@@ -537,14 +560,14 @@ class WebSocketServer(object):
 			# return websocket
 
 		try: 
-			# Get the serialization format first
+			# Get the serialization format
 			ct = request.ct if request.ct is not None else CSE.defaultSerialization
 			targetOriginator = csiFromSPRelative(request.to)
 			if targetOriginator is None:
 				targetOriginator = request.to
 
 			# Connect to the target WS server. If the connection is already established, then use the existing connection.
-			websocket = connectWS(targetOriginator, ct)
+			websocket, isSenderWS = connectWS(targetOriginator, ct)
 
 			if websocket is None:
 				return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
@@ -552,7 +575,7 @@ class WebSocketServer(object):
 				# Remove the connection and try to establish a new one once
 				L.isWarn and L.logWarn(f'WS connection to {targetOriginator} was closed. Trying to re-establish connection')
 				self.removeConnection(websocket, targetOriginator)
-				websocket = connectWS(targetOriginator, ct)
+				websocket, isSenderWS = connectWS(targetOriginator, ct)
 				if websocket is None or websocket.protocol.state == State.CLOSED:
 					return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = 'No WS connection established')
 
@@ -575,7 +598,7 @@ class WebSocketServer(object):
 		# Sending the request
 		try:
 			message = prepareResultForSending(req)[1]
-			L.isDebug and L.logDebug(f'WS Request ==>: {targetOriginator}')
+			L.isDebug and L.logDebug(f'WS Request ==>: {targetOriginator if not isSenderWS else self._getWSSendingTargetName(targetOriginator)}')
 			L.isDebug and L.logDebug(f'Body: {message!r}')
 			websocket.send(message)
 		except Exception as e:

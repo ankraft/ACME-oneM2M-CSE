@@ -116,7 +116,7 @@ def closeUpdateConnection() -> None:
 		print(f'\n[yellow]>>> (Updates) Disconnected from WebSocket server at [bold]{cseUrl}[/bold]')
 
 
-def _doRequest(request:dict, originator:str = None, reason:str = None, websocket:ClientConnection = _websocket) -> dict:
+def _doRequest(request:dict, originator:str = None, reason:str = None, websocket:ClientConnection = None) -> dict:
 	""" Send a request and receive the response.
 
 		Args:
@@ -161,8 +161,18 @@ def receiveNotification(originator:str = None) -> dict:
 
 		try:
 			while True:
-				if (response := _printRecv(json.loads(_websocket.recv(timeout = timeout)), 'Received Notification')):
-					return response
+				if (request := _printRecv(json.loads(_websocket.recv(timeout = timeout)), 'Received Notification')):
+					if request['pc'].get('m2m:sgn'):
+						# This is a notification, send response
+						response = {
+							'fr': request['to'],
+							'to': request['fr'],
+							'rqi': request['rqi'],
+							'rvi': request['rvi'],
+							'rsc': 2000
+						}
+						_websocket.send(json.dumps(_printSend(response, 'Send Notification Response')))
+					return request
 				else:
 					continue
 		except Exception as e:

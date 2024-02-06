@@ -32,6 +32,7 @@ if __name__ == '__main__':
 	# Receive the notification
 	sleep(timeout)	# Wait a little bit to receive the notification
 	receiveNotification(orig)
+	sleep(timeout)
 
 	# End and close
 	closeConnection()
