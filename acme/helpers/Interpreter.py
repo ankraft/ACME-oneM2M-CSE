@@ -51,6 +51,7 @@ class PException(Exception):
 		self.pcontext = pcontext
 		"""	`PContext` object with the interpreter state and error messages."""
 	
+
 	def __str__(self) -> str:
 		"""	Nicely printable version of the exception.
 
@@ -103,6 +104,20 @@ class PQuitWithError(PException):
 class PQuitRegular(PException):
 	"""	Exception to regularly quit the script execution without an error. """
 	...
+
+
+class PReturnFrom(PException):
+	"""	Exception to indicate an executed *return-from* commands. """
+
+	def __init__(self, pcontext:PContext, name:str) -> None:
+		"""	Exception initialization.
+		
+			Args:
+				pcontext: `PContext` object with the interpreter state and error messages.
+				name: Name of the block to return to.
+		"""
+		super().__init__(pcontext)
+		self.name = name
 
 
 class PRuntimeError(PException):
@@ -188,6 +203,12 @@ class SType(IntEnum):
 
 class SSymbol(object):
 	"""	The basic class to store and handle symbols, lists, and values in the Interpreter. 
+
+		Attributes:
+			value:	The actual stored value. This is either one of the the basic data typs, of a `SSymbol`, list of `SSymbol`, dictionary, etc.
+			type: `SType` to indicate the type.
+			length: The length of the symbol. Could be the length of a string, number of items in a list etc.
+	
 	"""
 
 	__slots__ = (
@@ -1815,6 +1836,53 @@ def _doBoolean(pcontext:PContext, symbol:SSymbol, value:bool) -> PContext:
 	return pcontext.setResult(SSymbol(boolean = value))
 
 
+def _doBlock(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Execute a block of expressions.
+
+		Example:
+			::
+
+				;; Prints "Hello" and "World". The result is "World".
+				(block aSymbol
+					(print "Hello")
+					(print "World"))
+				
+				
+				;; Prints only "Hello". The result is 42.
+				(block aSymbol
+					(print "Hello")
+					(return-from aSymbol 42)
+					(print "World"))
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result is the result of the last executed expression in the block, or the result of a matching *return-from* expression.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# get block name
+	if symbol[1].type != SType.tSymbol:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'block requires symbol name, got type: {symbol[1].type}'))
+	_name = symbol[1].value
+
+	# execute block expressions
+	pcontext.result = SSymbol()	# Default result is NIL for empty blocks
+	for e in symbol[2:]:
+		try:
+			pcontext = pcontext._executeExpression(e, symbol)
+		except PReturnFrom as e:
+			# If the exception is raised for the current block, then return the result
+			if e.name == _name:	
+				return pcontext.setResult(e.pcontext.result)
+			# Otherwise raise the exception again until the block is found
+			raise e
+
+	return pcontext
+
+
 def _doCar(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	Get the first symbol of a list without changing the list.
 
@@ -2953,7 +3021,9 @@ def _doParseString(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 
 def _doPrint(pcontext:PContext, symbol:SSymbol) -> PContext:
-	""" Print the arguments to the console
+	""" Print the arguments to the console.
+
+		The function return the resulting string as a symbol.
 	
 		Example:
 			::
@@ -2970,9 +3040,9 @@ def _doPrint(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	if symbol.type != SType.tList or symbol.length == 1:
 		pcontext.printFunc(pcontext, '')
-		return pcontext.setResult(SSymbol())
-	pcontext.printFunc(pcontext, str(pcontext._joinExpression(symbol[1:]).result.value))
-	return pcontext.setResult(SSymbol())
+		return pcontext.setResult(SSymbol(string = ''))
+	pcontext.printFunc(pcontext, arg := str(pcontext._joinExpression(symbol[1:]).result.value))
+	return pcontext.setResult(SSymbol(string = arg))
 
 
 def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3170,6 +3240,43 @@ def _doReturn(pcontext:PContext, symbol:SSymbol) -> PContext:
 		pcontext.result = SSymbol()
 	pcontext.state = PState.returning
 	return pcontext
+
+
+def _doReturnFrom(pcontext:PContext, symbol:SSymbol) -> None:
+	"""	Return from a named block.
+
+		Example:
+			::
+
+				(block "aBlock" 1 (return-from "aBlock" 2) 3) -> 2
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the function result.
+		
+		Raises:
+			`PReturnFrom`: Always raises this exception.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 2, maxLength = 3)
+
+	# get block name
+	if symbol[1].type != SType.tSymbol:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'return-from requires symbol name, got type: {symbol[1].type}'))
+	_name = symbol[1].value
+
+	if symbol.length == 3:
+		# Evaluate the first symbol
+		pcontext = pcontext.getArgument(symbol, 2)
+	else:
+		# result is nil
+		pcontext.result = SSymbol()
+	
+	# do NOT return but raise an exception
+	raise PReturnFrom(pcontext, _name)
+
 
 
 def _doRound(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3480,6 +3587,51 @@ def _doToSymbol(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext
 
 
+def _doUnwindProtect(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Execute a cleanup form after the main form has been executed or in case of an error.
+
+		Currently only programmatic flow interrupts are supported to trigger the cleanup form:
+		*assert*, *quit*, *quit-with-error*, *return*, *return-from*.
+	
+		Example:
+			::
+
+				(unwind-protect
+					(print "main form")
+					(print "cleanup form"))
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the function result.
+	"""
+
+	def _cleanup(pcontext:PContext, symbol:SSymbol) -> PContext:
+		for i in range(2, symbol.length):
+			pcontext, _ = pcontext.resultFromArgument(symbol, i)
+		return pcontext
+
+	pcontext.assertSymbol(symbol, minLength = 3)
+
+	# protected form
+	try:
+		pcontext, _ = pcontext.resultFromArgument(symbol, 1)
+		if pcontext.state == PState.returning:
+			pcontext = _cleanup(pcontext, symbol)
+		return pcontext
+	
+	# currently only programmatic flow interrups are supported:
+	# return-from, assert, quit, quit-with-error, return
+	# Those functions throw exception that are caught here,
+	# and then the cleanup form is executed and the exception is re-raised
+	except (PAssertionFailed, PQuitRegular, PQuitWithError, PReturnFrom) as e:
+		pcontext = _cleanup(pcontext, symbol)
+		e.pcontext = pcontext
+		raise e
+
+
 def _doURLEncode(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	URL-Encode a string.
 
@@ -3568,6 +3720,7 @@ _builtinCommands:PSymbolDict = {
 	'argv':					_doArgv,
 	'assert':				_doAssert,
 	'base64-encode':		_doB64Encode,
+	'block':				_doBlock,
 	'car':					_doCar,
 	'case':					_doCase,
 	'cdr': 					_doCdr,
@@ -3582,7 +3735,6 @@ _builtinCommands:PSymbolDict = {
 	'false':				lambda p, a: _doBoolean(p, a, False),
 	'get-json-attribute':	_doGetJSONAttribute,
 	'has-json-attribute':	_doHasJSONAttribute,
-	''
 	'if':					_doIf,
 	'inc':					lambda p, a: _doIncDec(p, a, True),
 	'index-of':				_doIndexOf,
@@ -3607,6 +3759,7 @@ _builtinCommands:PSymbolDict = {
 	'random':				_doRandom,
 	'remove-json-attribute':_doRemoveJSONAttribute,
 	'return':				_doReturn,
+	'return-from':			_doReturnFrom,
 	'round':				_doRound,
 	'set-json-attribute':	_doSetJSONAttribute,
 	'setq':					_doSetq,
@@ -3617,6 +3770,7 @@ _builtinCommands:PSymbolDict = {
 	'to-string':			_doToString,
 	'to-symbol':			_doToSymbol,
 	'true':					lambda p, a: _doBoolean(p, a, True),
+	'unwind-protect':		_doUnwindProtect,
 	'upper':				lambda p, a: _doLowerUpper(p, a, False),
 	'url-encode':			_doURLEncode,
 	'while':				_doWhile,

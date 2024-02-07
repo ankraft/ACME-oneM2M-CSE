@@ -13,6 +13,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [argv](#argv)                                           | Get script arguments                                                             |
 |                            | [assert](#assert)                                       | Assert a condition                                                               |
 |                            | [base64-encode](#base64-encode)                         | Base64-encode a string                                                           |
+|                            | [block](#block)                                         | Execute a block of expressions.                                                  |
 |                            | [car](#car)                                             | Return the first element from a list                                             |
 |                            | [case](#case)                                           | Conditional execution depending on an input value                                |
 |                            | [cdr](#cdr)                                             | Return a list with elements from a list, except the first element                |
@@ -51,6 +52,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [random](#random)                                       | Generate a random number                                                         |
 |                            | [remove-json-attribute](#remove-json-attribute)         | Remove one or multiple JSON attributes in a JSON structure                       |
 |                            | [return](#return)                                       | Early return from a function or while loop                                       |
+|                            | [return-from](#return-from)                             | Early return in a block.                                                         |
 |                            | [round](#round)                                         | Return a round number                                                            |
 |                            | [set-json-attribute](#set-json-attribute)               | Set a JSON attribute in a JSON structure to a new value                          |
 |                            | [setq](#setq)                                           | Assigns a value to a variable                                                    |
@@ -61,6 +63,7 @@ The following built-in functions and variables are provided by the ACMEScript in
 |                            | [to-number](#to-number)                                 | Converts a string to a number                                                    |
 |                            | [to-string](#to-string)                                 | Returns a string representation of a symbol                                      |
 |                            | [to-symbol](#to-symbol)                                 | Converts a string to a symbol                                                    |
+|                            | [unwind-protect](#unwind-protect)                       | Execute a clean-up symbol before returning                                       |
 |                            | [upper](#upper)                                         | Returns an upper case copy of a string                                           |
 |                            | [url-encode](#url-encode)                               | URL-encode a string                                                              |
 |                            | [while](#while)                                         | Evaluate an s-expression in a loop                                               |
@@ -205,6 +208,52 @@ Example:
 ```lisp
 (base64-encode "Hello, World")  ;; Returns "SGVsbG8sIFdvcmxk"
 ```
+
+[top](#top)
+
+---
+
+<a name="block"></a>
+
+### block
+
+`(block <name:string> <s-expression>+)`
+
+The `block` function executes a number of expressions. 
+The first argument is a string that specifies the block's name. 
+The following arguments are s-expressions that are executed in the block.
+
+The result of the last expression is returned. A block can be exited early with the [return-from](#return-from) function.
+
+See also:  [return-from](#return-from)
+
+Example:
+
+```lisp
+(block "myBlock" 1 2 3)  ;; Returns 3
+(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
+```
+
+One can use the [block](#block) function to implement *break* and *continue* functionality in loops.
+
+```lisp
+;; Example for a break block
+;; The following example breaks the loop when the value of "i" is 5
+(block break
+	(dotimes (i 10)
+		((print i) 
+		 (if (== i 5) 
+			(return-from break)))))
+
+;; Example for a continue block
+;; The following example skips the value of "i" when it is 5
+(dotimes (i 10)
+	(block continue
+		(if (== i 5) 
+			(return-from continue))
+		(print i)))
+``````
+
 
 [top](#top)
 
@@ -1120,6 +1169,27 @@ Example:
 
 ---
 
+<a name="return-from"></a>
+
+### return-from
+
+`(return-from <block name:string> [<s-expression>])`
+
+The `return-from` function stops the evaluation of a [block](#block) with the given name and returns the evaluation to the caller. 
+The function may return a symbol, or *nil*.
+
+See also:  [block](#block)
+
+Example:
+
+```lisp
+(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
+```
+
+[top](#top)
+
+---
+
 <a name="round"></a>
 
 ### round
@@ -1335,6 +1405,35 @@ Example:
 ```
 
 [top](#top)
+
+---
+
+<a name="unwind-protect"></a>
+
+### unwind-protect
+
+`(unwind-protect <s-expression> <cleanup s-expression>)`
+
+The `unwind-protect` function evaluates the first s-expression and then the second s-expression. 
+The second s-expression is always evaluated, even if the first s-expression throws an error or returns early.
+This is effectively a try/finally block (without a catch)
+
+Currently only programmatic flow interrupts are supported to trigger the cleanup form:
+[assert](#assert), [quit](#quit), [quit-with-error](#quit-with-error), [return](#return), [return-from](#return-from).
+
+The function always returns the result of the cleanup s-expression.
+
+Example:
+
+```lisp
+;; Prints "main form" and "cleanup form" and returns 2
+(unwind-protect
+	((print "main form") 1)
+	((print "cleanup form") 2))
+```
+
+[top](#top)
+
 
 ---
 
