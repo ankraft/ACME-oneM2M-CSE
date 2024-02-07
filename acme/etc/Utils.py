@@ -423,6 +423,7 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 				if ids[0] == '-':			# replace placeholder "-". Always convert in CSE-relative
 					ids[0] = CSE.cseRn
 				srn = '/'.join(ids)
+			csi = CSE.cseCsi
 
 		# SP-Relative (first element is /)
 		case 1:
