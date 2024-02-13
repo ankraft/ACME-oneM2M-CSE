@@ -761,7 +761,7 @@
 			"ctype": "m2m:mgmtLinkRef",
 			"lname": "val",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		},
 		{
@@ -896,7 +896,7 @@
 			"lname": "accessControlOriginators",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "anyURI",
+			"ltype": "ID",
 			"car": "1"
 		}
 	],
@@ -972,9 +972,9 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:actionInput",
-			"lname": "ID",
+			"lname": "resourceID",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		}
 	],
@@ -984,7 +984,7 @@
 			"ctype": "m2m:actionInput",
 			"lname": "resourceAttributeID",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		}
 	],
@@ -999,7 +999,7 @@
 			"ctype": "m2m:actionStatus",
 			"lname": "action",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		}
 	],
@@ -1076,7 +1076,7 @@
 			"ctype": "m2m:contentRef",
 			"lname": "URI",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "1"
 		}
 	],
@@ -1555,7 +1555,7 @@
 			"lname": "groupRequestTargetMembers",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "anyURI",
+			"ltype": "ID",
 			"car": "01L"
 		}
 	],
@@ -1772,7 +1772,7 @@
 			"lname": "notificationURI",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "anyURI",
+			"ltype": "ID",
 			"car": "01"
 		}
 	],
@@ -1819,7 +1819,7 @@
 			"ctype": "m2m:setOfNotificationStatsInfo",
 			"lname": "target",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "1"
 		}
 	],
@@ -1864,7 +1864,7 @@
 			"ctype": "m2m:specializationType",
 			"lname": "containerDefinition",
 			"ns": "m2m",
-			"type": "anyURI",
+			"type": "ID",
 			"car": "01"
 		}
 	],
