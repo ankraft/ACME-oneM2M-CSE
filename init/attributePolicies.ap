@@ -2516,7 +2516,7 @@
 	],
 	"nl": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CSEBase", "FCNT", "CSR", "REQRESP" ],
+			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSRAnnc", "FCNT", "FCNTAnnc", "CSR", "REQRESP" ],
 			"lname": "nodeLink",
 			"ns": "m2m",
 			"type": "ID",
