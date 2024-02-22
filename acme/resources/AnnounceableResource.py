@@ -11,12 +11,13 @@ from __future__ import annotations
 from typing import Optional, Tuple
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
+from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
+from ..etc.Utils import toSPRelative
 from .Resource import Resource
 
 _announcedTo = Constants.attrAnnouncedTo
@@ -126,6 +127,43 @@ class AnnounceableResource(Resource):
 	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:Optional[bool] = False) -> JSON:
 		"""	Actually create the resource dict.
 		"""
+
+		def _convertIdentifierAttributeToSPRelative(value:any, typ:BasicType, policy:AttributePolicy) -> any:
+			"""	Convert an attribute to the SP-relative form if it is an identifier.
+				This is a recursive function that is called for each attribute of a complex attribute
+				(e.g. a list or a complex attribute).
+
+				Args:
+					value: The value to convert.
+					typ: The type of the value.
+					policy: The attribute policy of the value.
+
+				Return:
+					The converted value.
+				
+				TODO:
+					This function could be moved to the utils module.
+			"""
+
+			# Return None if the value is None (e.g. in updates)
+			if value is None:
+				return None
+			
+			match typ:
+				case BasicType.ID:
+					return toSPRelative(value)
+				case BasicType.list | BasicType.listNE:
+					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
+				case BasicType.complex:
+					_r = {}
+					for k, v in value.items():
+						_policy = CSE.validator.getAttributePolicy(policy.typeName, k)
+						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.typeName, _policy)
+					return _r
+				case _:
+					return value
+
+
 		# Stub
 		tpe = ResourceTypes(self.ty).announced(self.mgd).tpe()	# Hack, bc management objects do it a bit differently
 
@@ -147,7 +185,9 @@ class AnnounceableResource(Resource):
 
 			# copy mandatoy and optional attributes
 			for attr in announcedAttributes:
-				body[attr] = self[attr]
+				policy = CSE.validator.getAttributePolicy(self.ty, attr)
+				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
+				# body[attr] = self[attr]
 
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
 				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi

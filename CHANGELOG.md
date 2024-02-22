@@ -42,6 +42,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed wrong http request header when forwarding non-blocking requests.
 - [CSE] Fixed empty result content in the &lt;REQ> instance when forwarding non-blocking requests to a remote CSE.
 - [CSE] Fixed wrong handling of *Originator* header in forwarded requests, especially when creating new remote resources.
+- [CSE] CSE-relative identifiers in attributes are now correctly converted to SP-relative identifiers when announcing resources.
 - [CSE] Added support for Python 3.12.
 
 ### Removed
