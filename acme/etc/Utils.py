@@ -513,17 +513,17 @@ def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
 		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
 
 
-def toSPRelative(originator:str) -> str:
+def toSPRelative(id:str) -> str:
 	"""	Add the CSI to an originator (if not already present).
 
 		Args:
-			originator: A string with the originator to convert.
+			id: A string with the originator or resource ID to convert.
 		Return:
-			A string in the format */<csi>/<originato>*.
+			A string in the format */<csi>/<id>*.
 	"""
-	if not isSPRelative(originator):
-		return  f'{CSE.cseCsi}/{originator}'
-	return originator
+	if not isSPRelative(id):
+		return  f'{CSE.cseCsi}/{id}'
+	return id
 
 
 def toCSERelative(id:str) -> str:
