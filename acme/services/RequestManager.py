@@ -1208,7 +1208,7 @@ class RequestManager(object):
 					else:
 						cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = getIDFromPath(to)
 						if dbg:
-							raise BAD_REQUEST(dbg, data = cseRequest)
+							raise BAD_REQUEST(f'"to": {dbg}', data = cseRequest)
 
 			if earlyError:
 				raise BAD_REQUEST(earlyError, data = cseRequest)
