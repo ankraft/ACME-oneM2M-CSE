@@ -18,8 +18,6 @@ if __name__ == '__main__':
 
 	# open a new connection without originator!
 	openConnection('CDifferentOriginator')	
-	expectRSC(unregisterAE(aeName, orig, 'unregister AE w/ different WS originator'), 2002, 'Expected Fail! Unregister AE', doexit = False)
+	expectRSC(unregisterAE(aeName, orig, 'unregister AE w/ different WS originator'), 2002, 'Unregister AE')
 	closeConnection()
 
-	# Cleanup
-	cleanup(aeName, orig)

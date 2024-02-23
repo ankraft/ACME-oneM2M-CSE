@@ -19,10 +19,6 @@ if __name__ == '__main__':
 	orig = getOriginator(r)
 
 	# The following re-opens a new connection including the new originator
-	expectRSC(unregisterAE(aeName, orig, 'unregister AE w/ WS originator'), 2002, 'Expected Fail: Unregister AE', doexit = False)
+	expectRSC(unregisterAE(aeName, orig, 'unregister AE w/ WS originator'), 2002, 'Unregister AE')
 	closeConnection()
-
-	# clean up
-	cleanup(aeName, orig)
-
 

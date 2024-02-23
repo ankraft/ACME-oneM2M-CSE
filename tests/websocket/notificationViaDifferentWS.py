@@ -27,6 +27,9 @@ if __name__ == '__main__':
     # Register necessary resources
 	expectRSC(r := createSubscription(subName, orig), 2001, 'Create Subscription', cleanup = lambda: cleanup(aeName, orig))
 	
+	# Close connection to force a notification to the own WS server
+	closeConnection()
+
 	# Open a new connection with the admin originator to update the AE, update the AE, and close the connection
 	openUpdateConnection(adminOriginator)
 	expectRSC(r := updateAE(aeName, adminOriginator), 2004, 'Update AE', cleanup = lambda: cleanup(aeName, orig))
