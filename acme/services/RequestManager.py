@@ -1699,6 +1699,7 @@ class RequestManager(object):
 		
 		# Map the response
 		response =  { 'rsc': result.rsc,
+			   		  'rqi': request.rqi,
 					  'pc': pc,
 					  'dbg': result.dbg,
 					  'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
