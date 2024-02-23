@@ -168,6 +168,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
 	def test_createAEsParallel(self) -> None:
 		"""	Create n AEs in m threads in parallel. This might take a moment. """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
@@ -179,6 +180,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
 	def test_deleteAEsParallel(self) -> None:
 		"""	Delete n AEs in m threads in parallel. This might take a moment. """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
@@ -215,6 +217,7 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
 	def test_createCNTCINsParallel(self) -> None:
 		"""	Create 1 AE + n CNTs * 20 CINs in n threads. This might take a moment. """
 		self.assertEqual(len(TestLoad.aes), 0)
