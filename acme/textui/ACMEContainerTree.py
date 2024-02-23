@@ -55,7 +55,7 @@ class ACMEResourceTree(TextualTree):
 				self._update_content(node.node.data)
 			else:
 				# No data means this is a type section
-				self._update_type_section(node.node.label)
+				self._update_type_section(str(node.node.label))
 		except ResponseException as e:
 			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
 

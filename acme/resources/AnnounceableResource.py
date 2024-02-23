@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
@@ -128,7 +128,7 @@ class AnnounceableResource(Resource):
 		"""	Actually create the resource dict.
 		"""
 
-		def _convertIdentifierAttributeToSPRelative(value:any, typ:BasicType, policy:AttributePolicy) -> any:
+		def _convertIdentifierAttributeToSPRelative(value:Any, typ:BasicType, policy:AttributePolicy) -> Any:
 			"""	Convert an attribute to the SP-relative form if it is an identifier.
 				This is a recursive function that is called for each attribute of a complex attribute
 				(e.g. a list or a complex attribute).
@@ -158,7 +158,7 @@ class AnnounceableResource(Resource):
 					_r = {}
 					for k, v in value.items():
 						_policy = CSE.validator.getAttributePolicy(policy.typeName, k)
-						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.typeName, _policy)
+						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.type, _policy)
 					return _r
 				case _:
 					return value
