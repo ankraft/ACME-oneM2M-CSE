@@ -39,12 +39,6 @@ class MQTTClientHandler(MQTTHandler):
 		'topicPrefix',
 		'topicPrefixCount',
 		'operationEvents',
-
-		'_eventMqttCreate',
-		'_eventMqttRetrieve',
-		'_eventMqttUpdate',
-		'_eventMqttDelete',
-		'_eventMqttNotify',
 	)
 
 	def __init__(self, mqttClient:MQTTClient) -> None:
@@ -53,20 +47,13 @@ class MQTTClientHandler(MQTTHandler):
 		self.topicPrefix = mqttClient.topicPrefix
 		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
 
-		# Optimize event handling
-		self._eventMqttCreate =  CSE.event.mqttCreate				# type: ignore [attr-defined]
-		self._eventMqttRetrieve =  CSE.event.mqttRetrieve			# type: ignore [attr-defined]
-		self._eventMqttUpdate =  CSE.event.mqttUpdate				# type: ignore [attr-defined]
-		self._eventMqttDelete =  CSE.event.mqttDelete				# type: ignore [attr-defined]
-		self._eventMqttNotify =  CSE.event.mqttNotify				# type: ignore [attr-defined]
-
 		self.operationEvents = {
-			Operation.CREATE:		[self._eventMqttCreate, 'MQCR'],
-			Operation.RETRIEVE: 	[self._eventMqttRetrieve, 'MQRE'],
-			Operation.UPDATE:		[self._eventMqttUpdate, 'MQUP'],
-			Operation.DELETE:		[self._eventMqttDelete, 'MQDE'],
-			Operation.NOTIFY:		[self._eventMqttNotify, 'MQNO'],
-			Operation.DISCOVERY:	[self._eventMqttRetrieve, 'MQDI'],
+			Operation.CREATE:		[CSE.event.mqttCreate, 'MQ_C'],		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	[CSE.event.mqttRetrieve, 'MQ_R'],	# type: ignore [attr-defined]
+			Operation.UPDATE:		[CSE.event.mqttUpdate, 'MQ_U'],		# type: ignore [attr-defined]
+			Operation.DELETE:		[CSE.event.mqttDelete, 'MQ_D'],		# type: ignore [attr-defined]
+			Operation.NOTIFY:		[CSE.event.mqttNotify, 'MQ_N'],		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	[CSE.event.mqttRetrieve, 'MQ_F'],	# type: ignore [attr-defined]
 		}
 
 
@@ -276,10 +263,8 @@ class MQTTClientHandler(MQTTHandler):
 
 		# send events for the MQTT operations
 		_t = self.operationEvents[request.op]
-		_t[0]()
-		
-		# rename threads
-		renameThread(_t[1])
+		_t[0]()	# Send event
+		renameThread(_t[1]) # rename threads
 
 		try:
 			responseResult = CSE.request.handleRequest(request)

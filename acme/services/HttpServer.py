@@ -346,7 +346,7 @@ class HttpServer(object):
 	def handleGET(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HTRE')
+		renameThread('HT_R')
 		self._eventHttpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE)
 
@@ -355,11 +355,11 @@ class HttpServer(object):
 		if not self.handleAuthentication():
 			return Response(status = 401)
 		if self._hasContentType():
-			renameThread('HTCR')
+			renameThread('HT_C')
 			self._eventHttpCreate()
 			return self._handleRequest(path, Operation.CREATE)
 		else:
-			renameThread('HTNO')
+			renameThread('HT_N')
 			self._eventNotify()
 			return self._handleRequest(path, Operation.NOTIFY)
 
@@ -367,7 +367,7 @@ class HttpServer(object):
 	def handlePUT(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HTUP')
+		renameThread('HT_U')
 		self._eventHttpUpdate()
 		return self._handleRequest(path, Operation.UPDATE)
 
@@ -375,7 +375,7 @@ class HttpServer(object):
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HTDE')
+		renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -387,7 +387,7 @@ class HttpServer(object):
 			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
-		renameThread('HTDE')
+		renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
 
