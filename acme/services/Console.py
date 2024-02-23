@@ -750,18 +750,17 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previousExportRi)):
 			self.previousExportRi = ri
 			try:
-				if not (resdis := CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)):
-					L.console(resdis.dbg, isError=True)
-				else:
-					# insert the parent resource at the beginning of the list
-					resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
-					count = 0
-					path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(",", 1)[0]}.sh'
-					cseUrl = CSE.httpServer.serverAddress
-					with open(path, 'w') as f:
+				resdis = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
 
-						# Write shell file header
-						f.write(
+				# insert the parent resource at the beginning of the list
+				resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
+				count = 0
+				path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(",", 1)[0]}.sh'
+				cseUrl = CSE.httpServer.serverAddress
+				with open(path, 'w') as f:
+
+					# Write shell file header
+					f.write(
 f'''#!/bin/bash
 # Exported {ri} from {CSE.cseRi} at {getResourceDate()}
 
@@ -786,25 +785,25 @@ function createResource() {{
 			  
 ''')
 
-						# Write createResource commands for all resources
-						for r in resdis:
-							tpe = r.tpe
-							attributes = {}
-							for attr in r.getAttributes():
-								policy = CSE.validator.getAttributePolicy(r.ty, attr)
-								if policy.optionalCreate != RequestOptionality.NP:
-									attributes[attr] = r[attr]
-							
-							# Special handling for some attributes
-							if 'et' in attributes:
-								del attributes['et']
+					# Write createResource commands for all resources
+					for r in resdis:
+						tpe = r.tpe
+						attributes = {}
+						for attr in r.getAttributes():
+							policy = CSE.validator.getAttributePolicy(r.ty, attr)
+							if policy.optionalCreate != RequestOptionality.NP:
+								attributes[attr] = r[attr]
+						
+						# Special handling for some attributes
+						if 'et' in attributes:
+							del attributes['et']
 
-							attributes = { tpe : attributes }
-							parentSrn = r.getSrn().rsplit('/', 1)[0]
-							# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
-							f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
-							count += 1
-					L.console(f'Exported {count} resources to {path}')
+						attributes = { tpe : attributes }
+						parentSrn = r.getSrn().rsplit('/', 1)[0]
+						# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
+						f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
+						count += 1
+				L.console(f'Exported {count} resources to {path}')
 
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -1189,40 +1188,61 @@ function createResource() {{
 			if CSE.statistics.statisticsEnabled:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n')
 				resourceOps += 	'\n'
-				resourceOps +=  f'Created       : {stats.get(Statistics.createdResources, 0)}\n'
-				resourceOps +=  f'Updated       : {stats.get(Statistics.updatedResources, 0)}\n'
-				resourceOps +=  f'Deleted       : {stats.get(Statistics.deletedResources, 0)}\n'
-				resourceOps +=  f'Expired       : {stats.get(Statistics.expiredResources, 0)}\n'
-				resourceOps +=  f'Notifications : {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
+				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
+				resourceOps +=  f'Delete: {stats.get(Statistics.deletedResources, 0)}\n'
+				resourceOps +=  f'Notify: {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps += 	'\n'
+				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
 				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
 
 				httpReceived  = _markup('[underline]HTTP:R[/underline]\n')
-				httpReceived += 	'\n'
-				httpReceived += f'C : {stats.get(Statistics.httpCreates, 0)}\n'
-				httpReceived += f'R : {stats.get(Statistics.httpRetrieves, 0)}\n'
-				httpReceived += f'U : {stats.get(Statistics.httpUpdates, 0)}\n'
-				httpReceived += f'D : {stats.get(Statistics.httpDeletes, 0)}\n'
+				httpReceived += '\n'
+				httpReceived += f'C: {stats.get(Statistics.httpCreates, 0)}\n'
+				httpReceived += f'R: {stats.get(Statistics.httpRetrieves, 0)}\n'
+				httpReceived += f'U: {stats.get(Statistics.httpUpdates, 0)}\n'
+				httpReceived += f'D: {stats.get(Statistics.httpDeletes, 0)}\n'
+				httpReceived += f'N: {stats.get(Statistics.httpNotifies, 0)}\n'
 
 				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n')
 				httpSent += 	'\n'
-				httpSent += 	f'C : {stats.get(Statistics.httpSendCreates, 0)}\n'
-				httpSent += 	f'R : {stats.get(Statistics.httpSendRetrieves, 0)}\n'
-				httpSent += 	f'U : {stats.get(Statistics.httpSendUpdates, 0)}\n'
-				httpSent += 	f'D : {stats.get(Statistics.httpSendDeletes, 0)}\n'
+				httpSent += 	f'C: {stats.get(Statistics.httpSendCreates, 0)}\n'
+				httpSent += 	f'R: {stats.get(Statistics.httpSendRetrieves, 0)}\n'
+				httpSent += 	f'U: {stats.get(Statistics.httpSendUpdates, 0)}\n'
+				httpSent += 	f'D: {stats.get(Statistics.httpSendDeletes, 0)}\n'
+				httpSent += 	f'N: {stats.get(Statistics.httpSendNotifies, 0)}\n'
 
 				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n')
 				mqttReceived += 	'\n'
-				mqttReceived += f'C : {stats.get(Statistics.mqttCreates, 0)}\n'
-				mqttReceived += f'R : {stats.get(Statistics.mqttRetrieves, 0)}\n'
-				mqttReceived += f'U : {stats.get(Statistics.mqttUpdates, 0)}\n'
-				mqttReceived += f'D : {stats.get(Statistics.mqttDeletes, 0)}\n'
+				mqttReceived += f'C: {stats.get(Statistics.mqttCreates, 0)}\n'
+				mqttReceived += f'R: {stats.get(Statistics.mqttRetrieves, 0)}\n'
+				mqttReceived += f'U: {stats.get(Statistics.mqttUpdates, 0)}\n'
+				mqttReceived += f'D: {stats.get(Statistics.mqttDeletes, 0)}\n'
+				mqttReceived += f'N: {stats.get(Statistics.mqttNotifies, 0)}\n'
 
 				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n')
 				mqttSent += 	'\n'
-				mqttSent += 	f'C : {stats.get(Statistics.mqttSendCreates, 0)}\n'
-				mqttSent += 	f'R : {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
-				mqttSent += 	f'U : {stats.get(Statistics.mqttSendUpdates, 0)}\n'
-				mqttSent += 	f'D : {stats.get(Statistics.mqttSendDeletes, 0)}\n'
+				mqttSent += 	f'C: {stats.get(Statistics.mqttSendCreates, 0)}\n'
+				mqttSent += 	f'R: {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
+				mqttSent += 	f'U: {stats.get(Statistics.mqttSendUpdates, 0)}\n'
+				mqttSent += 	f'D: {stats.get(Statistics.mqttSendDeletes, 0)}\n'
+				mqttSent += 	f'N: {stats.get(Statistics.mqttSendNotifies, 0)}\n'
+
+				wsReceived  =	_markup('[underline]WS:R[/underline]\n')
+				wsReceived +=	'\n'
+				wsReceived +=	f'C: {stats.get(Statistics.wsCreates, 0)}\n'
+				wsReceived +=	f'R: {stats.get(Statistics.wsRetrieves, 0)}\n'
+				wsReceived +=	f'U: {stats.get(Statistics.wsUpdates, 0)}\n'
+				wsReceived +=	f'D: {stats.get(Statistics.wsDeletes, 0)}\n'
+				wsReceived +=	f'N: {stats.get(Statistics.wsNotifies, 0)}\n'
+
+				wsSent  =   	_markup('[underline]WS:S[/underline]\n')
+				wsSent +=   	'\n'
+				wsSent +=   	f'C: {stats.get(Statistics.wsSendCreates, 0)}\n'
+				wsSent +=   	f'R: {stats.get(Statistics.wsSendRetrieves, 0)}\n'
+				wsSent +=   	f'U: {stats.get(Statistics.wsSendUpdates, 0)}\n'
+				wsSent +=   	f'D: {stats.get(Statistics.wsSendDeletes, 0)}\n'
+				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
 
 
 				logs  = _markup('[underline]Logs[/underline]\n')
@@ -1289,11 +1309,13 @@ function createResource() {{
 
 			requestsGrid = Table.grid(expand = True)
 			requestsGrid.add_column(ratio = 28)
-			requestsGrid.add_column(ratio = 18)
-			requestsGrid.add_column(ratio = 18)
-			requestsGrid.add_column(ratio = 18)
-			requestsGrid.add_column(ratio = 18)
-			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
 			infoGrid = Table.grid(expand=True)
 			infoGrid.add_column(ratio = 64)
@@ -1354,7 +1376,7 @@ function createResource() {{
 			resourceTypes += '\n'
 			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
 			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 4)
+			resourceTypes += '\n' * (tableWorkers.row_count + 5)
 
 
 			result = Table.grid(expand = True)

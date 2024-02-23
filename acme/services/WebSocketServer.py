@@ -20,6 +20,7 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..etc.RequestUtils import prepareResultForSending
 from ..etc.Utils import renameThread, exceptionToResult, uniqueID, isValidAEI, toSPRelative, csiFromSPRelative, uniqueRI, isCSI
 from ..etc.DateUtils import getResourceDate
@@ -49,6 +50,8 @@ class WebSocketServer(object):
 		'websocketServer', 
 		'wsConnections', 
 		'associatedConnections', 
+		'connectionUsedCounter',
+		'operationEvents',
 		'actor'
 	]
 	""" Define slots for instance variables. """
@@ -69,12 +72,28 @@ class WebSocketServer(object):
 
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
+
 		self.websocketServer:Optional[WSServer] = None
 		"""	The WebSocket server object. """
+
 		self.wsConnections:dict[uuid.UUID, WSConnection] = {}	# websocket.id -> websocket
 		"""	The list of currently handled WebSocket connections. """
+
 		self.associatedConnections:dict[str, uuid.UUID] = {}		# originator -> websocket.id
 		"""	The list of currently handled WebSocket connections, associated with an originator. """
+
+		self.connectionUsedCounter:dict[uuid.UUID, ThreadSafeCounter] = {}	# websocket.id -> counter
+		"""	A counter for each opened WS connection opened by the CSE. """
+
+		self.operationEvents = {
+			Operation.CREATE:		[CSE.event.wsCreate, 'WS_C'],		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	[CSE.event.wsRetrieve, 'WS_R'],		# type: ignore [attr-defined]
+			Operation.UPDATE:		[CSE.event.wsUpdate, 'WS_U'],		# type: ignore [attr-defined]
+			Operation.DELETE:		[CSE.event.wsDelete, 'WS_D'],		# type: ignore [attr-defined]
+			Operation.NOTIFY:		[CSE.event.wsNotify, 'WS_M'],		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	[CSE.event.wsRetrieve, 'WS_F'],		# type: ignore [attr-defined]
+		}
+
 		L.isInfo and L.log('WebSocket server initialized')
 
 
@@ -211,7 +230,7 @@ class WebSocketServer(object):
 		self.isPaused = False
 
 
-	def addConnection(self, websocket:WSConnection) -> None:
+	def addConnection(self, websocket:WSConnection, cseInitiated:bool = False) -> None:
 		"""	Add a new connection to the list of connections.
 
 			Args:
@@ -219,6 +238,21 @@ class WebSocketServer(object):
 		"""
 		L.isDebug and L.logDebug(f'Adding new WS connection: {websocket.id}')
 		self.wsConnections[websocket.id] = websocket
+		if cseInitiated:
+			self.connectionUsedCounter[websocket.id] = ThreadSafeCounter(1)
+			L.isDebug and L.logDebug(f'WS connection counter added: {websocket.id}')
+	
+	
+	def incrementConnection(self, websocket:WSConnection) -> None:
+		"""	Increment the counter for a connection.
+
+			Args:
+				websocket: The WebSocket connection.
+		"""
+		# Increment the counter for the connection if it is a CSE initiated connection
+		if websocket.id in self.connectionUsedCounter:
+			_v = self.connectionUsedCounter[websocket.id].increment()
+			L.isDebug and L.logDebug(f'WS connection counter incremented: {websocket.id} = {_v}')
 
 
 	def associateConnectionWithOriginator(self, websocket:WSConnection, originator:str) -> None:
@@ -281,9 +315,20 @@ class WebSocketServer(object):
 			Args:
 				originator: The originator.
 		"""
-		def _removeConnection(originator:str):
+		def _removeConnection(originator:str) -> None:
 			if originator in self.associatedConnections:
 				websocketID = self.associatedConnections[originator]
+
+				if websocketID in self.connectionUsedCounter:
+					# Decrement the counter for the connection
+					if (_v := self.connectionUsedCounter[websocketID].decrement()) > 0:
+						L.isDebug and L.logDebug(f'WS connection counter decremented: {websocketID} = {_v}')
+						# There are still other requests using the connection. Do not close the connection yet
+						return
+					else:
+						# Remove the counter
+						del self.connectionUsedCounter[websocketID]
+						L.isDebug and L.logDebug(f'WS connection counter removed: {websocketID}')
 
 				# Also remove from the list of websocket connections
 				if websocketID in self.wsConnections:
@@ -446,13 +491,18 @@ class WebSocketServer(object):
 				# Else, the request must be an AE registration
 
 			# Compare the originator and the from, only for Mca
-		
-			if wsOriginator is not None and not isCSI(wsOriginator):	# wsOriginator is not a CSE-ID, so it must be an AE-ID, ie. it is an Mca request
-				if isValidAEI(wsOriginator):
-					if toSPRelative(requestOriginator) != toSPRelative(wsOriginator):
-						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn(f'Originator mismatch: {requestOriginator} != {wsOriginator}'))
-				else:
-					raise BAD_REQUEST(L.logWarn(f'Invalid originator format: {wsOriginator}'))
+			# REMOVEME The following code was used for the Mca, but is not necessary anymore
+			# if wsOriginator is not None and not isCSI(wsOriginator):	# wsOriginator is not a CSE-ID, so it must be an AE-ID, ie. it is an Mca request
+			# 	if isValidAEI(wsOriginator):
+			# 		if toSPRelative(requestOriginator) != toSPRelative(wsOriginator):
+			# 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn(f'Originator mismatch: {requestOriginator} != {wsOriginator}'))
+			# 	else:
+			# 		raise BAD_REQUEST(L.logWarn(f'Invalid originator format: {wsOriginator}'))
+
+			# Send the operation event and rename the thread
+			_t = self.operationEvents[request.op]
+			_t[0]()	# Send event
+			renameThread(_t[1]) # rename threads
 
 			L.isDebug and L.logDebug(f'Operation: {request.op}')
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
@@ -507,57 +557,45 @@ class WebSocketServer(object):
 					The WebSocket connection and a flag whether the connection is one that is initiated by the CSE.
 			"""
 
-			# Check whether the target is the default unreachable target
+			# TODO check whether we need a lock() here
+
+
+			# Check whether the target is alredy associated with an established connection
+			if target in self.associatedConnections:
+				L.isDebug and L.logDebug(f'Sending request via established WS Connection to: {target}')
+				webSocket = self.wsConnections.get(self.associatedConnections[target])
+				self.incrementConnection(webSocket)	# Increment the counter for the connection
+				return webSocket, False
+		
+			# From here on it is assumed that there is no established connection with the target
+	
+			# Check whether the url is the default unreachable target url.
+			# If so, then no WS connection is established
 			if url == Constants.defaultWebSocketSchema:
-				# Check whether the target is already associated with a connection
-				if target in self.associatedConnections:
-					return self.wsConnections[self.associatedConnections[target]], False
-				else:
-					# No WS connection established
-					raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
-			else:
-				target = self._getWSSendingTargetName(target)
-				if target in self.associatedConnections:
-					return self.wsConnections[self.associatedConnections[target]], True
+				raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
 
-				# Connect to the target WS server
-				try:
-					websocket = connect(url, 
-										subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-										additional_headers = { 'X-m2m-origin': CSE.cseCsi})
-				except Exception as e:
-					raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
-				# Associate the WS connection with the originator
-				self.addConnection(websocket)
-				self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
-				BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
-											name = f'ws_{uniqueID()}')
-				return websocket, True
+			# Else connect to the target WS server using the URL
+			L.isDebug and L.logDebug(f'Establishing new temporary WS connection to send request to: {target}')
+			try:
+				websocket = connect(url, 
+									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
+									additional_headers = { 'X-m2m-Origin': CSE.cseCsi})
+			except Exception as e:
+				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
+			
+			# Associate the WS connection with the originator
+			self.addConnection(websocket, True)
+			self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
+
+			BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
+										name = f'ws_{uniqueID()}')
+			return websocket, True
 
 
-			# # Check whether we already have an established connection to the target. Otherwise establish a new WS connection
-			# websocket:WSConnection = None
-			# if target not in self.associatedConnections:
-
-			# 	# Check whether the target is not the special unreachable target
-			# 	if url == Constants.defaultWebSocketSchema:
-			# 		L.logWarn(f'No WS connection established. Target is not connectable.')
-			# 		raise TARGET_NOT_REACHABLE('No WS connection established')	# No WS connection established
-				
-			# 	try:
-			# 		websocket = connect(url, 
-			# 							subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-			# 							additional_headers = { 'X-m2m-origin': CSE.cseCsi})
-			# 	except Exception as e:
-			# 		L.logWarn(f'Error connecting to WS server: {url} - {e}')
-			# 		raise TARGET_NOT_REACHABLE(f'Error connecting to WS: {e}')
-			# 	self.addConnection(websocket)
-			# 	self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
-			# 	BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
-			# 								name = f'ws_{uniqueID()}')
-			# else:
-			# 	websocket = self.wsConnections[self.associatedConnections[target]]
-			# return websocket
+		def disconnectWS(target:str, doClose:bool) -> None:
+			if doClose:
+				L.isDebug and L.logDebug(f'Closing temporary WS connection to: {target}')
+				self.closeConnectionForOriginator(target)
 
 		try: 
 			# Get the serialization format
@@ -602,13 +640,18 @@ class WebSocketServer(object):
 			L.isDebug and L.logDebug(f'Body: {message!r}')
 			websocket.send(message)
 		except Exception as e:
+			disconnectWS(targetOriginator, isSenderWS)
 			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'Error sending WS request: {e}')	
 
 		# Receiving the response
 		resResp, _ = CSE.request.waitForResponse(req.request.rqi, self.requestTimeout)
 
 		if resResp is None:
+			disconnectWS(targetOriginator, isSenderWS)
 			return Result(rsc = ResponseStatusCode.REQUEST_TIMEOUT, dbg = 'No response received within timeout')
+
+		# Disconnect the WS connection if it is just a temporary connection
+		disconnectWS(targetOriginator, isSenderWS)
 
 		# TODO Log request
 

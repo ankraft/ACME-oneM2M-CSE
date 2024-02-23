@@ -44,6 +44,11 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendDelete')
 		self.addEvent('mqttSendNotify')
 
+		self.addEvent('wsRetrieve')
+		self.addEvent('wsCreate')
+		self.addEvent('wsDelete')
+		self.addEvent('wsUpdate')
+		self.addEvent('wsNotify')
 		self.addEvent('wsSendRetrieve')
 		self.addEvent('wsSendCreate')
 		self.addEvent('wsSendUpdate')

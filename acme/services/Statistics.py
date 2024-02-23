@@ -75,6 +75,26 @@ mqttSendDeletes		= 'mqSDl'
 """ Attribute name for number of MQTT SEND DELETE requests. """
 mqttSendNotifies	= 'mqSNo'
 """ Attribute name for number of MQTT SEND NOTIFY requests. """
+wsRetrieves			= 'wsqRet'
+""" Attribute name for number of WS RETRIEVE requests. """
+wsCreates			= 'wsCre'
+""" Attribute name for number of WS CREATE requests. """
+wsUpdates			= 'wsUpd'
+""" Attribute name for number of WS UPDATE requests. """
+wsDeletes			= 'wsDel'
+""" Attribute name for number of WS DELETE requests. """
+wsNotifies			= 'wsNot'
+""" Attribute name for number of WS NOTIFY requests. """
+wsSendRetrieves		= 'wsSRt'
+""" Attribute name for number of WS SEND RETRIEVE requests. """
+wsSendCreates		= 'wsSCr'
+""" Attribute name for number of WS SEND CREATE requests. """
+wsSendUpdates		= 'wsSUp'
+""" Attribute name for number of WS SEND UPDATE requests. """
+wsSendDeletes		= 'wsSDl'
+""" Attribute name for number of WS SEND DELETE requests. """
+wsSendNotifies		= 'wsSNo'
+""" Attribute name for number of WS SEND NOTIFY requests. """
 notifications		= 'notif'
 """ Attribute name for number of notifications. """
 logErrors			= 'lgErr'
@@ -135,29 +155,39 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpDelete, lambda n: self._handleStatsEvent(httpDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda n: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendCreate, lambda n: self._handleStatsEvent(httpSendCreates))		# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda n: self._handleStatsEvent(httpSendUpdates))		# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendDelete, lambda n: self._handleStatsEvent(httpSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))		# type: ignore
 			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda n: self._handleStatsEvent(mqttRetrieves))			# type: ignore
 			CSE.event.addHandler(CSE.event.mqttCreate, lambda n: self._handleStatsEvent(mqttCreates))				# type: ignore
 			CSE.event.addHandler(CSE.event.mqttUpdate, lambda n: self._handleStatsEvent(mqttUpdates))				# type: ignore
 			CSE.event.addHandler(CSE.event.mqttDelete, lambda n: self._handleStatsEvent(mqttDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))				# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda n: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda n: self._handleStatsEvent(mqttSendCreates))		# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda n: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda n: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))		# type: ignore
+			CSE.event.addHandler(CSE.event.wsRetrieve, lambda n: self._handleStatsEvent(wsRetrieves))				# type: ignore
+			CSE.event.addHandler(CSE.event.wsCreate, lambda n: self._handleStatsEvent(wsCreates))					# type: ignore
+			CSE.event.addHandler(CSE.event.wsUpdate, lambda n: self._handleStatsEvent(wsUpdates))					# type: ignore
+			CSE.event.addHandler(CSE.event.wsDelete, lambda n: self._handleStatsEvent(wsDeletes))					# type: ignore
+			CSE.event.addHandler(CSE.event.wsNotify, lambda n: self._handleStatsEvent(wsNotifies))					# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendRetrieve, lambda n: self._handleStatsEvent(wsSendRetrieves))		# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendCreate, lambda n: self._handleStatsEvent(wsSendCreates))			# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendUpdate, lambda n: self._handleStatsEvent(wsSendUpdates))			# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendDelete, lambda n: self._handleStatsEvent(wsSendDeletes))			# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendNotify, lambda n: self._handleStatsEvent(wsSendNotifies))			# type: ignore
 			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))			# type: ignore
-			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)									# type: ignore
+			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)										# type: ignore
 			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))					# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))				# type: ignore
 
 			# Also do some internal handling
-			CSE.event.addHandler(CSE.event.cseReset, self.restart)												# type: ignore
+			CSE.event.addHandler(CSE.event.cseReset, self.restart)													# type: ignore
 
 		L.isInfo and L.log('Statistics initialized')
 
@@ -226,7 +256,16 @@ class Statistics(object):
 			mqttSendUpdates 	: 0,
 			mqttSendDeletes 	: 0,
 			mqttSendNotifies 	: 0,
-
+			wsRetrieves			: 0,
+			wsCreates			: 0,
+			wsUpdates 			: 0,
+			wsDeletes 			: 0,
+			wsNotifies 			: 0,
+			wsSendRetrieves		: 0,
+			wsSendCreates		: 0,
+			wsSendUpdates 		: 0,
+			wsSendDeletes 		: 0,
+			wsSendNotifies 		: 0,
 			cseStartUpTime		: 0.0,
 			logErrors 			: 0,
 			logWarnings 		: 0
