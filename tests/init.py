@@ -569,7 +569,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		# print(f'HTTP request sent: {r.status_code}')
 	except Exception as e:
 		# print(f'Failed to send request: {str(e)}')
-		return None, 5103
+		return f'Failed to send request: {str(e)}', 5103
 	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
 
 	# save last header for later

@@ -833,6 +833,32 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	Announcement with identifier attributes
+	#
+		
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_announceAEwithIdentifierAttributes(self) -> None:
+		""" Create announced <AE> with identifier attributes """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+					'rr': 	True,
+				 	'srv': 	[ RELEASEVERSION ],
+				 	'at': 	[ REMOTECSEID ],
+					'aa': 	[ 'aei' ]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		print(r)
+		self.assertEqual(rsc, RC.CREATED, r)
+		TestRemote_Annc.ae = r
+
+		# TODO: retrieve and test the announced AE
+
+		# Delete the announced AE
+		r, rsc = DELETE(f'{cseURL}/{aeRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
 
 # TODO Test: non-resource attribute in "aa" attribute
 
@@ -894,6 +920,9 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# announcement to own CSE
 	addTest(suite, TestRemote_Annc('test_announceToHostingCSE'))
 	addTest(suite, TestRemote_Annc('test_unannounceFromHostingCSE'))
+
+	# annoncement with identifier attributes
+	addTest(suite, TestRemote_Annc('test_announceAEwithIdentifierAttributes'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
