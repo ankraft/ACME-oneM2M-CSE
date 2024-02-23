@@ -425,7 +425,7 @@ def resetCSE() -> None:
 		
 		httpServer.pause()
 		mqttClient.pause()
-		webSocketServer.pause()
+		webSocketServer.shutdown()	# WS Server needs to be shutdown to close connections
 
 		storage.purge()
 
@@ -437,7 +437,8 @@ def resetCSE() -> None:
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 		remote.restart()
-		webSocketServer.unpause()
+
+		webSocketServer.run()	# WS Server restart
 		mqttClient.unpause()
 		httpServer.unpause()
 

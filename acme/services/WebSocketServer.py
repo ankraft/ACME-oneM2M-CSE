@@ -22,19 +22,14 @@ from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..etc.RequestUtils import prepareResultForSending
-from ..etc.Utils import renameThread, exceptionToResult, uniqueID, isValidAEI, toSPRelative, csiFromSPRelative, uniqueRI, isCSI
+from ..etc.Utils import renameThread, exceptionToResult, uniqueID, csiFromSPRelative, uniqueRI
 from ..etc.DateUtils import getResourceDate
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
-
-
-# TODO record WS requests
-# TODO add events for WS connections
-# TODO add statistics for WS connections
 
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
@@ -93,18 +88,21 @@ class WebSocketServer(object):
 			Operation.NOTIFY:		[CSE.event.wsNotify, 'WS_M'],		# type: ignore [attr-defined]
 			Operation.DISCOVERY:	[CSE.event.wsRetrieve, 'WS_F'],		# type: ignore [attr-defined]
 		}
+		"""	Events for the different operations. """
 
 		L.isInfo and L.log('WebSocket server initialized')
-
-
-# TODO restart: close all connections, restart server (shutdown and run again)
 
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the WebSocket server.
 		"""
 		L.isInfo and L.log('WebSocket server shut down')
-		# TODO close all connections
+
+		# Close all connections gracefully
+		L.isDebug and L.logDebug('Closing all WS connections')
+		for originator in list(self.associatedConnections.keys()):
+			self.closeConnectionForOriginator(originator)
+
 		self._stop()
 		return True
 
@@ -148,8 +146,8 @@ class WebSocketServer(object):
 
 		# assign new values
 		self._assignConfig()
-
-		# TODO restart server if necessary
+		self.shutdown()
+		self.run()		# Restart the server
 
 
 	def _handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
@@ -322,13 +320,13 @@ class WebSocketServer(object):
 				if websocketID in self.connectionUsedCounter:
 					# Decrement the counter for the connection
 					if (_v := self.connectionUsedCounter[websocketID].decrement()) > 0:
-						L.isDebug and L.logDebug(f'WS connection counter decremented: {websocketID} = {_v}')
+						L.isDebug and L.logDebug(f'WS connection counter decremented: {websocketID} = {_v} - NOT closing connection')
 						# There are still other requests using the connection. Do not close the connection yet
 						return
 					else:
 						# Remove the counter
 						del self.connectionUsedCounter[websocketID]
-						L.isDebug and L.logDebug(f'WS connection counter removed: {websocketID}')
+						L.isDebug and L.logDebug(f'WS connection counter removed: {websocketID} - closing connection')
 
 				# Also remove from the list of websocket connections
 				if websocketID in self.wsConnections:
@@ -337,7 +335,6 @@ class WebSocketServer(object):
 					self.removeConnection(websocket, originator)
 				else:
 					del self.associatedConnections[originator]
-
 
 		L.isDebug and L.logDebug(f'Closing WS connection(s) for originator {originator}')
 		_removeConnection(originator)
@@ -526,8 +523,6 @@ class WebSocketServer(object):
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)
 
-		# TODO	CSE.request.recordRequest(dissectResult.request, dissectResult)
-
 		_r, _data = prepareResultForSending(responseResult, isResponse = True)	
 		L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
 
@@ -652,7 +647,5 @@ class WebSocketServer(object):
 
 		# Disconnect the WS connection if it is just a temporary connection
 		disconnectWS(targetOriginator, isSenderWS)
-
-		# TODO Log request
 
 		return resResp
