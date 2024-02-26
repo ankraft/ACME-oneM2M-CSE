@@ -1689,8 +1689,7 @@ class ScriptManager(object):
 		if self.scriptMonitorInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
-		# Add a worker to check scheduled script, fixed every second
-		# TODO resolution
+		# Add a worker to check scheduled script, fixed interval of 1 second
 		self.scriptCronWorker = BackgroundWorkerPool.newWorker(1, 
 							 								   self.cronMonitor, 
 															   'scriptCronMonitor').start()
