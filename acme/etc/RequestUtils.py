@@ -13,7 +13,8 @@ from typing import Any, cast, Optional, Tuple
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
 from .DateUtils import getResourceDate
-from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode, Result, ResourceTypes, Operation
+from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
+from .Types import Result, ResourceTypes, Operation, CSERequest
 from .Constants import Constants
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
@@ -277,7 +278,7 @@ def prepareResultForSending(inResult:Result,
 	
 		Args:
 			inResult: A `Result` object, that contains a request in its *request* attribute.
-			isResponse: Indicater whether the `Result` object is actually a response or a request.
+			isResponse: Indicator whether the `Result` object is actually a response or a request.
 
 		Return:
 			A tuple with an updated `Result` object and the serialized content.
@@ -317,3 +318,14 @@ def createRawRequest(**kwargs:Any) -> JSON:
 		}
 	r.update(kwargs)
 	return r
+
+
+def createPositiveResponseResult() -> Result:
+	"""	Create a positive `Result` object with a request.
+	
+		Return:
+			A `Result` object with a positive response.
+	"""
+	return Result(rsc = ResponseStatusCode.OK, request = CSERequest(requestType = RequestType.RESPONSE,
+																 	rsc = ResponseStatusCode.OK))
+			   
