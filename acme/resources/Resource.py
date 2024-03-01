@@ -219,12 +219,8 @@ class Resource(object):
 											 createdInternally = self.isCreatedInternally(), 
 											 isAnnounced = self.isAnnounced())
 
-		# Set the internal originator that created the resource.
-		# This is done slightly different for CSE and AE originators.
-		if isValidCSI(originator):
-			self.setAttribute(_originator, originator, overwrite = False)
-		else:
-			self.setAttribute(_originator, toCSERelative(originator), overwrite = False)
+		# Set the internal originator that creates the resource.
+		self.setAttribute(_originator, originator, overwrite = False)
 
 		# validate the resource logic
 		self.validate(originator, parentResource = parentResource)

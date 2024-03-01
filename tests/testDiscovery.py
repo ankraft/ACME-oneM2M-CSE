@@ -873,6 +873,61 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+#
+# Persmission tests
+#
+		
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTwithRCN12Fail(self) -> None:
+		""" Update <CNT> with rcn=12 -> Fail """
+
+		# create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}rcn12'
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+
+		# update <CNT> with rcn=12
+		dct = 	{ 'm2m:cnt' : { 
+					'lbl'  : [ 'test' ]
+				}}
+
+		r, rsc = UPDATE(f'{cntURL}rcn12?rcn={int(RCN.permissions)}', TestDiscovery.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}rcn12', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithRCN12(self) -> None:
+		""" Retrieve <CNT> with rcn=12 """
+
+		# create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}rcn12'
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED)
+
+		# create sub <CNT>
+		dct = 	{ 'm2m:cnt' : {
+					'rn'  : f'{cnt2RN}rcn12-2'
+				}}
+		r, rsc = CREATE(f'{cntURL}rcn12', TestDiscovery.originator, T.CNT, dct)
+		
+		# retrieve <CNT> with rcn=12
+		r, rsc = RETRIEVE(f'{cntURL}rcn12?rcn={int(RCN.permissions)}', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}rcn12', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
 
 def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
@@ -936,6 +991,10 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN8'))
 	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN6'))
 	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN5'))
+
+	# Retrieve Permissions
+	addTest(suite, TestDiscovery('test_updateCNTwithRCN12Fail'))
+	addTest(suite, TestDiscovery('test_retrieveCNTwithRCN12'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

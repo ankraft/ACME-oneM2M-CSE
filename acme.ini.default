@@ -390,10 +390,10 @@ writeDelay=1
 ; List of AE originators that can register. This is a comma-separated list of originators.
 ; Wildcards (* and ?) are supported.
 ; Default: C*,S* 
-allowedAEOriginators=C*,S*
+allowedAEOriginators=C*,S*,/*/C*,/*/S*
 ; List of CSR originators that can register. This is a comma-separated list of originators.
 ; Wildcards (* and ?) are supported.
-; Note: No leading "/"
+; Note: CSE-IDs must have a leading "/"
 ; Default: empty list
 allowedCSROriginators=
 ; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True

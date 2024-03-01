@@ -110,7 +110,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
@@ -130,7 +130,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
@@ -150,7 +150,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print(f'\n[r]Please add "{csrOriginator[1:]}" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.CREATED, r)	# actually, it is overwritten by the CSE
 
 		_, rsc = DELETE(csrURL, csrOriginator)
@@ -204,7 +204,7 @@ class TestRemote(unittest.TestCase):
 		}}
 		r, rsc = CREATE(cseURL, 'Ctest', T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print('\n[r]Please add "Ctest" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+			console.print('\n[r]Please add "[b]Ctest[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
 
 		_, rsc = DELETE(aeURL, ORIGINATOR)

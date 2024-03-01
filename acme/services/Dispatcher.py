@@ -638,7 +638,7 @@ class Dispatcher(object):
 				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 				CONFLICT: If the resource already exists.
 		"""
-		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}|{request.srn}')
+		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}|{request.srn} Originator: {originator}')
 
 		# handle transit requests first
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:

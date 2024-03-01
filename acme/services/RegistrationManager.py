@@ -231,8 +231,6 @@ class RegistrationManager(object):
 				originator = uniqueAEI('C')
 			case 'S':
 				originator = uniqueAEI('S')
-			case x if x is not None:
-				originator = getIdFromOriginator(originator)
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):

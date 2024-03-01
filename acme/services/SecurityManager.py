@@ -10,12 +10,12 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any
+from typing import List, cast, Optional, Any, Tuple
 
 import ssl
 
 from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
 from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..services import CSE
@@ -229,8 +229,7 @@ class SecurityManager(object):
 		
 		# Check for resource == None
 		if not resource:
-			L.logErr('Resource must not be None')
-			return False
+			raise INTERNAL_SERVER_ERROR(L.logErr('Resource must not be None'))
 
 		# Allow originator for announced resource
 		if resource.isAnnounced():

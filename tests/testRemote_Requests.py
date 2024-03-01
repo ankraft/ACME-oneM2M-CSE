@@ -108,7 +108,7 @@ class TestRemote_GRP(unittest.TestCase):
 					'rr'  : True,
 					'srv' : [ RELEASEVERSION ]
 				}}
-		r, rsc = CREATE(REMOTEcseURL, 'Cremote', ResourceTypes.AE, dct)
+		r, rsc = CREATE(REMOTEcseURL, f'{CSEID}/Cremote', ResourceTypes.AE, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
 		dct =	{ 'm2m:cnt' : { 
@@ -118,11 +118,13 @@ class TestRemote_GRP(unittest.TestCase):
 		_ae = f'{CSEURL}{REMOTECSEID}/{REMOTECSERN}/{aeRN}'
 
 		# CREATE a <CNT> on the remote CSE via a forwarded request
-		r, rsc = CREATE(_ae, '/id-mn/Cremote', ResourceTypes.CNT, dct)
+		# r, rsc = CREATE(_ae, '/id-mn/Cremote', ResourceTypes.CNT, dct)
+		r, rsc = CREATE(_ae, f'{CSEID}/Cremote', ResourceTypes.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
 		# Unregister AE
-		r, rsc = DELETE(_ae, '/id-mn/Cremote')
+		# r, rsc = DELETE(_ae, '/id-mn/Cremote')
+		r, rsc = DELETE(_ae, f'{CSEID}/Cremote')
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
