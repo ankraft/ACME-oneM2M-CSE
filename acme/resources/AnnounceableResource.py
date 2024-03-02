@@ -149,6 +149,7 @@ class AnnounceableResource(Resource):
 			if value is None:
 				return None
 			
+			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to SP-relative form.')
 			match typ:
 				case BasicType.ID:
 					return toSPRelative(value)
@@ -156,8 +157,10 @@ class AnnounceableResource(Resource):
 					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
 				case BasicType.complex:
 					_r = {}
+					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
 					for k, v in value.items():
-						_policy = CSE.validator.getAttributePolicy(policy.typeName, k)
+						if not (_policy := CSE.validator.getAttributePolicy(typeName, k)):
+							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
 						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.type, _policy)
 					return _r
 				case _:
