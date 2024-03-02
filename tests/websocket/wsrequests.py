@@ -7,9 +7,7 @@
 #	WebSocket requests and utility functions
 #
 
-from typing import Tuple
 from config import *
-from wsrequests import *
 import json, random, sys, threading, queue
 from rich import print, rule
 from websockets.sync.client import connect, ClientConnection
@@ -24,7 +22,6 @@ _websocketServer:WSServer = None
 """ The WebSocket server to receive notifications. """
 _notifications:queue.Queue = queue.Queue()
 """ The queue to store received notifications. """
-
 
 
 def _printSend(request:dict, reason:str = None, websocket:ClientConnection = None) -> dict:
@@ -180,7 +177,7 @@ def receiveNotification(originator:str = None) -> dict:
 		return None
 
 
-def startNotificationServer() -> None:
+def startNotificationServer(doRespond:bool = True) -> None:
 	""" Start the notification server.
 
 		Args:
@@ -194,14 +191,17 @@ def startNotificationServer() -> None:
 		_printRecv(request := json.loads(websocket.recv()), 'Received Notification via standalone WS server')
 		_notifications.put(request)
 
-		response = {
-			'fr': request['to'],
-			'to': request['fr'],
-			'rqi': request['rqi'],
-			'rvi': request['rvi'],
-			'rsc': 2000
-		}
-		websocket.send(json.dumps(_printSend(response, 'Send Notification Response via standalone WS server')))
+		if doRespond:
+			# Send response
+
+			response = {
+				'fr': request['to'],
+				'to': request['fr'],
+				'rqi': request['rqi'],
+				'rvi': request['rvi'],
+				'rsc': 2000
+			}
+			websocket.send(json.dumps(_printSend(response, 'Send Notification Response via standalone WS server')))
 
 	def _runNotificationServer() -> None:
 		with _websocketServer as server:
@@ -342,7 +342,7 @@ def createContainer(rn:str, originator:str = None, reason:str = 'Create Containe
 	return _doRequest(createRequest, originator, reason)
 
 
-def createSubscription(rn:str, originator:str = None, reason:str = 'Create Subscription') -> dict:
+def createSubscription(rn:str, originator:str = None, reason:str = 'Create Subscription', nu:str = None) -> dict:
 	""" Create a subscription. The subscription is created for the AE.
 	
 		Args:
@@ -362,7 +362,7 @@ def createSubscription(rn:str, originator:str = None, reason:str = 'Create Subsc
 		'pc': {
 			'm2m:sub': {
 				'rn': rn,
-				'nu': [ originator ],
+				'nu': [ originator if not nu else nu ],
 			}}
 	}
 	if originator:
