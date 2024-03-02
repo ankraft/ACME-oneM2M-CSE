@@ -46,7 +46,8 @@ TargetDetails = List[ 						#type: ignore[misc]
 						  PCH, 				# PollingChannel resource, if this is to be used 
 						  str, 				# Originator with adapted scope
 						  str, 				# Targets ID (to)
-						  ResourceTypes		# Target's resource type
+						  ResourceTypes,	# Target's resource type
+						  bool				# True if the target is a direct URL
 				] ]	
 
 
@@ -1015,15 +1016,18 @@ class RequestManager(object):
 		if not (resolved := self.determineTargetDetails(request)):	# empty list?
 			raise BAD_REQUEST(L.logWarn('cannot determine target details for the request'))
 		results:RequestResponseList = []
-		for url, csz, rvi, pch, requestOriginator, to, targetType in resolved:
+		for url, csz, rvi, pch, requestOriginator, to, targetType, isDirectURL in resolved:
 
 			# Some adjustments to the originat request
 			_request = request.convertToR1Target(rvi) 
 			_request.rvi = rvi
 			_request.ot = request.ot if request.ot is not None else getResourceDate()
 			_request.originator = requestOriginator
+			_request.to = urllib.parse.unquote(_request.to)	# unquote URL
 			if _request.id is None:
 				_request.id = to
+			_request.id = urllib.parse.unquote(_request.id)	# unquote URL
+
 			# Send the request via a PCH, if present
 			if pch:
 				_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
@@ -1054,18 +1058,18 @@ class RequestManager(object):
 			# Otherwise send it via one of the bindings
 			if isHttpUrl(url):
 				self.requestHandlers[_request.op].httpEvent()	# send event
-				results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url)) )
+				results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
 				continue
 
 			elif isMQTTUrl(url):
 				self.requestHandlers[_request.op].mqttEvent()	# send event
-				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url)) )
+				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
 				continue
 
 			elif isWSUrl(url):
 				self.requestHandlers[_request.op].wsEvent()	# send event
 				try:
-					results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url)) )
+					results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
 				except TARGET_NOT_REACHABLE as e:
 					L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
 				continue
@@ -1577,7 +1581,8 @@ class RequestManager(object):
 					  None, 
 					  originator, 
 					  uri, 
-					  ResourceTypes.UNKNOWN) ]
+					  ResourceTypes.UNKNOWN,
+					  True) ]
 
 
 		# targetResource will be assigned the real resource that offers the POA
@@ -1638,14 +1643,16 @@ class RequestManager(object):
 					  cast(PCH, pollingChannelResources[0]),
 					  originator,
 					  uri,
-					  targetResourceType) ]
+					  targetResourceType,
+					  False) ]
 
 		# Use the poa of a target resource
 		if not targetResource.poa:	# check that the resource has a poa
 			L.isWarn and L.logWarn(f'Resource {uri} has no "poa" attribute')
 			return []
 		
-		resultList:List[Tuple[str, List[str], str, PCH, str, str, ResourceTypes]] = []
+		# TODO define a type for the result list
+		resultList:List[Tuple[str, List[str], str, PCH, str, str, ResourceTypes, bool]] = []
 		
 		for p in targetResource.poa:
 			if isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
@@ -1656,7 +1663,8 @@ class RequestManager(object):
 							   None,
 							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != CSE.cseCsi else originator,
 							   uri,
-							   targetResourceType))
+							   targetResourceType,
+							   False))
 		# L.logWarn(resultList)
 		return resultList
 

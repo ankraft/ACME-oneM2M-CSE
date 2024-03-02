@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import cbor2, json
 from typing import Any, cast, Optional, Tuple
-from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
+from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode, unquote, ParseResult
 
 from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
@@ -329,3 +329,31 @@ def createPositiveResponseResult() -> Result:
 	return Result(rsc = ResponseStatusCode.OK, request = CSERequest(requestType = RequestType.RESPONSE,
 																 	rsc = ResponseStatusCode.OK))
 			   
+
+def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str, ParseResult]:
+	"""	Create a `Result` object from a URI. The URI is unquoted, parsed and the request is created.
+	
+		Args:
+			request: The request to create.
+			url: The URL to parse.
+		
+		Return:
+			A tuple with the `Result` object, the URL and the parsed URL.
+	"""
+
+	from ..services import CSE
+	from .Utils import uniqueRI
+
+	url = unquote(url)
+	u = urlparse(url)
+	req 					= Result(request = request)
+	req.request.id			= u.path[1:] if u.path[1:] else req.request.to
+	req.resource			= req.request.pc
+	req.request.rqi			= uniqueRI()
+	if req.request.rvi != '1':
+		req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+	req.request.ot			= getResourceDate()
+	req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
+	req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+
+	return req, url, u

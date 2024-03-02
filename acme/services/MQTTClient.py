@@ -10,12 +10,11 @@
 from __future__ import annotations
 from typing import Tuple, cast, Dict, Optional, Any, Union
 
-from urllib.parse import urlparse
-from threading import Lock
+from urllib.parse import unquote
 
 from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.RequestUtils import prepareResultForSending
+from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
 from ..etc.DateUtils import getResourceDate, waitFor
 from ..etc.Utils import exceptionToResult, uniqueRI, renameThread, csiFromSPRelative
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
@@ -456,7 +455,7 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, request:CSERequest, url:str) -> Result:
+	def sendMqttRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Sending a request via MQTT.
 		"""
 
@@ -465,33 +464,36 @@ class MQTTClient(object):
 						  dbg = 'MQTT client is not running')
 
 		# deconstruct URL
-		u = urlparse(url)
-		mqttHost:Optional[str] = u.hostname
-		mqttScheme = u.scheme.lower()
+		req, url, urlParsed = createRequestResultFromURI(request, url)
+		# u = urlparse(url)
+
+		mqttHost:Optional[str] = urlParsed.hostname
+		mqttScheme = urlParsed.scheme.lower()
 		mqttSecurity = mqttScheme == 'mqtts'	# TODO Is it necessary to do something special here?
-		if not (mqttPort := u.port):
+		if not (mqttPort := urlParsed.port):
 			mqttPort = 1883 if mqttScheme == 'mqtt' else 8883
-		mqttUsername:Optional[str] = u.username
-		mqttPassword:Optional[str] = u.password
+		mqttUsername:Optional[str] = urlParsed.username
+		mqttPassword:Optional[str] = urlParsed.password
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
 
-		req 					= Result(request = request)
-		req.request.id			= u.path[1:] if u.path[1:] else req.request.to
-		req.resource			= req.request.pc
-		req.request.rqi			= uniqueRI()
-		if req.request.rvi != '1':
-			req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
-		req.request.ot			= getResourceDate()
-		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-		req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+		# req 					= Result(request = request)
+		# req.request.id			= unquote(u.path[1:]) if u.path[1:] else req.request.to
+		# req.resource			= req.request.pc
+		# req.request.rqi			= uniqueRI()
+		# if req.request.rvi != '1':
+		# 	req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		# req.request.ot			= getResourceDate()
+		# req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
+		# req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL for the address
 		(preq, _data) = prepareResultForSending(req)
-		topic = u.path
-		pathSplit = u.path.split('/')
+		topic = urlParsed.path	# We cannot unquote the path here, yet (s.b.)
+		topicSplit = urlParsed.path.split('/')
 
 		# Build the topic
 		if not len(topic):
@@ -501,14 +503,17 @@ class MQTTClient(object):
 			
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
 			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
 						  dbg = 'Cannot build topic')
+		
+		# Unquote the topic now, after the processing
+		topic = unquote(topic)
 
 		# Get the broker, or connect to a new MQTTBroker for this address
 		if not (mqttConnection := self.getMqttBroker(mqttHost, mqttPort)):
@@ -530,7 +535,15 @@ class MQTTClient(object):
 		# Publish the request and wait for the response.
 		# Then return the response as result
 		logRequest(preq, _data, topic, isResponse = False, isIncoming = False)
-		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
+		# mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
+		mqttConnection.publish(topic, _data)
+
+		# Don't wait for the response if the request is for a notification and a direct URL is used
+		if ignoreResponse and req.request.op == Operation.NOTIFY:
+			L.isDebug and L.logDebug('MQTT: Ignoring response to notification')
+			return Result(rsc = ResponseStatusCode.OK)
+		
+		# Wait for the response
 		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, self.requestTimeout) # type: ignore
 		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response

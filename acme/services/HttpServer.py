@@ -31,7 +31,7 @@ from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUES
 from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..services.Configuration import Configuration
 from ..services import CSE
@@ -487,7 +487,7 @@ class HttpServer(object):
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, request:CSERequest, url:str) -> Result:
+	def sendHttpRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -593,6 +593,11 @@ class HttpServer(object):
 					   headers = hds,
 					   verify = CSE.security.verifyCertificateHttp,
 					   timeout = timeout)
+		
+			# Ignore the response to notifications in some cases
+			if ignoreResponse and request.op == Operation.NOTIFY:
+				L.isDebug and L.logDebug('HTTP: Ignoring response to notification')
+				return createPositiveResponseResult()
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)

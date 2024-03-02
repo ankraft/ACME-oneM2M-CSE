@@ -10,7 +10,6 @@
 from __future__ import annotations
 from typing import Optional, Any, Tuple
 import logging, uuid
-from urllib.parse import urlparse
 
 from websockets.sync.connection import Connection as WSConnection
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
@@ -21,9 +20,8 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
-from ..etc.RequestUtils import prepareResultForSending
-from ..etc.Utils import renameThread, exceptionToResult, uniqueID, csiFromSPRelative, uniqueRI
-from ..etc.DateUtils import getResourceDate
+from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
+from ..etc.Utils import renameThread, exceptionToResult, uniqueID, csiFromSPRelative
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
 from ..services.Configuration import Configuration
@@ -530,12 +528,13 @@ class WebSocketServer(object):
 		websocket.send(_data)
 	
 
-	def sendWSRequest(self, request:CSERequest, url:str) -> Result:
+	def sendWSRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send a request to another WebSocket server.
 
 			Args:
 				request: The request to send.
 				url: The URL to send the request to.
+				ignoreResponse: Flag whether to ignore the response.
 
 			Returns:
 				The result object of the request.
@@ -615,18 +614,7 @@ class WebSocketServer(object):
 		except ConnectionRefusedError as e:
 			return Result(rsc = ResponseStatusCode.TARGET_NOT_REACHABLE, dbg = f'WS connection refused: {e}')
 		
-		# TODO optimize this. Same code is in MQTTServer.py
-		u = urlparse(url)
-		req 					= Result(request = request)
-		req.request.id			= u.path[1:] if u.path[1:] else req.request.to
-		req.resource			= req.request.pc
-		req.request.rqi			= uniqueRI()
-		if req.request.rvi != '1':
-			req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
-		req.request.ot			= getResourceDate()
-		req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-		req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
-
+		req, url, urlParsed = createRequestResultFromURI(request, url)
 
 		# Sending the request
 		try:
@@ -637,6 +625,12 @@ class WebSocketServer(object):
 		except Exception as e:
 			disconnectWS(targetOriginator, isSenderWS)
 			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'Error sending WS request: {e}')	
+
+		# Ignore the response to notifications in some cases
+		if ignoreResponse and request.op == Operation.NOTIFY:
+			L.isDebug and L.logDebug('WS: Ignoring response to notification')
+			disconnectWS(targetOriginator, isSenderWS)
+			return createPositiveResponseResult()
 
 		# Receiving the response
 		resResp, _ = CSE.request.waitForResponse(req.request.rqi, self.requestTimeout)
