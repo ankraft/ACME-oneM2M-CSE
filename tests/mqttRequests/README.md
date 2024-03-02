@@ -1,6 +1,6 @@
 # MQTT Requests
 
-This directory contains a couple of shell scripts that sends MQTT requests to the CSE to test certain aspects.
+This directory contains a couple of python and shell scripts that sends MQTT requests to the CSE to test certain aspects.
 These tests are intended  to be run manually.
 
 ## Installation
@@ -12,8 +12,11 @@ These tests are intended  to be run manually.
 
 Just run the tests on a command line:
 
-
 	$ sh <script.sh>
 
-Please note, that the scripts **don't** remove created resources. One must restart or reset the CSE.
+or
+
+	$ python3 <script.py>
+
+Please note, that the scripts **may not** remove created resources. One must restart or reset the CSE.
 
