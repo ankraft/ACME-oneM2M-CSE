@@ -1035,6 +1035,8 @@ class ResultContentType(ACMEIntEnum):
 	""" Semantic Content. """
 	discoveryResultReferences				= 11
 	""" Discovery Result References. """
+	permissions								= 12
+	""" Permissions. """
 
 
 	def validForOperation(self, op:Operation) -> bool:
@@ -1067,7 +1069,8 @@ _ResultContentTypeForOperations = {
 							  ResultContentType.childResources, 
 							  ResultContentType.attributesAndChildResourceReferences, 
 							  ResultContentType.originalResource, 
-							  ResultContentType.childResourceReferences ],
+							  ResultContentType.childResourceReferences,
+							  ResultContentType.permissions],
 	Operation.DISCOVERY:	[ ResultContentType.discoveryResultReferences,
 							  ResultContentType.childResourceReferences,
 							  ResultContentType.semanticContent ],
