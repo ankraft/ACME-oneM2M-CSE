@@ -3402,7 +3402,7 @@
 			"type": "m2m:actionStatus",
 			"car": "01",
 			"oc": "NP",
-			"ou": "NP",
+			"ou": "O",
 			"od": "NP",
 			"annc": "OA"
 		}
