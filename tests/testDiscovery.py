@@ -882,7 +882,7 @@ class TestDiscovery(unittest.TestCase):
 		""" Update <CNT> with rcn=12 -> Fail """
 
 		# create <CNT>
-		dct = 	{ 'm2m:cnt' : { 
+		dct:JSON = 	{ 'm2m:cnt' : { 
 					'rn'  : f'{cntRN}rcn12'
 				}}
 		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
