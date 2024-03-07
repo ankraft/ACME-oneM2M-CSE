@@ -23,6 +23,7 @@ from ..etc.Types import CSEType, ContentSerializationType, Permission
 from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..services import Onboarding
 
+# TODO: proper use of the baseDirectory configuration for other values
 
 documentationLinks = {
 	'cse': 'https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/docs/Configuration.md#general',
@@ -225,6 +226,7 @@ class Configuration(object):
 		try:
 			Configuration._configuration = {
 				'configfile'							: Configuration._argsConfigfile,
+				'baseDirectory'							: config.get('basic.config', 'baseDirectory'),
 				'packageDirectory'						: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,	# points to the acme package directory
 
 

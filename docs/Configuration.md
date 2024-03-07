@@ -582,10 +582,11 @@ Configuration values can be referenced by their respective configuration name an
 
 The following configuration names are supported in addition to those defined in the sections below. They are set by the CSE at runtime.
 
-| Configuration name | Description                              |
-|:-------------------|:-----------------------------------------|
-| configfile         | Name of the configuration file.          |
-| packageDirectory   | Path to the ACME package directory.      |
+| Configuration name | Description                         |
+|:-------------------|:------------------------------------|
+| configfile         | Name of the configuration file.     |
+| baseDirectory      | Path to the ACME root directory.    |
+| packageDirectory   | Path to the ACME package directory. |
 
 [top](#sections)
 
