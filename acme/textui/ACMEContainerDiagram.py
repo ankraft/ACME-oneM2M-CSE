@@ -172,6 +172,8 @@ ToggleButton:light.-on:focus > .toggle--button {
 			DiagramTypes.Bar: Button('Bar', variant = 'primary', id = 'diagram-bar-button'),
 			DiagramTypes.Timeline: Button('Timeline', variant = 'primary', id = 'diagram-timeline-button'),
 		}
+		self.refreshCheckbox = Checkbox('Auto Refresh', self.autoRefresh, id = 'diagram-autorefresh-checkbox')
+		self.refreshCheckbox.BUTTON_INNER = ' '
 
 
 
@@ -184,9 +186,9 @@ ToggleButton:light.-on:focus > .toggle--button {
 					for button in self.buttons.values():
 						yield button
 					yield Button('Refresh', variant = 'primary', id = 'diagram-refresh-button')
-					_refreshCheckbox = Checkbox('Auto Refresh', self.autoRefresh, id = 'diagram-autorefresh-checkbox')
-					_refreshCheckbox.BUTTON_INNER = ' '
-					yield _refreshCheckbox
+					# _refreshCheckbox = Checkbox('Auto Refresh', self.autoRefresh, id = 'diagram-autorefresh-checkbox')
+					# _refreshCheckbox.BUTTON_INNER = ' '
+					yield self.refreshCheckbox
 
 
 	def on_mount(self) -> None:
@@ -255,8 +257,11 @@ ToggleButton:light.-on:focus > .toggle--button {
 		self.autoRefresh = event.value
 		if self.autoRefresh:
 			self._startRefreshTimer()
+			self.refreshCheckbox.BUTTON_INNER = 'X'
 		else:
+			self.refreshCheckbox.BUTTON_INNER = ' '
 			self._stopRefreshTimer()
+		self.refreshCheckbox.refresh()
 
 
 	def refreshPlot(self) -> None:

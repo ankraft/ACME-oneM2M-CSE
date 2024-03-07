@@ -45,6 +45,7 @@ from ..services.Logging import Logging as L
 _markup = Text.from_markup
 
 # TODO support configevent!
+# TODO move some of the functions to a more general place because they are used here and in the TUI
 
 
 
@@ -337,7 +338,7 @@ class Console(object):
 			('c', 'Show configuration'),
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
-			('E', 'Export a resource and its children to the [i]data[/i] directory as [i]curl[/i] commands'),
+			('E', 'Export a resource and its children to the [i]tmp[/i] directory as [i]curl[/i] commands'),
 			('f', 'Show requests history for a resource'),
 			('F', 'Show all requests history'),
 			('^F', 'Clear requests history'),
@@ -738,8 +739,82 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
+	def doExportResource(self, ri:str, withChildResources:bool = False) -> Tuple[int, str]:
+		try:
+
+			if withChildResources:
+				resdis = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
+				# insert the parent resource at the beginning of the list
+				resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
+			else:
+				resdis = [CSE.dispatcher.retrieveResource(ri)]
+
+			# Counter for the number of resources exported
+			count = 0
+
+			# Create a temporary directory for the export
+			outdir = f'{CSE.Configuration.get('baseDirectory')}/tmp'
+			os.makedirs(outdir, exist_ok = True)
+
+			filename = f'export-{getResourceDate().rsplit(",", 1)[0]}.sh'
+			path = f'{outdir}/{filename}'
+			cseUrl = CSE.httpServer.serverAddress
+			with open(path, 'w') as f:
+
+				# Write shell file header
+				f.write(f'''#!/bin/bash
+# Exported {ri} from {CSE.cseRi} at {getResourceDate()}
+
+cseURL={cseUrl}
+
+function uniqueNumber() {{
+	unique_number=""
+	for i in {{1..10}}
+	do
+		unique_number+=$RANDOM
+	done
+	unique_number=${{unique_number:0:10}}
+	echo "$unique_number"
+}}
+
+function createResource() {{
+	printf '\\nCreating child resource under %s\\n' $cseURL/$4
+	printf 'Result: '		  
+	curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {CSE.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
+	printf '\\n'
+}}
+			
+''')
+
+				# Write createResource commands for all resources
+				for r in resdis:
+					tpe = r.tpe
+					attributes = {}
+					for attr in r.getAttributes():
+						policy = CSE.validator.getAttributePolicy(r.ty, attr)
+						if policy.optionalCreate != RequestOptionality.NP:
+							attributes[attr] = r[attr]
+					
+					# Special handling for some attributes
+					if 'et' in attributes:
+						del attributes['et']
+
+					attributes = { tpe : attributes }
+					parentSrn = r.getSrn().rsplit('/', 1)[0]
+					# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
+					f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
+					count += 1
+			L.console(f'Exported {count} resource(s) to {path}')
+
+		except ResponseException as e:
+			L.console(e.dbg, isError = True)
+			return 0, e.dbg
+		
+		return count, f'tmp/{filename}'
+
+
 	def exportResources(self, key:str) -> None:
-		"""	Export resources to the data directory.
+		"""	Export resources to the tmp directory.
 			The result is a shell script that can be used to re-build a previous resource tree.
 
 			Args:
@@ -749,64 +824,7 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('ri', default = self.previousExportRi)):
 			self.previousExportRi = ri
-			try:
-				resdis = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
-
-				# insert the parent resource at the beginning of the list
-				resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
-				count = 0
-				path = f'{CSE.storage.dbPath}/export-{getResourceDate().rsplit(",", 1)[0]}.sh'
-				cseUrl = CSE.httpServer.serverAddress
-				with open(path, 'w') as f:
-
-					# Write shell file header
-					f.write(
-f'''#!/bin/bash
-# Exported {ri} from {CSE.cseRi} at {getResourceDate()}
-
-cseURL={cseUrl}
-
-function uniqueNumber() {{
-    unique_number=""
-    for i in {{1..10}}
-    do
-        unique_number+=$RANDOM
-    done
-    unique_number=${{unique_number:0:10}}
-    echo "$unique_number"
-}}
-
-function createResource() {{
-    printf '\\nCreating child resource under %s\\n' $cseURL/$4
-    printf 'Result: '		  
-    curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {CSE.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
-    printf '\\n'
-}}
-			  
-''')
-
-					# Write createResource commands for all resources
-					for r in resdis:
-						tpe = r.tpe
-						attributes = {}
-						for attr in r.getAttributes():
-							policy = CSE.validator.getAttributePolicy(r.ty, attr)
-							if policy.optionalCreate != RequestOptionality.NP:
-								attributes[attr] = r[attr]
-						
-						# Special handling for some attributes
-						if 'et' in attributes:
-							del attributes['et']
-
-						attributes = { tpe : attributes }
-						parentSrn = r.getSrn().rsplit('/', 1)[0]
-						# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
-						f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
-						count += 1
-				L.console(f'Exported {count} resources to {path}')
-
-			except ResponseException as e:
-				L.console(e.dbg, isError = True)
+			self.doExportResource(ri)
 		L.on()
 
 

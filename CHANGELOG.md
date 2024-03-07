@@ -23,14 +23,15 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added validation: *notificationURI* must only be present in non-blocking async requests.
 - [TUI] Added sorting of resource lists by resource type. Added resource type section headers.
 - [TUI] Added configurable size limit for displaying requests and responses.
+- [TUI] Added "service" tab for resource services. The first service is a service to export resources as *curl* commands.
 - [SCRIPTS] Added "remove-json-attribute" function to the script interpreter. 
 - [SCRIPTS] Added "block" and "return-from" functions to the script interpreter.
 - [SCRIPTS] Added "protect-unwind" function to the script interpreter.
 - [TESTS] Added support for the WebSocket protocol binding to the tests.
 - [TESTS] Added specific tests for the WebSocket protocol binding and special notification handling.
 
-
 ### Experimental
+- [WS] The WebSocket protocol binding is still experimental because it differs from the oneM2M spec in some points, e.g. the new presence of the *X-M2M-Origin* header when establishing a WebSocket connection. The general functionality is the same, though.
 
 ### Changed
 - [CSE] Allow virtual resources to be referenced in &lt;actions> and &lt;dependencies>.

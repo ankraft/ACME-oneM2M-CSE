@@ -26,10 +26,10 @@ from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers.TextTools import commentJson
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerDiagram import ACMEContainerDiagram
+from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
 
 idTree = 'tree'
-
 
 class ACMEResourceTree(TextualTree):
 
@@ -127,6 +127,7 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
 		self.parentContainer.tabs.hide_tab('tree-tab-requests')
 		self.parentContainer.tabs.hide_tab('tree-tab-delete')
+		self.parentContainer.tabs.hide_tab('tree-tab-services')	
 
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
@@ -216,6 +217,7 @@ class ACMEContainerTree(Container):
 		# Various Resource and Request views
 		self.deleteView = ACMEContainerDelete()
 		self.diagram = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), tuiApp = tuiApp)
+		self.servicesView = ACMEContainerResourceServices()
 
 		# For some reason, the markdown header is not refreshed the very first time
 		self.header = Markdown('')
@@ -239,6 +241,10 @@ class ACMEContainerTree(Container):
 
 				with TabPane('Diagram', id = 'tree-tab-diagram'):
 					yield self.diagram
+				
+				with TabPane('Services', id = 'tree-tab-services'):
+					yield self.servicesView
+
 
 				# with TabPane('CREATE', id = 'tree-tab-create', disabled = True):
 				# 	yield Markdown('## Send CREATE Request')
@@ -266,7 +272,7 @@ class ACMEContainerTree(Container):
 		# self._update_requests()
 
 
-	def action_refresh_resources(self) -> None:
+	def services_refresh_resources(self) -> None:
 		self.update()
 
 			
@@ -301,6 +307,13 @@ class ACMEContainerTree(Container):
 			# Update DELETE view
 			self.deleteView.updateResource(resource)
 			self.deleteView.disabled = False
+
+			# Update the services view
+			self.servicesView.updateResource(resource)
+			self.tabs.show_tab('tree-tab-services')
+
+			# Disable the services view
+
 
 			# Update Diagram view
 			try:
@@ -373,6 +386,8 @@ class ACMEContainerTree(Container):
 			case 'tree-tab-diagram':
 				pass
 			case 'tree-tab-delete':
+				pass
+			case 'tree-tab-services':
 				pass
 
 		self.app.updateFooter()	# type:ignore[attr-defined]
