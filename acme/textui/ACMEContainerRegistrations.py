@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Container
 from textual.widgets import Static
 from ..services import CSE
 
@@ -21,30 +21,19 @@ class ACMEContainerRegistrations(Container):
 	from ..textui import ACMETuiApp
 
 	DEFAULT_CSS = '''
-#regs-view {
-	display: block;
-	overflow: auto auto;  
-	min-width: 100%;
-}
-'''
-
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__(id = idRegs)
-		self.tuiApp = tuiApp
-		self.registrationsView = Static(expand = True)
-		self.registrationsUpdate()
-
+	#registrations-view {
+		display: block;
+		overflow: auto auto;  
+		min-width: 100%;
+	}
+	'''
 
 	def compose(self) -> ComposeResult:
-		with Vertical(id = 'regs-view'):
-			yield self.registrationsView
+		yield Static(expand = True, id = 'registrations-view')
 
 
 	def on_show(self) -> None:
 		self.registrationsUpdate()
 	
-
 	def registrationsUpdate(self) -> None:
-		self.registrationsView.update(CSE.console.getRegistrationsRich())
-
-
+		self.query_one('#registrations-view').update(CSE.console.getRegistrationsRich())
