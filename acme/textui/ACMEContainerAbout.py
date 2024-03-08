@@ -15,27 +15,23 @@ from textual.widgets import Label, Button
 from textual.binding import Binding
 from ..etc.Constants import Constants
 
-
 class ACMEContainerAbout(Container):
 
 	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
 
 	DEFAULT_CSS = """
-#about-view {
-	display: block;
-	overflow: auto auto;  
-	min-width: 100%;
-}
-"""
+	#about-view {
+		display: block;
+		overflow: auto auto;  
+		min-width: 100%;
+	}
 
-
-# 	logo = \
-# f"""\
-# [dim]███[/dim]     [{Constants.logoColor}] █████   ██████ ███    ███ ███████[/{Constants.logoColor}]     [dim]███[/dim] 
-# [dim]██ [/dim]     [{Constants.logoColor}]██   ██ ██      ████  ████ ██     [/{Constants.logoColor}]     [dim] ██[/dim] 
-# [dim]██ [/dim]     [{Constants.logoColor}]███████ ██      ██ ████ ██ █████  [/{Constants.logoColor}]     [dim] ██[/dim] 
-# [dim]██ [/dim]     [{Constants.logoColor}]██   ██ ██      ██  ██  ██ ██     [/{Constants.logoColor}]     [dim] ██[/dim] 
-# [dim]███[/dim]     [{Constants.logoColor}]██   ██  ██████ ██      ██ ███████[/{Constants.logoColor}]     [dim]███[/dim]""" 
+	#about-button {
+		height:0;
+		width:0;
+		border: none;
+	}
+	"""
 
 	text = \
 f"""\
@@ -47,7 +43,6 @@ f"""\
 [dim]╚══╝[/dim]    [{Constants.logoColor}]╚═╝  ╚═╝ ╚═════╝╚═╝     ╚═╝╚══════╝[/{Constants.logoColor}]    [dim]╚══╝[/dim]
 
 {Constants.version}
-
 
 An open source CSE Middleware for Education
 
@@ -81,19 +76,13 @@ Available under the BSD 3-Clause License"""
 """
 
 
-	def __init__(self) -> None:
-		super().__init__(id = 'about')
-
+	
+	def on_show(self) -> None:
 		# HACK The following is a hack to get the focus on this page.
 		# Otherwise, without an interactive element, the focus would not be on this page at all,
 		# and the Bindings would not be shown.
-		self.button = Button('hidden')
-		self.button.styles.visibility = 'hidden'
-
-	
-	def on_show(self) -> None:
-		self.button.focus()
-
+		# The button is hidden using the CSS
+		self.query_one('#about-button').focus()
 
 
 	def compose(self) -> ComposeResult:
@@ -111,7 +100,7 @@ Available under the BSD 3-Clause License"""
 			with (_c := Center()):
 				_c.styles.padding = (7, 0, 0, 0)
 				yield Label(self.qrcode)
-				yield self.button
+				yield Button('hidden', id = 'about-button')
 
 
 	def action_goto_repo(self) -> None:
