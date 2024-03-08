@@ -472,13 +472,12 @@ class Logging:
 				end:Optional[str] = '\n', 
 				plain:Optional[bool] = False, 
 				isError:Optional[bool] = False, 
-				isHeader:Optional[bool] = False) -> None:
+				isHeader:Optional[bool] = False) -> str:
 		"""	Print a message or object to the console.
 		"""
 		# if this is a header then call the method again with different parameters
 		if isHeader:
-			Logging.console(f'**{msg}**', nlb = True, nl = True)
-			return
+			return Logging.console(f'**{msg}**', nlb = True, nl = True)
 
 		style = Logging.terminalStyle if not isError else Logging.terminalStyleError
 		if nlb:	# Empty line before
@@ -486,14 +485,19 @@ class Logging:
 		
 		match msg:
 			case str():
-				Logging._console.print(msg if plain else Markdown(msg), style = style, end = end, highlight = False)
+				result = msg if plain else Markdown(msg)
+				Logging._console.print(result, style = style, end = end, highlight = False)
 			case dict() | Tree() | Table() | Text():
+				result = msg
 				Logging._console.print(msg, style = style, end = end)
 			case _:
-				Logging._console.print(str(msg), style = style, end = end)
+				result = str(msg)
+				Logging._console.print(result, style = style, end = end)
 
 		if nl:	# Empty line after
 			Logging._console.print()
+		
+		return result
 
 
 	@staticmethod
