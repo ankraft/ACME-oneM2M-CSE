@@ -10,7 +10,8 @@
 from __future__ import annotations
 from typing import cast
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
+from textual.containers import Container, Vertical, Horizontal
+from textual.events import Mount
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..services import CSE
@@ -24,11 +25,17 @@ idConfigs = 'configurations'
 class ACMEConfigurationTree(TextualTree):
 
 	parentContainer:ACMEContainerConfigurations = None
+	prefixLen:int = 0
 
 	def on_mount(self) -> None:
+		# Expand the root element
+		self.root.expand()
+
+	
+	def on_show(self) -> None:
 		self.parentContainer = cast(ACMEContainerConfigurations, self.parent.parent)
 
-		# Build the resource tree
+		# Build the configuration settings tree
 		self.auto_expand = False
 		root = self.root
 		root.data = root.label
@@ -54,12 +61,8 @@ class ACMEConfigurationTree(TextualTree):
 		for k in CSE.Configuration.all().keys():
 			_addSetting(k.split('.'), 0, self.root)
 
-		# Expand the root element, but the others
-		self.root.expand()
-	
-	def on_show(self) -> None:
-		node = self.cursor_node
-		self._showDocumentation(str(node.data))
+		# Show root documentation
+		self._showDocumentation('Configurations')
 
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
@@ -86,43 +89,28 @@ class ACMEConfigurationTree(TextualTree):
 			else:
 				header += f'> &nbsp;\n\n'
 
-		self.parentContainer.tuiApp.logDebug(str(topic))
-		self.parentContainer.documentationView.update(header + doc)
+		self.parentContainer.updateDocumentation(header, doc)
 
 
 class ACMEContainerConfigurations(Container):
-
-
+	
 	DEFAULT_CSS = '''
-#configs-documentation-view {
-	display: block;
-	overflow: auto auto;  
-}
-'''
+	#configs-documentation {
+		display: block;
+		overflow: auto auto;  
+	}
 
-	from ..textui import ACMETuiApp
-
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__(id = idConfigs)
-		self.tuiApp = tuiApp
-		self.documentationView = Markdown('')
-
-		self.configurationsTree = ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', id = 'tree-view')
-		self.configurationsTree.parentContainer = self
-
-
+	'''
 	def compose(self) -> ComposeResult:
-		with Vertical():
-			yield self.configurationsTree
-			with Vertical(id = 'configs-documentation-view'):
-				yield self.documentationView
+		with Horizontal():
+			yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', id = 'tree-view')
+			yield Markdown('', id = 'configs-documentation')
 
 
 	def on_show(self) -> None:
-		self.tuiApp.logDebug('show')
-		self.configurationsTree.focus()
+		t = self.query_one('#tree-view')
+		t.focus()
 
 
-	# def _configurationsUpdate(self) -> None:
-	# 	self.configurationsView.update(CSE.console.getConfigurationRich())
-
+	def updateDocumentation(self, header:str, doc:str) -> None:
+		self.query_one('#configs-documentation').update(header + doc)
