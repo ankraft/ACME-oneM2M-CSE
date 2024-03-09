@@ -24,6 +24,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added sorting of resource lists by resource type. Added resource type section headers.
 - [TUI] Added configurable size limit for displaying requests and responses.
 - [TUI] Added "service" tab for resource services. The first service is a service to export resources as *curl* commands.
+- [TUI] Added service to export *instance* resources under a &lt;container> or &lt;timeSeries> as a CSV file.
 - [SCRIPTS] Added "remove-json-attribute" function to the script interpreter. 
 - [SCRIPTS] Added "block" and "return-from" functions to the script interpreter.
 - [SCRIPTS] Added "protect-unwind" function to the script interpreter.
