@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional, List, cast, Any
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical, Horizontal, Center
+from textual.containers import Vertical, Horizontal, Center
 from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
@@ -24,28 +24,20 @@ from ..services import CSE
 from ..services.Configuration import Configuration
 from ..helpers.TextTools import commentJson
 
-idRequests = 'requests'
-
-
-class ACMEContainerRequests(Container):
-
-	from ..textui import ACMETuiApp
-
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__(id = idRequests)
-		self.tuiApp = tuiApp
-		self.requestsView = ACMEViewRequests()
-
+class ACMEContainerRequests(Vertical):
 
 	def compose(self) -> ComposeResult:
-		with Container():
-			with Vertical(id = 'requests-view'):
-				yield self.requestsView
+		yield ACMEViewRequests(id = 'requests-view')
 
 
 	def on_show(self) -> None:
 		self.requestsView.onShow()
 		self.requestsView.updateBindings()
+
+
+	@property
+	def requestsView(self) -> ACMEViewRequests:
+		return cast(ACMEViewRequests, self.query_one('#requests-view'))	
 
 
 class ACMEListItem(ListItem):
@@ -54,9 +46,6 @@ class ACMEListItem(ListItem):
 	def __init__(self, *children: Widget, name: str | None = None, id: str | None = None, classes: str | None = None, disabled: bool = False) -> None:
 		super().__init__(*children, name=name, id=id, classes=classes, disabled=disabled)
 		self._data:Any = None
-	
-
-
 
 class ACMEViewRequests(Vertical):
 
@@ -68,80 +57,70 @@ class ACMEViewRequests(Vertical):
 				]
 
 	DEFAULT_CSS = """
-#requests-view {
-	overflow: auto auto;  
-	width: 1fr;
-	height: 1fr;
-	/* background:red; */
-}
+	#requests-view {
+		overflow: auto auto;  
+		width: 1fr;
+		height: 1fr;
+	}
 
-#request-list-view {
-	/* overflow: auto scroll; */
-	width: 1fr;
-	height: 1fr;
-	/* background:red; */
-}
+	#request-list-view {
+		width: 1fr;
+		height: 1fr;
+	}
 
-#request-list-header {
-	/* overflow: auto hidden; */
-	width: 1fr;
-	height: 1;
-	align-vertical: middle;
-	background: $panel;
-}
+	#request-list-header {
+		width: 1fr;
+		height: 1;
+		align-vertical: middle;
+		background: $panel;
+	}
 
-#request-list-list {
-	overflow: auto auto;  
-	min-width: 100%;
-	height: 2fr;
-}
+	#request-list-list {
+		overflow: auto auto;  
+		min-width: 100%;
+		height: 2fr;
+	}
 
-#request-list-details-header {
-	overflow: auto;
-	height: 1;
-	align-vertical: middle;
-	background: $panel;
-}
+	#request-list-details-header {
+		overflow: auto;
+		height: 1;
+		align-vertical: middle;
+		background: $panel;
+	}
 
-#request-list-details {
-	overflow: auto scroll;
-	height: 3fr;
-}	
+	#request-list-details {
+		overflow: auto scroll;
+		height: 3fr;
+	}	
 
-#request-list-request {
-	overflow: auto;  
-	width: 1fr;
-	min-height: 100%;
-	padding: 1 1;
-}
+	#request-list-request {
+		overflow: auto;  
+		width: 1fr;
+		min-height: 100%;
+		padding: 1 1;
+	}
 
-#request-list-response {
-	overflow: auto;  
-	width: 1fr;
-	min-height: 100%;
-	border-left: $panel;
-	padding: 1 1;
-}
+	#request-list-response {
+		overflow: auto;  
+		width: 1fr;
+		min-height: 100%;
+		border-left: $panel;
+		padding: 1 1;
+	}
+	"""
 
-
-"""
-
-
-	def __init__(self) -> None:
-		super().__init__(id = 'request-list-view')
+	def __init__(self, id:str) -> None:
+		super().__init__(id = id)
 
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
 		self.maxRequestSize = Configuration.get('textui.maxRequestSize')
 
-		# Request List
-		self.requestList = ListView(id = 'request-list-list')
 		self.listDetails = False
+		"""Show list details."""
 
-		# Request view: request + response
-		self.requestListRequest = Static(id = 'request-list-request')
-		self.requestListResponse = Static(id = 'request-list-response')
 		self.commentsOneLine = True
+		"""Show comments in requests and responses in one line."""
 		
 	
 	@property
@@ -157,6 +136,21 @@ class ACMEViewRequests(Vertical):
 		self._bindings.bind('D', 'delete_requests', 'Delete Requests' if ri else 'Delete ALL Requests', key_display = 'SHIFT+D')
 		self.updateBindings()
 
+
+	@property
+	def requestList(self) -> ListView:
+		return cast(ListView, self.query_one('#request-list-list'))
+
+
+	@property
+	def requestListRequest(self) -> Static:
+		return cast(Static, self.query_one('#request-list-request'))
+
+
+	@property
+	def requestListResponse(self) -> Static:
+		return cast(Static, self.query_one('#request-list-response'))
+
 			
 	def compose(self) -> ComposeResult:
 
@@ -165,7 +159,7 @@ class ACMEViewRequests(Vertical):
 			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]')
 
 		# Request List
-		yield self.requestList
+		yield ListView(id = 'request-list-list')
 
 		# Details Header
 		with Horizontal(id = 'request-list-details-header'):
@@ -176,8 +170,8 @@ class ACMEViewRequests(Vertical):
 
 		# Details
 		with Horizontal(id = 'request-list-details'):
-			yield self.requestListRequest
-			yield self.requestListResponse
+			yield Static(id = 'request-list-request')
+			yield Static(id = 'request-list-response')
 	
 
 	def onShow(self) -> None:
@@ -325,5 +319,3 @@ class ACMEViewRequests(Vertical):
 		if 0 <= idx < len(self._currentRequests):
 			self.requestListRequest.update(Pretty(self._currentRequests[idx]['req']))
 			self.requestListResponse.update(Pretty(self._currentRequests[idx]['rsp']))
-
-

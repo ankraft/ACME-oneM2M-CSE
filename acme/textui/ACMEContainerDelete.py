@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import cast
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical, Center
+from textual.containers import Container, Center, VerticalScroll
 from textual.widgets import Button, Static, Label
 from .ACMEFieldOriginator import ACMEFieldOriginator
 from ..etc.Types import Operation, ResponseStatusCode
@@ -22,27 +22,19 @@ from ..resources.Resource import Resource
 from ..services import CSE
 
 
-idRequestDelete = 'request-delete'
-
-
 def validateOriginator(value: str) -> bool:
 	return len(value) > 1 and value.startswith('C')
 
 class ACMEContainerDelete(Container):
 
 	DEFAULT_CSS = """
-	ACMEContainerDelete {
-		width: 100%;
-	}
-
 	#request-delete-view {
-		display: block;
-		overflow: auto auto;
+		height: 12;
 	}
 
-	#request-delete-response {
-		display: block;
-		overflow: auto auto;
+	#request-delete-input-view {
+		width: 100%;
+		height: 6;
 	}
 
 	#request-delete-response-label {
@@ -57,47 +49,37 @@ class ACMEContainerDelete(Container):
 	#request-delete-response-response {
 		margin: 1 1 1 1;
 	}
-
 	"""
 
-	def __init__(self) -> None:
+	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
-		super().__init__(id = idRequestDelete)
+		super().__init__(id = id)
 		self.requestOriginator = 'CAdmin'
-		self.response = Static('', id = 'request-delete-response-response')
-		self.fieldOriginator =  ACMEFieldOriginator(self.requestOriginator, 
-					      						    suggestions = [CSE.cseOriginator, self.requestOriginator])
 		self.resource:Resource = None
 
 
 	def compose(self) -> ComposeResult:
-		""" Compose the view.
-
-			Returns:
-				The ComposeResult
-		"""
-		with Vertical(id = 'request-delete-view'):
-			yield self.fieldOriginator
+		self.fieldOriginator =ACMEFieldOriginator(self.requestOriginator, suggestions = [CSE.cseOriginator, self.requestOriginator])
+		with VerticalScroll(id = 'request-delete-view'):
+			with Container(id = 'request-delete-input-view'):
+				yield self.fieldOriginator
 			with Center():
 				yield Button('Send DELETE Request', variant = 'error', id = 'request-delete-button')
-		with Container(id = 'request-delete-response'):
+		with VerticalScroll(id = 'request-delete-response'):
 			yield Label('[u b]Response[/u b]', id = 'request-delete-response-label')
-			yield self.response
-
-
-	def on_show(self) -> None:
-		...
+			yield Static('', id = 'request-delete-response-response')
 
 
 	def updateResource(self, resource:Resource) -> None:
-		self.requestOriginator = resource.getOriginator()
+		self.resource = resource
+		# Update the request originator. Important for getting a default request originator
+		self.requestOriginator = self.resource.getOriginator()
 		if self.requestOriginator:	
 			self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
 			self.fieldOriginator.update(CSE.cseOriginator, [CSE.cseOriginator])
-		self.resource = resource
-		self.response.update('')
+		self.query_one('#request-delete-response-response').update('')	# Clear the response field
 	
 
 	@on(Button.Pressed, '#request-delete-button')
@@ -119,7 +101,7 @@ class ACMEContainerDelete(Container):
 			
 			cast(ACMETuiApp, self.app).containerTree.update()
 		except ResponseException as e:
-			self.response.update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
+			self.query_one('#request-delete-response-response').update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
 
 
 	@on(ACMEFieldOriginator.Submitted)

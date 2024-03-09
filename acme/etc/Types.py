@@ -363,6 +363,18 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
+	def isContainerResource(cls, ty:int) -> bool:
+		"""	Test whether a resource type is a container resource type.
+
+			Args:
+				ty: Type to test.
+			Return:
+				*True* if the resource type is a container resource.
+		"""
+		return ty in _ResourceTypesContainerResourcesSet
+	
+
+	@classmethod
 	def isRequestCreatable(cls, ty:ResourceTypes) -> bool:
 		"""	Test whether a resource type is creatable through a request.
 		
@@ -426,6 +438,8 @@ class ResourceDescription():
 	"""	Whether the resource type is a mgmtObj specialization. """
 	isInstanceResource:bool = False
 	"""	Whether the resource type is an instance resource. """
+	isContainer:boolean = False
+	"""	Whether the resource type is a container. """
 	isInternalType:bool = False
 	"""	Whether the resource type is an internal type. """
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
@@ -452,8 +466,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'ApplicationEntity Announced'),
 	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='ContentInstance'),
 	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
-	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, fullName='Container'),
-	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, fullName='Container Announced'),
+	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
+	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
 	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
 	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
 	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='Cross Resource Subscription'),
@@ -464,8 +478,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc, fullName='Dependency'),
 	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
-	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, fullName='FlexContainer'), 	# not an official type name
-	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, fullName = 'FlexContainer Announced'),				# not an official type name
+	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
+	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
 	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),	# not an official type name
 	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),	# not an official type name
 	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
@@ -489,8 +503,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.STTE			: ResourceDescription(typeName = 'm2m:stte', announcedType = ResourceTypes.STTEAnnc, fullName='State'),
 	ResourceTypes.STTEAnnc		: ResourceDescription(typeName = 'm2m:stteA', isAnnouncedResource = True, fullName='State Announced'),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
-	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, fullName='TimeSeries'),
-	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, fullName='TimeSeries Announced'),
+	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, isContainer = True, fullName='TimeSeries'),
+	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, isContainer = True, fullName='TimeSeries Announced'),
 	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
 	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
 	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
@@ -603,6 +617,12 @@ _ResourceTypesInstanceResourcesSet = [ t
 									   for t, d in _ResourceTypeDetails.items()
 									   if d.isInstanceResource ]
 """	List of instance resources. """
+
+
+_ResourceTypesContainerResourcesSet = [ t
+									   for t, d in _ResourceTypeDetails.items()
+									   if d.isContainer ]
+"""	List of container resources. """
 
 
 _ResourceTypesVirtualResourcesNames = [ d.virtualResourceName

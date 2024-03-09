@@ -10,13 +10,11 @@
 from __future__ import annotations
 from typing import cast
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical, Horizontal
-from textual.events import Mount
+from textual.containers import Horizontal
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..services import CSE
 from ..services.Configuration import Configuration
-from ..services.Logging import Logging as L
 
 # TODO Add editing of configuration values
 
@@ -27,14 +25,17 @@ class ACMEConfigurationTree(TextualTree):
 	parentContainer:ACMEContainerConfigurations = None
 	prefixLen:int = 0
 
+	def __init__(self, *args, **kwargs) -> None:
+		self.parentContainer = kwargs.pop('parentContainer', None)
+		super().__init__(*args, **kwargs)
+
+
 	def on_mount(self) -> None:
 		# Expand the root element
 		self.root.expand()
 
 	
 	def on_show(self) -> None:
-		self.parentContainer = cast(ACMEContainerConfigurations, self.parent.parent)
-
 		# Build the configuration settings tree
 		self.auto_expand = False
 		root = self.root
@@ -92,9 +93,19 @@ class ACMEConfigurationTree(TextualTree):
 		self.parentContainer.updateDocumentation(header, doc)
 
 
-class ACMEContainerConfigurations(Container):
+class ACMEContainerConfigurations(Horizontal):
 	
 	DEFAULT_CSS = '''
+	#configs-tree-view {
+		display: block; 
+		scrollbar-gutter: stable;
+		overflow: auto;    
+		width: auto;    
+		min-height: 1fr;            
+		dock: left;
+		max-width: 50%;  
+	}
+
 	#configs-documentation {
 		display: block;
 		overflow: auto auto;  
@@ -102,14 +113,14 @@ class ACMEContainerConfigurations(Container):
 
 	'''
 	def compose(self) -> ComposeResult:
-		with Horizontal():
-			yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', id = 'tree-view')
-			yield Markdown('', id = 'configs-documentation')
+		yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', 
+							  		id = 'configs-tree-view',
+									parentContainer = self)
+		yield Markdown('', id = 'configs-documentation')
 
 
 	def on_show(self) -> None:
-		t = self.query_one('#tree-view')
-		t.focus()
+		self.query_one('#configs-tree-view').focus()
 
 
 	def updateDocumentation(self, header:str, doc:str) -> None:

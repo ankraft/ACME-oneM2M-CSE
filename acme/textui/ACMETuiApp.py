@@ -31,9 +31,6 @@ from ..services import CSE
 from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
-
-
-
 tabResources = 'tab-resources'
 tabRequests = 'tab-requests'
 tabRegistrations = 'tab-registrations'
@@ -41,44 +38,11 @@ tabConfigurations = 'tab-configurations'
 tabTools = 'tab-tools'
 tabAbout = 'tab-about'
 
-# AYU theme (see https://github.com/Textualize/textual/discussions/1407)
-CUSTOM_COLORS = {
-	'dark': ColorSystem(
-		primary = '#39BAE6',      # syntax.tag
-		secondary = '#FFB454',    # syntax.func
-		accent = '#59C2FF',       # syntax.entity
-		warning = '#E6B450',      # common.accent
-		error = '#D95757',        # common.error
-		success = '#7FD962',      # vcs.added
-		background = '#0B0E14',   # ui.bg
-		boost = '#47526633',      # ui.selection.normal
-		surface = '#0F131A',      # ui.panel.bg
-		panel = '#565B66',        # ui.fg
-		dark = True,
-	),
-
-	'light': ColorSystem(
-		primary = '#55B4D4',
-		secondary = '#F2AE49',
-		accent = '#399EE6',
-		warning = '#FFAA33',
-		error = '#E65050',
-		success = '#6CBF43',
-		background = '#F8F9FA',
-		boost = '#6B7D8F1F',
-		surface = '#F3F4F5',
-		panel = '#8A9199',
-		dark = False,
-	)
-}
-
-
 class ACMETuiQuitReason(IntEnum):
 	undefined = auto()
 	quitTUI = auto()
 	quitAll = auto()
 	restart = auto()
-
 
 class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
@@ -113,46 +77,80 @@ class ACMETuiApp(App):
 		# This is set in the on_load() function.
 		self.event_loop:asyncio.AbstractEventLoop = None
 
-		self.tabs = TabbedContent()
-		self.containerTree = ACMEContainerTree(self)
-		self.containerRequests = ACMEContainerRequests(self)
-		self.containerRegistrations = ACMEContainerRegistrations(self)
-		self.containerConfigs = ACMEContainerConfigurations(self)
-		self.containerInfo = ACMEContainerInfo(self)
-		self.containerTools = ACMEContainerTools(self)
-		self.containerAbout = ACMEContainerAbout()
-		self.debugConsole = Static('', id = 'debug-console')
-
 
 	def compose(self) -> ComposeResult:
 		"""Build the Main UI."""
 		yield ACMEHeader(show_clock = True)
 		if self.debugging:
-			yield self.debugConsole
-		with self.tabs:
+			yield Static('', id = 'debug-console')
+
+		with TabbedContent(id = 'tabs'):
 			with TabPane('Resources', id = tabResources):
-				yield self.containerTree
+				yield ACMEContainerTree(self, id = 'container-tree')
+
 			with TabPane('Requests', id = tabRequests):
-				yield self.containerRequests
+				yield ACMEContainerRequests(id = 'container-requests')
+
 			with TabPane('Registrations', id = tabRegistrations):
-				yield self.containerRegistrations
+				yield ACMEContainerRegistrations(id = 'container-registrations')
+
 			with TabPane('Tools', id = tabTools):
-				yield self.containerTools
+				self._toolsView =  ACMEContainerTools(id = 'container-tools')
+				yield self._toolsView
+
 			with TabPane('Infos', id = tabInfo):
-				yield self.containerInfo
+				yield ACMEContainerInfo(self, id = 'container-info')
+
 			with TabPane('Configurations', id = tabConfigurations):
-				yield self.containerConfigs
+				yield ACMEContainerConfigurations(id = 'container-configurations')
+
 			with TabPane('About', id = tabAbout):
-				yield self.containerAbout
+				yield ACMEContainerAbout()
+
 		yield Footer()
 
+
+	@property
+	def tabs(self) -> TabbedContent:
+		return self.query_one('#tabs')
+
+
+	@property
+	def containerTree(self) -> ACMEContainerTree:
+		return self.query_one('#container-tree')
+
+
+	@property
+	def containerRegistrations(self) -> ACMEContainerRegistrations:
+		return self.query_one('#container-registrations')
+
+
+	@property
+	def containerConfigs(self) -> ACMEContainerConfigurations:
+		return self.query_one('#container-configurations')
+
+
+	@property
+	def containerInfo(self) -> ACMEContainerInfo:
+		return self.query_one('#container-info')
+	
+
+	@property
+	def containerTools(self) -> ACMEContainerTools:
+		# This is a bit of a hack to get the containerTools object
+		# because it is not available anymore after the DOM is removed.
+		return self._toolsView
+	
+
+	@property
+	def containerRequests(self) -> ACMEContainerRequests:
+		return self.query_one('#container-requests')
+	
 
 	def on_load(self) -> None:
 		self.dark = self.textUI.theme == 'dark'
 		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		self.event_loop = asyncio.get_event_loop()
-		# self.design = CUSTOM_COLORS
-		# self.refresh_css()
 
 	
 	@on(TabbedContent.TabActivated)
@@ -160,8 +158,6 @@ class ACMETuiApp(App):
 		# Use the self.currentTab shortly to determine where we come from and call a 
 		if self.currentTab is not None and self.currentTab.id == tabTools:
 			self.containerTools.leaving_tab()
-			# if callable(_f := getattr(_c, "leaving_tab", None)):
-			# 	_f()
 		# Set self.currenTab to the new tab.
 		self.currentTab = tab.tab
 
@@ -189,11 +185,29 @@ class ACMETuiApp(App):
 
 	#########################################################################
 
+	# TODO move to a helper class
+	def action_open_file(self, filename:str) -> None:
+		"""	Open a file in the editor.
+		"""
+		import subprocess, os, platform
+		if platform.system() == 'Windows':
+			os.startfile(filename)
+		elif platform.system() == 'Darwin':
+			subprocess.call(['open', filename])
+		else:
+			subprocess.call(['xdg-open', filename])
+
+
+	#########################################################################
+
 	def logDebug(self, msg:str) -> None:
 		"""	Print debug msg """
-		self.debugConsole.update(msg)
-	
-	
+		try:
+			self.query_one('#debug-console').update(msg)
+		except:
+			# If the debug console is not available, just ignore
+			pass
+
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
 		if self.containerTools:
 			self.containerTools.scriptPrint(scriptName, msg)
@@ -262,24 +276,3 @@ class ACMETuiApp(App):
 		self.containerTools.cleanUp()
 		self.event_loop = None
 
-
-#
-#	TODO
-#
-
-# class QuitScreen(Screen):
-# 	def compose(self) -> ComposeResult:
-# 		yield Vertical(
-# 			Static('Are you sure you want to quit?', id="question"),
-# 			Static(' '),
-# 			Horizontal(
-# 				Button("Quit", variant="error", id="quit", classes = 'button'),
-# 				Button("Cancel", variant="primary", id="cancel", classes = 'button')),
-# 			id="dialog",
-# 		)
-
-# 	def on_button_pressed(self, event: Button.Pressed) -> None:
-# 		if event.button.id == "quit":
-# 			self.app.exit()
-# 		else:
-# 			self.app.pop_screen()

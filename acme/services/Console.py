@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import List, cast, Optional, Any, Tuple
 
-import datetime, json, os, sys, webbrowser, socket
+import csv, datetime, json, os, sys, webbrowser, socket
 from enum import IntEnum, auto
 from rich.live import Live
 from rich.panel import Panel
@@ -128,6 +128,9 @@ class Console(object):
 			previousScript: Name of the previous script run.
 			previousArgument: Previous script arguments.
 			previousGraphRi: Resource ID of the previous graph display.
+			previousRequestRi: Resource ID of the previous request display.
+			previousExportRi: Resource ID of the previous export.
+			previousInstanceExportRi: Resource ID of the previous instance export.
 	"""
 
 	__slots__ = (
@@ -140,6 +143,7 @@ class Console(object):
 		'previousGraphRi',
 		'previousRequestRi',
 		'previousExportRi',
+		'previousInstanceExportRi',
 		'tuiApp',
 		
 		'refreshInterval',
@@ -171,6 +175,7 @@ class Console(object):
 		self.previousArgument = ''
 		self.previousGraphRi = ''
 		self.previousExportRi = ''
+		self.previousInstanceExportRi = ''
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
@@ -250,6 +255,7 @@ class Console(object):
 			'C'					: self.clearScreen,
 			'D'					: self.deleteResource,
 			'E'					: self.exportResources,
+			FunctionKey.CTRL_E	: self.exportInstances,
 			'f'					: self.showRequests,
 			'F'					: self.showAllRequests,
 			FunctionKey.CTRL_F	: self.deleteRequests,
@@ -339,6 +345,7 @@ class Console(object):
 			('C', 'Clear the console screen'),
 			('D', 'Delete resource'),
 			('E', 'Export a resource and its children to the [i]tmp[/i] directory as [i]curl[/i] commands'),
+			('^E', 'Export the instances of a container resource to a CSV file in the [i]tmp[/i] directory'),
 			('f', 'Show requests history for a resource'),
 			('F', 'Show all requests history'),
 			('^F', 'Clear requests history'),
@@ -827,6 +834,69 @@ function createResource() {{
 			self.doExportResource(ri)
 		L.on()
 
+
+
+	def doExportInstances(self, ri:str) -> Tuple[int, str]:
+		"""	Export instances of a container resource to a CSV file in the tmp directory.
+
+			Args:
+				ri: Resource ID of the container resource.
+		"""
+		_instanceMapping = {
+			ResourceTypes.CNT: ResourceTypes.CIN,
+			ResourceTypes.CNTAnnc: ResourceTypes.CINAnnc,
+			ResourceTypes.FCNT: ResourceTypes.FCI,
+			ResourceTypes.TS: ResourceTypes.TSI,
+			ResourceTypes.TSAnnc: ResourceTypes.TSIAnnc
+		}
+
+		try:
+			L.console('Export Instance Resources', isHeader = True)
+			container = CSE.dispatcher.retrieveResource(ri)
+			if container.ty in [ResourceTypes.FCNT, ResourceTypes.FCNTAnnc]:
+				# TODO FCNT export not supported at the moment
+				return 0, L.console(f'Export of FCNT {ri} not supported', isError = True)
+
+			if not ResourceTypes.isContainerResource(container.ty):
+				return 0, L.console(f'{ri} is not a container resource', isError = True)
+			count = 0
+			if not (instances := CSE.dispatcher.retrieveDirectChildResources(ri, _instanceMapping[container.ty])):
+				L.console(f'No instances found under {ri}', isError = True)
+			else:
+				# Create a temporary directory for the export
+				outdir = f'{CSE.Configuration.get('baseDirectory')}/tmp'
+				os.makedirs(outdir, exist_ok = True)
+
+				# get the filename and open the file for writing
+				filename = f'instances-{getResourceDate().rsplit(",", 1)[0]}.csv'
+				path = f'{outdir}/{filename}'
+				with open(path, 'w') as f:
+					writer = csv.writer(f)
+					# Write CIN and TSI instances
+					writer.writerow(['ri', 'st', 'ct', 'con', 'cnf', 'structured_resource_identifier'])
+					for instance in instances:
+						writer.writerow([instance.ri, instance.st, instance.ct, instance.con, instance.cnf, instance.getSrn()])
+						count += 1
+
+				L.console(f'Exported {count} instances to {filename}')
+		except Exception as e:
+			L.console(e.dbg, isError = True)
+			return 0, e.dbg
+		return count, f'tmp/{filename}'
+		
+
+	def exportInstances(self, key:str) -> None:
+		"""	Export instances of a container resource to a CSV file in the tmp directory.
+
+			Args:
+				key: Input key. Ignored.
+		"""
+		L.console('Export instance resources', isHeader = True)
+		L.off()		
+		if (ri := L.consolePrompt('ri', default = self.previousInstanceExportRi)):
+			self.previousInstanceExportRi = ri
+			self.doExportInstances(ri)
+		L.on()
 
 	# def exportResources(self, key:str) -> None:
 	# 	"""	Export resources to the initialization directory.

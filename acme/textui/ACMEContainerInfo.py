@@ -27,8 +27,8 @@ class ACMEContainerInfo(Container):
 	'''
 	from ..textui import ACMETuiApp
 
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__()
+	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+		super().__init__(id = id)
 		self.tuiApp = tuiApp
 
 
@@ -44,3 +44,4 @@ class ACMEContainerInfo(Container):
 	def _statsUpdate(self, force:bool = False) -> None:
 		if force or self.tuiApp.tabs.active == tabInfo:
 			self.query_one('#stats-view').update(CSE.console.getStatisticsRich())
+

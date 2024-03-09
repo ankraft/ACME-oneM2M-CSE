@@ -13,12 +13,8 @@ from textual.containers import Container
 from textual.widgets import Static
 from ..services import CSE
 
-idRegs = 'registrations'
-
 
 class ACMEContainerRegistrations(Container):
-
-	from ..textui import ACMETuiApp
 
 	DEFAULT_CSS = '''
 	#registrations-view {

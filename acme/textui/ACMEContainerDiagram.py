@@ -11,7 +11,7 @@ from __future__ import annotations
 from enum import IntEnum
 from typing import Callable, Optional
 
-from textual import events, on
+from textual import on
 from textual.app import ComposeResult
 from textual.containers import Center, Container, Horizontal, Vertical
 from textual.widgets import Button, Checkbox
@@ -19,7 +19,6 @@ from textual.timer import Timer
 from textual_plotext import PlotextPlot
 
 from ..etc.DateUtils import fromISO8601Date
-from ..services import CSE
 
 
 class DiagramTypes(IntEnum):
@@ -42,6 +41,7 @@ class ACMEContainerDiagram(Container):
 
 #diagram-plot {
 	/*height: 100%;*/
+
 }
 
 #diagram-footer {
@@ -152,8 +152,8 @@ ToggleButton:light.-on:focus > .toggle--button {
 
 	from ..textui import ACMETuiApp
 
-	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__()
+	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+		super().__init__(id = id)
 		self.tuiApp = tuiApp
 		self.color = (0, 120, 212)
 		self.type = DiagramTypes.Line
@@ -307,7 +307,7 @@ ToggleButton:light.-on:focus > .toggle--button {
 					plt.event_plot(_d, color = self.color)
 				else:
 					plt.event_plot(dates, _d, color = self.color)	# type: ignore[arg-type]
-		self.plot.refresh(layout = True)
+		self.plotContainer.mount(self.plot)
 
 	
 	def setData(self, values:list[float], dates:Optional[list[str]] = None) -> None:
@@ -340,10 +340,6 @@ ToggleButton:light.-on:focus > .toggle--button {
 		self.plot = PlotextPlot()
 		self.plot.plt.date_form('d/m/Y H:M:S', 'Y-m-d H:M:S')
 		# TODO the output date format doesn't seem to work with the bar diagram
-
-		# Add the plot to the container and refresh the container
-		self.plotContainer._add_child(self.plot)
-		self.plotContainer.refresh(layout=True)
 
 
 	def _activateButton(self, type:DiagramTypes) -> None:

@@ -13,7 +13,7 @@ from time import sleep
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical, Center, Middle
+from textual.containers import Container, Vertical, Center, Middle, Horizontal
 from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog, Label
 from textual.widgets.tree import TreeNode
 from ..services import CSE
@@ -25,12 +25,13 @@ from ..textui.ACMEFieldOriginator import ACMEInputField
 
 # TODO Add editing of configuration values
 
-idTools = 'tools'
 
 class ACMEToolsTree(TextualTree):
 
 	def __init__(self, *args, **kwargs) -> None:	# type: ignore[no-untyped-def]
+		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
+
 		self.allLogs = False
 		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
 		self.nodes:dict[str, TreeNode] = {}
@@ -39,14 +40,10 @@ class ACMEToolsTree(TextualTree):
 
 		
 	def on_mount(self) -> None:
-		self.parentContainer = cast(ACMEContainerTools, self.parent.parent)
 
 		# Build the resource tree
 		self.auto_expand = False
 		root = self.root
-
-		# def _sortTools(item) -> bool:
-		# 	return item[1].meta.get('tuiSortOrder', 999)
 
 		# Iterate over all scripts and add them to the tree. Sort them by the meta tag "tuiSortOrder" and then by name.
 		for name, context in dict( sorted(CSE.script.scripts.items(), key = lambda x: (int(x[1].meta.get('tuiSortOrder', '500')), x[1].scriptName)) ).items():
@@ -71,7 +68,6 @@ class ACMEToolsTree(TextualTree):
 	
 
 	def on_show(self) -> None:
-		# self.app.bell()
 		node = self.cursor_node
 		self._showTool(node)
 	
@@ -82,7 +78,12 @@ class ACMEToolsTree(TextualTree):
 			Args:
 				node: The highlighted node.
 		"""
-		self._showTool(node.node)
+		try:
+			self._showTool(node.node)
+		except:
+			# This can happen when the tree is constructed and the first node is highlighted
+			# before the tree is fully constructed.
+			pass
 	
 
 	def _showTool(self, node:TreeNode) -> None:
@@ -102,8 +103,8 @@ class ACMEToolsTree(TextualTree):
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
 			self.parentContainer.toolsHeader.update(f'## {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
-			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
-			self.parentContainer.toolsInput.styles.visibility = 'hidden'
+			self.parentContainer.toolsExecButton.display = False
+			self.parentContainer.toolsInput.display = False
 			self.parentContainer.toolsLog.clear()
 
 
@@ -116,7 +117,8 @@ class ACMEToolsTree(TextualTree):
 			if description.startswith('#'):
 				self.parentContainer.toolsHeader.update(description)
 			else:    
-				self.parentContainer.toolsHeader.update(f"""\
+				self.parentContainer.toolsHeader.update(
+f"""\
 ## {node.label}
 
 {description}
@@ -124,19 +126,19 @@ class ACMEToolsTree(TextualTree):
 
 			# Add input field if the meta tag "tuiInput" is set
 			if (_l := ctx.getMeta('tuiInput')):
-				self.parentContainer.toolsInput.styles.visibility = 'visible'
+				self.parentContainer.toolsInput.display = True
 				self.parentContainer.toolsInput.setLabel(_l)
 			else:
-				self.parentContainer.toolsInput.styles.visibility = 'hidden'
+				self.parentContainer.toolsInput.display = False
 			
 			# configure the button according to the meta tag "tuiExecuteButton"
-			self.parentContainer.toolsExecButton.styles.visibility = 'visible'
+			self.parentContainer.toolsExecButton.display = True
 			self.parentContainer.toolsExecButton.label = 'Execute'
 			if ctx.hasMeta('tuiExecuteButton'):
 				if (_b := ctx.getMeta('tuiExecuteButton')):
 					self.parentContainer.toolsExecButton.label = _b
 				else:
-					self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
+					self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsExecButton.styles.width = len(self.parentContainer.toolsExecButton.label) + 4
 
 			self.parentContainer.toolsLog.clear()
@@ -165,8 +167,8 @@ class ACMEToolsTree(TextualTree):
 
 		else:
 			self.parentContainer.toolsHeader.update('')
-			self.parentContainer.toolsExecButton.styles.visibility = 'hidden'
-			self.parentContainer.toolsInput.styles.visibility = 'hidden'
+			self.parentContainer.toolsExecButton.display = False
+			self.parentContainer.toolsInput.display = False
 		
 	
 	def printLogs(self) -> None:
@@ -197,8 +199,7 @@ class ACMEToolsTree(TextualTree):
 				self.autoRunName = None
 
 
-
-class ACMEContainerTools(Container):
+class ACMEContainerTools(Horizontal):
 
 	from . import ACMETuiApp
 
@@ -206,98 +207,122 @@ class ACMEContainerTools(Container):
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
 
 	DEFAULT_CSS = '''
+	 #tools-tree-view {
+		display: block; 
+		scrollbar-gutter: stable;
+		overflow: auto;    
+		width: auto;    
+		min-height: 1fr;            
+		dock: left;
+		max-width: 50%;  
+	}
 
-#tools-top-view {
-	display: block;
-	overflow: auto auto;
-	min-width: 100%;
-	margin: 0 0 0 0;
-	height: 3fr;
-}
+	#tools-top-view {
+		display: block;
+		overflow: auto auto;
+		min-width: 100%;
+		margin: 0 0 0 0;
+		height: 3fr;
+	}
 
-#tools-arguments-view {
-	display: block;
-	overflow: auto auto;
-	min-width: 100%;
-	height: 1fr;
-	margin: 0 0 0 0;
-}
+	#tools-arguments-view {
+		display: block;
+		overflow: auto auto;
+		min-width: 100%;
+		height: 1fr;
+		margin: 0 0 0 0;
+	}
 
+	#tools-arguments-view {
+		display: block;
+		overflow: auto auto;
+		min-width: 100%;
+		height: 1.5fr;
+		margin: 0 0 0 0;
+	}
 
-#tools-arguments-view {
-	display: block;
-	overflow: auto auto;
-	min-width: 100%;
-	height: 1.5fr;
-	margin: 0 0 0 0;
-}
+	#tools-log-view {
+		display: block;
+		overflow: auto auto;
+		height: 3fr;
+		padding: 0 0 0 1;
+		border-top: $panel;
+	}
 
-#tools-log-view {
-	display: block;
-	overflow: auto auto;
-	height: 3fr;
-	padding: 0 0 0 1;
-	border-top: $panel;
-}
+	#tools-run-button {
+		background: red;
+	}
 
-#tools-run-button {
-	background: red;
-}
+	#tools-argument-view {
+		display: block;
+		overflow: auto auto;  
+		margin: 0 4 1 4;
+		layout: vertical;
+		height: 1fr;
+	}
 
-#tools-argument-view {
-	display: block;
-	overflow: auto auto;  
-	margin: 0 4 1 4;
-	layout: vertical;
-	height: 1fr;
-}
-
-#tool-log {
-	display: block;
-	min-width: 100%;
-	overflow: auto auto;  
-	margin: 0 0 0 0;
-	padding: 1 0 1 1;
-	border-top: $panel;
-}
- 
-'''
-
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp) -> None:
-		super().__init__(id = idTools)
-		self.tuiApp = tuiApp
-
-		self.toolsHeader = Markdown('')
-
-		self.toolsTree = ACMEToolsTree(f'[{CSE.textUI.objectColor}]Tools & Commands[/]', id = 'tree-view')
-		self.toolsTree.parentContainer = self
-
-		self.toolsInput = ACMEInputField(id = 'tools-argument')
-		self.toolsInput.styles.visibility = 'hidden'
-
-		self.toolsExecButton = Button('Execute', id = 'tool-execute-button', variant = 'primary')
-		self.toolsExecButton.styles.visibility = 'hidden'
-
-		self.toolsLog = RichLog(id = 'tools-log-view', markup=True)
-
+	#tool-log {
+		display: block;
+		min-width: 100%;
+		overflow: auto auto;  
+		margin: 0 0 0 0;
+		padding: 1 0 1 1;
+		border-top: $panel;
+	}
+	'''
 
 	def compose(self) -> ComposeResult:
-		with Container():
-			yield self.toolsTree
-			with Vertical():
-				with Center(id = 'tools-top-view'):
-					yield self.toolsHeader
-				with Middle(id = 'tools-arguments-view'):
-					with Center():
-						yield self.toolsInput
-					with Center():
-						yield self.toolsExecButton
 
-				yield self.toolsLog
+		# Prepare some widgets in advance
+		self._toolsTree = ACMEToolsTree(f'[{CSE.textUI.objectColor}]Tools & Commands[/]', 
+								 		id = 'tools-tree-view',
+										parentContainer = self)
+
+		yield self._toolsTree
+		with Vertical():
+			with Center(id = 'tools-top-view'):
+				yield Markdown('', id = 'tools-header')
+			with Middle(id = 'tools-arguments-view'):
+				with Center():
+					yield ACMEInputField(label = 'Argument', id = 'tools-argument')
+				with Center():
+					yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
+			yield RichLog(id = 'tools-log-view', markup=True)
+	
+
+	def on_mount(self) -> None:
+		self.toolsInput.display = False
+		self.toolsExecButton.display = False
+
+
+	@property
+	def toolsHeader(self) -> Markdown:
+		return cast(Markdown, self.query_one('#tools-header'))
+
+
+	@property
+	def toolsInput(self) -> ACMEInputField:
+		return cast(ACMEInputField, self.query_one('#tools-argument'))
+
+
+	@property
+	def toolsExecButton(self) -> Button:
+		return cast(Button, self.query_one('#tool-execute-button'))
+
+
+	@property
+	def toolsLog(self) -> RichLog:
+		return cast(RichLog, self.query_one('#tools-log-view'))
+	
+
+	@property
+	def toolsTree(self) -> ACMEToolsTree:
+		# This is a bit of a hack to get the ACMEToolsTree object
+		# because it is not available anymore after the DOM is removed.
+		return self._toolsTree
 
 
 	def on_show(self) -> None:
-		self.tuiApp.logDebug('show')
 		self.toolsTree.focus()
 
 	
@@ -416,7 +441,6 @@ class ACMEContainerTools(Container):
 			sleep(0.3)
 			self.toolsTree.nodes[scriptName].set_label(oldLabel)
 			self.toolsTree.refresh()
-
 
 
 def _getContext(name:str) -> Optional[PContext]:
