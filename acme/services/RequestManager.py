@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes
-from ..etc.Types import FilterUsage, Operation, Permission, RequestCallback, RequestType
+from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
@@ -24,11 +24,12 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, R
 from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
-from ..etc.Utils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isURL, isAbsolute, isSPRelative
-from ..etc.Utils import compareIDs, isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl, localResourceID, getIDFromPath, getIdFromOriginator
-from ..etc.Utils import isStructured, structuredPathFromRI
+from ..etc.ACMEUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
+from ..etc.ACMEUtils import compareIDs, localResourceID, getIDFromPath, getIdFromOriginator
+from ..etc.ACMEUtils import isStructured, structuredPathFromRI
+from ..etc.Utils import isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl
+from ..etc.Utils import isURL
 from ..helpers.TextTools import setXPath
-from ..etc.Constants import Constants
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource

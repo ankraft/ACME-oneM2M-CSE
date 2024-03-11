@@ -447,7 +447,7 @@ else:
 _functionKeys:Tuple[FunctionKey, str] = [(e, e.value) for e in FunctionKey] # type:ignore
 """ List of all function keys. """
 
-Commands = Dict[str, Callable[[str], None]]
+Commands = Dict[str, Callable[[str], str|None]]
 """ Mapping between characters and callback functions. """
 
 _stopLoop = False

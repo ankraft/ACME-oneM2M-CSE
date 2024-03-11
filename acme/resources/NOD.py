@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..etc.Utils import uniqueID
+from ..etc.ACMEUtils import uniqueID
 from ..services import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
 

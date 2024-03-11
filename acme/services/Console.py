@@ -18,13 +18,12 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich.style import Style
-from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 import plotext
 
-from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress
+from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress, Commands
 from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
@@ -34,7 +33,6 @@ from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality
 from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
-from ..etc.Utils import uniqueID
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..services import CSE, Statistics
@@ -243,7 +241,7 @@ class Console(object):
 		#	Enter an endless loop.
 		#	Execute keyboard commands in the keyboardHandler's loop() function.
 		#
-		commands = {
+		commands:Commands = {
 			'?'    			 	: self.help,
 			'h'					: self.help,
 			FunctionKey.F1		: self.help,
@@ -880,8 +878,12 @@ function createResource() {{
 
 				L.console(f'Exported {count} instances to {filename}')
 		except Exception as e:
-			L.console(e.dbg, isError = True)
-			return 0, e.dbg
+			if hasattr(e, 'dbg'):
+				L.console(e.dbg, isError = True)
+				return 0, e.dbg
+			else:
+				L.console(str(e), isError = True)
+				return 0, str(e)
 		return count, f'tmp/{filename}'
 		
 

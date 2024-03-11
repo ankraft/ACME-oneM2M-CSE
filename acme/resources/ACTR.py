@@ -14,7 +14,7 @@ from typing import Optional, Tuple
 
 from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
-from ..etc.Utils import riFromID, compareIDs
+from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..services.Logging import Logging as L

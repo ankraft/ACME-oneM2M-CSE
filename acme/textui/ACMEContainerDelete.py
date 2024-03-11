@@ -17,7 +17,7 @@ from .ACMEFieldOriginator import ACMEFieldOriginator
 from ..etc.Types import Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import getResourceDate
-from ..etc.Utils import uniqueRI
+from ..etc.ACMEUtils import uniqueRI
 from ..resources.Resource import Resource
 from ..services import CSE
 

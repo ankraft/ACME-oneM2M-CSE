@@ -310,7 +310,7 @@ def createRawRequest(**kwargs:Any) -> JSON:
 			JSON dictionary with the request.
 	"""
 	from ..services import CSE 
-	from ..etc.Utils import uniqueRI	# Leave it here to avoid circular init
+	from .ACMEUtils import uniqueRI	# Leave it here to avoid circular init
 
 	r = {	'fr': CSE.cseCsi,
 			'rqi': uniqueRI(),
@@ -342,7 +342,7 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 	"""
 
 	from ..services import CSE
-	from .Utils import uniqueRI
+	from .ACMEUtils import uniqueRI
 
 	url = unquote(url)
 	u = urlparse(url)

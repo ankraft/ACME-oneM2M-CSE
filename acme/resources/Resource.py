@@ -10,15 +10,15 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, cast, Optional, List, overload
-import json
+from typing import Any, cast, Optional, List
 
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
-from ..etc.Utils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict
-from ..etc.Utils import resourceDiff, normalizeURL, toCSERelative, isValidCSI
+from ..etc.ACMEUtils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict
+from ..etc.ACMEUtils import resourceDiff
+from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
 from ..services.Logging import Logging as L

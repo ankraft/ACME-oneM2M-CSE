@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
-from ..etc.Utils import pureResource
+from ..etc.ACMEUtils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, NotificationContentType
 from ..etc.Types import NotificationEventType, JSON

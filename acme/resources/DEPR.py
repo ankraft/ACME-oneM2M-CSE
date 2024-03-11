@@ -13,7 +13,7 @@ from typing import Optional, Tuple, Any, cast
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..services.Logging import Logging as L
-from ..etc.Utils import riFromID
+from ..etc.ACMEUtils import riFromID
 from ..helpers.TextTools import findXPath
 from ..services import CSE
 from ..resources.Resource import Resource

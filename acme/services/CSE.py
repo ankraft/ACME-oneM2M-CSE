@@ -20,6 +20,7 @@ from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.DateUtils import waitFor
+from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
 from ..services.ActionManager import ActionManager
 from ..services.Configuration import Configuration
@@ -359,7 +360,6 @@ def shutdown() -> None:
 	if console:
 		console.stop()				# This will end the main run loop.
 	
-	from ..etc.Utils import runsInIPython
 	if runsInIPython():
 		L.console('CSE shut down', nlb = True)
 

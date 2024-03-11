@@ -12,11 +12,12 @@ from typing import Tuple, cast, Dict, Optional, Any, Union
 
 from urllib.parse import unquote
 
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
+from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
-from ..etc.DateUtils import getResourceDate, waitFor
-from ..etc.Utils import exceptionToResult, uniqueRI, renameThread, csiFromSPRelative
+from ..etc.DateUtils import waitFor
+from ..etc.ACMEUtils import csiFromSPRelative
+from ..etc.Utils import renameThread
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..services.Configuration import Configuration
@@ -268,7 +269,7 @@ class MQTTClientHandler(MQTTHandler):
 		try:
 			responseResult = CSE.request.handleRequest(request)
 		except Exception as e:
-			responseResult = exceptionToResult(e)
+			responseResult = Result.exceptionToResult(e)
 		# Send response
 
 		# add, copy and update some fields from the original request

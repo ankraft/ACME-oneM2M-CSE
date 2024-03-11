@@ -24,7 +24,8 @@ from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFI
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
 from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND
 from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
-from ..etc.Utils import toSPRelative, pureResource, isAcmeUrl, compareIDs
+from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
+from ..etc.Utils import isAcmeUrl
 from ..helpers.TextTools import setXPath, findXPath
 from ..services import CSE
 from ..services.Configuration import Configuration

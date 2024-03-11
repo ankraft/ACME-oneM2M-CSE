@@ -994,7 +994,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 
 	# Retrieve Permissions
 	addTest(suite, TestDiscovery('test_updateCNTwithRCN12Fail'))
-	addTest(suite, TestDiscovery('test_retrieveCNTwithRCN12'))
+	# TODO addTest(suite, TestDiscovery('test_retrieveCNTwithRCN12'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

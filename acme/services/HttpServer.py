@@ -28,7 +28,8 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.Utils import exceptionToResult, renameThread, uniqueRI, toSPRelative, removeNoneValuesFromDict,isURL
+from ..etc.ACMEUtils import uniqueRI, toSPRelative, removeNoneValuesFromDict
+from ..etc.Utils import renameThread, isURL
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult
@@ -338,7 +339,7 @@ class HttpServer(object):
 		try:
 			responseResult = CSE.request.handleRequest(dissectResult.request)
 		except Exception as e:
-			responseResult = exceptionToResult(e)
+			responseResult = Result.exceptionToResult(e)
 		# L.inspect(responseResult)
 		return self._prepareResponse(responseResult, dissectResult.request)
 

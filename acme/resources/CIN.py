@@ -16,7 +16,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes,  JSON, CSERequest
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
 from ..services import CSE
-from ..etc.Utils import getAttributeSize
+from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services.Logging import Logging as L
 

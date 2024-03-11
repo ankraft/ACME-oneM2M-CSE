@@ -17,7 +17,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
 from ..services import CSE
 from ..services.Logging import Logging as L
-from ..etc.Utils import toSPRelative
+from ..etc.ACMEUtils import toSPRelative
 from .Resource import Resource
 
 _announcedTo = Constants.attrAnnouncedTo

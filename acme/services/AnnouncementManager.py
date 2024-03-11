@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, List, cast, Any
 
 import time
-from ..etc.Utils import isSPRelative
+from ..etc.ACMEUtils import isSPRelative
 from ..helpers.TextTools import findXPath
 from ..etc.RequestUtils import createRawRequest
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result, ResultContentType, CSERequest, FilterCriteria 

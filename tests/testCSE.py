@@ -15,7 +15,6 @@ from typing import Tuple
 from acme.etc.Types import ResponseStatusCode as RC
 from acme.etc.Types import ResourceTypes as T
 from init import *
-from acme.services.CSE import supportedReleaseVersions
 
 
 class TestCSE(unittest.TestCase):

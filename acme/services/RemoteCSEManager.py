@@ -16,7 +16,7 @@ from typing import List, Tuple, Dict, cast, Optional, Any
 
 from ..etc.Types import CSEStatus, ResourceTypes, Result, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
 from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
-from ..etc.Utils import pureResource, csiFromRelativeAbsoluteUnstructured
+from ..etc.ACMEUtils import pureResource, csiFromRelativeAbsoluteUnstructured
 from ..etc.Constants import Constants
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR

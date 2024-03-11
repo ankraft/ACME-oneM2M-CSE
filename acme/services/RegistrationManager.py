@@ -13,7 +13,7 @@ from typing import Any, Optional
 from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
-from ..etc.Utils import uniqueAEI, getIdFromOriginator, uniqueRN
+from ..etc.ACMEUtils import uniqueAEI, getIdFromOriginator, uniqueRN
 from ..etc.DateUtils import getResourceDate
 from ..services.Configuration import Configuration
 from ..services import CSE

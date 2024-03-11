@@ -16,7 +16,7 @@ import ssl
 
 from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
-from ..etc.Utils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..services import CSE
 from ..services.Configuration import Configuration

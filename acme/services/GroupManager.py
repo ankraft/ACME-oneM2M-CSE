@@ -16,7 +16,7 @@ from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, 
 from ..etc.Types import CSERequest, JSON, ResponseType
 from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
 from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
-from ..etc.Utils import isSPRelative, csiFromSPRelative, structuredPathFromRI
+from ..etc.ACMEUtils import isSPRelative, csiFromSPRelative, structuredPathFromRI
 from ..etc.DateUtils import utcTime
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj

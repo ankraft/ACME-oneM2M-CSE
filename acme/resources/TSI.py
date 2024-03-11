@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
-from ..etc.Utils import getAttributeSize
+from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

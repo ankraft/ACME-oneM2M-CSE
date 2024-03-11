@@ -11,7 +11,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, Result, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
-from ..etc.Utils import uniqueAEI
+from ..etc.ACMEUtils import uniqueAEI
 from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 from ..services import CSE

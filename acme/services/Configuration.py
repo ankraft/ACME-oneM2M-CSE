@@ -20,6 +20,7 @@ from rich.console import Console
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
+from ..etc.Utils import normalizeURL
 from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..services import Onboarding
 
@@ -624,7 +625,7 @@ class Configuration(object):
 					return None
 				
 
-		from ..etc.Utils import normalizeURL, isValidCSI	# cannot import at the top because of circel import
+		from ..etc.ACMEUtils import isValidCSI	# cannot import at the top because of circel import
 
 		# CSE type
 		if isinstance(cseType := _get('cse.type'), str):

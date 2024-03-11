@@ -30,6 +30,7 @@ from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..services import CSE
 from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.Utils import openFileWithDefaultApplication
 
 tabResources = 'tab-resources'
 tabRequests = 'tab-requests'
@@ -185,17 +186,13 @@ class ACMETuiApp(App):
 
 	#########################################################################
 
-	# TODO move to a helper class
 	def action_open_file(self, filename:str) -> None:
-		"""	Open a file in the editor.
+		"""	Open a file with the default application.
+		
+			Args:
+				filename: Name of the file to open.
 		"""
-		import subprocess, os, platform
-		if platform.system() == 'Windows':
-			os.startfile(filename)
-		elif platform.system() == 'Darwin':
-			subprocess.call(['open', filename])
-		else:
-			subprocess.call(['xdg-open', filename])
+		openFileWithDefaultApplication(filename)
 
 
 	#########################################################################

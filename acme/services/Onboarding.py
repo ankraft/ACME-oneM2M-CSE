@@ -86,7 +86,7 @@ def _print(msg:str) -> None:
 
 
 def buildUserConfigFile(configFile:str) -> bool:
-	from ..etc.Utils import isValidID
+	from ..etc.ACMEUtils import isValidID
 
 	cseType = 'IN'
 	cseEnvironment = 'Development'

@@ -19,7 +19,8 @@ from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultCo
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
-from ..etc.Utils import pureResource, strToBool
+from ..etc.ACMEUtils import pureResource
+from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools

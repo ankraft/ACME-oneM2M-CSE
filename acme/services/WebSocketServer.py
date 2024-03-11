@@ -21,7 +21,8 @@ from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
-from ..etc.Utils import renameThread, exceptionToResult, uniqueID, csiFromSPRelative
+from ..etc.ACMEUtils import uniqueID, csiFromSPRelative
+from ..etc.Utils import renameThread
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
 from ..services.Configuration import Configuration
@@ -516,7 +517,7 @@ class WebSocketServer(object):
 			responseResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
 
 		except Exception as e:
-				responseResult = exceptionToResult(e)
+				responseResult = Result.exceptionToResult(e)
 
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)

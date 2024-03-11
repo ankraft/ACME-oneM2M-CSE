@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import traceback
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type
 from enum import auto
@@ -438,7 +439,7 @@ class ResourceDescription():
 	"""	Whether the resource type is a mgmtObj specialization. """
 	isInstanceResource:bool = False
 	"""	Whether the resource type is an instance resource. """
-	isContainer:boolean = False
+	isContainer:bool = False
 	"""	Whether the resource type is a container. """
 	isInternalType:bool = False
 	"""	Whether the resource type is an internal type. """
@@ -2032,7 +2033,23 @@ class Result:
 				self.request.rqi = originalRequest.rqi
 		
 		return self
-			
+
+
+	@classmethod
+	def exceptionToResult(self, e:Exception) -> Result:
+		"""	Transform a Python exception to a result.
+	
+			Args:
+				e: Exception
+			Return:
+				Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
+		"""
+		from ..services.Logging import Logging
+		tb = traceback.format_exc()
+		Logging.logErr(tb, exc=e)
+		tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+		return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'encountered exception: {tbs}')
+	
 
 # Result instance to be re-used all over the place
 # _successResult = Result(status = True)

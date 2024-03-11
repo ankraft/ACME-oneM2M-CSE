@@ -485,15 +485,16 @@ class Logging:
 		
 		match msg:
 			case str():
-				result = msg if plain else Markdown(msg)
-				Logging._console.print(result, style = style, end = end, highlight = False)
+				_msg = msg if plain else Markdown(msg)
+				Logging._console.print(_msg, style = style, end = end, highlight = False)
+				result = str(_msg)
 			case dict() | Tree() | Table() | Text():
-				result = msg
 				Logging._console.print(msg, style = style, end = end)
-			case _:
 				result = str(msg)
-				Logging._console.print(result, style = style, end = end)
-
+			case _:
+				_msg = str(msg)
+				Logging._console.print(_msg, style = style, end = end)
+				result = _msg
 		if nl:	# Empty line after
 			Logging._console.print()
 		

@@ -16,7 +16,7 @@ from typing import Optional, cast
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import JSON
-from ..etc.Utils import pureResource
+from ..etc.ACMEUtils import pureResource
 from ..etc.Constants import Constants
 from ..services.Logging import Logging as L
 

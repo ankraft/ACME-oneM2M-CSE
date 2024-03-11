@@ -13,7 +13,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, Result, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Utils import isValidCSI, resourceFromCSI
+from ..etc.ACMEUtils import isValidCSI, resourceFromCSI
 from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
