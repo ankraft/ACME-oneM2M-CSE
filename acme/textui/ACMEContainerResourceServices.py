@@ -8,7 +8,8 @@
 """
 
 from __future__ import annotations
-import time
+from typing import cast
+
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from textual import on
 from textual.app import ComposeResult
@@ -161,6 +162,36 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 					yield Rule()
 
 
+	@property
+	def exportResourceResult(self) -> Static:
+		return cast(Static, self.query_one('#services-export-resource-result'))
+	
+
+	@property
+	def exportInstancesResult(self) -> Static:
+		return cast(Static, self.query_one('#services-export-instances-result'))
+	
+
+	@property
+	def exportResourceLoadingIndicator(self) -> LoadingIndicator:
+		return cast(LoadingIndicator, self.query_one('#services-export-resource-loading-indicator'))
+	
+
+	@property
+	def exportInstancesLoadingIndicator(self) -> LoadingIndicator:
+		return cast(LoadingIndicator, self.query_one('#services-export-instances-loading-indicator'))
+	
+
+	@property
+	def exportInstancesView(self) -> Vertical:
+		return cast(Vertical, self.query_one('#services-export-instances'))
+
+
+	@property
+	def exportChildResourcesCheckbox(self) -> Checkbox:
+		return cast(Checkbox, self.query_one('#services-export-resource-checkbox'))
+	
+
 	def updateResource(self, resource:Resource) -> None:
 		"""	Update the current resource for the services view.
 
@@ -170,17 +201,17 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 		self.resource = resource
 
 		# Clear the result fields
-		self.query_one('#services-export-resource-result').update('')
-		self.query_one('#services-export-instances-result').update('')
+		self.exportResourceResult.update('')
+		self.exportInstancesResult.update('')
 	
 		# Show export instances view if the current resource is a container resource
-		self.query_one('#services-export-instances').display = ResourceTypes.isContainerResource(resource.ty)
+		self.exportInstancesView.display = ResourceTypes.isContainerResource(resource.ty)
 
 
 	def on_show(self) -> None:
 		# Hide the loading indicators
-		self.query_one('#services-export-resource-loading-indicator').display = False
-		self.query_one('#services-export-instances-loading-indicator').display = False
+		self.exportResourceLoadingIndicator.display = False
+		self.exportInstancesLoadingIndicator.display = False
 
 
 	#
@@ -189,9 +220,8 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 		
 	def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
 		self.exportIncludingChildResources = event.value
-		checkBox = self.query_one('#services-export-resource-checkbox')
-		checkBox.BUTTON_INNER = 'X' if self.exportIncludingChildResources else ' '
-		checkBox.refresh()
+		self.exportChildResourcesCheckbox.BUTTON_INNER = 'X' if self.exportIncludingChildResources else ' '
+		self.exportChildResourcesCheckbox.refresh()
 
 
 	@on(Button.Pressed, '#services-export-resource-button')
@@ -201,16 +231,14 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 
 		def _exportResource() -> None:
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
-			exportLoadingIndicator.display = False
-			exportResourceResult.display = True
-			exportResourceResult.update(f'Exported [{CSE.textUI.objectColor}]{count}[/] resource(s) to file [{CSE.textUI.objectColor}]{filename}[/]')
+			self.exportResourceLoadingIndicator.display = False
+			self.exportResourceResult.display = True
+			self.exportResourceResult.update(f'Exported [{CSE.textUI.objectColor}]{count}[/] resource(s) to file [{CSE.textUI.objectColor}]{filename}[/]')
 	
-		exportResourceResult = self.query_one('#services-export-resource-result')
-		exportLoadingIndicator = self.query_one('#services-export-resource-loading-indicator')
 
 		# Show the loading indicator instead of the result
-		exportLoadingIndicator.display = True
-		exportResourceResult.display = False
+		self.exportResourceLoadingIndicator.display = True
+		self.exportResourceResult.display = False
 
 		# Execute in the background to not block the UI
 		BackgroundWorkerPool.runJob(_exportResource)
@@ -227,16 +255,14 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 
 		def _exportInstances() -> None:
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
-			exportInstancesLoadingIndicator.display = False
-			exportInstancesResult.display = True
-			exportInstancesResult.update(f"Exported [{CSE.textUI.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self.exportInstancesLoadingIndicator.display = False
+			self.exportInstancesResult.display = True
+			self.exportInstancesResult.update(f"Exported [{CSE.textUI.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
 	
-		exportInstancesResult = self.query_one('#services-export-instances-result')
-		exportInstancesLoadingIndicator = self.query_one('#services-export-instances-loading-indicator')
 
 		# Show the loading indicator instead of the result
-		exportInstancesLoadingIndicator.display = True
-		exportInstancesResult.display = False
+		self.exportInstancesLoadingIndicator.display = True
+		self.exportInstancesResult.display = False
 
 		# Execute in the background to not block the UI
 		BackgroundWorkerPool.runJob(_exportInstances)

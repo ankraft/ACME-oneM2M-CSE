@@ -8,6 +8,8 @@
 """
 
 from __future__ import annotations
+from typing import cast
+
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Static
@@ -36,6 +38,11 @@ class ACMEContainerInfo(Container):
 		yield Static(expand = True, id = 'stats-view')
 
 
+	@property
+	def statsView(self) -> Static:
+		return cast(Static, self.query_one('#stats-view'))
+
+
 	def on_show(self) -> None:
 		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
 		self._statsUpdate(True)	# Update once at the beginning
@@ -43,5 +50,5 @@ class ACMEContainerInfo(Container):
 
 	def _statsUpdate(self, force:bool = False) -> None:
 		if force or self.tuiApp.tabs.active == tabInfo:
-			self.query_one('#stats-view').update(CSE.console.getStatisticsRich())
+			self.statsView.update(CSE.console.getStatisticsRich())
 

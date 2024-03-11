@@ -8,7 +8,8 @@
 """
 
 from __future__ import annotations
-from typing import cast
+from typing import cast, Any
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Tree as TextualTree, Markdown
@@ -25,7 +26,7 @@ class ACMEConfigurationTree(TextualTree):
 	parentContainer:ACMEContainerConfigurations = None
 	prefixLen:int = 0
 
-	def __init__(self, *args, **kwargs) -> None:
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
 
@@ -119,9 +120,19 @@ class ACMEContainerConfigurations(Horizontal):
 		yield Markdown('', id = 'configs-documentation')
 
 
+	@property
+	def treeView(self) -> ACMEConfigurationTree:
+		return cast(ACMEConfigurationTree, self.query_one('#configs-tree-view'))
+
+
+	@property
+	def documentationView(self) -> Markdown:
+		return cast(Markdown, self.query_one('#configs-documentation'))
+
+
 	def on_show(self) -> None:
-		self.query_one('#configs-tree-view').focus()
+		self.treeView.focus()
 
 
 	def updateDocumentation(self, header:str, doc:str) -> None:
-		self.query_one('#configs-documentation').update(header + doc)
+		self.documentationView.update(header + doc)

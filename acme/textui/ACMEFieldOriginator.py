@@ -7,7 +7,8 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
+from typing import cast
+
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical, Middle
 from textual.widgets import Input, Label
@@ -84,19 +85,18 @@ class ACMEInputField(Container):
 
 
 	@on(Input.Changed)
-	def show_invalid_reasons(self, event: Input.Changed) -> None:
+	def show_invalid_reasons(self, event:Input.Changed) -> None:
 		# Updating the UI to show the reasons why validation failed
-		msgField = self.query_one('#field-message')
 		if event.validation_result and not event.validation_result.is_valid:  
-			msgField.update(event.validation_result.failure_descriptions[0])
+			self.msgField.update(event.validation_result.failure_descriptions[0])
 		else:
-			msgField.update('')
+			self.msgField.update('')
 			self.originator = event.value
 
 
 	@on(Input.Submitted, '#field-input')
 	async def submit(self, event:Input.Submitted) -> None:
-		self.post_message(self.Submitted(self, self.query_one('#field-input').value))
+		self.post_message(self.Submitted(self, self.inputField.value))
 
 
 	def setLabel(self, label:str) -> None:
@@ -105,21 +105,32 @@ class ACMEInputField(Container):
 			Args:
 				label: The label to set.
 		"""
-		self.query_one('#field-label').update(f'[b]{label}[/b] ')
+		cast(Label, self.query_one('#field-label')).update(f'[b]{label}[/b] ')
 	
 
 	@property
 	def value(self) -> str:
-		return self.query_one('#field-input').value
+		return cast(Input, self.query_one('#field-input')).value
 
 
 	@value.setter
 	def value(self, value:str) -> None:
 		self._value = value
 		try:
-			self.query_one('#field-input').value = value
+			self.inputField.value = value
 		except:
 			pass
+	
+	
+	@property
+	def msgField(self) -> Label:
+		return cast(Label, self.query_one('#field-message'))
+	
+	
+	@property
+	def inputField(self) -> Input:
+		return cast(Input, self.query_one('#field-input'))
+	
 	
 	def setSuggestions(self, suggestions:list[str]) -> None:
 		""" Set the suggestions for the input field.
@@ -128,7 +139,7 @@ class ACMEInputField(Container):
 				suggestions: The suggestions to set.
 		"""
 		self.suggestions = suggestions
-		self.query_one('#field-input').suggester = SuggestFromList(self.suggestions)
+		self.inputField.suggester = SuggestFromList(self.suggestions)
 
 
 # TODO This may has to be turned into a more generic field class

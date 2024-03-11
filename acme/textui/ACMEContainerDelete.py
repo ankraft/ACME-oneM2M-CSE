@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from typing import cast
+
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Center, VerticalScroll
@@ -71,6 +72,11 @@ class ACMEContainerDelete(Container):
 			yield Static('', id = 'request-delete-response-response')
 
 
+	@property
+	def deleteResponse(self) -> Static:
+		return cast(Static, self.query_one('#request-delete-response-response'))
+
+
 	def updateResource(self, resource:Resource) -> None:
 		self.resource = resource
 		# Update the request originator. Important for getting a default request originator
@@ -79,7 +85,7 @@ class ACMEContainerDelete(Container):
 			self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
 			self.fieldOriginator.update(CSE.cseOriginator, [CSE.cseOriginator])
-		self.query_one('#request-delete-response-response').update('')	# Clear the response field
+		self.deleteResponse.update('')	# Clear the response field
 	
 
 	@on(Button.Pressed, '#request-delete-button')
@@ -101,7 +107,7 @@ class ACMEContainerDelete(Container):
 			
 			cast(ACMETuiApp, self.app).containerTree.update()
 		except ResponseException as e:
-			self.query_one('#request-delete-response-response').update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
+			self.deleteResponse.update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
 
 
 	@on(ACMEFieldOriginator.Submitted)

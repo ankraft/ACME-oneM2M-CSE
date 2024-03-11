@@ -8,6 +8,8 @@
 """
 
 from __future__ import annotations
+from typing import cast
+
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Static
@@ -28,8 +30,15 @@ class ACMEContainerRegistrations(Container):
 		yield Static(expand = True, id = 'registrations-view')
 
 
+	@property
+	def registrationView(self) -> Static:
+		return cast(Static, self.query_one('#registrations-view'))
+
+
 	def on_show(self) -> None:
 		self.registrationsUpdate()
 	
 	def registrationsUpdate(self) -> None:
-		self.query_one('#registrations-view').update(CSE.console.getRegistrationsRich())
+		self.registrationView.update(CSE.console.getRegistrationsRich())
+	
+

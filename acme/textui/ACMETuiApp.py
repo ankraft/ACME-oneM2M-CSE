@@ -8,7 +8,8 @@
 """
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, cast
+
 from typing_extensions import Literal, get_args
 import asyncio
 from enum import IntEnum, auto
@@ -113,27 +114,27 @@ class ACMETuiApp(App):
 
 	@property
 	def tabs(self) -> TabbedContent:
-		return self.query_one('#tabs')
+		return cast(TabbedContent, self.query_one('#tabs'))
 
 
 	@property
 	def containerTree(self) -> ACMEContainerTree:
-		return self.query_one('#container-tree')
+		return cast(ACMEContainerTree, self.query_one('#container-tree'))
 
 
 	@property
 	def containerRegistrations(self) -> ACMEContainerRegistrations:
-		return self.query_one('#container-registrations')
+		return cast(ACMEContainerRegistrations, self.query_one('#container-registrations'))
 
 
 	@property
 	def containerConfigs(self) -> ACMEContainerConfigurations:
-		return self.query_one('#container-configurations')
+		return cast(ACMEContainerConfigurations, self.query_one('#container-configurations'))
 
 
 	@property
 	def containerInfo(self) -> ACMEContainerInfo:
-		return self.query_one('#container-info')
+		return cast(ACMEContainerInfo, self.query_one('#container-info'))
 	
 
 	@property
@@ -145,7 +146,12 @@ class ACMETuiApp(App):
 
 	@property
 	def containerRequests(self) -> ACMEContainerRequests:
-		return self.query_one('#container-requests')
+		return cast(ACMEContainerRequests, self.query_one('#container-requests'))
+
+
+	@property
+	def debugConsole(self) -> Static:
+		return cast(Static, self.query_one('#debug-console'))
 	
 
 	def on_load(self) -> None:
@@ -200,7 +206,7 @@ class ACMETuiApp(App):
 	def logDebug(self, msg:str) -> None:
 		"""	Print debug msg """
 		try:
-			self.query_one('#debug-console').update(msg)
+			self.debugConsole.update(msg)
 		except:
 			# If the debug console is not available, just ignore
 			pass

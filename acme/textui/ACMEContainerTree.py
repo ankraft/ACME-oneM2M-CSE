@@ -7,13 +7,12 @@
 """	This module defines the *Resources* view for the ACME text UI.
 """
 from __future__ import annotations
-from typing import List, Tuple, Optional
-from datetime import datetime
+from typing import List, Tuple, Optional, Any, cast
+
 from textual import events
 from textual.app import ComposeResult
 from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Markdown, Label, Button
 from textual.containers import Container, Vertical, Horizontal
-from textual.widgets.tree import TreeNode
 from textual.screen import ModalScreen
 from textual.binding import Binding
 from rich.syntax import Syntax
@@ -22,7 +21,6 @@ from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
-from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers.TextTools import commentJson
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerDiagram import ACMEContainerDiagram
@@ -32,7 +30,7 @@ from .ACMEContainerResourceServices import ACMEContainerResourceServices
 class ACMEResourceTree(TextualTree):
 
 
-	def __init__(self, *args, **kwargs) -> None:
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
 
@@ -236,6 +234,10 @@ class ACMEContainerTree(Container):
 					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
 				
 				
+	@property
+	def resourceHeader(self) -> Label:
+		return cast(Label, self.query_one('#tree-tab-resource-header'))
+
 
 	def on_mount(self) -> None:
 		self.update()
@@ -360,37 +362,43 @@ class ACMEContainerTree(Container):
 			Args:
 				header: The header to set.
 		"""
-		self.query_one('#tree-tab-resource-header').update(header)
+		self.resourceHeader.update(header)
 	
 
 	@property
 	def tabs(self) -> TabbedContent:
-		return self.query_one('#tree-tabs')
+		return cast(TabbedContent, self.query_one('#tree-tabs'))
 
 
 	@property
 	def resourceTree(self) -> ACMEResourceTree:
-		return self.query_one('#tree-view')
+		return cast(ACMEResourceTree, self.query_one('#tree-view'))
+
 
 	@property
 	def deleteView(self) -> ACMEContainerDelete:
-		return self.query_one('#tree-tab-resource-delete')
+		return cast(ACMEContainerDelete, self.query_one('#tree-tab-resource-delete'))
+
 
 	@property
 	def servicesView(self) -> ACMEContainerResourceServices:
-		return self.query_one('#tree-tab-resource-services')
+		return cast(ACMEContainerResourceServices, self.query_one('#tree-tab-resource-services'))
+
 
 	@property
 	def requestView(self) -> ACMEViewRequests:
-		return self.query_one('#tree-tab-requests-view')
+		return cast(ACMEViewRequests, self.query_one('#tree-tab-requests-view'))
+
 
 	@property
 	def resourceView(self) -> Static:
-		return self.query_one('#resource-view')
+		return cast(Static, self.query_one('#resource-view'))
+
 
 	@property
 	def diagram(self) -> ACMEContainerDiagram:
-		return self.query_one('#tree-tab-diagram-view')
+		return cast(ACMEContainerDiagram, self.query_one('#tree-tab-diagram-view'))
+
 	
 # TODO move the following to a more generic dialog module
 class ACMEDialog(ModalScreen):
