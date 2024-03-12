@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2023.DEV
+Version 2024.03
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)
@@ -38,30 +38,27 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/129) for the detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/131) for the detailed list of changes.
 
 ### Highlights in this release
 
-- Support for the &lt;schedule> resource type.
-- Limited support for the &lt;locationPolicy> resource type, and for the *location* attribute and *geo-queries*.
-- Basic and bearer authorization for http requests.
-- WSGI http server support. 
-
+- Added WebSocket Binding support.
+- Added support for *SIM* and *MobileNetwork* ManagementObject specializations.
+- Added support for Python 3.12.
 
 ### Improvements
 - Improved Text UI
-  - Added an input field for passing script arguments to tool scripts
-  - Added diagrams for &lt;containers> that have &lt;contentInstances> with numeric values.
-- Improved scripting support with new functions and better script organization.
-- Improved on-boarding by offering automatic installation of missing Python packages
+  - Auto-refresh for diagrams
+  - Diagrams now support containers that contain boolean-kind values.
+  - Added Service menu for resources.
+    - Export a resource and its child resources as curl commands.
+    - Export the instance resources of &lt;container> and &lt;timeSeries> container to CSV files.
+- Improved scripting support with new functions.
 
-
-### <font color="red">Breaking Changes</font>
-- Python 3.8 will be EOL soon. To move forward, from this release on ACME will require Python 3.10 or greater. 
 
 ### What to expect in the next release
 
-See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/129) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/142) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 

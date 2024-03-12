@@ -5,8 +5,8 @@
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>528</x>
-      <y>320</y>
+      <x>592</x>
+      <y>336</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -24,8 +24,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>576</x>
-      <y>232</y>
+      <x>640</x>
+      <y>248</y>
       <w>24</w>
       <h>104</h>
     </coordinates>
@@ -36,8 +36,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>536</x>
-      <y>376</y>
+      <x>600</x>
+      <y>392</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -50,8 +50,8 @@ requests</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>608</x>
-      <y>448</y>
+      <x>672</x>
+      <y>464</y>
       <w>72</w>
       <h>56</h>
     </coordinates>
@@ -65,8 +65,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>528</x>
-      <y>488</y>
+      <x>592</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -79,8 +79,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>528</x>
-      <y>608</y>
+      <x>592</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -97,8 +97,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>584</x>
-      <y>576</y>
+      <x>648</x>
+      <y>592</y>
       <w>40</w>
       <h>48</h>
     </coordinates>
@@ -111,8 +111,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>576</x>
-      <y>544</y>
+      <x>640</x>
+      <y>560</y>
       <w>40</w>
       <h>48</h>
     </coordinates>
@@ -122,8 +122,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>688</x>
-      <y>608</y>
+      <x>752</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -137,8 +137,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>608</y>
+      <x>432</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -151,8 +151,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>416</x>
-      <y>568</y>
+      <x>480</x>
+      <y>584</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -166,8 +166,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>208</x>
-      <y>608</y>
+      <x>272</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -180,8 +180,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>264</x>
-      <y>576</y>
+      <x>328</x>
+      <y>592</y>
       <w>48</w>
       <h>48</h>
     </coordinates>
@@ -193,8 +193,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>504</x>
-      <y>352</y>
+      <x>568</x>
+      <y>368</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -211,8 +211,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>624</x>
-      <y>656</y>
+      <x>688</x>
+      <y>672</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -228,8 +228,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>48</x>
-      <y>608</y>
+      <x>112</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -242,8 +242,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>104</x>
-      <y>568</y>
+      <x>168</x>
+      <y>584</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -256,8 +256,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>728</y>
+      <x>600</x>
+      <y>744</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -272,8 +272,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>760</y>
+      <x>600</x>
+      <y>776</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -288,8 +288,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>528</x>
-      <y>704</y>
+      <x>592</x>
+      <y>720</y>
       <w>248</w>
       <h>184</h>
     </coordinates>
@@ -300,8 +300,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>584</x>
-      <y>664</y>
+      <x>648</x>
+      <y>680</y>
       <w>24</w>
       <h>56</h>
     </coordinates>
@@ -312,8 +312,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>760</y>
+      <x>432</x>
+      <y>776</y>
       <w>128</w>
       <h>24</h>
     </coordinates>
@@ -328,8 +328,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>424</x>
-      <y>664</y>
+      <x>488</x>
+      <y>680</y>
       <w>24</w>
       <h>56</h>
     </coordinates>
@@ -340,8 +340,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>56</x>
-      <y>712</y>
+      <x>120</x>
+      <y>728</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -356,8 +356,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>112</x>
-      <y>688</y>
+      <x>176</x>
+      <y>704</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -369,8 +369,8 @@ fontsize=12
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>104</x>
-      <y>664</y>
+      <x>168</x>
+      <y>680</y>
       <w>24</w>
       <h>56</h>
     </coordinates>
@@ -381,8 +381,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>584</x>
-      <y>256</y>
+      <x>648</x>
+      <y>272</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -396,8 +396,8 @@ via http</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>208</x>
-      <y>712</y>
+      <x>272</x>
+      <y>728</y>
       <w>128</w>
       <h>24</h>
     </coordinates>
@@ -412,8 +412,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>264</x>
-      <y>664</y>
+      <x>328</x>
+      <y>680</y>
       <w>24</w>
       <h>64</h>
     </coordinates>
@@ -424,8 +424,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>752</x>
-      <y>568</y>
+      <x>816</x>
+      <y>584</y>
       <w>80</w>
       <h>56</h>
     </coordinates>
@@ -438,8 +438,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>24</x>
-      <y>280</y>
+      <x>88</x>
+      <y>296</y>
       <w>1984</w>
       <h>632</h>
     </coordinates>
@@ -453,8 +453,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>56</x>
-      <y>744</y>
+      <x>120</x>
+      <y>760</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -469,8 +469,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>48</x>
-      <y>704</y>
+      <x>112</x>
+      <y>720</y>
       <w>128</w>
       <h>72</h>
     </coordinates>
@@ -480,8 +480,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>488</y>
+      <x>432</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -494,8 +494,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>400</x>
-      <y>440</y>
+      <x>464</x>
+      <y>456</y>
       <w>64</w>
       <h>64</h>
     </coordinates>
@@ -508,8 +508,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>744</x>
-      <y>448</y>
+      <x>808</x>
+      <y>464</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -525,8 +525,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>272</x>
-      <y>696</y>
+      <x>336</x>
+      <y>712</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -538,8 +538,8 @@ fontsize=12
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>432</x>
-      <y>688</y>
+      <x>496</x>
+      <y>704</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -551,8 +551,8 @@ fontsize=12
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>592</x>
-      <y>688</y>
+      <x>656</x>
+      <y>704</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -564,8 +564,8 @@ fontsize=12
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>648</x>
-      <y>616</y>
+      <x>712</x>
+      <y>632</y>
       <w>56</w>
       <h>32</h>
     </coordinates>
@@ -578,8 +578,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>672</x>
-      <y>632</y>
+      <x>736</x>
+      <y>648</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -591,8 +591,8 @@ fontsize=12
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>624</x>
-      <y>696</y>
+      <x>688</x>
+      <y>712</y>
       <w>64</w>
       <h>24</h>
     </coordinates>
@@ -609,8 +609,8 @@ layer=1</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>456</x>
-      <y>448</y>
+      <x>520</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -623,8 +623,8 @@ resources</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>208</x>
-      <y>488</y>
+      <x>272</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -641,8 +641,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>608</x>
-      <y>232</y>
+      <x>672</x>
+      <y>248</y>
       <w>40</w>
       <h>104</h>
     </coordinates>
@@ -652,8 +652,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>624</x>
-      <y>256</y>
+      <x>688</x>
+      <y>272</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -667,8 +667,8 @@ via http</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>272</x>
-      <y>440</y>
+      <x>336</x>
+      <y>456</y>
       <w>48</w>
       <h>64</h>
     </coordinates>
@@ -681,8 +681,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>312</x>
-      <y>448</y>
+      <x>376</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -695,8 +695,8 @@ resources</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>848</x>
-      <y>488</y>
+      <x>912</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -713,8 +713,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>792</y>
+      <x>600</x>
+      <y>808</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -729,8 +729,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>720</x>
-      <y>568</y>
+      <x>784</x>
+      <y>584</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -744,8 +744,8 @@ set/get
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>696</x>
-      <y>568</y>
+      <x>760</x>
+      <y>584</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -756,8 +756,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>520</x>
-      <y>232</y>
+      <x>584</x>
+      <y>248</y>
       <w>40</w>
       <h>104</h>
     </coordinates>
@@ -767,8 +767,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>256</y>
+      <x>600</x>
+      <y>272</y>
       <w>32</w>
       <h>24</h>
     </coordinates>
@@ -782,8 +782,8 @@ via http</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>624</x>
-      <y>376</y>
+      <x>688</x>
+      <y>392</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -796,8 +796,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>216</x>
-      <y>448</y>
+      <x>280</x>
+      <y>464</y>
       <w>72</w>
       <h>56</h>
     </coordinates>
@@ -809,8 +809,8 @@ send NOTIFY</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>712</x>
-      <y>144</y>
+      <x>776</x>
+      <y>160</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -823,8 +823,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>640</x>
-      <y>160</y>
+      <x>704</x>
+      <y>176</y>
       <w>88</w>
       <h>40</h>
     </coordinates>
@@ -834,8 +834,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>648</x>
-      <y>200</y>
+      <x>712</x>
+      <y>216</y>
       <w>160</w>
       <h>168</h>
     </coordinates>
@@ -848,8 +848,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>648</x>
-      <y>144</y>
+      <x>712</x>
+      <y>160</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -863,8 +863,8 @@ via http</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1168</x>
-      <y>488</y>
+      <x>1232</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -882,8 +882,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1008</x>
-      <y>488</y>
+      <x>1072</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -897,8 +897,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1088</x>
-      <y>440</y>
+      <x>1152</x>
+      <y>456</y>
       <w>56</w>
       <h>64</h>
     </coordinates>
@@ -912,8 +912,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1024</x>
-      <y>448</y>
+      <x>1088</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -926,8 +926,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1008</x>
-      <y>608</y>
+      <x>1072</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -940,8 +940,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>824</y>
+      <x>600</x>
+      <y>840</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -956,8 +956,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1056</x>
-      <y>560</y>
+      <x>1120</x>
+      <y>576</y>
       <w>48</w>
       <h>64</h>
     </coordinates>
@@ -970,8 +970,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1016</x>
-      <y>568</y>
+      <x>1080</x>
+      <y>584</y>
       <w>40</w>
       <h>56</h>
     </coordinates>
@@ -984,8 +984,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>848</x>
-      <y>608</y>
+      <x>912</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1002,8 +1002,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>912</x>
-      <y>568</y>
+      <x>976</x>
+      <y>584</y>
       <w>40</w>
       <h>56</h>
     </coordinates>
@@ -1016,8 +1016,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>856</x>
-      <y>568</y>
+      <x>920</x>
+      <y>584</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -1031,8 +1031,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>936</x>
-      <y>568</y>
+      <x>1000</x>
+      <y>584</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1045,8 +1045,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1096</x>
-      <y>568</y>
+      <x>1160</x>
+      <y>584</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1058,8 +1058,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>48</x>
-      <y>488</y>
+      <x>112</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1076,8 +1076,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>72</x>
-      <y>448</y>
+      <x>136</x>
+      <y>464</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1089,8 +1089,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>120</x>
-      <y>448</y>
+      <x>184</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -1103,8 +1103,8 @@ resources</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1168</x>
-      <y>608</y>
+      <x>1232</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1118,8 +1118,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1224</x>
-      <y>568</y>
+      <x>1288</x>
+      <y>584</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -1132,8 +1132,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>688</x>
-      <y>488</y>
+      <x>752</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1147,8 +1147,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>688</x>
-      <y>440</y>
+      <x>752</x>
+      <y>456</y>
       <w>72</w>
       <h>64</h>
     </coordinates>
@@ -1163,8 +1163,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1176</x>
-      <y>440</y>
+      <x>1240</x>
+      <y>456</y>
       <w>72</w>
       <h>64</h>
     </coordinates>
@@ -1178,8 +1178,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>872</x>
-      <y>440</y>
+      <x>936</x>
+      <y>456</y>
       <w>72</w>
       <h>64</h>
     </coordinates>
@@ -1193,8 +1193,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1232</x>
-      <y>432</y>
+      <x>1296</x>
+      <y>448</y>
       <w>80</w>
       <h>72</h>
     </coordinates>
@@ -1208,8 +1208,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>528</x>
-      <y>448</y>
+      <x>592</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -1223,8 +1223,8 @@ fontsize=8
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>56</x>
-      <y>536</y>
+      <x>120</x>
+      <y>552</y>
       <w>112</w>
       <h>16</h>
     </coordinates>
@@ -1240,8 +1240,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>688</x>
-      <y>16</y>
+      <x>752</x>
+      <y>32</y>
       <w>176</w>
       <h>216</h>
     </coordinates>
@@ -1253,8 +1253,8 @@ layer=-2</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>712</x>
-      <y>56</y>
+      <x>776</x>
+      <y>72</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1272,8 +1272,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>736</x>
-      <y>112</y>
+      <x>800</x>
+      <y>128</y>
       <w>40</w>
       <h>48</h>
     </coordinates>
@@ -1285,8 +1285,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>640</x>
-      <y>72</y>
+      <x>704</x>
+      <y>88</y>
       <w>88</w>
       <h>40</h>
     </coordinates>
@@ -1296,8 +1296,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>648</x>
-      <y>56</y>
+      <x>712</x>
+      <y>72</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -1311,8 +1311,8 @@ Mca</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>792</x>
-      <y>112</y>
+      <x>856</x>
+      <y>128</y>
       <w>64</w>
       <h>48</h>
     </coordinates>
@@ -1324,8 +1324,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>536</x>
-      <y>856</y>
+      <x>600</x>
+      <y>872</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -1340,8 +1340,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>784</x>
-      <y>440</y>
+      <x>848</x>
+      <y>456</y>
       <w>64</w>
       <h>64</h>
     </coordinates>
@@ -1355,8 +1355,8 @@ fontsize=8
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>928</x>
-      <y>448</y>
+      <x>992</x>
+      <y>464</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -1369,8 +1369,8 @@ resources</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>8</x>
-      <y>0</y>
+      <x>72</x>
+      <y>16</y>
       <w>2016</w>
       <h>928</h>
     </coordinates>
@@ -1383,8 +1383,8 @@ layer=-2</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>144</x>
-      <y>656</y>
+      <x>208</x>
+      <y>672</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -1400,8 +1400,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1328</x>
-      <y>488</y>
+      <x>1392</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1415,8 +1415,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1336</x>
-      <y>440</y>
+      <x>1400</x>
+      <y>456</y>
       <w>56</w>
       <h>64</h>
     </coordinates>
@@ -1430,8 +1430,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>848</x>
-      <y>320</y>
+      <x>912</x>
+      <y>336</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1444,8 +1444,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>904</x>
-      <y>240</y>
+      <x>968</x>
+      <y>256</y>
       <w>56</w>
       <h>96</h>
     </coordinates>
@@ -1457,8 +1457,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>920</x>
-      <y>376</y>
+      <x>984</x>
+      <y>392</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -1470,8 +1470,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1392</x>
-      <y>440</y>
+      <x>1456</x>
+      <y>456</y>
       <w>72</w>
       <h>64</h>
     </coordinates>
@@ -1485,8 +1485,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>320</y>
+      <x>432</x>
+      <y>336</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1504,8 +1504,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>416</x>
-      <y>232</y>
+      <x>480</x>
+      <y>248</y>
       <w>24</w>
       <h>104</h>
     </coordinates>
@@ -1516,8 +1516,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>376</x>
-      <y>376</y>
+      <x>440</x>
+      <y>392</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -1530,8 +1530,8 @@ requests</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>344</x>
-      <y>352</y>
+      <x>408</x>
+      <y>368</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -1547,8 +1547,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>424</x>
-      <y>256</y>
+      <x>488</x>
+      <y>272</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -1562,8 +1562,8 @@ via MQTT</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>464</x>
-      <y>232</y>
+      <x>528</x>
+      <y>248</y>
       <w>40</w>
       <h>104</h>
     </coordinates>
@@ -1573,8 +1573,8 @@ via MQTT</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>480</x>
-      <y>256</y>
+      <x>544</x>
+      <y>272</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -1588,8 +1588,8 @@ via MQTT</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>360</x>
-      <y>232</y>
+      <x>424</x>
+      <y>248</y>
       <w>40</w>
       <h>104</h>
     </coordinates>
@@ -1599,8 +1599,8 @@ via MQTT</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>376</x>
-      <y>256</y>
+      <x>440</x>
+      <y>272</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -1614,8 +1614,8 @@ via MQTT</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>464</x>
-      <y>376</y>
+      <x>528</x>
+      <y>392</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1628,8 +1628,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1328</x>
-      <y>608</y>
+      <x>1392</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1643,8 +1643,8 @@ customelement=</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1376</x>
-      <y>560</y>
+      <x>1440</x>
+      <y>576</y>
       <w>40</w>
       <h>64</h>
     </coordinates>
@@ -1657,8 +1657,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1320</x>
-      <y>560</y>
+      <x>1384</x>
+      <y>576</y>
       <w>64</w>
       <h>64</h>
     </coordinates>
@@ -1672,8 +1672,8 @@ fontsize=8
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1408</x>
-      <y>560</y>
+      <x>1472</x>
+      <y>576</y>
       <w>40</w>
       <h>64</h>
     </coordinates>
@@ -1686,8 +1686,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>640</x>
-      <y>232</y>
+      <x>704</x>
+      <y>248</y>
       <w>48</w>
       <h>104</h>
     </coordinates>
@@ -1698,8 +1698,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>672</x>
-      <y>256</y>
+      <x>736</x>
+      <y>272</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -1713,8 +1713,8 @@ Tester</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1488</x>
-      <y>488</y>
+      <x>1552</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1728,8 +1728,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1544</x>
-      <y>448</y>
+      <x>1608</x>
+      <y>464</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1743,8 +1743,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1328</x>
-      <y>712</y>
+      <x>1392</x>
+      <y>728</y>
       <w>128</w>
       <h>24</h>
     </coordinates>
@@ -1763,8 +1763,8 @@ drawLine(21.8,11.4,20,15) lw=1</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1384</x>
-      <y>664</y>
+      <x>1448</x>
+      <y>680</y>
       <w>24</w>
       <h>64</h>
     </coordinates>
@@ -1776,8 +1776,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1392</x>
-      <y>696</y>
+      <x>1456</x>
+      <y>712</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -1789,8 +1789,8 @@ fontsize=12
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1168</x>
-      <y>320</y>
+      <x>1232</x>
+      <y>336</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1803,8 +1803,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1224</x>
-      <y>240</y>
+      <x>1288</x>
+      <y>256</y>
       <w>64</w>
       <h>96</h>
     </coordinates>
@@ -1816,8 +1816,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1184</x>
-      <y>376</y>
+      <x>1248</x>
+      <y>392</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -1829,8 +1829,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1248</x>
-      <y>376</y>
+      <x>1312</x>
+      <y>392</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1842,8 +1842,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1704</x>
-      <y>448</y>
+      <x>1768</x>
+      <y>464</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1857,8 +1857,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1648</x>
-      <y>488</y>
+      <x>1712</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1872,8 +1872,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1008</x>
-      <y>320</y>
+      <x>1072</x>
+      <y>336</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -1886,8 +1886,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1096</x>
-      <y>376</y>
+      <x>1160</x>
+      <y>392</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -1900,8 +1900,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1024</x>
-      <y>376</y>
+      <x>1088</x>
+      <y>392</y>
       <w>64</w>
       <h>56</h>
     </coordinates>
@@ -1915,8 +1915,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1064</x>
-      <y>240</y>
+      <x>1128</x>
+      <y>256</y>
       <w>56</w>
       <h>96</h>
     </coordinates>
@@ -1928,8 +1928,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>656</x>
-      <y>728</y>
+      <x>720</x>
+      <y>744</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -1944,8 +1944,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>656</x>
-      <y>792</y>
+      <x>720</x>
+      <y>808</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -1960,8 +1960,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>656</x>
-      <y>760</y>
+      <x>720</x>
+      <y>776</y>
       <w>112</w>
       <h>24</h>
     </coordinates>
@@ -1976,8 +1976,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>360</x>
-      <y>704</y>
+      <x>424</x>
+      <y>720</y>
       <w>144</w>
       <h>184</h>
     </coordinates>
@@ -1988,8 +1988,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>728</y>
+      <x>432</x>
+      <y>744</y>
       <w>128</w>
       <h>24</h>
     </coordinates>
@@ -2004,8 +2004,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>368</x>
-      <y>792</y>
+      <x>432</x>
+      <y>808</y>
       <w>128</w>
       <h>24</h>
     </coordinates>
@@ -2020,8 +2020,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1488</x>
-      <y>608</y>
+      <x>1552</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -2034,8 +2034,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1544</x>
-      <y>568</y>
+      <x>1608</x>
+      <y>584</y>
       <w>56</w>
       <h>56</h>
     </coordinates>
@@ -2048,8 +2048,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1648</x>
-      <y>608</y>
+      <x>1712</x>
+      <y>624</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -2063,8 +2063,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1704</x>
-      <y>568</y>
+      <x>1768</x>
+      <y>584</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -2078,8 +2078,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1800</x>
-      <y>488</y>
+      <x>1864</x>
+      <y>504</y>
       <w>128</w>
       <h>64</h>
     </coordinates>
@@ -2093,8 +2093,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1880</x>
-      <y>448</y>
+      <x>1944</x>
+      <y>464</y>
       <w>48</w>
       <h>56</h>
     </coordinates>
@@ -2108,8 +2108,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1808</x>
-      <y>440</y>
+      <x>1872</x>
+      <y>456</y>
       <w>64</w>
       <h>64</h>
     </coordinates>
@@ -2123,8 +2123,8 @@ fontsize=8
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>984</x>
-      <y>352</y>
+      <x>1048</x>
+      <y>368</y>
       <w>64</w>
       <h>24</h>
     </coordinates>
@@ -2140,8 +2140,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>1624</x>
-      <y>520</y>
+      <x>1688</x>
+      <y>536</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -2157,8 +2157,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>824</x>
-      <y>352</y>
+      <x>888</x>
+      <y>368</y>
       <w>48</w>
       <h>24</h>
     </coordinates>
@@ -2170,5 +2170,148 @@ halign=center
 layer=1
 fontsize=10</panel_attributes>
     <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>272</x>
+      <y>336</y>
+      <w>128</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>WS Server/Client
+REST
+symbol=component
+valign=center
+transparency=0
+customelement=
+drawArc(10,10,10,10,0,270,true) transparency=100
+drawLine(16.5,14,20,15)
+drawLine(21.8,11.4,20,15)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>248</x>
+      <y>368</y>
+      <w>56</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>WebSocket
+transparency=0
+bg=light_gray
+valign=center
+halign=center
+layer=1
+fontsize=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>280</x>
+      <y>248</y>
+      <w>40</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=)-</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>296</x>
+      <y>272</y>
+      <w>40</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Mcc
+via WS</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>320</x>
+      <y>248</y>
+      <w>24</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>328</x>
+      <y>272</y>
+      <w>40</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Mca / Mcc
+via WS</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>368</x>
+      <y>248</y>
+      <w>40</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=)-</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>384</x>
+      <y>272</y>
+      <w>48</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Notifications
+via WS</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>368</x>
+      <y>392</y>
+      <w>48</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+send
+requests
+fontsize=8</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>280</x>
+      <y>392</y>
+      <w>56</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>lt=)-
+fontsize=8
+forward
+requests</panel_attributes>
+    <additional_attributes>20.0;40.0;20.0;10.0</additional_attributes>
   </element>
 </diagram>

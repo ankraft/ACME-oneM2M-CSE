@@ -12,6 +12,20 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+
+### Experimental
+
+### Changed
+
+### Fixed
+
+### Removed
+
+
+
+## [2024.03] - xxxx-xx-xx
+
+### Added
 - [CSE] Added internal check before executing a DELETE operation that all resources are allowed to be deleted.
 - [CSE] Added configuration value for the CSE's *poa* attribute. Before, the CSE's *poa* was always set to the *http* server's address.
 - [CSE] Added support for *SIM* ManagementObject specialization.

@@ -210,6 +210,6 @@ The ACME CSE runs at least on the following runtime environments:
 # Limitations
 - The intention of this CSE implemention is to support education and learning, experiments, and demonstrations, but not a production environment. **Use it at your own risk.**
 - The underlying communication stacks and database system are not optimized in any way for high-volume, high-availability, or high-reliability.
-- Unsupported resource types are just stored, but no validations or functionality are provided for those resources. 
+- Unsupported resource types are not stored and handled, and requests for those resources are rejected. 
 
 [← README](../README.md) 
