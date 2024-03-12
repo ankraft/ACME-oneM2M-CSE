@@ -33,6 +33,12 @@ class TinyDBBetterTable(Table):
 
 	# Overload
 	def _get_next_id(self) -> str:
+		"""	Return the ID for a newly inserted document. This method overloads the original method
+			to return the ID as a string.
+
+			Returns:
+				The ID for the new document.
+		"""
 		return str(super()._get_next_id()) # type:ignore[no-untyped-call]
 
 

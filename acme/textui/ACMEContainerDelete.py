@@ -24,6 +24,14 @@ from ..services import CSE
 
 
 def validateOriginator(value: str) -> bool:
+	"""	Validate the originator.
+	
+		Args:	
+			value:	The value to validate.
+
+		Returns:
+			True if the value is valid, otherwise False.
+	"""
 	return len(value) > 1 and value.startswith('C')
 
 class ACMEContainerDelete(Container):
@@ -51,16 +59,26 @@ class ACMEContainerDelete(Container):
 		margin: 1 1 1 1;
 	}
 	"""
+	"""	The CSS for the *Delete* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
+
+			Args:
+				id:	The view ID.
 		"""
 		super().__init__(id = id)
+
 		self.requestOriginator = 'CAdmin'
+		"""	The request originator. """
+
 		self.resource:Resource = None
+		"""	The resource to delete. """
 
 
 	def compose(self) -> ComposeResult:
+		"""	Build the *Delete* view.
+		"""
 		self.fieldOriginator =ACMEFieldOriginator(self.requestOriginator, suggestions = [CSE.cseOriginator, self.requestOriginator])
 		with VerticalScroll(id = 'request-delete-view'):
 			with Container(id = 'request-delete-input-view'):
@@ -74,10 +92,20 @@ class ACMEContainerDelete(Container):
 
 	@property
 	def deleteResponse(self) -> Static:
+		""" Get the delete response widget.
+
+			Returns:
+				The delete response widget.
+		"""
 		return cast(Static, self.query_one('#request-delete-response-response'))
 
 
 	def updateResource(self, resource:Resource) -> None:
+		"""	Update the resource to delete.
+
+			Args:
+				resource:	The resource to delete.
+		"""
 		self.resource = resource
 		# Update the request originator. Important for getting a default request originator
 		self.requestOriginator = self.resource.getOriginator()
@@ -90,6 +118,8 @@ class ACMEContainerDelete(Container):
 
 	@on(Button.Pressed, '#request-delete-button')
 	def buttonExecute(self) -> None:
+		"""	Handle the *Send DELETE Request* button event.
+		"""
 		from .ACMETuiApp import ACMETuiApp
 
 		try:			
@@ -112,4 +142,9 @@ class ACMEContainerDelete(Container):
 
 	@on(ACMEFieldOriginator.Submitted)
 	def inputFieldSubmitted(self, value:str) -> None:
+		"""	Handle the input field submission event.
+
+			Args:
+				value:	The value of the input field.
+		"""
 		self.buttonExecute()

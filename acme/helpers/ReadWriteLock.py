@@ -1,11 +1,17 @@
-# From O'Reilly Python Cookbook by David Ascher, Alex Martelli
-# With changes to cover the starvation situation where a continuous
-#   stream of readers may starve a writer, Lock Promotion and Context Managers
+#
+#	ReadWriteLock.py
+#
+#
+#	This is a simple implementation of a ReadWriteLock.
+#	From O'Reilly Python Cookbook by David Ascher, Alex Martelli
+#	With changes to cover the starvation situation where a continuous
+#	stream of readers may starve a writer, Lock Promotion and Context Managers
+"""	This is a simple implementation of a ReadWriteLock.
+"""
 
 from __future__ import annotations
 from typing import Optional
 import threading
-#import logging
 
 
 class ReadWriteLock(object):
@@ -22,8 +28,8 @@ class ReadWriteLock(object):
 
     def acquire_read(self) -> None:
         """ Acquire a read lock. Blocks only if a thread has
-	        acquired the write lock. """
-        #logging.debug("RWL : acquire_read()")
+	        acquired the write lock. 
+        """
         self._read_ready.acquire()
         try:
             while self._writers > 0:
@@ -33,9 +39,10 @@ class ReadWriteLock(object):
             self._readerList.append(threading.get_ident())
             self._read_ready.release()
 
+
     def release_read(self) -> None:
-        """ Release a read lock. """
-        #logging.debug("RWL : release_read()")
+        """ Release a read lock. 
+        """
         self._read_ready.acquire()
         try:
             self._readers -= 1
@@ -45,10 +52,11 @@ class ReadWriteLock(object):
             self._readerList.remove(threading.get_ident())
             self._read_ready.release()
 
+
     def acquire_write(self) -> None:
         """ Acquire a write lock. Blocks until there are no
-        	acquired read or write locks. """
-        #logging.debug("RWL : acquire_write()")
+        	acquired read or write locks. 
+        """
         self._read_ready.acquire()   # A re-entrant lock lets a thread re-acquire the lock
         self._writers += 1
         self._writerList.append(threading.get_ident())
@@ -61,9 +69,10 @@ class ReadWriteLock(object):
             else:
                 self._read_ready.wait()
 
+
     def release_write(self) -> None:
-        """ Release a write lock. """
-        #logging.debug("RWL : release_write()")
+        """ Release a write lock. 
+        """
         self._writers -= 1
         self._writerList.remove(threading.get_ident())
         self._read_ready.notifyAll()
@@ -73,18 +82,35 @@ class ReadWriteLock(object):
 
 
 class ReadRWLock(object):
-    # Context Manager class for ReadWriteLock
+    """ Context Manager class for ReadWriteLock.
+    """
 
     def __init__(self, rwLock:ReadWriteLock) -> None:
         self.rwLock = rwLock
 
     def __enter__(self) -> ReadRWLock:
+        """ Context Manager method to enter the block.
+        
+            This acquires a read lock. Blocks only if a thread has
+	        acquired the **write** lock.
+            
+            Returns:
+				A ReadRWLock context manager object.
+        """
         self.rwLock.acquire_read()
         return self         # Not mandatory, but returning to be safe
 
+
     def __exit__(self, exc_type, exc_value, traceback) -> bool:
+        """ Context Manager method to exit the block.
+		
+			This releases a read lock.
+			
+			Returns:
+				False if exited due to an exception.
+		"""
         self.rwLock.release_read()
-        return False        # Raise the exception, if exited due to an exception
+        return True
 
 ##############################################################################
 
@@ -101,11 +127,15 @@ class WriteRWLock(object):
 
     def __exit__(self, exc_type, exc_value, traceback) -> bool:
         self.rwLock.release_write()
-        return False        # Raise the exception, if exited due to an exception
+        return False        # Surpress any exceptions
 
 
+##############################################################################
+#
+#	Tests
+#
+    
 import time
-
 
 def reads() -> None:
     readLock = ReadRWLock(lock)

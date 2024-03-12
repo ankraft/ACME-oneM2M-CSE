@@ -68,9 +68,9 @@ class PRMR(AnnounceableResource):
 		""" Initialize the PRMR resource instance.
 		
 			Args:
-				dct: The JSON dictionary with the resource attributes
-				pi: The parent resource ID
-				create: Create a new resource instance. Default is `False`
+				dct: The JSON dictionary with the resource attributes.
+				pi: The parent resource ID.
+				create: Create a new resource instance. Default is *False*.
 		"""
 		super().__init__(ResourceTypes.PRMR, dct, pi, create = create)
 

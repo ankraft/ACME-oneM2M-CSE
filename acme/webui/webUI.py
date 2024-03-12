@@ -7,6 +7,9 @@
 #	WebUI for the ACME CSE
 #
 
+""" This module defines the web user interface for the ACME CSE.
+"""
+
 from __future__ import annotations
 from typing import Callable, Optional
 
@@ -23,6 +26,8 @@ FlaskHandler = 	Callable[[str], Response]
 
 
 class WebUI(object):
+	"""	The web user interface for the ACME CSE.
+	"""
 
 	def __init__(self, app:Flask, 
 					   defaultRI:str, 
@@ -31,15 +36,42 @@ class WebUI(object):
 					   webuiDirectory:Optional[str] = '.', 
 					   redirectURL:Optional[str] = None, 
 					   version:Optional[str] ='') -> None:
+		"""	Initialize the web user interface.
+
+			Args:
+				app: The flask app.
+				defaultRI: The default CSE RI.
+				defaultOriginator: The default originator.
+				root: The root for the web UI.
+				webuiDirectory: The directory for the web UI.
+				redirectURL: The URL to redirect to.
+				version: The version of the web UI.
+		"""
+
 		# Register the endpoint for the web UI
 		self.flaskApp 			= app
+		""" The flask app. """
+
 		self.webuiRoot 			= root
+		""" The root for the web UI. """
+
 		self.defaultRI 			= defaultRI
+		""" The default CSE RI. """
+
 		self.defaultOriginator	= defaultOriginator
+		""" The default originator. """
+
 		self.webuiDirectory 	= f'{webuiDirectory}/web'
+		""" The directory for the web UI. """
+		
 		self.redirectURL 		= redirectURL
+		""" The URL to redirect to. """
+
 		self.version 			= version
+		""" The version of the web UI. """
+		
 		self.oauthToken:Token	= None
+		""" The oauth token. """
 
 		# Append / if necessary
 		if self.redirectURL is not None and self.redirectURL[-1] != '/':
@@ -63,21 +95,50 @@ class WebUI(object):
 						  handler:Optional[FlaskHandler] = None, 
 						  methods:Optional[list[str]] = None, 
 						  strictSlashes:Optional[bool] = True) -> None:
+		"""	Add an endpoint to the web UI.
+
+			Args:
+				endpoint: The endpoint.
+				endpoint_name: The name of the endpoint.
+				handler: The handler for the endpoint.
+				methods: The methods for the endpoint.
+				strictSlashes: Whether to use strict slashes.
+		"""
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
 
 
 	def redirectRoot(self, path:str = None) -> Response:
 		"""	Redirect request to / to webui.
+
+			Args:
+				path: The path.
+				
+			Returns:
+				The response.
 		"""
 		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code = 302)
 
 
 	def getVersion(self, path:str = None) -> Response:
+		"""	Get the version of the web UI.
+
+			Args:
+				path: The path.
+				
+			Returns:
+				The response.
+		"""	
 		return Response(self.version)
 
 
 	def handleWebUIGET(self, path:str = None) -> Response:
 		""" Handle a GET request for the web GUI. 
+
+			Args:
+				path: The path.
+				
+			Returns:
+				The response.
 		"""
 
 		# security check whether the path will under the web root
@@ -101,6 +162,15 @@ class WebUI(object):
 
 	# Proxy method from: https://stackoverflow.com/a/36601467/4799
 	def proxy(self, *args, **kwargs) -> Response:	# type: ignore
+		"""	Proxy a request to another server.
+
+			Args:
+				args: The arguments.
+				kwargs: The keyword arguments.
+
+			Returns:
+				The response.
+		"""
 		url = request.url.replace(request.host_url, self.redirectURL)
 		if doLogging:
 			console.log('[dim]--------------------------------------------------')
@@ -150,7 +220,9 @@ class WebUI(object):
 
 
 console:Console = None
+""" The ACME console for logging. """
 doLogging:bool = True
+""" Whether to do logging. """
 
 
 def runServer(flaskApp:Flask, 
@@ -159,6 +231,17 @@ def runServer(flaskApp:Flask,
 			  useTLS:bool, 
 			  certFile:Optional[str] = None, 
 			  privateKey:Optional[str] = None) -> None:
+	"""	Run the web server.
+
+		Args:
+			flaskApp: The flask app to run.
+			host: The host to bind to.
+			port: The port to bind to.
+			useTLS: Whether to use TLS.
+			certFile: The certificate file.
+			privateKey: The private key file.
+	"""
+	
 	WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 	# Run the http server. This runs forever.
@@ -191,26 +274,52 @@ def runServer(flaskApp:Flask,
 #
 
 class ACMERequestHandler(WSGIRequestHandler):
+	"""	Own request handler to redirect some logging of the http server.
+	"""
 
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
+		"""	Log a message. Overridden to redirect logging.
+
+			Args:
+				type: The type of the message.
+				message: The message.
+				args: The arguments.
+		"""
 		if doLogging:
 			console.log(message % args)
 
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
+		"""	Log an incoming request. Overridden to redirect logging.
+
+			Args:
+				code: The response code.
+				size: The response size.
+		"""
 		if doLogging:
 			console.log(f'"{self.requestline}" {size} {code}')
 
 
 	def log_message(self, format, *args): 	# type: ignore
+		"""	Log a message. Overridden to redirect logging.
+
+			Args:
+				format: The format of the message.
+				args: The arguments.
+		"""
 		if doLogging:
 			console.log(format % args)
 
+#
+#	OAuth2 token handling
+#	
 
 Token = collections.namedtuple('Token', 'token expiration')
+""" Named tuple for a token. """
 _expirationLeeway	= 5.0		# 5 seconds leeway for token expiration
+"""	Leeway for token expiration. """
 
 
 
@@ -221,6 +330,13 @@ def getOAuthToken(token:Optional[Token] = None,
 
 		This function returns a new named tuple Token(token, expiration), or None in case of an error. The expiration 
 		is in epoch seconds.
+
+		Args:
+			token: The token to check. If None, a new token is retrieved.
+			kind: The kind of token to retrieve. Currently only 'keycloak' is supported.
+
+		Returns:
+			The token, or None in case of an error.
 	"""
 	if token is None:
 		token = Token(token=None, expiration=0.0)

@@ -22,28 +22,50 @@ from ..services.Configuration import Configuration
 idConfigs = 'configurations'
 
 class ACMEConfigurationTree(TextualTree):
+	"""	Configurations view for the ACME text UI.
+	"""
 
 	parentContainer:ACMEContainerConfigurations = None
+	"""	The parent container. """
 	prefixLen:int = 0
+	"""	The length of the prefix. """
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		"""	Constructor.
+
+			An extra parameter "parentContainer" is added to the constructor.
+
+			Args:
+				args:	Variable length argument list.
+				kwargs:	Arbitrary keyword arguments.
+		"""
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
-
+		
 
 	def on_mount(self) -> None:
+		""" Called when the widget is mounted to the app.
+		"""
 		# Expand the root element
 		self.root.expand()
 
 	
 	def on_show(self) -> None:
+		""" Called when the widget is shown.
+		"""
 		# Build the configuration settings tree
-		self.auto_expand = False
 		root = self.root
 		root.data = root.label
 		self.prefixLen = len(self.root.data) + 1 
 
 		def _addSetting(splits:list[str], level:int, node:TreeNode) -> None:
+			""" Add a setting to the tree.
+
+				Args:
+					splits:	The list of splits.
+					level:	The level.
+					node:	The node.
+			"""
 			_s = splits[level]
 			_n = None
 			for c in node.children:
@@ -68,10 +90,20 @@ class ACMEConfigurationTree(TextualTree):
 
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
+		""" Called when a node is highlighted. Show the documentation for the node.
+
+			Args:
+				node:	The node.
+		"""
 		self._showDocumentation(str(node.node.data))
 
 
 	def _showDocumentation(self, topic:str) -> None:
+		""" Show the documentation for a topic.
+
+			Args:
+				topic:	The topic.
+		"""
 		if topic != str(self.root.data):
 			topic = topic[self.prefixLen:]
 		
@@ -95,6 +127,8 @@ class ACMEConfigurationTree(TextualTree):
 
 
 class ACMEContainerConfigurations(Horizontal):
+	"""	Container for the *Configurations* view.
+	"""
 	
 	DEFAULT_CSS = '''
 	#configs-tree-view {
@@ -111,9 +145,13 @@ class ACMEContainerConfigurations(Horizontal):
 		display: block;
 		overflow: auto auto;  
 	}
-
 	'''
+	"""	The CSS for the *Configurations* view. """
+
+
 	def compose(self) -> ComposeResult:
+		"""	Build the *Configurations* view.
+		"""
 		yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', 
 							  		id = 'configs-tree-view',
 									parentContainer = self)
@@ -122,17 +160,35 @@ class ACMEContainerConfigurations(Horizontal):
 
 	@property
 	def treeView(self) -> ACMEConfigurationTree:
+		""" Get the tree view widget.
+
+			Returns:
+				The tree view.
+		"""
 		return cast(ACMEConfigurationTree, self.query_one('#configs-tree-view'))
 
 
 	@property
 	def documentationView(self) -> Markdown:
+		""" Get the documentation view widget.
+
+			Returns:
+				The documentation view.
+		"""
 		return cast(Markdown, self.query_one('#configs-documentation'))
 
 
 	def on_show(self) -> None:
+		""" Called when the widget is shown.
+		"""
 		self.treeView.focus()
 
 
 	def updateDocumentation(self, header:str, doc:str) -> None:
+		""" Update the documentation view.
+
+			Args:
+				header:	The header.
+				doc:	The documentation.
+		"""
 		self.documentationView.update(header + doc)

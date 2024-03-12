@@ -16,8 +16,11 @@ from textual.binding import Binding
 from ..etc.Constants import Constants
 
 class ACMEContainerAbout(Container):
+	"""	About view for the ACME text UI.
+	"""
 
 	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
+	"""	The key bindings for the *About* view. """
 
 	DEFAULT_CSS = """
 	#about-view {
@@ -32,6 +35,7 @@ class ACMEContainerAbout(Container):
 		border: none;
 	}
 	"""
+	"""	The CSS for the *About* view. """
 
 	text = \
 f"""\
@@ -49,10 +53,13 @@ An open source CSE Middleware for Education
 {Constants.copyright}
 
 Available under the BSD 3-Clause License"""
+	"""	The text for the ACME CSE about view."""
 
 	socialLink =  Text('Social: ') + Text('@acmeCSE@mstdn.social', style='link https://mstdn.social/@acmeCSE') + Text(' ')
+	"""	A link to the ACME CSE Mastodon account. """
 
 	link =  Text('GitHub: ') + Text('https://github.com/ankraft/ACME-oneM2M-CSE', style='link https://github.com/ankraft/ACME-oneM2M-CSE') + Text(' ')
+	"""	A link to the ACME CSE GitHub repository. """
 
 	qrcode = \
 """\
@@ -74,10 +81,13 @@ Available under the BSD 3-Clause License"""
 █ ▀▀▀ █ ▀█▄▄▀▀▀▄█  ▄█ ▄█ ▀ ██▄▀▀▀
 ▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀\
 """
+	"""	The QR code for the ACME CSE. """
 
 
 	
 	def on_show(self) -> None:
+		"""	Show the view. Callback from *textualize*.
+		"""
 		# HACK The following is a hack to get the focus on this page.
 		# Otherwise, without an interactive element, the focus would not be on this page at all,
 		# and the Bindings would not be shown.
@@ -86,6 +96,11 @@ Available under the BSD 3-Clause License"""
 
 
 	def compose(self) -> ComposeResult:
+		"""	Compose the view. Callback from *textualize*.
+		
+			Returns:
+				The ComposeResult.
+		"""
 		with Vertical(id = 'about-view'):
 			with (_c := Center()):
 				_c.styles.padding = (4, 0, 0, 0)
@@ -104,4 +119,6 @@ Available under the BSD 3-Clause License"""
 
 
 	def action_goto_repo(self) -> None:
+		"""	Open the ACME @ GitHub page in the browser.
+		"""
 		webbrowser.open('https://github.com/ankraft/ACME-oneM2M-CSE')

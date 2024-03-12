@@ -6,6 +6,8 @@
 #
 #	ResourceType: PollingChannel
 #
+"""	This module implements the PollingChannel (PCH) resource.
+"""
 
 from __future__ import annotations
 from typing import Optional, cast
@@ -22,12 +24,18 @@ from ..services.Logging import Logging as L
 # Tests for special access to PCH resource is done in SecurityManager.hasAccess()
 
 class PCH(Resource):
+	"""	PollingChannel resource class.
+	"""
 
 	_parentOriginator = '__parentOriginator__'
+	"""	Parent resource originator attribute name. """
+
 	_pcuRI = '__pcuRI__'
+	"""	PCU resource ID attribute name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
+	"""	Allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -45,11 +53,19 @@ class PCH(Resource):
 		# Resource attributes
 		'rqag': None,
 	}
+	"""	Attributes and Attribute policies for this Resource Class. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
+		"""	Initialize the PCH object.
+
+			Args:
+				dct:		The dictionary containing the resource data.
+				pi:			The parent resource ID.
+				create:		True if this resource should be created.
+		"""
 		# PCH inherits from its parent, the <AE>
 		super().__init__(ResourceTypes.PCH, dct, pi, create = create, inheritACP = True)
 
@@ -62,6 +78,12 @@ class PCH(Resource):
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
+		"""	Activate the PCH resource. Create the PCU resource and set the parent's originator.
+
+			Args:
+				parentResource:	The parent resource.
+				originator:		The originator of the request.
+		"""
 		# register pollingChannelURI PCU virtual resource before anything else, because
 		# it will be needed during validation, 
 		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
@@ -90,6 +112,13 @@ class PCH(Resource):
 	def validate(self, originator:Optional[str] = None, 
 					   dct:Optional[JSON] = None, 
 					   parentResource:Optional[Resource] = None) -> None:
+		"""	Validate the PCH resource.
+		
+			Args:
+				originator:		The originator of the request.
+				dct:			The dictionary containing the resource data.
+				parentResource:	The parent resource.
+		"""
 		super().validate(originator, dct, parentResource)
 
 		# Set the aggregation state in the own PCU

@@ -6,6 +6,8 @@
 #
 #	Managing time related CSE functions
 #
+""" Managing time related CSE functions.
+"""
 
 from __future__ import annotations
 from typing import cast, List, Tuple, Optional
@@ -22,15 +24,22 @@ from ..services.Logging import Logging as L
 # TODO add check to http response handling
 # TODO add check to mqtt request handling
 # TODO add check to mqtt response handling
+# TODO add check to ws request handling
+# TODO add check to ws response handling
 
 class TimeManager(object):
+	"""	Managing time related CSE functions.
+	"""
 
 	__slots__ = (
 		'periodicTimeSyncBeacons',
 		'losTimeSyncBeacons',
 	)
+	""" Define slots for instance variables. """
 
 	def __init__(self) -> None:
+		"""	Initialize the TimeManager.
+		"""
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
@@ -43,11 +52,11 @@ class TimeManager(object):
 		CSE.event.addHandler(CSE.event.requestReceived, self.requestReveivedHandler)			# type: ignore
 		CSE.event.addHandler(CSE.event.responseReceived, self.responseReveivedHandler)			# type: ignore
 		
-		# Table for periodic timeSyncBeacons
 		self.periodicTimeSyncBeacons:dict[str, BackgroundWorker] = {}
+		"""	Table for periodic timeSyncBeacons."""
 
-		# Table for Loss of sync timeSyncBeacons
 		self.losTimeSyncBeacons:dict[str, Tuple[float, str]] = {}	# dict bcnr -> (threshold, tsb.ri)
+		"""	Table for Loss-of-sync timeSyncBeacons."""
 
 		L.isInfo and L.log('TimeManager initialized')
 
@@ -79,10 +88,20 @@ class TimeManager(object):
 
 
 	def requestReveivedHandler(self, name:str, req:CSERequest) -> None:
+		"""	Handle a received request.
+		
+			Args:
+				req: The received request
+		"""
 		# L.logErr(f'Received {req}')
 		...
 
 	def responseReveivedHandler(self, name:str, resp:CSERequest) -> None:
+		"""	Handle a received response.
+		
+			Args:
+				resp: The received response
+		"""
 		# L.logErr(f'Received {resp}')
 		#L.logWarn(self.isLossOfSynchronization(resp))
 		...
@@ -94,11 +113,20 @@ class TimeManager(object):
 
 
 	def _getAllPeriodicTimeSyncBeacons(self) -> list[TSB]:
+		"""	Get all periodic timeSyncBeacons from the storage.
+		
+			Return:
+				List of periodic timeSyncBeacons
+		"""
 		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
 	def addTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO doc
+		"""	Add a timeSyncBeacon resource.
+		
+			Args:
+				tsb: timeSyncBeacon resource
+		"""
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
 			self.addPeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
@@ -139,6 +167,11 @@ class TimeManager(object):
 
 
 	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
+		"""	Add a Loss-of-sync timeSyncBeacon resource.
+		
+			Args:
+				tsb: timeSyncBeacon resource
+		"""
 		# TODO doc
 		if not (bcnr := tsb.bcnr):
 			raise BAD_REQUEST(f'bcnr missing in TSB: {tsb.ri}')
@@ -148,12 +181,21 @@ class TimeManager(object):
 
 	
 	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> None:
-		# TODO
+		"""	Update a timeSyncBeacon resource.
+		
+			Args:
+				tsb: The timeSyncBeacon resource
+				originalBcnc: The original beacon criteria
+		"""
 		...
 	
 
 	def removeTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO doc
+		"""	Remove a timeSyncBeacon resource.
+		
+			Args:
+				tsb: The timeSyncBeacon resource
+		"""
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
 			self.removePeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
@@ -172,7 +214,11 @@ class TimeManager(object):
 	
 
 	def removeLosTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO doc
+		"""	Remove a Loss-of-sync timeSyncBeacon resource.
+		
+			Args:
+				tsb: The timeSyncBeacon resource.
+		"""
 		if not (bcnr := tsb.bcnr):
 			L.isWarn and L.logWarn(f'bcnr missing in TSB: {tsb.ri}')
 			return
@@ -181,6 +227,14 @@ class TimeManager(object):
 
 
 	def isLossOfSynchronization(self, req:CSERequest) -> Optional[str]:
+		"""	Check if a request is a loss-of-synchronization request.
+		
+			Args:
+				req: The request.
+			
+			Return:
+				The duration of the loss-of-synchronization or None.
+		"""
 		if (tup := self.losTimeSyncBeacons.get(req.originator)) and (ot := req.ot):
 			tsd = abs(isodateDelta(ot))
 			L.logWarn(tsd)

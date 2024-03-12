@@ -128,7 +128,7 @@ class WebSocketServer(object):
 	def _configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
-		"""	Callback for the `configUpdate` event.
+		"""	Callback for the *configUpdate* event.
 			
 			Args:
 				name: Event name.

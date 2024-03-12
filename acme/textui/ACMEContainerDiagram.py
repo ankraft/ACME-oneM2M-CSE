@@ -25,146 +25,187 @@ class DiagramTypes(IntEnum):
 	"""	Enumeration of the different diagram types.
 	"""
 	Line = 0
+	"""	Line diagram."""
+
 	Graph = 1
+	"""	Graph diagram."""
+
 	Scatter = 2
+	"""	Scatter diagram."""
+
 	Bar = 3
+	"""	Bar diagram."""
+
 	Timeline = 4
+	"""	Timeline diagram."""
 
 
 class ACMEContainerDiagram(Container):
+	"""	The Diagram view for *Container* resources for the ACME text UI.
+	"""
 
 	DEFAULT_CSS = '''
-#diagram-view {
-	height: 100%;
-	padding: 0 1 1 1;
-}
+	#diagram-view {
+		height: 100%;
+		padding: 0 1 1 1;
+	}
 
-#diagram-plot {
-	/*height: 100%;*/
+	#diagram-plot {
+		/*height: 100%;*/
 
-}
+	}
 
-#diagram-footer {
-	width: 100%;
-	margin-top: 1;
-	height: 1;
-}
+	#diagram-footer {
+		width: 100%;
+		margin-top: 1;
+		height: 1;
+	}
 
-#diagram-button-set {
-	width: auto;
-	margin-bottom: 0;
-}
+	#diagram-button-set {
+		width: auto;
+		margin-bottom: 0;
+	}
 
-#diagram-line-button {
-	height: 1;
-	border: none;
-	margin-right: 1;
-	min-width: 10;
-}
+	#diagram-line-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 10;
+	}
 
-#diagram-graph-button {
-	height: 1;
-	border: none;
-	margin-right: 1;
-	min-width: 11;
-}
+	#diagram-graph-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 11;
+	}
 
-#diagram-scatter-button {
-	height: 1;
-	border: none;
-	margin-right: 1;
-	min-width: 13;
-}
+	#diagram-scatter-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 13;
+	}
 
-#diagram-bar-button {
-	height: 1;
-	border: none;
-	margin-right: 1;
-	min-width: 9;
-}
+	#diagram-bar-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 9;
+	}
 
-#diagram-timeline-button {
-	height: 1;
-	border: none;
-	margin-right: 0;
-	min-width: 14;
-}
+	#diagram-timeline-button {
+		height: 1;
+		border: none;
+		margin-right: 0;
+		min-width: 14;
+	}
 
-#diagram-refresh-button {
-	height: 1;
-	border: none;
-	margin-left: 4;
-	margin-right: 0;
-	min-width: 13;
-}
+	#diagram-refresh-button {
+		height: 1;
+		border: none;
+		margin-left: 4;
+		margin-right: 0;
+		min-width: 13;
+	}
 
-#diagram-autorefresh-checkbox {
-	height: 1;
-	border: none;
-	margin-left: 2;
-	margin-right: 0;
-	min-width: 17;
-}
+	#diagram-autorefresh-checkbox {
+		height: 1;
+		border: none;
+		margin-left: 2;
+		margin-right: 0;
+		min-width: 17;
+	}
 
-/* Toggle Button */
+	/* Toggle Button */
 
-ToggleButton > .toggle--button {
-	color: $background;
-	text-style: bold;
-	background: $foreground 15%;
-}
-
-ToggleButton:focus > .toggle--button {
-	background: $foreground 25%;
-}
-
-ToggleButton.-on > .toggle--button {
-	background: $success 75%;
-}
-
-ToggleButton.-on:focus > .toggle--button {
-	background: $success;
-}
-
-
-ToggleButton:light > .toggle--button {
-        color: $background;
+	ToggleButton > .toggle--button {
+		color: $background;
 		text-style: bold;
-        background: $foreground 15%;
-}
+		background: $foreground 15%;
+	}
 
-ToggleButton:light:focus > .toggle--button {
-	background: $foreground 25%;
-}
+	ToggleButton:focus > .toggle--button {
+		background: $foreground 25%;
+	}
 
-ToggleButton:light.-on > .toggle--button {
-	color: $foreground 10%;
-	background: $success;
-}
+	ToggleButton.-on > .toggle--button {
+		background: $success 75%;
+	}
 
-ToggleButton:light.-on:focus > .toggle--button {
-	color: $foreground 10%;
-	background: $success 75%;
-}
+	ToggleButton.-on:focus > .toggle--button {
+		background: $success;
+	}
 
-'''
+
+	ToggleButton:light > .toggle--button {
+			color: $background;
+			text-style: bold;
+			background: $foreground 15%;
+	}
+
+	ToggleButton:light:focus > .toggle--button {
+		background: $foreground 25%;
+	}
+
+	ToggleButton:light.-on > .toggle--button {
+		color: $foreground 10%;
+		background: $success;
+	}
+
+	ToggleButton:light.-on:focus > .toggle--button {
+		color: $foreground 10%;
+		background: $success 75%;
+	}
+	'''
+	"""	The default CSS for the diagram view."""
 
 
 	from ..textui import ACMETuiApp
 
 	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+		"""	Initialize the Diagram view.
+
+			Args:
+				refreshCallback: The callback to refresh the diagram.
+				tuiApp: The TUI application.
+				id: The ID of the view.
+		"""
 		super().__init__(id = id)
+		
 		self.tuiApp = tuiApp
+		"""	Backlink to the TUI application."""
+
 		self.color = (0, 120, 212)
+		"""	The color of the diagram."""
+
 		self.type = DiagramTypes.Line
+		"""	The type of the diagram."""
+
 		self.plotContainer:Container = None
+		"""	The container widget for the plot. """
+
 		self.plot:PlotextPlot = None
+		"""	The plot widget."""
+
 		self.values:list[float] = []
+		"""	The values to be displayed in the diagram."""
+
 		self.dates:Optional[list[str]] = []
+		"""	The dates for the values."""
+
 		self.refreshCallback = refreshCallback
+		"""	The callback to refresh the diagram."""
+
 		self.autoRefresh = False
+		"""	Whether the diagram should be refreshed automatically."""
+
 		self.autoRefreshInterval = self.tuiApp.textUI.refreshInterval
+		"""	The interval for the automatic refresh."""
+
 		self.refreshTimer:Timer = None
+		"""	The timer for the automatic refresh."""
+
 		self.buttons = {
 			DiagramTypes.Line: Button('Line', variant = 'success', id = 'diagram-line-button'),
 			DiagramTypes.Graph: Button('Graph', variant = 'primary', id = 'diagram-graph-button'),
@@ -172,12 +213,19 @@ ToggleButton:light.-on:focus > .toggle--button {
 			DiagramTypes.Bar: Button('Bar', variant = 'primary', id = 'diagram-bar-button'),
 			DiagramTypes.Timeline: Button('Timeline', variant = 'primary', id = 'diagram-timeline-button'),
 		}
+		"""	The buttons to switch between the diagram types."""
+
 		self.refreshCheckbox = Checkbox('Auto Refresh', self.autoRefresh, id = 'diagram-autorefresh-checkbox')
+		"""	The checkbox to enable/disable the automatic refresh."""
+
+		# Set the inner button text to a space
 		self.refreshCheckbox.BUTTON_INNER = ' '
 
 
 
 	def compose(self) -> ComposeResult:
+		"""	Compose the diagram view.
+		"""
 		self._newPlot()
 		with Vertical(id = 'diagram-view'):
 			yield self.plotContainer
@@ -192,12 +240,16 @@ ToggleButton:light.-on:focus > .toggle--button {
 
 
 	def on_mount(self) -> None:
+		"""	Callback when the view is mounted.
+		"""
 		self.refreshTimer = self.set_interval(self.autoRefreshInterval, 
 											  self._refreshChart, 
 											  pause = True)
 
 
 	def on_show(self) -> None:
+		"""	Callback when the view is shown.
+		"""
 		self._activateButton(self.type)
 		self.plotGraph()
 		if self.autoRefresh:
@@ -205,6 +257,8 @@ ToggleButton:light.-on:focus > .toggle--button {
 	
 	
 	def on_hide(self) -> None:
+		"""	Callback when the view is hidden.
+		"""
 		self._stopRefreshTimer()
 
 
