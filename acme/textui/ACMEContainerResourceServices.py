@@ -156,7 +156,7 @@ Export the resource to a file in the *./tmp* directory as a *curl* command.
 Export the instances of the container resource to a CSV file in the *./tmp* directory.
 ''')
 				with Container(id = 'services-export-instances-area'):
-					yield Button('Export CVS', variant = 'primary', id = 'services-export-instances-button')
+					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button')
 					yield LoadingIndicator(id = 'services-export-instances-loading-indicator')
 					yield Static('', id = 'services-export-instances-result')
 					yield Rule()
