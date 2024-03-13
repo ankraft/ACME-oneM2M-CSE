@@ -42,13 +42,14 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-- Added WebSocket Binding support.
+- Added WebSocket Binding support.  
+  Though fully functional, there are two experimental features added to the implementation. See the [article](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/143) that explains these features and how to use them.
 - Added support for *SIM* and *MobileNetwork* ManagementObject specializations.
 - Added support for Python 3.12.
 
 ### Improvements
-- Improved Text UI
-  - Auto-refresh for diagrams
+- Improved Text UI.
+  - Auto-refresh for diagrams.
   - Diagrams now support containers that contain boolean-kind values.
   - Added Service menu for resources.
     - Export a resource and its child resources as curl commands.
