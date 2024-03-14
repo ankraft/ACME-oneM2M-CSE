@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [unreleased 2024.DEV] - xxxx-xx-xx
+
+### Added
+
+### Experimental
+
+### Changed
+
+### Fixed
+
+### Removed
+
+
 ## [2024.03] - 2024-03-14
 
 ### Added
@@ -47,7 +60,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed originator handling when working with requests to remote CSE's and also with announcements.
 - [CSE] Added support for Python 3.12.
 
-### Removed
 
 
 ## [2023.10.1] - 2023-11-04
