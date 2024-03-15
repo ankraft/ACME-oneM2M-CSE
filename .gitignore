@@ -1,7 +1,8 @@
 # Other
 .DS_Store
 certs/
-data*/
+data/
+data.*/
 init.mn/
 logs*/
 acme.*ini
