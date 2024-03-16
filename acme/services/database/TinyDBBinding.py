@@ -548,7 +548,6 @@ class TinyDBBinding(DBBinding):
 	#	Subscriptions
 	#
 
-
 	def searchSubscriptions(self, ri:Optional[str] = None, 
 								  pi:Optional[str] = None) -> Optional[list[JSON]]:
 		with self.lockSubscriptions:
@@ -593,14 +592,10 @@ class TinyDBBinding(DBBinding):
 	#	BatchNotifications
 	#
 
-	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
+	def addBatchNotification(self, batchRecord:JSON) -> bool:
+	# def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
 		with self.lockBatchNotifications:
-			return self.tabBatchNotifications.insert( 
-					{	'ri' 		: ri,
-						'nu' 		: nu,
-						'tstamp'	: utcTime(),
-						'request'	: notificationRequest
-					}) is not None
+			return self.tabBatchNotifications.insert(batchRecord) is not None
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
@@ -625,8 +620,6 @@ class TinyDBBinding(DBBinding):
 	def searchStatistics(self) -> JSON:
 		with self.lockStatistics:
 			stats = self.tabStatistics.all()
-			# stats = self.tabStatistics.get(doc_id = 1)
-			# return stats if stats is not None and len(stats) > 0 else None
 			return stats[0] if stats else None
 
 
@@ -634,7 +627,6 @@ class TinyDBBinding(DBBinding):
 		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
 				doc_id = self.tabStatistics.all()[0].doc_id
-				#return self.tabStatistics.update(stats, doc_ids = [1]) is not None
 				return self.tabStatistics.update(stats, doc_ids = [doc_id]) is not None
 			else:
 				return self.tabStatistics.insert(stats) is not None
@@ -649,37 +641,25 @@ class TinyDBBinding(DBBinding):
 	#	Actions
 	#
 
-	def searchActionReprs(self) -> list[JSON]:
+	def getAllActionReprs(self) -> list[JSON]:
 		with self.lockActions:
 			actions = self.tabActions.all()
 			return cast(list[JSON], actions) if actions else None
 	
 
-	def getAction(self, ri:str) -> Optional[JSON]:
+	def getActionRep(self, ri:str) -> Optional[JSON]:
 		with self.lockActions:
 			return cast(list[JSON], self.tabActions.get(doc_id = ri))	# type:ignore[arg-type, return-value]
 
 
-	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
+	def searchActionsReprsForSubject(self, ri:str) -> Sequence[JSON]:
 		with self.lockActions:
 			return self.tabActions.search(self.actionsQuery.subject == ri)
 	
 
-	def upsertActionRepr(self, action:ACTR, periodTS:float, count:int) -> bool:
+	def upsertActionRepr(self, actionRepr:JSON, ri:str) -> bool:
 		with self.lockActions:
-			_ri = action.ri
-			_sri = action.sri
-			return self.tabActions.upsert(Document(
-					{	'ri':		_ri,
-						'subject':	_sri if _sri else action.pi,
-						'dep':		action.dep,
-						'apy':		action.apy,
-						'evm':		action.evm,
-						'evc':		action.evc,	
-						'ecp':		action.ecp,
-						'periodTS': periodTS,
-						'count':	count,
-					}, _ri)) is not None
+			return self.tabActions.upsert(Document(actionRepr, ri)) is not None	# type:ignore[arg-type]
 
 
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
@@ -692,7 +672,6 @@ class TinyDBBinding(DBBinding):
 			if self.tabActions.get(doc_id = ri):	# type:ignore[arg-type]
 				return len(self.tabActions.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
 			return False
-			# return len(self.tabActions.remove(self.actionsQuery.ri == ri)) > 0
 
 
 	#
