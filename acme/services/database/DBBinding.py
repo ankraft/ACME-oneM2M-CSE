@@ -316,7 +316,7 @@ class DBBinding(ABC):
 	#
 
 	@abstractmethod
-	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
+	def addBatchNotification(self, batchRecord:JSON) -> bool:
 		"""	Add a batch notification to the database.
 
 			Args:
@@ -411,8 +411,8 @@ class DBBinding(ABC):
 	#
 
 	@abstractmethod
-	def searchActionReprs(self) -> list[JSON]:
-		"""	Search for action representations.
+	def getAllActionReprs(self) -> list[JSON]:
+		"""	Return all action representations.
 		
 			Return:
 				A list of action representations, or None if not found.
@@ -421,7 +421,7 @@ class DBBinding(ABC):
 	
 
 	@abstractmethod
-	def getAction(self, ri:str) -> Optional[JSON]:
+	def getActionRep(self, ri:str) -> Optional[JSON]:
 		"""	Get an action representation by resource ID.
 		
 			Args:
@@ -434,7 +434,7 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def searchActionsDeprsForSubject(self, ri:str) -> Sequence[JSON]:
+	def searchActionsReprsForSubject(self, ri:str) -> Sequence[JSON]:
 		"""	Search for action representations by subject.
 		
 			Args:
@@ -448,13 +448,12 @@ class DBBinding(ABC):
 
 	# TODO Move resource handling to Storage module. This is too detailed here
 	@abstractmethod
-	def upsertActionRepr(self, action:ACTR, periodTS:float, count:int) -> bool:
+	def upsertActionRepr(self, actionRepr:JSON, ri:str) -> bool:
 		"""	Update or insert an action representation.
 		
 			Args:
 				action: The action representation to update or insert.
-				periodTS: The timestamp for periodic execution.
-				count: The number of times the action will be executed.
+				ri: The resource ID of the action representation.
 			
 			Return:
 				True if the action representation was updated or inserted, False otherwise.

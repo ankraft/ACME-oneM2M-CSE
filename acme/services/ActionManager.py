@@ -104,7 +104,7 @@ class ActionManager(object):
 		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {_ri}')
 
 		# Get actions. Remember, these are NOT <action> resources
-		actions = CSE.storage.searchActionsForSubject(_ri)		
+		actions = CSE.storage.searchActionReprsForSubject(_ri)		
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
 		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {_ri}')
@@ -122,7 +122,7 @@ class ActionManager(object):
 				
 				# re-read the action document because it might have changed while waiting for the lock
 				# However, it might be under rare circumstances that the action is deleted while waiting
-				if not (action := CSE.storage.getAction(ri)):
+				if not (action := CSE.storage.getActionRepr(ri)):
 					L.logWarn(f'Action {ri} not found anymore. Skipping')
 					continue
 
@@ -165,13 +165,13 @@ class ActionManager(object):
 					evm = action['evm']
 					if evm == EvalMode.once:			# remove if only once
 						L.isDebug and L.logDebug(f'Removing "once" action: {ri}')
-						CSE.storage.removeAction(ri)
+						CSE.storage.removeActionRepr(ri)
 						continue
 					if evm == EvalMode.continous:		# remove from action DB if count reaches 0
 						count = action['count']
 						if (count := count - 1) == 0:
 							L.isDebug and L.logDebug(f'Removing "continuous" action: {ri} (count: {actr.ecp} reached)')
-							CSE.storage.removeAction(ri)
+							CSE.storage.removeActionRepr(ri)
 						else:
 							action['count'] = count
 							CSE.storage.updateActionRepr(action)
@@ -291,33 +291,33 @@ class ActionManager(object):
 		evm = action.evm
 		if evm == EvalMode.off:
 			L.isDebug and L.logDebug(f'evm: off for action: {action.ri} - Action inactive.')
-			CSE.storage.removeAction(action.ri)	# just remove, ignore result
+			CSE.storage.removeActionRepr(action.ri)	# just remove, ignore result
 			return
 		if evm == EvalMode.once:
 			L.isDebug and L.logDebug(f'evm: once for action: {action.ri}.')
-			CSE.storage.updateAction(action, 0, 0)
+			CSE.storage.upsertAction(action, 0, 0)
 			return
 		if evm == EvalMode.periodic:
 			ecp = action.ecp if action.ecp else self.ecpPeriodicDefault
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
-			CSE.storage.updateAction(action, utcTime(), 0)
+			CSE.storage.upsertAction(action, utcTime(), 0)
 			return
 		if evm == EvalMode.continous:
 			ecp = action.ecp if action.ecp else self.ecpContinuousDefault
 			L.isDebug and L.logDebug(f'evm: continuous for action: {action.ri}, counter: {ecp}')
-			CSE.storage.updateAction(action, 0, ecp)
+			CSE.storage.upsertAction(action, 0, ecp)
 			return
 		raise INTERNAL_SERVER_ERROR(f'unknown EvalMode: {evm}. This should not happen.')
 		
 
 	def unscheduleAction(self, action:ACTR) -> None:
-		CSE.storage.removeAction(action.ri)
+		CSE.storage.removeActionRepr(action.ri)
 
 	
 	def updateAction(self, actr:ACTR) -> None:
 		# TODO  doc
 		# hack, only update the dep attribute
-		if action := CSE.storage.getAction(actr.ri):
+		if action := CSE.storage.getActionRepr(actr.ri):
 			action['dep'] = actr.dep
 			CSE.storage.updateActionRepr(action)
 

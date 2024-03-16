@@ -24,10 +24,9 @@ from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence
 
 import os
-from tinydb.table import Document
-
 from ..etc.Types import ResourceTypes, JSON, Operation
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
+from ..etc.DateUtils import utcTime
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -173,7 +172,7 @@ class Storage(object):
 			dbFile = _statistics
 			self.getStatistics()
 			dbFile = _actions
-			self.getActions()
+			self.getAllActionReprs()
 			dbFile = _schedules
 			self.getSchedules()
 
@@ -567,8 +566,13 @@ class Storage(object):
 			Return:
 				Boolean value to indicate success or failure.
 		"""
-		return self.db.addBatchNotification(ri, nu, request)
-
+		return self.db.addBatchNotification(
+			{	'ri' 		: ri,
+				'nu' 		: nu,
+				'tstamp'	: utcTime(),
+				'request'	: request
+			})
+	
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
 		"""	Count the number of batch notifications for a target resource and a notification URI.
@@ -649,17 +653,17 @@ class Storage(object):
 	##	Actions
 	##
 
-	def getActions(self) -> list[JSON]:
+	def getAllActionReprs(self) -> list[JSON]:
 		"""	Retrieve all action representations from the DB.
 
 			Return:
 				List of *Documents*. May be empty.
 		"""
-		return self.db.searchActionReprs()
+		return self.db.getAllActionReprs()
 	
 
-	def getAction(self, ri:str) -> Optional[JSON]:
-		"""	Retrieve the actions representation from the DB.
+	def getActionRepr(self, ri:str) -> Optional[JSON]:
+		"""	Retrieve an action representation from the DB.
 
 			Args:
 				ri: The action's resource ID.
@@ -667,11 +671,11 @@ class Storage(object):
 			Return:
 				The action's data as a *Document*, or None.
 		"""
-		return self.db.getAction(ri)
+		return self.db.getActionRep(ri)
 
 	
-	def searchActionsForSubject(self, ri:str) -> Sequence[JSON]:
-		"""	Search for actions for a subject resource.
+	def searchActionReprsForSubject(self, ri:str) -> Sequence[JSON]:
+		"""	Search for action representation for a subject resource.
 		
 			Args:
 				ri: The subject resource's resource ID.
@@ -679,11 +683,11 @@ class Storage(object):
 			Return:
 				List of matching action representations.
 		"""
-		return self.db.searchActionsDeprsForSubject(ri)
+		return self.db.searchActionsReprsForSubject(ri)
 
 
-	def updateAction(self, action:ACTR, period:float, count:int) -> bool:
-		"""	Update or add an action representation in the DB.
+	def upsertAction(self, action:ACTR, periodTS:float, count:int) -> bool:
+		"""	Update or add an action as an action representation in the DB.
 		
 			Args:
 				action: The action to update or insert.
@@ -693,11 +697,25 @@ class Storage(object):
 			Return:
 				Boolean value to indicate success or failure.
 		"""
-		return self.db.upsertActionRepr(action, period, count)
+		ri = action.ri
+		sri = action.sri
+
+		return self.db.upsertActionRepr(
+			{	'ri':		ri,
+				'subject':	sri if sri else action.pi,
+				'dep':		action.dep,
+				'apy':		action.apy,
+				'evm':		action.evm,
+				'evc':		action.evc,	
+				'ecp':		action.ecp,
+				'periodTS': periodTS,
+				'count':	count,
+			},
+			ri) is not None
 
 
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
-		"""	Update an action representation in the DB.
+		"""	Update an action representation (not an actual action) in the DB.
 		
 			Args:
 				actionRepr: The action representation to update.
@@ -708,7 +726,7 @@ class Storage(object):
 		return self.db.updateActionRepr(actionRepr)
 
 
-	def removeAction(self, ri:str) -> bool:
+	def removeActionRepr(self, ri:str) -> bool:
 		"""	Remove an action representation from the DB.
 		
 			Args:
