@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional, Callable, Sequence, cast
 
-import shutil
+import shutil, os
 from threading import Lock
 from pathlib import Path
 
@@ -68,7 +68,6 @@ class TinyDBBinding(DBBinding):
 
 	__slots__ = (
 		'path',
-		'inMemory',
 		'cacheSize',
 		'writeDelay',
 		'maxRequests',
@@ -125,16 +124,14 @@ class TinyDBBinding(DBBinding):
 
 	def __init__(self, path:str, 
 			  		   postfix:str, 
-					   inMemory:bool,
 					   cacheSize:int,
 					   writeDelay:int,
 					   maxRequests:int) -> None:
 		"""	Initialize the TinyDB binding.
 		
 			Args:
-				path: Path to the database directory.
+				path: Path to the database directory. If None, the database will be in memory.
 				postfix: Postfix for the database file names.
-				inMemory: Flag to indicate if the database should be in memory.
 				cacheSize: Size of the cache for the TinyDB tables.
 				writeDelay: Delay for writing to the database (in full seconds).
 				maxRequests: Maximum number of oneM2M recorded requests to keep in the database.
@@ -142,9 +139,6 @@ class TinyDBBinding(DBBinding):
 		
 		self.path = path
 		""" Path to the database directory. """
-
-		self.inMemory = inMemory
-		""" Flag to indicate if the database should be in memory. """
 
 		self.cacheSize = cacheSize
 		""" Size of the cache for the TinyDB tables. """
@@ -157,86 +151,134 @@ class TinyDBBinding(DBBinding):
 
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
-		# create transaction locks
-		self.lockResources				= Lock()
+		#
+		#	Create transaction locks
+		#
+
+		self.lockResources = Lock()
 		""" Lock for the resources table."""
-		self.lockIdentifiers			= Lock()
+
+		self.lockIdentifiers = Lock()
 		""" Lock for the identifiers table."""
-		self.lockChildResources			= Lock()
+
+		self.lockChildResources = Lock()
 		""" Lock for the childResources table."""
-		self.lockStructuredIDs			= Lock()
+
+		self.lockStructuredIDs = Lock()
 		""" Lock for the structuredIDs table."""
-		self.lockSubscriptions			= Lock()
+
+		self.lockSubscriptions = Lock()
 		""" Lock for the subscriptions table."""
-		self.lockBatchNotifications		= Lock()
+
+		self.lockBatchNotifications	= Lock()
 		""" Lock for the batchNotifications table."""
-		self.lockStatistics 			= Lock()
+
+		self.lockStatistics = Lock()
 		""" Lock for the statistics table."""
-		self.lockActions 				= Lock()
+
+		self.lockActions = Lock()
 		""" Lock for the actions table."""
-		self.lockRequests 				= Lock()
+
+		self.lockRequests = Lock()
 		""" Lock for the requests table."""
-		self.lockSchedules 				= Lock()
+
+		self.lockSchedules = Lock()
 		""" Lock for the schedules table."""
 
-		# file names
-		self.fileResources				= f'{self.path}/{_resources}-{postfix}.json'
-		""" Filename for the resources table."""
-		self.fileIdentifiers			= f'{self.path}/{_identifiers}-{postfix}.json'
-		""" Filename for the identifiers table."""
-		self.fileSubscriptions			= f'{self.path}/{_subscriptions}-{postfix}.json'
-		""" Filename for the subscriptions table."""
-		self.fileBatchNotifications		= f'{self.path}/{_batchNotifications}-{postfix}.json'
-		""" Filename for the batchNotifications table."""
-		self.fileStatistics				= f'{self.path}/{_statistics}-{postfix}.json'
-		""" Filename for the statistics table."""
-		self.fileActions				= f'{self.path}/{_actions}-{postfix}.json'
-		""" Filename for the actions table."""
-		self.fileRequests				= f'{self.path}/{_requests}-{postfix}.json'
-		""" Filename for the requests table."""
-		self.fileSchedules				= f'{self.path}/{_schedules}-{postfix}.json'
-		""" Filename for the schedules table."""
 
 		# All databases/tables will use the smart query cache
-		if self.inMemory:
+		if not self.path:
 			L.isInfo and L.log('DB in memory')
-			self.dbResources 			= TinyDB(storage = MemoryStorage)
+
+			self.dbResources = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the resources table."""
-			self.dbIdentifiers 			= TinyDB(storage = MemoryStorage)
+
+			self.dbIdentifiers = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the identifiers table."""
-			self.dbSubscriptions 		= TinyDB(storage = MemoryStorage)
+
+			self.dbSubscriptions = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the subscriptions table."""
-			self.dbBatchNotifications	= TinyDB(storage = MemoryStorage)
+
+			self.dbBatchNotifications = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the batchNotifications table."""
-			self.dbStatistics			= TinyDB(storage = MemoryStorage)
+
+			self.dbStatistics = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the statistics table."""
-			self.dbActions				= TinyDB(storage = MemoryStorage)
+
+			self.dbActions = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the actions table."""
-			self.dbRequests				= TinyDB(storage = MemoryStorage)
+
+			self.dbRequests = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the requests table."""
-			self.dbSchedules			= TinyDB(storage = MemoryStorage)
+			#
+			self.dbSchedules = TinyDB(storage = MemoryStorage)
 			""" The TinyDB database for the schedules table."""
-		else:
-			L.isInfo and L.log('DB in file system')
-			self.dbResources 			= TinyDB(self.fileResources, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+		else:	# path is set
+
+			L.isInfo and L.log('DB in file system. Data directory: ' + self.path)
+			os.makedirs(self.path, exist_ok = True)
+			
+			#
+			#	Assign file names
+			#
+
+			self.fileResources = f'{self.path}/{_resources}-{postfix}.json'
+			""" Filename for the resources table."""
+
+			self.fileIdentifiers = f'{self.path}/{_identifiers}-{postfix}.json'
+			""" Filename for the identifiers table."""
+
+			self.fileSubscriptions = f'{self.path}/{_subscriptions}-{postfix}.json'
+			""" Filename for the subscriptions table."""
+
+			self.fileBatchNotifications = f'{self.path}/{_batchNotifications}-{postfix}.json'
+			""" Filename for the batchNotifications table."""
+
+			self.fileStatistics = f'{self.path}/{_statistics}-{postfix}.json'
+			""" Filename for the statistics table."""
+
+			self.fileActions = f'{self.path}/{_actions}-{postfix}.json'
+			""" Filename for the actions table."""
+
+			self.fileRequests = f'{self.path}/{_requests}-{postfix}.json'
+			""" Filename for the requests table."""
+
+			self.fileSchedules = f'{self.path}/{_schedules}-{postfix}.json'
+			""" Filename for the schedules table."""
+
+			#
+			#	Open/Create databases
+			#
+
+			self.dbResources = TinyDB(self.fileResources, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the resources table."""
-			self.dbIdentifiers 			= TinyDB(self.fileIdentifiers, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbIdentifiers = TinyDB(self.fileIdentifiers, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the identifiers table."""
-			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbSubscriptions = TinyDB(self.fileSubscriptions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the subscriptions table."""
-			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbBatchNotifications = TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the batchNotifications table."""
-			self.dbStatistics 			= TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbStatistics = TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the statistics table."""
-			self.dbActions	 			= TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbActions = TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the actions table."""
-			self.dbRequests	 			= TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbRequests = TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the requests table."""
-			self.dbSchedules	 		= TinyDB(self.fileSchedules, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+
+			self.dbSchedules = TinyDB(self.fileSchedules, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
 			""" The TinyDB database for the schedules table."""
 
 		
-		# Open/Create tables
+		#
+		#	Open/Create tables
+		#
 		self.tabResources = self.dbResources.table(_resources, cache_size = self.cacheSize)
 		""" The TinyDB table for the resources table."""
 		TinyDBBetterTable.assign(self.tabResources)
@@ -277,22 +319,29 @@ class TinyDBBinding(DBBinding):
 		""" The TinyDB table for the schedules table."""
 		TinyDBBetterTable.assign(self.tabSchedules)
 
+		#
+		#	Create the Queries
+		#
 
-
-		# Create the Queries
-		self.resourceQuery 				= Query()
+		self.resourceQuery = Query()
 		""" The TinyDB query object for the resources table."""
-		self.identifierQuery 			= Query()
+
+		self.identifierQuery = Query()
 		""" The TinyDB query object for the identifiers table."""
-		self.subscriptionQuery			= Query()
+
+		self.subscriptionQuery = Query()
 		""" The TinyDB query object for the subscriptions table."""
-		self.batchNotificationQuery 	= Query()
+
+		self.batchNotificationQuery = Query()
 		""" The TinyDB query object for the batchNotifications table."""
-		self.actionsQuery				= Query()
+
+		self.actionsQuery = Query()
 		""" The TinyDB query object for the actions table."""
-		self.requestsQuery				= Query()
+		
+		self.requestsQuery = Query()
 		""" The TinyDB query object for the requests table."""
-		self.schedulesQuery				= Query()
+
+		self.schedulesQuery = Query()
 		""" The TinyDB query object for the schedules table."""
 
 
@@ -331,6 +380,9 @@ class TinyDBBinding(DBBinding):
 	
 
 	def backupDB(self, dir:str) -> bool:
+		if not self.path:
+			L.isDebug and L.logDebug('Backup of in-memory database is not supported. Skipping.')
+			return True
 		for fn in [	self.fileResources,
 					self.fileIdentifiers,
 					self.fileSubscriptions,
@@ -339,16 +391,16 @@ class TinyDBBinding(DBBinding):
 					self.fileActions,
 					self.fileRequests,
 					self.fileSchedules
-					]:
+				  ]:
 			if Path(fn).is_file():
 				shutil.copy2(fn, dir)
+		L.isDebug and L.logDebug('DB backup done')
 		return True
 
 
 	#
 	#	Resources
 	#
-
 
 	def insertResource(self, resource: Resource, ri:str) -> None:
 		with self.lockResources:
