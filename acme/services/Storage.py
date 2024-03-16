@@ -21,7 +21,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence
+from typing import Callable, cast, List, Optional, Sequence, Any
 
 import os
 from ..etc.Types import ResourceTypes, JSON, Operation
@@ -64,10 +64,7 @@ class Storage(object):
 	"""
 
 	__slots__ = (
-		'inMemory',
-		'dbPath',
-		'dbReset',
-		'db',
+		'db'
 	)
 	""" Define slots for instance variables. """
 
@@ -78,39 +75,50 @@ class Storage(object):
 				RuntimeError: In case of an error during initialization.
 		"""
 
-		# create data directory
-		self._assignConfig()
-
-		if not self.inMemory:
-			if self.dbPath:
-				L.isInfo and L.log('Using data directory: ' + self.dbPath)
-				os.makedirs(self.dbPath, exist_ok = True)
-			else:
-				raise RuntimeError(L.logErr('database.path not set'))
-
-		# create DB object and open DB
-		self.db = TinyDBBinding(self.dbPath, 
-						  		CSE.cseCsi[1:], # add CSE CSI as postfix
-								Configuration.get('database.inMemory'),
-								Configuration.get('database.cacheSize'),
-								Configuration.get('database.writeDelay'),
-								Configuration.get('cse.operation.requests.size')
-							   ) 
+		self.db:TinyDBBinding = None
 		""" The database object. """
 
-		# Reset dbs?
-		if self.dbReset:
-			self._backupDB()	# In this case do a backup *before* startup.
-			self.purge()
-		
-		# Check validity
-		if not self.dbReset and not self._validateDB():
-			raise RuntimeError('DB error. Please check or remove database files.')
-		
-		# Make backup *after* validation, only when *not* reset
-		if not self.inMemory and not self.dbReset and not self._backupDB():
-			raise RuntimeError('DB Error')
+		match Configuration.get('database.type'):
+			case 'tinydb':
+				# create tinyDB object and open DB for file handling
+				self.db = TinyDBBinding(Configuration.get('database.tinydb.path'), 
+										CSE.cseCsi[1:], # add CSE CSI as postfix
+										Configuration.get('database.tinydb.cacheSize'),
+										Configuration.get('database.tinydb.writeDelay'),
+										Configuration.get('cse.operation.requests.size')
+									) 
+			case 'memory':
+				# create tinyDB object and open DB for in-memory handling
+				self.db = TinyDBBinding(None,
+										CSE.cseCsi[1:], # add CSE CSI as postfix
+										Configuration.get('database.tinydb.cacheSize'),
+										Configuration.get('database.tinydb.writeDelay'),
+										Configuration.get('cse.operation.requests.size')
+									)
+			case 'postgresql':
+				L.logErr('PostgreSQL not yet supported')
+				quit()
+			case _:
+				L.logErr('Unknown database type')
+				quit()
 
+		dbReset = Configuration.get('database.resetOnStartup') # Indicator that the database should be reset or cleared during start-up. """
+
+		# Reset dbs?
+		if dbReset:
+			self.backupDB()	# In this case do a backup *before* removing everything.
+			self.purge()
+
+		else:
+		
+			# Check validity
+			if not self._validateDB():
+				raise RuntimeError('DB error. Please check or remove database files.')
+		
+			# Make backup *after* validation, only when *not* reset
+			if not self.backupDB():
+				raise RuntimeError('DB Error')
+		
 		L.isInfo and L.log('Storage initialized')
 
 
@@ -124,17 +132,6 @@ class Storage(object):
 		self.db = None
 		L.isInfo and L.log('Storage shut down')
 		return True
-
-
-	def _assignConfig(self) -> None:
-		"""	Assign default configurations.
-		"""
-		self.inMemory 	= Configuration.get('database.inMemory')
-		""" Indicator whether the database is located in memory (volatile) or on disk. """
-		self.dbPath 	= Configuration.get('database.path')
-		""" In case *inMemory* is "False" this attribute contains the path to a directory where the database is stored in disk. """
-		self.dbReset 	= Configuration.get('database.resetOnStartup') 
-		""" Indicator that the database should be reset or cleared during start-up. """
 
 
 	def purge(self) -> None:
@@ -184,16 +181,16 @@ class Storage(object):
 		return True
 	
 
-	def _backupDB(self) -> bool:
+	def backupDB(self) -> bool:
 		"""	Creating a backup from the DB to a sub directory.
 
 			Return:
 				Boolean indicating the success of the backup operation.
 		"""
-		dir = f'{self.dbPath}/backup'
-		L.isDebug and L.logDebug(f'Creating DB backup in directory: {dir}')
-		os.makedirs(dir, exist_ok = True)
-		return self.db.backupDB(dir)
+		_dir = Configuration.get('database.backupPath')
+		L.isDebug and L.logDebug(f'Creating DB backup in directory: {_dir}')
+		os.makedirs(_dir, exist_ok = True)
+		return self.db.backupDB(_dir)
 		
 
 	#########################################################################

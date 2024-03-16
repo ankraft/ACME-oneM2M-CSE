@@ -352,11 +352,17 @@ class Configuration(object):
 				#	Database
 				#
 
-				'database.cacheSize'					: config.getint('database', 'cacheSize', 							fallback = 0),		# Default: no caching
-				'database.inMemory'						: config.getboolean('database', 'inMemory', 						fallback = False),
-				'database.path'							: config.get('database', 'path', 									fallback = './data'),
+				'database.type'							: config.get('database', 'type',			 						fallback = 'tinydb'),
 				'database.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',					fallback = False),
-				'database.writeDelay'					: config.getint('database', 'writeDelay', 							fallback = 1),		# Default: 1 second
+				'database.backupPath'					: config.get('database', 'backupPath',								fallback = './data/backup'),
+
+				#
+				#	Database TinyDB
+				#
+
+				'database.tinydb.path'					: config.get('database.tinydb', 'path',								fallback = './data'),
+				'database.tinydb.cacheSize'				: config.getint('database.tinydb', 'cacheSize', 					fallback = 0),		# Default: no caching
+				'database.tinydb.writeDelay'			: config.getint('database.tinydb', 'writeDelay', 					fallback = 1),		# Default: 1 second
 
 				#
 				#	HTTP Server
@@ -687,7 +693,6 @@ class Configuration(object):
 
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
-		if Configuration._argsDBStorageMode is not None:		_put('database.inMemory', Configuration._argsDBStorageMode == 'memory')	# Override DB storage mode from command line
 		if Configuration._argsDBDataDirectory is not None:		_put('database.path', Configuration._argsDBDataDirectory)				# Override DB data directory from command line
 		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
 		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
@@ -723,7 +728,8 @@ class Configuration(object):
 		if _get('websocket.security.useTLS'):
 			if _get('websocket.address').startswith('ws:'):
 				Configuration._print(r'[orange3]Configuration Warning: Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
-				_put('websocket.address', _get('websocket.address').replace('ws:', 'wss:'))
+				_put('websocket.address', 
+		 _get('websocket.address').replace('ws:', 'wss:'))
 			# registrar might still be accessible via another protocol
 		else: 
 			if _get('websocket.address').startswith('wss:'):
@@ -944,6 +950,11 @@ class Configuration(object):
 		if _get('textui.maxRequestSize') <= 0:
 			return False, r'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s'
 		
+		# Database settings
+		_put('database.type', (dbType := _get('database.type').lower()))
+
+		if dbType not in ['tinydb', 'postgresql', 'memory']:
+			return False, fr'Configuration Error: [i]\[database]:type[/i] must be "tinydb", "postgresql", or "memory"'
 		# Everything is fine
 		return True, None
 
