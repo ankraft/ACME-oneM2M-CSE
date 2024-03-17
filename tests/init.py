@@ -748,7 +748,7 @@ def connectionPossible(url:str) -> bool:
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
-		return RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)[1] != ResponseStatusCode.OK
+		return RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)[1] == ResponseStatusCode.OK
 	except Exception as e:
 		print(e)
 		return False
