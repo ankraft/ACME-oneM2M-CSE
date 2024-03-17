@@ -21,12 +21,12 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence, Any
+from typing import Callable, cast, List, Optional, Sequence
 
 import os
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
-from ..etc.DateUtils import utcTime
+from ..etc.DateUtils import utcTime, fromDuration
 from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
@@ -219,10 +219,10 @@ class Storage(object):
 		
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')
-			self.db.upsertResource(resource, _ri)
+			self.db.upsertResource(resource.dict, _ri)
 		else: 
 			if not self.hasResource(_ri, _srn):	# Only when resource with same ri or srn does not exist yet
-				self.db.insertResource(resource, _ri)
+				self.db.insertResource(resource.dict, _ri)
 			else:
 				raise CONFLICT(L.logWarn(f'Resource already exists (Skipping): {resource} ri: {_ri} srn:{_srn}'))
 
@@ -358,7 +358,8 @@ class Storage(object):
 		"""
 		ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
-		return self.db.updateResource(resource, ri)
+		resource.dict = self.db.updateResource(resource.dict, ri)
+		return resource
 
 
 	def deleteResource(self, resource:Resource) -> None:
@@ -374,7 +375,7 @@ class Storage(object):
 		try:
 			_ri = resource.ri
 			_pi = resource.pi
-			self.db.deleteResource(resource)
+			self.db.deleteResource(_ri)
 			self.db.deleteIdentifier(_ri, resource.getSrn())
 			self.db.removeChildResource(_ri, _pi)
 		except KeyError:
@@ -396,7 +397,7 @@ class Storage(object):
 			Returns:
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
-		if (_ris := self.db.searchChildResourcesByParentRI(pi, ty)):
+		if (_ris := self.db.searchChildResourcesByParentRIAndType(pi, ty)):
 			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
 			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
@@ -413,7 +414,7 @@ class Storage(object):
 			Returns:
 				Return a list of resource IDs.
 		"""
-		return self.db.searchChildResourcesByParentRI(pi, ty)
+		return self.db.searchChildResourcesByParentRIAndType(pi, ty)
 
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
@@ -506,7 +507,7 @@ class Storage(object):
 				The subscription as a JSON dictionary, or None.
 		"""
 		# L.logDebug(f'Retrieving subscription: {ri}')
-		subs = self.db.searchSubscriptions(ri = ri)
+		subs = self.db.searchSubscriptionReprs(ri = ri)
 		if not subs or len(subs) != 1:
 			return None
 		return subs[0]
@@ -522,11 +523,11 @@ class Storage(object):
 				List of subscriptions. This is not the oneM2M Subscription resource, but the internal subscription representation.
 		"""
 		# L.logDebug(f'Retrieving subscriptions for parent: {pi}')
-		return self.db.searchSubscriptions(pi = pi)
+		return self.db.searchSubscriptionReprs(pi = pi)
 
 
-	def addSubscription(self, subscription:Resource) -> bool:
-		"""	Add a subscription to the DB.
+	def upsertSubscription(self, subscription:Resource) -> bool:
+		"""	Add or update a subscription to the DB.
 		
 			Args:
 				subscription: The subscription `Resource` to add.
@@ -535,7 +536,24 @@ class Storage(object):
 				Boolean value to indicate success or failure.
 		"""
 		# L.logDebug(f'Adding subscription: {ri}')
-		return self.db.upsertSubscription(subscription)
+		ri = subscription.ri
+		return self.db.upsertSubscriptionRepr(
+			{ 'ri'  	: ri, 
+			  'pi'  	: subscription.pi,
+			  'nct' 	: subscription.nct,
+			  'net' 	: subscription.attribute('enc/net'),	# TODO perhaps store enc as a whole?
+			  'atr' 	: subscription.attribute('enc/atr'),
+			  'chty'	: subscription.attribute('enc/chty'),
+			  'exc' 	: subscription.exc,
+			  'ln'  	: subscription.ln,
+			  'nus' 	: subscription.nu,
+			  'bn'  	: subscription.bn,
+			  'cr'  	: subscription.cr,
+			  'nec'  	: subscription.nec,
+			  'org'		: subscription.getOriginator(),
+			  'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
+			  'nse' 	: subscription.nse
+			 }, ri) is not None
 
 
 	def removeSubscription(self, subscription:Resource) -> bool:
@@ -552,22 +570,9 @@ class Storage(object):
 		"""
 		# L.logDebug(f'Removing subscription: {subscription.ri}')
 		try:
-			return self.db.removeSubscription(subscription)
+			return self.db.removeSubscriptionRepr(subscription.ri)
 		except KeyError as e:
 			raise NOT_FOUND(L.logDebug(f'Cannot subscription data for: {subscription.ri} (NOT_FOUND). Could be an expected error.'))
-
-
-	def updateSubscription(self, subscription:Resource) -> bool:
-		"""	Update a subscription representation in the DB.
-
-			Args:
-				subscription: The subscription `Resource` to update.
-
-			Return:
-				Boolean value to indicate success or failure.
-		"""
-		# L.logDebug(f'Updating subscription: {ri}')
-		return self.db.upsertSubscription(subscription)
 
 
 	#########################################################################

@@ -11,10 +11,7 @@ from __future__ import annotations
 from typing import Optional, Callable, Sequence
 from abc import ABC, abstractmethod
 
-from ...etc.Types import JSON, ResourceTypes, Operation
-from ...resources.Resource import Resource
-
-from ...resources.ACTR import ACTR
+from ...etc.Types import JSON, ResourceTypes
 
 
 class DBBinding(ABC):
@@ -57,7 +54,7 @@ class DBBinding(ABC):
 	#
 
 	@abstractmethod
-	def insertResource(self, resource: Resource, ri:str) -> None:
+	def insertResource(self, resource:JSON, ri:str) -> None:
 		"""	Insert a resource into the database.
 		
 			Args:
@@ -68,7 +65,7 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def upsertResource(self, resource: Resource, ri:str) -> None:
+	def upsertResource(self, resource:JSON, ri:str) -> None:
 		"""	Update or insert a resource into the database.
 		
 			Args:
@@ -79,7 +76,7 @@ class DBBinding(ABC):
 	
 
 	@abstractmethod
-	def updateResource(self, resource: Resource, ri:str) -> Resource:
+	def updateResource(self, resource:JSON, ri:str) -> JSON:
 		"""	Update a resource in the database. Only the fields that are not None will be updated.
 		
 			Args:
@@ -87,16 +84,16 @@ class DBBinding(ABC):
 				ri: The resource ID of the resource.
 
 			Return:
-				The updated resource.
+				The updated resource dirctionary.
 		"""
 		pass
 	
 	@abstractmethod
-	def deleteResource(self, resource:Resource) -> None:
+	def deleteResource(self, ri:str) -> None:
 		"""	Delete a resource from the database.
 
 			Args:
-				resource: The resource to delete.
+				ri: The resource ID of the resource.
 		"""
 		pass
 	
@@ -143,17 +140,15 @@ class DBBinding(ABC):
 
 	@abstractmethod
 	def hasResource(self, ri:Optional[str] = None, 
-						  csi:Optional[str] = None, 
 						  srn:Optional[str] = None,
 						  ty:Optional[int] = None) -> bool:
 		"""	Check if a resource exists in the database.
 
 			Only one of the parameters may be used at a time. The order of precedence is: structured resource name,
-			resource ID, CSE-ID, resource type.
+			resource ID, resource type.
 			
 			Args:
 				ri: A resource ID.
-				csi: A CSE ID.
 				srn: A structured resource name.
 				ty: A resource type.
 			
@@ -256,8 +251,8 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
-		"""	Search for child resources by parent resource ID.
+	def searchChildResourcesByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
+		"""	Search for child resources by parent resource ID and optional type.
 
 			Args:
 				pi: The parent resource ID.
@@ -274,7 +269,7 @@ class DBBinding(ABC):
 	#
 
 	@abstractmethod
-	def searchSubscriptions(self, ri:Optional[str] = None, 
+	def searchSubscriptionReprs(self, ri:Optional[str] = None, 
 								  pi:Optional[str] = None) -> Optional[list[JSON]]:
 		"""	Search for subscription representations by resource ID or parent resource ID.
 
@@ -291,11 +286,12 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def upsertSubscription(self, subscription:Resource) -> bool:
+	def upsertSubscriptionRepr(self, subscription:JSON, ri:str) -> bool:
 		"""	Update or insert a subscription representation into the database.
 
 			Args:
-				subscription: The `SUB` (subscription) to update or insert.
+				subscription: The subscription representation to update or insert.
+				ri: The resource ID of the original `SUB` resource.
 
 			Return:
 				True if the subscription representation was updated or inserted, False otherwise.
@@ -304,11 +300,11 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def removeSubscription(self, subscription:Resource) -> bool:
+	def removeSubscriptionRepr(self, ri:str) -> bool:
 		"""	Remove a subscription representation from the database.
 
 			Args:
-				subscription: The `SUB` (subscription) to remove.
+				ri: The resource ID of the original `SUB` resource.
 
 			Return:
 				True if the subscription representation was removed, False otherwise.

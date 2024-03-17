@@ -151,7 +151,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		self._verifyNusInSubscription(subscription, originator = originator)	# verification requests happen here
 		
-		if not CSE.storage.addSubscription(subscription):
+		if not CSE.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot add subscription to database')
 
 
@@ -203,7 +203,7 @@ class NotificationManager(object):
 			"""
 		L.isDebug and L.logDebug('Updating subscription')
 		self._verifyNusInSubscription(subscription, previousNus, originator = originator)	# verification requests happen here
-		if not CSE.storage.updateSubscription(subscription):
+		if not CSE.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot update subscription in database')
 
 
@@ -1221,7 +1221,7 @@ class NotificationManager(object):
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate(True)						# Update the real subscription
-				CSE.storage.updateSubscription(subResource)	# Also update the internal sub
+				CSE.storage.upsertSubscription(subResource)	# Also update the internal sub
 		return result								
 
 
