@@ -212,22 +212,40 @@ class Storage(object):
 			Raises:
 				CONFLICT: In case the resource already exists and *overwrite* is "False".
 		"""
-		ri  = resource.ri
-		srn = resource.getSrn()
+		_ri  = resource.ri
+		_pi = resource.pi
+		_ty = resource.ty
+		_srn = resource.getSrn()
+		
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')
-			self.db.upsertResource(resource, ri)
+			self.db.upsertResource(resource, _ri)
 		else: 
-			if not self.hasResource(ri, srn):	# Only when resource with same ri or srn does not exist yet
-				self.db.insertResource(resource, ri)
+			if not self.hasResource(_ri, _srn):	# Only when resource with same ri or srn does not exist yet
+				self.db.insertResource(resource, _ri)
 			else:
-				raise CONFLICT(L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}'))
+				raise CONFLICT(L.logWarn(f'Resource already exists (Skipping): {resource} ri: {_ri} srn:{_srn}'))
 
 		# Add path to identifiers db
-		self.db.upsertIdentifier(resource, ri, srn)
+		self.db.upsertIdentifier(
+			# identifier mapping
+			{ 'ri' : _ri, 
+			  'rn' : resource.rn, 
+			  'srn' : _srn,
+			  'ty' : _ty
+			}, 
+			{ 'srn': _srn,
+			  'ri' : _ri 
+			}, 
+			_ri, _srn)	# type:ignore[arg-type]
 
 		# Add record to childResources db
-		self.db.upsertChildResource(resource, ri)
+		self.db.upsertChildResource(
+			{ 'ri' : _ri,
+			  'pi' : _pi,
+			  'ty' : _ty,
+			  'ch' : [] 
+			}, _ri)
 
 
 	def hasResource(self, ri:Optional[str] = None, srn:Optional[str] = None) -> bool:
@@ -354,9 +372,11 @@ class Storage(object):
 		"""
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn})')
 		try:
+			_ri = resource.ri
+			_pi = resource.pi
 			self.db.deleteResource(resource)
-			self.db.deleteIdentifier(resource)
-			self.db.removeChildResource(resource)
+			self.db.deleteIdentifier(_ri, resource.getSrn())
+			self.db.removeChildResource(_ri, _pi)
 		except KeyError:
 			raise NOT_FOUND(L.logDebug(f'Cannot remove: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 

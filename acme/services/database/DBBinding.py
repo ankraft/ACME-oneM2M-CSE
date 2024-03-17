@@ -191,10 +191,13 @@ class DBBinding(ABC):
 	#
 
 	@abstractmethod
-	def upsertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
-		"""	Insert or update an identifier into the identifiers DB.
+	def upsertIdentifier(self, identifierMapping:JSON, structuredPathMapping:JSON, ri:str, srn:str) -> None:
+		"""	Insert or update an identifier into the identifiers DB and a structured 
+			resource name into the structuredResourceNames DB.
 
 			Args:
+				identifierMapping: The identifier mapping to insert.
+				structuredPathMapping: The structured path mapping to insert.
 				resource: The resource to insert.
 				ri: The resource ID of the resource.
 				srn: The structured resource name of the resource.
@@ -203,11 +206,12 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def deleteIdentifier(self, resource:Resource) -> None:
+	def deleteIdentifier(self, ri:str, srn:str) -> None:
 		"""	Delete an identifier from the identifiers DB.
 
 			Args:
-				resource: The resource for which to delete the identifier.
+				ri: The resource ID of the resource.
+				srn: The structured resource name of the resource.
 		"""
 		pass
 
@@ -230,7 +234,7 @@ class DBBinding(ABC):
 
 
 	@abstractmethod
-	def upsertChildResource(self, resource:Resource, ri:str) -> None:
+	def upsertChildResource(self, childResource:JSON, ri:str) -> None:
 		"""	Add a child resource to the childResources DB.
 
 			Args:
@@ -241,11 +245,12 @@ class DBBinding(ABC):
 
 			
 	@abstractmethod
-	def removeChildResource(self, resource:Resource) -> None:
+	def removeChildResource(self, ri:str, pi:str) -> None:
 		"""	Remove a child resource from the childResources DB.
 
 			Args:
-				resource: The resource to remove as a child.
+				ri: The resource ID of the resource.
+				pi: The resource ID of the parent resource.
 		"""
 		pass
 

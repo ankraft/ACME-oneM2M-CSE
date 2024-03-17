@@ -16,11 +16,8 @@ from pathlib import Path
 
 from .DBBinding import DBBinding
 from ...etc.Types import JSON, ResourceTypes
-from ...etc.Types import Operation	# TODO move this "up"
-from ...etc.Types import ResponseStatusCode	# TODO move this "up"
-from ...etc.DateUtils import utcTime, fromDuration
+from ...etc.DateUtils import fromDuration
 from ...resources.Resource import Resource
-from ...resources.ACTR import ACTR	# TODO move this "up"
 
 from ...services.Logging import Logging as L
 
@@ -493,40 +490,30 @@ class TinyDBBinding(DBBinding):
 	#	Identifiers, Structured RI, Child Resources
 	#
 
-	def upsertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
-		# L.isDebug and L.logDebug({'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty})		
+	def upsertIdentifier(self, identifierMapping:JSON, structuredPathMapping:JSON, ri:str, srn:str) -> None:
 		with self.lockIdentifiers:
-			self.tabIdentifiers.upsert(Document(
-				{	'ri' : ri, 
-					'rn' : resource.rn, 
-					'srn' : srn,
-					'ty' : resource.ty 
-				}, ri))	# type:ignore[arg-type]
-
+			self.tabIdentifiers.upsert(Document(identifierMapping, ri))	# type:ignore[arg-type]
 		with self.lockStructuredIDs:
-			self.tabStructuredIDs.upsert(
-				Document({'srn': srn,
-				  		  'ri' : ri 
-						 }, srn))	# type:ignore[arg-type]
+			self.tabStructuredIDs.upsert(Document(structuredPathMapping, srn))	# type:ignore[arg-type]
 
 
-	def deleteIdentifier(self, resource:Resource) -> None:
+	def deleteIdentifier(self, ri:str, srn:str) -> None:
 		with self.lockIdentifiers:
-			self.tabIdentifiers.remove(doc_ids = [resource.ri])
-
+			self.tabIdentifiers.remove(doc_ids = [ri])		# type:ignore[arg-type,list-item]
 		with self.lockStructuredIDs:
-			self.tabStructuredIDs.remove(doc_ids = [resource.getSrn()])	# type:ignore[arg-type,list-item]
+			self.tabStructuredIDs.remove(doc_ids = [srn])	# type:ignore[arg-type,list-item]
 
 
 	def searchIdentifiers(self, ri:Optional[str] = None, 
 								srn:Optional[str] = None) -> list[JSON]:
 		_r:Document
+
+		# First, find the ri for the srn if one is given. This overrides the ri parameter.
 		if srn:
 			if (_r := self.tabStructuredIDs.get(doc_id = srn)):	# type:ignore[arg-type, assignment]
 				ri = _r['ri'] if _r else None 
 			else:
 				return []
-
 		if ri:
 			with self.lockIdentifiers:
 				_r = self.tabIdentifiers.get(doc_id = ri)	# type:ignore[arg-type, assignment]
@@ -534,33 +521,28 @@ class TinyDBBinding(DBBinding):
 		return []
 
 
-	def upsertChildResource(self, resource:Resource, ri:str) -> None:
-		# L.isDebug and L.logDebug(f'insertChildResource ri:{ri}')		
+	def upsertChildResource(self, childResource:JSON, ri:str) -> None:
+		# L.isDebug and L.logDebug(f'insertChildResource ri:{ri}')
 
-		pi = resource.pi
-		ty = resource.ty
 		with self.lockChildResources:
 
 			# First add a new record
 			self.tabChildResources.upsert(
-				Document({'ri' : ri,
-				  		  'ch' : [] 
-						 }, ri))	# type:ignore[arg-type]
+				Document(childResource, ri))	# type:ignore[arg-type]
 
 			# Then add the child ri to the parent's record
-			if pi:	# ATN: CSE has no parent
+			_pi = childResource['pi']
+			if _pi:	# ATN: CSE has no parent
 				_r:Document
-				_r = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type, assignment]
+				_r = self.tabChildResources.get(doc_id = _pi) # type:ignore[arg-type, assignment]
 				_ch = _r['ch']
-				if ri not in _ch:
-					_ch.append( [ri, ty] )
+				if not any(ri == _slist[0] for _slist in _ch):
+					_ch.append( [ri, childResource['ty']] )
 					_r['ch'] = _ch
-					self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
+					self.tabChildResources.update(_r, doc_ids = [_pi])	# type:ignore[arg-type, list-item]
 
 			
-	def removeChildResource(self, resource:Resource) -> None:
-		ri = resource.ri
-		pi = resource.pi
+	def removeChildResource(self, ri:str, pi:str) -> None:
 
 		# L.isDebug and L.logDebug(f'removeChildResource ri:{ri} pi:{pi}')		
 		with self.lockChildResources:
@@ -568,15 +550,16 @@ class TinyDBBinding(DBBinding):
 			# First remove the record
 			self.tabChildResources.remove(doc_ids = [ri])	# type:ignore[arg-type, list-item]
 
-			# Remove (ri, ty) tuple from parent record
+			# Remove (ri, ty) tuple from parent record, for the given ri
 			_r:Document = self.tabChildResources.get(doc_id = pi) # type:ignore[arg-type, assignment]
-			_t = [ri, resource.ty]
 			_ch = _r['ch']
-			if _t in _ch:
-				_ch.remove(_t)
-				_r['ch'] = _ch
-				# L.isDebug and L.logDebug(f'removeChildResource _r:{_r}')		
-				self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
+			for _slist in _ch:
+				if _slist[0] == ri:
+					_ch.remove(_slist)
+					_r['ch'] = _ch
+					# L.isDebug and L.logDebug(f'removeChildResource _r:{_r}')		
+					self.tabChildResources.update(_r, doc_ids = [pi])	# type:ignore[arg-type, list-item]
+					break
 
 
 	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
@@ -585,7 +568,7 @@ class TinyDBBinding(DBBinding):
 			ty = [ty]
 		_r:Document = self.tabChildResources.get(doc_id = pi) #type:ignore[arg-type, assignment]
 		if _r:
-			if ty is None:	# optimization: only check ty once for None
+			if ty is None:	# optimization: only check ty once for None (meaining all types are valid)
 				return [ c[0] for c in _r['ch'] ]
 			return [ c[0] for c in _r['ch'] if c[1] in ty]	# c is a tuple (ri, ty)
 		return []
