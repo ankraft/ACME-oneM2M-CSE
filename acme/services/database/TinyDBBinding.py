@@ -16,8 +16,6 @@ from pathlib import Path
 
 from .DBBinding import DBBinding
 from ...etc.Types import JSON, ResourceTypes
-from ...etc.DateUtils import fromDuration
-from ...resources.Resource import Resource
 
 from ...services.Logging import Logging as L
 
@@ -393,33 +391,38 @@ class TinyDBBinding(DBBinding):
 	#	Resources
 	#
 
-	def insertResource(self, resource: Resource, ri:str) -> None:
+	def insertResource(self, resource:JSON, ri:str) -> None:
 		with self.lockResources:
-			self.tabResources.insert(Document(resource.dict, ri))	# type:ignore[arg-type]
+			self.tabResources.insert(Document(resource, ri))	# type:ignore[arg-type]
 	
 
-	def upsertResource(self, resource: Resource, ri:str) -> None:
+	def upsertResource(self, resource:JSON, ri:str) -> None:
 		#L.logDebug(resource)
 		with self.lockResources:
 			# Update existing or insert new when overwriting
-			self.tabResources.upsert(Document(resource.dict, doc_id = ri))	# type:ignore[arg-type]
+			self.tabResources.upsert(Document(resource, doc_id = ri))	# type:ignore[arg-type]
 	
 
-	def updateResource(self, resource: Resource, ri:str) -> Resource:
+	def updateResource(self, resource:JSON, ri:str) -> JSON:
 		#L.logDebug(resource)
 		with self.lockResources:
-			self.tabResources.update(resource.dict, doc_ids = [ri])	# type:ignore[call-arg, list-item]
+
+			# TinyDB update() updates the record, but does not remove fields that are None. It also
+			# updates the fields and doesnot update the whole document.
+			self.tabResources.update(resource, doc_ids = [ri])	# type:ignore[call-arg, list-item]
+
 			# remove nullified fields from db and resource
-			for k in list(resource.dict):
-				if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
+			for k in list(resource):
+				if resource[k] is None:	# only remove the real None attributes, not those with 0 or zero length
+					# The delete() method removes a field from the document
 					self.tabResources.update(delete(k), doc_ids = [ri])	# type: ignore[no-untyped-call, call-arg, list-item]
-					del resource.dict[k]
+					del resource[k]
 			return resource
 
 
-	def deleteResource(self, resource:Resource) -> None:
+	def deleteResource(self, ri:str) -> None:
 		with self.lockResources:
-			self.tabResources.remove(doc_ids = [resource.ri])	
+			self.tabResources.remove(doc_ids = [ri])	# type:ignore[arg-type, list-item]
 	
 
 	def searchResources(self, ri:Optional[str] = None, 
@@ -459,15 +462,12 @@ class TinyDBBinding(DBBinding):
 
 
 	def hasResource(self, ri:Optional[str] = None, 
-						  csi:Optional[str] = None, 
 						  srn:Optional[str] = None,
 						  ty:Optional[int] = None) -> bool:
 		if not srn:
 			with self.lockResources:
 				if ri:
 					return self.tabResources.contains(doc_id = ri)	# type: ignore [arg-type]
-				elif csi :
-					return self.tabResources.contains(self.resourceQuery.csi == csi)
 				elif ty is not None:	# ty is an int
 					return self.tabResources.contains(self.resourceQuery.ty == ty)
 		else:
@@ -562,7 +562,7 @@ class TinyDBBinding(DBBinding):
 					break
 
 
-	def searchChildResourcesByParentRI(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
+	def searchChildResourcesByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		# First convert ty to a list if it is just an int
 		if isinstance(ty, int):
 			ty = [ty]
@@ -577,7 +577,7 @@ class TinyDBBinding(DBBinding):
 	#	Subscriptions
 	#
 
-	def searchSubscriptions(self, ri:Optional[str] = None, 
+	def searchSubscriptionReprs(self, ri:Optional[str] = None, 
 								  pi:Optional[str] = None) -> Optional[list[JSON]]:
 		with self.lockSubscriptions:
 			if ri:
@@ -588,33 +588,14 @@ class TinyDBBinding(DBBinding):
 			return None
 
 
-	def upsertSubscription(self, subscription:Resource) -> bool:
+	def upsertSubscriptionRepr(self, subscription:JSON, ri:str) -> bool:
 		with self.lockSubscriptions:
-			ri = subscription.ri
-			return self.tabSubscriptions.upsert(
-				Document({'ri'  	: ri, 
-						  'pi'  	: subscription.pi,
-						  'nct' 	: subscription.nct,
-						  'net' 	: subscription['enc/net'],	# TODO perhaps store enc as a whole?
-						  'atr' 	: subscription['enc/atr'],
-						  'chty'	: subscription['enc/chty'],
-						  'exc' 	: subscription.exc,
-						  'ln'  	: subscription.ln,
-						  'nus' 	: subscription.nu,
-						  'bn'  	: subscription.bn,
-						  'cr'  	: subscription.cr,
-						  'nec'  	: subscription.nec,
-						  'org'		: subscription.getOriginator(),
-						  'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
-						  'nse' 	: subscription.nse
-						 }, ri)) is not None
-					# self.subscriptionQuery.ri == ri) is not None
+			return self.tabSubscriptions.upsert(Document(subscription, ri)) is not None 	# type:ignore[arg-type]
 
 
-	def removeSubscription(self, subscription:Resource) -> bool:
+	def removeSubscriptionRepr(self, ri:str) -> bool:
 		with self.lockSubscriptions:
-			return len(self.tabSubscriptions.remove(doc_ids = [subscription.ri])) > 0
-			# return len(self.tabSubscriptions.remove(self.subscriptionQuery.ri == _ri)) > 0
+			return len(self.tabSubscriptions.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
 
 
 	#
