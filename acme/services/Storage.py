@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence, Any
 
 import os
-from ..etc.Types import ResourceTypes, JSON, Operation
+from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime
 from ..services.Configuration import Configuration
@@ -64,7 +64,8 @@ class Storage(object):
 	"""
 
 	__slots__ = (
-		'db'
+		'db',
+		'maxRequests',
 	)
 	""" Define slots for instance variables. """
 
@@ -75,6 +76,9 @@ class Storage(object):
 				RuntimeError: In case of an error during initialization.
 		"""
 
+		self.maxRequests = Configuration.get('cse.operation.requests.size') 
+		""" Maximum number of requests to store. """	
+
 		self.db:TinyDBBinding = None
 		""" The database object. """
 
@@ -84,16 +88,14 @@ class Storage(object):
 				self.db = TinyDBBinding(Configuration.get('database.tinydb.path'), 
 										CSE.cseCsi[1:], # add CSE CSI as postfix
 										Configuration.get('database.tinydb.cacheSize'),
-										Configuration.get('database.tinydb.writeDelay'),
-										Configuration.get('cse.operation.requests.size')
+										Configuration.get('database.tinydb.writeDelay')
 									) 
 			case 'memory':
 				# create tinyDB object and open DB for in-memory handling
 				self.db = TinyDBBinding(None,
 										CSE.cseCsi[1:], # add CSE CSI as postfix
 										Configuration.get('database.tinydb.cacheSize'),
-										Configuration.get('database.tinydb.writeDelay'),
-										Configuration.get('cse.operation.requests.size')
+										Configuration.get('database.tinydb.writeDelay')
 									)
 			case 'postgresql':
 				L.logErr('PostgreSQL not yet supported')
@@ -103,6 +105,7 @@ class Storage(object):
 				quit()
 
 		dbReset = Configuration.get('database.resetOnStartup') # Indicator that the database should be reset or cleared during start-up. """
+		
 
 		# Reset dbs?
 		if dbReset:
@@ -763,7 +766,26 @@ class Storage(object):
 			Return:
 				Boolean value to indicate success or failure.
 			"""
-		return self.db.insertRequest(op, ri, srn, originator, outgoing, ot, request, response)
+		# return self.db.insertRequest(op, ri, srn, originator, outgoing, ot, request, response)
+
+		# Remove old requests first
+		self.db.removeOldRequests(self.maxRequests)
+
+		# Store the request
+		_ts = utcTime()
+		_doc =	{ 'ri': ri,
+	  			  'srn': srn,
+				  'ts': _ts,
+				  'org': originator,
+				  'op': op,
+				  'rsc': response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN,
+				  'out': outgoing,
+				  'ot': ot,
+				  'req': { k: v for k, v in request.items() if v is not None }, # Remove None values
+				  'rsp': { k: v for k, v in response.items() if v is not None }	# Remove None values
+				}
+		_doc = { k: v for k, v in _doc.items() if v is not None }	# Remove remaining None values
+		return self.db.insertRequest(_doc, _ts)
 
 
 	def getRequests(self, ri:Optional[str] = None, sortedByOt:bool = False) -> list[JSON]:
@@ -828,7 +850,12 @@ class Storage(object):
 			Return:
 				Boolean value to indicate success or failure.
 		"""
-		return self.db.upsertSchedule(schedule.ri, schedule.pi, schedule.attribute('se/sce'))
+		# return self.db.upsertSchedule(schedule.ri, schedule.pi, schedule.attribute('se/sce'))
+		return self.db.upsertSchedule(
+					{ 'ri': schedule.ri,
+						'pi': schedule.pi,
+						'sce': schedule.attribute('se/sce') 
+					}, schedule.ri) is not None	
 
 
 	def removeSchedule(self, schedule:SCH) -> bool:
