@@ -494,28 +494,25 @@ class DBBinding(ABC):
 	# TODO Move request handling to Storage module. This is too detailed here
 
 	@abstractmethod
-	def insertRequest(self, op:Operation, 
-							ri:str, 
-							srn:str, 
-							originator:str, 
-							outgoing:bool, 
-							ot: str,
-							request:JSON, 
-							response:JSON) -> bool:
+	def insertRequest(self, req:JSON, ts:float) -> bool:
 		"""	Add a request to the *requests* database.
-		
+
 			Args:
-				op: Operation.
-				ri: Resource ID of a request's target resource.
-				srn: Structured resource ID of a request's target resource.
-				originator: Request originator.
-				outgoing: If true, then this is a request sent by the CSE.
-				ot: Request creation timestamp.
-				request: The request to store.
-				response: The response to store.
-			
+				req: The request to store.
+				ts: The timestamp of the request.
+
 			Return:
 				Boolean value to indicate success or failure.
+		"""
+		pass
+	
+	
+	@abstractmethod
+	def removeOldRequests(self, maxRequests:int) -> None:
+		"""	Remove old requests from the database.
+
+			Args:
+				maxRequests: The maximum number of requests to keep.
 		"""
 		pass
 	
@@ -584,13 +581,12 @@ class DBBinding(ABC):
 	
 
 	@abstractmethod
-	def upsertSchedule(self, ri:str, pi:str, schedule:list[str]) -> bool:
+	def upsertSchedule(self, schedule:JSON, ri:str) -> bool:
 		"""	Add or update a schedule in the database.
 		
 			Args:
-				ri: The resource ID of the schedule.
-				pi: The resource ID of the schedule's parent resource.
 				schedule: The schedule to store.
+				ri: The resource ID of the schedule.
 			
 			Return:
 				True if the schedule was added or updated, False otherwise.

@@ -70,7 +70,6 @@ class TinyDBBinding(DBBinding):
 		'path',
 		'cacheSize',
 		'writeDelay',
-		'maxRequests',
 		
 		'lockResources',
 		'lockIdentifiers',
@@ -125,8 +124,7 @@ class TinyDBBinding(DBBinding):
 	def __init__(self, path:str, 
 			  		   postfix:str, 
 					   cacheSize:int,
-					   writeDelay:int,
-					   maxRequests:int) -> None:
+					   writeDelay:int) -> None:
 		"""	Initialize the TinyDB binding.
 		
 			Args:
@@ -134,7 +132,6 @@ class TinyDBBinding(DBBinding):
 				postfix: Postfix for the database file names.
 				cacheSize: Size of the cache for the TinyDB tables.
 				writeDelay: Delay for writing to the database (in full seconds).
-				maxRequests: Maximum number of oneM2M recorded requests to keep in the database.
 		"""
 		
 		self.path = path
@@ -145,9 +142,6 @@ class TinyDBBinding(DBBinding):
 
 		self.writeDelay = writeDelay
 		""" Delay for writing to the database. """
-
-		self.maxRequests = maxRequests
-		""" Maximum number of oneM2M recorded requests to keep in the database. """
 
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
@@ -730,48 +724,27 @@ class TinyDBBinding(DBBinding):
 	#	Requests
 	#
 
-	def insertRequest(self, op:Operation, 
-							ri:str, 
-							srn:str, 
-							originator:str, 
-							outgoing:bool, 
-							ot: str,
-							request:JSON, 
-							response:JSON) -> bool:
+	def insertRequest(self, req:JSON, ts:float) -> bool:
 		with self.lockRequests:
 			try:
-				# First check whether we reached the max number of allowed requests.
-				# If yes, then remove the oldest.
-				if (_a := self.tabRequests.all()):
-					if len(_a) >= self.maxRequests:
-						self.tabRequests.remove(doc_ids = [_a[0].doc_id])
-				
-				# Adding a request
-				ts = utcTime()
-
-				#op = request.get('op') if 'op' in request else Operation.NA
-				rsc = response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN
-
-				# The following removes all None values from the request and response, and the requests structure
-				_doc = {'ri': ri,
-						 'srn': srn,
-						 'ts': ts,
-						 'org': originator,
-						 'op': op,
-						 'rsc': rsc,
-						 'out': outgoing,
-						 'ot': ot,
-						 'req': { k: v for k, v in request.items() if v is not None }, 
-						 'rsp': { k: v for k, v in response.items() if v is not None }
-					   }
-				self.tabRequests.insert(
-					Document({k: v for k, v in _doc.items() if v is not None}, 
-			    			 self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
+				# Insert the request, using the timestamp as the document id
+				self.tabRequests.insert(Document(req, self.tabRequests.document_id_class(ts)))	# type:ignore[arg-type]
 
 			except Exception as e:
-				L.logErr(f'Exception inserting request/response for ri: {ri}', exc = e)
+				L.logErr(f'Exception inserting request/response for ts: {ts}', exc = e)
 				return False
 		return True
+	
+
+	def removeOldRequests(self, maxRequests:int) -> None:
+		with self.lockRequests:
+			# Remove the oldest requests if we have more than maxRequests
+			# We could use the len() function instead of retrieving all requests, but 
+			# this would actually create a small overhead because most of the time we have 
+			# to retrieve all requests anyway.
+			if (_a := self.tabRequests.all()):
+				if len(_a) >= maxRequests:
+					self.tabRequests.remove(doc_ids = [_a[0].doc_id])
 	
 
 	def getRequests(self, ri:Optional[str] = None) -> list[JSON]:
@@ -808,13 +781,9 @@ class TinyDBBinding(DBBinding):
 			return cast(list[JSON], self.tabSchedules.search(self.schedulesQuery.pi == pi))
 	
 
-	def upsertSchedule(self, ri:str, pi:str, schedule:list[str]) -> bool:
+	def upsertSchedule(self, schedule:JSON, ri:str) -> bool:
 		with self.lockSchedules:
-			return self.tabSchedules.upsert(Document(
-						{ 'ri': ri,
-						  'pi': pi,
-						  'sce': schedule }, 
-						ri)) is not None	# type:ignore[arg-type]
+			return self.tabSchedules.upsert(Document(schedule, ri)) is not None	# type:ignore[arg-type]
 
 
 	def removeSchedule(self, ri:str) -> bool:
