@@ -758,7 +758,7 @@ Available under the BSD 3-Clause License
 			count = 0
 
 			# Create a temporary directory for the export
-			outdir = f'{CSE.Configuration.get('baseDirectory')}/tmp'
+			outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
 			os.makedirs(outdir, exist_ok = True)
 
 			filename = f'export-{getResourceDate().rsplit(",", 1)[0]}.sh'
@@ -862,7 +862,7 @@ function createResource() {{
 				L.console(f'No instances found under {ri}', isError = True)
 			else:
 				# Create a temporary directory for the export
-				outdir = f'{CSE.Configuration.get('baseDirectory')}/tmp'
+				outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
 				os.makedirs(outdir, exist_ok = True)
 
 				# get the filename and open the file for writing
