@@ -281,8 +281,9 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = MQTTClient(client_id = self.clientID, 
-									  clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
+		self.mqttClient = MQTTClient(callback_api_version = mqtt.CallbackAPIVersion.VERSION1,
+							   		 client_id = self.clientID, 
+									 clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
 		# Enable SSL see: https://pypi.org/project/paho-mqtt/
 		if self.useTLS:
