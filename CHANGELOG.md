@@ -19,6 +19,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Changed the database configuration settings to accommodate the new postgreSQL database support. This is a breaking change. 
 
 ### Fixed
+- [CSE] SyntaxError: f-string: unmatched '(' (see issue #146). Thanks to @mathiasp for the contribution.
+- [MQTT] Fixed breaking change of MQTT Paho 2.0 in MQTT client instanciation (see issue #147). Thanks to @name-taken23 for the contribution.
 
 ### Removed
 
