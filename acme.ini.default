@@ -374,19 +374,43 @@ type=${basic.config:databaseType}
 ; Default: False
 resetOnStartup=false
 ; The directory for a backup of the database files.
-; Default: ./backup
+; Database backups are not supported for the memory database and postgreSQL.
+; Default: ./data/backup
 backupPath=${basic.config:dataDirectory}/data/backup
 
 
 [database.tinydb]
-; Directory for the database files. Default: ./data
+; Directory for the database files.
+; Default: ./data
 path=${basic.config:dataDirectory}/data
-; Cache size in bytes, or 0 to disable caching. Default: 0
+; Cache size in bytes, or 0 to disable caching. 
+; Default: 0
 cacheSize=0
 ; Delay in seconds before new data is written to disk to avoid trashing.
 ; Must be full seconds.
 ; Default: 1 seconds
 writeDelay=1
+
+
+[database.postgresql]
+; The hostname of the PostgreSQL server.
+; Default: localhost
+host=localhost
+; The port of the PostgreSQL server.
+; Default: 5432
+port=5432
+; The database name.
+; Default: acmecse
+database=${basic.config:cseID}
+; The schema name.
+; Default: acmecse
+schema=acmecse
+; The user/role for the PostgreSQL server.
+; Default: the CSE-ID
+role=${basic.config:cseID}
+; The password for the PostgreSQL server.
+; Default: none set
+password=
 
 
 ;

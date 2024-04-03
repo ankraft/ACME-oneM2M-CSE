@@ -35,7 +35,9 @@ from ..resources.SCH import SCH
 from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
 
+from .database.DBBinding import DBBinding
 from .database.TinyDBBinding import TinyDBBinding
+from .database.PostgreSQLBinding import PostgreSQLBinding
 
 
 # Constants for database and table names
@@ -79,30 +81,40 @@ class Storage(object):
 		self.maxRequests = Configuration.get('cse.operation.requests.size') 
 		""" Maximum number of requests to store. """	
 
-		self.db:TinyDBBinding = None
+		self.db:DBBinding = None
 		""" The database object. """
 
-		match Configuration.get('database.type'):
-			case 'tinydb':
-				# create tinyDB object and open DB for file handling
-				self.db = TinyDBBinding(Configuration.get('database.tinydb.path'), 
-										CSE.cseCsi[1:], # add CSE CSI as postfix
-										Configuration.get('database.tinydb.cacheSize'),
-										Configuration.get('database.tinydb.writeDelay')
-									) 
-			case 'memory':
-				# create tinyDB object and open DB for in-memory handling
-				self.db = TinyDBBinding(None,
-										CSE.cseCsi[1:], # add CSE CSI as postfix
-										Configuration.get('database.tinydb.cacheSize'),
-										Configuration.get('database.tinydb.writeDelay')
-									)
-			case 'postgresql':
-				L.logErr('PostgreSQL not yet supported')
-				quit()
-			case _:
-				L.logErr('Unknown database type')
-				quit()
+		# Create the database object and connect to the database
+		try:
+			match Configuration.get('database.type'):
+				case 'tinydb':
+					# create tinyDB object and open DB for file handling
+					self.db = TinyDBBinding(Configuration.get('database.tinydb.path'), 
+											CSE.cseCsi[1:], # add CSE CSI as postfix
+											Configuration.get('database.tinydb.cacheSize'),
+											Configuration.get('database.tinydb.writeDelay')
+										) 
+				case 'memory':
+					# create tinyDB object and open DB for in-memory handling
+					self.db = TinyDBBinding(None,
+											CSE.cseCsi[1:], # add CSE CSI as postfix
+											Configuration.get('database.tinydb.cacheSize'),
+											Configuration.get('database.tinydb.writeDelay')
+										)
+				case 'postgresql':
+					# create PostgreSQL object and connect to the DB
+					self.db = PostgreSQLBinding(Configuration.get('database.postgresql.host'),
+												Configuration.get('database.postgresql.port'),
+												Configuration.get('database.postgresql.role'),
+												Configuration.get('database.postgresql.password'),
+												Configuration.get('database.postgresql.database'),
+												Configuration.get('database.postgresql.schema')
+											)
+				case _:
+					L.logErr('Unknown database type')
+					quit()
+		except Exception as e:
+			raise INTERNAL_SERVER_ERROR(f'Database error: {e}')
 
 		dbReset = Configuration.get('database.resetOnStartup') # Indicator that the database should be reset or cleared during start-up. """
 		
@@ -120,6 +132,7 @@ class Storage(object):
 		
 			# Make backup *after* validation, only when *not* reset
 			if not self.backupDB():
+				self.db.closeDB()
 				raise RuntimeError('DB Error')
 		
 		L.isInfo and L.log('Storage initialized')
@@ -190,17 +203,13 @@ class Storage(object):
 			Return:
 				Boolean indicating the success of the backup operation.
 		"""
-		_dir = Configuration.get('database.backupPath')
-		L.isDebug and L.logDebug(f'Creating DB backup in directory: {_dir}')
-		os.makedirs(_dir, exist_ok = True)
-		return self.db.backupDB(_dir)
+		return self.db.backupDB(Configuration.get('database.backupPath'))
 		
 
 	#########################################################################
 	##
 	##	Resources
 	##
-
 
 	def createResource(self, resource:Resource, overwrite:Optional[bool] = True) -> None:
 		"""	Create a new resource in the database.
@@ -397,7 +406,7 @@ class Storage(object):
 			Returns:
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
-		if (_ris := self.db.searchChildResourcesByParentRIAndType(pi, ty)):
+		if (_ris := self.db.searchChildResourceIDsByParentRIAndType(pi, ty)):
 			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
 			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
@@ -414,7 +423,7 @@ class Storage(object):
 			Returns:
 				Return a list of resource IDs.
 		"""
-		return self.db.searchChildResourcesByParentRIAndType(pi, ty)
+		return self.db.searchChildResourceIDsByParentRIAndType(pi, ty)
 
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
@@ -522,7 +531,6 @@ class Storage(object):
 			Return:
 				List of subscriptions. This is not the oneM2M Subscription resource, but the internal subscription representation.
 		"""
-		# L.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptionReprs(pi = pi)
 
 
@@ -699,16 +707,16 @@ class Storage(object):
 		return self.db.getActionRep(ri)
 
 	
-	def searchActionReprsForSubject(self, ri:str) -> Sequence[JSON]:
+	def searchActionReprsForSubject(self, subjectRi:str) -> Sequence[JSON]:
 		"""	Search for action representation for a subject resource.
 		
 			Args:
-				ri: The subject resource's resource ID.
+				subjectRi: The subject resource's resource ID.
 			
 			Return:
 				List of matching action representations.
 		"""
-		return self.db.searchActionsReprsForSubject(ri)
+		return self.db.searchActionsReprsForSubject(subjectRi)
 
 
 	def upsertAction(self, action:ACTR, periodTS:float, count:int) -> bool:
@@ -861,7 +869,7 @@ class Storage(object):
 				List of schedule resource IDs.
 		"""
 		result = []
-		for s in self.db.searchSchedules(pi):
+		for s in self.db.searchSchedulesForParent(pi):
 			result.extend(s['sce'])
 		return result
 

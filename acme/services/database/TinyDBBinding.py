@@ -6,6 +6,8 @@
 #
 #	Database Binding for TinyDB.
 #
+"""	This module implements the TinyDB binding to the database. It is used by the Storage class.
+"""
 
 from __future__ import annotations
 from typing import Optional, Callable, Sequence, cast
@@ -370,8 +372,13 @@ class TinyDBBinding(DBBinding):
 
 	def backupDB(self, dir:str) -> bool:
 		if not self.path:
-			L.isDebug and L.logDebug('Backup of in-memory database is not supported. Skipping.')
+			L.isDebug and L.logDebug('In-memory database backup is not supported. Skipping.')
 			return True
+		
+		L.isDebug and L.logDebug(f'Creating DB backup in directory: {dir}')
+		# Create the directory if it does not exist
+		os.makedirs(dir, exist_ok = True)
+
 		for fn in [	self.fileResources,
 					self.fileIdentifiers,
 					self.fileSubscriptions,
@@ -527,8 +534,7 @@ class TinyDBBinding(DBBinding):
 		with self.lockChildResources:
 
 			# First add a new record
-			self.tabChildResources.upsert(
-				Document(childResource, ri))	# type:ignore[arg-type]
+			self.tabChildResources.upsert(Document(childResource, ri))	# type:ignore[arg-type]
 
 			# Then add the child ri to the parent's record
 			_pi = childResource['pi']
@@ -562,7 +568,7 @@ class TinyDBBinding(DBBinding):
 					break
 
 
-	def searchChildResourcesByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
+	def searchChildResourceIDsByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		# First convert ty to a list if it is just an int
 		if isinstance(ty, int):
 			ty = [ty]
@@ -662,9 +668,9 @@ class TinyDBBinding(DBBinding):
 			return cast(list[JSON], self.tabActions.get(doc_id = ri))	# type:ignore[arg-type, return-value]
 
 
-	def searchActionsReprsForSubject(self, ri:str) -> Sequence[JSON]:
+	def searchActionsReprsForSubject(self, subjectRi:str) -> Sequence[JSON]:
 		with self.lockActions:
-			return self.tabActions.search(self.actionsQuery.subject == ri)
+			return self.tabActions.search(self.actionsQuery.subject == subjectRi)
 	
 
 	def upsertActionRepr(self, actionRepr:JSON, ri:str) -> bool:
@@ -740,7 +746,7 @@ class TinyDBBinding(DBBinding):
 			return cast(list[JSON], self.tabSchedules.get(doc_id = ri))	# type:ignore[arg-type, return-value]
 	
 
-	def searchSchedules(self, pi:str) -> list[JSON]:
+	def searchSchedulesForParent(self, pi:str) -> list[JSON]:
 		with self.lockSchedules:
 			return cast(list[JSON], self.tabSchedules.search(self.schedulesQuery.pi == pi))
 	

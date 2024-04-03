@@ -633,34 +633,13 @@ Settings in this section are listed under the `[database]` section.
 
 
 
-# database.cacheSize
+# database.backupPath
 
-This setting specifies the number of database query result to be cached.
+This setting specifies the path to the CSE's database backup files. 
 
-The default value is `0`.
+**Attention**: Database backups are not supported for the in-memory and postgreSQL databases.
 
-
-
-# database.inMemory
-
-This setting enables or disables the CSE's in-memory database mode.
-
-See also the command line argument `--db-storage`.
-
-**Attention**: No data is stored persistently when in-memory database mode is enabled.
-
-The default value is `False`.
-
-
-
-# database.path
-
-
-This setting specifies the path to the CSE's database files.
-
-The databases' file names contain the CSE's CSE-ID to allow multiple CSE installation to use the same directory.
-
-The default value is `./data`.
+The default value is `./data/backup`.
 
 
 
@@ -675,7 +654,105 @@ The default value is `False`.
 
 
 
-#  database.writeDelay
+# database.type
+
+This setting determines the used database binding. The following database bindings are available:
+
+- `memory`: An in-memory database. **Data is not stored persistently when in-memory database mode is enabled.**
+- `postgresql`: A PostgreSQL database. This binding requires a PostgreSQL server to be installed and running.
+- `tinydb`: A simple but fast file-based database. This is the default database binding.
+
+See also the command line argument `--db-type`.
+
+The default value is `tinydb`.
+
+
+
+# database.postgresql
+
+This section contains settings that control the CSE's PostgreSQL database binding.
+
+Settings in this section are listed under the `[database.postgresql]` section.
+
+
+
+# database.postgresql.database
+
+This setting specifies the name of the database.
+
+The default value is the CSE's CSE-ID.
+
+
+
+# database.postgresql.host
+
+This setting specifies the hostname of the PostgreSQL server.
+
+The default value is `localhost`.
+
+
+
+# database.postgresql.password
+
+This setting specifies the password for the database *role*.
+
+The default value is an empty string.
+
+
+
+# database.postgresql.port
+
+This setting specifies the port of the PostgreSQL server.
+
+The default value is `5432`.
+
+
+
+# database.postgresql.role
+
+This setting specifies the role/username for the database.
+
+The default value is the CSE's CSE-ID.
+
+
+
+# database.postgresql.schema
+
+This setting specifies the schema name of the database.
+
+The default value is `acmecse`.
+
+
+
+# database.tinydb
+
+This section contains settings that control the CSE's TinyDB database binding.  
+TinyDB is a simple but fast file-based database.
+
+Settings in this section are listed under the `[database.tinydb]` section.
+
+
+
+# database.tinydb.cacheSize
+
+This setting specifies the number of database query result to be cached.
+
+The default value is `0`.
+
+
+
+# database.tinydb.path
+
+
+This setting specifies the path to the CSE's TinyDB database files.
+
+The databases' file names contain the CSE's CSE-ID to allow multiple CSE installation to use the same directory.
+
+The default value is `./data`.
+
+
+
+#  database.tinydb.writeDelay
 
 This setting specifies the latency of the database write cache, in seconds, before writing new or updated data to the database files.
 
