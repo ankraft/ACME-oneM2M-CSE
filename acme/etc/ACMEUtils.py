@@ -602,12 +602,15 @@ def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 			If the resource type name is not in the correct format, eg the domain is missing, it is *None*.
 			The third element always contains the found outer attribute name.
 	"""
-	rootKeys = list(dct.keys())
-	# Try to determine the root identifier 
-	if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
-		return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
-	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
-	return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
+	try:
+		rootKeys = list(dct.keys())
+		# Try to determine the root identifier 
+		if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
+			return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
+		# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
+		return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
+	except Exception as e:
+		raise
 
 
 # def removeKeyFromDict(jsn:dict, keys:list[str]) -> Any:
@@ -701,16 +704,19 @@ def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
 			 if k in attributesToInclude }
 			 
 
-def resourceFromCSI(csi:str) -> Any:	# Actual a Resource object
+def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 
 		Args:
 			csi: *CSE-ID* of the <CSEBase> resource to retrieve.
 		
 		Return:
-			<CSEBase> resource.
+			<CSEBase> resource or None if not found.
 	"""
-	return CSE.storage.retrieveResource(csi = csi)
+	try:
+		return CSE.storage.retrieveResource(csi = csi)
+	except Exception as e:
+		return None
 
 
 def getAttributeSize(attribute:Any) -> int:
