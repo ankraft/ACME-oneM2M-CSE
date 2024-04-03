@@ -187,7 +187,7 @@ class TestLoad(unittest.TestCase):
 	@unittest.skipIf(BINDING in ('mqtt', 'ws'), 'No parallel execution for MQTT or WS binding yet')
 	def test_createAEsParallel(self) -> None:
 		"""	Create n AEs in m threads in parallel"""
-		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
+		print(f'{self.count} * {self.parallel} Threads = {self.count * self.parallel} AEs ... ', end='', flush=True)
 		threads = [threading.Thread(target=lambda: TestLoad.aes.extend(self._createAEs(self.count))) for _ in range(self.parallel)]
 		TestLoad.startTimer()
 		[t.start() for t in threads] 	# type: ignore [func-returns-value]
@@ -199,7 +199,7 @@ class TestLoad(unittest.TestCase):
 	@unittest.skipIf(BINDING in ('mqtt', 'ws'), 'No parallel execution for MQTT or WS binding yet')
 	def test_deleteAEsParallel(self) -> None:
 		"""	Delete n AEs in m threads in parallel """
-		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
+		print(f'{self.count} * {self.parallel} Threads = {self.count * self.parallel} AEs ... ', end='', flush=True)
 		nrPerList = int(len(TestLoad.aes)/self.parallel)
 		deleteLists = [TestLoad.aes[x:x+nrPerList] for x in range(0, len(TestLoad.aes), nrPerList)]
 		threads = [threading.Thread(target=lambda n: self._deleteAEs(self.count, aes=deleteLists[n]), args=(n,)) for n in range(self.parallel)]
@@ -334,6 +334,10 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Create and delete 10 <AE> in 100 threads in parallel
 	addTest(suite, TestLoad('test_createAEsParallel', 10, 100))
 	addTest(suite, TestLoad('test_deleteAEsParallel', 10, 100))
+
+	# Create and delete 1000 <AE> in 50 threads in parallel
+	addTest(suite, TestLoad('test_createAEsParallel', 1000, 50))
+	addTest(suite, TestLoad('test_deleteAEsParallel', 1000, 50))
 
 	# Create and delete 1 AE + 10 CNTs * 20 CINs one by one
 	addTest(suite, TestLoad('test_createCNTCINs', 10))
