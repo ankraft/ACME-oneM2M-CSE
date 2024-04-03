@@ -26,14 +26,14 @@ class DBBinding(ABC):
 	def closeDB(self) -> None:
 		"""	Close the database.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
 	def purgeDB(self) -> None:
 		"""	Purge the database. Remove all data
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -46,7 +46,7 @@ class DBBinding(ABC):
 			Return:
 				Boolean value to indicate success or failure.
 		"""
-		pass
+		...
 
 
 	#
@@ -61,7 +61,7 @@ class DBBinding(ABC):
 				resource: The resource to insert.
 				ri: The resource ID of the resource.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -72,7 +72,7 @@ class DBBinding(ABC):
 				resource: The resource to upate or insert.
 				ri: The resource ID of the resource.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -86,7 +86,7 @@ class DBBinding(ABC):
 			Return:
 				The updated resource dirctionary.
 		"""
-		pass
+		...
 	
 	@abstractmethod
 	def deleteResource(self, ri:str) -> None:
@@ -95,7 +95,7 @@ class DBBinding(ABC):
 			Args:
 				ri: The resource ID of the resource.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -122,12 +122,14 @@ class DBBinding(ABC):
 			Return:
 				A list of found resource documents, or an empty list.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
 	def discoverResourcesByFilter(self, func:Callable[[JSON], bool]) -> list[JSON]:
-		"""	Search for resources by a filter function.
+		"""	Search for resources by a filter function. This goes through all resources in the database and
+			applies the filter function to each resource. If the filter function returns True, the resource is added
+			to the result list.
 
 			Args:
 				func: The filter function to use.
@@ -135,7 +137,7 @@ class DBBinding(ABC):
 			Return:
 				A list of found resource documents, or an empty list.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -155,7 +157,7 @@ class DBBinding(ABC):
 			Return:
 				True if the resource exists, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -165,7 +167,7 @@ class DBBinding(ABC):
 			Return:
 				The number of resources in the database.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -178,7 +180,7 @@ class DBBinding(ABC):
 			Return:
 				A list of found resources, or an empty list.
 		"""
-		pass
+		...
 
 
 	#
@@ -197,7 +199,7 @@ class DBBinding(ABC):
 				ri: The resource ID of the resource.
 				srn: The structured resource name of the resource.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -208,7 +210,7 @@ class DBBinding(ABC):
 				ri: The resource ID of the resource.
 				srn: The structured resource name of the resource.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -224,8 +226,8 @@ class DBBinding(ABC):
 				srn: Structured path to search for.
 			Return:
 				A list of found identifier documents (see `upsertIdentifier`), or an empty list if not found.
-		 """
-		pass
+		"""
+		...
 
 
 	@abstractmethod
@@ -236,7 +238,7 @@ class DBBinding(ABC):
 				resource: The resource to add as a child.
 				ri: The resource ID of the resource.
 		"""
-		pass
+		...
 
 			
 	@abstractmethod
@@ -247,11 +249,11 @@ class DBBinding(ABC):
 				ri: The resource ID of the resource.
 				pi: The resource ID of the parent resource.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
-	def searchChildResourcesByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
+	def searchChildResourceIDsByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		"""	Search for child resources by parent resource ID and optional type.
 
 			Args:
@@ -261,7 +263,7 @@ class DBBinding(ABC):
 			Return:
 				A list of child resource IDs, or an empty list if not found.
 		"""
-		pass
+		...
 
 
 	#
@@ -282,7 +284,7 @@ class DBBinding(ABC):
 			Return:
 				A list of found subscription representations, or None.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -296,7 +298,7 @@ class DBBinding(ABC):
 			Return:
 				True if the subscription representation was updated or inserted, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -309,7 +311,7 @@ class DBBinding(ABC):
 			Return:
 				True if the subscription representation was removed, False otherwise.
 		"""
-		pass
+		...
 
 
 	#
@@ -321,14 +323,12 @@ class DBBinding(ABC):
 		"""	Add a batch notification to the database.
 
 			Args:
-				ri: The resource ID of the resource.
-				nu: The notification URI.
-				notificationRequest: The notification request.
+				batchRecord: The batch notification to add.
 
 			Return:
 				True if the batch notification was added, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -342,7 +342,7 @@ class DBBinding(ABC):
 			Return:
 				The number of batch notifications for the resource and notification URI.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -356,7 +356,7 @@ class DBBinding(ABC):
 			Return:
 				A list of batch notifications for the resource and notification URI.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -370,7 +370,7 @@ class DBBinding(ABC):
 			Return:
 				True if the batch notifications were removed, False otherwise.
 		"""
-		pass
+		...
 
 
 	#
@@ -384,7 +384,7 @@ class DBBinding(ABC):
 			Return:
 				The statistics, or None if not found.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -397,14 +397,14 @@ class DBBinding(ABC):
 			Return:
 				True if the statistics were updated or inserted, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
 	def purgeStatistics(self) -> None:
 		"""	Purge the statistics DB.
 		"""
-		pass
+		...
 
 
 	#
@@ -418,7 +418,7 @@ class DBBinding(ABC):
 			Return:
 				A list of action representations, or None if not found.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -431,20 +431,20 @@ class DBBinding(ABC):
 			Return:
 				The action representation, or None if not found.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
-	def searchActionsReprsForSubject(self, ri:str) -> Sequence[JSON]:
+	def searchActionsReprsForSubject(self, subjectRi:str) -> Sequence[JSON]:
 		"""	Search for action representations by subject.
 		
 			Args:
-				ri: The resource ID of the action representation's subject.
+				subjectRi: The resource ID of the action representation's subject.
 			
 			Return:
-				A list of action representations, or None if not found.
+				A list of action representations, or an empty list if not found.
 		"""
-		pass
+		...
 	
 
 	# TODO Move resource handling to Storage module. This is too detailed here
@@ -459,7 +459,7 @@ class DBBinding(ABC):
 			Return:
 				True if the action representation was updated or inserted, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -472,7 +472,7 @@ class DBBinding(ABC):
 			Return:
 				True if the action representation was updated, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -485,7 +485,7 @@ class DBBinding(ABC):
 			Return:
 				True if the action representation was removed, False otherwise.
 		"""
-		pass
+		...
 
 
 	#
@@ -505,7 +505,7 @@ class DBBinding(ABC):
 			Return:
 				Boolean value to indicate success or failure.
 		"""
-		pass
+		...
 	
 	
 	@abstractmethod
@@ -515,7 +515,7 @@ class DBBinding(ABC):
 			Args:
 				maxRequests: The maximum number of requests to keep.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -528,17 +528,17 @@ class DBBinding(ABC):
 			Return:
 				List of *Documents*. May be empty.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
 	def deleteRequests(self, ri:Optional[str] = None) -> None:
-		"""	Remnove all stord requests from the database.
+		"""	Remnove all stored requests from the database.
 
 			Args:
 				ri: Optional resouce ID. Only requests for this resource ID will be deleted.
 		"""
-		pass
+		...
 
 
 	#
@@ -552,7 +552,7 @@ class DBBinding(ABC):
 			Return:
 				List of *Documents*. May be empty.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -565,11 +565,11 @@ class DBBinding(ABC):
 			Return:
 				The schedule, or *None* if not found.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
-	def searchSchedules(self, pi:str) -> list[JSON]:
+	def searchSchedulesForParent(self, pi:str) -> list[JSON]:
 		"""	Search for schedules in the database.
 		
 			Args:
@@ -578,7 +578,7 @@ class DBBinding(ABC):
 			Return:
 				List of *Documents*. May be empty.
 		"""
-		pass
+		...
 	
 
 	@abstractmethod
@@ -592,7 +592,7 @@ class DBBinding(ABC):
 			Return:
 				True if the schedule was added or updated, False otherwise.
 		"""
-		pass
+		...
 
 
 	@abstractmethod
@@ -605,4 +605,4 @@ class DBBinding(ABC):
 			Return:
 				True if the schedule was removed, False otherwise.
 		"""
-		pass
+		...
