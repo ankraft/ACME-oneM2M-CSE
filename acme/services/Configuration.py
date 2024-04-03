@@ -118,6 +118,8 @@ class Configuration(object):
 	""" The network interface passed as argument. This overrides the respective value in the configuration file. """
 	_argsMqttEnabled:bool = None
 	""" The mqtt enabled flag passed as argument. This overrides the respective value in the configuration file. """
+	_argsWsEnabled:bool = None
+	""" The WebSocket enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRemoteCSEEnabled:bool = None
 	""" The remote CSE enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRunAsHttps:bool = None
@@ -173,6 +175,7 @@ class Configuration(object):
 		Configuration._argsRunAsHttpWsgi		= args.httpWsgi if args and 'httpWsgi' in args else None
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 		Configuration._argsTextUI				= args.textui if args and 'textui' in args else None
+		Configuration._argsWsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
 
 
 		# Create user config file if doesn't exist
@@ -355,6 +358,17 @@ class Configuration(object):
 				'database.type'							: config.get('database', 'type',			 						fallback = 'tinydb'),
 				'database.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',					fallback = False),
 				'database.backupPath'					: config.get('database', 'backupPath',								fallback = './data/backup'),
+
+				#
+				#	Database PostgreSQL
+				#
+
+				'database.postgresql.host'					: config.get('database.postgresql', 'host',								fallback = 'localhost'),
+				'database.postgresql.port'					: config.getint('database.postgresql', 'port', 							fallback = 5432),
+				'database.postgresql.role'					: config.get('database.postgresql', 'role', 							fallback = None),	# CSE-ID
+				'database.postgresql.password'				: config.get('database.postgresql', 'password', 						fallback = None),
+				'database.postgresql.database'				: config.get('database.postgresql', 'database', 						fallback = 'acmecse'),
+				'database.postgresql.schema'				: config.get('database.postgresql', 'schema', 							fallback = 'acmecse'),
 
 				#
 				#	Database TinyDB
@@ -694,6 +708,8 @@ class Configuration(object):
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
 		if Configuration._argsDBDataDirectory is not None:		_put('database.path', Configuration._argsDBDataDirectory)				# Override DB data directory from command line
+		if Configuration._argsDBStorageMode is not None:		_put('database.type', Configuration._argsDBStorageMode)				# Override DB data directory from command line
+		if Configuration._argsHeadless is True:					_put('console.headless', True)
 		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
 		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
 		if Configuration._argsImportDirectory is not None:		_put('cse.resourcesPath', Configuration._argsImportDirectory)			# Override import directory from command line
@@ -704,7 +720,7 @@ class Configuration(object):
 		if Configuration._argsRunAsHttpWsgi is not None:		_put('http.wsgi.enable', Configuration._argsRunAsHttpWsgi)				# Override use WSGI
 		if Configuration._argsStatisticsEnabled is not None:	_put('cse.statistics.enable', Configuration._argsStatisticsEnabled)		# Override statistics enablement
 		if Configuration._argsTextUI is not None:				_put('textui.startWithTUI', Configuration._argsTextUI)
-		if Configuration._argsHeadless is True:					_put('console.headless', True)
+		if Configuration._argsWsEnabled is not None:			_put('websocket.enable', Configuration._argsWsEnabled)						# Override mqtt enable
 
 		# Correct urls
 		_put('cse.registrar.address', normalizeURL(Configuration._configuration['cse.registrar.address']))

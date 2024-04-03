@@ -77,6 +77,10 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableMqtt.add_argument('--mqtt', action='store_true', dest='mqttenabled', default=None, help='enable mqtt binding')
 	groupEnableMqtt.add_argument('--no-mqtt', action='store_false', dest='mqttenabled', default=None, help='disable mqtt binding')
 
+	groupEnableWS = parser.add_mutually_exclusive_group()
+	groupEnableWS.add_argument('--ws', action='store_true', dest='wsenabled', default=None, help='enable WebSocket binding')
+	groupEnableWS.add_argument('--no-ws', action='store_false', dest='wsenabled', default=None, help='disable WebSocket binding')
+
 	groupRemoteCSE = parser.add_mutually_exclusive_group()
 	groupRemoteCSE.add_argument('--remote-cse', action='store_true', dest='remotecseenabled', default=None, help='enable remote CSE connections')
 	groupRemoteCSE.add_argument('--no-remote-cse', action='store_false', dest='remotecseenabled', default=None, help='disable remote CSE connections')
@@ -85,9 +89,9 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
-	parser.add_argument('--db-directory', action='store', dest='dbdirectory', metavar='<data-directory>', default=None, help='specify the DB´s data directory')
+	parser.add_argument('--db-directory', action='store', dest='dbdirectory', metavar='<data-directory>', default=None, help='specify the TinyDB data directory')
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
-	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
+	parser.add_argument('--db-type', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'tinydb', 'postgresql' ], type=str.lower, help='specify the DB´s storage type')
 	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server-URL>', help='specify the CSE\'s http server URL')
 	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http-port>',  type=int, help='specify the CSE\'s http port')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')

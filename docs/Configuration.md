@@ -58,22 +58,29 @@ resourcesPath=${basic.config:baseDirectory}/init
 The following tables provide detailed descriptions of all the possible CSE configuration settings.
 
 [&#91;cse&#93; - General CSE Settings](#general)  
-[&#91;cse.announcements&#93; - Settings for Resource Announcements](#announcements)  
-[&#91;cse.operation.jobs&#93; - CSE Operations Settings - Jobs](#operation_jobs)  
-[&#91;cse.operation.requests&#93; - CSE Operations Settings - Requests](#operation_requests)  
-[&#91;cse.registration&#93; - Settings for Self-Registrations](#cse_registration)  
-[&#91;cse.registrar&#93; - Settings for Remote CSE Access](#registrar)  
-[&#91;cse.security&#93; - General Security Settings](#security)  
-[&#91;cse.statistics&#93; - Statistic Settings](#statistics)  
-[&#91;console&#93; - Console Settings](#console)  
-[&#91;database&#93; - Database Settings](#database)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.announcements&#93; - Settings for Resource Announcements](#announcements)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.operation.jobs&#93; - CSE Operations Settings - Jobs](#operation_jobs)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.operation.requests&#93; - CSE Operations Settings - Requests](#operation_requests)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.registration&#93; - Settings for Self-Registrations](#cse_registration)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.registrar&#93; - Settings for Remote CSE Access](#registrar)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.security&#93; - General Security Settings](#security)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;cse.statistics&#93; - Statistic Settings](#statistics)  
+[&#91;database&#93; - General Database Settings](#database)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;database.tinydb&#93; - TinyDB Database Settings](#database_tinydb)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;database.postgresql&#93; - PostgreSQL Database Settings](#database_postgresql)  
 [&#91;http&#93; - HTTP Server Settings](#http)  
-[&#91;http.security&#93; - HTTP Security Settings](#security_http)  
-[&#91;http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
-[&#91;http.wsgi&#93; - HTTP WSGI (Web Server Gateway Interface) Settings](#http_wsgi)  
-[&#91;logging&#93; - Logging Settings](#logging)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;http.security&#93; - HTTP Security Settings](#security_http)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;http.cors&#93; - HTTP CORS (Cross-Origin Resource Sharing) Settings](#http_cors)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;http.wsgi&#93; - HTTP WSGI (Web Server Gateway Interface) Settings](#http_wsgi)  
 [&#91;mqtt&#93; - MQTT Binding Settings](#client_mqtt)  
-[&#91;mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;mqtt.security&#93; - MQTT Security Settings](#security_mqtt)  
+[&#91;websocket&#93; - WebSocket Binding Settings](#websocket)  
+&nbsp;&nbsp;&nbsp;&nbsp;[&#91;websocket.security&#93; - WebSocket Security Settings](#security_websocket)  
+[&#91;logging&#93; - Logging Settings](#logging)  
+[&#91;scripting&#93; - Scripting Settings](#scripting)  
+[&#91;console&#93; - Console Settings](#console)  
+[&#91;textui&#93; - Text UI Settings](#textui)  
+[&#91;webui&#93; - Web UI Settings](#webui)  
 [&#91;resource.acp&#93; - Resource defaults: Access Control Policies](#resource_acp)  
 [&#91;resource.actr&#93; - Resource defaults: Action](#resource_actr)  
 [&#91;resource.cnt&#93; - Resource Defaults: Container](#resource_cnt)  
@@ -83,12 +90,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [&#91;resource.sub&#93; - Resource Defaults: Subscription](#resource_sub)  
 [&#91;resource.ts&#93; - Resource Defaults: TimeSeries](#resource_ts)  
 [&#91;resource.tsb&#93; - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
-[&#91;scripting&#93; - Scripting Settings](#scripting)  
-[&#91;textui&#93; - Text UI Settings](#textui)  
-[&#91;websocket&#93; - WebSocket Binding Settings](#websocket)  
-[&#91;websocket.security&#93; - WebSocket Security Settings](#security_websocket)  
-[&#91;webui&#93; - Web UI Settings](#webui)  
-
 	
 
 <a name="general"></a>
@@ -123,14 +124,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
-<a name="security"></a>
+<a name="announcements"></a>
 
-### [cse.security] - General Security Settings
+### [cse.announcements] - Settings for Resource Announcements 
 
-| Setting         | Description                                                                               | Configuration Name           |
-|:----------------|:------------------------------------------------------------------------------------------|:-----------------------------|
-| enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.security.enableACPChecks |
-| fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin |
+| Setting                        | Description                                                                                                                                          | Configuration Name                               |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------|
+| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10                                                        | cse.announcements.checkInterval                  |
+| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                                              | cse.announcements.allowAnnouncementsToHostingCSE |
+| delayAfterRegistration         | Specify a short delay in seconds before starting announcing resources after a remote CSE has registered at the hosting CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
 
 [top](#sections)
 
@@ -148,7 +150,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 [top](#sections)
 
-
 ---
 
 <a name="operation_requests"></a>
@@ -159,6 +160,109 @@ The following tables provide detailed descriptions of all the possible CSE confi
 |:--------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
 | enable  | Enable request recording.<br/>Default: False                                                                                                                                                                               | cse.operation.requests.enable |
 | size    | Maximum number of requests to be stored. Oldest requests will be deleted when this threshold is reached. Note, that a large number of requests might take a moment to be displayed in the console or UIs.<br/>Default: 250 | cse.operation.requests.size   |
+
+[top](#sections)
+
+---
+
+<a name="cse_registration"></a>
+
+###	[cse.registration] - Settings for Self-Registrations
+
+| Setting               | Description                                                                                                                                                                                        | Configuration Name                     |
+|:----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
+| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                                                 | cse.registration.allowedAEOriginators  |
+| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />; Note: CSE-IDs must have a leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
+| checkLiveliness       | Check the liveliness of the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                                               | cse.registration.checkLiveliness       |
+
+[top](#sections)
+
+---
+
+<a name="registrar"></a>
+
+### [cse.registrar] - Settings for Registrar Registrar CSE Access 
+
+| Setting              | Description                                                                                                                                                                                                                    | Configuration Name                 |
+|:---------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                                                                                              | cse.registrar.address              |
+| root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                 | cse.registrar.root                 |
+| cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                                                                             | cse.registrar.cseID                |
+| resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                                                                                                     | cse.registrar.resourceName         |
+| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json                                                                                 | cse.registrar.serialization        |
+| checkInterval        | This setting specifies the pause in seconds between tries to connect to the configured registrar CSE. This value is also used to check the connectivity to the registrar CSE after a successful registration..<br/>Default: 30 | cse.registrar.checkInterval        |
+| excludeCSRAttributes | List of attributes that are excluded when creating a registrar CSR.<br />Default: empty list                                                                                                                                    | cse.registrar.excludeCSRAttributes |
+
+[top](#sections)
+
+---
+
+<a name="security"></a>
+
+### [cse.security] - General Security Settings
+
+| Setting         | Description                                                                               | Configuration Name           |
+|:----------------|:------------------------------------------------------------------------------------------|:-----------------------------|
+| enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.security.enableACPChecks |
+| fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin |
+
+[top](#sections)
+
+---
+
+<a name="statistics"></a>
+
+###	[cse.statistics] - Statistic Settings
+
+| Setting       | Description                                                                                                              | Configuration Name           |
+|:--------------|:-------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
+| enable        | This setting enables or disables the CSE's statistics collection and reporting.<br />Default: True                       | cse.statistics.enable        |
+| writeInterval | This setting specifies the pause, in seconds, between writing the collected statistics to the database.<br />Default: 60 | cse.statistics.writeInterval |
+
+[top](#sections)
+
+---
+
+<a name="database"></a>
+
+###	[database] - Database Settings
+
+| Setting        | Description                                                                                                                                                    | Configuration Name      |
+|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------|
+| backupPath     | The directory for a backup of the database files.<br />Database backups are not supported for the in-memory database and postgreSQL.<br />Default: ./data/backup. | database.backupPath     |
+| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                | database.resetOnStartup |
+| type           | The type of database to use.<br />See also command line argument [--db-type](Running.md).<br />Allowed values: tinydb, postgresql, memory<br />Default: tinydb                                                              | database.type           |
+
+[top](#sections)
+
+---
+
+<a name="database_tinydb"></a>
+
+###	[database.tinydb] - TinyDB Database Settings
+
+| Setting    | Description                                                                                                        | Configuration Name         |
+|:-----------|:-------------------------------------------------------------------------------------------------------------------|:---------------------------|
+| cacheSize  | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                       | database.tinydb.cacheSize  |
+| path       | Directory for the database files.<br/>Default: ./data                                                              | database.tinydb.path       |
+| writeDelay | Delay in seconds before new data is written to disk to avoid trashing. Must be full seconds.<br/>Default: 1 second | database.tinydb.writeDelay |
+
+[top](#sections)
+
+---
+
+<a name="database_postgresql"></a>
+
+###	[database.postgresql] - PostgreSQL Database Settings
+
+| Setting  | Description                                               | Configuration Name           |
+|:---------|:----------------------------------------------------------|:-----------------------------|
+| database | Name of the database.<br/>Default: the CSE-ID             | database.postgresql.database |
+| host     | Hostname of the PostgreSQL server.<br/>Default: localhost | database.postgresql.host     |
+| password | Password for the database.<br/>Default: not set           | database.postgresql.password |
+| port     | Port of the PostgreSQL server.<br/>Default: 5432          | database.postgresql.port     |
+| schema   | Name of the schema.<br/>Default: acmecse                  | database.postgresql.schema   |
+| role     | Login/Username for the database.<br/>Default: the CSE-ID  | database.postgresql.role     |
 
 [top](#sections)
 
@@ -227,7 +331,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | connectionLimit | The number of possible parallel connections that can be accepted by the WSGI server. Note: One connection uses one system file descriptor.<br />Default: 100 | http.wsgi.connectionLimit |
 
 
-
 [top](#sections)
 
 ---
@@ -266,17 +369,31 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
-<a name="database"></a>
+<a name="websocket"></a>
 
-###	[database] - Database Settings
+###	[websocket] - WebSocket Binding Settings
 
-| Setting        | Description                                                                                                                                                          | Configuration Name      |
-|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------|
-| path           | Directory for the database files.<br/>Default: ./data                                                                                                                | database.path           |
-| inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | database.inMemory       |
-| cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | database.cacheSize      |
-| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | database.resetOnStartup |
-| writeDelay     | Delay in seconds before new data is written to disk to avoid trashing. Must be full seconds-<br/>Default: 1 second                                                   | database.writeDelay     |
+| Setting  | Description                                                                                                                 | Configuration Name |
+|:---------|:----------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| enable   | Enable the WebSocket binding.<br />Default: False                                                                           | websocket.enable   |
+| port     | Set the port for the WebSocket server.<br />Default: 8180                                                                   | websocket.port     |
+| listenIF | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br />Default:0.0.0.0                                              | websocket.listenIF |
+
+[top](#sections)
+
+---
+
+<a name="security_websocket"></a>
+
+###	[websocket.security] - WebSocket Security Settings
+
+| Setting           | Description                                                                                                                                                                 | Configuration Name                   |
+|:------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| useTLS            | Enable TLS for websocket communications.<br />Default: False                                                                                                                | websocket.security.useTLS            |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto | websocket.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False                                                                     | websocket.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                               | websocket.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                               | websocket.security.caPrivateKeyFile  |
 
 [top](#sections)
 
@@ -304,60 +421,61 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ---
 
-<a name="cse_registration"></a>
+<a name="scripting"></a>
 
-###	[cse.registration] - Settings for Self-Registrations
+###	[scripting] - Scripting Settings
 
-| Setting               | Description                                                                                                                                                                                        | Configuration Name                     |
-|:----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
-| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                                                 | cse.registration.allowedAEOriginators  |
-| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />; Note: CSE-IDs must have a leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
-| checkLiveliness       | Check the liveliness of the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                                               | cse.registration.checkLiveliness       |
-
-[top](#sections)
-
----
-
-<a name="registrar"></a>
-
-### [cse.registrar] - Settings for Registrar Registrar CSE Access 
-
-| Setting              | Description                                                                                                                                                                                                                    | Configuration Name                 |
-|:---------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
-| address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                                                                                              | cse.registrar.address              |
-| root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                 | cse.registrar.root                 |
-| cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                                                                             | cse.registrar.cseID                |
-| resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                                                                                                     | cse.registrar.resourceName         |
-| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json                                                                                 | cse.registrar.serialization        |
-| checkInterval        | This setting specifies the pause in seconds between tries to connect to the configured registrar CSE. This value is also used to check the connectivity to the registrar CSE after a successful registration..<br/>Default: 30 | cse.registrar.checkInterval        |
-| excludeCSRAttributes | List of attributes that are excluded when creating a registrar CSR.<br />Default: empty list                                                                                                                                    | cse.registrar.excludeCSRAttributes |
+| Setting                | Description                                                                                                                                                    | Configuration Name               |
+|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------|
+| scriptDirectories      | Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory. Must be a comma-separated list.<br/>Default: not set | scripting.scriptDirectories      |
+| verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | scripting.verbose                |
+| fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | scripting.fileMonitoringInterval |
+| maxRuntime             | Set the timeout for script execution in seconds. 0.0 seconds means no timeout.<br/>Must be >= 0.0.<br/>Default: 60.0 seconds                                   | scripting.maxRuntime |
 
 [top](#sections)
 
 ---
 
-<a name="announcements"></a>
+<a name="console"></a>
 
-### [cse.announcements] - Settings for Resource Announcements 
+###	[console] - Console Settings
 
-| Setting                        | Description                                                                                                                                          | Configuration Name                               |
-|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------|
-| checkInterval                  | Wait n seconds between tries to announce resources to registered remote CSE.<br />Default: 10                                                        | cse.announcements.checkInterval                  |
-| allowAnnouncementsToHostingCSE | Allow resource announcements to the own hosting CSE.<br />Default: True                                                                              | cse.announcements.allowAnnouncementsToHostingCSE |
-| delayAfterRegistration         | Specify a short delay in seconds before starting announcing resources after a remote CSE has registered at the hosting CSE.<br />Default: 3 seconds. | cse.announcements.delayAfterRegistration         |
+| Setting                     | Description                                                                                                                                                                                   | Configuration Name                  |
+|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------|
+| confirmQuit                 | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                                                       | console.confirmQuit                 |
+| headless                    | Run the CSE in headless mode, i.e. without a console and without screen logging.<br />Default: False                                                                                          | console.headless                    |
+| hideResources               | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                                                    | console.hideResources               |
+| refreshInterval             | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                                             | console.refreshInterval             |
+| theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | console.theme                       |
+| treeIncludeVirtualResources | Show virtual resources in the console's and structure endpoint's tree view..<br/>Default: False                                                                                               | console.treeIncludeVirtualResources |
+| treeMode                    | Set the mode how resources and their content are presented in the console's and structure endpoint's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | console.treeMode                    |
 
 [top](#sections)
 
 ---
 
-<a name="statistics"></a>
+<a name="webui"></a>
 
-###	[cse.statistics] - Statistic Settings
+###	[webui] - Web UI Settings
 
-| Setting       | Description                                                                                                              | Configuration Name           |
-|:--------------|:-------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
-| enable        | This setting enables or disables the CSE's statistics collection and reporting.<br />Default: True                       | cse.statistics.enable        |
-| writeInterval | This setting specifies the pause, in seconds, between writing the collected statistics to the database.<br />Default: 60 | cse.statistics.writeInterval |
+| Setting | Description                                  | Configuration Name |
+|:--------|:---------------------------------------------|:-------------------|
+| root    | Root path of the web UI.<br/>Default: /webui | webui.root         |
+
+[top](#sections)
+
+---
+
+<a name="textui"></a>
+
+###	[textui] - Text UI Settings
+
+| Setting         | Description                                                                                                                                        | Configuration Name     |
+|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
+| startWithTUI    | Show the text UI after startup.<br />See also command line argument [–-textui](Running.md).<br />Default: False                                    | textui.startWithTUI    |
+| theme           | Set the color theme for the text UI. Allowed values are "dark" and "light".<br />Default: same as [console].theme                                  | textui.theme           |
+| refreshInterval | Interval for refreshing various views in the text UI.<br />Default: 2.0                                                                            | textui.refreshInterval |
+| maxRequestSize  | Max size of a request or response in bytes to display. Requests or responses larger than this threshold will not be displayed.<br />Default: 10000 | textui.maxRequestSize  |
 
 [top](#sections)
 
@@ -478,99 +596,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [top](#sections)
 
 ---
-
-<a name="console"></a>
-
-###	[console] - Console Settings
-
-| Setting                     | Description                                                                                                                                                                                   | Configuration Name                  |
-|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------|
-| confirmQuit                 | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                                                       | console.confirmQuit                 |
-| headless                    | Run the CSE in headless mode, i.e. without a console and without screen logging.<br />Default: False                                                                                          | console.headless                    |
-| hideResources               | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                                                    | console.hideResources               |
-| refreshInterval             | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                                             | console.refreshInterval             |
-| theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | console.theme                       |
-| treeIncludeVirtualResources | Show virtual resources in the console's and structure endpoint's tree view..<br/>Default: False                                                                                               | console.treeIncludeVirtualResources |
-| treeMode                    | Set the mode how resources and their content are presented in the console's and structure endpoint's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | console.treeMode                    |
-
-[top](#sections)
-
----
-
-<a name="textui"></a>
-
-###	[textui] - Text UI Settings
-
-| Setting         | Description                                                                                                                                        | Configuration Name     |
-|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
-| startWithTUI    | Show the text UI after startup.<br />See also command line argument [–-textui](Running.md).<br />Default: False                                    | textui.startWithTUI    |
-| theme           | Set the color theme for the text UI. Allowed values are "dark" and "light".<br />Default: same as [console].theme                                  | textui.theme           |
-| refreshInterval | Interval for refreshing various views in the text UI.<br />Default: 2.0                                                                            | textui.refreshInterval |
-| maxRequestSize  | Max size of a request or response in bytes to display. Requests or responses larger than this threshold will not be displayed.<br />Default: 10000 | textui.maxRequestSize  |
-
-[top](#sections)
-
-
----
-
-<a name="scripting"></a>
-
-###	[scripting] - Scripting Settings
-
-| Setting                | Description                                                                                                                                                    | Configuration Name               |
-|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------|
-| scriptDirectories      | Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory. Must be a comma-separated list.<br/>Default: not set | scripting.scriptDirectories      |
-| verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | scripting.verbose                |
-| fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | scripting.fileMonitoringInterval |
-| maxRuntime             | Set the timeout for script execution in seconds. 0.0 seconds means no timeout.<br/>Must be >= 0.0.<br/>Default: 60.0 seconds                                   | scripting.maxRuntime |
-
-[top](#sections)
-
----
-
-<a name="websocket"></a>
-
-###	[websocket] - WebSocket Binding Settings
-
-| Setting  | Description                                                                                                                 | Configuration Name |
-|:---------|:----------------------------------------------------------------------------------------------------------------------------|:-------------------|
-| enable   | Enable the WebSocket binding.<br />Default: False                                                                           | websocket.enable   |
-| port     | Set the port for the WebSocket server.<br />Default: 8180                                                                   | websocket.port     |
-| listenIF | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br />Default:0.0.0.0                                              | websocket.listenIF |
-
-[top](#sections)
-
----
-
-<a name="security_websocket"></a>
-
-###	[websocket.security] - WebSocket Security Settings
-
-| Setting           | Description                                                                                                                                                                 | Configuration Name                   |
-|:------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
-| useTLS            | Enable TLS for websocket communications.<br />Default: False                                                                                                                | websocket.security.useTLS            |
-| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto | websocket.security.tlsVersion        |
-| verifyCertificate | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False                                                                     | websocket.security.verifyCertificate |
-| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                               | websocket.security.caCertificateFile |
-| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                               | websocket.security.caPrivateKeyFile  |
-
-[top](#sections)
-
----
-
-<a name="webui"></a>
-
-###	[webui] - Web UI Settings
-
-| Setting | Description                                  | Configuration Name |
-|:--------|:---------------------------------------------|:-------------------|
-| root    | Root path of the web UI.<br/>Default: /webui | webui.root         |
-
-[top](#sections)
-
----
-
-
 
 <a name="advanced"></a>
 

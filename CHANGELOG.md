@@ -11,10 +11,12 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [DATABASE] Added postgreSQL support for the CSE's database. This is an alternative to the default TinyDB database. 
 
 ### Experimental
 
 ### Changed
+- [CSE] Changed the database configuration settings to accommodate the new postgreSQL database support. This is a breaking change. 
 
 ### Fixed
 
