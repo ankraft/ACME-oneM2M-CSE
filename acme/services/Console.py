@@ -1335,47 +1335,60 @@ function createResource() {{
 				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
 
 
-				logs  = _markup('[underline]Logs[/underline]\n')
-				logs += '\n'
-				logs += f'LogLevel : {str(L.logLevel)}\n'
-				logs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
-				logs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
+				miscRight  = _markup('[underline]Logs[/underline]\n')
+				miscRight += '\n'
+				miscRight += f'LogLevel : {str(L.logLevel)}\n'
+				miscRight += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
+				miscRight += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
+				miscRight += '\n'
+				miscRight += _markup('[underline]Database[/underline]\n')
+				miscRight += '\n'
+				miscRight += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
+				match _dbType:
+					case 'postgresql':
+						miscRight += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
+						miscRight += f'Role     : {Configuration.get("database.postgresql.role")}\n'
+						miscRight += f'Database : {Configuration.get("database.postgresql.database")}\n'
+						miscRight += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
+					case 'tinydb':
+						miscRight += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+
 
 			else:
 				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n')
 				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n')
 				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n')
-				logs         = _markup('\n[dim]statistics are disabled[/dim]\n')
+				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n')
 
 
-			misc  = _markup('[underline]Misc[/underline]\n')
-			misc += '\n'
-			misc += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
-			misc += f'Hostname          : {socket.gethostname()}\n'
+			miscLeft  = _markup('[underline]Misc[/underline]\n')
+			miscLeft += '\n'
+			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
+			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
-				misc += f'IP-Address        : {getIPAddress()}\n'
+				miscLeft += f'IP-Address        : {getIPAddress()}\n'
 			except Exception as e:
 				print(e)
-			misc += f'PoA               : {CSE.csePOA[0]}\n'
+			miscLeft += f'PoA               : {CSE.csePOA[0]}\n'
 			if len(CSE.csePOA) > 1:
-				misc += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
 
-			misc += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-			misc += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
+			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
 
-			misc += '\n'
+			miscLeft += '\n'
 			if hasattr(os, 'getloadavg'):
 				load = os.getloadavg()
-				misc += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+				miscLeft += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
 			else:
-				misc += '\n'
-			misc += f'Platform          : {sys.platform}\n'
-			misc += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+				miscLeft += '\n'
+			miscLeft += f'Platform          : {sys.platform}\n'
+			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
 
 			# Adapt the following line when adding resources to keep formatting. 
 			# It fills up the right columns to match the length of the left column.
-			misc += '\n' * ( (2 if CSE.statistics.statisticsEnabled else 3) - len(CSE.csePOA))
+			miscLeft += '\n' * ( (2 if CSE.statistics.statisticsEnabled else 3) - len(CSE.csePOA))
 
 			workers = _markup('[underline]Workers[/underline]\n')
 			workers += '\n'
@@ -1408,13 +1421,13 @@ function createResource() {{
 			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
 			infoGrid = Table.grid(expand=True)
-			infoGrid.add_column(ratio = 64)
-			infoGrid.add_column(ratio = 36)
-			infoGrid.add_row(misc, logs)
+			infoGrid.add_column(ratio = 60)
+			infoGrid.add_column(ratio = 40)
+			infoGrid.add_row(miscLeft, miscRight)
 
 			workerGrid = Table.grid(expand = True)
-			workerGrid.add_column(ratio = 64)
-			workerGrid.add_column(ratio = 36)
+			workerGrid.add_column(ratio = 60)
+			workerGrid.add_column(ratio = 50)
 			workerGrid.add_row(workers, threads)
 			workerGrid.add_row(tableWorkers, tableThreads)
 
