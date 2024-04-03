@@ -423,7 +423,12 @@ class ResourceTypes(ACMEIntEnum):
 				The full name of the resource type.
 		"""
 		return _ResourceTypeDetails.get(ResourceTypes(ty)).fullName
-
+	
+	
+	def __str__(self) -> str:
+		return str(int(self.value))
+	
+	
 
 @dataclass()
 class ResourceDescription():
