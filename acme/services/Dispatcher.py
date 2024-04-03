@@ -693,6 +693,7 @@ class Dispatcher(object):
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
+		# TODO perhaps optimize this?
 		if CSE.storage.hasResource(ri = newResource.ri):
 			raise CONFLICT(L.logWarn(f'Resource with ri: {newResource.ri} already exists'))
 		if CSE.storage.hasResource(srn = newResource.getSrn()):
