@@ -269,7 +269,11 @@ class RegistrationManager(object):
 				originator: ID of the originator / AE.
 			Return
 				True if the originator is registered with the CSE.
+
+			Todo:
+				Currently this is done by searching the storage. This should be optimized by using an index for the originator.
 		"""
+		# TODO optimize this by using an index for the originator
 		return len(CSE.storage.searchByFragment({'aei' : originator})) > 0
 
 	#########################################################################
