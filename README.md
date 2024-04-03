@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.03
+Version 2024.04
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)
@@ -42,19 +42,13 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-- Added WebSocket Binding support.  
-  Though fully functional, there are two experimental features added to the implementation. See the [article](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/143) that explains these features and how to use them.
-- Added support for *SIM* and *MobileNetwork* ManagementObject specializations.
-- Added support for Python 3.12.
-
+- Added postgreSQL support. Instead of the default TinyDB, you can now use a PostgreSQL database to store the resources and runtime data.
+  
 ### Improvements
-- Improved Text UI.
-  - Auto-refresh for diagrams.
-  - Diagrams now support containers that contain boolean-kind values.
-  - Added Service menu for resources.
-    - Export a resource and its child resources as curl commands.
-    - Export the instance resources of &lt;container> and &lt;timeSeries> container to CSV files.
-- Improved scripting support with new functions.
+
+### Breaking Changes
+- Due to the new database support, the configuration file has changed. Please see the [Configuration](docs/Configuration.md) documentation for further details.
+
 
 
 ### What to expect in the next release
