@@ -60,7 +60,9 @@ RELEASEVERSION			= '4'				# Supported Release Version for requests & registratio
 #	CSE SuT
 #
 
-CSEURL					= f'{PROTOCOL}://localhost:8080/'	# CSE Server address.
+CSEHOST					= 'localhost'		# CSE Server address.
+CSEPORT					= 8080				# CSE Server port.
+CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}/'	# CSE Server address.
 CSERN					= 'cse-in'			# CSEBase Resource Name
 CSERI					= 'id-in'			# CSEBase Resource ID
 CSEID					= '/id-in'			# CSE-ID
@@ -148,6 +150,6 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 #
 #	Upper Tester
 #
-UTURL	= f'{CONFIGPROTOCOL}://localhost:8080/__ut__'	# CSE's Upper Tester URL
+UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}/__ut__'	# CSE's Upper Tester URL
 UTCMD	= 'X-M2M-UTCMD'
 UTRSP	= 'X-M2M-UTRSP'
