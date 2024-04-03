@@ -22,6 +22,7 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
+from ..etc.ResponseStatusCodes import ResponseException
 from ..services.ActionManager import ActionManager
 from ..services.Configuration import Configuration
 from ..services.Console import Console
@@ -46,7 +47,7 @@ from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..services.WebSocketServer import WebSocketServer
-from .AnnouncementManager import AnnouncementManager
+from ..services.AnnouncementManager import AnnouncementManager
 from ..services.Logging import Logging as L
 
 
@@ -271,55 +272,65 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceLatency = Configuration.get('cse.operation.jobs.balanceLatency'),
 										balanceReduceFactor = Configuration.get('cse.operation.jobs.balanceReduceFactor'))
 
-	textUI = TextUI()						# Start the textUI
-	console = Console()						# Start the console
+	try:
+		textUI = TextUI()						# Start the textUI
+		console = Console()						# Start the console
 
-	storage = Storage()						# Initialize the resource storage
-	statistics = Statistics()				# Initialize the statistics system
-	registration = RegistrationManager()	# Initialize the registration manager
-	validator = Validator()					# Initialize the resource validator
-	dispatcher = Dispatcher()				# Initialize the resource dispatcher
-	request = RequestManager()				# Initialize the request manager
-	security = SecurityManager()			# Initialize the security manager
-	httpServer = HttpServer()				# Initialize the HTTP server
-	mqttClient = MQTTClient()				# Initialize the MQTT client
-	webSocketServer = WebSocketServer()		# Initialize the WebSocket server
-	notification = NotificationManager()	# Initialize the notification manager
-	groupResource = GroupManager()					# Initialize the group manager
-	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
-	remote = RemoteCSEManager()				# Initialize the remote CSE manager
-	announce = AnnouncementManager()		# Initialize the announcement manager
-	semantic = SemanticManager()			# Initialize the semantic manager
-	location = LocationManager()			# Initialize the location manager
-	time = TimeManager()					# Initialize the time mamanger
-	script = ScriptManager()				# Initialize the script manager
-	action = ActionManager()				# Initialize the action manager
+		storage = Storage()						# Initialize the resource storage
+		statistics = Statistics()				# Initialize the statistics system
+		registration = RegistrationManager()	# Initialize the registration manager
+		validator = Validator()					# Initialize the resource validator
+		dispatcher = Dispatcher()				# Initialize the resource dispatcher
+		request = RequestManager()				# Initialize the request manager
+		security = SecurityManager()			# Initialize the security manager
+		httpServer = HttpServer()				# Initialize the HTTP server
+		mqttClient = MQTTClient()				# Initialize the MQTT client
+		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
+		notification = NotificationManager()	# Initialize the notification manager
+		groupResource = GroupManager()					# Initialize the group manager
+		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
+		remote = RemoteCSEManager()				# Initialize the remote CSE manager
+		announce = AnnouncementManager()		# Initialize the announcement manager
+		semantic = SemanticManager()			# Initialize the semantic manager
+		location = LocationManager()			# Initialize the location manager
+		time = TimeManager()					# Initialize the time mamanger
+		script = ScriptManager()				# Initialize the script manager
+		action = ActionManager()				# Initialize the action manager
 
-	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-	# Import extra attribute policies for specializations first
-	# When this fails, we cannot continue with the CSE startup
-	importer = Importer()
-	if not importer.doImport():
+		# Import a default set of resources, e.g. the CSE, first ACP or resource structure
+		# Import extra attribute policies for specializations first
+		# When this fails, we cannot continue with the CSE startup
+		importer = Importer()
+		if not importer.doImport():
+			cseStatus = CSEStatus.STOPPED
+			return False
+		
+		# Start the HTTP server
+		if not httpServer.run(): 						# This does return (!)
+			L.logErr('Terminating', showStackTrace = False)
+			cseStatus = CSEStatus.STOPPED
+			return False 					
+
+		# Start the MQTT client
+		if not mqttClient.run():				# This does return
+			L.logErr('Terminating', showStackTrace = False)
+			cseStatus = CSEStatus.STOPPED
+			return False 
+
+		# Start the WebSocket server
+		if not webSocketServer.run():			# This does return
+			L.logErr('Terminating', showStackTrace = False)
+			cseStatus = CSEStatus.STOPPED
+			return False
+	
+	except ResponseException as e:
+		L.logErr(f'Error during startup: {e.dbg}')
 		cseStatus = CSEStatus.STOPPED
 		return False
-	
-	# Start the HTTP server
-	if not httpServer.run(): 						# This does return (!)
-		L.logErr('Terminating', showStackTrace = False)
+	except Exception as e:
+		L.logErr(f'Error during startup: {e}', exc = e)
 		cseStatus = CSEStatus.STOPPED
-		return False 					
-
-	# Start the MQTT client
-	if not mqttClient.run():				# This does return
-		L.logErr('Terminating', showStackTrace = False)
-		cseStatus = CSEStatus.STOPPED
-		return False 
-
-	# Start the WebSocket server
-	if not webSocketServer.run():			# This does return
-		L.logErr('Terminating', showStackTrace = False)
-		cseStatus = CSEStatus.STOPPED
-		return False	
+		return False
 
 	# Enable log queuing
 	L.queueOn()	
