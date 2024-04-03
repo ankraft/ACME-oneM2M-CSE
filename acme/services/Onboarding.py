@@ -89,6 +89,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 	from ..etc.ACMEUtils import isValidID
 
 	cseType = 'IN'
+	cseID:str = None
 	cseEnvironment = 'Development'
 
 
@@ -224,15 +225,15 @@ def buildUserConfigFile(configFile:str) -> bool:
 									invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 								).execute(),
 			'registrarCsePort': inquirer.number(
-							message = 'The Registrar CSE\' host http port:',
-							default = _iniValues[cseType]['registrarCsePort'],
-							long_instruction = 'The TCP port of the remote (Registrar) CSE.',
-							validate = NetworkTools.isValidPort,
-							min_allowed = 1,
-        					max_allowed = 65535,
-							amark = '✓',
-							invalid_message = 'Invalid port number. Must be a number between 1 and 65535.',
-						).execute(),
+									message = 'The Registrar CSE\' host http port:',
+									default = _iniValues[cseType]['registrarCsePort'],
+									long_instruction = 'The TCP port of the remote (Registrar) CSE.',
+									validate = NetworkTools.isValidPort,
+									min_allowed = 1,
+									max_allowed = 65535,
+									amark = '✓',
+									invalid_message = 'Invalid port number. Must be a number between 1 and 65535.',
+								).execute(),
 		}
 
 
@@ -242,7 +243,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 			Return:
 				A dictionary with the selected policies.
 		"""
-		_print('\n\n[b]CSE Policies\n')
+		_print('\n\n[b]CSE policies\n')
 		_print('The following configuration settings determine miscellaneous CSE policies.\n')
 
 		return {
@@ -253,18 +254,6 @@ def buildUserConfigFile(configFile:str) -> bool:
 							long_instruction = 'Set the logging verbosity',
 							amark = '✓',
 						).execute(),
-			'databaseInMemory': inquirer.select(
-							message = 'Database location policy:',
-							choices = [ Choice(name = 'memory - Faster, but data is lost when the CSE terminates', 
-			  								   value = True),
-		  								Choice(name = 'disk   - Slower, but data is persisted across CSE restarts', 
-		   									   value = False),
-									  ],
-							default = cseEnvironment in ('Development', 'Introduction'),
-							transformer = lambda result: result.split()[0],
-							long_instruction = 'Store data in memory (volatile) or on disk (persistent).',
-							amark = '✓',
-						).execute(),	
 			'consoleTheme': inquirer.select(
 								message = 'Console and Text UI Theme:',
 								choices = [ Choice(name = 'Dark', 
@@ -276,6 +265,78 @@ def buildUserConfigFile(configFile:str) -> bool:
 								long_instruction = 'Set the console and Text UI theme',
 								amark = '✓',
 							).execute(),
+			}
+
+
+	def cseDatabase() -> InquirerPySessionResult:
+		""" Prompts for CSE Database settings. 
+
+			Return:
+				A dictionary with the selected policies.
+		"""
+		_print('\n\n[b]Database configuration\n')
+		_print('The following configuration settings determine the database configuration.\n')
+
+		dbType = inquirer.select(
+							message = 'Database type:',
+							choices = [ Choice(name = 'memory     - Faster, but data is lost when the CSE terminates', 
+			  								   value = 'memory'),
+		  								Choice(name = 'TinyDB     - Simple but fast file-based database', 
+		   									   value = 'tinydb'),
+		  								Choice(name = 'PostgreSQL - Data is stored in a separate PostgreSQL database', 
+		   									   value = 'postgresql'),
+									  ],
+							default = 'memory' if cseEnvironment in ('Development', 'Introduction') else 'tinydb',
+							transformer = lambda result: result.split()[0],
+							long_instruction = 'Store data in memory, or persist in a database.',
+							amark = '✓',
+						).execute()
+		if dbType == 'postgresql':
+			_print('\nPlease provide the connection parameters for the PostgreSQL database.\n')
+			return {
+				'databaseType': dbType,
+				'dbName': inquirer.text(
+							message = 'Database name:',
+							default = cseID,
+							long_instruction = 'The name of the PostgreSQL database.',
+							amark = '✓', 
+						).execute(),
+				'dbSchema': inquirer.text(
+							message = 'Database schema:',
+							default = 'acmecse',
+							long_instruction = 'The schema name of the PostgreSQL database.',
+							amark = '✓',
+						).execute(),
+				'dbUser': inquirer.text(
+							message = 'Database role:',
+							default = cseID,
+							long_instruction = 'The role/user name to connect to the PostgreSQL database.',
+							amark = '✓', 
+						).execute(),
+				'dbPassword': inquirer.secret(
+							message = 'Database password:',
+							long_instruction = 'The password to connect to the PostgreSQL database.',
+							amark = '✓', 
+						).execute(),
+				'dbHost': inquirer.text(
+							message = 'Database host:',
+							default = 'localhost',
+							long_instruction = 'The host name or IP address of the PostgreSQL database server.',
+							amark = '✓', 
+						).execute(),
+				'dbPort': inquirer.number(
+							message = 'Database port:',
+							default = 5432,
+							long_instruction = 'The port number of the PostgreSQL database server.',
+							amark = '✓', 
+							validate = NetworkTools.isValidPort,
+							min_allowed = 1,
+							max_allowed = 65535,
+						).execute(),
+			}
+		else:
+			return {
+				'databaseType': dbType
 			}
 
 
@@ -296,11 +357,17 @@ def buildUserConfigFile(configFile:str) -> bool:
 		# Prompt for the CSE configuration
 		for each in (bc := cseConfig()):
 			cnf.append(f'{each}={bc[each]}')
+		cseID = bc['cseID']
 		
 		# Prompt for registrar configuration
 		if cseType in [ 'MN', 'ASN' ]:
 			for each in (bc := registrarConfig()):
 				cnf.append(f'{each}={bc[each]}')
+		
+		# Prompt for the CSE database settings
+
+		dbc = cseDatabase()
+		cnf.append(f'databaseType={dbc["databaseType"]}')
 		
 		# Prompt for the CSE policies
 		for each in (bc := csePolicies()):
@@ -381,6 +448,20 @@ headless=True
 enable=True
 """
 
+		if dbc['databaseType'] == 'postgresql':
+			cnfPostgreSQL = \
+f"""
+[database.postgresql]
+database={dbc["dbName"]}
+host={dbc["dbHost"]}
+password={dbc["dbPassword"]}
+port={dbc["dbPort"]}
+role={dbc["dbUser"]}
+schema={dbc["dbSchema"]}
+"""
+		else:
+			cnfPostgreSQL = ''
+
 		# Construct the configuration
 		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra
 
@@ -396,6 +477,9 @@ enable=True
 				jcnf += cnfHeadless
 			case 'WSGI':
 				jcnf += cnfWSGI
+		
+		# Add the database configuration
+		jcnf += cnfPostgreSQL
 
 		# Show configuration and confirm write
 		_print('\n[b]Save configuration\n')
