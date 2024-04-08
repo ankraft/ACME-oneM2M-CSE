@@ -37,7 +37,12 @@ from ..services.Logging import Logging as L
 
 from .database.DBBinding import DBBinding
 from .database.TinyDBBinding import TinyDBBinding
-from .database.PostgreSQLBinding import PostgreSQLBinding
+
+if 'ACME_NO_PGSQL' not in os.environ:
+	from .database.PostgreSQLBinding import PostgreSQLBinding
+	_disablePostgreSQL = False
+else:
+	_disablePostgreSQL = True
 
 
 # Constants for database and table names
@@ -83,6 +88,9 @@ class Storage(object):
 
 		self.db:DBBinding = None
 		""" The database object. """
+	
+		if _disablePostgreSQL:
+			L.isDebug and L.logDebug('PostgreSQL is disabled by environment variable')
 
 		# Create the database object and connect to the database
 		try:
@@ -103,6 +111,8 @@ class Storage(object):
 										)
 				case 'postgresql':
 					# create PostgreSQL object and connect to the DB
+					if _disablePostgreSQL:
+						raise RuntimeError('Configuration conflict: Use of PostgreSQL is disabled in the environment, but enabled in the configuration.')
 					self.db = PostgreSQLBinding(Configuration.get('database.postgresql.host'),
 												Configuration.get('database.postgresql.port'),
 												Configuration.get('database.postgresql.role'),

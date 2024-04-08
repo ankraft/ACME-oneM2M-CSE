@@ -274,7 +274,7 @@ Just execute the ```mypy``` command in the project's root directory. It will rea
 The CSE tries to catch errors and give helpful advice as much as possible during runtime.
 However, there are circumstances when this could not done easily, e.g. during startup.
 
-In order to provide additional information in these situations one can set the *ACME_DEBUG* environment (to any value):
+In order to provide additional information in these situations one can set the *ACME_DEBUG* environment variable (to any value):
 
 	$ export ACME_DEBUG=1
 

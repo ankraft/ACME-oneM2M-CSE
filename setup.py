@@ -34,7 +34,7 @@ setup(
 		'isodate',
 		'paho-mqtt',
 		'plotext',
-		'psycopg2',
+		'psycopg2-binary',
 	        'python3-dtls',
 		'rdflib',
 		'requests', 
