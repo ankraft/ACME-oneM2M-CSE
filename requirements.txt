@@ -59,7 +59,7 @@ plotext==5.2.8
     #   textual-plotext
 prompt-toolkit==3.0.43
     # via inquirerpy
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
     # via ACME-oneM2M-CSE (setup.py)
 pygments==2.17.2
     # via rich

@@ -4,7 +4,7 @@
 
 ### Python
 
-ACME requires **Python 3.10** or newer. Install it with your favorite package manager.
+ACME requires **Python 3.10** or newer. Install it with your favorite package manager or as part of a virtual environment manager.
 
 You may consider to use a virtual environment manager like pyenv + virtualenv (see [this HowTo](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/137) or [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 
@@ -51,11 +51,13 @@ You can start the CSE by simply running it from the command line:
 
 The ACME CSE uses a database to store resources. This section describes the default database and how to set up a PostgreSQL database.
 
-### TinyDB
+### TinyDB and In-Memory
 
-The default database is a simple but fast file-based database using the [TinyDB](https://github.com/msiemens/tinydb) library. by default, it requires no additional setup.
+The default database is a simple but fast file-based database using the [TinyDB](https://github.com/msiemens/tinydb) library. By default, it requires no additional setup.
 
-The database files are stored by default in the directory *./data* (which can be changed by a [configuration setting](Configuration.md#databasetinydb---tinydb-database-settings)). TinyDB also provides a memory-based database that might be useful for testing and development purposes, or if you want to start with a clean database each time you start the CSE.
+The database files are stored by default in the directory *./data* (which can be changed by a [configuration setting](Configuration.md#databasetinydb---tinydb-database-settings)). 
+
+TinyDB also provides a memory-based database that might be useful for testing and development purposes, or if you want to start with a clean database each time you start the CSE.
 
 ### PostgreSQL
 
@@ -64,7 +66,8 @@ An alternative to the file-based database is to use a PostgreSQL database. This 
 The following steps describe how to set up a PostgreSQL database for the ACME CSE:
 
 1. Optional: Install PostgreSQL on your system. You can download the installer from the [PostgreSQL website](https://www.postgresql.org/download/).
-1. Create a new database and user for the CSE. It is recommended to use the CSE-ID as the database name and as the role name. You can use the following commands to create a new database named *id-in* and a role named *id-in* with the password *acme*:
+1. Create a new database and user for the CSE. It is recommended to use the CSE-ID as the database name and as the role name.  
+For example, you can use the following commands to create a new database named *id-in* and a role named *id-in* with the password *acme*:
 
 		psql -c "CREATE DATABASE \"id-in\";"
 		psql -c "CREATE USER \"id-in\" WITH PASSWORD 'acme';"
@@ -83,6 +86,20 @@ The following steps describe how to set up a PostgreSQL database for the ACME CS
 
 1. Run the CSE.  
 The database schema and tables are created automatically by the CSE when it starts and connects for the first time. 
+
+
+#### Disabling PostgreSQL
+
+Sometimes it may not be possible or desirable to use a PostgreSQL database, for example, when running the CSE on a system where PostgreSQL is not available or when you want to use the CSE in a simple test environment.
+
+In this case, you can disable the PostgreSQL database by setting the *databaseType* setting in the *\[basic.config\]* section to *tinydb* or *memory*:
+
+	[basic.config]
+	databaseType=tinydb
+
+In order to prevent the PostgreSQL Python modules (i.e. psycopg2) to be loaded you can also set the `ACME_NO_PGSQL` environment variable to any value before running the CSE:
+
+	export ACME_NO_PGSQL=1
 
 ---
 ## Installation on a Raspberry Pi
