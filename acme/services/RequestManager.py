@@ -1345,11 +1345,12 @@ class RequestManager(object):
 
 			# SQI - Semantic Query Indicator
 			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
-				if cseRequest.op != Operation.RETRIEVE:
+				if cseRequest.op not in [Operation.RETRIEVE, Operation.DISCOVERY]:
 					raise BAD_REQUEST(L.logDebug('sqi request attribute is only allowed for RETRIEVE/DISCOVERY operations'), data = cseRequest)
 				else:
 					cseRequest.sqi = v
 					cseRequest.op = Operation.DISCOVERY
+					rcn = ResultContentType.semanticContent
 
 
 			# Validate rcn depending on operation
