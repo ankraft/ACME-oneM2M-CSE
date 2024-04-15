@@ -20,7 +20,7 @@ flask==3.0.2
     #   flask-cors
 flask-cors==4.0.0
     # via ACME-oneM2M-CSE (setup.py)
-idna==3.6
+idna==3.7
     # via requests
 inquirerpy==0.3.4
     # via ACME-oneM2M-CSE (setup.py)
