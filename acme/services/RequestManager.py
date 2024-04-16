@@ -1349,7 +1349,6 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'), data = cseRequest)
 				else:
 					cseRequest.sqi = v
-					rcn = ResultContentType.semanticContent
 
 
 			# Validate rcn depending on operation
