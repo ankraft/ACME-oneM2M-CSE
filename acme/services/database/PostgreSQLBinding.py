@@ -467,7 +467,7 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def _fetchSingleRow(self, cursor:PsyCursor, asList:bool = True) -> Any|list[Any]:
-		"""	Fetch the first eklement from the first row from the database cursor.
+		"""	Fetch the first element from the first row from the database cursor.
 
 			Args:
 				cursor: The database cursor to fetch the row from.
@@ -668,14 +668,17 @@ class PostgreSQLBinding(DBBinding):
 
 	def searchChildResourceIDsByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
 		# L.isDebug and L.logDebug(f'Searching child resources for parent resource {pi} and type {ty}')
-		
-		def _cl(cursor:PsyCursor) -> list[str]:
-			if cursor.rowcount > 0:
-				return [ c[0] for c in cursor if ty is None or c[1] in ty ]
-			return []
 
 		if isinstance(ty, int):
 			ty = [ty]
+
+		def _cl(cursor:PsyCursor) -> list[str]:
+			if cursor.rowcount > 0:
+				return [ c[0] 
+						 for c in cursor 
+						 if ty is None or c[1] in ty ]
+			return []
+
 		return self._executePrepared('getChildResourcesByPI (%s)', (pi,), 
 									 _cl)
 
@@ -740,7 +743,7 @@ class PostgreSQLBinding(DBBinding):
 		def _cl(cursor:PsyCursor) -> JSON:
 			if not (_s := self._fetchSingleRow(cursor, False)):
 				return {}
-			return _s
+			return _s	# type: ignore[return-value]
 		
 		return self._executePrepared('getStatistics', (), 
 									 _cl)

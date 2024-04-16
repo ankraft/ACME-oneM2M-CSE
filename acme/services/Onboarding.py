@@ -357,7 +357,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 		# Prompt for the CSE configuration
 		for each in (bc := cseConfig()):
 			cnf.append(f'{each}={bc[each]}')
-		cseID = bc['cseID']
+		cseID = cast(str, bc['cseID'])
 		
 		# Prompt for registrar configuration
 		if cseType in [ 'MN', 'ASN' ]:
