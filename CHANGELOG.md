@@ -20,6 +20,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] SyntaxError: f-string: unmatched '(' (see issue #146). Thanks to @mathiasp for the contribution.
+- [CSE] Updated the MQTT client and connection functions to the Paho 2.0 version. 
 - [MQTT] Fixed breaking change of MQTT Paho 2.0 in MQTT client instanciation (see issue #147). Thanks to @name-taken23 for the contribution.
 
 ### Removed

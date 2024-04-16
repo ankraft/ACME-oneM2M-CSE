@@ -9,7 +9,7 @@
 """ Implementation of an MQTT Client helper class. """
 
 from __future__ import annotations
-from typing import Callable, Any, Tuple, Optional, TypeAlias
+from typing import Callable, Any, Tuple, Optional, TypeAlias, cast
 
 import ssl, time
 from dataclasses import dataclass
@@ -19,6 +19,9 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ..helpers.TextTools import simpleMatch
 
 import paho.mqtt.client as mqtt
+import paho.mqtt.reasoncodes as mqtt_rc
+import paho.mqtt.properties as mqtt_pr
+import paho.mqtt.enums as mqtt_en
 
 
 MQTTClient:TypeAlias = mqtt.Client
@@ -339,7 +342,7 @@ class MQTTConnection(object):
 	#	MQTT/paho callbacks
 	#
 
-	def _onConnect(self, client:MQTTClient, userdata:Any, flags:dict, rc:int) -> None:
+	def _onConnect(self, client:MQTTClient, userdata:Any, flags:dict, rc:mqtt_en.MQTTErrorCode) -> None:
 		"""	Callback when the MQTT client connected to the broker.
 
 			Args:
@@ -359,7 +362,7 @@ class MQTTConnection(object):
 				self.messageHandler.onError(self, rc)
 
 
-	def _onDisconnect(self, client:MQTTClient, userdata:Any, rc:int) -> None:
+	def _onDisconnect(self, client:MQTTClient, userdata:Any, rc:mqtt_en.MQTTErrorCode) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 
 			Args:
@@ -397,10 +400,10 @@ class MQTTConnection(object):
 				level: Log level.
 				buf: Log message.
 		"""
-		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[cast(mqtt_en.LogLevel, level)], f'MQTT: {buf}')
 	
 
-	def _onSubscribe(self, client:MQTTClient, userdata:Any, mid:int, granted_qos:int) -> None:
+	def _onSubscribe(self, client:MQTTClient, userdata:Any, mid:int, reason_code_list:list[mqtt_rc.ReasonCode], properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the client successfulle subscribed to a topic. The topic
 			is also added to the internal topic list.
 
@@ -408,7 +411,7 @@ class MQTTConnection(object):
 				client: The MQTT client.
 				userdata: User data.
 				mid: The message ID.
-				granted_qos: The QoS level.
+				reason_code_list: Reason codes received from the broker for each subscription
 		"""
 		# TODO doc, error check when not connected, not subscribed
 		for t in self.subscribedTopics.values():
@@ -447,7 +450,7 @@ class MQTTConnection(object):
 				userdata: User data.
 				message: The received message.
 		"""
-		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload!r}')
 		for t in self.subscribedTopics.keys():
 			if simpleMatch(message.topic, t, star='#'):
 				if (topic := self.subscribedTopics[t]).callback:
