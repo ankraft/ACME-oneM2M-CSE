@@ -197,7 +197,10 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Direct discovered SMD: {_resources}')
 
 			# Execute semantic resource discovery
-			_resources = CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, request.fc.smf, cast(Sequence[SMD], _resources))
+			_resources = CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, 
+																 		  request.fc.smf,
+																		  cast(Sequence[SMD], _resources),
+																		  request.ct)
 			return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(_resources, request.drt))
 
 		else:
@@ -254,7 +257,9 @@ class Dispatcher(object):
 					resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
 					
 					# Execute semantic query
-					res = CSE.semantic.executeSPARQLQuery(request.fc.smf, cast(Sequence[SMD], resources))
+					res = CSE.semantic.executeSPARQLQuery(request.fc.smf, 
+										   				  cast(Sequence[SMD], resources),
+														  request.ct)
 					L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
 					return Result(rsc = ResponseStatusCode.OK, data = { 'm2m:qres' : res.data })
 

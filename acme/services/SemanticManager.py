@@ -19,7 +19,7 @@ import base64, binascii
 from ..resources.SMD import SMD
 from ..resources.Resource import Resource
 from ..services import CSE
-from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat
+from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
 from ..services.Logging import Logging as L
 
@@ -96,7 +96,7 @@ class SemanticHandler(ABC):
 
 
 	@abstractmethod
-	def query(self, query:str, ids:Sequence[str], format:SemanticFormat) -> Result:
+	def query(self, query:str, ids:Sequence[str], format:str) -> Result:
 		"""	Run a SPARQL query against a graph.
 
 			Args:
@@ -142,6 +142,7 @@ class SemanticManager(object):
 			semantic graph in memory from the existing resources.
 		"""
 		self.semanticHandler = RdfLibHandler()
+		# TODO determine the format
 		self.defaultFormat = SemanticFormat.FF_RdfXml	# TODO configurable
 
 		# Re-Build graph in memory from <SMD> resources.
@@ -327,23 +328,29 @@ class SemanticManager(object):
 
 	def executeSPARQLQuery(self, query:str, 
 								 smds:Union[Sequence[SMD], SMD], 
-								 format:Optional[SemanticFormat] = None) -> Result:
+								 ct:ContentSerializationType) -> Result:
 		"""	Run a SPARQL query against a list of <`SMD`> resources.
 		
 			Args:
 				query: String with the SPARQL query.
 				smds: A list of <`SMD`> resources, or a single <`SMD`> resource, which are to be aggregated for the query.
-				format: Serialization format to use.
+				ct: Result serialization format to determine the result format.
 
 			Return:
 				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
 		"""
 		L.isDebug and L.logDebug('Performing SPARQL query')
+
+		# Determine the result format from the content serialization format
+		serializationFormat = 'json' if ct in ( ContentSerializationType.JSON, ContentSerializationType.CBOR ) else 'xml'
+
+		# Convert to list if necessary
 		if isinstance(smds, SMD):
 			smds = [ smds ]
+
 		return self.semanticHandler.query(query, 
 										  [ smd.ri for smd in smds ], 
-										  self.defaultFormat if not format else format)
+										  serializationFormat)
 		# aggregatedGraph = self.semanticHandler.getAggregatedGraph([ smd.ri for smd in smds ])
 		# qres = self.semanticHandler.query(query, aggregatedGraph).data
 		# return Result(status = True, data = qres.serialize(format='xml').decode('UTF-8'))
@@ -352,7 +359,7 @@ class SemanticManager(object):
 	def executeSemanticDiscoverySPARQLQuery(self, originator:str, 
 												  query:str, 
 												  smds:Sequence[SMD], 
-												  format:Optional[SemanticFormat] = None) -> List[Resource]:
+												  ct:ContentSerializationType) -> List[Resource]:
 		"""	Recursively discover link-related <`SMD`> resources and run a SPARQL query against each of the results.
 		
 			This implementation support the "resource link-based" method, but not the "annotation-based" method.
@@ -363,7 +370,7 @@ class SemanticManager(object):
 				query: String with the SPARQL query.
 				originator: The originator of the original request. It is used to determine the access to related resources.
 				smds: A list of <`SMD`> resources which are to be aggregated and for the query. 
-				format: Serialization format to use.
+				ct: Result serialization format to determine the result format.
 			
 			Return:
 				`Result` object. If successful, the *data* attribute contains the serialized result of the query.
@@ -382,7 +389,7 @@ class SemanticManager(object):
 		# Determine the matches and add the parent resources for those who have one
 		resources:list[Resource] = []
 		for smd in graphIDs.values():
-			qres = self.executeSPARQLQuery(query, smd, format)
+			qres = self.executeSPARQLQuery(query, smd, ct)
 			try:
 				for e in ElementTree.fromstring(cast(str, qres.data)):	
 					if e.tag.endswith('results'):	# ignore namespace
@@ -529,10 +536,12 @@ class RdfLibHandler(SemanticHandler):
 		self.store.remove_graph(graph)		# type:ignore [no-untyped-call]
 
 
-	def query(self, query:str, ids:Sequence[str], format:SemanticFormat) -> Result:
+	def query(self, query:str, ids:Sequence[str], format:str) -> Result:
 		L.isDebug and L.logDebug(f'Querying graphs')
-		if not (_format := self.getFormat(format)):
-			raise BAD_REQUEST(L.logWarn(f'Unsupported format: {format} for result'))
+
+		# Check serialization format
+		if not format in ( 'json', 'xml', 'csv', 'txt' ):
+			raise BAD_REQUEST(L.logWarn(f'Unsupported result serialization format: {format}'))
 
 		# Aggregate a new graph for the query
 		aggregatedGraph = self.getAggregatedGraph(ids)
@@ -543,8 +552,8 @@ class RdfLibHandler(SemanticHandler):
 
 			# Pretty print the result to the log
 			# ET.indent is only available in Python 3.9+
-			if L.isDebug and sys.version_info >= (3, 9) and _format == 'xml':
-				element = ElementTree.XML(qres.serialize(format = _format).decode('UTF-8'))
+			if L.isDebug and sys.version_info >= (3, 9) and format == 'xml':
+				element = ElementTree.XML(qres.serialize(format = format).decode('UTF-8'))
 				ElementTree.indent(element)	# type:ignore
 				L.logDebug(ElementTree.tostring(element, encoding = 'unicode'))
 		except Exception as e:
@@ -552,7 +561,7 @@ class RdfLibHandler(SemanticHandler):
 
 
 		# Serialize the result in the desired format and return
-		return Result(data = qres.serialize(format = _format).decode('UTF-8'))
+		return Result(data = qres.serialize(format = format).decode('UTF-8'))
 
 
 	def reset(self) -> None:
