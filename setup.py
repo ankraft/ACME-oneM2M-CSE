@@ -10,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='2024.03',
+    version='2024.04',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
@@ -35,7 +35,7 @@ setup(
 		'paho-mqtt',
 		'plotext',
 		'psycopg2-binary',
-	        'python3-dtls',
+		'python3-dtls',
 		'rdflib',
 		'requests', 
 		'rich', 

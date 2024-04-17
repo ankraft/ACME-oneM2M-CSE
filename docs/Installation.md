@@ -88,7 +88,7 @@ For example, you can use the following commands to create a new database named *
 The database schema and tables are created automatically by the CSE when it starts and connects for the first time. 
 
 
-#### Disabling PostgreSQL
+#### Disabling PostgreSQL Support
 
 Sometimes it may not be possible or desirable to use a PostgreSQL database, for example, when running the CSE on a system where PostgreSQL is not available or when you want to use the CSE in a simple test environment.
 

@@ -8,12 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased 2024.DEV] - xxxx-xx-xx
+## [2024.01] - 2024-04-17
 
 ### Added
 - [DATABASE] Added postgreSQL support for the CSE's database. This is an alternative to the default TinyDB database. 
-
-### Experimental
 
 ### Changed
 - [CSE] Changed the database configuration settings to accommodate the new postgreSQL database support. This is a breaking change. 
@@ -23,9 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Updated the MQTT client and connection functions to the Paho 2.0 version. 
 - [CSE] Improved the handling of semantic queries' result serialization. The proper format (JSON or XML) is now used depending on the original request's content serialization. Thanks to @Luke1734 for the contribution.
 - [CSE] Corrected the handling of semantic request parameters. See PR #149. Thanks to @Luke1734 for the contribution.
-- [MQTT] Fixed breaking change of MQTT Paho 2.0 in MQTT client instanciation (see issue #147). Thanks to @name-taken23 for the contribution.
-
-### Removed
+- [MQTT] Fixed breaking change of MQTT Paho 2.0 in MQTT client instantiation (see issue #149). Thanks to @name-taken23 for the contribution.
 
 
 ## [2024.03] - 2024-03-14

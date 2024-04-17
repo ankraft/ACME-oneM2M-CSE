@@ -42,7 +42,7 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-- Added postgreSQL support. Instead of the default TinyDB, you can now use a PostgreSQL database to store the resources and runtime data.
+- Added postgreSQL support. Instead of the default TinyDB, you can now use a PostgreSQL database backend to store the resources and runtime data.
   
 ### Improvements
 
