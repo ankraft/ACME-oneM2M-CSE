@@ -1346,10 +1346,9 @@ class RequestManager(object):
 			# SQI - Semantic Query Indicator
 			if (v := gget(cseRequest.originalRequest, 'sqi', greedy = False)) is not None:
 				if cseRequest.op != Operation.RETRIEVE:
-					raise BAD_REQUEST(L.logDebug('sqi request attribute is only allowed for RETRIEVE/DISCOVERY operations'), data = cseRequest)
+					raise BAD_REQUEST(L.logDebug('sqi request attribute is only allowed for RETRIEVE operations'), data = cseRequest)
 				else:
 					cseRequest.sqi = v
-					cseRequest.op = Operation.DISCOVERY
 
 
 			# Validate rcn depending on operation
@@ -1430,8 +1429,6 @@ class RequestManager(object):
 					raise e
 			
 			# Check whether none or all of sqi, smf and rcn=semantic content is set, otherwise error
-			if [ cseRequest.fc.smf is not None, cseRequest.sqi is not None ].count(True) not in [ 0, 2 ]:
-				raise BAD_REQUEST(L.logDebug('sqi and smf must be specified together'), data = cseRequest)
 			if cseRequest.sqi and cseRequest.rcn != ResultContentType.semanticContent:
 				raise BAD_REQUEST(L.logDebug('Wrong ResultContentType for sqi == True (must be semanticContent)'), data = cseRequest)
 			if cseRequest.sqi is not None and not cseRequest.sqi and cseRequest.rcn != ResultContentType.discoveryResultReferences:
