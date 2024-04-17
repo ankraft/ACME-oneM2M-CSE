@@ -161,7 +161,7 @@ class Importer(object):
 				Configuration.update('cse.resourceName', cse.rn)
 		else:
 			# We don't have a CSE!
-			L.logErr('CSE missing in startup script')
+			L.logErr('CSE missing during startup, or database mismatch due to wrong CSE-ID in configuration settings.')
 			return False
 
 		L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
