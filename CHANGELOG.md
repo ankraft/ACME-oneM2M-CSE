@@ -21,6 +21,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Fixed
 - [CSE] SyntaxError: f-string: unmatched '(' (see issue #146). Thanks to @mathiasp for the contribution.
 - [CSE] Updated the MQTT client and connection functions to the Paho 2.0 version. 
+- [CSE] Improved the handling of semantic queries' result serialization. The proper format (JSON or XML) is now used depending on the original request's content serialization. Thanks to @Luke1734 for the contribution.
+- [CSE] Corrected the handling of semantic request parameters. See PR #149. Thanks to @Luke1734 for the contribution.
 - [MQTT] Fixed breaking change of MQTT Paho 2.0 in MQTT client instanciation (see issue #147). Thanks to @name-taken23 for the contribution.
 
 ### Removed
