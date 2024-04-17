@@ -263,10 +263,10 @@ class TestSMD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_semanticQueryOnlySMFFail(self) -> None:
-		"""	Semantic query with only SMF -> Fail"""
+	def test_semanticQueryOnlySMF(self) -> None:
+		"""	Semantic query with only SMF"""
 		r, rsc = RETRIEVE(f'{aeURL}?smf={query_query_URL}', TestSMD.originator)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -283,8 +283,8 @@ class TestSMD(unittest.TestCase):
 		# r, rsc = RETRIEVE(f'{aeURL}?sqi=true&rcn={int(RCN.semanticContent)}&smf={query_discovery_URL}', TestSMD.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(qres := findXPath(r, 'm2m:qres'))
-		self.assertTrue(qres.startswith('<?xml'), qres)
-		self.assertTrue(qres.endswith('</sparql>'), qres)
+		self.assertTrue(qres.startswith('<?xml') or qres.startswith('{"results":'), qres)
+		self.assertTrue(qres.endswith('</sparql>') or qres.endswith('}}'), qres)
 
 	#########################################################################
 
@@ -317,7 +317,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Semantic query tests
 	addTest(suite, TestSMD('test_semanticQueryOnlyRCNFail'))
 	addTest(suite, TestSMD('test_semanticQueryOnlySQIFail'))
-	addTest(suite, TestSMD('test_semanticQueryOnlySMFFail'))
+	addTest(suite, TestSMD('test_semanticQueryOnlySMF'))
 	addTest(suite, TestSMD('test_semanticQueryAsDiscoveryFail'))
 	addTest(suite, TestSMD('test_semanticQuery'))
 
