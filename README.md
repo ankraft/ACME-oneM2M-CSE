@@ -60,6 +60,11 @@ See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/14
 Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](docs/Contributing.md#acknowledgements) for the list of contributors.
 
 
+## Join the Discussions on Discord
+
+Join the ACME CSE community on [Discord ](https://discord.gg/C7Qx33Xw) to discuss the project, ask questions, and get help.
+
+
 ## License
 
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
