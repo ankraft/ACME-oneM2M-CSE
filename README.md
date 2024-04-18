@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.04
+Version 2024.DEV
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)  
@@ -44,18 +44,16 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-- Added postgreSQL support. Instead of the default TinyDB, you can now use a PostgreSQL database backend to store the resources and runtime data.
   
 ### Improvements
 
 ### Breaking Changes
-- Due to the new database support, the configuration file has changed. Please see the [Configuration](docs/Configuration.md) documentation for further details.
 
 
 
 ### What to expect in the next release
 
-See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/142) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/152) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 
