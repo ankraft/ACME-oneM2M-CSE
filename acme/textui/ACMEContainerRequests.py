@@ -20,8 +20,8 @@ from ..etc.Types import JSONLIST, JSON, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..helpers.TextTools import commentJson
 
 class ACMEContainerRequests(Vertical):

@@ -11,11 +11,11 @@ from typing import List, Optional
 
 from ..helpers.TextTools import simpleMatch
 from ..helpers.TextTools import findXPath
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Permission, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 

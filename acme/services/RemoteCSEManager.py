@@ -23,10 +23,10 @@ from ..resources.CSR import CSR
 from ..resources.CSEBase import CSEBase, getCSE
 from ..resources.Resource import Resource
 from ..resources.Factory import resourceFromDict
-from ..services.Configuration import Configuration
-from ..services import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class RemoteCSEManager(object):

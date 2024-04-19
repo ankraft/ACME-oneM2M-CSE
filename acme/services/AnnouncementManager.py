@@ -16,8 +16,7 @@ from typing import Optional, Tuple, List, cast, Any
 import time
 from ..etc.ACMEUtils import isSPRelative
 from ..helpers.TextTools import findXPath
-from ..etc.RequestUtils import createRawRequest
-from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result, ResultContentType, CSERequest, FilterCriteria 
+from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
 from ..etc.Types import Operation 
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR, OPERATION_NOT_ALLOWED, CONFLICT
@@ -25,9 +24,9 @@ from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.CSEBase import getCSE
-from . import CSE
-from .Configuration import Configuration
-from .Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime.Logging import Logging as L
 
 # TODO for anounceable resource:
 # - update: update resource here

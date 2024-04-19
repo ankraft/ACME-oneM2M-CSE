@@ -1977,7 +1977,7 @@ class Result:
 		"""
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
-		from ..services.CSE import defaultSerialization
+		from ..runtime.CSE import defaultSerialization
 
 		# determine the default serialization type if none was given
 		ct = defaultSerialization if not ct else ct
@@ -2049,7 +2049,7 @@ class Result:
 			Return:
 				Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
 		"""
-		from ..services.Logging import Logging
+		from ..runtime.Logging import Logging
 		tb = traceback.format_exc()
 		Logging.logErr(tb, exc=e)
 		tbs = tb.replace('"', '\\"').replace('\n', '\\n')

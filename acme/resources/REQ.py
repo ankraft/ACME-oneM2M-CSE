@@ -15,11 +15,11 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERe
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
-from ..services.Configuration import Configuration
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..resources import Factory	# attn: circular import
-from ..services import CSE
+from ..runtime import CSE
 
 
 class REQ(Resource):

@@ -10,9 +10,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ConsistencyStrategy, JSON
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..etc.Types import AttributePolicyDict, ResourceTypes, ConsistencyStrategy, JSON
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..resources import Factory as Factory	# attn: circular import
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource

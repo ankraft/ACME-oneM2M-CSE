@@ -30,14 +30,14 @@ from ..etc.ACMEUtils import isStructured, structuredPathFromRI
 from ..etc.Utils import isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL
 from ..helpers.TextTools import setXPath
-from ..services.Configuration import Configuration
-from ..services import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]

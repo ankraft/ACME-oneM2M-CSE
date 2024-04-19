@@ -15,10 +15,10 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes,  JSON, CSERequest
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
-from ..services import CSE
+from ..runtime import CSE
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class CIN(AnnounceableResource):

@@ -17,8 +17,8 @@ from typing import Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..resources import Factory as Factory
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource

@@ -25,10 +25,10 @@ from ..etc.ACMEUtils import uniqueID, csiFromSPRelative
 from ..etc.Utils import renameThread
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
-from ..services.Configuration import Configuration
-from ..services import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
 from ..resources.Resource import Resource
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.

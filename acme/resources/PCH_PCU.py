@@ -13,8 +13,8 @@ from typing import cast, Optional
 from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes, JSON, CSERequest, Result
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..etc.DateUtils import timeUntilTimestamp
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 

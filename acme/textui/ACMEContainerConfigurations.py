@@ -14,8 +14,8 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 
 # TODO Add editing of configuration values
 

@@ -12,7 +12,7 @@ from textual.widgets import Header, Label
 from textual.widgets._header import HeaderClock, HeaderClockSpace, HeaderTitle
 from textual.containers import Horizontal, Middle
 
-from ..services import CSE
+from ..runtime import CSE
 from ..etc.Constants import Constants
 from ..etc.DateUtils import toISO8601Date
 from ..etc.DateUtils import utcDatetime

@@ -18,9 +18,9 @@ from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, 
 from ..helpers.TextTools import setXPath
 from ..etc.DateUtils import utcTime
 from ..etc.RequestUtils import responseFromResult
-from ..services import CSE
-from ..services.Configuration import Configuration
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime.Logging import Logging as L
 from ..resources.ACTR import ACTR
 from ..helpers.ResourceSemaphore import CriticalSection
 

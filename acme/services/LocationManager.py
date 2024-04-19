@@ -19,8 +19,8 @@ from ..etc.Types import LocationInformationType, LocationSource, GeofenceEventCr
 from ..etc.DateUtils import fromDuration
 from ..etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..resources.LCP import LCP
 from ..resources.CIN import CIN
 from ..resources import Factory

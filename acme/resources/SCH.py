@@ -14,8 +14,8 @@ from typing import Optional
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
 from ..resources.AnnounceableResource import AnnounceableResource

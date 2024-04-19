@@ -80,7 +80,7 @@ def _print(msg:str) -> None:
 		Args:
 			msg: The message to print.
 	"""
-	from ..services import CSE
+	from ..runtime import CSE
 	if not CSE.isHeadless:
 		Console().print(msg)	# Print error message to console
 

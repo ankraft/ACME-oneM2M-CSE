@@ -14,9 +14,9 @@ from __future__ import annotations
 from typing import Optional, Any, Literal
 import asyncio
 
-from . import CSE
-from ..services.Configuration import Configuration
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..etc.Types import CSEStatus
 from ..helpers.Interpreter import PContext

@@ -27,13 +27,13 @@ import os
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
-from ..services.Configuration import Configuration
-from ..services import CSE
+from .Configuration import Configuration
+from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
 from ..resources.Factory import resourceFromDict
-from ..services.Logging import Logging as L
+from .Logging import Logging as L
 
 from ..databases.DBBinding import DBBinding
 from ..databases.TinyDBBinding import TinyDBBinding

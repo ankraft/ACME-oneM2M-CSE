@@ -13,7 +13,7 @@ from typing import cast
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Static
-from ..services import CSE
+from ..runtime import CSE
 
 
 class ACMEContainerRegistrations(Container):

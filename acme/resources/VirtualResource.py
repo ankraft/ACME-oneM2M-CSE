@@ -12,7 +12,7 @@ from __future__ import annotations
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND
 from ..resources.Resource import Resource
-from ..services import CSE
+from ..runtime import CSE
 
 # TODO DOCs
 

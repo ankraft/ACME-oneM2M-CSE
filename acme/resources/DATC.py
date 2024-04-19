@@ -15,7 +15,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class DATC(MgmtObj):

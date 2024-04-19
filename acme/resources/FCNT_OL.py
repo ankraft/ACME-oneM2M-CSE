@@ -15,8 +15,8 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
 from ..resources.FCI import FCI
 

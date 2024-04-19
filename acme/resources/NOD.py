@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ACMEUtils import uniqueID
-from ..services import CSE
+from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
 
 

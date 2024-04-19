@@ -23,7 +23,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.ACMEUtils import uniqueRI, uniqueID, pureResource
 from ..etc.Utils import runsInIPython, isURL
-from .Configuration import Configuration
+from ..runtime.Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -32,8 +32,8 @@ from ..helpers.TextTools import setXPath
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
-from ..services import CSE
-from ..services.Logging import Logging as L, LogLevel
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L, LogLevel
 
 #
 #	Meta Tags

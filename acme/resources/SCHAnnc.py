@@ -13,8 +13,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..services.Logging import Logging as L
-from .AnnouncedResource import AnnouncedResource
+from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class SCHAnnc(AnnouncedResource):

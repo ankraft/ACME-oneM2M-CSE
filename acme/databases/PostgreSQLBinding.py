@@ -22,7 +22,7 @@ from psycopg2.extensions import cursor as PsyCursor
 from .DBBinding import DBBinding
 from ..etc.Types import JSON, ResourceTypes
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 # TODO Add error handling ansd exceptions to fetch methods?

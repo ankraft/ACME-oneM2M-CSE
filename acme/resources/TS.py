@@ -10,13 +10,13 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, ResponseStatusCode, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import getResourceDate, toISO8601Date
-from ..services.Configuration import Configuration
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..resources import Factory		# attn: circular import

@@ -19,7 +19,7 @@ from pathlib import Path
 from .DBBinding import DBBinding
 from ..etc.Types import JSON, ResourceTypes
 
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 from tinydb import TinyDB, Query
 from tinydb.table import Document

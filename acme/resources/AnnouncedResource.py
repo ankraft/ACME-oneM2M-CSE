@@ -11,8 +11,8 @@ from typing import Optional
 from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON, CSERequest, Operation
 from ..etc.ResponseStatusCodes import ResponseException
 from ..resources.Resource import Resource
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 
 
 class AnnouncedResource(Resource):

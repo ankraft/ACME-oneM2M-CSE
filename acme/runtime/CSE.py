@@ -24,31 +24,31 @@ from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
 from ..etc.ResponseStatusCodes import ResponseException
 from ..services.ActionManager import ActionManager
-from ..services.Configuration import Configuration
-from ..services.Console import Console
+from ..runtime.Configuration import Configuration
+from ..runtime.Console import Console
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
 from ..services.EventManager import EventManager
 from ..services.GroupManager import GroupManager
 from ..protocols.HttpServer import HttpServer
-from ..services.Importer import Importer
+from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
 from ..protocols.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
-from ..services.ScriptManager import ScriptManager
+from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
-from ..services.Statistics import Statistics
-from ..services.Storage import Storage
-from ..services.TextUI import TextUI
+from ..runtime.Statistics import Statistics
+from ..runtime.Storage import Storage
+from ..runtime.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 

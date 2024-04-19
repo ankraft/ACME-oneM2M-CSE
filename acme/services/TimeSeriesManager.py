@@ -7,14 +7,13 @@
 #	Manager for TimeSeries handlings
 #
 from __future__ import annotations
-from dataclasses import dataclass
 
 from ..etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes
 from ..resources.Resource import Resource
-from ..services import CSE
+from ..runtime import CSE
 from ..etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects

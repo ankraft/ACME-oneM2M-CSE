@@ -23,9 +23,9 @@ from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
 from ..resources.Factory import resourceFromDict
-from ..services import CSE
-from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 
 
 class GroupManager(object):

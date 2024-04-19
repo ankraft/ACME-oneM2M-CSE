@@ -17,7 +17,6 @@ from textual.app import App, ComposeResult
 from textual import on
 from textual.widgets import Tab, Footer, TabbedContent, TabPane, Static
 from textual.binding import Binding
-from textual.design import ColorSystem
 from textual.notifications import Notification, SeverityLevel
 
 from ..textui.ACMEHeader import ACMEHeader
@@ -28,7 +27,7 @@ from ..textui.ACMEContainerTree import ACMEContainerTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
 from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
-from ..services import CSE
+from ..runtime import CSE
 from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Utils import openFileWithDefaultApplication
@@ -49,7 +48,7 @@ class ACMETuiQuitReason(IntEnum):
 class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
 
-	from ..services import TextUI
+	from ..runtime import TextUI
 
 	CSS_PATH = 'ACMETUI.css'
 

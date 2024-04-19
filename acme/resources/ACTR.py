@@ -16,8 +16,8 @@ from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Perm
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 

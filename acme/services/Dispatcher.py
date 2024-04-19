@@ -34,13 +34,13 @@ from ..etc.ACMEUtils import srnFromHybrid, uniqueRI, noNamespace, riFromStructur
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.SMD import SMD
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 # TODO NOTIFY optimize local resource notifications

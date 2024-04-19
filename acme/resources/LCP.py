@@ -14,9 +14,9 @@ from typing import Optional
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource, GeofenceEventCriteria, LocationUpdateEventCriteria, LocationInformationType
-from ..services.Logging import Logging as L
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory 

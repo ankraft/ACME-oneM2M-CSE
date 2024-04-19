@@ -18,7 +18,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import JSON
 from ..etc.ACMEUtils import pureResource
 from ..etc.Constants import Constants
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 from ..resources.Resource import Resource

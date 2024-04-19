@@ -13,10 +13,9 @@ from typing import Optional
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
-from .AnnounceableResource import AnnounceableResource
-from .Resource import Resource
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.Resource import Resource
+from ..runtime import CSE
 
 
 class ContainerResource(AnnounceableResource):

@@ -34,13 +34,13 @@ from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult
 from ..helpers.NetworkTools import isTCPPortAvailable
-from ..services.Configuration import Configuration
-from ..services import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
 from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Interpreter import SType
-from ..services.Logging import Logging as L, LogLevel
+from ..runtime.Logging import Logging as L, LogLevel
 
 
 #

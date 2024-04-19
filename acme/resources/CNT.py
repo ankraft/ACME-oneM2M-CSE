@@ -16,9 +16,9 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, JSONLI
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
-from ..services import CSE
-from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..resources import Factory	# attn: circular import

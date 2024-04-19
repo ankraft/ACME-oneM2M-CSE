@@ -20,7 +20,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import getResourceDate
 from ..etc.ACMEUtils import uniqueRI
 from ..resources.Resource import Resource
-from ..services import CSE
+from ..runtime import CSE
 
 
 def validateOriginator(value: str) -> bool:

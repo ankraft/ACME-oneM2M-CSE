@@ -27,13 +27,13 @@ from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp,
 from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
 from ..etc.Utils import isAcmeUrl
 from ..helpers.TextTools import setXPath, findXPath
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 # TODO: removal policy (e.g. unsuccessful tries)
 

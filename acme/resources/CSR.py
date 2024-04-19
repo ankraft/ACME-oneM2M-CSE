@@ -15,8 +15,8 @@ from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
 from ..etc.ACMEUtils import getIdFromOriginator
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 
 
 class CSR(AnnounceableResource):

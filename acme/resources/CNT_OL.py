@@ -17,8 +17,8 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSEReq
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..resources.VirtualResource import VirtualResource
 from ..resources.CIN import CIN
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 
 
 

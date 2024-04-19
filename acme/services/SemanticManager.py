@@ -18,10 +18,10 @@ import base64, binascii
 
 from ..resources.SMD import SMD
 from ..resources.Resource import Resource
-from ..services import CSE
+from ..runtime import CSE
 from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class SemanticHandler(ABC):

@@ -15,12 +15,11 @@ from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
 from ..etc.ACMEUtils import uniqueAEI, getIdFromOriginator, uniqueRN
 from ..etc.DateUtils import getResourceDate
-from ..services.Configuration import Configuration
-from ..services import CSE
+from ..runtime.Configuration import Configuration
+from ..runtime import CSE
 from ..resources.Resource import Resource
-from ..resources.ACP import ACP
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class RegistrationManager(object):

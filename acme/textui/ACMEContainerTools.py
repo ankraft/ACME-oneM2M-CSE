@@ -13,11 +13,11 @@ from time import sleep
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical, Center, Middle, Horizontal
-from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog, Label
+from textual.containers import Vertical, Center, Middle, Horizontal
+from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
 from textual.widgets.tree import TreeNode
-from ..services import CSE
-from ..services.ScriptManager import PContext
+from ..runtime import CSE
+from ..runtime.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ..helpers.Interpreter import SSymbol

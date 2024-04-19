@@ -22,7 +22,7 @@ from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
 from ..etc.Utils import normalizeURL
 from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
-from ..services import Onboarding
+from ..runtime import Onboarding
 
 # TODO: proper use of the baseDirectory configuration for other values
 
@@ -605,7 +605,7 @@ class Configuration(object):
 			Returns:
 				A tuple (bool, str) with the result and an error message if applicable.
 		"""
-		from ..services.Logging import LogLevel
+		from .Logging import LogLevel
 
 		# Some clean-ups and overrides
 
@@ -919,7 +919,7 @@ class Configuration(object):
 			return False, r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0'
 
 		# Console settings
-		from ..services.Console import TreeMode
+		from .Console import TreeMode
 		if isinstance(tm := _get('console.treeMode'), str):
 			if not (treeMode := TreeMode.to(tm)):
 				return False, fr'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}'
@@ -1056,7 +1056,7 @@ class Configuration(object):
 				Configuration._configuration[key] = original
 				return r[1].replace(r'\[', '[')	# unescape "\[" in error messages
 
-			from ..services import CSE
+			from . import CSE
 			CSE.event.configUpdate(key, value)		# type:ignore [attr-defined]
 		else:
 			return f'Invalid value for key: {key}'

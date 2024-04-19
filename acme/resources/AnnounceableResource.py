@@ -15,8 +15,8 @@ from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolic
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
-from ..services import CSE
-from ..services.Logging import Logging as L
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 from ..etc.ACMEUtils import toSPRelative
 from .Resource import Resource
 

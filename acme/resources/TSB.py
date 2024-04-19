@@ -15,9 +15,9 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.DateUtils import fromDuration
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..services import CSE
-from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 
 
 # DISCUSS Only one TSB with loss_of_sync, but only one is relevant for a requester. Only one is allowed? Check in update/create

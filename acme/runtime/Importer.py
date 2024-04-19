@@ -11,7 +11,7 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
-from typing import cast, Sequence, Optional, Tuple
+from typing import cast, Optional
 
 import json, os, fnmatch, re
 from copy import deepcopy
@@ -19,10 +19,10 @@ from copy import deepcopy
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
-from ..services.Configuration import Configuration
-from ..services import CSE
+from .Configuration import Configuration
+from ..runtime import CSE
 from ..helpers.TextTools import removeCommentsFromJSON
-from ..services.Logging import Logging as L
+from .Logging import Logging as L
 from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
 

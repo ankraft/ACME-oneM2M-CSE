@@ -21,8 +21,8 @@ from ..etc.ACMEUtils import resourceDiff
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate
-from ..services.Logging import Logging as L
-from ..services import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..etc.Constants import Constants
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)

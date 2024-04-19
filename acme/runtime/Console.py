@@ -23,6 +23,8 @@ from rich.text import Text
 from rich.tree import Tree
 import plotext
 
+from ..runtime import CSE
+
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress, Commands
 from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -35,9 +37,9 @@ from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
-from ..services import CSE, Statistics
-from ..services.Configuration import Configuration, documentationLinks
-from ..services.Logging import Logging as L
+from ..runtime import Statistics
+from .Configuration import Configuration, documentationLinks
+from .Logging import Logging as L
 
 # Used in many "rich" functions
 _markup = Text.from_markup

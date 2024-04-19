@@ -16,7 +16,7 @@ from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
 from .Types import Result, ResourceTypes, Operation, CSERequest
 from .Constants import Constants
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 from ..helpers import TextTools
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 
@@ -156,7 +156,7 @@ def requestFromResult(inResult:Result,
 		See Also:
 			`responseFromResult`
 	"""
-	from ..services import CSE
+	from ..runtime import CSE
 
 	req:JSON = {}
 
@@ -309,7 +309,7 @@ def createRawRequest(**kwargs:Any) -> JSON:
 		Return:
 			JSON dictionary with the request.
 	"""
-	from ..services import CSE 
+	from ..runtime import CSE 
 	from .ACMEUtils import uniqueRI	# Leave it here to avoid circular init
 
 	r = {	'fr': CSE.cseCsi,
@@ -341,7 +341,7 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 			A tuple with the `Result` object, the URL and the parsed URL.
 	"""
 
-	from ..services import CSE
+	from ..runtime import CSE
 	from .ACMEUtils import uniqueRI
 
 	url = unquote(url)

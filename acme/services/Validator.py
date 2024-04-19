@@ -26,7 +26,7 @@ from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
 from ..resources.BAT import BatteryStatus
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 # TODO AE Not defined yet: ExternalGroupID?
@@ -702,7 +702,7 @@ class Validator(object):
 		try:
 			if attr in _valueNameMappings:
 				return _valueNameMappings[attr](value) # type: ignore [no-untyped-call]
-			from ..services import CSE
+			from ..runtime import CSE
 			return CSE.validator.getEnumInterpretation(rtype, attr, value)
 		except Exception as e:
 			return str(e)

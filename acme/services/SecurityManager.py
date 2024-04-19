@@ -18,13 +18,13 @@ from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
 from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..helpers.TextTools import findXPath, simpleMatch
-from ..services import CSE
-from ..services.Configuration import Configuration
+from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
-from ..services.Logging import Logging as L
+from ..runtime.Logging import Logging as L
 
 
 class SecurityManager(object):
