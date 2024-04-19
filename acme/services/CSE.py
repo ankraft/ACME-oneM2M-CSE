@@ -30,10 +30,10 @@ from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
 from ..services.EventManager import EventManager
 from ..services.GroupManager import GroupManager
-from ..services.HttpServer import HttpServer
+from ..protocols.HttpServer import HttpServer
 from ..services.Importer import Importer
 from ..services.LocationManager import LocationManager
-from ..services.MQTTClient import MQTTClient
+from ..protocols.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
@@ -46,7 +46,7 @@ from ..services.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
-from ..services.WebSocketServer import WebSocketServer
+from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..services.Logging import Logging as L
 
