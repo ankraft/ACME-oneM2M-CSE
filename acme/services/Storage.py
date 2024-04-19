@@ -35,11 +35,11 @@ from ..resources.SCH import SCH
 from ..resources.Factory import resourceFromDict
 from ..services.Logging import Logging as L
 
-from .database.DBBinding import DBBinding
-from .database.TinyDBBinding import TinyDBBinding
+from ..databases.DBBinding import DBBinding
+from ..databases.TinyDBBinding import TinyDBBinding
 
 if 'ACME_NO_PGSQL' not in os.environ:
-	from .database.PostgreSQLBinding import PostgreSQLBinding
+	from ..databases.PostgreSQLBinding import PostgreSQLBinding
 	_disablePostgreSQL = False
 else:
 	_disablePostgreSQL = True

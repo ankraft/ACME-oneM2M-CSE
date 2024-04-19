@@ -17,17 +17,17 @@ from threading import Lock
 from pathlib import Path
 
 from .DBBinding import DBBinding
-from ...etc.Types import JSON, ResourceTypes
+from ..etc.Types import JSON, ResourceTypes
 
-from ...services.Logging import Logging as L
+from ..services.Logging import Logging as L
 
 from tinydb import TinyDB, Query
 from tinydb.table import Document
 from tinydb.storages import MemoryStorage
 from tinydb.operations import delete 
 
-from ...helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
-from ...helpers.TinyDBBetterTable import TinyDBBetterTable
+from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
+from ..helpers.TinyDBBetterTable import TinyDBBetterTable
 
 
 # Constants for database and table names

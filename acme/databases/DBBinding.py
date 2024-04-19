@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional, Callable, Sequence
 from abc import ABC, abstractmethod
 
-from ...etc.Types import JSON, ResourceTypes
+from ..etc.Types import JSON, ResourceTypes
 
 
 class DBBinding(ABC):
