@@ -284,7 +284,7 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = MQTTClient(callback_api_version = mqtt.CallbackAPIVersion.VERSION1,
+		self.mqttClient = MQTTClient(callback_api_version = mqtt.CallbackAPIVersion.VERSION2,
 							   		 client_id = self.clientID, 
 									 clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
@@ -342,52 +342,54 @@ class MQTTConnection(object):
 	#	MQTT/paho callbacks
 	#
 
-	def _onConnect(self, client:MQTTClient, userdata:Any, flags:dict, rc:mqtt_en.MQTTErrorCode) -> None:
+	def _onConnect(self, client:MQTTClient, userdata:Any, flags:dict, reason_code:mqtt_rc.ReasonCode, properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the MQTT client connected to the broker.
 
 			Args:
 				client: The MQTT client.
 				userdata: User data.
 				flags: Flags.
-				rc: Result code.
+				reason_code: Reason code
+				properties : Properties (MQTTv5 Only)
 		"""
-		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with result code: {rc} ({mqtt.error_string(rc)})')
-		if rc == 0:
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with reason code: {reason_code} ({str(reason_code)})')
+		if reason_code == 0:
 			self.isConnected = True
 			self.messageHandler and self.messageHandler.onConnect(self)
 		else:
 			self.isConnected = False
 			if self.messageHandler:
-				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot connect to broker. Result code: {rc} ({mqtt.error_string(rc)})')
-				self.messageHandler.onError(self, rc)
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot connect to broker. Reason code: {reason_code} ({str(reason_code)})')
+				self.messageHandler.onError(self, reason_code.value)
 
 
-	def _onDisconnect(self, client:MQTTClient, userdata:Any, rc:mqtt_en.MQTTErrorCode) -> None:
+	def _onDisconnect(self, client:MQTTClient, userdata:Any, disconnect_flags:mqtt.DisconnectFlags ,reason_code:mqtt_rc.ReasonCode, properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 
 			Args:
 				client: The MQTT client.
 				userdata: User data.
-				rc: Result code.
+				reason_code: Reason code
+				properties : Properties (MQTTv5 Only)
 		"""
-		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with reason code: {reason_code} ({str(reason_code)})')
 		self.subscribedTopics.clear()
 
-		match rc:
+		match reason_code:
 			case 0:
 				self.isConnected = False
 				self.messageHandler and	self.messageHandler.onDisconnect(self)
 			case 7:
 				self.isConnected = False
-				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({str(reason_code)})')
 				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Did another client connected with the same ID ({self.clientID})?')
 				self.messageHandler and	self.messageHandler.onDisconnect(self)
 			case _:
 				self.isConnected = False
 				if self.messageHandler:
-					self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+					self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({str(reason_code)})')
 					self.messageHandler.onDisconnect(self)
-					self.messageHandler.onError(self, rc)
+					self.messageHandler.onError(self, reason_code.value)
 
 
 	def _onLog(self, client:MQTTClient, userdata:Any, level:int, buf:str) -> None:
@@ -403,7 +405,7 @@ class MQTTConnection(object):
 		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[cast(mqtt_en.LogLevel, level)], f'MQTT: {buf}')
 	
 
-	def _onSubscribe(self, client:MQTTClient, userdata:Any, mid:int, reason_code_list:list[mqtt_rc.ReasonCode], properties:mqtt_pr.Properties) -> None:
+	def _onSubscribe(self, client:MQTTClient, userdata:Any, mid:int, reason_codes:list[mqtt_rc.ReasonCode], properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the client successfulle subscribed to a topic. The topic
 			is also added to the internal topic list.
 
@@ -411,7 +413,8 @@ class MQTTConnection(object):
 				client: The MQTT client.
 				userdata: User data.
 				mid: The message ID.
-				reason_code_list: Reason codes received from the broker for each subscription
+				reason_codes: Reason codes received from the broker for each subscription
+				properties : Properties (MQTTv5 Only)
 		"""
 		# TODO doc, error check when not connected, not subscribed
 		for t in self.subscribedTopics.values():
@@ -421,7 +424,7 @@ class MQTTConnection(object):
 				break
 	
 
-	def _onUnsubscribe(self, client:MQTTClient, userdata:Any, mid:int) -> None:
+	def _onUnsubscribe(self, client:MQTTClient, userdata:Any, mid:int, reason_codes:list[mqtt_rc.ReasonCode], properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the client successfulle unsubscribed from a topic. The topic
 			is also removed from the internal topic list.
 			"""
@@ -433,6 +436,8 @@ class MQTTConnection(object):
 				client: The MQTT client.
 				userdata: User data.
 				mid: The message ID.
+				reason_codes: Reason codes received from the broker for each subscription
+				properties : Properties (MQTTv5 Only)
 		"""
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
