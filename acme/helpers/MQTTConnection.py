@@ -352,18 +352,18 @@ class MQTTConnection(object):
 				reason_code: Reason code
 				properties : Properties (MQTTv5 Only)
 		"""
-		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with reason code: {reason_code} ({mqtt.error_string(reason_code)})')
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with reason code: {reason_code} ({str(reason_code)})')
 		if reason_code == 0:
 			self.isConnected = True
 			self.messageHandler and self.messageHandler.onConnect(self)
 		else:
 			self.isConnected = False
 			if self.messageHandler:
-				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot connect to broker. Reason code: {reason_code} ({mqtt.error_string(reason_code)})')
-				self.messageHandler.onError(self, reason_code)
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot connect to broker. Reason code: {reason_code} ({str(reason_code)})')
+				self.messageHandler.onError(self, reason_code.value)
 
 
-	def _onDisconnect(self, client:MQTTClient, userdata:Any, reason_code:mqtt_rc.ReasonCode, properties:mqtt_pr.Properties) -> None:
+	def _onDisconnect(self, client:MQTTClient, userdata:Any, disconnect_flags:mqtt.DisconnectFlags ,reason_code:mqtt_rc.ReasonCode, properties:mqtt_pr.Properties) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 
 			Args:
@@ -372,7 +372,7 @@ class MQTTConnection(object):
 				reason_code: Reason code
 				properties : Properties (MQTTv5 Only)
 		"""
-		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with reason code: {reason_code} ({mqtt.error_string(reason_code)})')
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with reason code: {reason_code} ({str(reason_code)})')
 		self.subscribedTopics.clear()
 
 		match reason_code:
@@ -381,15 +381,15 @@ class MQTTConnection(object):
 				self.messageHandler and	self.messageHandler.onDisconnect(self)
 			case 7:
 				self.isConnected = False
-				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({mqtt.error_string(reason_code)})')
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({str(reason_code)})')
 				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Did another client connected with the same ID ({self.clientID})?')
 				self.messageHandler and	self.messageHandler.onDisconnect(self)
 			case _:
 				self.isConnected = False
 				if self.messageHandler:
-					self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({mqtt.error_string(reason_code)})')
+					self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Reason code: {reason_code} ({str(reason_code)})')
 					self.messageHandler.onDisconnect(self)
-					self.messageHandler.onError(self, reason_code)
+					self.messageHandler.onError(self, reason_code.value)
 
 
 	def _onLog(self, client:MQTTClient, userdata:Any, level:int, buf:str) -> None:
