@@ -169,11 +169,11 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ###	[cse.registration] - Settings for Self-Registrations
 
-| Setting               | Description                                                                                                                                                                                        | Configuration Name                     |
-|:----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
-| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                                                 | cse.registration.allowedAEOriginators  |
-| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />; Note: CSE-IDs must have a leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
-| checkLiveliness       | Check the liveliness of the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                                               | cse.registration.checkLiveliness       |
+| Setting               | Description                                                                                                                                                                                                 | Configuration Name                     |
+|:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
+| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                                                          | cse.registration.allowedAEOriginators  |
+| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />; Note: CSE-IDs must **not** have a leading "/".<br />Default: empty list | cse.registration.allowedCSROriginators |
+| checkLiveliness       | Check the liveliness of the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                                                        | cse.registration.checkLiveliness       |
 
 [top](#sections)
 

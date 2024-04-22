@@ -402,7 +402,7 @@ f"""
 
 [cse.registration]
 ; Edit this to add more allowed originators.
-allowedCSROriginators=/id-in,/id-mn,/id-asn
+allowedCSROriginators=id-in,id-mn,id-asn
 """
 
 		cnfRegular = \

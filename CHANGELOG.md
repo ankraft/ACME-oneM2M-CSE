@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Changed the values for the [SIM] and [MobileNetwork] ManagementObject specializations to adapt the changes in TS-0022.
 
 ### Fixed
+- [CSE] Fixed wrong examples and onboard defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
 
 ### Removed
 
