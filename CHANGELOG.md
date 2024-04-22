@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 
 ### Changed
+- [CSE] Changed the values for the [SIM] and [MobileNetwork] ManagementObject specializations to adapt the changes in TS-0022.
 
 ### Fixed
 

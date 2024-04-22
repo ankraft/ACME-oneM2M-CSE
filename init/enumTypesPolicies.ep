@@ -160,8 +160,8 @@
 		"1026": "MEFClientRegCfg",
 		"1027": "OAuth2Authentication",
 		"1028": "wifiClient",
-		"1029": "SIM",
-		"1030": "mobileNetwork"
+		"1030": "SIM",
+		"1031": "mobileNetwork"
 	},
 	"m2m:multicastCapability" : {
 		"1": "MBMS",

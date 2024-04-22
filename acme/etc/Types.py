@@ -146,9 +146,9 @@ class ResourceTypes(ACMEIntEnum):
 	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
 	"""	WifiClient ManagementObject specialization. """
-	SIM 			= 1029	# SIM
+	SIM 			= 1030	# SIM
 	"""	SIM ManagementObject specialization. """
-	MNWK			= 1030	# mobileNetwork
+	MNWK			= 1031	# mobileNetwork
 	"""	MobileNetwork ManagementObject specialization. """
 
 	# Announced Resources
@@ -219,9 +219,9 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
 	"""	Announced WifiClient ManagementObject specialization. """
-	SIMAnnc			= -30029
+	SIMAnnc			= -30030
 	"""	Announced SIM ManagementObject specialization. """
-	MNWKAnnc		= -30030
+	MNWKAnnc		= -30031
 	"""	Announced MobileNetwork ManagementObject specialization. """
 
 
