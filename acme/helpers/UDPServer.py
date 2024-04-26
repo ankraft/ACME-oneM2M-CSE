@@ -1,16 +1,16 @@
 #
 #	UdpServer.py
 #
-#	(c) 2023 by Andreas Kraft, Yann Garcia
+#	(c) 2024 by Andreas Kraft, Yann Garcia
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	This module contains various utilty functions that are used from various
 #	modules and entities of the CSE.
 #
 
-import threading
-from typing import Callable, Any, Tuple
+from typing import Callable, Any, Tuple, Union
 import socket
+
 # Dtls
 import ssl
 from dtls.wrapper import wrap_server, wrap_client, DtlsSocket
@@ -40,67 +40,85 @@ class UdpServer(object):
 		'mtu'
 	)
 
-	def __init__(self, server_address:str,
+	def __init__(self, serverAddress:str,
 	      			   port:str,
 					   useDTLS:bool,
-					   tlsVersion:str,
-					   verifyCertificate:bool,
-					   privateKeyFile:str,
-					   certificateFile:str,
-					   received_data_callback:Callable,
-					   logging:Callable) -> None:
-		self.addr = server_address
+					   receivedDataCallback:Callable,
+					   logging:Callable = None,
+					   dtlsVersion:str = None,
+					   verifyCertificate:bool = False,
+					   privateKeyFile:str = None,
+					   certificateFile:str = None) -> None:
+		
+		# Basic settings
+		self.addr = serverAddress
 		self.port = port
+		self.useTLS = useDTLS
+		self.received_data_callback = receivedDataCallback
+		self.logging = logging if logging is not None else print
+
+		# TLS settings
+		self.tlsVersion = dtlsVersion
+		self.verifyCertificate	= verifyCertificate
+		self.privateKeyFile = privateKeyFile
+		self.certificateFile = certificateFile
+
+		# Define basic variables
 		self.socket:socket.socket = None # Client socket
 		self.listen_socket:socket.socket = None # Server socket
 		self.doListen = False
-		self.received_data_callback = received_data_callback
-		self.useTLS = useDTLS
-		self.tlsVersion = tlsVersion
-		self.ssl_version = { 'tls1.1': sslconnection.PROTOCOL_DTLSv1, 
-		       				 'tls1.2': sslconnection.PROTOCOL_DTLSv1_2, 
-							 'auto': sslconnection.PROTOCOL_DTLS }[self.tlsVersion]
-		self.verifyCertificate	= verifyCertificate
+		self.mtu = 512 #1500 # TODO configurable	
 
-		self.privateKeyFile = privateKeyFile
-		self.certificateFile = certificateFile
-		self.logging = logging
+		# Set the SSL 
+		try:
+			self.ssl_version = { 'tls1.1': sslconnection.PROTOCOL_DTLSv1, 
+								'tls1.2': sslconnection.PROTOCOL_DTLSv1_2, 
+								'auto': sslconnection.PROTOCOL_DTLS }[self.tlsVersion]
+		except KeyError:
+			raise ValueError(f'UdpServer: Unknown or unsupported DTLS version: {self.tlsVersion}')
+
+		# DTLS context
 		self.ssl_ctx:DtlsSocket	= None
-		self.mtu = 512 #1500 TODO configurable	
 
 
-	def listen(self, timeout:int = 5) -> None: # This does NOT return
+	def listen(self, timeout:int = 5) -> None:
+
+		# Create the datagram (UDP) socket for the server
 		self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 		self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
-		def _listen(listenSocket:Tuple[socket.socket, DtlsSocket]) -> None:
+		def _listen(listenSocket:Union[socket.socket, DtlsSocket]) -> None:
 			self.doListen = True
 			while self.doListen:
-				self.logging(f'UdpServer.listen: In loop: {str(self.doListen)}')
+				self.logging(f'UdpServer.listen: In loop: {str(self.doListen)}')	# type: ignore[operator]
 				try:
-					data, client_address = listenSocket.recvfrom(4096)
-					self.logging(f'UdpServer.listen: client_address: {str(client_address)}')
-					if len(client_address) > 2:
-						client_address = (client_address[0], client_address[1])
-					self.logging(f'UdpServer.listen: receive_datagram (1) - {str(data)}')
+					data, clientAddress = listenSocket.recvfrom(4096)
+					self.logging(f'UdpServer.listen: client_address: {str(clientAddress)}')	# type: ignore[operator]
+
+					# If the client address is a larger tuple, we need to convert it to a 2-tuple
+					if len(clientAddress) > 2:
+						clientAddress = (clientAddress[0], clientAddress[1])
+
+					self.logging(f'UdpServer.listen: receive_datagram (1) - {str(data)}')	# type: ignore[operator]
+
+					# If we have data, we can process it in a separate thread
 					if data is not None:
-						self.logging(f'UdpServer.listen: receive_datagram - - {str(data)}')
-						BackgroundWorkerPool.runJob(lambda : self.received_data_callback(data, client_address), f'CoAP_{str(client_address)}')	# TODO a better thread name
-						# t = threading.Thread(target=self.received_data_callback, args=(data, client_address))
-						# t.setDaemon(True)
-						# t.start()
+						self.logging(f'UdpServer.listen: receive_datagram - - {str(data)}')	# type: ignore[operator]
+						BackgroundWorkerPool.runJob(lambda : self.received_data_callback(data, clientAddress), f'CoAP_{str(clientAddress)}')	# TODO a better thread name
+
 				except socket.timeout:
+					# just continue
 					continue
 				except Exception as e:
-					self.logging(f'UdpServer.listen (secure): {str(e)}')
+					self.logging(f'UdpServer.listen (secure): {str(e)}')	# type: ignore[operator]
 					continue
 
 
 		if self.useTLS == True:
 
 			# Setup DTLS context
-			self.logging(f'Setup SSL context. Certfile: {self.certificateFile}, KeyFile: {self.privateKeyFile}, TLS version: {self.tlsVersion}')
+			self.logging(f'Setup SSL context. Certfile: {self.certificateFile}, KeyFile: {self.privateKeyFile}, TLS version: {self.tlsVersion}')	# type: ignore[operator]
 			self.ssl_ctx = wrap_server(
 				self.listen_socket, 
 				keyfile = self.privateKeyFile, 
@@ -110,7 +128,7 @@ class UdpServer(object):
 				#ca_certs=self.caCertificateFile, 
 				do_handshake_on_connect = True, 
 				user_mtu = self.mtu, 
-				ssl_logging = True,
+				ssl_logging = True,	# TODO ?
 				cb_ignore_ssl_exception_in_handshake = None, 
 				cb_ignore_ssl_exception_read = None, 
 				cb_ignore_ssl_exception_write = None)
@@ -119,7 +137,7 @@ class UdpServer(object):
 			self.ssl_ctx.bind((self.addr, self.port))
 			self.ssl_ctx.settimeout(timeout)
 			self.ssl_ctx.listen(0)
-			_listen(self.ssl_ctx)	# Does not return
+			_listen(self.ssl_ctx)	# Will eventually return
 			# self.doListen = True
 			# while self.doListen:
 			# 	self.logging(f'UdpServer.listen: In loop: {str(self.doListen)}')
@@ -145,7 +163,7 @@ class UdpServer(object):
 			# Initialize and start listening (non-secure)
 			self.listen_socket.bind((self.addr, self.port))
 			self.listen_socket.settimeout(timeout)
-			_listen(self.listen_socket)	# Does not return
+			_listen(self.listen_socket)	# Will eventually return
 
 			# self.doListen = True
 			# while self.doListen:
@@ -225,8 +243,8 @@ class UdpServer(object):
 			self.socket = None
 
 
-	def sendTo(self, datagram):
-		self.logging(f'==> UdpServer.sendTo: /{str(datagram[0])} - {str(datagram[1])}')
+	def sendTo(self, datagram:Any) -> None:
+		self.logging(f'==> UdpServer.sendTo: /{str(datagram[0])} - {str(datagram[1])}')	# type: ignore[operator]
 		try:
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 			if self.useTLS == True:

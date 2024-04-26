@@ -30,10 +30,8 @@ from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
 from ..services.EventManager import EventManager
 from ..services.GroupManager import GroupManager
-from ..protocols.HttpServer import HttpServer
 from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
-from ..protocols.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
@@ -46,6 +44,9 @@ from ..runtime.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
+from ..protocols.HttpServer import HttpServer
+# from ..protocols.CoAPServer import CoAPServer
+from ..protocols.MQTTClient import MQTTClient
 from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
@@ -60,6 +61,9 @@ action:ActionManager = None
 
 announce:AnnouncementManager = None
 """	Runtime instance of the `AnnouncementManager`. """
+
+# coapServer:CoAPServer = None
+# """	Runtime instance of the `CoAPServer`. """
 
 console:Console = None
 """ Runtime instance of the `Console`. """
@@ -202,9 +206,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient, notification, registration
-	global remote, request, script, security, semantic, statistics, storage, textUI, time, timeSeries, validator, webSocketServer
-	global aeStatistics
+	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
+	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
+	global timeSeries, validator, webSocketServers
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator
@@ -284,6 +288,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
 		httpServer = HttpServer()				# Initialize the HTTP server
+		# coapServer = CoAPServer()				# Initialize the CoAP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
 		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
 		notification = NotificationManager()	# Initialize the notification manager
@@ -310,6 +315,12 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			L.logErr('Terminating', showStackTrace = False)
 			cseStatus = CSEStatus.STOPPED
 			return False 					
+
+		# # Start the CoAP server
+		# if not coapServer.run():					# This does return
+		# 	L.logErr('Terminating', showStackTrace = False)
+		# 	cseStatus = CSEStatus.STOPPED
+		# 	return False
 
 		# Start the MQTT client
 		if not mqttClient.run():				# This does return
