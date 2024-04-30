@@ -50,7 +50,6 @@ resourcesPath=${basic.config:baseDirectory}/init
 ```
 
 
-
 # configfile
 
 This is the filename of the currently used configuration file. 
@@ -59,10 +58,25 @@ The default is `acme.ini`, but others can be specified with the command line arg
 
 
 
-# packageDirectory
+# baseDirectory
+
+This is the base directory of the CSE installation.
+
+This value is set during the CSE's startup and is used for settings interpolation.
+
+
+
+# moduleDirectory
 
 This is the path name of the directory where the *ACME* packages and modules can be found. 
 It is the full path of the current working directory when starting the CSE.
+
+
+
+# initDirectory
+
+This is the path name of the directory where the CSE's initialization scripts, default configuration,
+attribute definitions, and other initialization files are located.
 
 
 
@@ -891,7 +905,7 @@ This setting specifies the path to the CSE's HTTP server's CA certificate file.
 
 The default value is an empty string.
 
-It is recommended to store the CSE's CA certificate in the file `{baseDirectory}./certs/acme_cert.pem`.
+It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
 
 
 
@@ -901,7 +915,7 @@ This setting specifies the path to the CSE's HTTP server's CA private key file.
 
 The default value is an empty string.
 
-It is recommended to store the CSE's CA private key in the file `{baseDirectory}/certs/acme_key.pem`.
+It is recommended to store the CSE's CA private key in the file `{basic.config:baseDirectory}/certs/acme_key.pem`.
 
 
 
@@ -964,7 +978,7 @@ This setting specifies the path to the CSE's HTTP server's basic authentication 
 The file must contain lines with the format "username:password". 
 Comments are lines starting with a #.
 
-The default value is `${basic.config:dataDirectory}/certs/http_basic_auth.txt`.
+The default value is `${basic.config:baseDirectory}/certs/http_basic_auth.txt`.
 
 
 
@@ -974,7 +988,7 @@ This setting specifies the path to the CSE's HTTP server's token authentication 
 The file must contain lines with the format "token".
 Comments are lines starting with a #.
 
-The default value is `${basic.config:dataDirectory}/certs/http_token_auth.txt`.
+The default value is `${basic.config:baseDirectory}/certs/http_token_auth.txt`.
 
 
 
@@ -1035,7 +1049,7 @@ The default value is `10`.
 
 # logging.enableBindingsLogging
 
-This setting enables or disables detailed and internal logging of the CSE's protocol sbindings.
+This setting enables or disables detailed and internal logging of the CSE's protocol bindings.
 
 The default value is `False`.
 
@@ -1208,7 +1222,7 @@ This setting specifies the path to the CSE's MQTT client's CA certificate file.
 
 The default value is an empty string.
 
-It is recommended to store the CSE's CA certificate in the file `{baseDirectory}/certs/acme_cert.pem`.
+It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
 
 
 
@@ -1617,6 +1631,8 @@ This setting specifies the path to the CSE's WebSocket server's CA certificate f
 
 The default value is an empty string.
 
+It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
+
 
 
 # websocket.security.caPrivateKeyFile
@@ -1624,6 +1640,9 @@ The default value is an empty string.
 This setting specifies the path to the CSE's WebSocket server's CA private key file.
 
 The default value is an empty string.
+
+It is recommended to store the CSE's CA private key in the file `{basic.config:baseDirectory}/certs/acme_key.pem`.
+
 
 
 

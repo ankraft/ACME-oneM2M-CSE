@@ -35,8 +35,8 @@ resourceID=${basic.config:cseID}
 ; Default: cse-in
 resourceName=${basic.config:cseName}
 ; Directory of default resources to import. 
-; Default: ./init
-resourcesPath=${basic.config:dataDirectory}/init
+; Default: ${basic.config:initDirectory}
+resourcesPath=${basic.config:initDirectory}
 ; Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.
 ; Default: true
 enableResourceExpiration=true
@@ -183,9 +183,9 @@ tlsVersion=auto
 ; Verify certificates in requests. Set to False when using self-signed certificates. Default: False
 verifyCertificate=false
 ; Path and filename of the certificate file. Default: None
-caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
+caCertificateFile=${basic.config:baseDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. Default: None
-caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
+caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
 ; Enable basic authentication for the HTTP binding.
 ; Default: false
 enableBasicAuth=false
@@ -196,19 +196,19 @@ enableTokenAuth=false
 ; The file must contain lines with the format "username:password".
 ; Comments are lines starting with a #.
 ; Default: certs/http_basic_auth.txt
-basicAuthFile=${basic.config:dataDirectory}/certs/http_basic_auth.txt
+basicAuthFile=${basic.config:baseDirectory}/certs/http_basic_auth.txt
 ; Path and filename of the http bearer token authentication file.
 ; The file must contain lines with the format "token".
 ; Comments are lines starting with a #.
 ; Default: certs/http_token_auth.txt
-tokenAuthFile=${basic.config:dataDirectory}/certs/http_token_auth.txt
+tokenAuthFile=${basic.config:baseDirectory}/certs/http_token_auth.txt
 
 
 [http.cors]
 ; Enable CORS support for the HTTP binding.
 ; Default: false
 enable=false
-; A comma separated list of allowed resource paths. The list elements could be regular exporessions.
+; A comma separated list of allowed resource paths. The list elements could be regular expressions.
 ; Default: "/*" , ie. all resources under the HTTP server's root
 resources=/*
 
@@ -274,7 +274,7 @@ useTLS=False
 verifyCertificate=False
 ; Path and filename of the certificate file. 
 ; Default: None
-caCertificateFile=${basic.config:dataDirectory}/certs/m2mqtt_ca.crt
+caCertificateFile=${basic.config:baseDirectory}/certs/m2mqtt_ca.crt
 ; List of credential-IDs that can be used to register an AE via MQTT. 
 ; If this list is empty then all credential IDs are allowed.
 ; This is a comma-separated list. Wildcards (* and ?) are supported.
@@ -321,10 +321,10 @@ tlsVersion=auto
 verifyCertificate=false
 ; Path and filename of the certificate file. 
 ; Default: None
-caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
+caCertificateFile=${basic.config:baseDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. 
 ; Default: None
-caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
+caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
 
 
 ;
@@ -357,10 +357,10 @@ dtlsVersion=auto
 ; Verify certificates in requests. Set to False when using self-signed certificates. 
 ; Default: False
 verifyCertificate=False
-; Path and filename of the certificate file. Default: ${basic.config:dataDirectory}/certs/coap_cert.pem
-certificateFile=${basic.config:dataDirectory}/certs/coap_cert.pem
+; Path and filename of the certificate file. Default: ${basic.config:baseDirectory}/certs/coap_cert.pem
+certificateFile=${basic.config:baseDirectory}/certs/coap_cert.pem
 ; Path and filename of the private key file. Default: None
-privateKeyFile=${basic.config:dataDirectory}/certs/coap_key.pem
+privateKeyFile=${basic.config:baseDirectory}/certs/coap_key.pem
 
 ;
 ;	Database settings
@@ -376,13 +376,13 @@ resetOnStartup=false
 ; The directory for a backup of the database files.
 ; Database backups are not supported for the memory database and postgreSQL.
 ; Default: ./data/backup
-backupPath=${basic.config:dataDirectory}/data/backup
+backupPath=${basic.config:baseDirectory}/data/backup
 
 
 [database.tinydb]
 ; Directory for the database files.
 ; Default: ./data
-path=${basic.config:dataDirectory}/data
+path=${basic.config:baseDirectory}/data
 ; Cache size in bytes, or 0 to disable caching. 
 ; Default: 0
 cacheSize=0
@@ -467,7 +467,7 @@ enableFileLogging=False
 enableScreenLogging=true
 ; Path to the log files. 
 ; Default: ./logs
-path=${basic.config:dataDirectory}/logs
+path=${basic.config:baseDirectory}/logs
 ; Loglevel. Allowed values: debug, info, warning, error, off. 
 ; Default: debug
 level=${basic.config:logLevel}
