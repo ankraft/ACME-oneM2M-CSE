@@ -40,7 +40,7 @@ def isValidateHostname(hostname:str) -> bool:
 		Return:
 			True if the *hostname* is valid, or False otherwise.
 	"""
-	if len(hostname) > 255:
+	if not (1 < len(hostname) <= 255):
 		return False
 	if hostname[-1] == '.':
 		hostname = hostname[:-1] # strip exactly one dot from the right, if present

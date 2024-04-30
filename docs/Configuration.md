@@ -48,7 +48,7 @@ Example:
 
 ```ini
 [cse]
-resourcesPath=${basic.config:baseDirectory}/init
+resourcesPath=${basic.config:initDirectory}
 ```
 
 
@@ -96,29 +96,29 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 ### [cse] - General CSE Settings
 
-| Setting                                | Description                                                                                                                                                                | Configuration Name                         |
-|:---------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------|
-| asyncSubscriptionNotifications         | Enable or disable asynchronous notification for normal runtime subscription notifications.<br/>Default: true                                                               | cse.asyncSubscriptionNotifications         |
-| checkExpirationsInterval               | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                    | cse.checkExpirationsInterval               |
-| cseID                                  | The CSE ID. A CSE-ID must start with a /.<br/>Default: id-in                                                                                                               | cse.cseID                                  |
-| defaultSerialization                   | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                     | cse.defaultSerialization                   |
-| enableRemoteCSE                        | Enable remote CSE registration and checking.<br/>See also command line arguments [–-remote-cse and -–no-remote-cse](Running.md).<br/>Default: true                         | cse.enableRemoteCSE                        |
-| enableResourceExpiration               | Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.<br/>Default: true                                         | cse.enableResourceExpiration               |
-| enableSubscriptionVerificationRequests | Enable or disable verification requests when creating a new subscription.<br/>Default: true                                                                                | cse.enableSubscriptionVerificationRequests |
-| flexBlockingPreference                 | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                 | cse.flexBlockingPreference                 |
-| maxExpirationDelta                     | Default and maximum expirationTime allowed for resources in seconds.<br/>Default: 60*60*24*365*5 = 157680000 seconds = 5 years                                             | cse.maxExpirationDelta                     |
-| originator                             | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                          | cse.originator                             |
-| poa                                    | Set the CSE's point-of-access. This is a comma-separated list of URLs.<br/>Default: The configured HTTP server's address.                                                  | cse.poa                                    |
-| releaseVersion                         | The release version indicator for requests. Allowed values: see setting of *supportedReleaseVersions*.<br />Default: 4                                                     | cse.releaseVersion                         |
-| requestExpirationDelta                 | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                                          | cse.requestExpirationDelta                 |
-| resourceID                             | The \<CSEBase> resource's resource ID. This should be the same value as *cseID* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in | cse.resourceID                             |
-| resourceName                           | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                     | cse.resourceName                           |
-| resourcesPath                          | Directory of default resources to import.<br/>See also command line argument [–-import-directory](Running.md).<br/>Default: ./init                                         | cse.resourcesPath                          |
-| sendToFromInResponses                  | Indicate whether the optional "to" and "from" parameters shall be sent in responses.<br/>Default: true                                                                     | cse.sendToFromInResponses                  |
-| serviceProviderID                      | The CSE's service provider ID.<br/>Default: acme.example.com                                                                                                               | cse.serviceProviderID                      |
-| sortDiscoveredResources                | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                        | cse.sortDiscoveredResources                |
-| supportedReleaseVersions               | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4,5                                            | cse.supportedReleaseVersions               |
-| type                                   | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                 | cse.type                                   |
+| Setting                                | Description                                                                                                                                                                               | Configuration Name                         |
+|:---------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------|
+| asyncSubscriptionNotifications         | Enable or disable asynchronous notification for normal runtime subscription notifications.<br/>Default: true                                                                              | cse.asyncSubscriptionNotifications         |
+| checkExpirationsInterval               | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                   | cse.checkExpirationsInterval               |
+| cseID                                  | The CSE ID. A CSE-ID must start with a /.<br/>Default: id-in                                                                                                                              | cse.cseID                                  |
+| defaultSerialization                   | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                    | cse.defaultSerialization                   |
+| enableRemoteCSE                        | Enable remote CSE registration and checking.<br/>See also command line arguments [–-remote-cse and -–no-remote-cse](Running.md).<br/>Default: true                                        | cse.enableRemoteCSE                        |
+| enableResourceExpiration               | Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.<br/>Default: true                                                        | cse.enableResourceExpiration               |
+| enableSubscriptionVerificationRequests | Enable or disable verification requests when creating a new subscription.<br/>Default: true                                                                                               | cse.enableSubscriptionVerificationRequests |
+| flexBlockingPreference                 | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                | cse.flexBlockingPreference                 |
+| maxExpirationDelta                     | Default and maximum expirationTime allowed for resources in seconds.<br/>Default: 60*60*24*365*5 = 157680000 seconds = 5 years                                                            | cse.maxExpirationDelta                     |
+| originator                             | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                         | cse.originator                             |
+| poa                                    | Set the CSE's point-of-access. This is a comma-separated list of URLs.<br/>Default: The configured HTTP server's address.                                                                 | cse.poa                                    |
+| releaseVersion                         | The release version indicator for requests. Allowed values: see setting of *supportedReleaseVersions*.<br />Default: 4                                                                    | cse.releaseVersion                         |
+| requestExpirationDelta                 | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                                                         | cse.requestExpirationDelta                 |
+| resourceID                             | The \<CSEBase> resource's resource ID. This should be the same value as *cseID* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                | cse.resourceID                             |
+| resourceName                           | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                    | cse.resourceName                           |
+| resourcesPath                          | Directory of default CSE resources, policies, and other settings to import.<br/>See also command line argument [–-init-directory](Running.md).<br/>Default: ${basic.config:initDirectory} | cse.resourcesPath                          |
+| sendToFromInResponses                  | Indicate whether the optional "to" and "from" parameters shall be sent in responses.<br/>Default: true                                                                                    | cse.sendToFromInResponses                  |
+| serviceProviderID                      | The CSE's service provider ID.<br/>Default: acme.example.com                                                                                                                              | cse.serviceProviderID                      |
+| sortDiscoveredResources                | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                       | cse.sortDiscoveredResources                |
+| supportedReleaseVersions               | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4,5                                                           | cse.supportedReleaseVersions               |
+| type                                   | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                                | cse.type                                   |
 
 [top](#sections)
 
@@ -607,11 +607,13 @@ Configuration values can be referenced by their respective configuration name an
 
 The following configuration names are supported in addition to those defined in the sections below. They are set by the CSE at runtime.
 
-| Configuration name | Description                         |
-|:-------------------|:------------------------------------|
-| configfile         | Name of the configuration file.     |
-| baseDirectory      | Path to the ACME root directory.    |
-| packageDirectory   | Path to the ACME package directory. |
+| Configuration name | Description                                                                       |
+|:-------------------|:----------------------------------------------------------------------------------|
+| baseDirectory      | Path to the ACME runtime directory. The default is the current working directory. |
+| configfile         | Name of the configuration file in the *baseDirectory*.                            |
+| moduleDirectory    | Path to the ACME module directory.                                                |
+| initDirectory      | Path to the main ACME init directory.                                             |
+
 
 [top](#sections)
 

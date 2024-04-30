@@ -166,6 +166,7 @@ class ACMEPContext(PContext):
 						 verbose = CSE.script.verbose)
 
 		self.scriptFilename = filename if filename else None
+		self.meta[_metaFilename] = filename if filename else None
 		self.fileMtime = os.stat(filename).st_mtime if filename else None
 		self.nextScript:Tuple[PContext, List[str]] = None	# Script to be started after another script ended
 
@@ -1781,12 +1782,12 @@ class ScriptManager(object):
 				del self.scripts[eachName]
 
 		# Read new scripts
-		if CSE.importer.extendedResourcePath:	# from the init directory
-			if self.loadScriptsFromDirectory(CSE.importer.extendedResourcePath) == -1:
-				L.isWarn and L.logWarn('Cannot import new scripts')
+		if CSE.importer.extendedScriptPaths:	# from the init directory
+			if self.loadScriptsFromDirectory(CSE.importer.extendedScriptPaths) == -1:
+				L.isWarn and L.logWarn('Cannot import script(s)')
 		if self.scriptDirectories:	# from the extra script directories
 			if self.loadScriptsFromDirectory(self.scriptDirectories) == -1:
-				L.isWarn and L.logWarn('Cannot import new scripts')
+				L.isWarn and L.logWarn('Cannot import script(s)')
 		return True
 
 
@@ -1853,7 +1854,7 @@ class ScriptManager(object):
 					continue
 				# read the file and add it to the script manager
 
-				L.isDebug and L.logDebug(f'Importing script: {os.path.relpath(ffn)}')
+				L.isDebug and L.logDebug(f'Importing script: {ffn}')
 				if not self.loadScriptFromFile(ffn):
 					return -1
 				countScripts += 1
@@ -1902,6 +1903,9 @@ class ScriptManager(object):
 		if not (name := pcontext.scriptName):		# Add name to meta data if not set
 			pcontext.scriptName = Path(filename).stem
 			name = pcontext.scriptName
+			if name in self.scripts:
+				L.isWarn and L.logWarn(f'Script with name or filename "{name}" already loaded')
+				return None
 		if not pcontext.scriptFilename:							# Add filename to meta data
 			pcontext.scriptFilename = filename
 		self.scripts[name] = pcontext

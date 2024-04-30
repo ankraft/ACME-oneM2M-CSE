@@ -10,7 +10,8 @@
 """
 
 from __future__ import annotations 
-from typing import List, cast
+from typing import List, cast, Tuple, Optional
+import os
 from datetime import datetime
 
 from InquirerPy import inquirer
@@ -18,10 +19,14 @@ from InquirerPy.utils import InquirerPySessionResult
 from InquirerPy.base import Choice
 
 from rich.console import Console
+from rich.rule import Rule
+from rich.style import Style
 
 from ..etc.Constants import Constants
 
 from ..helpers import NetworkTools
+
+from ..runtime import Configuration
 
 
 _iniValues = {
@@ -29,9 +34,9 @@ _iniValues = {
 		'cseID': 'id-in',
 		'cseName': 'cse-in',
 		'adminID': 'CAdmin',
-		'dataDirectory': '${baseDirectory}',
 		'networkInterface': '0.0.0.0',
-		'cseHost': NetworkTools.getIPAddress(),
+		'cseHost': '{hostIPAddress}',
+		# 'cseHost': NetworkTools.getIPAddress(),
 		'httpPort': 8080,
 
 		'logLevel': 'debug',
@@ -41,15 +46,16 @@ _iniValues = {
 		'cseID': 'id-mn',
 		'cseName': 'cse-mn',
 		'adminID': 'CAdmin',
-		'dataDirectory': '${baseDirectory}',
 		'networkInterface': '0.0.0.0',
-		'cseHost': NetworkTools.getIPAddress(),
+		# 'cseHost': NetworkTools.getIPAddress(),
+		'cseHost': '{hostIPAddress}',
 		'httpPort': 8081,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
-		'registrarCseHost': NetworkTools.getIPAddress(),
+		# 'registrarCseHost': NetworkTools.getIPAddress(),
+		'registrarCseHost': '{hostIPAddress}',
 		'registrarCsePort': 8080,
 		'registrarCseID': 'id-in',
 		'registrarCseName': 'cse-in',
@@ -58,15 +64,16 @@ _iniValues = {
 		'cseID': 'id-asn',
 		'cseName': 'cse-asn',
 		'adminID': 'CAdmin',
-		'dataDirectory': '${baseDirectory}',
 		'networkInterface': '0.0.0.0',
-		'cseHost': '127.0.0.1',
+		# 'cseHost': '127.0.0.1',
+		'cseHost': '{hostIPAddress}',
 		'httpPort': 8082,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
-		'registrarCseHost': '127.0.0.1',
+		# 'registrarCseHost': '127.0.0.1',
+		'registrarCseHost': '{hostIPAddress}',
 		'registrarCsePort': 8081,
 		'registrarCseID': 'id-mn',
 		'registrarCseName': 'cse-mn',
@@ -74,7 +81,7 @@ _iniValues = {
 }
 
 
-def _print(msg:str) -> None:
+def _print(msg:str|Rule = '\n') -> None:
 	""" Print a message to the console.
 	
 		Args:
@@ -82,20 +89,46 @@ def _print(msg:str) -> None:
 	"""
 	from ..runtime import CSE
 	if not CSE.isHeadless:
-		Console().print(msg)	# Print error message to console
+		if isinstance(msg, Rule):
+			Console().print('\n')
+		Console().print(msg, highlight = False)	# Print error message to console
+		if isinstance(msg, Rule):
+			Console().print('\n')
 
 
-def buildUserConfigFile(configFile:str) -> bool:
+def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
 	from ..etc.ACMEUtils import isValidID
 
 	cseType = 'IN'
 	cseID:str = None
 	cseEnvironment = 'Development'
+	runtimeDirectory = os.path.dirname(configFile)
+	_configFile = os.path.basename(configFile)
 
+
+	def directoriesAndConfigFile() -> None:
+		nonlocal runtimeDirectory, _configFile
+		_print(Rule('[b]Directories and Configuration File[/b]', style = 'dim'))
+		_print('The following questions determine the runtime data directory and the configuration file.\n')
+
+		runtimeDirectory = inquirer.text(
+							message = 'Runtime data directory:',
+							default = str(Configuration.Configuration._baseDirectory),
+							long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
+							amark = '✓', 
+						).execute()
+		_configFile = inquirer.text(
+							message = 'Configuration file:',
+							default = _configFile,
+							long_instruction = 'The name of the configuration file in the runtime data directory.',
+							amark = '✓', 
+						).execute()
+		
+		
 
 	def basicConfig() -> None:
 		nonlocal cseType, cseEnvironment
-		_print('[b]Basic configuration\n')
+		_print(Rule('[b]Basic Configuration[/b]', style = 'dim'))
 
 		cseEnvironment = inquirer.select(
 							message = 'Select the target environment:',
@@ -132,8 +165,8 @@ def buildUserConfigFile(configFile:str) -> bool:
 
 
 	def cseConfig() -> InquirerPySessionResult:
-		_print('\n\n[b]CSE configuration\n')
-		_print('The following questions determine basic CSE settings.\n')
+		_print(Rule('[b][b]CSE Configuration[/b]', style = 'dim'))
+		_print('The following questions determine the basic CSE settings.\n')
 
 		return {
 			'cseID': inquirer.text(
@@ -160,12 +193,6 @@ def buildUserConfigFile(configFile:str) -> bool:
 							amark = '✓', 
 							invalid_message = 'Invalid Originator ID. Must start with "C", must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 						).execute(),
-			'dataDirectory': inquirer.text(
-								message = 'Data root directory:',
-								default = _iniValues[cseType]['dataDirectory'],
-								long_instruction = 'The directory under which the "data", "init" and "log" directories are located. Usually the CSE\'s base directory.',
-								amark = '✓', 
-							).execute(),
 			'networkInterface': inquirer.text(
 								message = 'Network interface to bind to (IP address):',
 								default = _iniValues[cseType]['networkInterface'],
@@ -177,8 +204,8 @@ def buildUserConfigFile(configFile:str) -> bool:
 			'cseHost': inquirer.text(
 							message = 'CSE host address (IP address or host name):',
 							default = _iniValues[cseType]['cseHost'],
-							long_instruction = 'The network interface to listen for requests. Use "0.0.0.0" for all interfaces.',
-							validate =  lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result),
+							long_instruction = f'The IP address, or "{{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()}).',
+							validate =  lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or result == '{hostIPAddress}',
 							amark = '✓', 
 							invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 						).execute(),
@@ -196,7 +223,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 
 
 	def registrarConfig() -> InquirerPySessionResult:
-		_print('\n\n[b]Registrar configuration\n')
+		_print(Rule('[b][b]Registrar Configuration[/b]', style = 'dim'))
 		_print('The following settings concern the registrar CSE to which this CSE will be registering.\n')
 
 		return {
@@ -219,8 +246,9 @@ def buildUserConfigFile(configFile:str) -> bool:
 			'registrarCseHost':	inquirer.text(
 									message = 'The Registrar CSE\' IP address / host name:',
 									default = _iniValues[cseType]['registrarCseHost'],
-									long_instruction = 'The IP address or host name of the remote (Registrar) CSE.',
-									validate = lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result),
+									long_instruction = f'The IP address / host name of the remote (Registrar) CSE, or "{{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()})',
+
+									validate = lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or result == '{hostIPAddress}',
 									amark = '✓', 
 									invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 								).execute(),
@@ -243,7 +271,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 			Return:
 				A dictionary with the selected policies.
 		"""
-		_print('\n\n[b]CSE policies\n')
+		_print(Rule('[b][b]CSE Policies[/b]', style = 'dim'))
 		_print('The following configuration settings determine miscellaneous CSE policies.\n')
 
 		return {
@@ -274,7 +302,7 @@ def buildUserConfigFile(configFile:str) -> bool:
 			Return:
 				A dictionary with the selected policies.
 		"""
-		_print('\n\n[b]Database configuration\n')
+		_print(Rule('[b][b]Database Configuration[/b]', style = 'dim'))
 		_print('The following configuration settings determine the database configuration.\n')
 
 		dbType = inquirer.select(
@@ -347,9 +375,12 @@ def buildUserConfigFile(configFile:str) -> bool:
 	cnf:List[str] = []
 
 	try:
-		_print(f'[u][b]Creating a new [/b]{Constants.textLogo}[b] configuration file\n')
+		_print(Rule(f'[b]Creating a New {Constants.textLogo} Configuration File', characters = '═', style = Style(color = Constants.logoColor)))
 		_print('You may press CTRL-C at any point to cancel the configuration.\n')
 		
+		# Prompt for directories and configuration file
+		directoriesAndConfigFile()
+
 		# Prompt for basic configuration
 		basicConfig()
 		cnf.append(f'cseType={cseType}')
@@ -482,30 +513,33 @@ schema={dbc["dbSchema"]}
 		jcnf += cnfPostgreSQL
 
 		# Show configuration and confirm write
-		_print('\n[b]Save configuration\n')
+		_print(Rule('[b][b]Saving Configuration[/b]', style = 'dim'))
 		_jcnf = jcnf.replace('[', r'\[')
 		_print(f'[dim]{_jcnf}\n')
 
-		if not inquirer.confirm	(message = f'Write configuration to file {configFile}?', 
+		configFile = f'{runtimeDirectory}{os.sep}{_configFile}'
+		if not inquirer.confirm	(message = f'Write configuration to file "{configFile}"?', 
 			   					default = True,
 								long_instruction = 'Write the configuration file and start the CSE afterwards.',
 			  					amark = '✓'
 								).execute():
 			_print('\n[red]Configuration canceled\n')
-			return False
+			return False, None, None
 
 	except KeyboardInterrupt:
 		_print('\n[red]Configuration canceled\n')
-		return False
+		return False, None, None
 
 	try:
+
+		os.makedirs(os.path.dirname(configFile), exist_ok=True)
 		with open(configFile, 'w') as file:
 			file.write(cnfHeader)
 			file.write(jcnf)
 	except Exception as e:
 		_print(str(e))
-		return False
+		return False, None, None
 
 	_print(f'\n[spring_green2]New {cseType}-CSE configuration created.\n')
-	return True
+	return True, configFile, runtimeDirectory
 

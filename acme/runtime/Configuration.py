@@ -19,7 +19,8 @@ from rich.console import Console
 
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSEType, ContentSerializationType, Permission
+from ..etc.Types import CSEType, ContentSerializationType,Permission
+from ..helpers.NetworkTools import getIPAddress
 from ..etc.Utils import normalizeURL
 from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..runtime import Onboarding
@@ -93,6 +94,15 @@ class Configuration(object):
 	_configurationDocs: Dict[str, str] = {}
 	""" The configuration values documentation as a dictionary. """
 
+	_moduleDirectory:pathlib.Path = None
+	""" The base directory of the ACME module. """
+	_initDirectory:pathlib.Path = None
+	""" The init directory of the ACME module. """
+	_defaultConfigFilePath:pathlib.Path = None
+	""" The default init file. """
+
+	_baseDirectory:pathlib.Path = None
+	""" The base directory of the ACME module. """
 	_defaultConfigFile:str = None
 	""" The default configuration file. """
 
@@ -112,7 +122,7 @@ class Configuration(object):
 	""" The http address passed as argument. This overrides the respective value in the configuration file. """
 	_argsHttpPort:int = None
 	""" The http port passed as argument. This overrides the respective value in the configuration file. """
-	_argsImportDirectory:str = None
+	_argsInitDirectory:str = None
 	""" The import directory passed as argument. This overrides the respective value in the configuration file. """
 	_argsListenIF:str = None
 	""" The network interface passed as argument. This overrides the respective value in the configuration file. """
@@ -126,6 +136,8 @@ class Configuration(object):
 	""" The https flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsRunAsHttpWsgi:bool = None
 	""" The http WSGI flag passed as argument. This overrides the respective value in the configuration file. """
+	_argsBaseDirectory:str = None
+	""" The runtime data directory passed as argument. This overrides the default (the CWD). """
 	_argsStatisticsEnabled:bool = None
 	""" The statistics enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsTextUI:bool = None
@@ -155,11 +167,8 @@ class Configuration(object):
 				True on success, False otherwise.
 		"""
 
-		# The default ini file
-		Configuration._defaultConfigFile		= f'{pathlib.Path.cwd()}{os.sep}{C.defaultConfigFile}'
-
 		# resolve the args, if any
-		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultUserConfigFile
+		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args and args.configfile else C.defaultUserConfigFile
 		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
 		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
@@ -167,16 +176,42 @@ class Configuration(object):
 		Configuration._argsHeadless				= args.headless if args and 'headless' in args else False
 		Configuration._argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
 		Configuration._argsHttpPort				= args.httpport if args and 'httpport' in args else None
-		Configuration._argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
+		Configuration._argsInitDirectory		= args.initdirectory if args and 'initdirectory' in args else None
 		Configuration._argsListenIF				= args.listenif if args and 'listenif' in args else None
 		Configuration._argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
 		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
 		Configuration._argsRunAsHttpWsgi		= args.httpWsgi if args and 'httpWsgi' in args else None
+		Configuration._argsBaseDirectory	= args.rtDirectory if args and 'rtDirectory' in args else None	# baseDirectory
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 		Configuration._argsTextUI				= args.textui if args and 'textui' in args else None
 		Configuration._argsWsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
 
+		# The path to the ACME module directory
+		Configuration._moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
+		
+		# Test that the config filename is just a filename without a path. If it is then throw an error
+		if os.path.dirname(Configuration._argsConfigfile):
+			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._argsConfigfile}')
+			return False
+
+		# The path to the init directory
+		Configuration._initDirectory = Configuration._moduleDirectory / 'init'
+		if Configuration._argsInitDirectory:	# Use the init directory if given as argument
+			Configuration._initDirectory = pathlib.Path(Configuration._argsInitDirectory)
+
+		# The path to the runtime data directory
+		Configuration._baseDirectory = os.getcwd()
+		if Configuration._argsBaseDirectory:	# Use the runtime data directory if given as argument
+			Configuration._baseDirectory = pathlib.Path(Configuration._argsBaseDirectory)
+
+		# Check and re-set the configuration file's path if the runtime data directory is given AND
+		# the configuration file is not given as argument
+		if Configuration._argsBaseDirectory and not args.configfile:
+			Configuration._argsConfigfile = f'{Configuration._argsBaseDirectory}/{C.defaultUserConfigFile}'
+
+		# Adapt configuration file path to the runtime data directory
+		Configuration._argsConfigfile = f'{Configuration._baseDirectory}{os.sep}{os.path.basename(Configuration._argsConfigfile)}'
 
 		# Create user config file if doesn't exist
 		if not os.path.exists(Configuration._argsConfigfile):
@@ -184,11 +219,21 @@ class Configuration(object):
 				if Configuration._argsHeadless:
 					Console().print(f'[red]Configuration file: {Configuration._argsConfigfile} is missing and cannot be created in headless mode.\n')
 					return False
-				if not Onboarding.buildUserConfigFile(Configuration._argsConfigfile):
+				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._argsConfigfile)
+				if not result:
 					return False
+				Configuration._argsConfigfile = str(pathlib.Path(_configFile))
+				Configuration._baseDirectory = pathlib.Path(_baseDirectory)
 			except Exception as e:
 				Console().print(e)
 				raise e
+
+		# Set the default ini file and check if it exists and is readable
+		Configuration._defaultConfigFilePath = Configuration._initDirectory / C.defaultConfigFile
+		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
+		if not os.access(Configuration._defaultConfigFile, os.R_OK):
+			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+			return False
 
 
 		# Read and parse the configuration file
@@ -198,11 +243,15 @@ class Configuration(object):
 											converters = {'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
 		config.read_dict({ 'basic.config': {
-								'baseDirectory' 	: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent,	# points to the acme module's parent directory
-								'registrarCseHost'	: '127.0.0.1',																# The IP address of the registrar CSE
-								'registrarCsePort'	: 8080,																		# The TCP port of the registrar CSE
-								'registrarCseID'	: 'id-in',																	# The CSE-ID of the registrar CSE
-								'registrarCseName'	: 'cse-in',																	# The resource name of the registrar CSE's CSEBase
+								'baseDirectory' 		: Configuration._baseDirectory,			# points to the currenr working directory
+								'moduleDirectory' 		: Configuration._moduleDirectory,		# points to the acme module's directory
+								'initDirectory' 		: Configuration._initDirectory,			# points to the acme/init directory		
+								'hostIPAddress'			: getIPAddress(),						# provide the IP address of the host
+
+								'registrarCseHost'		: '127.0.0.1',							# The IP address of the registrar CSE
+								'registrarCsePort'		: 8080,									# The TCP port of the registrar CSE
+								'registrarCseID'		: 'id-in',								# The CSE-ID of the registrar CSE
+								'registrarCseName'		: 'cse-in',								# The resource name of the registrar CSE's CSEBase
 						 }
 					})
 		try:
@@ -213,6 +262,7 @@ class Configuration(object):
 			Configuration._print('[red]Error in configuration file')
 			Configuration._print(str(e))
 			return False
+		
 	
 		#
 		#	Look for deprecated and renamed sections
@@ -230,8 +280,9 @@ class Configuration(object):
 		try:
 			Configuration._configuration = {
 				'configfile'							: Configuration._argsConfigfile,
-				'baseDirectory'							: config.get('basic.config', 'baseDirectory'),
-				'packageDirectory'						: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,	# points to the acme package directory
+				'baseDirectory'							: Configuration._baseDirectory,
+				'moduleDirectory'						: Configuration._moduleDirectory,	# points to the acme package directory
+				'initDirectory'							: Configuration._initDirectory,			# points to the acme / init directory
 
 
 				#
@@ -712,7 +763,7 @@ class Configuration(object):
 		if Configuration._argsHeadless is True:					_put('console.headless', True)
 		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
 		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
-		if Configuration._argsImportDirectory is not None:		_put('cse.resourcesPath', Configuration._argsImportDirectory)			# Override import directory from command line
+		if Configuration._argsInitDirectory is not None:		_put('cse.resourcesPath', Configuration._argsInitDirectory)			# Override import directory from command line
 		if Configuration._argsListenIF is not None:				_put('http.listenIF', Configuration._argsListenIF)						# Override binding network interface
 		if Configuration._argsMqttEnabled is not None:			_put('mqtt.enable', Configuration._argsMqttEnabled)						# Override mqtt enable
 		if Configuration._argsRemoteCSEEnabled is not None:		_put('cse.enableRemoteCSE', Configuration._argsRemoteCSEEnabled)		# Override remote CSE enablement

@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import List, cast, Optional, Any, Tuple
 
-import csv, datetime, json, os, sys, webbrowser, socket
+import csv, datetime, json, os, sys, webbrowser, socket, platform
 from enum import IntEnum, auto
 from rich.live import Live
 from rich.panel import Panel
@@ -1363,7 +1363,7 @@ function createResource() {{
 				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n')
 
 
-			miscLeft  = _markup('[underline]Misc[/underline]\n')
+			miscLeft  = _markup('[underline]Misc[/underline]\n',)
 			miscLeft += '\n'
 			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
@@ -1376,6 +1376,11 @@ function createResource() {{
 			if len(CSE.csePOA) > 1:
 				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
 
+			miscLeft += '\n'
+			miscLeft += f'CWD               : {os.getcwd()}\n'
+			miscLeft += f'Runtime Directory : {Configuration.get("baseDirectory")}\n'
+			miscLeft += f'Config File       : {Configuration.get("configfile")}\n'
+			miscLeft += '\n'
 			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
 
@@ -1385,16 +1390,16 @@ function createResource() {{
 				miscLeft += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
 			else:
 				miscLeft += '\n'
-			miscLeft += f'Platform          : {sys.platform}\n'
+			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
 			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
 
 			# Adapt the following line when adding resources to keep formatting. 
 			# It fills up the right columns to match the length of the left column.
-			miscLeft += '\n' * ( (2 if CSE.statistics.statisticsEnabled else 3) - len(CSE.csePOA))
+			miscLeft += '\n' * ( (3 if CSE.statistics.statisticsEnabled else 4) - len(CSE.csePOA))
 
 			workers = _markup('[underline]Workers[/underline]\n')
 			workers += '\n'
-			tableWorkers = Table(row_styles = [ '', L.tableRowStyle], box = None)
+			tableWorkers = Table(expand=True, row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0, 0, 1))
 			tableWorkers.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
 			tableWorkers.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
 			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n'), no_wrap = True, justify = 'right')
@@ -1405,9 +1410,9 @@ function createResource() {{
 			
 			threads = _markup('[underline]Threads[/underline]\n')
 			threads += '\n'
-			tableThreads = Table(row_styles = [ '', L.tableRowStyle], box = None)
-			tableThreads.add_column(_markup('[u]Thread Queues\n[/u]'), no_wrap = True)
-			tableThreads.add_column(_markup('[u]Count\n[/u]'), no_wrap = True)
+			tableThreads = Table(row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0))
+			tableThreads.add_column(_markup('[u]Queues  \n[/u]'), no_wrap = True)
+			tableThreads.add_column(_markup('[u]Count   \n[/u]'), no_wrap = True, justify = 'right')
 			r, p = BackgroundWorkerPool.countJobs()
 			tableThreads.add_row('Running', str(r))
 			tableThreads.add_row('Paused', str(p))
@@ -1422,14 +1427,14 @@ function createResource() {{
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
-			infoGrid = Table.grid(expand=True)
-			infoGrid.add_column(ratio = 60)
-			infoGrid.add_column(ratio = 40)
+			infoGrid = Table.grid(expand=True, padding=(0,0,0,3))
+			infoGrid.add_column(ratio = 70, no_wrap=True)
+			infoGrid.add_column(ratio = 30)
 			infoGrid.add_row(miscLeft, miscRight)
 
-			workerGrid = Table.grid(expand = True)
-			workerGrid.add_column(ratio = 60)
-			workerGrid.add_column(ratio = 50)
+			workerGrid = Table.grid(expand = True, padding=(0,0,0,3))
+			workerGrid.add_column(ratio = 70)
+			workerGrid.add_column(ratio = 30)
 			workerGrid.add_row(workers, threads)
 			workerGrid.add_row(tableWorkers, tableThreads)
 
@@ -1478,10 +1483,9 @@ function createResource() {{
 			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
 			resourceTypes += '\n'
-			resourceTypes += '\n'
 			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
 			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 5)
+			resourceTypes += '\n' * (tableWorkers.row_count + 12)
 
 
 			result = Table.grid(expand = True)

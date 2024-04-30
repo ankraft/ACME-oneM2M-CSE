@@ -179,7 +179,7 @@ class HttpServer(object):
 		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
 		self.requestTimeout 	= Configuration.get('http.timeout')
 		self.webuiRoot 			= Configuration.get('webui.root')
-		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
+		self.webuiDirectory 	= f'{Configuration.get("moduleDirectory")}/webui'
 		self.corsEnable			= Configuration.get('http.cors.enable')
 		self.corsResources		= Configuration.get('http.cors.resources')
 		self.enableBasicAuth	= Configuration.get('http.security.enableBasicAuth')

@@ -65,7 +65,8 @@ def parseArgs() -> argparse.Namespace:
 			The parsed arguments.
 	"""
 	parser = argparse.ArgumentParser(prog='acme')
-	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultUserConfigFile, metavar='<filename>', help='specify the configuration file')
+	parser.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
+	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
 
 	# two mutual exlcusive arguments
 	groupEnableHttp = parser.add_mutually_exclusive_group()
@@ -89,12 +90,12 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
-	parser.add_argument('--db-directory', action='store', dest='dbdirectory', metavar='<data-directory>', default=None, help='specify the TinyDB data directory')
+	parser.add_argument('--db-directory', action='store', dest='dbdirectory', metavar='<directory>', default=None, help='specify the TinyDB data directory')
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-type', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'tinydb', 'postgresql' ], type=str.lower, help='specify the DB´s storage type')
 	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server-URL>', help='specify the CSE\'s http server URL')
 	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http-port>',  type=int, help='specify the CSE\'s http port')
-	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
+	parser.add_argument('--init-directory', action='store', dest='initdirectory', default=None, metavar='<directory>', help='specify the init directory')
 	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip-address>', default=None, help='specify the network interface/IP address to bind to')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--headless', action='store_true', dest='headless', default=None, help='operate the CSE in headless mode')

@@ -5,7 +5,10 @@
 
 Meta tags are special commands in a script that are not executed during the runtime of a script, but describe certain capabilities of the script or give, for example, the script a name or provide instructions when a script should be executed. 
 
-Meta tags are keyword that start with an at-sign "@". They can appear anywhere in a script file on a single line, but it is recommend to collect them either at the start or the end of a script. Meta tags are case sensitive.
+Meta tags are keyword that start with an at-sign "@". They can appear anywhere in a script file on a single line, but it is recommend to collect them either at the start or the end of a script. 
+
+> **Important**  
+> Meta tag names are case sensitive.
 
 <a name="top"></a>
 
@@ -13,7 +16,7 @@ Meta tags are keyword that start with an at-sign "@". They can appear anywhere i
 |---------------------|---------------------------------------------|------------------------------------------------------------------------------------------------|
 | [Basic](#_basic)    | [@at](#meta_at)                             | Schedule scripts to run at a certain time or time interval                                     |
 |                     | [@description](#meta_description)           | Provide a one-line script description                                                          |
-|                     | [@filename](#meta_filename)                 | Contains a script's filename (internal only)                                                   |
+|                     | [@filename](#meta_filename)                 | Contains the script's filename (internal only)                                                 |
 |                     | [@hidden](#meta_hidden)                     | Hide a script from the console's script catalog                                                |
 |                     | [@init](#init)                              | Run a script to initialize the CSE during startup and restart                                  |
 |                     | [@name](#meta_name)                         | Assign a name to a script                                                                      |

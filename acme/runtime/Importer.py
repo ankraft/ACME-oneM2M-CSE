@@ -18,7 +18,6 @@ from copy import deepcopy
 
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
-from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from .Configuration import Configuration
 from ..runtime import CSE
 from ..helpers.TextTools import removeCommentsFromJSON
@@ -37,7 +36,7 @@ class Importer(object):
 
 	__slots__ = (
 		'resourcePath',
-		'extendedResourcePath',
+		'extendedScriptPaths',
 		'macroMatch',
 		'isImporting',
 
@@ -53,7 +52,7 @@ class Importer(object):
 		"""	Initialization of an *Importer* instance.
 		"""
 		self.resourcePath = Configuration.get('cse.resourcesPath')
-		self.extendedResourcePath = None
+		self.extendedScriptPaths:list[str] = []
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
 		L.isInfo and L.log('Importer initialized')
@@ -70,13 +69,35 @@ class Importer(object):
 		self.removeImports()
 
 		# Do Imports
-		if not (self.importEnumPolicies() and
-				self.importAttributePolicies() and
-				self.importFlexContainerPolicies() and
-				self.assignAttributePolicies() and
-				self.importConfigDocs() and
-				self.importScripts()):
+		L.isInfo and L.log(f'Importing standard resources and policies from: {self.resourcePath}')
+
+		if not (self.importEnumPolicies(self.resourcePath) and
+				self.importAttributePolicies(self.resourcePath) and
+				self.importFlexContainerPolicies(self.resourcePath)):
 			return False
+		
+		# Do extra imports from the init directory of the runtime data directory
+		rtDir = f'{Configuration.get("baseDirectory")}{os.sep}init'
+		if os.path.exists(rtDir):
+			L.isInfo and L.log(f'Importing additional resources from runtime data directory: {rtDir}')
+			if not (self.importEnumPolicies(rtDir) and
+					self.importAttributePolicies(rtDir) and
+					self.importFlexContainerPolicies(rtDir)):
+				return False
+
+		# Assign the attribute policies 
+		if not self.assignAttributePolicies():
+			return False
+	
+		# Import 
+		if not (self.importConfigDocs() and
+				self.importScripts([self.resourcePath, rtDir])):
+			return False
+
+		# TODO
+		# - modify and simplify import functions
+		# - add test script in /tmp/acme/init
+				
 		if CSE.script.scriptDirectories:
 			if not self.importScripts(CSE.script.scriptDirectories):
 				return False
@@ -97,7 +118,7 @@ class Importer(object):
 	#	Scripts
 	#
 
-	def importScripts(self, path:Optional[str|list[str]] = None) -> bool:
+	def importScripts(self, path:str|list[str] = None) -> bool:
 		"""	Import the ACME script from a directory.
 		
 			Args:
@@ -108,22 +129,27 @@ class Importer(object):
 		countScripts = 0
 
 		# Import
-		if not path:
-			if (path := self.resourcePath) is None:
-				L.logErr('cse.resourcesPath not set')
-				raise RuntimeError('cse.resourcesPath not set')
+		if isinstance(path, str):
 			path = [ path ]
-			for _e in os.scandir(self.resourcePath):
+		scriptPaths = path.copy()
+
+		for p in list(scriptPaths):
+			if not os.path.exists(p):
+				L.isDebug and L.logDebug(f'Import directory for scripts does not exist: {p}')
+				scriptPaths.remove(p)
+				continue
+			# automatically add all subdirectories with the .scripts suffix
+			for _e in os.scandir(p):
 				if _e.is_dir() and _e.name.endswith('.scripts'):
-					path.append(_e.path)
-			self.extendedResourcePath = path	# save for later use
+					scriptPaths.append(_e.path)
+		self.extendedScriptPaths.extend(scriptPaths)	# save for later use
 
 		self._prepareImporting()
 		try:
-			L.isInfo and L.log(f'Importing scripts from directory(s): {path}')
-			if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
+			L.isDebug and L.logDebug(f'Importing scripts from directory(s): {self.extendedScriptPaths}')
+			if (countScripts := CSE.script.loadScriptsFromDirectory(self.extendedScriptPaths)) == -1:
 				return False
-		
+			
 			# Check that there is only one startup script, then execute it
 			match len(scripts := CSE.script.findScripts(meta = _metaInit)):
 				case l if l > 1:
@@ -183,7 +209,7 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing configuration documentation from: {os.path.relpath(path)}')
+		L.isDebug and L.logDebug(f'Importing configuration documentation')
 		
 		# Import the markdown help texts here. Split them in section at each "# name" line.
 		try:
@@ -218,32 +244,26 @@ class Importer(object):
 	#	Attribute Policies
 	#
 
-	def importEnumPolicies(self, path:Optional[str] = None) -> bool:
+	def importEnumPolicies(self, path:str) -> bool:
 		"""	Import the enumeration types policies.
 
 			Args:
-				path: Optional path to a directory from where to import enumeration policies. The default is the *init* directory.
+				path: Path to a directory from where to import enumeration policies.
 			Return:
 				True if the policies were successfully imported, False otherwise.
 		"""
-		countAP = 0
-
-		# Get import path
-		if not path:
-			if (path := self.resourcePath) is None:
-				L.logErr('cse.resourcesPath not set')
-				raise RuntimeError('cse.resourcesPath not set')
+		countEP = 0
 
 		if not os.path.exists(path):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing enumerated data types policies from: {os.path.relpath(path)}')
+		L.isDebug and L.logDebug('Importing enumerated data types policies')
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ep')
 		for fno in filenames:
 			fn = os.path.join(path, fno)
-			L.isInfo and L.log(f'Importing policies: {os.path.relpath(fno)}')
+			L.isDebug and L.logDebug(f'Importing policies: {os.path.basename(fno)}')
 			if os.path.exists(fn):
 				
 				# Read the JSON file
@@ -282,31 +302,28 @@ class Importer(object):
 								enm[i] = enumInterpretation
 
 					self._enumValues[enumName] = enm
+					countEP += 1
 
+
+		L.isDebug and L.logDebug(f'Imported {countEP} enum policies')
 		return True
 
 
-	def importFlexContainerPolicies(self, path:Optional[str] = None) -> bool:
+	def importFlexContainerPolicies(self, path:str) -> bool:
 		"""	Import the attribute and hierarchy policies for flexContainer specializations.
 
 			Args:
-				path: Optional path to a directory from where to import flexContainer policies. The default is the *init* directory.
+				path: Path to a directory from where to import flexContainer policies. 
 			Return:
 				True if the policies were successfully imported, False otherwise.
 		"""
 		countFCP = 0
 
-		# Get import path
-		if not path:
-			if (path := self.resourcePath) is None:
-				L.logErr('cse.resourcesPath not set')
-				raise RuntimeError('cse.resourcesPath not set')
-
 		if not os.path.exists(path):
 			L.isWarn and L.logWarn(f'Import directory for flexContainer policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing flexContainer attribute policies from: {os.path.relpath(path)}')
+		L.isDebug and L.logDebug('Importing flexContainer attribute policies')
 		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
 		for each in filenames:
 			fn = os.path.join(path, each)
@@ -357,37 +374,30 @@ class Importer(object):
 							L.logErr(f'Cannot add flexContainer specialization for type: {tpe}')
 							return False
 
-		
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
 		return True
 
 
-	def importAttributePolicies(self, path:Optional[str] = None) -> bool:
+	def importAttributePolicies(self, path:str) -> bool:
 		"""	Import the resource attribute policies.
 
 			Args:
-				path: Optional path to a directory from where to import attribute policies. The default is the *init* directory.
+				path: Path to a directory from where to import attribute policies.
 			Return:
 				True if the policies were successfully imported, False otherwise.
 		"""
 		countAP = 0
 
-		# Get import path
-		if not path:
-			if (path := self.resourcePath) is None:
-				L.logErr('cse.resourcesPath not set')
-				raise RuntimeError('cse.resourcesPath not set')
-
 		if not os.path.exists(path):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing attribute policies from: {path}')
+		L.isDebug and L.logDebug('Importing attribute policies')
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')
 		for fno in filenames:
 			fn = os.path.join(path, fno)
-			L.isInfo and L.log(f'Importing policies: {fno}')
+			L.isDebug and L.logDebug(f'Importing policies: {fno}')
 			if os.path.exists(fn):
 				
 				# Read the JSON file
@@ -451,7 +461,7 @@ class Importer(object):
 			Return:
 				True if there were no errors during the assignment, False otherwise.
 		"""
-		L.isInfo and L.log(f'Assigning attribute policies to resource types')
+		L.isDebug and L.logDebug('Assigning attribute policies to resource types')
 
 		noErrors = True
 		for ty in ResourceTypes:
