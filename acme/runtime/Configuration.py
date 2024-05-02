@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional, cast
 
 import configparser, argparse, os, os.path, pathlib
+from copy import copy
 import isodate
 from rich.console import Console
 
@@ -65,21 +66,21 @@ documentationLinks = {
 
 _deprecatedSections = (
 	('server.http', 'http'),
-    ('server.http.security', 'http.security'),
-    ('server.http.cors', 'http.cors'), 
-    ('client.mqtt', 'mqtt'),
-    ('client.mqtt.security', 'mqtt.security'),
-    ('cse.resource.acp', 'resource.acp'),
-    ('cse.resource.actr', 'resource.actr'),
-    ('cse.resource.cnt', 'resource.cnt'),
-    ('cse.resource.ts', 'resource.ts'),
-    ('cse.resource.tsb', 'resource.tsb'),
-    ('cse.resource.req', 'resource.req'),
-    ('cse.resource.sub', 'resource.sub'),
-    ('cse.webui', 'webui'),
-    ('cse.console', 'console'),
-    ('cse.textui', 'textui'),
-    ('cse.scripting', 'scripting')
+	('server.http.security', 'http.security'),
+	('server.http.cors', 'http.cors'), 
+	('client.mqtt', 'mqtt'),
+	('client.mqtt.security', 'mqtt.security'),
+	('cse.resource.acp', 'resource.acp'),
+	('cse.resource.actr', 'resource.actr'),
+	('cse.resource.cnt', 'resource.cnt'),
+	('cse.resource.ts', 'resource.ts'),
+	('cse.resource.tsb', 'resource.tsb'),
+	('cse.resource.req', 'resource.req'),
+	('cse.resource.sub', 'resource.sub'),
+	('cse.webui', 'webui'),
+	('cse.console', 'console'),
+	('cse.textui', 'textui'),
+	('cse.scripting', 'scripting')
 )
 """	Deprecated sections. Mapping from old section name to new section name."""
 
@@ -238,22 +239,28 @@ class Configuration(object):
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
-											
 											# Convert csv to list, ignore empty elements
 											converters = {'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
-		config.read_dict({ 'basic.config': {
-								'baseDirectory' 		: Configuration._baseDirectory,			# points to the currenr working directory
-								'moduleDirectory' 		: Configuration._moduleDirectory,		# points to the acme module's directory
-								'initDirectory' 		: Configuration._initDirectory,			# points to the acme/init directory		
-								'hostIPAddress'			: getIPAddress(),						# provide the IP address of the host
+	
+		# Construct the default values
+		_defaults = {	'basic.config': {	'baseDirectory' 		: Configuration._baseDirectory,			# points to the currenr working directory
+							'moduleDirectory' 		: Configuration._moduleDirectory,		# points to the acme module's directory
+							'initDirectory' 		: Configuration._initDirectory,			# points to the acme/init directory		
+							'hostIPAddress'			: getIPAddress(),						# provide the IP address of the host
 
-								'registrarCseHost'		: '127.0.0.1',							# The IP address of the registrar CSE
-								'registrarCsePort'		: 8080,									# The TCP port of the registrar CSE
-								'registrarCseID'		: 'id-in',								# The CSE-ID of the registrar CSE
-								'registrarCseName'		: 'cse-in',								# The resource name of the registrar CSE's CSEBase
-						 }
-					})
+							'registrarCseHost'		: '127.0.0.1',							# The IP address of the registrar CSE
+							'registrarCsePort'		: 8080,									# The TCP port of the registrar CSE
+							'registrarCseID'		: 'id-in',								# The CSE-ID of the registrar CSE
+							'registrarCseName'		: 'cse-in',								# The resource name of the registrar CSE's CSEBase
+						}
+					}
+		# Add environment variables to the defaults
+		_defaults.update({ 'DEFAULT': copy(os.environ) })
+
+		# Set the defaults
+		config.read_dict(_defaults)
+
 		try:
 			if len(config.read( [Configuration._defaultConfigFile, Configuration._argsConfigfile])) == 0 and Configuration._argsConfigfile != C.defaultUserConfigFile:		# Allow 
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._argsConfigfile}')
@@ -634,7 +641,7 @@ class Configuration(object):
 		
 		except configparser.InterpolationMissingOptionError as e:
 			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
-			Configuration._print('\n[red]Please check the section [bold](basic.config)[/bold] in the configuration file.\n')
+			Configuration._print('\n[red]Please provide the option in the section [bold](basic.config)[/bold] in the configuration file or set an environment variable with that name.\n')
 			return False
 
 		except Exception as e:	# about when findings errors in configuration
