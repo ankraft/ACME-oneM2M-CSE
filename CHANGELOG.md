@@ -11,14 +11,22 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added installation of the ACME CSE via the PyPi package manager. The package is available under the name *acmecse*.
+- [CSE] Added support for interpolating environment variables in configuration settings. This is useful when running the CSE in a Docker container, where parts of the configuration settings can be set via environment variables.
+- [CSE] Added support for the *--base-directory* or *-dir* command line argument to specify the root directory for the configuration file and for runtime data such as *data*, *logs*, temporary files, and a secondary *init* directory.
 
 ### Experimental
 
 ### Changed
 - [CSE] Changed the values for the [SIM] and [MobileNetwork] ManagementObject specializations to adapt the changes in TS-0022.
+- [CSE] Changed the location for the *init* directory. It is now located in the *acme* package directory. This is a breaking change.
+- [CSE] Changed the location for the *acme.ini.default* configuration file. It is now located in the *acme/init* directory. This is a breaking change.
+- [CSE] Improved the onboarding manager to allow for more flexible onboarding configurations and improved the  interpolation support.
+- [CONSOLE] Improved the statistics view layout.
 
 ### Fixed
-- [CSE] Fixed wrong examples and onboard defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
+- [CSE] Fixed wrong examples and onboarding defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
+
 
 ### Removed
 

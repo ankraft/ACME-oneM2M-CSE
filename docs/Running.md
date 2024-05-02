@@ -35,7 +35,7 @@ The CSE can also be started with a specific configuration file:
 	python3 -m acme --config <filename>
 
 
-### Starting with a Specific Base Directory
+### Running with a Different Base Directory
 
 The CSE can also be started with a specific base directory:
 
@@ -47,7 +47,11 @@ The CSE can also be started with a specific base directory:
 
 	python3 -m acme -dir <directory>
 
-This will use the specified directory as the root directory for runtime data such as data, logs, and temporary files. The configuration file *acme.ini*is expected to be in the specified directory, or it will be created there if it does not exist.
+This will use the specified directory as the root directory for runtime data such as *data*, *logs*, and *temporaryÜ files. The configuration file *acme.ini*is expected to be in the specified directory, or it will be created there if it does not exist.
+
+#### Secondary *init* Directory
+
+A base directory may also host a secondary *init* directory that is used for importing further resources such as attribute definitions and scripts. Resources in this directory are automatically imported when the CSE starts, and processed after the resources in the primary *init* directory have been imported and processed.
 
 ### Command Line Arguments
 
