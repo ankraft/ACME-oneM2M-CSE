@@ -170,6 +170,7 @@ class Configuration(object):
 
 		# resolve the args, if any
 		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args and args.configfile else C.defaultUserConfigFile
+		Configuration._argsBaseDirectory		= args.rtDirectory if args and 'rtDirectory' in args else None	# baseDirectory
 		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
 		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
@@ -183,7 +184,6 @@ class Configuration(object):
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
 		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
 		Configuration._argsRunAsHttpWsgi		= args.httpWsgi if args and 'httpWsgi' in args else None
-		Configuration._argsBaseDirectory	= args.rtDirectory if args and 'rtDirectory' in args else None	# baseDirectory
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 		Configuration._argsTextUI				= args.textui if args and 'textui' in args else None
 		Configuration._argsWsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
@@ -244,7 +244,8 @@ class Configuration(object):
 										  )
 	
 		# Construct the default values
-		_defaults = {	'basic.config': {	'baseDirectory' 		: Configuration._baseDirectory,			# points to the currenr working directory
+		_defaults = {	'basic.config': {	
+							'baseDirectory' 		: Configuration._baseDirectory,			# points to the currenr working directory
 							'moduleDirectory' 		: Configuration._moduleDirectory,		# points to the acme module's directory
 							'initDirectory' 		: Configuration._initDirectory,			# points to the acme/init directory		
 							'hostIPAddress'			: getIPAddress(),						# provide the IP address of the host

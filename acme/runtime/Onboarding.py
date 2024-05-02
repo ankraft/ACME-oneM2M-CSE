@@ -11,7 +11,7 @@
 
 from __future__ import annotations 
 from typing import List, cast, Tuple, Optional
-import os
+import os, re
 from datetime import datetime
 
 from InquirerPy import inquirer
@@ -35,7 +35,7 @@ _iniValues = {
 		'cseName': 'cse-in',
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
-		'cseHost': '{hostIPAddress}',
+		'cseHost': '${hostIPAddress}',
 		# 'cseHost': NetworkTools.getIPAddress(),
 		'httpPort': 8080,
 
@@ -48,14 +48,14 @@ _iniValues = {
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
 		# 'cseHost': NetworkTools.getIPAddress(),
-		'cseHost': '{hostIPAddress}',
+		'cseHost': '${hostIPAddress}',
 		'httpPort': 8081,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
 		# 'registrarCseHost': NetworkTools.getIPAddress(),
-		'registrarCseHost': '{hostIPAddress}',
+		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8080,
 		'registrarCseID': 'id-in',
 		'registrarCseName': 'cse-in',
@@ -66,14 +66,14 @@ _iniValues = {
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
 		# 'cseHost': '127.0.0.1',
-		'cseHost': '{hostIPAddress}',
+		'cseHost': '${hostIPAddress}',
 		'httpPort': 8082,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
 		# 'registrarCseHost': '127.0.0.1',
-		'registrarCseHost': '{hostIPAddress}',
+		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8081,
 		'registrarCseID': 'id-mn',
 		'registrarCseName': 'cse-mn',
@@ -94,6 +94,18 @@ def _print(msg:str|Rule = '\n') -> None:
 		Console().print(msg, highlight = False)	# Print error message to console
 		if isinstance(msg, Rule):
 			Console().print('\n')
+
+_interpolationVariable = re.compile(r'\$\{([a-zA-Z0-9_]+)\}')
+def _containsVariable(value:str) -> bool:
+	""" Check if the value contains an interpolation variable.
+	
+		Args:
+			value: The value to check.
+		
+		Return:
+			True if the value contains an interpolation variable, False otherwise.
+	"""
+	return _interpolationVariable.search(value) is not None
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
@@ -173,7 +185,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 						message = 'CSE-ID:',
 						default = _iniValues[cseType]['cseID'],
 						long_instruction = 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
-						validate = lambda result: isValidID(result),
+						validate = lambda result: isValidID(result) or _containsVariable(result),
 						amark = '✓', 
 						invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 					 ).execute(),
@@ -181,7 +193,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							message = 'Name of the CSE:',
 							default = _iniValues[cseType]['cseName'],
 							long_instruction = 'This is the resource name of the CSEBase.',
-							validate = lambda result: isValidID(result),
+							validate = lambda result: isValidID(result) or _containsVariable(result),
 							amark = '✓', 
 							invalid_message = 'Invalid CSE name. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 						).execute(),
@@ -189,7 +201,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							message = 'Admin Originator:',
 							default = _iniValues[cseType]['adminID'],
 							long_instruction = 'The originator who has admin access rights to the CSE and the CSE\'s resources.',
-							validate = lambda result: isValidID(result) and result.startswith('C'),
+							validate = lambda result: (isValidID(result) and result.startswith('C')) or _containsVariable(result),
 							amark = '✓', 
 							invalid_message = 'Invalid Originator ID. Must start with "C", must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 						).execute(),
@@ -197,15 +209,15 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 								message = 'Network interface to bind to (IP address):',
 								default = _iniValues[cseType]['networkInterface'],
 								long_instruction = 'The network interface to listen for requests. Use "0.0.0.0" for all interfaces.',
-								validate = NetworkTools.isValidateIpAddress,
+								validate = lambda result: NetworkTools.isValidateIpAddress or _containsVariable(result),
 								amark = '✓', 
 								invalid_message = 'Invalid IPv4 or IPv6 address.',
 							).execute(),
 			'cseHost': inquirer.text(
 							message = 'CSE host address (IP address or host name):',
 							default = _iniValues[cseType]['cseHost'],
-							long_instruction = f'The IP address, or "{{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()}).',
-							validate =  lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or result == '{hostIPAddress}',
+							long_instruction = f'The IP address, or "${{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()}).',
+							validate =  lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or _containsVariable(result),
 							amark = '✓', 
 							invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 						).execute(),
@@ -213,7 +225,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							message = 'CSE host http port:',
 							default = _iniValues[cseType]['httpPort'],
 							long_instruction = 'TCP port at which the CSE is reachable for requests.',
-							validate = NetworkTools.isValidPort,
+							validate = lambda result: NetworkTools.isValidPort or _containsVariable(result),
 							min_allowed = 1,
         					max_allowed = 65535,
 							amark = '✓',
@@ -231,7 +243,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Registrar CSE-ID:',
 									default = _iniValues[cseType]['registrarCseID'],
 									long_instruction = 'This is the CSE-ID of the remote (Registrar) CSE.',
-									validate = lambda result: isValidID(result),
+									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
 									invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 								).execute(),
@@ -239,16 +251,16 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Name of the Registrar CSE:',
 									default = _iniValues[cseType]['registrarCseName'],
 									long_instruction = 'The resource name of the remote (Registrar) CSE.',
-									validate = lambda result: isValidID(result),
+									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
 									invalid_message = 'Invalid CSE Name. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
 								).execute(),
 			'registrarCseHost':	inquirer.text(
 									message = 'The Registrar CSE\' IP address / host name:',
 									default = _iniValues[cseType]['registrarCseHost'],
-									long_instruction = f'The IP address / host name of the remote (Registrar) CSE, or "{{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()})',
+									long_instruction = f'The IP address / host name of the remote (Registrar) CSE, or "${{hostIPAddress}}" for the current value ({NetworkTools.getIPAddress()})',
 
-									validate = lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or result == '{hostIPAddress}',
+									validate = lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or _containsVariable(result),
 									amark = '✓', 
 									invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 								).execute(),
@@ -256,7 +268,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Registrar CSE\' host http port:',
 									default = _iniValues[cseType]['registrarCsePort'],
 									long_instruction = 'The TCP port of the remote (Registrar) CSE.',
-									validate = NetworkTools.isValidPort,
+									validate = lambda result: NetworkTools.isValidPort or _containsVariable(result),
 									min_allowed = 1,
 									max_allowed = 65535,
 									amark = '✓',
@@ -357,7 +369,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							default = 5432,
 							long_instruction = 'The port number of the PostgreSQL database server.',
 							amark = '✓', 
-							validate = NetworkTools.isValidPort,
+							validate = lambda result: NetworkTools.isValidPort or _containsVariable(result),
 							min_allowed = 1,
 							max_allowed = 65535,
 						).execute(),
