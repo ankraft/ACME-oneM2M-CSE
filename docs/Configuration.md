@@ -20,7 +20,7 @@ settings in the configuration file.
 
 **Changes should only be done to a copy of the default configuration file.**
 
-A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, 
+A default configuration file is provided with the file [acme.ini.default](../acme/init/acme.ini.default). Don't make changes to this file, 
 but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, 
 but must then specify it with the *--config* command line argument when running the 
 (see [Running the CSE](Running.md#running-the-cse)).
@@ -31,24 +31,51 @@ All other settings are read from the default config file *acme.ini.default*.
 If the specified or the default *acme.ini* could not be found then an interactive procedure is started to generate a file
 with basic configuration settings. You can add further configurations if necessary by copying sections and settings from *acme.ini.default*.
 
-### Interpolating Configuration Settings
+### Interpolation of Configuration Settings
 
 In addition to assigning individual values for configurations settings you can use
 [settings interpolation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) which allows you to
 reference settings from the same or from other sections. The syntax to denote a value from a section is ```${section:option}```.
 
-### Built-in Configuration Macros
+### Built-in Configuration Settings
 
 #### ${basic.config:baseDirectory}
 
-A built-in configuration setting that points to the base-directory of the CSE installation can be 
-referenced by the interpolation ```${basic.config:baseDirectory}```.
+A built-in configuration setting that points to the base-directory of the CSE's data directory. This setting is either the current working directory or the directory that is specified with the command line argument *--base-directory* or *-dir*.
 
 Example:
 
 ```ini
 [cse]
 resourcesPath=${basic.config:initDirectory}
+```
+
+#### ${basic.config:moduleDirectory}
+
+A built-in configuration setting that points to the acme module's directory.
+
+#### ${basic.config:initDirectory}
+
+A built-in configuration setting that points to the acme/init directory.
+
+#### ${basic.config:hostIPAddress}
+
+A built-in configuration setting that provides the IP address of the CSE host.
+
+
+### Interpolation of Environment Variables
+
+You can also use environment variables in the configuration file. The syntax is also `${VARIABLE_NAME}`.
+
+Environment variables can be used in the configuration file to provide sensitive information like passwords or API keys. 
+
+Another useful application is to provide the IP address of a Docker host to the CSE. This can be done, for example, by setting the environment variable `DOCKER_HOST_IP` and using it in the configuration file.
+
+Example:
+
+```ini
+[basic.config]
+cseHost=${DOCKER_HOST_IP}
 ```
 
 

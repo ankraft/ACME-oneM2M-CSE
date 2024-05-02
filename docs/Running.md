@@ -4,17 +4,52 @@
 
 ## Installation and Configuration
 
-Please refer to the [Installation](Installation.md) and [Configuration](Configuration.md) documentation for
-installing the CSE and setting up the CSE's configuration. 
+Please refer to the [Installation](Installation.md) and [Configuration](Configuration.md) documentations for installing the CSE and setting up the CSE's configuration. 
 
 ## Running the CSE
 
 You can start the CSE by simply running it from the command line:
 
+**For package installation:**
+
+	acmecse
+
+**For manual installation:**
+
 	python3 -m acme
 
 In this case the [configuration file](Configuration.md) *acme.ini* configuration file must be in the same directory. An [interactive
 configuration process](Installation.md#first_setup) is started if the configuration file is not found.
+
+
+### Starting with a Specific Configuration File
+
+The CSE can also be started with a specific configuration file:
+
+**For package installation:**
+
+	acmecse --config <filename>
+
+**For manual installation:**
+
+	python3 -m acme --config <filename>
+
+
+### Starting with a Specific Base Directory
+
+The CSE can also be started with a specific base directory:
+
+**For package installation:**
+
+	acmecse -dir <directory>
+
+**For manual installation:**
+
+	python3 -m acme -dir <directory>
+
+This will use the specified directory as the root directory for runtime data such as data, logs, and temporary files. The configuration file *acme.ini*is expected to be in the specified directory, or it will be created there if it does not exist.
+
+### Command Line Arguments
 
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 

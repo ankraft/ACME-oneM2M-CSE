@@ -4,12 +4,27 @@
 
 ### Python
 
-ACME requires **Python 3.10** or newer. Install it with your favorite package manager or as part of a virtual environment manager.
+ACME requires **Python 3.10** or newer. Install it with your favorite package manager or as part of a virtual environment.
 
 You may consider to use a virtual environment manager like pyenv + virtualenv (see [this HowTo](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/137) or [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 
 <a name="first_setup"></a>
 ## Installation and First Setup
+
+### Using pip
+
+Run *pip* to install the ACME CSE from the Python Package Index (PyPI):
+
+	python -m pip install acmecse
+
+This will install the latest version of the ACME CSE and all required dependencies. 
+
+You can also upgrade to the latest version by running:
+
+	python -m pip install --upgrade acmecse
+
+
+### Manual Installation
 
 1. Install the ACME CSE by cloning the repository, or by downloading the [latest](https://github.com/ankraft/ACME-oneM2M-CSE/releases/latest) release package, unpacking it, and copying the whole distribution to a new directory.
 
@@ -25,37 +40,47 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 	An alternative is to let ACME handle the installation automatically when running it for the first time (see below).
 
 
+### First Setup Procedure
+
 1. Run the CSE for the first time.  
 You can start the CSE by simply running it from the command line:
+
+	**For package installation:**
+
+		acmecse
+	
+	**For manual installation:**
 
 		python3 -m acme
 
 	Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
 
-    If you have not installed the required packages manually, ACME will ask you to install them now. This can be done by ACME automatically, or you can do it manually (see above).
+    If you have not installed the required packages during the installation ACME will ask you to install them now. This can be done by ACME automatically, or you can do it manually (see above).
 
-	If no configuration file is found then an interactive configuration process is started. The configuration is saved to a configuration file. e.g. *acme.ini* by default.  
-&nbsp;  
-![](images/bootstrapConfig.gif)
+	If no configuration file is found in the *base directory* then an interactive configuration process is started. The configuration is saved to a configuration file. e.g. *acme.ini* by default. 
+
+	The *base directory* by default is the directory where the CSE is started from. This directory can be changed by the *--base-directory* (or *-dir*) command line argument to a different directory. 
+
+	![](images/bootstrapConfig.gif)
 
 	After the configuration is saved, the CSE is started. with this configuration.
 
 1.  After terminating the CSE again you can edit that configuration file and add more settings if necessary.
 	There are a lot of individual settings to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
-	See the [Configuration](docs/Configuration.md) documentation for further details, and the defaults configuration file [acme.ini.default](../acme.ini.default).
+	See the [Configuration](docs/Configuration.md) documentation for further details, and the defaults configuration file [acme.ini.default](../acme/init/acme.ini.default).
 
 
 ---
 
 ## Database Setup
 
-The ACME CSE uses a database to store resources. This section describes the default database and how to set up a PostgreSQL database.
+The ACME CSE uses a database to store resources and other runtime data. This section describes the default database and how to set up a connection to a PostgreSQL database.
 
 ### TinyDB and In-Memory
 
 The default database is a simple but fast file-based database using the [TinyDB](https://github.com/msiemens/tinydb) library. By default, it requires no additional setup.
 
-The database files are stored by default in the directory *./data* (which can be changed by a [configuration setting](Configuration.md#databasetinydb---tinydb-database-settings)). 
+The database files are stored by default in the directory *{baseDirectory}/data* (which can be changed by a [configuration setting](Configuration.md#databasetinydb---tinydb-database-settings)). 
 
 TinyDB also provides a memory-based database that might be useful for testing and development purposes, or if you want to start with a clean database each time you start the CSE.
 
@@ -85,7 +110,7 @@ For example, you can use the following commands to create a new database named *
 		databaseType=postgresql
 
 1. Run the CSE.  
-The database schema and tables are created automatically by the CSE when it starts and connects for the first time. 
+The database schema, tables and other structures are created automatically by the CSE when it starts and connects for the first time. 
 
 
 #### Disabling PostgreSQL Support
