@@ -623,7 +623,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	while True: 	# Timeout?
 		try:
 			if not DateUtils.waitFor(timeout = 60.0, condition = lambda:rqi in mqttHandler.responses):
-				print('MQTT Timeout')
+				console.print('MQTT Timeout')
 				return None, 5103
 			message = mqttHandler.responses.pop(rqi)
 		except:
@@ -709,11 +709,11 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 				setLastHeaders(fillLastHeaders(resp))
 				return resp['pc'] if 'pc' in resp else None, resp['rsc']
 			else:
-				print(response)
-				print('.', end='', flush=True)
+				console.print(response)
+				console.print('.', end='', flush=True)
 				return None
 	except TimeoutError:	# expected
-		print('timeout')
+		console.print('timeout')
 		pass
 	return None
 
@@ -1155,6 +1155,16 @@ def isSPRelative(uri:str) -> bool:
 	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
+def getIPAddress() -> str:
+	"""	Get the IP address of the local machine.
+
+		Return:
+			String with the IP address.
+	"""
+	from acme.helpers.NetworkTools import getIPAddress as _getIPAddress
+	return _getIPAddress()
+
+
 def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
 	global testCaseNames
 
@@ -1257,6 +1267,12 @@ match PROTOCOL:
 # It checks whether there actually is a CSE running.
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
+
+# Set the TESTHOSTIP to the local IP address if it is not set
+if TESTHOSTIP is None:
+	TESTHOSTIP = getIPAddress()
+NOTIFICATIONSERVER = NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
+NOTIFICATIONSERVERW = NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
 
 if UPPERTESTERENABLED:
 	try:

@@ -45,6 +45,8 @@ match BINDING:
 #	General Configurations
 #
 
+
+
 SPID 					= 'acme.example.com'# Service Provide ID
 APPID					= 'NMyApp1Id'		# Application ID
 ORIGINATOR				= 'CAdmin'			# Admin originator
@@ -54,6 +56,8 @@ ORIGINATORNotifResp		= 'CTester'			# Originator for Notification responses
 RECONFIGURATIONENABLED	= True				# The CSE allowes for reconfigurations via Upper Tester
 UPPERTESTERENABLED		= True				# Enable or Disable Upper Tester extensions
 RELEASEVERSION			= '4'				# Supported Release Version for requests & registrations
+TESTHOSTIP				= None				# IP address of the host running the tests. 
+											# If None, the IP address is determined automatically
 
 
 #
@@ -142,8 +146,8 @@ REMOTEORIGINATOR	= 'CAdmin'
 #
 
 NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= f'{NOTIFICATIONPROTOCOL}://localhost:{NOTIFICATIONPORT}' 
-NOTIFICATIONSERVERW	= f'{NOTIFICATIONPROTOCOL}://localhost:6666'
+NOTIFICATIONSERVER	= f'{NOTIFICATIONPROTOCOL}://${{TESTHOSTIP}}:{NOTIFICATIONPORT}' 
+NOTIFICATIONSERVERW	= f'{NOTIFICATIONPROTOCOL}://${{TESTHOSTIP}}:6666'
 NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 
 
