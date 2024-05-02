@@ -1,7 +1,10 @@
-recursive-include init *
-recursive-include webui *
-recursive-include docs *
-include acme.ini.default
+recursive-include acmecse/init *
+recursive-include acmecse/webui *
+recursive-include acmecse/textui *
 include CHANGELOG.md
 include LICENSE
 include README.md
+include tools/pypi/README.md
+global-exclude */__pycache__/*
+global-exclude *.pyc
+global-exclude .DS_Store
