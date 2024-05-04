@@ -1,0 +1,174 @@
+site_name: ACME oneM2M CSE
+
+copyright: This work is licensed under the <a href="https://opensource.org/license/bsd-3-clause" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">3-Clause BSD License</a>.
+
+repo_url: https://github.com/ankraft/ACME-oneM2M-CSE
+repo_name: ACME-oneM2M-CSE
+extra_css:
+  - stylesheets/extra.css
+
+theme:
+  name: material
+  logo: 'images/acme_sm.png'
+  favicon: 'images/favicon.png'
+  icon:
+    repo: fontawesome/brands/github 
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: acmecse-light
+      primary: grey
+      accent: red
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: acmecse-dark
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to system preference
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    #- navigation.footer
+    - content.footnote.tooltips
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.instant.prefetch
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.integrate
+
+plugins:
+  # - tags:
+  #     tags_file: home/tags.md
+  - search
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: slide
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      skip_classes:
+        - custom-skip-class-name
+      auto_caption: true
+      caption_position: bottom
+      background: white
+      shadow: true
+
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+     alternate_style: true
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+
+##############################################################################
+
+extra:
+  social:
+#     - icon: fontawesome/solid/rss
+#       link: https://recipes.onem2m.org/feed_rss_created.xml 
+#       name: Recipes RSS Feed
+    - icon: fontawesome/brands/github
+      link: https://github.org/ankraft/ACME-oneM2M-CSE
+      name: ACME Git Repository
+    - icon: fontawesome/brands/mastodon
+      link: https://mstdn.social/@acmeCSE
+      name: ACME CSE @ Mastodon
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/2wEkwPyP
+      name: ACME Discord Server
+
+nav:
+  - Home:
+    - 'index.md'
+    - 'Supported Features': 'home/Supported.md'
+    - 'LICENSE': 'home/License.md'
+    - 'Contact': kkk
+  - 'Setup & Running':
+    - 'Installation': 'setup/Installation.md'
+    - 'Running': 'setup/Running.md'
+    - 'Database Setup': 'setup/Database.md'
+    - 'Configuration':
+      - 'Introduction': 'setup/Configuration-introduction.md'
+      - 'Basic Configuration': 'setup/Configuration-basic.md'
+      - 'CSE General Settings': 'setup/Configuration-cse.md'
+      - 'Databases': 'setup/Configuration-database.md'
+      - 'Logging': 'setup/Configuration-logging.md'
+      - 'HTTP Binding': 'setup/Configuration-http.md'
+      - 'MQTT Binding': 'setup/Configuration-mqtt.md'
+      - 'WebSocket Binding': 'setup/Configuration-ws.md'
+      - 'Scripting': 'setup/Configuration-scripting.md'
+      - 'User Interfaces': 'setup/Configuration-uis.md'
+      - 'oneM2M Resources': 'setup/Configuration-resources.md'
+    - 'User Interfaces':
+      - 'Console UI': 'setup/Console.md'
+      - 'Text UI': 'setup/TextUI.md'
+      - 'Web UI': 'setup/WebUI.md'
+    - 'Additional Platforms':
+      - 'Docker': 'setup/Docker.md'
+      - 'Raspberry Pi': 'setup/RaspberryPi.md'
+  - 'Development': 
+      - 'development/Development.md'
+      - 'Unit Tests': 'development/UnitTests.md'
+      - 'Scripting':
+        - 'ACMEScript': 'development/ACMEScript.md'
+         # - 'Meta-Tags': 'development/ACMEScript-metatags.md'
+         # - 'Running Scripts (last)': 'development/xxx.md'
+  #   - 'setup/Installation.md'
+  #   - 'Something': lkjklj
+  #   - 'Scripting':
+  #     - 'ddd': 'setup/Installation.md'
+  #     - 'Funtions': 'setup/Installation.md'
+  #     - 'Meta-Tags': 'setup/Installation.md'
+  #   - Roadmap
+  #   - Contributing
+  - 'HowTos':
+      - 'Raspberry Pi': 'setup/RaspberryPi.md'
+
+
+  - 'Help': 
+    - 'FAQ': 'help/FAQ.md'
+    - 'Contributing': 'help/Contributing.md'
+#  - 'Scripting':
+
