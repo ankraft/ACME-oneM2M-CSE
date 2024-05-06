@@ -36,7 +36,6 @@ _iniValues = {
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
 		'cseHost': '${hostIPAddress}',
-		# 'cseHost': NetworkTools.getIPAddress(),
 		'httpPort': 8080,
 
 		'logLevel': 'debug',
@@ -47,14 +46,12 @@ _iniValues = {
 		'cseName': 'cse-mn',
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
-		# 'cseHost': NetworkTools.getIPAddress(),
 		'cseHost': '${hostIPAddress}',
 		'httpPort': 8081,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
-		# 'registrarCseHost': NetworkTools.getIPAddress(),
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8080,
 		'registrarCseID': 'id-in',
@@ -65,14 +62,12 @@ _iniValues = {
 		'cseName': 'cse-asn',
 		'adminID': 'CAdmin',
 		'networkInterface': '0.0.0.0',
-		# 'cseHost': '127.0.0.1',
 		'cseHost': '${hostIPAddress}',
 		'httpPort': 8082,
 
 		'logLevel': 'debug',
 		'databaseInMemory': 'False',
 
-		# 'registrarCseHost': '127.0.0.1',
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8081,
 		'registrarCseID': 'id-mn',
