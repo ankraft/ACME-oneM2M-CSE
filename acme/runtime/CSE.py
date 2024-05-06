@@ -208,7 +208,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""
 	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
-	global timeSeries, validator, webSocketServers
+	global timeSeries, validator, webSocketServer
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator
