@@ -1919,7 +1919,8 @@ class ScriptManager(object):
 	
 
 	def findScripts(self, name:Optional[str] = None,
-						  meta:Optional[Union[str, list[str]]] = None) -> list[PContext]:
+						  meta:Optional[Union[str, list[str]]] = None,
+						  ignoreCase:bool = False) -> list[PContext]:
 		""" Find scripts by a filter.
 		
 			Filters are and-combined.
@@ -1936,7 +1937,7 @@ class ScriptManager(object):
 
 		# Find all the scripts by with simple match
 		if name:
-			result = [ script for script in self.scripts.values() if (n := script.scriptName) is not None and simpleMatch(n, name) ]
+			result = [ script for script in self.scripts.values() if (n := script.scriptName) is not None and simpleMatch(n, name, ignoreCase = ignoreCase) ]
 		else:
 			result = list(self.scripts.values())
 
@@ -2042,7 +2043,8 @@ class ScriptManager(object):
 
 	def run(self, scriptName:str, 
 				  arguments:Optional[list[str]|str] = '',
-				  metaFilter:Optional[list[str]] = []) -> Tuple[bool, SSymbol]:
+				  metaFilter:Optional[list[str]] = [],
+				  ignoreCase:Optional[bool] = False) -> Tuple[bool, SSymbol]:
 		""" Run a script by its name (only in the foreground).
 
 			Args:
@@ -2054,7 +2056,7 @@ class ScriptManager(object):
 				The result of the script run in a tuple. Boolean indicating success, and an optional result.
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {arguments if arguments else "None"}, meta: {metaFilter}')
-		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter)) != 1:
+		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter, ignoreCase = ignoreCase)) != 1:
 			return (False, SSymbol(string = L.logWarn(f'Script not found: "{scriptName}"')))
 		script = scripts[0]
 		if self.runScript(script, arguments = arguments, background = False):

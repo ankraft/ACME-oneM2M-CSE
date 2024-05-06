@@ -455,7 +455,7 @@ class HttpServer(object):
 		# Handle special commands
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
-			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
+			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ], ignoreCase = True))[0]:
 				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, str(res[1]))
 			
 			if res[1].type in [SType.tList, SType.tListQuote]:

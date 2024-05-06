@@ -422,7 +422,7 @@ def isBase64(value:str) -> bool:
 	return True
 
 
-def simpleMatch(st:str, pattern:str, star:Optional[str] = '*') -> bool:
+def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool = False) -> bool:
 	r"""	Simple string match function. 
 
 		This class supports the following expression operators:
@@ -452,6 +452,7 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*') -> bool:
 			st: string to test
 			pattern: the pattern string
 			star: optionally specify a different character as the star character
+			ignoreCase: ignore case in the comparison
 		
 		Return:
 			Boolean indicating a match.
@@ -532,36 +533,43 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*') -> bool:
 			if stIndex > stLen:
 				return False
 
-			# Match exactly one character, if there is one left
-			if p == '?':
-				if stIndex >= stLen:
-					return False
-				continue
-			
-			# Match zero or more characters
-			if p == star:
-				patternIndex += 1
-				if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
-					return True
-				return _simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+			match p:
+				# Match exactly one character, if there is one left
+				case '?':
+					if stIndex >= stLen:
+						return False
+					continue
 
-			if p == '+':
-				patternIndex += 1
-				if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
-					return True
-				return _simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+				# Match zero or more characters
+				case p if p == star:
+					patternIndex += 1
+					if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
+						return True
+					return _simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+				
+				# Match one or more characters
+				case '+':
+					patternIndex += 1
+					if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
+						return True
+					return _simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
 
-			# Literal match with the following character
-			if p == '\\':
-				patternIndex += 1
-				p = pattern[patternIndex]
-				# Fall-through
-			
-			# Literall match 
+				# Literal match with the following character
+				case '\\':
+					patternIndex += 1
+					p = pattern[patternIndex]
+					# Fall-through !
+
+			# Literall match. Return False if a single character does not match
 			if stIndex < stLen:
-				if p != st[stIndex]:
-					return False
-		
+				match ignoreCase:
+					case True:
+						if p.casefold() != st[stIndex].casefold():
+							return False
+					case False:
+						if p != st[stIndex]:
+							return False
+
 		# End of matches
 		return stIndex == stLen-1
 	

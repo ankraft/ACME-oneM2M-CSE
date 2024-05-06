@@ -22,6 +22,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Changed the location for the *init* directory. It is now located in the *acme* package directory. This is a breaking change.
 - [CSE] Changed the location for the *acme.ini.default* configuration file. It is now located in the *acme/init* directory. This is a breaking change.
 - [CSE] Improved the onboarding manager to allow for more flexible onboarding configurations and improved the  interpolation support.
+- [CSE] Made Upper Tester commands case-insensitive.
 - [CONSOLE] Improved the statistics view layout.
 
 ### Fixed
