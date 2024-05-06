@@ -26,6 +26,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed wrong examples and onboarding defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
+- [database] Improved the reconnect handling for the PostgreSQL database in case of a lost connection.
 
 
 ### Removed

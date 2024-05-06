@@ -17,7 +17,7 @@ from typing import Optional, Callable, Sequence, Any, Tuple
 
 from psycopg2 import connect, Error
 from psycopg2.extras import Json as PsyJson
-from psycopg2.extensions import cursor as PsyCursor
+from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 
 from .DBBinding import DBBinding
 from ..etc.Types import JSON, ResourceTypes
@@ -79,28 +79,15 @@ class PostgreSQLBinding(DBBinding):
 		self.dbSchema = dbSchema
 		"""	The schema to use in the database. """
 
-		# Connect to the database
-		try:
-			L.isDebug and L.logDebug('Connecting to database')
-			self.dbConnection = connect(
-				database = self.dbDatabase,
-				user = self.dbUser,
-				password = self.dbPassword,
-				host = self.dbHost,
-				port = self.dbPort,
-				options = f'-c search_path={self.dbSchema}'	# schema path
-			)
-			self.dbConnection.autocommit = True
-			L.isDebug and L.logDebug(f'Connected to database: {self.dbConnection}')
+		self.dbConnection:Optional[PsyConnection] = None
+		"""	The database connection object. """
 
-		except Error:
-			L.logErr(f'Error connecting to postgreSQL database at {self.dbHost}:{self.dbPort} as "{self.dbUser}" with database "{self.dbDatabase}"')
-			raise 
+		# Connect to the database
+		self._checkOpenConnection()
 
 		# Create and upgrade the tables if necessary
 		self.createTables()
 		self.upgradeTables()
-		self.prepareStatements()
 	
 
 	def closeDB(self) -> None:
@@ -238,6 +225,9 @@ class PostgreSQLBinding(DBBinding):
 			operations that can be performed on the database. This includes inserting,
 			updating, and deleting resources, identifiers, child resources, and
 			subscriptions.
+
+			Note that prepared statements are only usable within the same connection.
+			Therefore, this method should be called after the connection is established.
 		"""
 		L.isDebug and L.logDebug('Preparing SQL statements')
 		with self.dbConnection.cursor() as cur:
@@ -436,6 +426,33 @@ class PostgreSQLBinding(DBBinding):
 					 WHERE ri = $1;
 			''')
 
+	
+	def _checkOpenConnection(self) -> None:
+		"""	Check if the database connection is open.
+
+			Try to reconnect if the connection is closed.
+
+		"""
+		if not self.dbConnection or self.dbConnection.closed:
+			try:
+				L.isDebug and L.logDebug('Reconnecting to database')
+				self.dbConnection = connect(
+					database = self.dbDatabase,
+					user = self.dbUser,
+					password = self.dbPassword,
+					host = self.dbHost,
+					port = self.dbPort,
+					options = f'-c search_path={self.dbSchema}'	# schema path
+				)
+				self.dbConnection.autocommit = True
+				L.isDebug and L.logDebug(f'Reconnected to database: {self.dbConnection}')
+			except Error:
+				L.logErr(f'Error reconnecting to postgreSQL database at {self.dbHost}:{self.dbPort} as "{self.dbUser}" with database "{self.dbDatabase}"')
+				raise
+
+			# Prepare the statements (again)
+			self.prepareStatements()
+
 
 	def _executePrepared(self, statement:str, args:Tuple, closure:Optional[Callable] = None) -> Any:
 		"""	Execute a prepared statement.
@@ -456,6 +473,9 @@ class PostgreSQLBinding(DBBinding):
 				The result of the closure, if one is provided, or True if no closure is provided.
 		"""
 		try:
+			if self.dbConnection.closed:
+				self.co
+
 			with self.dbConnection.cursor() as cursor:
 				cursor.execute(f'EXECUTE {statement}', args)
 				if closure:
