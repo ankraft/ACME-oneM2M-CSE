@@ -474,7 +474,7 @@ class PostgreSQLBinding(DBBinding):
 		"""
 		try:
 			if self.dbConnection.closed:
-				self.co
+				self._checkOpenConnection()
 
 			with self.dbConnection.cursor() as cursor:
 				cursor.execute(f'EXECUTE {statement}', args)
