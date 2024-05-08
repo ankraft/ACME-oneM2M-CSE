@@ -1,4 +1,4 @@
-# ACMEScript
+# ACMEScript - Introduction
 
 The ACME CSE supports a lisp-based scripting language, called ACMEScript, that can be used to configure, execute functions, and control certain aspects of the ACME CSE:
 
@@ -27,7 +27,7 @@ An s-expression is a list of symbols that represent either a value or another s-
 	(print (+ 1 (/ 8 4)))  ;; prints 3
 	```
 
-## Data Types
+### Data Types
 
 The following data types are supported by ACMEscript:
 
@@ -40,7 +40,7 @@ The following data types are supported by ACMEscript:
 - nil: An empty list or non-value
 
 
-## Return Values
+### Return Values
 
 Every function and s-expression returns a value. This is usually the function result, but when a list contains multiple s-expressions that are evaluated, then only the last s-expression's result is returned.
 
@@ -52,7 +52,7 @@ Every function and s-expression returns a value. This is usually the function re
 	```
 
 
-## Variables and Function Scopes
+### Variables and Function Scopes
 
 Variables are global to a script execution. Variables that are defined globally and that are updated in a function call are updated globally. Variables that are not defined globally but are defined in a function's scope do only exist in the scope of the function and sub-functions calls.
 
@@ -64,13 +64,13 @@ Variable names are case-sensitive.
 
 
 
-## Comments
+### Comments
 
 Comments start with one or two semicolons and continue to the end of the line.
 
 
 
-## Quoting
+### Quoting
 
 It doesn't matter whether a symbol is another s-expression, a built-in, self-defined or even nameless function, or a variable: If symbols can be evaluated they are evaluated in order. However, sometimes it is necessary to pass an executable symbol without evaluating it first. This is called *quoting* and is achieved by adding a single quote to the beginning of a symbol or list.
 
@@ -95,7 +95,7 @@ Sometimes it is not possible to quote an s-expression or symbol because it is th
 	(print (quote (+ 1 2)))
 	```
 
-## Meta Tags
+### Meta Tags
 
 Meta tags are special commands in a script that are not executed during the runtime of a script, but describe certain capabilities of the script or give, for example, the script a name or provide instructions when a script should be executed.
 
@@ -103,118 +103,64 @@ Meta tags start with a `@` character and may have additional parameters. Meta ta
 
 Meta tags are described in [a separate documentation](../development/ACMEScript-metatags.md).
 
----
 
-<mark>TODO extra file</mark>
-<a name="running"></a>
-
-## Loading and Running Scripts
-
-Scripts are stored in and are imported from the *init* directory and in sub-directories, which names end with *.scripts*, of the *init* directory. 
-One can also specify a [list of directories](Configuration.md#scripting) in the configuration file with additional scripts that will be imported.
-All files with the extension "*.as*" are treated as ACMEScript files and are automatically imported during CSE startup and also imported and updated during runtime. 
-
-There are different ways to run scripts:
-
-- Scripts can be run from the console interface with the `R` (Run) command.
-- They can also be run by a keypress from the console interface (see [onKey](ACMEScript-metatags.md#meta_onkey) meta tag).
-- Scripts can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see [at](ACMEScript-metatags.md#meta_at) meta tag).
-- It is possible to schedule scripts to run at certain events. Currently, the CSE  [init](ACMEScript-metatags.md#meta_init), [onStartup](ACMEScript-metatags.md#meta_onstartup), [onRestart](ACMEScript-metatags.md#meta_onrestart), and [onShutdown](ACMEScript-metatags.md#meta_onshutdown) events are supported.
-- Scrips can be run as a receiver of a NOTIFY request from the CSE. See [onNotification](ACMEScript-metatags.md#meta_onnotification) meta tag.
-- They can also be run as a command of the [Upper Tester Interface](Operation.md#upper_tester).
-- Scripts can be integrated as tools in the [Text UI](TextUI.md). See also the available [meta-tags](ACMEScript-metatags.md#_textui) for available tags.
-
-
-<a name="arguments"></a>
-### Script Arguments
-
-Scripts may have arguments that can be accessed with the [argv](ACMEScript-functions.md#argv) function and [argc](ACMEScript-functions.md#argc) variable.
-
-### Script Prompt
-
-A script may ask for input before it runs. This can be enabled with the [@prompt](ACMEScript-metatags.md#meta_prompt) meta tag. 
-The prompt's answer is then assigned as the script's arguments.
-
-**Attention**: The [@prompt](ACMEScript-metatags.md#meta_prompt) meta tag should only be used when human interaction can be ensured. Running
-a script with this meta tag, for example, [scheduled](ACMEScript-metatags.md#meta_at) or unattended will cause the script to wait forever
-for user input. 
-
-### Running Scripts at Startup, Restart, and Shutdown
-
-Whenever a CSE starts or is restarted (or reset) it is necessary to create couple of oneM2M resources and to build a basic resource tree. This is done by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. A script with this tag is executed right after the start of many of the internal services during the startup of the *importer* service.
-
-Note that only one script may have the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
-
-Right after a CSE finished the start-up or restart, or just before a CSE shuts down the CSE looks for scripts that have the [@onStartup](ACMEScript-metatags.md#meta_onstartup), [@onRestart](ACMEScript-metatags.md#meta_onrestart), or [@onShutdown](ACMEScript-metatags.md#meta_onshutdown) meta tags set, and runs them respectively.
-
----
-
-<a name="extras"></a>
-
-## Extras
+## Advanced Topics
 
 ### Storing Data
 
-Data can be stored "persistently" during a CSE's runtime. This is intended to pass data across different runs of a script, but not to store data persistently across CSE restarts or reset. The storage format is a simple key/value store.
+Data can be stored "persistently" during a CSE's runtime. This is intended to pass data across different runs of a script, but not to store data persistently across a CSE restart or reset. The storage format is a simple key/value store.
 
-To store data persistently one may consider to store this data in the oneM2M resource tree.
+To store data persistently one may consider to store it in the oneM2M resource tree.
 
 See:  [get-storage](ACMEScript-functions.md##get-storage), [has-storage](ACMEScript-functions.md##has-storage), [set-storage](ACMEScript-functions.md#set-storage)
 
 ### Evaluating S-Expressions in Strings and JSON Structures
 
-S-expressions that are enclosed in the pattern `${..}` in a string or JSON structure are evaluated when the string or JSON symbol is evaluated. The result of the s-expression replaces the pattern. Pattern replacement can be escaped with two backslashes: `\\${..}`.
+S-expressions that are enclosed in the pattern `${..}` in a string or JSON structure are evaluated when the string or JSON symbol is evaluated. The result of the s-expression replaces the pattern. 
+
 
 In the following example the s-expression `(+ 1 2)` is evaluated when the string is processed:
 
-```lisp
-(print "1 + 2 = ${ + 1 2 }")  ;; Prints "1 + 2 = 3"
-```
+=== "Example"
+	```lisp
+	(print "1 + 2 = ${ + 1 2 }") 	;; Prints "1 + 2 = 3"
+	```
 
 Evaluation can be locally disabled by escaping the opening part:
 
-```lisp
- (print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = ${ + 1 2 )}"
-```
+=== "Example"
+	```lisp
+ 	(print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = ${ + 1 2 )}"
+	```
 
 Evaluation can also be disabled and enabled by using the [evaluate-inline](ACMEScript-functions.md#evaluate-inline) function.
+
+Pattern replacement can be escaped with two backslashes: `\\${..}`.
 
 ### "on-error" Function
 
 If the function `on-error` is defined in a script, then this function is executed in case of a script-terminating error, and just before the script terminates because of that error.
 
-The `on-error` function is called as follows:
+In general, the `on-error` function is called as follows:
 
-`(on-error <error type:string> <error message:string)`
+=== "on-error"
+	`(on-error <error type:string> <error message:string)`
 
-Example:
+The function is called with two arguments: the error type and the error message.
 
-```lisp
-;; Define the on-error function
-(defun on-error (e m) (print "Error:" e m)) 
+The following example shows how to define the `on-error` function and how it is called when a division-by-zero error occurs. 
 
-;; Cause an division-by-zero error
-;; This will implicitly call the function
-(/ 0 0)                                      
-```
+=== "Example"
+	```lisp
+	;; Define the on-error function
+	(defun on-error (error-type message) (print "Error:" error-type message)) 
+
+	;; Cause an division-by-zero error
+	;; This will implicitly call the function
+	(/ 0 0)                                      
+	```
 
 ---
-
-<a name="upper_tester"></a>
-
-## Upper Tester Integration
-
-ACMEScript is integrated with the [Upper Tester (UT) Interface](Operation.md#upper_tester). To enable this a script must have the [@uppertester](ACMEScript-metatags.md#meta_uppertester) meta tag set. It can then be run through the UT interface by having its [@name](ACMEScript-metatags.md#meta_name) (and optional script arguments) as the parameter of the upper tester's *X-M2M-UTCMD* header field of a http request:
-
-```text
-X-M2M-UTCMD: aScript param1 param2
-```
-
-A script result is  passed back in a response in the *X-M2M-UTRSP* header of the response:
-
-```text
-X-M2M-UTRSP: aResult
-```
 
 [← README](../README.md) 
 

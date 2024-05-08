@@ -9,15 +9,19 @@ A Docker image with reasonable defaults is available on Docker Hub: [https://hub
 
 You can download and run it with the following shell command:
 
-```sh
-docker run -it -p 8080:8080 --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
-```
+=== "Download and Run"
+	```sh
+	docker run -it -p 8080:8080 --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
+	```
+
 
 To adjust the output to the current terminal width run the image with the following command:
 
-```sh
-docker run -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -it -p 8080:8080 --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
-```
+=== "Run with Terminal Width"
+	```sh
+	docker run -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -it -p 8080:8080 --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
+	```
+
 
 ## Build Your Own Docker Image
 
@@ -32,9 +36,10 @@ The build script takes all the current scripts, attribute definitions etc. from 
 
 The Docker image uses the *data* directory as the base directory for the CSE's runtime data. This directory can be mapped to a volume on the host system. For example, to use a local data directory as the base directory, run the following command:
 
-```sh
-docker run -it -p 8080:8080 -v /path/to/data:/data --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
-```
+=== "Run with Mapped Base Directory"
+	```sh
+	docker run -it -p 8080:8080 -v /path/to/data:/data --rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
+	```
 
 This is useful for persisting data across container restarts and to provide a different configuration file that is then used instead of the default *acme.ini* file.
 
@@ -47,18 +52,20 @@ One example is to provide the Docker host's IP address to the CSE as the *cseHos
 
 The setting for *cseHost* in the *acme.ini* file should should be changed to the following:
 
-```ini
-[basic.config]
-...
-cseHost=${DOCKER_HOST_IP}
-...
-```
+=== "Environment Variable to set Host IP"
+	```ini
+	[basic.config]
+	...
+	cseHost=${DOCKER_HOST_IP}
+	...
+	```
 
 
 The value for this setting can be provided by setting the environment variable *DOCKER_HOST_IP* to the Docker host's IP address:
 
-```sh
-docker run -it -p 8080:8080 -v /path/to/data:/data -e DOCKER_HOST_IP=`ifconfig en0 | awk '$1 == "inet" {print $2}'` -rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
-```
+=== "Run with Docker Host IP Environment Variable"
+	```sh
+	docker run -it -p 8080:8080 -v /path/to/data:/data -e DOCKER_HOST_IP=`ifconfig en0 | awk '$1 == "inet" {print $2}'` -rm --name acme-onem2m-cse ankraft/acme-onem2m-cse
+	```
 
 Values for other setting, such as credentials, can be provided the same way.

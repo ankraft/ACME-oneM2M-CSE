@@ -14,7 +14,7 @@ You can start the CSE by simply running it from the command line. This is the si
 
 		python3 -m acme
 
-The current working directory is used as the base directory for the CSE and the *acme.ini* [configuration file](Configuration.md) must be in the same directory. An [interactive configuration process](Installation.md#automatic-configuration) is started if the configuration file is not found.
+The current working directory is used as the base directory for the CSE and the *acme.ini* [configuration file](Configuration.md) must be in the same directory. An [interactive configuration process](Installation.md#guided-configuration) is started if the configuration file is not found.
 
 
 ### Different Configuration File

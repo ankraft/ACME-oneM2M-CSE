@@ -4,7 +4,7 @@
 
 1. **Can I install the ACME CSE on a Raspberry Pi?**  
    Yes, the ACME CSE can be installed and run on a Raspberry Pi. However, this usually requires to install a newer version of Python than the one that is installed by default on the Raspberry Pi, and to install some additional libraries, tools, and packages.  
-   See the HowTo [Install ACME on a Raspberry Pi](../setup/raspberryPi.md){target=_new} for further details.
+   See the HowTo [Install ACME on a Raspberry Pi](../setup/RaspberryPi.md){target=_new} for further details.
 ## Network
 
 1. **How can I access the CSE from remote/another computer on my network?**  
@@ -63,6 +63,12 @@
    See [the documentation about Importing ](Importing.md#attributes) for further details.
 
 ## CSE Registrations
+
+
+1. **Why are there regular checks for remote CSEs?**  
+	When a CSE is configured as an MN-CSE or ASN-CSE it can register to a remote CSE, respectively an IN-CSE and MN-CSE can receive connection requests from those CSE types. A &lt;remoteCSE> resource is created in case of a successful registration. A CSE checks regularly the connection to other remote CSEs and removes the *remoteCSE* if the connection could not been established. This is done to keep the CSE's resource tree clean and up-to-date.  
+	This behaviour can be disabled by setting the configuration setting [`[cse.registration].checkLiveliness`](../setup/Configuration-cse.md#cse-registration) to *false*.  
+	The check interval can be configured with the [`[cse.registrar].checkInterval`](../setup/Configuration-cse.md#registrar-cse-access) setting.
 
 1. **Why does my CSE not register to another CSE or announce resources?**  
    One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's

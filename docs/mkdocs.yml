@@ -53,7 +53,8 @@ theme:
     - search.suggest
     - search.highlight
     - search.share
-    - toc.integrate
+    - toc.follow
+    #- toc.integrate
 
 plugins:
   # - tags:
@@ -123,8 +124,9 @@ nav:
   - Home:
     - 'index.md'
     - 'Supported Features': 'home/Supported.md'
+    - 'Roadmap': 'home/Roadmap.md'
     - 'LICENSE': 'home/License.md'
-    - 'Contact': kkk
+    - 'Contact': 'home/Contact.md'
   - 'Setup & Running':
     - 'Installation': 'setup/Installation.md'
     - 'Running': 'setup/Running.md'
@@ -141,6 +143,10 @@ nav:
       - 'Scripting': 'setup/Configuration-scripting.md'
       - 'User Interfaces': 'setup/Configuration-uis.md'
       - 'oneM2M Resources': 'setup/Configuration-resources.md'
+    - 'Operation':
+      - 'Infrastructure Diagrams': 'setup/Operation-diagrams.md'
+      - 'MQTT Broker': 'setup/Operation-mqtt.md'
+      - 'Upper Tester': 'setup/Operation-uppertester.md'
     - 'User Interfaces':
       - 'Console UI': 'setup/Console.md'
       - 'Text UI': 'setup/TextUI.md'
@@ -149,24 +155,18 @@ nav:
       - 'Docker': 'setup/Docker.md'
       - 'Raspberry Pi': 'setup/RaspberryPi.md'
   - 'Development': 
-      - 'development/Development.md'
+      - 'Overview': 'development/Overview.md'
       - 'Unit Tests': 'development/UnitTests.md'
-      - 'Scripting':
-        - 'ACMEScript': 'development/ACMEScript.md'
-         # - 'Meta-Tags': 'development/ACMEScript-metatags.md'
-         # - 'Running Scripts (last)': 'development/xxx.md'
-  #   - 'setup/Installation.md'
-  #   - 'Something': lkjklj
-  #   - 'Scripting':
-  #     - 'ddd': 'setup/Installation.md'
-  #     - 'Funtions': 'setup/Installation.md'
-  #     - 'Meta-Tags': 'setup/Installation.md'
-  #   - Roadmap
-  #   - Contributing
+      - 'ACMEScript':
+        - 'Introduction': 'development/ACMEScript.md'
+        - 'Loading & Running Scripts': 'development/ACMEScript-loading.md'
+        - 'Operations': 'development/ACMEScript-operations.md'
+        - 'Functions': 'development/ACMEScript-functions.md'
+        - 'Variables': 'development/ACMEScript-variables.md'
+        - 'Upper Tester Integration': 'development/ACMEScript-uppertester.md'
   - 'HowTos':
+      - 'Pyenv Setup': 'howtos/HowTo-pyenv.md'
       - 'Raspberry Pi': 'setup/RaspberryPi.md'
-
-
   - 'Help': 
     - 'FAQ': 'help/FAQ.md'
     - 'Contributing': 'help/Contributing.md'

@@ -1,8 +1,10 @@
-# Development
+# Overview
 
-## The Messy Details
+This article provides an overview of the ACME CSE's architecture, components, and database schemas. 
 
-### Components
+TODO It also describes how to integrate the CSE into other applications and how to run it in a Jupyter Notebook.
+
+## Components
 
 The ACME CSE is divided into several components. The following diagram shows the components and their relationships.
 
@@ -11,19 +13,23 @@ The ACME CSE is divided into several components. The following diagram shows the
 <figcaption>UML Component Diagram of the ACME CSE</figcaption>
 </figure>
 
-### Resource Class Hierarchy
+## Resource Class Hierarchy
 
 The CSE's resources are implemented as classes. The following diagram shows the class hierarchy of the resources.
 
 <figure markdown="1">
-![](../images/resources_uml.png)
+![UML Class Diagram of the ACME CSE Resources](../images/resources_uml.png)
 <figcaption>UML Class Diagram of the ACME CSE Resources</figcaption>
 </figcaption>
 </figure>
 
-### Database Schemas
+## Database Schemas
 
-![](images/db_schemas.png)
+<figure markdown="1">
+![Database Schemas of the ACME CSE](../images/db_schemas.png)
+<figcaption>Database Schemas of the ACME CSE</figcaption>
+</figcaption>
+</figure>
 
 If not hold in memory the database files are stored in the ["data"](../data) sub-directory. 
 
@@ -34,6 +40,7 @@ The filenames include the *CSE-ID* of the running CSE, so if multiple CSEs are r
 Some database tables duplicate attributes from actual resources, e.g. in the *subscription* database. This is mainly done for optimization reasons in order to prevent a retrieval and instantiation of a full resource when only a few attributes are needed.
 
 
+<mark>TODO move the following to a separate article "Integrating </mark>
 <a name="integration"></a>
 ## Integration Into Other Applications
 
@@ -93,5 +100,3 @@ However, there are circumstances when this could not done easily, e.g. during st
 In order to provide additional information in these situations one can set the *ACME_DEBUG* environment variable (to any value):
 
 	$ export ACME_DEBUG=1
-
-[← README](../README.md) 

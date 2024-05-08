@@ -7,7 +7,7 @@ The CSE is highly configurable and can be adapted to different environments and 
 Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable
 settings for the CSE. Configurations are mostly optional, and settings in this file overwrite the CSE's default values.
 
-The configuration file follows the Windows INI file format with sections, setting and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
+The configuration file follows the Windows INI file format with sections, setting and values. A configuration file may include comments, prefixed with the characters `#` or `;` .
 
 ### Command Line Arguments
 
@@ -17,7 +17,6 @@ settings in the configuration file.
 ## The Configuration File
 
 !!! warning
-
 	Changes should only be done to a copy of the default configuration file.
 
 A default configuration file is provided with the file [acme.ini.default](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/acme/init/acme.ini.default){target=_new}. Don't make changes to this file, but rather copy relevant configuration setting to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the `--config` command line argument when running the (see [Running the CSE](../setup/Running.md#running-the-cse)).
@@ -58,13 +57,11 @@ There are some built-in configuration settings that can be used in the configura
 :	Two built-in configuration settings that point to acme's main *init* directory.  
 	Both settings are equivalent and can be used interchangeably.
 
-	Example:
-
-	```ini
-	[cse]
-	resourcesPath=${basic.config:initDirectory}
-	```
-
+	=== "Example"
+		```ini
+		[cse]
+		resourcesPath=${basic.config:initDirectory}
+		```
 
 **${basic.config:moduleDirectory}**  
 **${moduleDirectory}**
@@ -80,9 +77,8 @@ Environment variables can be used in the configuration file to provide sensitive
 
 Another useful application is to provide the IP address of a Docker host to the CSE. This can be done, for example, by setting the environment variable `DOCKER_HOST_IP` and using it in the configuration file.
 
-Example:
-
-```ini
-[basic.config]
-cseHost=${DOCKER_HOST_IP}
-```
+=== "Example" 
+	```ini
+	[basic.config]
+	cseHost=${DOCKER_HOST_IP}
+	```

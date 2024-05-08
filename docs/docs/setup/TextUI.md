@@ -13,7 +13,7 @@ Depending on the terminal it can be operated with the mouse or with the keyboard
 
 One can switch between the normal console and the text UI by pressing the `#` key.
 
-The text UI is started automatically in some [configuration modes](Running.md#first_setup) when the CSE is started.
+The text UI is started automatically in some [configuration modes](../setup/Installation.md#guided-configuration) when the CSE is started.
 
 You can also start the text UI directly by providing the `--textui` command line argument when starting the CSE.
 

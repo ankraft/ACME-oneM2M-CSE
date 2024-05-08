@@ -30,6 +30,8 @@ Each test suite imports the file [init.py](https://github.com/ankraft/ACME-oneM2
 
 For each aspect of the CSE there is one test suite file that can be run independently or in the course of an overall test. For example, running the test suite for AE tests would look like this:
 
+=== "Example Test Suite Run"
+	```text
 	$ python3 testAE.py
 	test_createAE (__main__.TestAE) ... ok
 	test_createAEUnderAE (__main__.TestAE) ... ok
@@ -46,6 +48,7 @@ For each aspect of the CSE there is one test suite file that can be run independ
 	----------------------------------------------------------------------
 	Ran 12 tests in 0.116s
 	OK
+	```
 
 The individual test suites are located in the [tests](https://github.com/ankraft/ACME-oneM2M-CSE/tree/master/tests){target=_new} directory. Their names start with *test...* and are grouped by the aspect of the CSE they are testing.
 
@@ -56,46 +59,47 @@ The individual test suites are located in the [tests](https://github.com/ankraft
 
 The `--help` or `-h` command line argument provides a usage overview for the *runTest.py* script.
 
-```
-$ python runTests.py -h
-usage: runTests.py [-h] [--all] [--load-only] [--verbose-requests]
-                   [--disable-teardown] [--run-teardown]
-                   [--run-count NUMBEROFRUNS]
-                   [--run-tests TESTCASENAME [TESTCASENAME ...]]
-                   [--show-skipped] [--no-failfast]
-                   [--list-tests | --list-tests-sorted]
-                   [TESTSUITE ...]
+=== "Test Runner Overview"
+	```text
+	$ python runTests.py -h
+	usage: runTests.py [-h] [--all] [--load-only] [--verbose-requests]
+					[--disable-teardown] [--run-teardown]
+					[--run-count NUMBEROFRUNS]
+					[--run-tests TESTCASENAME [TESTCASENAME ...]]
+					[--show-skipped] [--no-failfast]
+					[--list-tests | --list-tests-sorted]
+					[TESTSUITE ...]
 
-positional arguments:
-  TESTSUITE             specific test suites to run. Run all test suites
-                        if empty
+	positional arguments:
+	TESTSUITE             specific test suites to run. Run all test suites
+							if empty
 
-options:
-  -h, --help            show this help message and exit
-  --all                 run all test suites (including load tests)
-  --load-only           run only load test suites
-  --verbose-requests, -v
-                        show verbose requests, responses and
-                        notifications output
-  --disable-teardown, -notd
-                        disable the tear-down / cleanup procedure at the
-                        end of a test suite
-  --run-teardown, -runtd
-                        run the specified test cases' tear-down
-                        functions and exit
-  --run-count NUMBEROFRUNS
-                        run each test suite n times (default: 1)
-  --run-tests TESTCASENAME [TESTCASENAME ...], -run TESTCASENAME [TESTCASENAME ...]
-                        run only the specified test cases from the set
-                        of test suites
-  --show-skipped        show skipped test cases in summary
-  --no-failfast         continue running test cases after a failure
-  --list-tests, -ls     list the test cases of the specified test suites
-                        in the order they are defined and exit
-  --list-tests-sorted, -lss
-                        alphabetical sorted list the test cases of the
-                        specified test suites and exit
-```
+	options:
+	-h, --help            show this help message and exit
+	--all                 run all test suites (including load tests)
+	--load-only           run only load test suites
+	--verbose-requests, -v
+							show verbose requests, responses and
+							notifications output
+	--disable-teardown, -notd
+							disable the tear-down / cleanup procedure at the
+							end of a test suite
+	--run-teardown, -runtd
+							run the specified test cases' tear-down
+							functions and exit
+	--run-count NUMBEROFRUNS
+							run each test suite n times (default: 1)
+	--run-tests TESTCASENAME [TESTCASENAME ...], -run TESTCASENAME [TESTCASENAME ...]
+							run only the specified test cases from the set
+							of test suites
+	--show-skipped        show skipped test cases in summary
+	--no-failfast         continue running test cases after a failure
+	--list-tests, -ls     list the test cases of the specified test suites
+							in the order they are defined and exit
+	--list-tests-sorted, -lss
+							alphabetical sorted list the test cases of the
+							specified test suites and exit
+	```
 
 ### Running the Tests
 
@@ -103,6 +107,8 @@ The Python script [runTests.py](https://github.com/ankraft/ACME-oneM2M-CSE/blob/
 
 Usually, the test suites are run only once, but one can specify the *--run-count* option to execute tests multiple times.
 
+=== "Example Test Run"
+	```text
 	$ python3 runTests.py
 	
 	...
@@ -146,6 +152,7 @@ Usually, the test suites are run only once, but one can specify the *--run-count
 	├─────────────────────┼───────┼─────────┼────────┼──────────────────────────────┼───────────────────┼───────────────────┼──────────┤
 	│ Totals              │   725 │       0 │      0 │ 365.0405 | 320.21 |   4.8910 │  0.5035 |  0.2906 │  0.0067 |  0.0039 │     1256 │
 	└─────────────────────┴───────┴─────────┴────────┴──────────────────────────────┴───────────────────┴───────────────────┴──────────┘
+	```
 
 With `--verbose-requests` the each request and response is printed as well. This can be helpful to debug problems with the system under test, the network, and other aspects.
 
@@ -153,7 +160,10 @@ With `--verbose-requests` the each request and response is printed as well. This
 
 One can  specify which test suites to run like this:
 
+=== "Example Test Suite Run"
+	```bash
 	$ python3 runTests.py testACP testCin
+	```
 
 The *runTest.py* script by default will run all test suites, **except** scripts that run load tests. To include those one need to specify the `--load-include` command line argument.
 
@@ -162,9 +172,10 @@ The *runTest.py* script by default will run all test suites, **except** scripts 
 
 It is also possible to run individual test cases from test suites. This is done by optionally specify the test suites and then with the `--run-tests` option a list of test case names to run:
 
-```
-$ python runTests.py testSUB --run-tests test_createCNTforEXC
-```
+=== "Example Single Test Case Run"
+	```bash
+	$ python runTests.py testSUB --run-tests test_createCNTforEXC
+	```
 
 If test cases appear more than once one can specify the order in which the test cases are run. Example:
 
@@ -178,11 +189,12 @@ If test cases appear more than once one can specify the order in which the test 
 
 The most interesting use of this functionionality is to run a whole test suite together with the `--disable-teardown` option up to the point of a failure, and then run the failed test case again:
 
-```
-$ python runTests.py testSUB --disable-teardown
-...
-$ python runTests.py testSUB --disable-teardown --run-tests test_createCNTforEXC
-```
+=== "Example Single Test Case Run Without Tear-Down"
+	```bash
+	$ python runTests.py testSUB --disable-teardown
+	...
+	$ python runTests.py testSUB --run-tests test_createCNTforEXC
+	```
 
 This disables the clean-up of the CSE after the test suite has run, so that the resources created by the test suite are still present in the CSE. This way one can investigate the state of the CSE after the test suite has run.
 

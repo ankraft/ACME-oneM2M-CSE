@@ -4,11 +4,12 @@
 
 The CSE implementation successfully passes all the relevant oneM2M test cases for the supported resource types and features.
 
-## Release Versions
-
-The ACME CSE supports oneM2M release 1 - 4 and the upcoming release 5 for the supported resource types and functionalities listed below. 
 
 ## oneM2M Features
+
+### Release Versions
+
+The ACME CSE supports oneM2M release 1 - 4 and the upcoming release 5 for the supported resource types and functionalities listed below. 
 
 ### CSE Types
 
@@ -24,12 +25,6 @@ The ACME CSE supports the following CSE types:
 ### Resource Types
 
 The ACME CSE supports the following oneM2M resource types:
-
-<figure markdown="1">
-![UML Class Diagram of the ACME CSE Resources](../images/resources_uml.png)
-<figurecaption>Resource Hierarchy</figurecaption>
-</figure>
-
 
 | Resource Type                   | Supported | Remarks                                                                                                                                                                                             |
 |:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -87,7 +82,35 @@ The following table presents the supported management object specifications.
 ACME CSE supports all FlexContainerSpecializations of [oneM2M TS-0023](https://specifications.onem2m.org/ts-0023){target=_new}.
 
 
+
+### Protocols Bindings
+
+The following Protocol Bindings are supported:
+
+| Protocol Binding | Supported | Remark                                                                                                                                        |
+|:-----------------|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| http             |  &check;  | incl. TLS (https) and CORS support. *basic* and *bearer* authentication. <br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
+| coap             |  &cross;  |                                                                                                                                               |
+| mqtt             |  &check;  | incl. mqtts                                                                                                                                   |
+| WebSocket        |  &check;  | incl. TLS (wss) support                                                                                                                       |
+
+The supported bindings can be used together, and combined and mixed in any way.
+
+
+### Serialization Types
+The following serialization types are supported:
+
+| Serialization Type | Supported | Remark                                                                                                         |
+|:-------------------|:---------:|:---------------------------------------------------------------------------------------------------------------|
+| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/\* ... \*/") are supported as well. |
+| CBOR               |  &check;  |                                                                                                                |
+| XML                |  &cross;  |                                                                                                                |
+
+The supported serializations can be used together, e.g. between different or even the same entity.
+
+
 ### Result Content Types
+
 The following result contents are implemented for standard oneM2M requests & discovery:
 
 | Discovery Type                         | RCN |
@@ -106,10 +129,9 @@ The following result contents are implemented for standard oneM2M requests & dis
 | discovery result references            | 11  |
 
 
+### oneM2M Service Functions
 
-
-
-## oneM2M Service Features
+The following oneM2M service functions are supported:
 
 | Functionality                 | Supported | Remark                                                                                                                                     |
 |:------------------------------|:---------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
@@ -139,7 +161,9 @@ The following result contents are implemented for standard oneM2M requests & dis
 | TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                                                                                |
 
 
-### Subscriptions Notification Event Types
+###  Notification Event Types
+
+The following notification event types for Subscriptions are supported:
 
 | Notification Event Types | Supported |
 |:-------------------------|:---------:|
@@ -151,32 +175,6 @@ The following result contents are implemented for standard oneM2M requests & dis
 | triggerReceivedForAE     |  &cross;  |
 | blockingUpdate           |  &check;  |
 | missingData              |  &check;  |
-
-
-### Protocols Bindings
-
-The following Protocol Bindings are supported:
-
-| Protocol Binding | Supported | Remark                                                                                                                                        |
-|:-----------------|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
-| http             |  &check;  | incl. TLS (https) and CORS support. *basic* and *bearer* authentication. <br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
-| coap             |  &cross;  |                                                                                                                                               |
-| mqtt             |  &check;  | incl. mqtts                                                                                                                                   |
-| WebSocket        |  &check;  | incl. TLS (wss) support                                                                                                                       |
-
-The supported bindings can be used together, and combined and mixed in any way.
-
-
-### Serialization Types
-The following serialization types are supported:
-
-| Serialization Type | Supported | Remark                                                                                                         |
-|:-------------------|:---------:|:---------------------------------------------------------------------------------------------------------------|
-| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/\* ... \*/") are supported as well. |
-| CBOR               |  &check;  |                                                                                                                |
-| XML                |  &cross;  |                                                                                                                |
-
-The supported serializations can be used together, e.g. between different or even the same entity.
 
 
 
