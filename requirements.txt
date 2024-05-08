@@ -99,5 +99,5 @@ wcwidth==0.2.13
     # via prompt-toolkit
 websockets==12.0
     # via ACME-oneM2M-CSE (setup.py)
-werkzeug==3.0.2
+werkzeug==3.0.3
     # via flask
