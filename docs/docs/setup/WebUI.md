@@ -23,7 +23,7 @@ The web UI also provides a REST UI where you can send REST requests directed at 
 
 The web UI can also be run as an independent application.  Since it communicates with the CSE via the Mca interfave it should be possible to use it with other CSE implementations as well as long as those third party CSEs follow the oneM2M http binding specification. It only supports the resource types that the ACME CSE supports, but at least it will present all other resource types as *unknown*.
 
-You can start the stand-alone web UI in a terminal like this (in the sub-directory [acme/webui](../acme/webui):
+You can start the stand-alone web UI in a terminal like this (in the sub-directory [acme/webui](https://github.com/ankraft/ACME-oneM2M-CSE/tree/master/acme/webui):
 
 ```bash
 python3 webUI.py

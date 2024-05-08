@@ -151,9 +151,6 @@ nav:
       - 'Console UI': 'setup/Console.md'
       - 'Text UI': 'setup/TextUI.md'
       - 'Web UI': 'setup/WebUI.md'
-    - 'Additional Platforms':
-      - 'Docker': 'setup/Docker.md'
-      - 'Raspberry Pi': 'setup/RaspberryPi.md'
   - 'Development': 
       - 'Overview': 'development/Overview.md'
       - 'Unit Tests': 'development/UnitTests.md'
@@ -163,10 +160,12 @@ nav:
         - 'Operations': 'development/ACMEScript-operations.md'
         - 'Functions': 'development/ACMEScript-functions.md'
         - 'Variables': 'development/ACMEScript-variables.md'
+        - 'Meta Tags': 'development/ACMEScript-metatags.md'
         - 'Upper Tester Integration': 'development/ACMEScript-uppertester.md'
   - 'HowTos':
+      - 'Docker': 'howtos/Docker.md'
       - 'Pyenv Setup': 'howtos/HowTo-pyenv.md'
-      - 'Raspberry Pi': 'setup/RaspberryPi.md'
+      - 'Raspberry Pi': 'howtos/RaspberryPi.md'
   - 'Help': 
     - 'FAQ': 'help/FAQ.md'
     - 'Contributing': 'help/Contributing.md'

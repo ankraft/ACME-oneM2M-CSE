@@ -54,29 +54,27 @@ A base directory may also host a secondary *init* directory that is used for imp
 
 The ACME CSE provides a number of command line arguments that will override the respective settings from the configuration file. They can be used to change certain CSE behaviours without changing the configuration file.
 
-<mark>TODO correct links</mark>
-
-| Command Line Argument                                    | Description                                                                                                                                       |
-|:---------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
-| -h, --help                                               | Show a help message and exit.                                                                                                                     |
-| --config &lt;filename>                                   | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                |
-| --base-directory &lt;directory>,<br/>-dir &lt;directory> | Specify the root directory for runtime data such as data, logs, and temporary files.                                                              |
-| --db-directory &lt;directory>                            | Specify the directory where the CSE's data base files are stored.                                                                                 |
-| --db-reset                                               | Reset and clear the database when starting the CSE.                                                                                               |
-| --db-type {memory, tinydb, postgresql}                   | Specify the DB's storage type.<br />This overrides the [database.type](../setup/Configuration-database.md) configuration setting.                         |
-| --headless                                               | Operate the CSE in headless mode. This disables almost all screen output and also the build-in console interface.                                 |
-| --http, --https                                          | Run the CSE with http or https server.<br />This overrides the [useTLS](../setup/Configuration-http.md#security) configuration setting.                         |
-| --http-wsgi                                              | Run CSE with http WSGI support.<br />This overrides the [http.wsgi.enable](../setup/Configuration-http.md#wsgi) configuration setting.                                               |
-| --http-address &lt;server URL>                           | Specify the CSE's http server URL.<br />This overrides the [address](../setup/Configuration-http.md#general-settings) configuration setting.                        |
-| --http-port &lt;http port>                               | Specify the CSE's http server port.<br />This overrides the [address](../setup/Configuration-http.md#general-settings) configuration setting.                         |
-| --init-directory &lt;directory>                          | Specify the import directory.<br />This overrides the [resourcesPath](../setup/Configuration-basic.md) configuration setting.                            |
-| --network-interface &lt;ip address                       | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](../setup/Configuration-http.md#general-settings) configuration setting.      |
-| --log-level {info, error, warn, debug, off}              | Set the log level, or turn logging off.<br />This overrides the [level](Configuration.md#logging) configuration setting.                          |
-| --mqtt, --no-mqtt                                        | Enable or disable the MQTT binding.<br />This overrides the [mqtt.enable](Configuration.md#client_mqtt) configuration setting.                    |
-| --remote-cse, --no-remote-cse                            | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting. |
-| --statistics, --no-statistics                            | Enable or disable collecting CSE statistics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                 |
-| --textui                                                 | Run the CSE's text UI after startup.                                                                                                              |
-| --ws, --no-ws                                            | Enable or disable the WebSocket binding.<br />This overrides the [websocket.enable](Configuration.md#websocket) configuration setting.            |
+| Command Line Argument                                    | Description                                                                                                                                                             |
+|:---------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -h, --help                                               | Show a help message and exit.                                                                                                                                           |
+| --config &lt;filename>                                   | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                                      |
+| --base-directory &lt;directory>,<br/>-dir &lt;directory> | Specify the root directory for runtime data such as data, logs, and temporary files.                                                                                    |
+| --db-directory &lt;directory>                            | Specify the directory where the CSE's data base files are stored.                                                                                                       |
+| --db-reset                                               | Reset and clear the database when starting the CSE.                                                                                                                     |
+| --db-type {memory, tinydb, postgresql}                   | Specify the DB's storage type.<br />This overrides the [database.type](../setup/Configuration-database.md#general-settings) configuration setting.                      |
+| --headless                                               | Operate the CSE in headless mode. This disables almost all screen output and also the build-in console interface.                                                       |
+| --http, --https                                          | Run the CSE with http or https server.<br />This overrides the [useTLS](../setup/Configuration-http.md#security) configuration setting.                                 |
+| --http-wsgi                                              | Run CSE with http WSGI support.<br />This overrides the [http.wsgi.enable](../setup/Configuration-http.md#wsgi) configuration setting.                                  |
+| --http-address &lt;server URL>                           | Specify the CSE's http server URL.<br />This overrides the [address](../setup/Configuration-http.md#general-settings) configuration setting.                            |
+| --http-port &lt;http port>                               | Specify the CSE's http server port.<br />This overrides the [address](../setup/Configuration-http.md#general-settings) configuration setting.                           |
+| --init-directory &lt;directory>                          | Specify the import directory.<br />This overrides the [resourcesPath](../setup/Configuration-cse.md#general-settings) configuration setting.                            |
+| --network-interface &lt;ip address                       | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](../setup/Configuration-http.md#general-settings) configuration setting.         |
+| --log-level {info, error, warn, debug, off}              | Set the log level, or turn logging off.<br />This overrides the [level](../setup/Configuration-logging.md#configuration---logging) configuration setting.               |
+| --mqtt, --no-mqtt                                        | Enable or disable the MQTT binding.<br />This overrides the [mqtt.enable](../setup/Configuration-mqtt.md#general-settings) configuration setting.                       |
+| --remote-cse, --no-remote-cse                            | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](../setup/Configuration-cse.md#general-settings) configuration setting. |
+| --statistics, --no-statistics                            | Enable or disable collecting CSE statistics.<br />This overrides the [enable](../setup/Configuration-cse.md#statistics) configuration setting.                                       |
+| --textui                                                 | Run the CSE's text UI after startup.                                                                                                                                    |
+| --ws, --no-ws                                            | Enable or disable the WebSocket binding.<br />This overrides the [websocket.enable](../setup//Configuration-ws.md#general-settings) configuration setting.                                  |
 
 
 <mark>TODO: To Development</mark>

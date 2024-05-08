@@ -37,7 +37,7 @@ The different sections of the text UI are described below. They can be selected 
 **Tools**
 :	This tab contains some tools that can be used to perform operations on the CSE, or run applications as scrips. 
 
-:	See the [ACMEScript meta-tags](ACMEScript-metatags.md#meta_tuiTool) for more information.
+:	See the [ACMEScript meta-tags](ACMEScript-metatags.md#tuiTool) for more information.
 
 **Infos**
 :	This tab shows the current number of resources, requests, and other statistics and useful information.

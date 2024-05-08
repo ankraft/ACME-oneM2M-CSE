@@ -42,7 +42,7 @@ The CSE's resource tree can be shown by pressing the `t` key:
 <figcaption>ACME CSE's resource tree in the console</figcaption>
 </figure>
 
-In addition to the build-in commands, the console shows the [Script commands](ACMEScript.md) with a configured [key binding](ACMEScript-metatags.md#meta_onkey).
+In addition to the build-in commands, the console shows the [Script commands](ACMEScript.md) with a configured [key binding](ACMEScript-metatags.md#onkey).
 
 
 ## Exporting Resources

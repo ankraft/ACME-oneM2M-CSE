@@ -22,6 +22,7 @@ Concatenate and return the stringified versions of the symbol arguments.
 	(. "Time:" sp (datetime))  ;; Returns "Time: 20230308T231049.934630"
 	```
 
+---
 
 ### argv
 
@@ -48,6 +49,7 @@ The number of arguments available is stored in the variable [argc](../developmen
 	(print "All arguments:" argv)
 	```
 
+---
 
 ### assert
 
@@ -61,6 +63,7 @@ The `assert` function terminates the script if its argument evaluates to *false*
 				"IN"))  ;; Terminates when the setting is different from "IN"
 	```
 
+---
 
 ### base64-encode
 
@@ -76,6 +79,7 @@ This function encodes a string as base64.
 	(base64-encode "Hello, World")  ;; Returns "SGVsbG8sIFdvcmxk"
 	```
 
+---
 
 ### block
 
@@ -116,6 +120,7 @@ One can use the `block` function to implement *break* and *continue* functionali
 			(print i)))
 	```
 
+---
 
 ### car
 
@@ -134,6 +139,7 @@ The `car` function returns the first symbol from a list. It doesn't change the o
 	(car '(1 2 3))  ;; Returns 1
 	```
 
+---
 
 ### case
 
@@ -158,6 +164,7 @@ The special symbol `otherwise` for a *condition* s-expression always matches and
 		(otherwise (print "Result: something else")))
 	```
 
+---
 
 ### cdr
 
@@ -176,6 +183,7 @@ The `cdr` function returns a list with all symbols from a list except the first 
 	(cdr '(1 2 3))  ;; Returns (2 3)
 	```
 
+---
 
 ### cons
 
@@ -193,6 +201,7 @@ The `cons` function adds a new symbol to the front of a list and returns it. It 
 	(cons '(1 2) '(3 4))  ;; Returns ((1 2) 3 4)
 	```
 
+---
 
 ### datetime
 
@@ -208,6 +217,7 @@ All timestamps are UTC-based.
 	(datetime "%H:%M")  ;; Returns, for example, "22:16"
 	```
 
+---
 
 ### defun
 
@@ -242,6 +252,7 @@ The result of a function is the result of the expression that is evaluated last 
 	(fib 10)                ;; Returns 55
 	```
 
+---
 
 ### dec
 
@@ -261,6 +272,7 @@ The function returns the variable's new value.
 	(dec a 2.5)  ;; Decrement variable "a" by 2.5
 	```
 
+---
 
 ### dolist
 
@@ -286,6 +298,7 @@ If the `result variable` is specified then the loop returns the value of that va
 	(print result)                   ;; 55
 	```
 
+---
 
 ### dotimes
 
@@ -300,7 +313,6 @@ If the `result variable` is specified then the loop returns the value of that va
 !!! see-also "See also"
 	[dolist](#dolist), [while](#while)
 
-
 === "Example"
 	```lisp
 	(dotimes (i 10)
@@ -312,6 +324,7 @@ If the `result variable` is specified then the loop returns the value of that va
 	(print result)                   ;; 45
 	```
 
+---
 
 ### eval
 
@@ -327,12 +340,13 @@ The `eval` function evaluates and executes a quoted list or symbol.
 	(eval '(print "Hello, World"))  ;; Prints "Hello, World" 
 	```
 
+---
 
 ### evaluate-inline
 
 `(evaluate-inline <boolean>)`
 
-With this function one can disable or enable the [evaluation of s-expressions in strings](ACMEScript.md#extras).
+With this function one can disable or enable the [evaluation of s-expressions in strings](../development/ACMEScript.md#evaluating-s-expressions-in-strings-and-json-structures).
 
 === "Example"
 	```lisp
@@ -340,6 +354,7 @@ With this function one can disable or enable the [evaluation of s-expressions in
 	(print "1 + 2 = [(+ 1 2)]")  ;; Prints "1 + 2 = [(+ 1 2)]"
 	```
 
+---
 
 ### get-json-attribute
 
@@ -362,6 +377,7 @@ The `get-json-attribute` function retrieves an attribute from a JSON structure v
 	(get-json-attribute { "a" : [ "b", "c" ]} "{*}/{0}" )  ;; Returns "b"
 	```
 
+---
 
 ### has-json-attribute
 
@@ -383,6 +399,7 @@ This *key* may be a structured path to access elements deeper down in the JSON s
 	(has-json-attribute { "a" : { "b" : "c" }} "a/c" )  ;; Returns false
 	```
 
+---
 
 ### if
 
@@ -401,6 +418,7 @@ The boolean expression can be any s-expression that evaluates to a boolean value
 		(print "false"))  ;; This expression is not executed
 	```
 
+---
 
 ### in
 
@@ -420,6 +438,7 @@ The function returns *true* if this is the case, or *false* otherwise.
 	(in '(1 2) '((1 2) (3 4)))   ;; Returns true
 	```
 
+---
 
 ### inc
 
@@ -441,6 +460,7 @@ The function returns the variable's new value.
 	(inc a 2.5)  ;; Increment variable "a" by 2.5
 	```
 
+---
 
 ### index-of
 
@@ -461,6 +481,7 @@ The function returns the index as a number, or *nil* if the value could not be f
 	(index-of "b" "abc")             ;; Returns 1
 	```
 
+---
 
 ### is-defined
 
@@ -478,6 +499,7 @@ The `is-defined` function tests whether a symbol (ie. a variable, built-in or de
 !!! note
 	Most of the time the symbol argument needs to be quoted, otherwise the symbol is evaluated first and the function will not work as expected.
 
+---
 
 ### json-to-string
 
@@ -493,6 +515,7 @@ The `json-to-string` function returns a JSON structure in a string.
 	(json-to-string { "a" : { "b" : "c" }})  ;; Returns "{\"a\": {\"b\": \"c\"}}"
 	```
 
+---
 
 ### jsonify
 
@@ -508,8 +531,7 @@ The `jsonify` function returns a string where characters are escaped that would 
 	(jsonify "Hello, World")  ;; Returns "Hello,\nWorld"
 	```
 
-
-<a name="lambda"></a>
+---
 
 ### lambda
 
@@ -537,6 +559,7 @@ The result of a lambda function is the result of the expression that is evaluate
 	((y) 5)                        ;; Returns 25
 	```
 
+---
 
 ### length
 
@@ -572,6 +595,7 @@ Each assignment consists, like the [setq](#setq) function, of an implicit quoted
 	(let* (b 2) (c 3))  ;; Assigns 2 to b and 3 to c
 	```
 
+---
 
 ### list
 
@@ -587,6 +611,7 @@ The `list` function returns a list that contains all the symbol arguments.
 	(list 1 2 3)  ;; Returns ( 1 2 3 )
 	```
 
+---
 
 ### log
 
@@ -604,6 +629,7 @@ The function always returns *nil*.
 	(log "Hello, World")  ;; Prints "Hello, World" to the log
 	```
 
+---
 
 ### log-error
 
@@ -621,6 +647,7 @@ The function always returns *nil*.
 	(log-error "Hello, World")  ;; Prints "Hello, World" to the warning log
 	```
 
+---
 
 ### lower
 
@@ -636,6 +663,7 @@ The `lower` function returns a lower case copy of the input string.
 	(lower "Hello, World")  ;; Returns "hello, world"
 	```
 
+---
 
 ### match
 
@@ -657,6 +685,7 @@ The `match` function determines whether a string matches a regular expression *r
 	(match "aa" "b*")  ;; Returns false
 	```
 
+---
 
 ### nl
 
@@ -672,6 +701,7 @@ The `nl` function returns a newline character.
 	(. "Hello," nl "World")  ;; Returns "Hello,\nWorld"
 	```
 
+---
 
 ### nth
 
@@ -690,6 +720,7 @@ The index is 0-based.
 	(nth 2 "Hello, World")  ;; Returns "l"
 	```
 
+---
 
 ### parse-string
 
@@ -705,6 +736,7 @@ The `parse-string` function parses a string that contains an s-expression and re
 	(eval (parse-string "(print \"hello, world\")"))  ;; Prints "hello, world" 
 	```
 
+---
 
 ### print
 
@@ -722,6 +754,7 @@ The function always returns *nil*.
 	(print "Hello, World")  ;; Prints "Hello, World"
 	```
 
+---
 
 ### progn
 
@@ -740,6 +773,7 @@ This function is implicitly used internally when used to evaluate s-expressions.
 	(progn (print "Hello, World") 1)  ;; Prints "Hello, World" and returns 1
 	```
 
+---
 
 ### quit
 
@@ -758,6 +792,7 @@ If a symbol is provided for the optional argument its value is taken as the resu
 	(quit "a result")  ;; Returns "a result"
 	```
 
+---
 
 ### quit-with-error
 
@@ -776,6 +811,7 @@ If a symbol is provided for the optional argument its value is taken as the resu
 	(quit-with-error "a result")  ;; Returns "a result"
 	```
 
+---
 
 ### quote
 
@@ -788,6 +824,7 @@ The `quote` function returns a quoted version of the argument. It can be used to
 	(quote (1 2 3))  ;; Returns (1 2 3)
 	```
 
+---
 
 ### random
 
@@ -804,6 +841,7 @@ The default for the range, when no argument is given, is [0.0, 1.0]. If one numb
 	(random 10 20)   ;; returns, for example, 12.73221
 	```
 
+---
 
 ### remove-json-attribute
 
@@ -821,6 +859,7 @@ The function doesn't change the original JSON structure, but returns an updated 
 	(remove-json-attribute { "a" : { "b" : "c" }} "a/b")  ;; Returns { "a" : {} }
 	```
 
+---
 
 ### return
 
@@ -838,6 +877,7 @@ The `return` function stops the evaluation of a function or [while](#while) loop
 	)
 	```
 
+---
 
 ### return-from
 
@@ -855,6 +895,7 @@ The function may return a symbol, or *nil*.
 	(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
 	```
 
+---
 
 ### round
 
@@ -868,6 +909,7 @@ The `round` function rounds a number to *precision* digits after the decimal poi
 	(round 3.1415926 2)  ;; Returns 3.14
 	```
 
+---
 
 ### set-json-attribute
 
@@ -896,6 +938,7 @@ The function doesn't change the original JSON structure, but returns an updated 
 	(set-json-attribute { "a" : { "b" : "c" }} '('("a/b" "d") '("a/c" "e")))  ;; Returns { "a" : { "b" : "d", "c" : "e"}
 	```
 
+---
 
 ### setq
 
@@ -911,6 +954,7 @@ The `setq` function assigns a value to a variable.
 	(setq a "Hello, World")  ;; Returns "Hello, World" and sets the variable "a"
 	```
 
+---
 
 ### sleep
 
@@ -927,6 +971,7 @@ The function returns the delay.
 	(sleep 1.5)  ;; Sleep for 1.5 seconds
 	```
 
+---
 
 ### slice
 
@@ -944,6 +989,7 @@ The behavior is the same as slicing in Python, except that both *start* and *end
 	(slice 99 100 '(1 2 3))  ;; Returns ()
 	```
 
+---
 
 ### sp
 
@@ -959,6 +1005,7 @@ The `sp` function returns a space character.
 	(. "Hello," sp "World")  ;; Returns "Hello, World"
 	```
 
+---
 
 ### string-to-json
 
@@ -974,6 +1021,7 @@ The `string-to-json` function converts a string to a JSON structure and returns 
 	(string-to-json "{ \"a\" : { \"b\" : \"c\" }}")  ;; Returns {"a": {"b": "c"}}
 	```
 
+---
 
 ### to-number
 
@@ -989,6 +1037,7 @@ The `to-number` function converts a string that contains a number to a number sy
 	(to-number "123")  ;; Returns the number 123
 	```
 
+---
 
 ### to-string
 
@@ -1004,6 +1053,7 @@ The `to-string` function converts a symbol of any of the built-in types to a str
 	(to-string '(1 2))  ;; Returns "[1, 2]"
 	```
 
+---
 
 ### to-symbol
 
@@ -1019,6 +1069,7 @@ The `to-symbol` function converts a string to a symbol and returns it. The resul
 	(to-symbol "a-symbol")  ;; Returns the symbol 'a-symbol'
 	```
 
+---
 
 ### unwind-protect
 
@@ -1041,6 +1092,7 @@ The function always returns the result of the cleanup s-expression.
 		((print "cleanup form") 2))
 	```
 
+---
 
 ### upper
 
@@ -1056,6 +1108,7 @@ The `upper` function returns an upper case copy of the input string.
 	(upper "Hello, World")  ;; Returns "HELLO, WORLD"
 	```
 
+---
 
 ### url-encode
 
@@ -1071,6 +1124,7 @@ The `url-encode` function encodes a string so that may be safely used as part of
 	(url-encode "Hello, World")  ;; Returns "Hello%2C+World"
 	```
 
+---
 
 ### while
 
@@ -1111,6 +1165,7 @@ The `clear-console` function clears the console screen.
 	(clear-console)  ;; Clears the console screen
 	```
 
+---
 
 ### cse-attribute-info
 
@@ -1130,6 +1185,7 @@ The function returns a quoted list where each entry is another quoted list with 
 	(cse-attribute-info "acop")  ;; Returns ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
 	```
 
+---
 
 ### cse-status
 
@@ -1150,6 +1206,7 @@ The return value is one of the following strings:
 	(cse-status)  ;; Returns "RUNNING"
 	```
 
+---
 
 ### get-config
 
@@ -1166,6 +1223,7 @@ The `get-config` function retrieves a setting from the CSE's internal configurat
 	(get-config "cse.cseID")   ;; Returns, for example, "/id-in"
 	```
 
+---
 
 ### get-loglevel
 
@@ -1184,6 +1242,7 @@ The `get-loglevel` function retrieves a the CSE's current log level setting. The
 	(get-loglevel)  ;; Return, for example, INFO
 	```
 
+---
 
 ### get-storage
 
@@ -1199,6 +1258,7 @@ The `get-storage` function retrieves a value from the CSE's internal script-data
 	(get-storage "aStorageID" "aKey")  ;; Retrieves the value for "aKey" from "aStorageID"
 	```
 
+---
 
 ### has-config
 
@@ -1215,6 +1275,7 @@ The `has-config` function determines whether a setting from the CSE's internal c
 	(has-config "cse.unknown")   ;; Returns false
 	```
 
+---
 
 ### has-storage
 
@@ -1230,6 +1291,7 @@ The `has-storage` function determines whether a value has been stored under the 
 	(has-storage "aStorageID" "aKey")       ;; Tests whether the key "aKey" exists in "aStorageID"
 	```
 
+---
 
 ### include-script
 
@@ -1247,6 +1309,7 @@ The function returns the result of the finished script.
 	(include-script "functions" "an argument")  ;; Run the script "functions"
 	```
 
+---
 
 ### log-divider
 
@@ -1260,6 +1323,7 @@ The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It c
 	(log-divider "Hello, World")  ;; Add a divider with a centered message
 	```
 
+---
 
 ### print-json
 
@@ -1272,6 +1336,7 @@ The `print-json` function prints a JSON structure with syntax highlighting to th
 	(print-json { "m2m:cnt" : { "rn": "myCnt" }})  ;; Print the JSON structure
 	```
 
+---
 
 ### put-storage
 
@@ -1287,6 +1352,7 @@ The `put-storage` function inserts or updates a *value* in the CSE's internal sc
 	(put-storage "aStorageID" "aKey" "Hello, World")  ;; Inserts or updates the key "aKey" in "aStorageID"
 	```
 
+---
 
 ### remove-storage
 
@@ -1308,6 +1374,7 @@ With two parameters the `remove-storage` function removes a *key*/*value* pair f
 	(remove-storage "aStorageID")         ;; Removes all keys and value from storageID
 	```
 
+---
 
 ### reset-cse
 
@@ -1322,6 +1389,7 @@ The script execution does continue after the CSE finished the reset.
 	(reset-cse)  ;; Resets the CSE
 	```
 
+---
 
 ### run-script
 
@@ -1339,6 +1407,7 @@ The function returns the result of the finished script.
 	(setq result (run-script "aScript" "an argument"))  ;; Run the script "aScript" and assign the result
 	```
 
+---
 
 ### runs-in-ipython
 
@@ -1351,6 +1420,7 @@ The `runs-in-ipython` function determines whether the CSE currently runs in an I
 	(runs-in-ipython)  ;; Returns true if the CSE runs in an iPython environment
 	```
 
+---
 
 ### schedule-next-script
 
@@ -1368,6 +1438,7 @@ This is different from [include-script](#include-script) and [run-script](#run-s
 	(schedule-next-script "scriptName" "anArgument")  ;; Schedule a script with an argument
 	```
 
+---
 
 ### set-config
 
@@ -1385,6 +1456,7 @@ It is only possible to update an existing setting, but not to create a new one. 
 	(set-config "cse.checkExpirationsInterval" 1.5)  ;; Set the configuration to 1.5
 	```
 
+---
 
 ### set-console-logging
 
@@ -1435,6 +1507,7 @@ The function returns a list:
 	(create-resource "CAdmin" "cse-in"  { "m2m:cnt" : { }} { "rvi": "3"})  ;; Returns ( 2001 { "m2m:cnt" ... } )
 	```
 
+---
 
 ### delete-resource
 
@@ -1468,6 +1541,7 @@ The function returns a list:
 	(delete-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2002 { "m2m:cnt" ... } )
 	```
 
+---
 
 ### import-raw
 
@@ -1475,40 +1549,33 @@ The function returns a list:
 
 The `import-raw` function creates a resource in the CSE without using the normal procedures when handling a [CREATE request](#create-resource). The resource is added to the resource tree without much validation.
 
-This function is primarily used when importing initial resources, and when restoring resources during the [startup](ACMEScript-metatags.md#meta_init) of the CSE.
+This function is primarily used when importing initial resources, and when restoring resources during the [startup](ACMEScript-metatags.md#init) of the CSE.
 
 `resource` is a valid oneM2M resource. All necessary attributes must be present in that resource, including the *parentID* ( *pi* ) attribute that determines the location in the resource tree.
 
 The function returns a list:
 
 `(<response status:number> <resource:JSON>)`
-
 - *response status* is the oneM2M Response Status Code (RSC) for the request
-
 - *resource* is the response content (usually *nil* if successful)
 
-Example:
-
-```lisp
-;; Add an AE resource under the CSEBase
-(import-raw 
-    "CmyAE"                                      ;; Originator
-    { "m2m:ae": {
-        "ri":  "CmyAE",
-        "rn":  "CmyAE",
-        "pi":  "${ (get-config \"cse.ri\") }",  ;; Get the CSE's resource ID from the configuration
-        "rr":  true,
-        "api": "NmyAppId",
-        "aei": "CmyAE",
-        "csz": [ "application/json", "application/cbor" ]
-    }})
-```
-
-[top](#top)
+=== "Example"
+	```lisp
+	;; Add an AE resource under the CSEBase
+	(import-raw 
+		"CmyAE"                                      ;; Originator
+		{ "m2m:ae": {
+			"ri":  "CmyAE",
+			"rn":  "CmyAE",
+			"pi":  "${ (get-config \"cse.ri\") }",  ;; Get the CSE's resource ID from the configuration
+			"rr":  true,
+			"api": "NmyAppId",
+			"aei": "CmyAE",
+			"csz": [ "application/json", "application/cbor" ]
+		}})
+	```
 
 ---
-
-<a name="query-resource"></a>
 
 ### query-resource
 
@@ -1524,25 +1591,21 @@ The function has the following arguments:
 
 The function returns a boolean indicating the query result.
 
-See also: [get-json-attribute](#get-json-attribute)
+!!! see-also "See also"
+	[get-json-attribute](#get-json-attribute)
 
-Examples:
-
-```lisp
-;; Returns true
-(query-resource 
-	'(& (> x 100) (== rn "cnt1234"))
-	{ "m2m:cnt": {
-		"rn": "cnt1234",
-	  	"x": 123
-	}})
-```
-
-[top](#top)
+=== "Examples"
+	```lisp
+	;; Returns true
+	(query-resource 
+		'(& (> x 100) (== rn "cnt1234"))
+		{ "m2m:cnt": {
+			"rn": "cnt1234",
+			"x": 123
+		}})
+	```
 
 ---
-
-<a name="retrieve-resource"></a>
 
 ### retrieve-resource
 
@@ -1563,25 +1626,20 @@ The function returns a list:
 `(<response status:number> <resource:JSON>)`
 
 - *response status* is the oneM2M Response Status Code (RSC) for the request
-
 - *resource* is the response content (usually the target resource if successful)
 
-See also: [create-resource](#create-resource),  [delete-resource](#delete-resource), [send-notification](#send-notification), [update-resource](#update-resource)
+!!! see-also "See also"
+	[create-resource](#create-resource), [delete-resource](#delete-resource), [send-notification](#send-notification), [update-resource](#update-resource)
 
-Examples:
-
-```lisp
-(retrieve-resource "CAdmin" "cse-in/myCnt")  
-;; Returns ( 2000 { "m2m:cnt" ... } )
-(retrieve-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Provide requestVersionIndicator
-;; Returns ( 2000 { "m2m:cnt" ... } )
-```
-
-[top](#top)
+=== "Examples"
+	```lisp
+	(retrieve-resource "CAdmin" "cse-in/myCnt")                ;; Returns ( 2000 { "m2m:cnt" ... } )
+	
+	;; Provide extra requestVersionIndicator
+	(retrieve-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2000 { "m2m:cnt" ... } )
+	```
 
 ---
-
-<a name="send-notification"></a>
 
 ### send-notification
 
@@ -1592,11 +1650,8 @@ The `send-notification` function sends a oneM2M NOTIFY request to a target resou
 The function has the following arguments:
 
 - *originator* of the request
-
 - The target *resource-id*
-
 - The *notification* JSON structure
-
 - Optional: A JSON structure  with additional *request arguments*
 
 The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
@@ -1606,22 +1661,17 @@ The function returns a list:
 `(<response status:number> <resource:JSON>)`
 
 - *response status* is the oneM2M Response Status Code (RSC) for the request
-
 - *resource* is the response content
 
-See also:  [create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [update-resource](#update-resource), 
+!!! see-also "See also"
+	[create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [update-resource](#update-resource)
 
-Example:
-
-```lisp
-(send-notification "CAdmin" "cse-in/myAE"  { "m2m:sgn" : { ... }})  ;; Returns notification result
-```
-
-[top](#top)
+=== "Examples"
+	```lisp
+	(send-notification "CAdmin" "cse-in/myAE"  { "m2m:sgn" : { ... }})  ;; Returns notification result
+	```
 
 ---
-
-<a name="update-resource"></a>
 
 ### update-resource
 
@@ -1632,11 +1682,8 @@ The `update-resource` function sends a oneM2M UPDATE request to a target resourc
 The function has the following arguments:
 
 - *originator* of the request
-
 - The target *resource-id*
-
 - The *resource* JSON structure
-
 - Optional: A JSON structure  with additional *request arguments*
 
 The function will provide defaults for the required request arguments (e.g. rvi, rid). These can be overwritten if necessary by setting them in the *request arguments* argument.
@@ -1646,32 +1693,21 @@ The function returns a list:
 `(<response status:number> <resource:JSON>)`
 
 - *response status* is the oneM2M Response Status Code (RSC) for the request
-
 - *resource* is the response content
 
-See also:  [create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [send-notification](#send-notification), 
+!!! see-also "See also"
+	[create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [send-notification](#send-notification)
 
-Examples:
+=== "Examples"
+	```lisp
+	(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }})                ;; Returns ( 2004 { "m2m:cnt" ... } )
 
-```lisp
-(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }})  
-;; Returns ( 2004 { "m2m:cnt" ... } )
-(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }} { "rvi": "3"})  
-;; Provide requestVersionIndicator
-;; Returns ( 2004 { "m2m:cnt" ... } )
-```
+	;; Provide extra requestVersionIndicator
+	(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }} { "rvi": "3"})  ;; Returns ( 2004 { "m2m:cnt" ... } )
+	```
 
-[top](#top)
-
----
-
-<a name="_textui"></a>
 
 ## Text UI
-
----
-
-<a name="open-web-browser"></a>
 
 ### open-web-browser
 
@@ -1679,18 +1715,12 @@ Examples:
 
 The `open-web-browser` function opens a web browser with the given URL.
 
-Examples:
-
-```lisp
-;; Opens the web browser with the URL "https://www.onem2m.org"
-(open-web-browser "https://www.onem2m.org")  
-```
-
-[top](#top)
+=== "Example"
+	```lisp
+	(open-web-browser "https://www.onem2m.org")  ;; Opens the web browser with the URL "https://www.onem2m.org"
+	```
 
 ---
-
-<a name="set-category-description"></a>
 
 ### set-category-description
 
@@ -1700,18 +1730,12 @@ The `set-category-description` function sets the description for a whole categor
 
 The description may contain Markdown formatting.
 
-Examples:
-
-```lisp
-;; Sets the description for the category "myCategory"
-(set-category-description "myCategory" "My category description")
-```
-
-[top](#top)
+=== "Example"
+	```lisp
+	(set-category-description "myCategory" "My category description")  ;; Sets the description for the category "myCategory"
+	```
 
 ---
-
-<a name="runs-in-tui"></a>
 
 ### runs-in-tui
 
@@ -1719,13 +1743,10 @@ Examples:
 
 The `runs-in-tui` function determines whether the CSE currently runs in Text UI mode.
 
-Examples:
-
-```lisp
-(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
-```
-
-[top](#top)
+=== "Example"
+	```lisp
+	(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+	```
 
 ---
 
@@ -1750,22 +1771,16 @@ This function is only available in TUI mode. It has the following arguments:
 If one of the optional arguments needs to be left out, a *nil* symbol must be used instead.
 The function returns NIL.
 
-Examples:
-
-```lisp
-(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
-(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
-(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
-(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
-(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
-
-```
-
-[top](#top)
+=== "Examples"
+	```lisp
+	(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+	(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
+	(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+	(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
+	(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
+	```
 
 ---
-
-<a name="tui-refresh-resources"></a>
 
 ### tui-refresh-resources
 
@@ -1773,17 +1788,12 @@ Examples:
 
 The `tui-refresh-resources` function refreshes the resources in the CSE's Text UI.
 
-Examples:
-
-```lisp
-(tui-refresh-resources)  ;; refreshes the resource tree
-```
-
-[top](#top)
+=== "Example"
+	```lisp
+	(tui-refresh-resources)  ;; Refreshes the resource tree
+	```
 
 ---
-
-<a name="tui-visual-bell"></a>
 
 ### tui-visual-bell
 
@@ -1791,21 +1801,12 @@ Examples:
 
 The `tui-visual-bell` function shortly flashes the script's entry in the scripts' list/tree.
 
-Examples:
-
-```lisp
-(tui-visual-bell)  ;; Flashes the script's name
-```
-
-[top](#top)
-
----
-
-<a name="_network"></a>
+=== "Example"
+	```lisp
+	(tui-visual-bell)  ;; Flashes the script's name
+	```
 
 ## Network
-
-<a name="http"></a>
 
 ### http
 
@@ -1816,11 +1817,8 @@ The `http` function sends an http request to an http server.
 The function has the following arguments:
 
 - *operation* of the request. This is one of the following supported quoted symbols: get, post, put, delete, patch
-
 - The target server's *url*. This is a string with a valid URL.
-
 - Optional: A JSON structure of header fields. Each header field is a JSON attribute with the name of the header field and its value. If the optional *body* argument is present then this argument must be present as well, ie. with at least an empty JSON structure or the *nil* symbol.
-
 - Optional: The http request's body, which could be a string or a JSON structure. 
 
 The function returns a list:
@@ -1828,32 +1826,27 @@ The function returns a list:
 `(<http status:number> <response body:JSON> <response headers:list of header fields)`
 
 - *http status* is the htttp status code for the request
-
 - *response body* is the response content
-
 - *response headers* is a list of header fields. The format of these header fields is the same as in the request above.
 
-Examples:
+=== "Examples"
+	```lisp
+	;; Retrieve a web page
+	(http 'get "https://www.onem2m.org")
 
-```lisp
-;; Retrieve a web page
-(http 'get "https://www.onem2m.org")
-
-;; Send a oneM2M CREATE request manually
-(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
-	  { "X-M2M-RI":"1234",                   ;; Header fields
-        "X-M2M-RVI": "4",
-        "X-M2M-Origin": "CAdmin",
-		"Content-type": "application/json;ty=3" }
-      { "m2m:cnt": {                         ;; Body
-          "rn": "myCnt"}})
-```
-
-[top](#top)
+	;; Send a oneM2M CREATE request manually
+	(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
+		{ "X-M2M-RI":"1234",                     ;; Header fields
+			"X-M2M-RVI": "4",
+			"X-M2M-Origin": "CAdmin",
+			"Content-type": "application/json;ty=3" }
+		{ "m2m:cnt": {                           ;; Body
+			"rn": "myCnt"
+			...
+		}})
+	```
 
 ---
-
-<a name="ping-tcp-service"></a>
 
 ### ping-tcp-service
 
@@ -1869,20 +1862,173 @@ It has the following arguments:
 
 The function returns a boolean value.
 
-Examples:
+=== "Examples"
+	```lisp
+	(ping-tcp-service "localhost" 8080)    ;; Returns true if the service is reachable
+	(ping-tcp-service "localhost" 8080 2)  ;; Returns true if the service is reachable. Timeout after 2 seconds.
+	```
 
-```lisp
-(ping-tcp-service "localhost" 8080 2)  
-;; Returns true if the service is reachable. Timeout after 2 seconds.
-```
+## Provided Functions
 
-[top](#top)
+In addition to the functions defined in this documentation, more functions are provided in the file [ASFunctions.as](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/acme/init/ASFunctions.as). 
+
+These functions can be included and made available in own scripts with the [include-script](#include-script) function:
+
+=== "Example"
+	```lisp
+	(include-script "ASFunctions")
+	```
+
+### cadr
+
+`(cadr <list>)`
+
+The `cadr` function returns the second element of a list.
+
+!!! see-also "See also"
+	[caddr](#caddr)
+
+=== "Example"
+	```lisp
+	(cadr '(1 2 3))  ;; Returns 2
+	```
 
 ---
 
+### caddr
+
+`(caddr <list>)`
+
+The `caddr` function returns the third element of a list.
+
+!!! see-also "See also"
+	[cadr](#cadr)
+
+=== "Example"
+	```lisp
+	(caddr '(1 2 3))  ;; Returns 3
+	```
+
+---
+
+### set-and-store-config-value
+
+`(set-and-store-config-value <key:string> <value:any>)`
+
+The `set-and-store-config-value` function stores the current value of a configuration setting and then updates the setting with a new value.
+
+The function has the following arguments:
+
+- The *key* of the configuration setting
+- The *value* to set
+
+The function returns the previous value of the configuration setting.
+
+!!! see-also "See also"
+	[restore-config-value](#restore-config-value)
+
+=== "Example"
+	```lisp
+	(set-and-store-config-value "cse.checkExpirationsInterval" 10)  ;; Returns the previous value of the configuration setting
+	```
+
+---
+
+### restore-config-value
+
+`(restore-config-value <key:string>)`
+
+The `restore-config-value` function restores a configuration setting to its previous value.
+
+The function has the following arguments:
+
+- The *key* of the configuration setting
+
+!!! see-also "See also"
+	[set-and-store-config-value](#set-and-store-config-value)
+
+=== "Example"
+	```lisp
+	(restore-config-value "cse.checkExpirationsInterval")  ;; Restores the configuration setting
+	```
+
+---
+
+### get-response-status
+
+`(get-response-status <response:list>)`
+
+The `get-response-status` function returns the response status of a oneM2M request.
+
+The function has the following arguments:
+
+- The *response* list 
+
+The function returns the response status.
+
+!!! see-also "See also"
+	[get-response-resource](#get-response-resource) 
+
+=== "Example"
+	```lisp
+	(get-response-status (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response status
+	```
+
+---
+
+### get-response-resource
+
+`(get-response-resource <response:list>)`
+
+The `get-response-resource` function returns the response resource of a oneM2M request.
+
+The function has the following arguments:
+
+- The *response* list
+
+The function returns the response resource.
+
+!!! see-also "See also"
+	[get-response-status](#get-response-status)
+
+=== "Example"
+	```lisp
+	(get-response-resource (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response resource
+	```
+
+---
+
+### eval-if-resource-exists
+
+`(eval-if-resource-exists <originator:string> <id:string> <cmd:s-expression> <else-cmd:s-expression>)`
+
+The `eval-if-resource-exists` function evaluates a command if a resource exists and can be retrieved. Otherwise, it evaluates an alternative command.
+
+If found, the resource is stored in the "_resource" variable that can be used in the "cmd" command.
+
+The function has the following arguments:
+
+- The *originator* of the request
+- The *id* of the resource
+- The *cmd* to evaluate if the resource exists
+- The *else-cmd* to evaluate if the resource does not exist
+
+The function returns the result of the evaluated command.
+
+=== "Example"
+	```lisp
+	(eval-if-resource-exists "CAdmin" "cse-in/myCnt" (print "Resource exists") (print "Resource does not exist"))  ;; Evaluates the command
+	```
 
 
+;; Run a command if the resource exists and can be retrieved
+;; Otherwise run the "else-cmd" command.
+;; If found, the resource is stored in the "_resource" variable
+;; that can be used in the "cmd" command.
+(defun eval-if-resource-exists (originator id cmd else-cmd)
+  ( (setq response (retrieve-resource originator id))
+    (if (== (get-response-status response) 2000)
+      ( (setq _resource (get-response-resource response))
+	    (eval cmd))
+	  (eval else-cmd))))
 
-**ASFunctions.as**
-
-In addition more functions are provided in the file [ASFunctions.as](../init/ASFunctions.as). These functions can be included and made available in own scripts with the [include-script](#include-script) function.

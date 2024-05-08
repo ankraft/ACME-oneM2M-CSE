@@ -18,6 +18,7 @@ Evaluates to the number of elements in [argv](../development/ACMEScript-function
     	(quit-with-error)))
 	```
 
+---
 
 ## event.data
 
@@ -37,6 +38,7 @@ Evaluates to the payload data of an event. This could be, for example, the strin
     	(print "Key:" event.data))  ;; Print the pressed key
 	```
 
+---
 
 ## event.type
 
@@ -57,6 +59,7 @@ Example:
     (print "Key:" event.data))  ;; Print the pressed key
 ```
 
+---
 
 ## notification.originator
 
@@ -71,6 +74,7 @@ It contains the notification's originator.
 	(print notification.originator)
 	```
 
+---
 
 ## notification.resource
 
@@ -85,6 +89,7 @@ It contains the notification's JSON body.
 	(print notification.resource)
 	```
 
+---
 
 ## notification.uri
 
@@ -99,15 +104,16 @@ It contains the notification's target URI.
 	(print notification.uri)
 	```
 
+---
 
 ## tui.autorun
 
 `tui.autorun`
 
-Evaluates to *true* if the script was started as an "autorun" script. This is the case when the [@tuiAutoRun](ACMEScript-metatags.md#meta_tuiAutoRun) meta tag is set in a script.
+Evaluates to *true* if the script was started as an "autorun" script. This is the case when the [@tuiAutoRun](ACMEScript-metatags.md#tuiautorun) meta tag is set in a script.
 
 !!! see-also "See also"
-	[tuiAutoRun](ACMEScript-metatags.md#meta_tuiAutoRun)
+	[tuiAutoRun](ACMEScript-metatags.md#tuiautorun)
 
 !!! note
 	This variable is only set when the script is run from the text UI.
@@ -119,6 +125,7 @@ Evaluates to *true* if the script was started as an "autorun" script. This is th
 			(print "Autorun: True")))  ;; Print a message
 	```
 
+---
 
 ## tui.theme
 

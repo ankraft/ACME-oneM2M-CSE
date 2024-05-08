@@ -186,7 +186,7 @@ The ACME CSE runs at least on the following runtime environments:
 
 | Runtime Environment | Supported | Remark                                                                                |
 |:--------------------|:---------:|:--------------------------------------------------------------------------------------|
-| Generic Linux       |  &check;  | Including [Raspberry Pi OS (32bit)](../setup/RaspberryPi.md) on Raspberry Pi 3 and 4. |
+| Generic Linux       |  &check;  | Including [Raspberry Pi OS (32bit)](../howtos/RaspberryPi.md) on Raspberry Pi 3 and 4. |
 | Mac OS              |  &check;  | Intel and Apple silicon.                                                              |
 | MS Windows          |  &check;  |                                                                                       |
 | Jupyter Notebooks   |  &check;  | ACME CSE can be run headless inside a Jupyter Notebook.                               |

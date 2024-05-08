@@ -11,11 +11,11 @@
 <a name="resources"></a>
 ## Initial Resources
 
-During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#meta_init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
+During CSE startup and restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running a script that has the [@init](ACMEScript-metatags.md#init) meta tag set. By default this is the [init.as](../init/init.as) script from the [init](../init) directory.
 
 Not much validation, access control, or registration procedures are performed when importing resources this way.
 
-See also [@init meta tag](ACMEScript-metatags.md#meta_init)
+See also [@init meta tag](ACMEScript-metatags.md#init)
 
 **Mandatory Resources to the CSE**
 
@@ -23,7 +23,7 @@ Please note that importing is required for creating the CSEBase, the administrat
 
 **Other Resources**
 
-Another option to import more resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#meta_onstartup)* and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
+Another option to import more resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the *[onStartup](ACMEScript-metatags.md#onstartup)* and *[onRestart](ACMEScript-metatags.md#onrestart)* events.
 
 
 <mark>TODO move to scripts</mark>
