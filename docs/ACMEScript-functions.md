@@ -2112,7 +2112,7 @@ Examples:
 
 The `import-raw` function creates a resource in the CSE without using the normal procedures when handling a [CREATE request](#create-resource). The resource is added to the resource tree without much validation.
 
-This function is primarily used when importing initial resources, and when restoring resources during the [startup](ACMEScript-metatags.md#meta_init) of the CSE.
+This function is primarily used when importing initial resources, and when restoring resources during the [startup](ACMEScript-metatags.md#init) of the CSE.
 
 `resource` is a valid oneM2M resource. All necessary attributes must be present in that resource, including the *parentID* ( *pi* ) attribute that determines the location in the resource tree.
 
@@ -2654,7 +2654,7 @@ Evaluates to *true* if the script was started as an "autorun" script. This is th
 in a script.
 
 
-See also: [@tuiAutoRun](ACMEScript-metatags.md#meta_tuiAutoRun)
+See also: [@tuiAutoRun](ACMEScript-metatags.md#tuiAutoRun)
 
 Note: This variable is only set when the script is run from the text UI.
 

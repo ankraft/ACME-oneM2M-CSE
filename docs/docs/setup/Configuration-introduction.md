@@ -57,11 +57,10 @@ There are some built-in configuration settings that can be used in the configura
 :	Two built-in configuration settings that point to acme's main *init* directory.  
 	Both settings are equivalent and can be used interchangeably.
 
-	=== "Example"
-		```ini
-		[cse]
-		resourcesPath=${basic.config:initDirectory}
-		```
+	```ini title="Use built-in settings"
+	[cse]
+	resourcesPath=${basic.config:initDirectory}
+	```
 
 **${basic.config:moduleDirectory}**  
 **${moduleDirectory}**
@@ -77,8 +76,7 @@ Environment variables can be used in the configuration file to provide sensitive
 
 Another useful application is to provide the IP address of a Docker host to the CSE. This can be done, for example, by setting the environment variable `DOCKER_HOST_IP` and using it in the configuration file.
 
-=== "Example" 
-	```ini
-	[basic.config]
-	cseHost=${DOCKER_HOST_IP}
-	```
+```ini title="Use Environment Variable to set Host IP"
+[basic.config]
+cseHost=${DOCKER_HOST_IP}
+```

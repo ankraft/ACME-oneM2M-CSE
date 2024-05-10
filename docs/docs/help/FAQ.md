@@ -78,14 +78,14 @@
    </br>
    Example for an IN-CSE with the CSE-ID "*/id-in*":
 
-	```ini
+	```ini title="Example to allow a CSE with the CSE-ID 'id-mn' to register to the IN-CSE"
 	[cse.registration]
 	allowedCSROriginators=id-mn
 	```
    <br/>
    And for an MN-CSE with the CSE-ID "*/id-mn*":
 
-	```ini
+	```ini title="Example to allow the IN-CSE with the CSE-ID 'id-in' to get access"
 	[cse.registration]
 	allowedCSROriginators=id-in
 	```
@@ -102,7 +102,7 @@
    When running the CSE with the database mode set to *disk* (ie. store the database on disk rather then in memory) one can improve the performance by increasing the time before data is actually written to disk. The default is 1 second, but it can be increased as necessary.  
    Be aware, though, that the risk of losing data increases with higher delays in case of a crash or when the CSE shutdown is interrupted.
 
-	```ini
+	```ini title="Example to set the write delay to 10 seconds"
 	[database]
 	writeDelay=10
 	```
@@ -122,7 +122,7 @@
 1. **There is an error message "UnicodeEncodeError: 'latin-1' codec can't encode character"**  
 	This error message is shown when the console tries to display a character that is not supported by the current console encoding. Try to set the console encoding to UTF-8 by setting the environment variable *PYTHONIOENCODING* to *utf-8*, for example:
 
-	```bash
+	```bash title="Set the terminal console encoding to UTF-8"
 	export PYTHONIOENCODING=utf-8
 	``` 
 	
@@ -135,7 +135,7 @@
 1. **The console or the text UI is not displayed correctly**  
 	It could be that the OS's terminal applications doesn't support rendering of extra characters, like line graphics. One recommendation on Linux systems is to install the [Mate Terminal](https://wiki.mate-desktop.org/mate-desktop/applications/mate-terminal/){target=_new}, which supports UTF-8 and line graphics. It also renders the output much faster.
 
-	```bash
+	```bash title="Install the Mate Terminal"
 	sudo apt-get install mate-terminal
 	```
 

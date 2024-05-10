@@ -12,11 +12,10 @@ Meta tags are keywords that start with an at-character `@`. They can appear anyw
 Meta tags are added as constants to the script's environment and are prefixed with `meta.`.
 They can be accessed like any other environment variable, for example:
 
-=== "Accessing a Meta Tag"
-	```lisp
-	(if (is-defined 'meta.name)            ;; note the quote in front of meta.name to prevent evaluation
-		(print "Script name:" meta.name))  ;; prints the script's name
-	```
+```lisp title="Accessing a Meta Tag"
+(if (is-defined 'meta.name)            ;; note the quote in front of meta.name to prevent evaluation
+	(print "Script name:" meta.name))  ;; prints the script's name
+```
 
 ## Basic Meta Tags
 
@@ -37,14 +36,13 @@ Each field is mandatory and must comply to the following values:
 - `<number>-<number` : range, or
 - `value[,value]*` : value is either a number, a step, or a range
 
-=== "Example"
-	```lisp
-	;; Run a script every 5 minutes
-	@at 0 */5 * * * * *
+```lisp title="Examples"
+;; Run a script every 5 minutes
+@at 0 */5 * * * * *
 
-	;; Run a script every Friday at 2:30 am
-	@at 0 30 2 * * 4 *
-	```
+;; Run a script every Friday at 2:30 am
+@at 0 30 2 * * 4 *
+```
 
 ---
 
@@ -59,12 +57,11 @@ A description must be a single line, but may include line breaks (i.e. `\n` char
 !!! see-also "See also"
 	[@usage](#usage)
 
-=== "Examples"
-	```lisp
-	@description The purpose of this script is to demonstrate the @description meta tag
+```lisp title="Examples"
+@description The purpose of this script is to demonstrate the @description meta tag
 
-	@description # Markdown header\n\nFormatted **Markdown** text.
-	```
+@description # Markdown header\n\nFormatted **Markdown** text.
+```
 
 ---
 
@@ -82,10 +79,9 @@ This meta tag is for internal use. It contains the script's full filename when r
 
 This meta tag indicates that a script will not be listed in the console's script catalog.
 
-=== "Example"
-	```lisp
-	@hidden
-	```
+```lisp title="Example"
+@hidden
+```
 
 ---
 
@@ -101,10 +97,9 @@ This meta tag indicates that the script will be executed during the CSE's startu
 !!! see-also
 	[@onRestart](#onrestart), [@onShutdown](#onshutdown), [@onStartup](#onstartup)
 
-=== "Example"
-	```lisp
-	@init
-	```
+```lisp title="Example"
+@init
+```
 
 ---
 
@@ -117,10 +112,9 @@ This meta tag assigns a name to a script. This name is used for identifying the 
 !!! see-also
 	[@uppertester](#uppertester)
 
-=== "Example"
-	```lisp
-	@name exampleScript
-	```
+```lisp title="Example"
+@name exampleScript
+```
 
 ---
 
@@ -135,13 +129,12 @@ The keys may be normal ASCII characters or a function key. Please consult the co
 
 A script can only register for a single key event.
 
-=== "Example"
-	```lisp
-	;; Run the script when the '9' key is pressed
-	@onkey F9
+```lisp title="Example"
+;; Run the script when the '9' key is pressed
+@onkey F9
 
-	(print (event.data))
-	```
+(print (event.data))
+```
 
 ---
 
@@ -160,13 +153,12 @@ When a notification is received and the handler script is run the following vari
 - [notification.resource](../development/ACMEScript-variables.md#notificationresource) : The notification's resource
 - [notification.uri](../development/ACMEScript-variables.md#notificationuri) : The notification's target URI
 
-=== "Example"
-	```lisp
-	;; Run the script when the 'acme://aNotification' notificastion is received
-	@onNotification acme://aNotification
+```lisp title="Example"
+;; Run the script when the 'acme://aNotification' notificastion is received
+@onNotification acme://aNotification
 
-	(print (notification.resource))
-	```
+(print (notification.resource))
+```
 
 ---
 
@@ -181,10 +173,9 @@ If multiple scripts have this meta tag set then they will run in random order.
 !!! see-also
 	[@init](#init), [@onShutdown](#onshutdown), [@onStartup](#onstartup)
 
-=== "Example"
-	```lisp
-	@onRestart
-	```
+```lisp title="Example"
+@onRestart
+```
 
 ---
 
@@ -199,9 +190,9 @@ If more than one script have this meta tag set then they will run in random orde
 !!! see-also
 	[@init](#init), [@onRestart](#onrestart), [@onStartup](#onstartup)
 
-=== "Example"
-	```lisp
-	@onShutdown
+```lisp title="Example"
+@onShutdown
+```
 
 ---
 
@@ -214,10 +205,9 @@ This meta tag indicates that the script will be executed just after the CSE star
 !!! see-also
 	[@init](#init), [@onRestart](#onrestart), [@onShutdown](#onshutdown)
 
-=== "Example"
-	```lisp
-	@onStartup
-	```
+```lisp title="Example"
+@onStartup
+```
 
 ---
 
@@ -229,10 +219,9 @@ A script with this meta tag will present a prompt before it is executed and ask 
 
 This meta tag should only be used when human interaction can be ensured. Running a script with this meta tag scheduled or  unattended will cause the script to wait forever for user input. 
 
-=== "Example"
-	```lisp
-	@prompt Enter some arguments
-	```
+```lisp title="Example"
+@prompt Enter some arguments
+```
 
 ---
 
@@ -244,10 +233,9 @@ This meta tag sets a timeout after which the script execution is terminated with
 
 Note, that the script may terminate some time after the timeout when a script command takes longer to run.
 
-=== "Example"
-	```lisp
-	@timeout 10
-	```
+```lisp title="Example"
+@timeout 10
+```
 
 ---
 
@@ -257,10 +245,9 @@ Note, that the script may terminate some time after the timeout when a script co
 
 This meta tag disables the `Execute` button for this script in the Text UI's *Tools* section.
 
-=== "Example"
-	```lisp
-	@tuiNoExecute
-	```
+```lisp title="Example"
+@tuiNoExecute
+```
 
 ---
 
@@ -275,10 +262,9 @@ Scripts without this meta tag cannot be run through the Upper Tester interface.
 !!! see-also
 	[@name](#name), [Upper Tester Integration](../development/ACMEScript-uppertester.md), [Upper Tester Interface](../setup/Operation-uppertester.md)
 
-=== "Example"
-	```lisp
-	@uppertester
-	```
+```lisp title="Example"
+@uppertester
+```
 
 ---
 
@@ -291,10 +277,9 @@ This meta tag provides a short help message for a script's usage.
 !!! see-also
 	[@description](#description)
 
-=== "Example"
-	```lisp
-	@usage exampleScript <a parameter> <another parameter>
-	```
+```lisp title="Example"
+@usage exampleScript <a parameter> <another parameter>
+```
 
 ---
 
@@ -309,10 +294,9 @@ A category name for the script. This is used, for example, in the text UI tools 
 !!! see-also
 	[@name](#name), [@tool](#tool)
 
-=== "Example"
-	```lisp
-	@categoy System
-	```
+```lisp title="Example"
+@categoy System
+```
 
 ---
 
@@ -328,10 +312,9 @@ When the *interval* argument is present it must be a positive float number that 
 
 If this meta tag is present, with or without the *interval* argument, the environment variable `tui.autorun` is set to *true* when the script is run.
 
-=== "Example"
-	```lisp
-	@tuiAutoRun 10
-	```
+```lisp title="Example"
+@tuiAutoRun 10
+```
 
 ---
 
@@ -347,10 +330,9 @@ The following configurations are possible:
 - Present in a script with an argument: The argument is used for the button's label.
 - Present in a script with no argument: The button is hidden.
 
-=== "Example"
-	```lisp
-	@tuiExecuteButton A Label
-	```
+```lisp title="Example"
+@tuiExecuteButton A Label
+```
 
 ---
 
@@ -366,10 +348,9 @@ The following configurations are possible:
 - Not present in a script or without a label: No input field is added.
 - Present in a script with an argument: The argument is used for the input field's label.
 
-=== "Example"
-	```lisp
-	@tuiInput A Label
-	```
+```lisp title="Example"
+@tuiInput A Label
+```
 
 ---
 
@@ -381,10 +362,9 @@ With this meta tag one can specify the sort order of a script in the Text UI's *
 
 The default sort order is 500. Scripts with a lower priority number are listed first.  Scripts with the same priority are sorted alphabetically.
 
-=== "Example"
-	```lisp
-	@tuiSortOrder 100
-	```
+```lisp title="Example"
+@tuiSortOrder 100
+```
 
 ---
 
@@ -394,7 +374,6 @@ The default sort order is 500. Scripts with a lower priority number are listed f
 
 This meta tag categorizes a script as a tool. Scripts marked as *tuiTools* are listed in the Text UI's *Tools* section.
 
-=== "Example"
-	```lisp
-	@tuiTool
-	```
+```lisp title="Example"
+@tuiTool
+```

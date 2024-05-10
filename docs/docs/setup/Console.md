@@ -68,11 +68,10 @@ Simple wildcards are allowed in this setting.
 
 Example to hide all resources with resource identifiers starting with 'acp':
 
-=== "Hide resources"
-	```ini
-	[cse.console]
-	hideResources=acp*
-	```
+```ini title="Hide Resources"
+[cse.console]
+hideResources=acp*
+```
 
 
 ## Supported Function Keys

@@ -8,11 +8,15 @@ You can start the CSE by simply running it from the command line. This is the si
 
 === "Package installation"
 
-		acmecse
+	```bash title="Start ACME CSE"
+	acmecse
+	```
 
 === "Manual Installation"
 
-		python3 -m acme
+	```bash title="Start ACME CSE as a module"
+	python3 -m acme
+	```
 
 The current working directory is used as the base directory for the CSE and the *acme.ini* [configuration file](Configuration.md) must be in the same directory. An [interactive configuration process](Installation.md#guided-configuration) is started if the configuration file is not found.
 
@@ -23,11 +27,15 @@ The CSE can also be started with a different configuration file:
 
 === "Package Installation"
 
-		acmecse --config <filename>
+	```bash title="Start ACME CSE with a different configuration file"
+	acmecse --config <filename>
+	```
 
 === "Manual Installation"
 
-		python3 -m acme --config <filename>
+	```bash title="Start ACME CSE with a different configuration file"
+	python3 -m acme --config <filename>
+	```
 
 The current working directory is still the base directory for the CSE and the configuration file is still expected to be located in this directory.
 
@@ -37,11 +45,15 @@ The CSE can also be started with a different base directory:
 
 === "Package Installation"
 
-		acmecse -dir <directory>
+	```bash title="Start ACME CSE with a different base directory"
+	acmecse -dir <directory>
+	```
 
 === "Manual Installation"
 
-		python3 -m acme -dir <directory>
+	```bash title="Start ACME CSE with a different base directory"
+	python3 -m acme -dir <directory>
+	```
 
 This will use the specified directory as the root directory for runtime data such as *data*, *logs*, and *temporary* files. The configuration file *acme.ini*is expected to be in the specified directory, or it will be created there if it does not exist.
 
@@ -69,20 +81,13 @@ The ACME CSE provides a number of command line arguments that will override the 
 | --http-port &lt;http port>                               | Specify the CSE's http server port.<br />This overrides the [address](../setup/Configuration-http.md#general-settings) configuration setting.                           |
 | --init-directory &lt;directory>                          | Specify the import directory.<br />This overrides the [resourcesPath](../setup/Configuration-cse.md#general-settings) configuration setting.                            |
 | --network-interface &lt;ip address                       | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](../setup/Configuration-http.md#general-settings) configuration setting.         |
-| --log-level {info, error, warn, debug, off}              | Set the log level, or turn logging off.<br />This overrides the [level](../setup/Configuration-logging.md#configuration---logging) configuration setting.               |
+| --log-level {info, error, warn, debug, off}              | Set the log level, or turn logging off.<br />This overrides the [level](../setup/Configuration-logging.md#general-settings) configuration setting.               |
 | --mqtt, --no-mqtt                                        | Enable or disable the MQTT binding.<br />This overrides the [mqtt.enable](../setup/Configuration-mqtt.md#general-settings) configuration setting.                       |
 | --remote-cse, --no-remote-cse                            | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](../setup/Configuration-cse.md#general-settings) configuration setting. |
 | --statistics, --no-statistics                            | Enable or disable collecting CSE statistics.<br />This overrides the [enable](../setup/Configuration-cse.md#statistics) configuration setting.                                       |
 | --textui                                                 | Run the CSE's text UI after startup.                                                                                                                                    |
 | --ws, --no-ws                                            | Enable or disable the WebSocket binding.<br />This overrides the [websocket.enable](../setup//Configuration-ws.md#general-settings) configuration setting.                                  |
 
-
-<mark>TODO: To Development</mark>
-
-
-## Debug Mode
-
-Please see [Development - Debug Mode](Development.md#debug-mode) how to enable the debug mode to see further information in case you run into problems when trying to run the CSE.
 
 
 ## Stopping the CSE
@@ -94,6 +99,7 @@ The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
 **Being impatient and hitting *CTRL-C* twice might lead to data corruption.**
+
 
 
 <mark>TODO: To Development</mark>

@@ -10,8 +10,10 @@ The database files are stored by default in the directory *{baseDirectory}/data*
 
 You enable the TinyDB database by setting the *databaseType* setting in the *\[basic.config\]* section to *tinydb*:
 
-	[basic.config]
-	databaseType=tinydb
+```ini title="Enable TinyDB as database"
+[basic.config]
+databaseType=tinydb
+```
 
 ## TinyDB In-Memory
 
@@ -19,8 +21,11 @@ TinyDB also provides a memory-based database that might be useful for testing an
 
 You enable the in-memory database by setting the *databaseType* setting in the *\[basic.config\]* section to *memory*:
 
-	[basic.config]
-	databaseType=memory
+```ini title="Enable in-memory database"
+[basic.config]
+databaseType=memory
+```
+
 
 ## PostgreSQL
 
@@ -32,20 +37,26 @@ The following steps describe how to set up a PostgreSQL database for the ACME CS
 1. Create a new database and user for the CSE. It is recommended to use the CSE-ID as the database name and as the role name.  
 For example, you can use the following commands to create a new database named *id-in* and a role named *id-in* with the password *acme*:
 
-		psql -c "CREATE DATABASE \"id-in\";"
-		psql -c "CREATE USER \"id-in\" WITH PASSWORD 'acme';"
-		psql -c "GRANT ALL PRIVILEGES ON DATABASE \"id-in\" TO \"id-in\";"
+```bash title="Create database and role"
+psql -c "CREATE DATABASE \"id-in\";"
+psql -c "CREATE USER \"id-in\" WITH PASSWORD 'acme';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE \"id-in\" TO \"id-in\";"
+```
 
 1. If not done during the setup procedure above: Edit the *acme.ini* configuration file and the following settings under the *\[database.postgresql\]* section:
 
+	```ini title="PostgreSQL database settings"
 		[database.postgresql]
 		password = acme
+	```
 
 	All other settings are optional and can be left at their default values. The *database* and *role* settings are set to the CSE-ID by default. If you used different names for the database and role, you have to adjust these settings accordingly. Also the *host* and *port* settings are set to *localhost* and *5432* by default. If your PostgreSQL server is running on a different host or port, you have to adjust these settings as well.  
 	You also need to enable the PostgreSQL database by setting the *databaseType* setting in the *\[basic.config\]* section to *postgresql*:
 
+	```ini title="Enable postgreSQL database"
 		[basic.config]
 		databaseType=postgresql
+	```
 
 1. Run the CSE.  
 The database schema, tables and other structures are created automatically by the CSE when it starts and connects for the first time. 
@@ -57,9 +68,13 @@ Sometimes it may not be possible or desirable to use a PostgreSQL database, for 
 
 In this case, you can disable the PostgreSQL database by setting the *databaseType* setting in the *\[basic.config\]* section to *tinydb* or *memory*:
 
-	[basic.config]
-	databaseType=tinydb
+```ini title="Disable PostgreSQL database"
+[basic.config]
+databaseType=tinydb
+```
 
 In order to prevent the PostgreSQL Python modules (i.e. psycopg2) to be loaded you can also set the `ACME_NO_PGSQL` environment variable to any value before running the CSE:
 
-	export ACME_NO_PGSQL=1
+```bash title="Disable PostgreSQL Database Support in Environment"
+export ACME_NO_PGSQL=1
+```

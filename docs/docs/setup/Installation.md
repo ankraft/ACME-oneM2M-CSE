@@ -8,7 +8,6 @@ ACME requires **Python 3.10** or newer. Install it with your favorite package ma
 You may consider to use a virtual environment manager like pyenv + virtualenv (see [this HowTo](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/137) or [this tutorial](https://realpython.com/python-virtual-environments-a-primer/){target=_new}).
 
 
-
 ## Installation and First Setup
 
 ### Installation
@@ -19,24 +18,32 @@ There are two ways to install the ACME CSE: using *pip* or by doing a manual ins
 
 	Run *pip* to install the ACME CSE from the Python Package Index (PyPI):
 
-		python -m pip install acmecse
+	```bash title="Install ACME CSE"
+	python -m pip install acmecse
+	```
 
 	This will install the latest version of the ACME CSE and all required dependencies. 
 
 	You can also upgrade to the latest version by running:
 
-		python -m pip install --upgrade acmecse
+	```bash title="Upgrade ACME CSE"
+	python -m pip install --upgrade acmecse
+	```
 
 === "Manual Installation"
 
-	1. Install the ACME CSE by cloning the repository, or by downloading the [latest](https://github.com/ankraft/ACME-oneM2M-CSE/releases/latest){target=_new} release package, unpacking it, and copying the whole distribution to a new directory.
+	1. Install the ACME CSE by cloning the repository, or by downloading the [latest](https://github.com/ankraft/ACME-oneM2M-CSE/releases/latest){target=_new} release package, unpacking it, and copying the whole distribution to a new directory.  
 
-			git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
-			cd ACME-oneM2M-CSE
+		```bash title="Clone the Repository"
+		git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
+		cd ACME-oneM2M-CSE
+		```
 
 	1. It is recommend to install the required packages by running the following command:
 
-			python3 -m pip install -r requirements.txt
+		```bash title="Install Required Packages"
+		python3 -m pip install -r requirements.txt
+		```
 
 		You may also install the packages manually, but make sure to install the exact versions as specified in the *requirements.txt* file.
 
@@ -54,13 +61,17 @@ You can start the CSE by simply running it from the command line:
 
 		Run the following command from the command line from **within any directory that uses the Python environment where you installed the package**:
 
-			acmecse
+		```bash title="Start ACME CSE"
+		acmecse
+		```
 
 	=== "For Manual Installation"
 
 		Run the following command from the command line from **within the directory where you installed the CSE**:
 
-			python3 -m acme
+		```bash title="Start ACME CSE as a module"
+		python3 -m acme
+		```
 
 	Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
 
@@ -74,7 +85,6 @@ You can start the CSE by simply running it from the command line:
 	![ACME CSE Guided Configuration](../images/bootstrapConfig.gif)
 	<figcaption>ACME CSE Guided Configuration</figcaption>
 	</figure>
-
 
 	After the configuration is saved, the CSE is started. with this configuration.
 

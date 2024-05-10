@@ -18,7 +18,7 @@ The following sections present an overview.
 ### HTTP Header X-M2M-UTCMD : Run CSE Commands
 
 The `X-M2M-UTCMD` http header field is used to run a command internally by the CSE. The ACME CSE implements these commands 
-as [scripts](../development/ACMEScript.md) that have the meta tag [@uppertester](ACMEScript-metatags.md#uppertester) set.
+as [scripts](../development/ACMEScript.md) that have the meta tag [@uppertester](../development/ACMEScript-metatags.md#uppertester) set.
 
 The following commands are available by default, but other can be added. Some of these commands are used to reconfigure the CSE
 when running test cases.
@@ -45,39 +45,36 @@ In case a command returns a result then it is available in the header field `X-M
 This example initiates a reset of the CSE.  
 The successful execution is indicated by the Response Status Code header *X-M2M-RSC: 2000* 
 
-===	"Resetting the CSE"
-	```http
-	$ curl -X POST -H "X-M2M-UTCMD:Reset" http://localhost:8080/__ut__
-	...
-	< HTTP/1.1 200 OK
-	< Server: Werkzeug/3.0.2 Python/3.11.7
-	< Date: Sun, 05 May 2024 11:09:33 GMT
-	< Server: ACME 2024.DEV
-	< X-M2M-RSC: 2000
-	< X-M2M-UTRSP: false
-	< Content-Type: text/plain; charset=utf-8
-	< Content-Length: 0
-	< Connection: close
-	...
-	``` 
+```http title="Resetting the CSE"
+$ curl -X POST -H "X-M2M-UTCMD:Reset" http://localhost:8080/__ut__
+...
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.0.2 Python/3.11.7
+< Date: Sun, 05 May 2024 11:09:33 GMT
+< Server: ACME 2024.DEV
+< X-M2M-RSC: 2000
+< X-M2M-UTRSP: false
+< Content-Type: text/plain; charset=utf-8
+< Content-Length: 0
+< Connection: close
+...
+``` 
 
 ### Get the CSE Status
 
 This example requests the CSE status. It is returned in the `X-M2M-UTRSP` header.
 
-=== "Get the CSE Status"
-	
-	```http
-	$ curl -v -X POST -H "X-M2M-UTCMD:Status" http://localhost:8080/__ut__
-	...
-	< HTTP/1.1 200 OK
-	< Server: Werkzeug/3.0.2 Python/3.11.7
-	< Date: Sun, 05 May 2024 11:02:47 GMT
-	< Server: ACME 2024.04
-	< X-M2M-RSC: 2000
-	< X-M2M-UTRSP: RUNNING
-	< Content-Type: text/plain; charset=utf-8
-	< Content-Length: 0
-	< Connection: close
-	...
-	``` 
+```http title="Get the CSE Status"
+$ curl -v -X POST -H "X-M2M-UTCMD:Status" http://localhost:8080/__ut__
+...
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.0.2 Python/3.11.7
+< Date: Sun, 05 May 2024 11:02:47 GMT
+< Server: ACME 2024.04
+< X-M2M-RSC: 2000
+< X-M2M-UTRSP: RUNNING
+< Content-Type: text/plain; charset=utf-8
+< Content-Length: 0
+< Connection: close
+...
+``` 

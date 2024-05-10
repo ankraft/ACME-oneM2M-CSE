@@ -122,9 +122,10 @@ extra:
 
 nav:
   - Home:
-    - 'index.md'
+    - 'Home': 'index.md'
     - 'Supported Features': 'home/Supported.md'
     - 'Roadmap': 'home/Roadmap.md'
+    - 'Acknowledgements': 'home/Acknowledgements.md'
     - 'LICENSE': 'home/License.md'
     - 'Contact': 'home/Contact.md'
   - 'Setup & Running':
@@ -154,6 +155,12 @@ nav:
   - 'Development': 
       - 'Overview': 'development/Overview.md'
       - 'Unit Tests': 'development/UnitTests.md'
+      - 'Type Checking': 'development/TypeChecking.md'
+      - 'Start-Up and Policies':
+        - 'Start-Up Resources': 'development/StartupResources.md'
+        - 'Attribute Policies': 'development/AttributePolicies.md'
+        - 'FlexContainer Policies': 'development/FlexContainerPolicies.md'
+        - 'Help File Format': 'development/HelpDocumentation.md'
       - 'ACMEScript':
         - 'Introduction': 'development/ACMEScript.md'
         - 'Loading & Running Scripts': 'development/ACMEScript-loading.md'
@@ -162,10 +169,18 @@ nav:
         - 'Variables': 'development/ACMEScript-variables.md'
         - 'Meta Tags': 'development/ACMEScript-metatags.md'
         - 'Upper Tester Integration': 'development/ACMEScript-uppertester.md'
+      - 'Integrating ACME CSE': 'development/Integrating_ACME.md'
+      - 'Debug Mode': 'development/DebugMode.md'
+      - 'Tools':
+        - 'Notification Server': 'development/NotificationServer.md'
   - 'HowTos':
+      - 'Overview': 'howtos/HowTos.md'
       - 'Docker': 'howtos/Docker.md'
+      - 'Experimental WebSocket Binding': 'howtos/ExperimentalWebSocketBinding.md'
+      - 'Export Resources': 'howtos/ExportResources.md'
       - 'Pyenv Setup': 'howtos/HowTo-pyenv.md'
       - 'Raspberry Pi': 'howtos/RaspberryPi.md'
+      - 'Stand-alone Web UI': 'howtos/StandAloneWebUI.md'
   - 'Help': 
     - 'FAQ': 'help/FAQ.md'
     - 'Contributing': 'help/Contributing.md'

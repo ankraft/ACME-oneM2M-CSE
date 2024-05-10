@@ -16,35 +16,31 @@ This guide assumes that you have installed the [homebrew](https://brew.sh){targe
 
 If not done yet, we need to install the *Xcode* dependencies:
 
-=== "Install Xcode dependencies"
-	```sh
-	Xcode-select --install
-	```
+```sh title="Install Xcode dependencies"
+Xcode-select --install
+```
 
 
 ## Installing pyenv
 
 Install *pyenv* using *homebrew*:
 
-=== "Install pyenv"
-	```sh
-	brew upgrade
-	brew install pyenv
-	```
+```sh title="Install pyenv"
+brew upgrade
+brew install pyenv
+```
 
 Install extra libraries:
 
-=== "Install extra libraries"
-	```sh
-	brew install readline xz
-	```
+```sh title="Install extra libraries"
+brew install readline xz
+```
 
 Install *virtualenv* using *homebrew*:
 
-=== "Install pyenv-virtualenv"
-	```sh
-	brew install pyenv-virtualenv
-	```
+```sh title="Install pyenv-virtualenv"
+brew install pyenv-virtualenv
+```
 
 
 ## Getting Started
@@ -53,22 +49,19 @@ We can now use *pyenv* and *pyenv-virtualenv*. We start with installing a Python
 
 The following command installs *Python 3.11.7* in *pyenv*:
 
-=== "Install a Python version"
-	```sh
-	pyenv install 3.11.7
-	```
+```sh title="Install a Python Version"
+pyenv install 3.11.7
+```
 
 Since we want to keep the installed base Python version "clean2, we will create a new virtual environment, e.g. taking version *3.11.7* as a base version. The following command will create a virtual environment *acme-3.11* that can be used later on:
 
-=== "Create a virtual environment"
-	```sh
-	pyenv virtualenv 3.11.7 acme-3.11
-	```
+```sh title="Create a Virtual Environment"
+pyenv virtualenv 3.11.7 acme-3.11
+```
 
 
 We can now enable a virtual environment for the local directory:
 
-=== "Enable a virtual environment for the local directory"
-	```sh
-	pyenv local acme-3.11
-	```
+```sh title="Enable a virtual environment for the local directory"
+pyenv local acme-3.11
+```

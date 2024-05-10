@@ -17,15 +17,14 @@ The scripts are stored as normal text files. A script contains so-called [s-expr
 
 An s-expression is a list of symbols that represent either a value or another s-expression. Usually, the first element in the list is the function that is called to perform a function, and that may have zero, one, or multiple symbols as arguments. If such an argument symbol is executable, then it is recursively evaluated, and its result is taken as the actual argument.
 
-=== "Example"
-	```lisp
-	;; Print "Hello, World" to the console
-	(print "Hello, World!")
+```lisp title="Example"
+;; Print "Hello, World" to the console
+(print "Hello, World!")
 
-	;; Print the result of calculations to the console
-	(print (+ 1 2))        ;; prints 3
-	(print (+ 1 (/ 8 4)))  ;; prints 3
-	```
+;; Print the result of calculations to the console
+(print (+ 1 2))        ;; prints 3
+(print (+ 1 (/ 8 4)))  ;; prints 3
+```
 
 ### Data Types
 
@@ -44,12 +43,11 @@ The following data types are supported by ACMEscript:
 
 Every function and s-expression returns a value. This is usually the function result, but when a list contains multiple s-expressions that are evaluated, then only the last s-expression's result is returned.
 
-=== "Example"
-	```lisp
-	;; First, set the variable a to 3, then use it in a calculation.
-	;; Then, the result of the calculation is printed.
-	(print ( (setq a 3) (+ a 4) ))   ;; prints 7
-	```
+```lisp title="Example"
+;; First, set the variable a to 3, then use it in a calculation.
+;; Then, the result of the calculation is printed.
+(print ( (setq a 3) (+ a 4) ))   ;; prints 7
+```
 
 
 ### Variables and Function Scopes
@@ -77,23 +75,21 @@ It doesn't matter whether a symbol is another s-expression, a built-in, self-def
 Some functions assume that one or more arguments are implicitly quoted, such as the *setq* function that doesn't evaluating its first argument. In this case the argument is not quoted.
 
 
-=== "Example"
-	```lisp
-	;; Print the string "(+ 1 2)" to the console
-	(print '(+ 1 2))
+```lisp title="Example"
+;; Print the string "(+ 1 2)" to the console
+(print '(+ 1 2))
 
-	;; Set a variable "a" to 42 and print the variable to the console
-	(setq a 42)  ;; a is not evaluated!
-	(print a)    ;; a is evaluated. It prints 42
-	```
+;; Set a variable "a" to 42 and print the variable to the console
+(setq a 42)  ;; a is not evaluated!
+(print a)    ;; a is evaluated. It prints 42
+```
 
 Sometimes it is not possible to quote an s-expression or symbol because it is the result of the evaluation of another s-expression. In this case the [quote](ACMEScript-functions.md#quote) function can be used to return a quoted version of an s-expression.
 
-=== "Example"
-	```lisp
-	;; Print the string "(+ 1 2)" to the console
-	(print (quote (+ 1 2)))
-	```
+```lisp title="Example"
+;; Print the string "(+ 1 2)" to the console
+(print (quote (+ 1 2)))
+```
 
 ### Meta Tags
 
@@ -112,7 +108,7 @@ Data can be stored "persistently" during a CSE's runtime. This is intended to pa
 
 To store data persistently one may consider to store it in the oneM2M resource tree.
 
-See:  [get-storage](ACMEScript-functions.md#get-storage), [has-storage](ACMEScript-functions.md#has-storage), [set-storage](ACMEScript-functions.md#set-storage)
+See:  [get-storage](ACMEScript-functions.md#get-storage), [has-storage](ACMEScript-functions.md#has-storage), [put-storage](ACMEScript-functions.md#put-storage)
 
 ### Evaluating S-Expressions in Strings and JSON Structures
 
@@ -121,17 +117,15 @@ S-expressions that are enclosed in the pattern `${..}` in a string or JSON struc
 
 In the following example the s-expression `(+ 1 2)` is evaluated when the string is processed:
 
-=== "Example"
-	```lisp
-	(print "1 + 2 = ${ + 1 2 }") 	;; Prints "1 + 2 = 3"
-	```
+```lisp title="Example"
+(print "1 + 2 = ${ + 1 2 }") 	;; Prints "1 + 2 = 3"
+```
 
 Evaluation can be locally disabled by escaping the opening part:
 
-=== "Example"
-	```lisp
- 	(print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = ${ + 1 2 )}"
-	```
+```lisp title="Example"
+(print "1 + 2 = \\${ + 1 2 }")  ;; Prints "1 + 2 = ${ + 1 2 )}"
+```
 
 Evaluation can also be disabled and enabled by using the [evaluate-inline](ACMEScript-functions.md#evaluate-inline) function.
 
@@ -143,22 +137,22 @@ If the function `on-error` is defined in a script, then this function is execute
 
 In general, the `on-error` function is called as follows:
 
-=== "on-error"
-	`(on-error <error type:string> <error message:string)`
+```lisp title="Example"
+(on-error <error type:string> <error message:string)
+```
 
 The function is called with two arguments: the error type and the error message.
 
 The following example shows how to define the `on-error` function and how it is called when a division-by-zero error occurs. 
 
-=== "Example"
-	```lisp
-	;; Define the on-error function
-	(defun on-error (error-type message) (print "Error:" error-type message)) 
+```lisp title="Example"
+;; Define the on-error function
+(defun on-error (error-type message) (print "Error:" error-type message)) 
 
-	;; Cause an division-by-zero error
-	;; This will implicitly call the function
-	(/ 0 0)                                      
-	```
+;; Cause an division-by-zero error
+;; This will implicitly call the function
+(/ 0 0)                                      
+```
 
 ---
 

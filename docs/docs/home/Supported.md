@@ -1,11 +1,13 @@
 # Supported Resource Types and Functionalities
 
-## oneM2M Specification Conformance
-
-The CSE implementation successfully passes all the relevant oneM2M test cases for the supported resource types and features.
+This article lists the supported oneM2M resource types, functionalities, and additional runtime features of the ACME CSE.
 
 
 ## oneM2M Features
+
+### oneM2M Specification Conformance
+
+The CSE implementation successfully passes all the relevant oneM2M test cases for the supported resource types, attributes and behaviours.
 
 ### Release Versions
 
@@ -106,12 +108,12 @@ The following serialization types are supported:
 | CBOR               |  &check;  |                                                                                                                |
 | XML                |  &cross;  |                                                                                                                |
 
-The supported serializations can be used together, e.g. between different or even the same entity.
+The supported serializations can be used together, e.g. between different or even with the same entity.
 
 
 ### Result Content Types
 
-The following result contents are implemented for standard oneM2M requests & discovery:
+The following result contents are implemented for standard oneM2M requests and discovery:
 
 | Discovery Type                         | RCN |
 |:---------------------------------------|:---:|

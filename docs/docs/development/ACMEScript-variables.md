@@ -11,12 +11,11 @@ Evaluates to the number of elements in [argv](../development/ACMEScript-function
 !!! see-also "See also"
 	[argv](../development/ACMEScript-functions.md#argv)
 
-=== "Example"
-	```lisp
-	(if (> argc 2)
-    	((log-error "Wrong number of arguments")
-    	(quit-with-error)))
-	```
+```lisp title="Example"
+(if (> argc 2)
+	((log-error "Wrong number of arguments")
+	(quit-with-error)))
+```
 
 ---
 
@@ -24,7 +23,7 @@ Evaluates to the number of elements in [argv](../development/ACMEScript-function
 
 `event.data`
 
-Evaluates to the payload data of an event. This could be, for example, the string representation in case of an [onKey](../development/ACMEScript.md#onkey) event.
+Evaluates to the payload data of an event. This could be, for example, the string representation in case of an [onKey](../development/ACMEScript-metatags.md#onkey) event.
 
 !!! note
 	This variable is only set when the script was invoked by an event.
@@ -32,11 +31,10 @@ Evaluates to the payload data of an event. This could be, for example, the strin
 !!! see-also "See also"
 	[event.type](#eventtype)
 
-=== "Example"
-	```lisp
-	(if (== event.type "onKey")     ;; If the event is "onKey"
-    	(print "Key:" event.data))  ;; Print the pressed key
-	```
+```lisp title="Example"
+(if (== event.type "onKey")     ;; If the event is "onKey"
+	(print "Key:" event.data))  ;; Print the pressed key
+```
 
 ---
 
@@ -44,7 +42,7 @@ Evaluates to the payload data of an event. This could be, for example, the strin
 
 `event.type`
 
-Evaluates to the type of an event. This could be, for example, the value *"onKey"* in case of an [onKey](../development/ACMEScript.md#onkey)* event.
+Evaluates to the type of an event. This could be, for example, the value *"onKey"* in case of an [onKey](../development/ACMEScript-metatags.md#onkey) event.
 
 !!! note
 	This variable is only set when the script was invoked by an event.
@@ -52,9 +50,7 @@ Evaluates to the type of an event. This could be, for example, the value *"onKey
 !!! see-also "See also"
 	[event.data](#eventdata)
 
-Example:
-
-```lisp
+```lisp title="Example"
 (if (== event.type "onKey")     ;; If the event is "onKey"
     (print "Key:" event.data))  ;; Print the pressed key
 ```
@@ -69,10 +65,9 @@ The `notification.originator` variable is set when a script is called to process
 
 It contains the notification's originator.
 
-=== "Example"
-	```lisp
-	(print notification.originator)
-	```
+```lisp title="Example"
+(print notification.originator)
+```
 
 ---
 
@@ -84,10 +79,9 @@ The `notification.resource` variable is set when a script is called to process a
 
 It contains the notification's JSON body.
 
-=== "Example"
-	```lisp
-	(print notification.resource)
-	```
+```lisp title="Example"
+(print notification.resource)
+```
 
 ---
 
@@ -99,10 +93,9 @@ The `notification.uri` variable is set when a script is called to process a noti
 
 It contains the notification's target URI.
 
-=== "Example"
-	```lisp
-	(print notification.uri)
-	```
+```lisp title="Example"
+(print notification.uri)
+```
 
 ---
 
@@ -118,12 +111,11 @@ Evaluates to *true* if the script was started as an "autorun" script. This is th
 !!! note
 	This variable is only set when the script is run from the text UI.
 
-=== "Example"
-	```lisp
-	(if (is-defined 'tui.autorun)     ;; If the variable is defined
-		(if (== tui.autorun true)     ;; If the script is an autorun script
-			(print "Autorun: True")))  ;; Print a message
-	```
+```lisp title="Example"
+(if (is-defined 'tui.autorun)     ;; If the variable is defined
+	(if (== tui.autorun true)     ;; If the script is an autorun script
+		(print "Autorun: True")))  ;; Print a message
+```
 
 ---
 
@@ -133,8 +125,7 @@ Evaluates to *true* if the script was started as an "autorun" script. This is th
 
 Evaluates to the state of the current theme of the text UI. This can either be the values *light* or *dark*.
 
-=== "Example"
-	```lisp
-	(print "Theme: " tui.theme)  ;; Print the theme name
-	```
+```lisp title="Example"
+(print "Theme: " tui.theme)  ;; Print the theme name
+```
 

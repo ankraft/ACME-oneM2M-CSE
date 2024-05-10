@@ -12,34 +12,31 @@ First, we need to install a newer Python 3 runtime on our Raspberry Pi.
 
 The following download gets the source code from the official Python repository. It could be a newer version of Python as well, of course.
 
-=== "Download Python"
-	```sh
-	wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz
-	```
+```sh title="Download Python"
+wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz
+```
 
 ### Installing Extra Components
 
 The following commands install the necessary system libraries and other tools to compile Python on the Raspberry Pi. :
 
-=== "Install Extra Components and Libraries"
-	```sh
-	sudo apt update
-	sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev libatlas-base-dev libgeos-dev gfortran git cmake libpq-dev
-	```
+```sh title="Install Extra Components and Libraries"
+sudo apt update
+sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev libatlas-base-dev libgeos-dev gfortran git cmake libpq-dev
+```
 
 ### Compile Python
 
 The next step is to unpack and to unpack, configure, make and install the Python runtime.
 
-=== "Compile Python"
-	```sh
-	tar -xzvf Python-3.11.4.tgz 
-	cd Python-3.11.4/
-	./configure --enable-optimizations
-	sudo make -j 4
-	sudo make altinstall
-	cd ..
-	```
+```sh title="Compile Python"
+tar -xzvf Python-3.11.4.tgz 
+cd Python-3.11.4/
+./configure --enable-optimizations
+sudo make -j 4
+sudo make altinstall
+cd ..
+```
 
 ## Install, Configure, and Run ACME
 

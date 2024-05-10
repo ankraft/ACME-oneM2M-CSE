@@ -17,10 +17,9 @@ Concatenate and return the stringified versions of the symbol arguments.
 !!! see-also "See also"
 	[nl](#nl), [sp](#sp), [to-string](#to-string)
 
-=== "Example"
-	```lisp
-	(. "Time:" sp (datetime))  ;; Returns "Time: 20230308T231049.934630"
-	```
+```lisp title="Example"
+(. "Time:" sp (datetime))  ;; Returns "Time: 20230308T231049.934630"
+```
 
 ---
 
@@ -37,17 +36,16 @@ The number of arguments available is stored in the variable [argc](../developmen
 !!! see-also "See also"
 	[argc](../development/ACMEScript-variables.md#argc)
 
-=== "Examples"
-	```lisp
-	;; Print the script name
-	(print "The name of the script is:" (argv 0))
+```lisp title="Example"
+;; Print the script name
+(print "The name of the script is:" (argv 0))
 
-	;; Print the first argument
-	(print "The first argument is:" (argv 1))
+;; Print the first argument
+(print "The first argument is:" (argv 1))
 
-	;; Print script name and all arguments
-	(print "All arguments:" argv)
-	```
+;; Print script name and all arguments
+(print "All arguments:" argv)
+```
 
 ---
 
@@ -57,11 +55,10 @@ The number of arguments available is stored in the variable [argc](../developmen
 
 The `assert` function terminates the script if its argument evaluates to *false*.
 
-=== "Example"
-	```lisp
-	(assert (== (get-configuration "cse.type") 
-				"IN"))  ;; Terminates when the setting is different from "IN"
-	```
+```lisp title="Example"
+(assert (== (get-configuration "cse.type") 
+			"IN"))  ;; Terminates when the setting is different from "IN"
+```
 
 ---
 
@@ -74,10 +71,9 @@ This function encodes a string as base64.
 !!! see-also "See also"
 	[url-encode](#url-encode)
 
-=== "Example"
-	```lisp
-	(base64-encode "Hello, World")  ;; Returns "SGVsbG8sIFdvcmxk"
-	```
+```lisp title="Example"
+(base64-encode "Hello, World")  ;; Returns "SGVsbG8sIFdvcmxk"
+```
 
 ---
 
@@ -93,32 +89,30 @@ The result of the last expression is returned. A block can be exited early with 
 !!! see-also "See also"
 	[return-from](#return-from)
 
-=== "Examples"
-	```lisp
-	(block "myBlock" 1 2 3)  ;; Returns 3
-	(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
-	```
+```lisp title="Examples"
+(block "myBlock" 1 2 3)  ;; Returns 3
+(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
+```
 
 One can use the `block` function to implement *break* and *continue* functionality in loops:
 
-=== "Examples"
-	```lisp
-	;; Example for a break block
-	;; The following example breaks the loop when the value of "i" is 5
-	(block break
-		(dotimes (i 10)
-			((print i) 
-			(if (== i 5) 
-				(return-from break)))))
-
-	;; Example for a continue block
-	;; The following example skips the value of "i" when it is 5
+```lisp title="Examples"
+;; Example for a break block
+;; The following example breaks the loop when the value of "i" is 5
+(block break
 	(dotimes (i 10)
-		(block continue
-			(if (== i 5) 
-				(return-from continue))
-			(print i)))
-	```
+		((print i) 
+		(if (== i 5) 
+			(return-from break)))))
+
+;; Example for a continue block
+;; The following example skips the value of "i" when it is 5
+(dotimes (i 10)
+	(block continue
+		(if (== i 5) 
+			(return-from continue))
+		(print i)))
+```
 
 ---
 
@@ -134,10 +128,9 @@ The `car` function returns the first symbol from a list. It doesn't change the o
 !!! see-also "See also"
 	[cdr](#cdr), [nth](#nth)
 
-=== "Example"
-	```lisp
-	(car '(1 2 3))  ;; Returns 1
-	```
+```lisp title="Example"
+(car '(1 2 3))  ;; Returns 1
+```
 
 ---
 
@@ -156,13 +149,12 @@ Each of these list contains two symbols that are handled in order:
 
 The special symbol `otherwise` for a *condition* s-expression always matches and can be used as a default or fallback case .
 
-=== "Example"
-	```lisp
-	(case aSymbol
-		( 1 (print "Result: 1"))
-		( (+ 1 1) (print "Result: 2"))
-		(otherwise (print "Result: something else")))
-	```
+```lisp title="Example"
+(case aSymbol
+	( 1 (print "Result: 1"))
+	( (+ 1 1) (print "Result: 2"))
+	(otherwise (print "Result: something else")))
+```
 
 ---
 
@@ -178,10 +170,9 @@ The `cdr` function returns a list with all symbols from a list except the first 
 !!! see-also "See also"
 	[car](#car),  [nth](#nth)
 
-=== "Example"
-	```lisp
-	(cdr '(1 2 3))  ;; Returns (2 3)
-	```
+```lisp title="Example"
+(cdr '(1 2 3))  ;; Returns (2 3)
+```
 
 ---
 
@@ -194,12 +185,11 @@ The `cons` function adds a new symbol to the front of a list and returns it. It 
 !!! Note
 	A list needs to be quoted when used directly.
 
-=== "Example"
-	```lisp
-	(cons 1 2)	          ;; Returns (1 2)
-	(cons 1 '(2 3))	      ;; Returns (1 2 3)
-	(cons '(1 2) '(3 4))  ;; Returns ((1 2) 3 4)
-	```
+```lisp title="Examples"
+(cons 1 2)	          ;; Returns (1 2)
+(cons 1 '(2 3))	      ;; Returns (1 2 3)
+(cons '(1 2) '(3 4))  ;; Returns ((1 2) 3 4)
+```
 
 ---
 
@@ -211,11 +201,10 @@ The `datetime` function returns the current date and time. As a default, if not 
 
 All timestamps are UTC-based.
 
-=== "Examples"
-	```lisp
-	(datetime)          ;; Returns a timestamp, e.g. 20230302T221625.771604
-	(datetime "%H:%M")  ;; Returns, for example, "22:16"
-	```
+```lisp title="Examples"
+(datetime)          ;; Returns a timestamp, e.g. 20230302T221625.771604
+(datetime "%H:%M")  ;; Returns, for example, "22:16"
+```
 
 ---
 
@@ -236,21 +225,20 @@ The result of a function is the result of the expression that is evaluated last 
 !!! see-also "See also"
 	[lambda](#lambda), [return](#return)
 
-=== "Example"
-	```lisp
-	(defun greeting (name)  ;; define the function
-		(print "hello" name)) 
-	(greeting "Arthur")     ;; call the function
+```lisp title="Example"
+(defun greeting (name)  ;; define the function
+	(print "hello" name)) 
+(greeting "Arthur")     ;; call the function
 
-	;; Fibonacci
-	(defun fib (n)          ;; Define the function
-		(if (< n 2)
-			n
-			(+ (fib (- n 1)) 
-			(fib (- n 2)))
-		))
-	(fib 10)                ;; Returns 55
-	```
+;; Fibonacci
+(defun fib (n)          ;; Define the function
+	(if (< n 2)
+		n
+		(+ (fib (- n 1)) 
+		(fib (- n 2)))
+	))
+(fib 10)                ;; Returns 55
+```
 
 ---
 
@@ -265,12 +253,11 @@ The function returns the variable's new value.
 !!! see-also "See also"
 	[inc](#inc)
 
-=== "Example"
-	```lisp
-	(setq a 1)   ;; Set variable "a" to 1
-	(dec a)      ;; Decrement variable "a" by 1
-	(dec a 2.5)  ;; Decrement variable "a" by 2.5
-	```
+```lisp title="Examples"
+(setq a 1)   ;; Set variable "a" to 1
+(dec a)      ;; Decrement variable "a" by 1
+(dec a 2.5)  ;; Decrement variable "a" by 2.5
+```
 
 ---
 
@@ -287,16 +274,15 @@ If the `result variable` is specified then the loop returns the value of that va
 !!! see-also "See also"
 	[dotimes](#dotimes), [while](#while)
 
-=== "Example"
-	```lisp
-	(dolist (i '(1 2 3 4 5 6 7 8 9 10))
-		(print i)                   ;; print 1..10
+```lisp title="Examples"
+(dolist (i '(1 2 3 4 5 6 7 8 9 10))
+	(print i)                   ;; print 1..10
 
-	(setq result 0)
-	(dolist (i '(1 2 3 4 5 6 7 8 9 10) result)
-		(setq result (+ result i)))  ;; sum 1..10
-	(print result)                   ;; 55
-	```
+(setq result 0)
+(dolist (i '(1 2 3 4 5 6 7 8 9 10) result)
+	(setq result (+ result i)))  ;; sum 1..10
+(print result)                   ;; 55
+```
 
 ---
 
@@ -313,16 +299,15 @@ If the `result variable` is specified then the loop returns the value of that va
 !!! see-also "See also"
 	[dolist](#dolist), [while](#while)
 
-=== "Example"
-	```lisp
-	(dotimes (i 10)
-		(print i)                   ;; print 0..9
+```lisp title="Examples"
+(dotimes (i 10)
+	(print i)                   ;; print 0..9
 
-	(setq result 0)
-	(dotimes (i 10 result)
-		(setq result (+ result i)))  ;; sum 0..9
-	(print result)                   ;; 45
-	```
+(setq result 0)
+(dotimes (i 10 result)
+	(setq result (+ result i)))  ;; sum 0..9
+(print result)                   ;; 45
+```
 
 ---
 
@@ -335,10 +320,9 @@ The `eval` function evaluates and executes a quoted list or symbol.
 !!! see-also "See also"
 	[parse-string](#parse-string), [progn](#progn), [to-symbol](#to-symbol)
 
-=== "Example"
-	```lisp
-	(eval '(print "Hello, World"))  ;; Prints "Hello, World" 
-	```
+```lisp title="Example"
+(eval '(print "Hello, World"))  ;; Prints "Hello, World" 
+```
 
 ---
 
@@ -348,11 +332,10 @@ The `eval` function evaluates and executes a quoted list or symbol.
 
 With this function one can disable or enable the [evaluation of s-expressions in strings](../development/ACMEScript.md#evaluating-s-expressions-in-strings-and-json-structures).
 
-=== "Example"
-	```lisp
-	(evaluate-inline false)  ;; Disables inline evaluation
-	(print "1 + 2 = [(+ 1 2)]")  ;; Prints "1 + 2 = [(+ 1 2)]"
-	```
+```lisp title="Example"
+(evaluate-inline false)  ;; Disables inline evaluation
+(print "1 + 2 = [(+ 1 2)]")  ;; Prints "1 + 2 = [(+ 1 2)]"
+```
 
 ---
 
@@ -369,13 +352,12 @@ The `get-json-attribute` function retrieves an attribute from a JSON structure v
 !!! see-also "See also"
 	[has-json-attribute](#has-json-attribute), [remove-json-attribute](#remove-json-attribute), [set-json-attribute](#set-json-attribute)
 
-=== "Examples"
-	```lisp
-	(get-json-attribute { "a" : { "b" : "c" }} "a/b" )     ;; Returns "c"
-	(get-json-attribute { "a" : [ "b", "c" ]} "a/{0}" )    ;; Returns "b"
-	(get-json-attribute { "a" : [ "b", "c" ]} "a/{}" )     ;; Returns ( "b" "c" )
-	(get-json-attribute { "a" : [ "b", "c" ]} "{*}/{0}" )  ;; Returns "b"
-	```
+```lisp title="Examples"
+(get-json-attribute { "a" : { "b" : "c" }} "a/b" )     ;; Returns "c"
+(get-json-attribute { "a" : [ "b", "c" ]} "a/{0}" )    ;; Returns "b"
+(get-json-attribute { "a" : [ "b", "c" ]} "a/{}" )     ;; Returns ( "b" "c" )
+(get-json-attribute { "a" : [ "b", "c" ]} "{*}/{0}" )  ;; Returns "b"
+```
 
 ---
 
@@ -392,12 +374,10 @@ This *key* may be a structured path to access elements deeper down in the JSON s
 
 	See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
 
-
-=== "Examples"
-	```lisp
-	(has-json-attribute { "a" : { "b" : "c" }} "a/b" )  ;; Returns true
-	(has-json-attribute { "a" : { "b" : "c" }} "a/c" )  ;; Returns false
-	```
+```lisp title="Examples"
+(has-json-attribute { "a" : { "b" : "c" }} "a/b" )  ;; Returns true
+(has-json-attribute { "a" : { "b" : "c" }} "a/c" )  ;; Returns false
+```
 
 ---
 
@@ -411,12 +391,11 @@ If it evaluates to *false* then the third (optional) argument is executed, if pr
 
 The boolean expression can be any s-expression that evaluates to a boolean value or *nil*, or a list or a string. *nil* values, empty lists, or zero-length strings evaluate to *false*, or to *true* otherwise.
 
-=== "Example"
-	```lisp
-	(if (< 1 2)           ;; Evaluates to "true"
-		(print "true")    ;; This expression is executed
-		(print "false"))  ;; This expression is not executed
-	```
+```lisp title="Examples"
+(if (< 1 2)           ;; Evaluates to "true"
+	(print "true")    ;; This expression is executed
+	(print "false"))  ;; This expression is not executed
+```
 
 ---
 
@@ -430,13 +409,12 @@ The function returns *true* if this is the case, or *false* otherwise.
 !!! see-also "See also"
 	[index-of](#index-of)
 
-=== "Example"
-	```lisp
-	(in "Hello" "Hello, World")  ;; Returns true
-	(in "Bye" "Hello, World")    ;; Returns false
-	(in 1 '(1 2 3))              ;; Returns true
-	(in '(1 2) '((1 2) (3 4)))   ;; Returns true
-	```
+```lisp title="Examples"
+(in "Hello" "Hello, World")  ;; Returns true
+(in "Bye" "Hello, World")    ;; Returns false
+(in 1 '(1 2 3))              ;; Returns true
+(in '(1 2) '((1 2) (3 4)))   ;; Returns true
+```
 
 ---
 
@@ -453,12 +431,11 @@ The function returns the variable's new value.
 !!! see-also "See also"
 	[dec](#dec)
 
-=== "Example"
-	```lisp
-	(setq a 1)   ;; Set variable "a" to 1
-	(inc a)      ;; Increment variable "a" by 1
-	(inc a 2.5)  ;; Increment variable "a" by 2.5
-	```
+```lisp title="Example"
+(setq a 1)   ;; Set variable "a" to 1
+(inc a)      ;; Increment variable "a" by 1
+(inc a 2.5)  ;; Increment variable "a" by 2.5
+```
 
 ---
 
@@ -474,12 +451,11 @@ The function returns the index as a number, or *nil* if the value could not be f
 !!! see-also "See also"
 	[in](#in), [nth](#nth)
 
-=== "Example"
-	```lisp
-	(index-of 1 '(1 2 3))            ;; Returns 0
-	(index-of "a" '("b", "c", "d"))  ;; Returns nil
-	(index-of "b" "abc")             ;; Returns 1
-	```
+```lisp title="Examples"
+(index-of 1 '(1 2 3))            ;; Returns 0
+(index-of "a" '("b", "c", "d"))  ;; Returns nil
+(index-of "b" "abc")             ;; Returns 1
+```
 
 ---
 
@@ -489,12 +465,11 @@ The function returns the index as a number, or *nil* if the value could not be f
 
 The `is-defined` function tests whether a symbol (ie. a variable, built-in or defined function) is defined.
 
-=== "Example"
-	```lisp
-	(setq a 1)       ;; Define variable "a"
-	(is-defined 'a)  ;; Evaluates to "true".
-	(is-defined 'b)  ;; Evaluates to "false"
-	```
+```lisp title="Examples"
+(setq a 1)       ;; Define variable "a"
+(is-defined 'a)  ;; Evaluates to "true".
+(is-defined 'b)  ;; Evaluates to "false"
+```
 
 !!! note
 	Most of the time the symbol argument needs to be quoted, otherwise the symbol is evaluated first and the function will not work as expected.
@@ -510,10 +485,9 @@ The `json-to-string` function returns a JSON structure in a string.
 !!! see-also "See also"
 	[string-to-json](#string-to-json), [to-number](#to-number), [to-string](#to-string)
 
-=== "Example"
-	```lisp
-	(json-to-string { "a" : { "b" : "c" }})  ;; Returns "{\"a\": {\"b\": \"c\"}}"
-	```
+```lisp title="Example"
+(json-to-string { "a" : { "b" : "c" }})  ;; Returns "{\"a\": {\"b\": \"c\"}}"
+```
 
 ---
 
@@ -526,10 +500,9 @@ The `jsonify` function returns a string where characters are escaped that would 
 !!! see-also "See also"
 	[string-to-json](#string-to-json), [to-number](#to-number), [to-string](#to-string)
 
-=== "Example"
-	```lisp
-	(jsonify "Hello, World")  ;; Returns "Hello,\nWorld"
-	```
+```lisp title="Example"
+(jsonify "Hello, World")  ;; Returns "Hello,\nWorld"
+```
 
 ---
 
@@ -550,14 +523,13 @@ The result of a lambda function is the result of the expression that is evaluate
 !!! see-also "See also"
 	[defun](#defun), [return](#return)
 
-=== "Example"
-	```lisp
-	((lambda (x) (* x x)) 5)       ;; Returns 25
+```lisp title="Examples"
+((lambda (x) (* x x)) 5)       ;; Returns 25
 
-	(setq y (lambda (x) (* x x)))  ;; Define and assign lambda function
-	(y)                            ;; Returns ( ( x ) ( * x x ) )
-	((y) 5)                        ;; Returns 25
-	```
+(setq y (lambda (x) (* x x)))  ;; Define and assign lambda function
+(y)                            ;; Returns ( ( x ) ( * x x ) )
+((y) 5)                        ;; Returns 25
+```
 
 ---
 
@@ -567,11 +539,10 @@ The result of a lambda function is the result of the expression that is evaluate
 
 The `length` function returns the length of a string or the number of elements in a list.
 
-=== "Example"
-	```lisp
-	(length "Hello, World")  ;; Returns 12
-	(length '(1 2 3))        ;; Returns 3
-	```
+```lisp title="Examples"
+(length "Hello, World")  ;; Returns 12
+(length '(1 2 3))        ;; Returns 3
+```
 
 <a name="let-star"></a>
 ### let*
@@ -588,12 +559,11 @@ Each assignment consists, like the [setq](#setq) function, of an implicit quoted
 !!! see-also "See also"
 	[setq](#setq)
 
-=== "Example"
-	```lisp
-	(let* (a 1)         ;; Assigns 1 to a
-		(a (+ a 1)))    ;; Assigns a + 1 = 2 to a
-	(let* (b 2) (c 3))  ;; Assigns 2 to b and 3 to c
-	```
+```lisp title="Examples"
+(let* (a 1)         ;; Assigns 1 to a
+	(a (+ a 1)))    ;; Assigns a + 1 = 2 to a
+(let* (b 2) (c 3))  ;; Assigns 2 to b and 3 to c
+```
 
 ---
 
@@ -606,10 +576,9 @@ The `list` function returns a list that contains all the symbol arguments.
 !!! see-also "See also"
 	[cons](#cons)
 
-=== "Example"
-	```lisp
-	(list 1 2 3)  ;; Returns ( 1 2 3 )
-	```
+```lisp title="Example"
+(list 1 2 3)  ;; Returns ( 1 2 3 )
+```
 
 ---
 
@@ -624,10 +593,9 @@ The function always returns *nil*.
 !!! see-also "See also"
 	[log-error](#log-error), [print](#print)
 
-=== "Example"
-	```lisp
-	(log "Hello, World")  ;; Prints "Hello, World" to the log
-	```
+```lisp title="Example"
+(log "Hello, World")  ;; Prints "Hello, World" to the log
+```
 
 ---
 
@@ -642,10 +610,9 @@ The function always returns *nil*.
 !!! see-also "See also"
 	[log](#log), [print](#print)
 
-=== "Example"
-	```lisp
-	(log-error "Hello, World")  ;; Prints "Hello, World" to the warning log
-	```
+```lisp title="Example"
+(log-error "Hello, World")  ;; Prints "Hello, World" to the warning log
+```
 
 ---
 
@@ -658,10 +625,9 @@ The `lower` function returns a lower case copy of the input string.
 !!! see-also "See also"
 	[upper](#upper)
 
-=== "Example"
-	```lisp
-	(lower "Hello, World")  ;; Returns "hello, world"
-	```
+```lisp title="Example"
+(lower "Hello, World")  ;; Returns "hello, world"
+```
 
 ---
 
@@ -679,11 +645,10 @@ The `match` function determines whether a string matches a regular expression *r
 - `+` : one or more characters
 - `\` : Escape an expression operator
 
-=== "Example"
-	```lisp
-	(match "aa" "a?")  ;; Returns true
-	(match "aa" "b*")  ;; Returns false
-	```
+```lisp title="Examples"
+(match "aa" "a?")  ;; Returns true
+(match "aa" "b*")  ;; Returns false
+```
 
 ---
 
@@ -696,10 +661,9 @@ The `nl` function returns a newline character.
 !!! see-also "See also"
 	[print](#print),  [sp](#sp)
 
-=== "Example"
-	```lisp
-	(. "Hello," nl "World")  ;; Returns "Hello,\nWorld"
-	```
+```lisp title="Example"
+(. "Hello," nl "World")  ;; Returns "Hello,\nWorld"
+```
 
 ---
 
@@ -714,11 +678,10 @@ The index is 0-based.
 !!! see-also "See also"
 	[car](#car),  [cdr](#cdr), [index-of](#index-of)
 
-=== "Example"
-	```lisp
-	(nth 2 '(1 2 3))        ;; Returns 3
-	(nth 2 "Hello, World")  ;; Returns "l"
-	```
+```lisp title="Examples"
+(nth 2 '(1 2 3))        ;; Returns 3
+(nth 2 "Hello, World")  ;; Returns "l"
+```
 
 ---
 
@@ -731,10 +694,9 @@ The `parse-string` function parses a string that contains an s-expression and re
 !!! see-also "See also"
 	[eval](#eval), [to-symbol](#to-symbol)
 
-=== "Example"
-	```lisp
-	(eval (parse-string "(print \"hello, world\")"))  ;; Prints "hello, world" 
-	```
+```lisp title="Example"
+(eval (parse-string "(print \"hello, world\")"))  ;; Prints "hello, world" 
+```
 
 ---
 
@@ -749,10 +711,9 @@ The function always returns *nil*.
 !!! see-also "See also"
 	[log](#log), [log-error](#log-error)
 
-=== "Example"
-	```lisp
-	(print "Hello, World")  ;; Prints "Hello, World"
-	```
+```lisp title="Example"
+(print "Hello, World")  ;; Prints "Hello, World"
+```
 
 ---
 
@@ -768,10 +729,9 @@ This function is implicitly used internally when used to evaluate s-expressions.
 !!! see-also "See also"
 	[eval](#eval)
 
-=== "Example"
-	```lisp
-	(progn (print "Hello, World") 1)  ;; Prints "Hello, World" and returns 1
-	```
+```lisp title="Example"
+(progn (print "Hello, World") 1)  ;; Prints "Hello, World" and returns 1
+```
 
 ---
 
@@ -786,11 +746,10 @@ If a symbol is provided for the optional argument its value is taken as the resu
 !!! see-also "See also"
 	[quit-with-error](#quit-with-error)
 
-=== "Example"
-	```lisp
-	(quit)             ;; Returns nil
-	(quit "a result")  ;; Returns "a result"
-	```
+```lisp title="Examples"
+(quit)             ;; Returns nil
+(quit "a result")  ;; Returns "a result"
+```
 
 ---
 
@@ -805,11 +764,10 @@ If a symbol is provided for the optional argument its value is taken as the resu
 !!! see-also "See also"
 	[quit](#quit)
 
-=== "Example"
-	```lisp
-	(quit-with-error)             ;; Returns nil
-	(quit-with-error "a result")  ;; Returns "a result"
-	```
+```lisp title="Examples"
+(quit-with-error)             ;; Returns nil
+(quit-with-error "a result")  ;; Returns "a result"
+```
 
 ---
 
@@ -819,10 +777,9 @@ If a symbol is provided for the optional argument its value is taken as the resu
 
 The `quote` function returns a quoted version of the argument. It can be used to get a quoted version of an s-expression or symbol that is the result of another function.
 
-=== "Example"
-	```lisp
-	(quote (1 2 3))  ;; Returns (1 2 3)
-	```
+```lisp title="Example"
+(quote (1 2 3))  ;; Returns (1 2 3)
+```
 
 ---
 
@@ -834,12 +791,11 @@ The `random` function generates a random float number in the given range.
 
 The default for the range, when no argument is given, is [0.0, 1.0]. If one number argument is given then this indicates a range of [0.0, \<end number>]. If two number arguments are given then this indicates a range of [\<start number>, \<end number>].
 
-=== "Example"
-	```lisp
-	(random)         ;; Returns, for example, 0.748786
-	(random 10)      ;; Returns, for example, 4.976338
-	(random 10 20)   ;; returns, for example, 12.73221
-	```
+```lisp title="Examples"
+(random)         ;; Returns, for example, 0.748786
+(random 10)      ;; Returns, for example, 4.976338
+(random 10 20)   ;; returns, for example, 12.73221
+```
 
 ---
 
@@ -854,10 +810,9 @@ The function doesn't change the original JSON structure, but returns an updated 
 !!! see-also "See also"
 	[get-json-attribute](#get-json-attribute), [has-json-attribute](#has-json-attribute), [set-json-attribute](#set-json-attribute)
 
-=== "Examples"
-	```lisp
-	(remove-json-attribute { "a" : { "b" : "c" }} "a/b")  ;; Returns { "a" : {} }
-	```
+```lisp title="Examples"
+(remove-json-attribute { "a" : { "b" : "c" }} "a/b")  ;; Returns { "a" : {} }
+```
 
 ---
 
@@ -870,12 +825,11 @@ The `return` function stops the evaluation of a function or [while](#while) loop
 !!! see-also "See also"
 	[defun](#defun), [while](#while)
 
-=== "Example"
-	```lisp
-	(if (< 1 2)      ;; Evaluates to "true"
-		(return 23)  ;; Return the number 23
-	)
-	```
+```lisp title="Example"
+(if (< 1 2)      ;; Evaluates to "true"
+	(return 23)  ;; Return the number 23
+)
+```
 
 ---
 
@@ -890,10 +844,9 @@ The function may return a symbol, or *nil*.
 !!! see-also "See also"
 	[block](#block)
 
-=== "Example"
-	```lisp
-	(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
-	```
+```lisp title="Examples"
+(block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
+```
 
 ---
 
@@ -903,11 +856,10 @@ The function may return a symbol, or *nil*.
 
 The `round` function rounds a number to *precision* digits after the decimal point. The default is 0, meaning to round to nearest integer.
 
-=== "Example"
-	```lisp
-	(round 3.1415926)    ;; Returns 3
-	(round 3.1415926 2)  ;; Returns 3.14
-	```
+```lisp title="Examples"
+(round 3.1415926)    ;; Returns 3
+(round 3.1415926 2)  ;; Returns 3.14
+```
 
 ---
 
@@ -915,7 +867,6 @@ The `round` function rounds a number to *precision* digits after the decimal poi
 
 `(set-json-attribute <JSON> <key:string> <value>)`  
 `(set-json-attribute <JSON> '( '(<key:string> <value>)* )`
-
 
 The `set-json-attribute` function adds or updates an attribute in a JSON structure via a *key* path to the new *value*. This *key* may be a structured path to access elements deeper down in the JSON structure. See [get-json-attribute](#get-json-attribute) for further details on how to access JSON attributes.
 
@@ -932,11 +883,10 @@ The function doesn't change the original JSON structure, but returns an updated 
 !!! see-also "See also"
 	[get-json-attribute](#get-json-attribute), [has-json-attribute](#has-json-attribute), [remove-json-attribute](#remove-json-attribute)
 
-=== "Examples"
-	```lisp
-	(set-json-attribute { "a" : { "b" : "c" }} "a/b" "e")  ;; Returns {"a": {"b": "e"}}
-	(set-json-attribute { "a" : { "b" : "c" }} '('("a/b" "d") '("a/c" "e")))  ;; Returns { "a" : { "b" : "d", "c" : "e"}
-	```
+```lisp title="Examples"
+(set-json-attribute { "a" : { "b" : "c" }} "a/b" "e")  ;; Returns {"a": {"b": "e"}}
+(set-json-attribute { "a" : { "b" : "c" }} '('("a/b" "d") '("a/c" "e")))  ;; Returns { "a" : { "b" : "d", "c" : "e"}
+```
 
 ---
 
@@ -949,10 +899,9 @@ The `setq` function assigns a value to a variable.
 !!! see-also "See also"
 	[let*](#let-star)
 
-=== "Example"
-	```lisp
-	(setq a "Hello, World")  ;; Returns "Hello, World" and sets the variable "a"
-	```
+```lisp title="Example"
+(setq a "Hello, World")  ;; Returns "Hello, World" and sets the variable "a"
+```
 
 ---
 
@@ -966,10 +915,9 @@ If the script execution timeouts during a sleep, the function is interrupted and
 
 The function returns the delay.
 
-=== "Example"
-	```lisp
-	(sleep 1.5)  ;; Sleep for 1.5 seconds
-	```
+```lisp title="Example"
+(sleep 1.5)  ;; Sleep for 1.5 seconds
+```
 
 ---
 
@@ -981,13 +929,12 @@ The `slice` function returns the slice of a list or a string.
 
 The behavior is the same as slicing in Python, except that both *start* and *end* must be provided. The first argument is the *start* (including) of the slice, the second is the *end* (excluding) of the slice. The fourth argument is the list or string to slice.
 
-=== "Example"
-	```lisp
-	(slice 1 2 '(1 2 3))     ;; Returns (2)
-	(slice 0 -1 "abcde")     ;; Returns "abcd"
-	(slice -1 99 "abcde")    ;; Returns "e"
-	(slice 99 100 '(1 2 3))  ;; Returns ()
-	```
+```lisp title="Examples"
+(slice 1 2 '(1 2 3))     ;; Returns (2)
+(slice 0 -1 "abcde")     ;; Returns "abcd"
+(slice -1 99 "abcde")    ;; Returns "e"
+(slice 99 100 '(1 2 3))  ;; Returns ()
+```
 
 ---
 
@@ -1000,10 +947,9 @@ The `sp` function returns a space character.
 !!! see-also "See also"
 	[print](#print),  [nl](#nl)
 
-=== "Example"
-	```lisp
-	(. "Hello," sp "World")  ;; Returns "Hello, World"
-	```
+```lisp title="Example"
+(. "Hello," sp "World")  ;; Returns "Hello, World"
+```
 
 ---
 
@@ -1016,10 +962,9 @@ The `string-to-json` function converts a string to a JSON structure and returns 
 !!! see-also "See also"
 	[json-to-string](#json-to-string), [to-number](#to-number), [jsonify](#jsonify)
 
-=== "Example"
-	```lisp
-	(string-to-json "{ \"a\" : { \"b\" : \"c\" }}")  ;; Returns {"a": {"b": "c"}}
-	```
+```lisp title="Example"
+(string-to-json "{ \"a\" : { \"b\" : \"c\" }}")  ;; Returns {"a": {"b": "c"}}
+```
 
 ---
 
@@ -1032,10 +977,9 @@ The `to-number` function converts a string that contains a number to a number sy
 !!! see-also "See also"
 	[json-to-string](#json-to-string),  [to-string](#to-string)
 
-=== "Example"
-	```lisp
-	(to-number "123")  ;; Returns the number 123
-	```
+```lisp title="Example"
+(to-number "123")  ;; Returns the number 123
+```
 
 ---
 
@@ -1048,10 +992,9 @@ The `to-string` function converts a symbol of any of the built-in types to a str
 !!! see-also "See also"
 	[json-to-string](#json-to-string), [to-number](#to-number)
 
-=== "Example"
-	```lisp
-	(to-string '(1 2))  ;; Returns "[1, 2]"
-	```
+```lisp title="Example"
+(to-string '(1 2))  ;; Returns "[1, 2]"
+```
 
 ---
 
@@ -1064,10 +1007,9 @@ The `to-symbol` function converts a string to a symbol and returns it. The resul
 !!! see-also "See also"
 	[eval](#eval), [parse-string](#parse-string), [parse-string](#parse-string)
 
-=== "Example"
-	```lisp
-	(to-symbol "a-symbol")  ;; Returns the symbol 'a-symbol'
-	```
+```lisp title="Example"
+(to-symbol "a-symbol")  ;; Returns the symbol 'a-symbol'
+```
 
 ---
 
@@ -1084,13 +1026,12 @@ Currently only programmatic flow interrupts are supported to trigger the cleanup
 
 The function always returns the result of the cleanup s-expression.
 
-=== "Example"
-	```lisp
-	;; Prints "main form" and "cleanup form" and returns 2
-	(unwind-protect
-		((print "main form") 1)
-		((print "cleanup form") 2))
-	```
+```lisp title="Example"
+;; Prints "main form" and "cleanup form" and returns 2
+(unwind-protect
+	((print "main form") 1)
+	((print "cleanup form") 2))
+```
 
 ---
 
@@ -1103,10 +1044,9 @@ The `upper` function returns an upper case copy of the input string.
 !!! see-also "See also"
 	[lower](#lower)
 
-=== "Example"
-	```lisp
-	(upper "Hello, World")  ;; Returns "HELLO, WORLD"
-	```
+```lisp title="Example"
+(upper "Hello, World")  ;; Returns "HELLO, WORLD"
+```
 
 ---
 
@@ -1119,10 +1059,9 @@ The `url-encode` function encodes a string so that may be safely used as part of
 !!! see-also "See also"
 	[base64-encode](#base64-encode)
 
-=== "Example"
-	```lisp
-	(url-encode "Hello, World")  ;; Returns "Hello%2C+World"
-	```
+```lisp title="Example"
+(url-encode "Hello, World")  ;; Returns "Hello%2C+World"
+```
 
 ---
 
@@ -1141,13 +1080,12 @@ The `while` function returns the result of the last evaluated s-expression in th
 !!! see-also "See also"
 	[dolist](#dolist), [dotime](#dotimes), [return](#return)
 
-=== "Example"
-	```lisp
-	(setq i 0)       ;; Set loop variable
-	(while (< i 10)  ;; Loop 10 times
-		((print i)   ;; Print to the console
-		(inc i)))    ;; Increment loop variable
-	```
+```lisp title="Example"
+(setq i 0)       ;; Set loop variable
+(while (< i 10)  ;; Loop 10 times
+	((print i)   ;; Print to the console
+	(inc i)))    ;; Increment loop variable
+```
 
 
 ## CSE-Specific Functions
@@ -1160,10 +1098,9 @@ The following functions provide support to access certain CSE functionalities, c
 
 The `clear-console` function clears the console screen.
 
-=== "Example"
-	```lisp
-	(clear-console)  ;; Clears the console screen
-	```
+```lisp title="Example"
+(clear-console)  ;; Clears the console screen
+```
 
 ---
 
@@ -1180,10 +1117,9 @@ The function returns a quoted list where each entry is another quoted list with 
 - attribute long name
 - attribute type
 
-=== "Example"
-	```lisp
-	(cse-attribute-info "acop")  ;; Returns ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
-	```
+```lisp title="Example"
+(cse-attribute-info "acop")  ;; Returns ( ( "acop" "accessControlOperations" "nonNegInteger" ) )
+```
 
 ---
 
@@ -1201,10 +1137,9 @@ The return value is one of the following strings:
 - STOPPED 
 - RESETTING
 
-=== "Example"
-	```lisp
-	(cse-status)  ;; Returns "RUNNING"
-	```
+```lisp title="Example"
+(cse-status)  ;; Returns "RUNNING"
+```
 
 ---
 
@@ -1217,11 +1152,10 @@ The `get-config` function retrieves a setting from the CSE's internal configurat
 !!! see-also "See also"
 	[has-config](#has-config), [set-config](#set-config)
 
-=== "Examples"
-	```lisp
-	(get-config "cse.type")    ;; Returns, for example, 1
-	(get-config "cse.cseID")   ;; Returns, for example, "/id-in"
-	```
+```lisp title="Examples"
+(get-config "cse.type")    ;; Returns, for example, 1
+(get-config "cse.cseID")   ;; Returns, for example, "/id-in"
+```
 
 ---
 
@@ -1237,10 +1171,9 @@ The `get-loglevel` function retrieves a the CSE's current log level setting. The
 - ERROR
 - OFF
 
-=== "Example"
-	```lisp
-	(get-loglevel)  ;; Return, for example, INFO
-	```
+```lisp title="Example"
+(get-loglevel)  ;; Return, for example, INFO
+```
 
 ---
 
@@ -1253,10 +1186,9 @@ The `get-storage` function retrieves a value from the CSE's internal script-data
 !!! see-also "See also"
 	[has-storage](#has-storage), [put-storage](#put-storage), [remove-storage](#remove-storage)
 
-=== "Examples"
-	```lisp
-	(get-storage "aStorageID" "aKey")  ;; Retrieves the value for "aKey" from "aStorageID"
-	```
+```lisp title="Example"
+(get-storage "aStorageID" "aKey")  ;; Retrieves the value for "aKey" from "aStorageID"
+```
 
 ---
 
@@ -1269,11 +1201,10 @@ The `has-config` function determines whether a setting from the CSE's internal c
 !!! see-also "See also"
 	[get-config](#get-config), [set-config](#set-config)
 
-=== "Examples"
-	```lisp
-	(has-config "cse.cseID")     ;; Returns true
-	(has-config "cse.unknown")   ;; Returns false
-	```
+```lisp title="Examples"
+(has-config "cse.cseID")     ;; Returns true
+(has-config "cse.unknown")   ;; Returns false
+```
 
 ---
 
@@ -1286,10 +1217,9 @@ The `has-storage` function determines whether a value has been stored under the 
 !!! see-also "See also"
 	[get-storage](#get-storage), [put-storage](#put-storage), [remove-storage](#remove-storage)
 
-=== "Examples"
-	```lisp
-	(has-storage "aStorageID" "aKey")       ;; Tests whether the key "aKey" exists in "aStorageID"
-	```
+```lisp title="Example"
+(has-storage "aStorageID" "aKey")       ;; Tests whether the key "aKey" exists in "aStorageID"
+```
 
 ---
 
@@ -1304,10 +1234,9 @@ The function returns the result of the finished script.
 !!! see-also "See also"
 	[run-script](#run-script), [schedule-next-script](#schedule-next-script)
 
-=== "Example"
-	```lisp
-	(include-script "functions" "an argument")  ;; Run the script "functions"
-	```
+```lisp title="Example"
+(include-script "functions" "an argument")  ;; Run the script "functions"
+```
 
 ---
 
@@ -1317,11 +1246,10 @@ The function returns the result of the finished script.
 
 The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It can help to easily identify the different sections when working with many requests. An optional (short) message can be provided in the argument.
 
-=== "Examples"
-	```lisp
-	(log-divider)                 ;; Add a divider
-	(log-divider "Hello, World")  ;; Add a divider with a centered message
-	```
+```lisp title="Examples"
+(log-divider)                 ;; Add a divider
+(log-divider "Hello, World")  ;; Add a divider with a centered message
+```
 
 ---
 
@@ -1331,10 +1259,9 @@ The `log-divider` function inserts a divider line in the CSE's *DEBUG* log. It c
 
 The `print-json` function prints a JSON structure with syntax highlighting to the console.
 
-=== "Example"
-	```lisp
-	(print-json { "m2m:cnt" : { "rn": "myCnt" }})  ;; Print the JSON structure
-	```
+```lisp title="Example"
+(print-json { "m2m:cnt" : { "rn": "myCnt" }})  ;; Print the JSON structure
+```
 
 ---
 
@@ -1347,10 +1274,9 @@ The `put-storage` function inserts or updates a *value* in the CSE's internal sc
 !!! see-also "See also"
 	[get-storage](#get-storage), [has-storage](#has-storage), [remove-storage](#remove-storage)
 
-=== "Examples"
-	```lisp
-	(put-storage "aStorageID" "aKey" "Hello, World")  ;; Inserts or updates the key "aKey" in "aStorageID"
-	```
+```lisp title="Example"
+(put-storage "aStorageID" "aKey" "Hello, World")  ;; Inserts or updates the key "aKey" in "aStorageID"
+```
 
 ---
 
@@ -1368,11 +1294,10 @@ With two parameters the `remove-storage` function removes a *key*/*value* pair f
 !!! see-also "See also"
 	[get-storage](#get-storage), [has-storage](#has-storage), [put-storage](#put-storage)
 
-=== "Examples"
-	```lisp
-	(remove-storage "aStorageID" "aKey")  ;; Removes the key and value from storageID
-	(remove-storage "aStorageID")         ;; Removes all keys and value from storageID
-	```
+```lisp title="Examples"
+(remove-storage "aStorageID" "aKey")  ;; Removes the key and value from storageID
+(remove-storage "aStorageID")         ;; Removes all keys and value from storageID
+```
 
 ---
 
@@ -1384,10 +1309,9 @@ The `reset-cse` function initiates a CSE reset.
 
 The script execution does continue after the CSE finished the reset.
 
-=== "Example"
-	```lisp
-	(reset-cse)  ;; Resets the CSE
-	```
+```lisp title="Example"
+(reset-cse)  ;; Resets the CSE
+```
 
 ---
 
@@ -1402,10 +1326,9 @@ The function returns the result of the finished script.
 !!! see-also "See also"
 	[include-script](#include-script), [schedule-next-script](#schedule-next-script)
 
-=== "Example"
-	```lisp
-	(setq result (run-script "aScript" "an argument"))  ;; Run the script "aScript" and assign the result
-	```
+```lisp title="Example"
+(setq result (run-script "aScript" "an argument"))  ;; Run the script "aScript" and assign the result
+```
 
 ---
 
@@ -1415,10 +1338,9 @@ The function returns the result of the finished script.
 
 The `runs-in-ipython` function determines whether the CSE currently runs in an IPython environment, such as Jupyter Notebooks.
 
-=== "Example"
-	```lisp
-	(runs-in-ipython)  ;; Returns true if the CSE runs in an iPython environment
-	```
+```lisp title="Example"
+(runs-in-ipython)  ;; Returns true if the CSE runs in an iPython environment
+```
 
 ---
 
@@ -1433,10 +1355,9 @@ This is different from [include-script](#include-script) and [run-script](#run-s
 !!! see-also "See also"
 	[include-script](#include-script), [run-script](#run-script)
 
-=== "Example"
-	```lisp
-	(schedule-next-script "scriptName" "anArgument")  ;; Schedule a script with an argument
-	```
+```lisp title="Example"
+(schedule-next-script "scriptName" "anArgument")  ;; Schedule a script with an argument
+```
 
 ---
 
@@ -1451,10 +1372,9 @@ It is only possible to update an existing setting, but not to create a new one. 
 !!! see-also "See also"
 	[get-config](#get-config), [has-config](#has-config)
 
-=== "Examples"
-	```lisp
-	(set-config "cse.checkExpirationsInterval" 1.5)  ;; Set the configuration to 1.5
-	```
+```lisp title="Example"
+(set-config "cse.checkExpirationsInterval" 1.5)  ;; Set the configuration to 1.5
+```
 
 ---
 
@@ -1464,10 +1384,9 @@ It is only possible to update an existing setting, but not to create a new one. 
 
 The `set-console-logging` function enables or disables console logging. It does not turn on or off logging in general. [Printing](#print) to the console is not affected.
 
-=== "Example"
-	```lisp
-	(set-console-logging false)  ;; Switch off console logging
-	```
+```lisp title="Example"
+(set-console-logging false)  ;; Switch off console logging
+```
 
 
 ## oneM2M-Specific Functions
@@ -1499,13 +1418,12 @@ The function returns a list:
 !!! see-also "See also"
 	[delete-resource](#delete-resource), [import-raw](#import-raw), [retrieve-resource](#retrieve-resource), [send-notification](#send-notification), [update-resource](#update-resource)
 
-=== "Examples"
-	```lisp
-	(create-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "rn": "myCnt" }})  ;; Returns ( 2001 { "m2m:cnt" ... } )
-	
-	;; Provide extra requestVersionIndicator
-	(create-resource "CAdmin" "cse-in"  { "m2m:cnt" : { }} { "rvi": "3"})  ;; Returns ( 2001 { "m2m:cnt" ... } )
-	```
+```lisp title="Example"
+(create-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "rn": "myCnt" }})  ;; Returns ( 2001 { "m2m:cnt" ... } )
+
+;; Provide extra requestVersionIndicator
+(create-resource "CAdmin" "cse-in"  { "m2m:cnt" : { }} { "rvi": "3"})  ;; Returns ( 2001 { "m2m:cnt" ... } )
+```
 
 ---
 
@@ -1533,13 +1451,12 @@ The function returns a list:
 !!! see-also "See also"
 	[create-resource](#create-resource), [retrieve-resource](#retrieve-resource), [send-notification](#send-notification), [update-resource](#update-resource)
 
-=== "Examples"
-	```lisp
-	(delete-resource "CAdmin" "cse-in/myCnt")                ;; Returns ( 2002 { "m2m:cnt" ... } )
-	
-	;; Provide extra requestVersionIndicator
-	(delete-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2002 { "m2m:cnt" ... } )
-	```
+```lisp title="Example"
+(delete-resource "CAdmin" "cse-in/myCnt")                ;; Returns ( 2002 { "m2m:cnt" ... } )
+
+;; Provide extra requestVersionIndicator
+(delete-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2002 { "m2m:cnt" ... } )
+```
 
 ---
 
@@ -1559,21 +1476,20 @@ The function returns a list:
 - *response status* is the oneM2M Response Status Code (RSC) for the request
 - *resource* is the response content (usually *nil* if successful)
 
-=== "Example"
-	```lisp
-	;; Add an AE resource under the CSEBase
-	(import-raw 
-		"CmyAE"                                      ;; Originator
-		{ "m2m:ae": {
-			"ri":  "CmyAE",
-			"rn":  "CmyAE",
-			"pi":  "${ (get-config \"cse.ri\") }",  ;; Get the CSE's resource ID from the configuration
-			"rr":  true,
-			"api": "NmyAppId",
-			"aei": "CmyAE",
-			"csz": [ "application/json", "application/cbor" ]
-		}})
-	```
+```lisp title="Example"
+;; Add an AE resource under the CSEBase
+(import-raw 
+	"CmyAE"                                      ;; Originator
+	{ "m2m:ae": {
+		"ri":  "CmyAE",
+		"rn":  "CmyAE",
+		"pi":  "${ (get-config \"cse.ri\") }",  ;; Get the CSE's resource ID from the configuration
+		"rr":  true,
+		"api": "NmyAppId",
+		"aei": "CmyAE",
+		"csz": [ "application/json", "application/cbor" ]
+	}})
+```
 
 ---
 
@@ -1594,16 +1510,15 @@ The function returns a boolean indicating the query result.
 !!! see-also "See also"
 	[get-json-attribute](#get-json-attribute)
 
-=== "Examples"
-	```lisp
-	;; Returns true
-	(query-resource 
-		'(& (> x 100) (== rn "cnt1234"))
-		{ "m2m:cnt": {
-			"rn": "cnt1234",
-			"x": 123
-		}})
-	```
+```lisp title="Example"
+;; Returns true
+(query-resource 
+	'(& (> x 100) (== rn "cnt1234"))
+	{ "m2m:cnt": {
+		"rn": "cnt1234",
+		"x": 123
+	}})
+```
 
 ---
 
@@ -1631,13 +1546,12 @@ The function returns a list:
 !!! see-also "See also"
 	[create-resource](#create-resource), [delete-resource](#delete-resource), [send-notification](#send-notification), [update-resource](#update-resource)
 
-=== "Examples"
-	```lisp
-	(retrieve-resource "CAdmin" "cse-in/myCnt")                ;; Returns ( 2000 { "m2m:cnt" ... } )
-	
-	;; Provide extra requestVersionIndicator
-	(retrieve-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2000 { "m2m:cnt" ... } )
-	```
+```lisp title="Example"
+(retrieve-resource "CAdmin" "cse-in/myCnt")                ;; Returns ( 2000 { "m2m:cnt" ... } )
+
+;; Provide extra requestVersionIndicator
+(retrieve-resource "CAdmin" "cse-in/myCnt" { "rvi": "3"})  ;; Returns ( 2000 { "m2m:cnt" ... } )
+```
 
 ---
 
@@ -1666,10 +1580,9 @@ The function returns a list:
 !!! see-also "See also"
 	[create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [update-resource](#update-resource)
 
-=== "Examples"
-	```lisp
-	(send-notification "CAdmin" "cse-in/myAE"  { "m2m:sgn" : { ... }})  ;; Returns notification result
-	```
+```lisp title="Example"
+(send-notification "CAdmin" "cse-in/myAE"  { "m2m:sgn" : { ... }})  ;; Returns notification result
+```
 
 ---
 
@@ -1698,13 +1611,12 @@ The function returns a list:
 !!! see-also "See also"
 	[create-resource](#create-resource), [delete-resource](#delete-resource), [retrieve-resource](#retrieve-resource), [send-notification](#send-notification)
 
-=== "Examples"
-	```lisp
-	(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }})                ;; Returns ( 2004 { "m2m:cnt" ... } )
+```lisp title="Example"
+(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }})                ;; Returns ( 2004 { "m2m:cnt" ... } )
 
-	;; Provide extra requestVersionIndicator
-	(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }} { "rvi": "3"})  ;; Returns ( 2004 { "m2m:cnt" ... } )
-	```
+;; Provide extra requestVersionIndicator
+(update-resource "CAdmin" "cse-in"  { "m2m:cnt" : { "mni": 10 }} { "rvi": "3"})  ;; Returns ( 2004 { "m2m:cnt" ... } )
+```
 
 
 ## Text UI
@@ -1715,10 +1627,9 @@ The function returns a list:
 
 The `open-web-browser` function opens a web browser with the given URL.
 
-=== "Example"
-	```lisp
-	(open-web-browser "https://www.onem2m.org")  ;; Opens the web browser with the URL "https://www.onem2m.org"
-	```
+```lisp title="Example"
+(open-web-browser "https://www.onem2m.org")  ;; Opens the web browser with the URL "https://www.onem2m.org"
+```
 
 ---
 
@@ -1730,10 +1641,9 @@ The `set-category-description` function sets the description for a whole categor
 
 The description may contain Markdown formatting.
 
-=== "Example"
-	```lisp
-	(set-category-description "myCategory" "My category description")  ;; Sets the description for the category "myCategory"
-	```
+```lisp title="Example"
+(set-category-description "myCategory" "My category description")  ;; Sets the description for the category "myCategory"
+```
 
 ---
 
@@ -1743,10 +1653,9 @@ The description may contain Markdown formatting.
 
 The `runs-in-tui` function determines whether the CSE currently runs in Text UI mode.
 
-=== "Example"
-	```lisp
-	(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
-	```
+```lisp title="Example"
+(runs-in-tui)  ;; Returns true if the CSE runs in Text UI mode
+```
 
 ---
 
@@ -1771,14 +1680,13 @@ This function is only available in TUI mode. It has the following arguments:
 If one of the optional arguments needs to be left out, a *nil* symbol must be used instead.
 The function returns NIL.
 
-=== "Examples"
-	```lisp
-	(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
-	(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
-	(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
-	(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
-	(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
-	```
+```lisp title="Examples"
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" "a title")      ;; Displays "a message" with title "a title in an information notification for 3 seconds
+(tui-notify "a message")                ;; Displays "a message" in an information notification for 3 seconds
+(tui-notify "a message" nil "warning")  ;; Displays "a message" in a warning notification, no title
+(tui-notify "a message" nil nil 10)     ;; Displays "a message" in an information notification, no title, for 3 seconds
+```
 
 ---
 
@@ -1788,10 +1696,9 @@ The function returns NIL.
 
 The `tui-refresh-resources` function refreshes the resources in the CSE's Text UI.
 
-=== "Example"
-	```lisp
-	(tui-refresh-resources)  ;; Refreshes the resource tree
-	```
+```lisp title="Example"
+(tui-refresh-resources)  ;; Refreshes the resource tree
+```
 
 ---
 
@@ -1801,10 +1708,10 @@ The `tui-refresh-resources` function refreshes the resources in the CSE's Text U
 
 The `tui-visual-bell` function shortly flashes the script's entry in the scripts' list/tree.
 
-=== "Example"
-	```lisp
-	(tui-visual-bell)  ;; Flashes the script's name
-	```
+```lisp title="Example"
+(tui-visual-bell)  ;; Flashes the script's name
+```
+
 
 ## Network
 
@@ -1829,22 +1736,21 @@ The function returns a list:
 - *response body* is the response content
 - *response headers* is a list of header fields. The format of these header fields is the same as in the request above.
 
-=== "Examples"
-	```lisp
-	;; Retrieve a web page
-	(http 'get "https://www.onem2m.org")
+```lisp title="Examples"
+;; Retrieve a web page
+(http 'get "https://www.onem2m.org")
 
-	;; Send a oneM2M CREATE request manually
-	(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
-		{ "X-M2M-RI":"1234",                     ;; Header fields
-			"X-M2M-RVI": "4",
-			"X-M2M-Origin": "CAdmin",
-			"Content-type": "application/json;ty=3" }
-		{ "m2m:cnt": {                           ;; Body
-			"rn": "myCnt"
-			...
-		}})
-	```
+;; Send a oneM2M CREATE request manually
+(http 'post "http://localhost:8080/cse-in"   ;; Operation and URL
+	{ "X-M2M-RI":"1234",                     ;; Header fields
+		"X-M2M-RVI": "4",
+		"X-M2M-Origin": "CAdmin",
+		"Content-type": "application/json;ty=3" }
+	{ "m2m:cnt": {                           ;; Body
+		"rn": "myCnt"
+		...
+	}})
+```
 
 ---
 
@@ -1862,11 +1768,10 @@ It has the following arguments:
 
 The function returns a boolean value.
 
-=== "Examples"
-	```lisp
-	(ping-tcp-service "localhost" 8080)    ;; Returns true if the service is reachable
-	(ping-tcp-service "localhost" 8080 2)  ;; Returns true if the service is reachable. Timeout after 2 seconds.
-	```
+```lisp title="Examples"
+(ping-tcp-service "localhost" 8080)    ;; Returns true if the service is reachable
+(ping-tcp-service "localhost" 8080 2)  ;; Returns true if the service is reachable. Timeout after 2 seconds.
+```
 
 ## Provided Functions
 
@@ -1874,10 +1779,9 @@ In addition to the functions defined in this documentation, more functions are p
 
 These functions can be included and made available in own scripts with the [include-script](#include-script) function:
 
-=== "Example"
-	```lisp
-	(include-script "ASFunctions")
-	```
+```lisp title="Example"
+(include-script "ASFunctions")
+```
 
 ### cadr
 
@@ -1888,10 +1792,9 @@ The `cadr` function returns the second element of a list.
 !!! see-also "See also"
 	[caddr](#caddr)
 
-=== "Example"
-	```lisp
-	(cadr '(1 2 3))  ;; Returns 2
-	```
+```lisp title="Example"
+(cadr '(1 2 3))  ;; Returns 2
+```
 
 ---
 
@@ -1904,10 +1807,9 @@ The `caddr` function returns the third element of a list.
 !!! see-also "See also"
 	[cadr](#cadr)
 
-=== "Example"
-	```lisp
-	(caddr '(1 2 3))  ;; Returns 3
-	```
+```lisp title="Example"
+(caddr '(1 2 3))  ;; Returns 3
+```
 
 ---
 
@@ -1927,10 +1829,9 @@ The function returns the previous value of the configuration setting.
 !!! see-also "See also"
 	[restore-config-value](#restore-config-value)
 
-=== "Example"
-	```lisp
-	(set-and-store-config-value "cse.checkExpirationsInterval" 10)  ;; Returns the previous value of the configuration setting
-	```
+```lisp title="Example"
+(set-and-store-config-value "cse.checkExpirationsInterval" 10)  ;; Returns the previous value of the configuration setting
+```
 
 ---
 
@@ -1947,10 +1848,9 @@ The function has the following arguments:
 !!! see-also "See also"
 	[set-and-store-config-value](#set-and-store-config-value)
 
-=== "Example"
-	```lisp
-	(restore-config-value "cse.checkExpirationsInterval")  ;; Restores the configuration setting
-	```
+```lisp title="Example"
+(restore-config-value "cse.checkExpirationsInterval")  ;; Restores the configuration setting
+```
 
 ---
 
@@ -1969,10 +1869,9 @@ The function returns the response status.
 !!! see-also "See also"
 	[get-response-resource](#get-response-resource) 
 
-=== "Example"
-	```lisp
-	(get-response-status (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response status
-	```
+```lisp title="Example"
+(get-response-status (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response status
+```
 
 ---
 
@@ -1991,10 +1890,9 @@ The function returns the response resource.
 !!! see-also "See also"
 	[get-response-status](#get-response-status)
 
-=== "Example"
-	```lisp
-	(get-response-resource (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response resource
-	```
+```lisp title="Example"
+(get-response-resource (retrieve-resource "CAdmin" "cse-in/myCnt"))  ;; Returns the response resource
+```
 
 ---
 
@@ -2015,20 +1913,10 @@ The function has the following arguments:
 
 The function returns the result of the evaluated command.
 
-=== "Example"
-	```lisp
-	(eval-if-resource-exists "CAdmin" "cse-in/myCnt" (print "Resource exists") (print "Resource does not exist"))  ;; Evaluates the command
-	```
-
-
-;; Run a command if the resource exists and can be retrieved
-;; Otherwise run the "else-cmd" command.
-;; If found, the resource is stored in the "_resource" variable
-;; that can be used in the "cmd" command.
-(defun eval-if-resource-exists (originator id cmd else-cmd)
-  ( (setq response (retrieve-resource originator id))
-    (if (== (get-response-status response) 2000)
-      ( (setq _resource (get-response-resource response))
-	    (eval cmd))
-	  (eval else-cmd))))
+```lisp title="Example"
+(eval-if-resource-exists "CAdmin" 
+                         "cse-in/myCnt" 
+						 (print "Resource exists") 
+						 (print "Resource does not exist"))  ;; Evaluates the command
+```
 

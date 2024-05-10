@@ -48,8 +48,8 @@ hide:
 
 	The intention is to provide an easy to install and use, extensible, and maintainable oneM2M CSE.
 
-	<mark>TODO reference?</mark>
-    [:octicons-arrow-right-24: Reference](#)
+    [:octicons-arrow-right-24: Development Documentation](development/Overview.md)&nbsp;&nbsp;&nbsp;&nbsp; [:octicons-arrow-right-24: HowTos](howtos/HowTos.md)
+	
 
 -   :material-scale-balance:{ .lg .middle } **Open Source | BSD 3-Clause**
 

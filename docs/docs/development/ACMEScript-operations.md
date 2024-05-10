@@ -15,20 +15,18 @@ The following comparison operations are supported by ACMEScript. They are used l
 | >         | Greater than          | `(> a b) ;; equal to: a > b`    |
 | >=        | Greater or equal than | `(>= a b) ;; equal to: a >= b`  |
 
-=== "Example"
-	```lisp
-	(if (< 1 2)           ;; Evaluates to "true"
-		(print "true")    ;; This expression is executed
-		(print "false"))  ;; This expression is not executed
-	```
+```lisp title="Example"
+(if (< 1 2)           ;; Evaluates to "true"
+	(print "true")    ;; This expression is executed
+	(print "false"))  ;; This expression is not executed
+```
 
 !!! note
 	The first operant in comparison operations may be a list or a quoted list. Only if the second operant is not a list, too, then the comparison operation is repeated for every member in the first operant's list. The comparison operation evaluates to *true* if any of these comparisons returns *true*.
 
-=== "Example"
-	```lisp
-	(== '(1 2 3) 2)  ;; Evaluates to "true"
-	```
+```lisp title="Example"
+(== '(1 2 3) 2)  ;; Evaluates to "true"
+```
 
 
 ## Logical Operations
@@ -41,20 +39,18 @@ The following logical operations are supported by ACMEScript. They are used like
 | and, &    | logical *and *of two or more boolean expressions | (and a b c) ;; a and b and c |
 | not, !    | logical negation or one boolean expression       | (not true)  ;; false         |
 
-=== "Example"
-	```lisp
-	(or (< 1 2) (>= 4 3) (== 1 1))   ;; Returns true
-	(and (or true false) (not true)) ;; Returns false
-	```
+```lisp title="Example"
+(or (< 1 2) (>= 4 3) (== 1 1))   ;; Returns true
+(and (or true false) (not true)) ;; Returns false
+```
 
 !!! note
 	The first operant in logical operations may be a list or quoted list. Only if the second operant is not a list, too, then the logical operation is repeated for every member in the first operant's list. The logical operation evaluates to *true* if any of these operations returns *true*.
 
-=== "Example"
-	```lisp
-	(and '(false false true) true)   ;; Evaluates to "true"
-	(and '(false false false) true)  ;; Evaluates to "false"
-	```
+```lisp title="Examples"
+(and '(false false true) true)   ;; Evaluates to "true"
+(and '(false false false) true)  ;; Evaluates to "false"
+```
 
 
 ## Mathematical Operations
@@ -70,8 +66,7 @@ The following mathematical operations are supported by ACMEScript. They are used
 | **        | Calculates the power of two or more numbers | (** 2 3 4)  ;; Returns 4096 |
 | %         | Calculates to modulo of two or more numbers | (% 100 21 13) ;; Returns 3  |
 
-=== "Example"
-	```lisp
-	(* 6 7)        ;; Returns 42
-	(* (+ 3 3) 7)  ;; Return 42
-	```
+```lisp title="Examples"
+(* 6 7)        ;; Returns 42
+(* (+ 3 3) 7)  ;; Return 42
+```

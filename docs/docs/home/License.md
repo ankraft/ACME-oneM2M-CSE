@@ -3,7 +3,6 @@
 The ACME oneM2M CSE is available under the BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
 
 
-
 ## BSD 3-Clause License
 
 Copyright (c) 2020, Andreas Kraft
