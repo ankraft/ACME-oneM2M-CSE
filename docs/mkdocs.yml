@@ -1,0 +1,196 @@
+site_name: ACME oneM2M CSE
+
+copyright: This work is licensed under the <a href="https://opensource.org/license/bsd-3-clause" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">3-Clause BSD License</a>.
+
+repo_url: https://github.com/ankraft/ACME-oneM2M-CSE
+repo_name: ACME-oneM2M-CSE
+extra_css:
+  - stylesheets/extra.css
+
+theme:
+  name: material
+  logo: 'images/acme_sm.png'
+  favicon: 'images/favicon.png'
+  icon:
+    repo: fontawesome/brands/github 
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: acmecse-light
+      primary: grey
+      accent: red
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: acmecse-dark
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to system preference
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    #- navigation.footer
+    - content.footnote.tooltips
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.instant.prefetch
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+    #- toc.integrate
+
+plugins:
+  # - tags:
+  #     tags_file: home/tags.md
+  - search
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: slide
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      skip_classes:
+        - custom-skip-class-name
+      auto_caption: true
+      caption_position: bottom
+      background: auto
+      shadow: true
+
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+     alternate_style: true
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+
+##############################################################################
+
+extra:
+  social:
+#     - icon: fontawesome/solid/rss
+#       link: https://recipes.onem2m.org/feed_rss_created.xml 
+#       name: Recipes RSS Feed
+    - icon: fontawesome/solid/section
+      link: /home/Imprint/
+      name: Imprint · Impressum
+    - icon: fontawesome/brands/github
+      link: https://github.com/ankraft/ACME-oneM2M-CSE
+      name: ACME Git Repository
+    - icon: fontawesome/brands/mastodon
+      link: https://mstdn.social/@acmeCSE
+      name: ACME CSE @ Mastodon
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/6ryMHQC2Uj
+      name: ACME Discord Server
+
+nav:
+  - Home:
+    - 'Home': 'index.md'
+    - 'Supported Features': 'home/Supported.md'
+    - 'Roadmap': 'home/Roadmap.md'
+    - 'LICENSE': 'home/License.md'
+    - 'Acknowledgements': 'home/Acknowledgements.md'
+    - 'Contact': 'home/Contact.md'
+    # - 'Imprint': 'home/Imprint.md'
+  - 'Setup & Running':
+    - 'Installation': 'setup/Installation.md'
+    - 'Running': 'setup/Running.md'
+    - 'Database Setup': 'setup/Database.md'
+    - 'Certificates': 'setup/Certificates.md'
+    - 'Configuration':
+      - 'Introduction': 'setup/Configuration-introduction.md'
+      - 'Basic Configuration': 'setup/Configuration-basic.md'
+      - 'CSE General Settings': 'setup/Configuration-cse.md'
+      - 'Databases': 'setup/Configuration-database.md'
+      - 'Logging': 'setup/Configuration-logging.md'
+      - 'HTTP Binding': 'setup/Configuration-http.md'
+      - 'MQTT Binding': 'setup/Configuration-mqtt.md'
+      - 'WebSocket Binding': 'setup/Configuration-ws.md'
+      - 'Scripting': 'setup/Configuration-scripting.md'
+      - 'User Interfaces': 'setup/Configuration-uis.md'
+      - 'oneM2M Resources': 'setup/Configuration-resources.md'
+    - 'Operation':
+      - 'Infrastructure Diagrams': 'setup/Operation-diagrams.md'
+      - 'MQTT Broker': 'setup/Operation-mqtt.md'
+      - 'Upper Tester': 'setup/Operation-uppertester.md'
+    - 'User Interfaces':
+      - 'Console UI': 'setup/Console.md'
+      - 'Text UI': 'setup/TextUI.md'
+      - 'Web UI': 'setup/WebUI.md'
+  - 'Development': 
+      - 'Overview': 'development/Overview.md'
+      - 'Unit Tests': 'development/UnitTests.md'
+      - 'Type Checking': 'development/TypeChecking.md'
+      - 'Start-Up and Policies':
+        - 'Start-Up Resources': 'development/StartupResources.md'
+        - 'Attribute Policies': 'development/AttributePolicies.md'
+        - 'FlexContainer Policies': 'development/FlexContainerPolicies.md'
+        - 'Help File Format': 'development/HelpDocumentation.md'
+      - 'Tools':
+        - 'Notification Server': 'development/NotificationServer.md'
+      - 'ACMEScript':
+        - 'Introduction': 'development/ACMEScript.md'
+        - 'Loading & Running Scripts': 'development/ACMEScript-loading.md'
+        - 'Operations': 'development/ACMEScript-operations.md'
+        - 'Functions': 'development/ACMEScript-functions.md'
+        - 'Variables': 'development/ACMEScript-variables.md'
+        - 'Meta Tags': 'development/ACMEScript-metatags.md'
+        - 'Upper Tester Integration': 'development/ACMEScript-uppertester.md'
+      - 'Integrating ACME CSE': 'development/Integrating_ACME.md'
+      - 'Debug Mode': 'development/DebugMode.md'
+      - 'Third Party Libraries': 'development/ThirdPartyLibraries.md'
+  - 'HowTos':
+      - 'Overview': 'howtos/HowTos.md'
+      - 'Docker': 'howtos/Docker.md'
+      - 'Experimental WebSocket Binding': 'howtos/ExperimentalWebSocketBinding.md'
+      - 'Export Resources': 'howtos/ExportResources.md'
+      - 'Pyenv Setup': 'howtos/HowTo-pyenv.md'
+      - 'Raspberry Pi': 'howtos/RaspberryPi.md'
+      - 'Stand-alone Web UI': 'howtos/StandAloneWebUI.md'
+  - 'Help': 
+    - 'FAQ': 'help/FAQ.md'
+    - 'Contributing': 'help/Contributing.md'
+#  - 'Scripting':
+
+not_in_nav:
+  home/Imprint.md

@@ -167,7 +167,7 @@ Data can be stored "persistently" during a CSE's runtime. This is intended to pa
 
 To store data persistently one may consider to store this data in the oneM2M resource tree.
 
-See:  [get-storage](ACMEScript-functions.md##get-storage), [has-storage](ACMEScript-functions.md##has-storage), [set-storage](ACMEScript-functions.md#set-storage)
+See:  [get-storage](ACMEScript-functions.md#get-storage), [has-storage](ACMEScript-functions.md#has-storage), [put-storage](ACMEScript-functions.md#put-storage)
 
 ### Evaluating S-Expressions in Strings and JSON Structures
 
