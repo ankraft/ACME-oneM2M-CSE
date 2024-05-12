@@ -159,4 +159,8 @@ div.md-sidebar.md-sidebar--secondary {
 			mask-image: var(--md-admonition-icon--see-also);
   }
 
+  /* Title page header -> smaller bottom margin */
+  #acme-onem2m-cse {
+	margin-bottom: 0;
+  }
 

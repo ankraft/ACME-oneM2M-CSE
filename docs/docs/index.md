@@ -2,16 +2,19 @@
 hide:
   - toc
 ---
-<div style="display:flex;justify-content:center;align-items:center;" markdown>
+<div style="margin-botto-0;display:flex;justify-content:center;align-items:center;" markdown>
 # ACME oneM2M CSE
 </div>
 <div style="display:flex;justify-content:center;align-items:center;" markdown>
-### **An open source CSE Middleware for Education - v 2024.05**
+v2024.05
 </div>
-
 <figure markdown="1">
-![](images/title.png){.off-glb style="height:40%;width:40%"}
+![](images/title.png){.off-glb style="height:60%;width:60%"}
 </figure>
+
+<div style="display:flex;justify-content:center;align-items:center;" markdown>
+### **An open source CSE Middleware for Education**
+</div>
 
 
 <div style="display:flex;justify-content:center;align-items:center;" markdown>
