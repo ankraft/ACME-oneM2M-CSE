@@ -15,28 +15,7 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 
 ![](docs/images/title.png)
 
-## Documentation
-
-- [Installation](docs/Installation.md)
-- [Configuration](docs/Configuration.md)
-- [Running](docs/Running.md)
-	- [Console](docs/Console.md)
-	- [Text UI](docs/TextUI.md)
-	- [Docker](docs/Docker.md)
-	- [Notification Server](tools/notificationServer/README.md)
-    - [Web & Rest UI](docs/WebUI.md)
-- [CSE Startup, Importing Resources and Other Settings](docs/Importing.md)
-- [Operation](docs/Operation.md)
-- [ACMEScript](docs/ACMEScript.md)
-	- [Functions](docs/ACMEScript-functions.md)
-	- [Meta Tags](docs/ACMEScript-metatags.md)
-- [Supported Resource Types and Functionalities](docs/Supported.md)
-	- [Limitations](docs/Supported.md#limitations)
-- [Roadmap](docs/Roadmap.md)
-- [Development](docs/Development.md)
-- [Contributing](docs/Contributing.md)
-	- [Acknowledgements](docs/Contributing.md#acknowledgements)
-- [FAQ](docs/FAQ.md)
+See [https://acme-cse.org](https://acme-cse.org) for more information.
 
 ## Changes
 
@@ -62,8 +41,7 @@ Many People have contributed to this project and helped to make it what it is to
 
 ## Join the Discussions on Discord
 
-Join the ACME CSE community on [Discord ](https://discord.gg/C7Qx33Xw) to discuss the project, ask questions, and get help.
-
+Join the ACME CSE community on [Discord ](https://discord.gg/6ryMHQC2Uj) to discuss the project, ask questions, and get help.
 
 ## License
 

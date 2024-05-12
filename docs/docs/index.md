@@ -6,7 +6,7 @@ hide:
 # ACME oneM2M CSE
 </div>
 <div style="display:flex;justify-content:center;align-items:center;" markdown>
-### **An open source CSE Middleware for Education - v 2024.04.01**
+### **An open source CSE Middleware for Education - v 2024.05**
 </div>
 
 <figure markdown="1">
