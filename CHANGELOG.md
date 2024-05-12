@@ -11,7 +11,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
-- [CSE] Added installation of the ACME CSE via the PyPi package manager. The package is available under the name *acmecse*.
+- [MISC] Added installation of the ACME CSE via the PyPi package manager. The package is available under the name *acmecse*.
+- [MISC] Added domain [https://acmecse.net](https://acmecse.net) and homepage for the ACME CSE.
 - [CSE] Added support for interpolating environment variables in configuration settings. This is useful when running the CSE in a Docker container, where parts of the configuration settings can be set via environment variables.
 - [CSE] Added support for the *--base-directory* or *-dir* command line argument to specify the root directory for the configuration file and for runtime data such as *data*, *logs*, temporary files, and a secondary *init* directory.
 

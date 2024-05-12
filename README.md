@@ -7,19 +7,20 @@ Version 2024.DEV
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)  
-[![Discord](https://img.shields.io/badge/-ACME%20oneM2M%20CSE-FFF?label=discord&logo=discord&style=social)](https://discord.gg/2wEkwPyP)
+[![Discord](https://img.shields.io/badge/-ACME%20oneM2M%20CSE-FFF?label=discord&logo=discord&style=social)](https://discord.gg/6ryMHQC2Uj)
 
-## Introduction
-
-This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintainable CSE for educational purposes.
 
 ![](docs/images/title.png)
 
-See [https://acmecse.net](https://acmecse.net) for more information.
+## Overview
+
+This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintainable CSE for educational purposes.
+
+See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/131) for the detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/131) for a detailed list of changes.
 
 ### Highlights in this release
 
