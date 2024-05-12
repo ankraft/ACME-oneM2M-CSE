@@ -15,7 +15,7 @@ This oneM2M compliant CSE implements a subset of the oneM2M standard (see [http:
 
 ![](docs/images/title.png)
 
-See [https://acme-cse.org](https://acme-cse.org) for more information.
+See [https://acmecse.net](https://acmecse.net) for more information.
 
 ## Changes
 
