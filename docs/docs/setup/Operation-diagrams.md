@@ -13,7 +13,8 @@ curl localhost:8080/__structure__
 This returns a PlantUML diagram script that can be rendered with the [PlantUML](https://plantuml.com){target=_new} tool. The diagram shows the resource tree and the deployment infrastructure of remote CSEs. The diagram can be used to get an overview of the current deployment and to identify potential issues.
 
 <figure markdown="1">
-![Example Deployment Diagram](../images/structure.png){:, style="height:80%;width:80%"},
+![Example Deployment Diagram](../images/structure.png#only-light){:, style="height:80%;width:80%", data-gallery="light"}
+![Example Deployment Diagram](../images/structure-dark.png#only-dark){:, style="height:80%;width:80%", data-gallery="dark"}
 <figcaption>Example Deployment Diagram</figcaption>
 </figure>
 

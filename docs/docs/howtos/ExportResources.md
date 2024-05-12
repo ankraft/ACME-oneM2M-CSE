@@ -7,7 +7,8 @@ Sometimes it is necessary to export resource, for example to backup a part of th
 The ACME CSE offers a simple and portable way to export single resources or a whole part of the resource tree. In the text UI when clicking on a resource a tab *Services* contains the service "Export Resource". When clicking on the "Export" button a resource and (depending on the "child resource" checkbox) its child resources are exported to a directory as a shell script with the current date and time. The directory is the *tmp* directory under the CSE's root directory.
 
 <figure markdown="1">
-![Text UI - Export Resources](../images/export_resource.png)
+![Text UI - Export Resources](../images/export_resource.png#only-light){data-gallery="light"}
+![Text UI - Export Resources](../images/export_resource-dark.png#only-dark){data-gallery="dark"}
 <figcaption>Text UI - Export Resources</figcaption>
 </figure>
 

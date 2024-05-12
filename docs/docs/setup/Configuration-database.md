@@ -13,7 +13,7 @@ These are the general database settings.
 |:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------|:------------------------|
 | backupPath     | The directory for a backup of the database files.<br />Database backups are not supported for the in-memory database and postgreSQL.               | [${basic.config:baseDirectory}](../setup/Configuration-introduction.md#built-in-settings)/data/backup | database.backupPath     |
 | resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](../setup/Running.md).                                              | False                                                                                                                       | database.resetOnStartup |
-| type           | The type of database to use.<br />See also command line argument [--db-type](../Setup/Running.md).<br />Allowed values: tinydb, postgresql, memory | tinydb                                                                                                                      | database.type           |
+| type           | The type of database to use.<br />See also command line argument [--db-type](../setup/Running.md).<br />Allowed values: tinydb, postgresql, memory | tinydb                                                                                                                      | database.type           |
 
 
 ## TinyDB

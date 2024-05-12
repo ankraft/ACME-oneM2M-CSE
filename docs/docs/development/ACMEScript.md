@@ -154,7 +154,3 @@ The following example shows how to define the `on-error` function and how it is 
 (/ 0 0)                                      
 ```
 
----
-
-[← README](../README.md) 
-

@@ -5,7 +5,7 @@ These settings are used throughout the configuration settings using [interpolati
 
 When creating the configuration file, it is recommended to use the [interactive procedure](../setup/Installation.md#guided-configuration) to generate a file with basic configuration settings. [^1]
 
-[^1]:You can add further configurations if necessary by copying sections and settings from `acme.ini.default`.
+[^1]:You can add further configurations if necessary by copying sections and settings from [acme.ini.default](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/acme/init/acme.ini.default){target=_new}.
 
 
 ## Basic Configuration
@@ -33,5 +33,5 @@ Some settings are mandatory, others are optional. This depends on the type of CS
 | consoleTheme     | The theme for the console and text UI.<br/>Allowed values: `light`, `dark`                                                                                                                          | Yes      |
 
 In addition to the settings in the table above, the [built-in configuration settings](../setup/Configuration-introduction.md#built-in-settings) 
-and [envirnoment variables](../setup/Configuration-introduction.md#interpolation-of-environment-variables) can be used in the configuration.
+and [envirnoment variables](../setup/Configuration-introduction.md#environment-variables) can be used in the configuration.
 

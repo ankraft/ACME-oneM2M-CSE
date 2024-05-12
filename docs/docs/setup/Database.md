@@ -6,7 +6,7 @@ The ACME CSE uses a database to store resources and other runtime data. You have
 
 The default database is a simple but fast file-based database using the [TinyDB](https://github.com/msiemens/tinydb){target=_new} library. By default, it requires no additional setup.
 
-The database files are stored by default in the directory *{baseDirectory}/data* (which can be changed by a [configuration setting](Configuration.md#databasetinydb---tinydb-database-settings)). 
+The database files are stored by default in the directory *{baseDirectory}/data* (which can be changed by a [configuration setting](../setup/Configuration-database.md#tinydb)). 
 
 You enable the TinyDB database by setting the *databaseType* setting in the *\[basic.config\]* section to *tinydb*:
 
@@ -29,7 +29,7 @@ databaseType=memory
 
 ## PostgreSQL
 
-An alternative to the file-based database is to use a PostgreSQL database. This requires a running PostgreSQL server to which the CSE can connect. The [PostgreSQL connection settings](Configuration.md#databasepostgresql---postgresql-database-settings) are configured in the *acme.ini* configuration file.
+An alternative to the file-based database is to use a PostgreSQL database. This requires a running PostgreSQL server to which the CSE can connect. The [PostgreSQL connection settings](../setup//Configuration-database.md#postgresql) are configured in the *acme.ini* configuration file.
 
 The following steps describe how to set up a PostgreSQL database for the ACME CSE:
 

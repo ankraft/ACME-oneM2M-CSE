@@ -57,7 +57,7 @@ hide:
 
     The ACME oneM2M CSE is an open source project licensed under the BSD 3-Clause license. 
 
-    [:octicons-arrow-right-24: GitHub](https://github.com/ankraft/ACME-oneM2M-CSE){target=_new} &nbsp;&nbsp;&nbsp;&nbsp; [:octicons-arrow-right-24: License](home/License.md)
+    [:octicons-arrow-right-24: ACME CSE @ GitHub](https://github.com/ankraft/ACME-oneM2M-CSE){target=_new} &nbsp;&nbsp;&nbsp;&nbsp; [:octicons-arrow-right-24: License](home/License.md)
 
 </div>
 </div>

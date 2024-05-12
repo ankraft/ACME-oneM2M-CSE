@@ -9,7 +9,7 @@
 
 1. **How can I access the CSE from remote/another computer on my network?**  
    By default the CSE binds to the *localhost/loopback* interface, meaning it **will not** be able to receive requests from remote machines. To make it accessible from a remote machine you need to bind the CSE's http server or MQTT client to another network interface, or address. This can be done in the *[http]* and *[mqtt]* sections of the configuration file. 
-   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.  
+   Setting the listen interface to "0.0.0.0" binds the servers to all available interfaces.  
    The reason for this default setting is security: making the CSE accessible from remote machines should be a conscious decision and not the default.
 
 
@@ -60,7 +60,7 @@
 
 1. **How can I add my own FlexContainer specializations to the ACME CSE?**  
    All resources and specializations are validated by the CSE. You can add your own specializations and validation policies by providing them in one or more separate files in the *import* directory. Those files must have the file extension ".ap". These files are read during the startup of the CSE.
-   See [the documentation about Importing ](Importing.md#attributes) for further details.
+   See [the documentation about defining FlexContainer spezializations](../development/FlexContainerPolicies.md) for further details.
 
 ## CSE Registrations
 

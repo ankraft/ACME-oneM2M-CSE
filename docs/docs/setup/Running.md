@@ -18,7 +18,7 @@ You can start the CSE by simply running it from the command line. This is the si
 	python3 -m acme
 	```
 
-The current working directory is used as the base directory for the CSE and the *acme.ini* [configuration file](Configuration.md) must be in the same directory. An [interactive configuration process](Installation.md#guided-configuration) is started if the configuration file is not found.
+The current working directory is used as the base directory for the CSE and the *acme.ini* [configuration file](../setup/Configuration-introduction.md#the-configuration-file) must be in the same directory. An [interactive configuration process](Installation.md#guided-configuration) is started if the configuration file is not found.
 
 
 ### Different Configuration File
@@ -92,21 +92,11 @@ The ACME CSE provides a number of command line arguments that will override the 
 
 ## Stopping the CSE
 
-The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **once** on the command line. [^1]
+The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **once** on the command line.[^1]
 
-[^1]: You can configure this behavior with the [\[cse.console\].confirmQuit](Configuration.md#console) configuration setting.
+[^1]: You can configure this behavior with the [\[cse.console\].confirmQuit](../setup/Configuration-uis.md#console) configuration setting.
 
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
-**Being impatient and hitting *CTRL-C* twice might lead to data corruption.**
-
-
-
-<mark>TODO: To Development</mark>
-
-
-## Running a Notifications Server
-
-If you want to work with subscriptions and notification then you might want to have a Notifications Server running first before starting the CSE. The Notification Server provided with the CSE in the [tools/notificationServer](../tools/notificationServer) directory provides a very simple implementation that receives and answers notification requests.
-
-See the [Notification Server's README](../tools/notificationServer/README.md) file for further details.
+!!! warning
+	Being impatient and hitting *CTRL-C* twice might lead to data corruption.

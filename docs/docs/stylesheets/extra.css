@@ -52,6 +52,16 @@ div.md-sidebar.md-sidebar--secondary {
 	padding-left: 0.5em;
 } */
 
+
+/* Make tables always full width */
+.md-typeset__table {
+	min-width: 100%;
+}
+.md-typeset table:not([class]) {
+    display: table;
+}
+
+
 [data-md-color-scheme="acmecse-light"] {
 	--md-primary-fg-color: 		rgb(200, 200, 200);
 	--md-primary-bg-color: 		rgb(49, 48, 48);
@@ -59,6 +69,12 @@ div.md-sidebar.md-sidebar--secondary {
 	--md-accent-fg-color:  		#0276b4;
 	--md-line-accent-fg-color--tr:#40404080;
 }
+
+[data-md-color-scheme="acmecse-light"] img[src$="#only-dark"],
+[data-md-color-scheme="acmecse-light"] img[src$="#gh-dark-mode-only"] {
+  display: none; /* Hide dark images in light mode */
+}
+
 [data-md-color-scheme="acmecse-dark"] {
 	--md-primary-fg-color: 		rgb(78, 78, 78);
 	--md-primary-bg-color: 		rgb(42, 42, 42);
@@ -105,9 +121,23 @@ div.md-sidebar.md-sidebar--secondary {
 	--md-shadow-z1: 0 0.2rem 0.5rem #0000000d, 0 0 0.05rem #0000001a;
 	--md-shadow-z2: 0 0.2rem 0.5rem #00000040, 0 0 0.05rem #00000040;
 	--md-shadow-z3: 0 0.2rem 0.5rem #0006, 0 0 0.05rem #00000059;
-	color-scheme: dark
+	color-scheme: dark;
+}
+[data-md-color-scheme="acmecse-dark"] img[src$="#only-light"],
+[data-md-color-scheme="acmecse-dark"] img[src$="#gh-light-mode-only"] {
+  display: none; /* Hide light images in dark mode */
 }
 
+
+/* glightbox caption background */
+
+.gdesc-inner {
+    background: rgba(0,0,0,.70) !important;
+}
+
+.gslide-title, .gslide-desc {
+    color: #fff !important;
+}
 
 /* See also admonition */
 

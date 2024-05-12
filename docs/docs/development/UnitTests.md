@@ -16,7 +16,7 @@ One can also provide OAuth2 settings in case the CSE under test is behind an OAu
 
 ### Enable Remote Configuration (Upper Tester)
 
-The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [http.enableUpperTesterEndpoint](Configuration.md#server_http) in the CSE's [configuration file](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/tests/config.py){target=_new}.
+The CSE under test must be started with the **remote configuration interface** enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuration [http.enableUpperTesterEndpoint](../setup/Configuration-http.md#general-settings) in the CSE's [configuration file](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/tests/config.py){target=_new}.
 
 !!! Note
 	This ability to remotly re-configure the CSE during runtime is a particular function of the  *ACME* CSE and might not be available with other CSE implementations.

@@ -1,4 +1,4 @@
-# FlexContainer Specifalization Policies
+# FlexContainer Specialization Policies
 
 This article describes the flexContainer specialization policies used by the ACME CSE.
 

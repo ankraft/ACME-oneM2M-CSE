@@ -292,7 +292,7 @@ This meta tag provides a short help message for a script's usage.
 A category name for the script. This is used, for example, in the text UI tools to group scripts.
 
 !!! see-also
-	[@name](#name), [@tool](#tool)
+	[@name](#name), [@tuiTool](#tuitool)
 
 ```lisp title="Example"
 @categoy System

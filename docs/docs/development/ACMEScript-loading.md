@@ -13,8 +13,8 @@ There are many different ways to run scripts:
 - Scripts can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see the [at](ACMEScript-metatags.md#at) meta tag).
 - It is possible to schedule scripts to run at certain events. Currently, the CSE [init](ACMEScript-metatags.md#init), [onStartup](ACMEScript-metatags.md#onstartup), [onRestart](ACMEScript-metatags.md#onrestart), and [onShutdown](ACMEScript-metatags.md#onshutdown) events are supported.
 - Scrips can be run as a receiver of a NOTIFY request from the CSE. See the [onNotification](ACMEScript-metatags.md#onnotification) meta tag.
-- They can also be run as a command of the [Upper Tester Interface](Operation.md#upper_tester).
-- Scripts can be integrated as tools in the [Text UI](TextUI.md). See also the section [Text UI meta-tags](ACMEScript-metatags.md#_textui) for available tags.
+- They can also be run as a command of the [Upper Tester Interface](../setup/Operation-uppertester.md).
+- Scripts can be integrated as tools in the [Text UI](../setup/TextUI.md). See also the section [Text UI meta-tags](../development/ACMEScript-metatags.md#text-ui) for available tags.
 
 
 ## Script Arguments

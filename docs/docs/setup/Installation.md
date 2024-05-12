@@ -4,10 +4,6 @@
 
 ACME requires **Python 3.10** or newer. Install it with your favorite package manager or as part of a virtual environment.
 
-<mark>TODO copy article</mark>
-You may consider to use a virtual environment manager like pyenv + virtualenv (see [this HowTo](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/137) or [this tutorial](https://realpython.com/python-virtual-environments-a-primer/){target=_new}).
-
-
 ## Installation and First Setup
 
 ### Installation
@@ -90,52 +86,4 @@ You can start the CSE by simply running it from the command line:
 
 1.  After terminating the CSE again you can edit that configuration file and add more settings if necessary.
 	There are a lot of individual settings to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
-	See the [Configuration](docs/Configuration.md) documentation for further details, and the defaults configuration file [acme.ini.default](../acme/init/acme.ini.default).
-
-<mark>TODO handle following</mark>
-
----
-## Certificates and Support for https
-
-To enable https you have to set various settings [\[server.http.security\] - HTTP Security Settings](Configuration.md#security_http), and provide a certificate and a key file. 
-One way to generate those files is the [openssl](https://www.openssl.org){target=_new} tool that may already be installed on your OS. The following example shows how to 
-generate a self-signed certificate:
-
-	openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 1000
-
-This will generate the self-signed certificate and private key without password protection (*-nodes*), and stores them in the files *cert.pem* and *key.pem* respectively. 
-*openssl* will prompt you with questions for *Country Name* etc, but you can just hit *Enter* and accept the defaults. The *-days* parameter affects the certificate's
-expiration date.
-
-Please also consult the *openssl* manual for further instructions. 
-
-After you generated these files you can move them to a separate directory (for example you may create a new directory named *cert* in ACME's installation directory) and set the *caCertificateFile* and *caPrivateKeyFile* configuration parameters in the *acme.ini* configuration file under the *\[server.http.security\]* section accordingly.
-
----
-
-<mark>TODO move</mark>
-
-## Third-Party Components
-The following third-party components are used by the ACME CSE.
-
-### Core CSE
-- The [cbor2](https://github.com/agronholm/cbor2){target=_new} package is used to parse and create CBOR serializations. MIT License.
-- The CSE uses the [Flask](https://flask.palletsprojects.com/){target=_new} web framework to service http(s) requests. BSD 3-Clause License.
-- [flask-cors](https://github.com/corydolphin/flask-cors/){target=_new} is a *Flask* extension for handling Cross Origin Resource Sharing (CORS), making cross-origin AJAX possible.
-- [InquirerPy](https://github.com/kazhala/InquirerPy/){target=_new} is a collection of common interactive command-line interfaces. MIT License.
-- The [isodate](https://github.com/gweis/isodate){target=_new} package is used to parse and handle ISO 8601 time, date, and duration. BSD License.
-- The [paho-mqtt](https://www.eclipse.org/paho/){target=_new} library provides a client class which enables applications to connect to an MQTT broker. Eclipse Public License 1.0 .
-- The [plotext](https://github.com/piccolomo/plotext){target=_new} library offers functions to plot graphs in the text console. MIT License.
-- [Psycopg](https://www.psycopg.org){target=_new} is a PostgreSQL adapter for the Python programming language. GNU Lesser General Public License.
-- [rdflib](https://github.com/RDFLib/rdflib){target=_new} is a Python library for working with RDF. BSD 3-Clause License.
-- The CSE uses the [Requests](https://requests.readthedocs.io){target=_new} HTTP Library to send requests vi http. Apache2 License
-- The CSE uses the [Rich](https://github.com/willmcgugan/rich){target=_new} text formatter library to format various terminal output. MIT License. 
-- [shapely](https://github.com/shapely/shapely){target=_new} is a library for manipulation and analysis of geometric objects. BSD 3-Clause License. 
-- [Textual](https://github.com/textualize/textual){target=_new} is a Rapid Application Development framework for to build textual user interfaces in Python. MIT License.
-- [waitress](https://github.com/Pylons/waitress){target=_new} is a production-quality pure-Python WSGI server with very acceptable performance. ZPL 2.1 License.
-- To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb){target=_new} document database. MIT License.
-
-
-### Web UI Components
-- TreeJS: [https://github.com/m-thalmann/treejs](https://github.com/m-thalmann/treejs){target=_new}, MIT License.
-- Picnic CSS : [https://picnicss.com](https://picnicss.com){target=_new}, MIT License.
+	See the [Configuration](../setup/Configuration-introduction.md) documentation for further details, and the defaults configuration file [acme.ini.default](https://github.com/ankraft/ACME-oneM2M-CSE/blob/master/acme/init/acme.ini.default){target=_new}.

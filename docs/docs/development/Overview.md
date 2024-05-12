@@ -7,7 +7,8 @@ This article provides an overview of the ACME CSE's architecture, components, an
 The ACME CSE is divided into several components. The following diagram shows the components and their relationships.
 
 <figure markdown="1">
-![UML Component Diagram of the ACME CSE](../images/cse_uml.png)
+![UML Component Diagram of the ACME CSE](../images/cse_uml.png#only-light){data-gallery="light"}
+![UML Component Diagram of the ACME CSE](../images/cse_uml-dark.png#only-dark){data-gallery="dark"}
 <figcaption>UML Component Diagram of the ACME CSE</figcaption>
 </figure>
 
@@ -16,7 +17,8 @@ The ACME CSE is divided into several components. The following diagram shows the
 The CSE's resources are implemented as classes. The following diagram shows the class hierarchy of the resources.
 
 <figure markdown="1">
-![UML Class Diagram of the ACME CSE Resources](../images/resources_uml.png)
+![UML Class Diagram of the ACME CSE Resources](../images/resources_uml.png#only-light){data-gallery="light"}
+![UML Class Diagram of the ACME CSE Resources](../images/resources_uml-dark.png#only-dark){data-gallery="dark"}
 <figcaption>UML Class Diagram of the ACME CSE Resources</figcaption>
 </figcaption>
 </figure>
@@ -24,12 +26,13 @@ The CSE's resources are implemented as classes. The following diagram shows the 
 ## Database Schemas
 
 <figure markdown="1">
-![Database Schemas of the ACME CSE](../images/db_schemas.png)
+![Database Schemas of the ACME CSE](../images/db_schemas.png#only-light){data-gallery="light"}
+![Database Schemas of the ACME CSE](../images/db_schemas-dark.png#only-dark){data-gallery="dark"}
 <figcaption>Database Schemas of the ACME CSE</figcaption>
 </figcaption>
 </figure>
 
-If not hold in memory the database files are stored in the ["data"](../data) sub-directory. 
+If the *tinyDB* database mode is used the database files are stored in the `data` sub-directory of the CSE's working directory. 
 
 The database used by the CSE is [TinyDB](https://github.com/msiemens/tinydb){target=_new} which uses plain JSON files for storing the data. Some files only contain a single data table while other contain multiple tables.
 

@@ -5,7 +5,8 @@ The Text UI is a text-based terminal UI that is enabled by default. It offers a 
 Depending on the terminal it can be operated with the mouse or with the keyboard.
 
 <figure markdown="1">
-![Text UI of the ACME CSE](../images/textUI.png)
+![Text UI of the ACME CSE](../images/textUI.png#only-light){data-gallery="light"}
+![Text UI of the ACME CSE](../images/textUI-dark.png#only-dark){data-gallery="dark"}
 <figcaption>Text UI of the ACME CSE</figcaption>
 </figure>
 
@@ -37,7 +38,7 @@ The different sections of the text UI are described below. They can be selected 
 **Tools**
 :	This tab contains some tools that can be used to perform operations on the CSE, or run applications as scrips. 
 
-:	See the [ACMEScript meta-tags](ACMEScript-metatags.md#tuiTool) for more information.
+:	See the [ACMEScript meta-tags](../development/ACMEScript-metatags.md#tuitool) for more information.
 
 **Infos**
 :	This tab shows the current number of resources, requests, and other statistics and useful information.

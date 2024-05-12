@@ -42,7 +42,7 @@ cd ..
 
 Next, we will install the ACME CSE. 
 
-You can now follow the instructions in the [Installation](Installation.md) guide to install the ACME CSE on your Raspberry Pi.
+You can now follow the instructions in the [Installation](../setup/Installation.md) guide to install the ACME CSE on your Raspberry Pi.
 
 
 
