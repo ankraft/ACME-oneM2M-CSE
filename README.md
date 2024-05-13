@@ -20,7 +20,7 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/131) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/152) for a detailed list of changes.
 
 ### Highlights in this release
 - The CSE can now be installed via pip: `pip install acmecse`
