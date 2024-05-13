@@ -88,7 +88,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
-					'et' : getResourceDate(expirationCheckDelay), # 2 seconds in the future
+					'et' : getResourceDate(expirationCheckDelay), # some seconds in the future
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)

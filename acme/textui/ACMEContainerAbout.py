@@ -58,28 +58,29 @@ Available under the BSD 3-Clause License"""
 	socialLink =  Text('Social: ') + Text('@acmeCSE@mstdn.social', style='link https://mstdn.social/@acmeCSE') + Text(' ')
 	"""	A link to the ACME CSE Mastodon account. """
 
-	link =  Text('GitHub: ') + Text('https://github.com/ankraft/ACME-oneM2M-CSE', style='link https://github.com/ankraft/ACME-oneM2M-CSE') + Text(' ')
+	link =  Text('Homepage: ') + Text('https://acmecse.net', style='link https://acmecse.net') + Text(' ')
 	"""	A link to the ACME CSE GitHub repository. """
 
+	# curl qrcode.show  -H "X-QR-Quiet-Zone: true" -H "X-QR-Max-Width: 40" -H "X-QR-Max-Height: 40" -d https://acmecse.net
 	qrcode = \
 """\
-█▀▀▀▀▀█ ▀▀▀▀▀▄█▀▄▄█  ▄█ ▄ █▀▀▀▀▀█
-█ ███ █ ▀█▀▀  ███ █▄▄ █▀  █ ███ █
-█ ▀▀▀ █ ▄▀▀▀▄██▀█▄▀▀██▀▀▀ █ ▀▀▀ █
-▀▀▀▀▀▀▀ ▀▄█ █ ▀ ▀ █ ▀ ▀ ▀ ▀▀▀▀▀▀▀
-▀▄▀▄ ▄▀▀ ███ ▀ ▀  ▄██ ▀█▄ ▄▀ ▄▀▄▀
-▀▄▄█▄▀▀▄▄▀▄██▀█▄▄▀█▀ ▀█▀▀██▄▄█▀▀▄
-▀ ▀ ██▀▄██ ▄▄██▀█▀█▀███ █ ▀ █ ▄██
-█▀▄▀▀ ▀▀▀█▄▀  ▄▄█ ▀▄█  ▀ ▄▄██▄▄ ▀
-▀▀▀ ▄ ▀▄▀████▄▄▄ ▄ ▄█▄ ██ █▀ ▄▀▀
-█ ▄  █▀█▄▀█▄▀▄ ▀▀▄ █▄▄ ▀██▄▀▄█▀█▀
-▀▄▀█ ▀▀ ▄█▀█ █ ▀ ▀   ▀ ▀▄▄▀█▀ ▄ ▄
-▀▀▀ █▄▀▀▄ ▄▀▀█▄▀ ▀█▀  █ █▄█   ▄ █
-▀▀ ▀  ▀ █ ▀▄▄▀ █▀  █▀  ██▀▀▀█ ▀█▄
-█▀▀▀▀▀█ ▀ ▄▄▄▀ ▀█▀█▀▄▀█▄█ ▀ ██▀ █
-█ ███ █  ▄▄▄ ▀▀▀█▀█ ████▀█▀██ ▄█  
-█ ▀▀▀ █ ▀█▄▄▀▀▀▄█  ▄█ ▄█ ▀ ██▄▀▀▀
-▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀\
+█████████████████████████████████
+█████████████████████████████████
+████ ▄▄▄▄▄ ██▄▀ ▄█  ▀█ ▄▄▄▄▄ ████
+████ █   █ ██▄▄▀▄█ ▄██ █   █ ████
+████ █▄▄▄█ █▀█ ▄█ █ ▄█ █▄▄▄█ ████
+████▄▄▄▄▄▄▄█▄▀ ▀ █▄█▄█▄▄▄▄▄▄▄████
+████ ▀█ ▀▄▄▀ ▄  ▀██▄▄ ▀▄████▀████
+█████▄▀▀▀ ▄ ▄▀█▄██▀▀ ▀ ▀ ██▄▄████
+█████ ▄█▀▀▄▀█ █▀ ███▄  ▀█ ▀▄ ████
+████▄▀█ ▄▄▄▄▀▄▄█ ▀▀████▄ █▄▀▄████
+████▄▄▄█▄█▄▄▀▀▀▄█▄▄█ ▄▄▄  ▄█▀████
+████ ▄▄▄▄▄ █▀█▀▀█ █▄ █▄█  ▀▄ ████
+████ █   █ █▀█▀  ▀▄█ ▄▄   ▀▄▄████
+████ █▄▄▄█ ████   ▄▀▀▀█▄▄▀▄█▄████
+████▄▄▄▄▄▄▄█▄█▄▄██▄▄▄▄▄▄███▄▄████
+█████████████████████████████████
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\
 """
 	"""	The QR code for the ACME CSE. """
 
@@ -113,7 +114,8 @@ Available under the BSD 3-Clause License"""
 				_c.styles.padding = (1, 0, 0, 0)
 				yield Label(self.socialLink)
 			with (_c := Center()):
-				_c.styles.padding = (7, 0, 0, 0)
+				_c.styles.padding = (3, 0, 0, 0)
+				_c.styles.color = '#808080'
 				yield Label(self.qrcode)
 				yield Button('hidden', id = 'about-button')
 

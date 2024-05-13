@@ -473,8 +473,7 @@ class PostgreSQLBinding(DBBinding):
 				The result of the closure, if one is provided, or True if no closure is provided.
 		"""
 		try:
-			if self.dbConnection.closed:
-				self._checkOpenConnection()
+			self._checkOpenConnection()
 
 			with self.dbConnection.cursor() as cursor:
 				cursor.execute(f'EXECUTE {statement}', args)
