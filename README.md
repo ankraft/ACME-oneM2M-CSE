@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.05.01
+Version 2024.DEV
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)  
@@ -20,19 +20,13 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/131) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/157) for a detailed list of changes.
 
 ### Highlights in this release
-- The CSE can now be installed via pip: `pip install acmecse`
-- ACME CSE got its own domain: [https://acmecse.net](https://acmecse.net)
-- The working directory for the CSE can now be changed.
   
 ### Improvements
-- Lots of small improvements and bug fixes.
 
 ### Breaking Changes
-- Moved the *init* directory to the acme module.
-- Moved the *acme.ini.default* file to the new *init* directory location.
 
 ### What to expect in the next release
 
@@ -40,7 +34,7 @@ See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/15
 
 ## Acknowledgements
 
-Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](docs/Contributing.md#acknowledgements) for the list of contributors.
+Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](https://acmecse.net/home/Acknowledgements/) for the list of contributors.
 
 
 ## Join the Discussions on Discord
