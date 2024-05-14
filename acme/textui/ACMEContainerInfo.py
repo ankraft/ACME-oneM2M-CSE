@@ -11,14 +11,14 @@ from __future__ import annotations
 from typing import cast
 
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import VerticalScroll
 from textual.widgets import Static
 from ..runtime import CSE
 
 tabInfo = 'tab-info'
 
 
-class ACMEContainerInfo(Container):
+class ACMEContainerInfo(VerticalScroll):
 
 	DEFAULT_CSS = '''
 	#stats-view {

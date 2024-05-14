@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import cast, Any
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal
+from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..runtime import CSE
@@ -126,7 +126,7 @@ class ACMEConfigurationTree(TextualTree):
 		self.parentContainer.updateDocumentation(header, doc)
 
 
-class ACMEContainerConfigurations(Horizontal):
+class ACMEContainerConfigurations(VerticalScroll):
 	"""	Container for the *Configurations* view.
 	"""
 	

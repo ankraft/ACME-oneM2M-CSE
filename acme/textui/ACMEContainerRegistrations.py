@@ -11,12 +11,12 @@ from __future__ import annotations
 from typing import cast
 
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import VerticalScroll
 from textual.widgets import Static
 from ..runtime import CSE
 
 
-class ACMEContainerRegistrations(Container):
+class ACMEContainerRegistrations(VerticalScroll):
 
 	DEFAULT_CSS = '''
 	#registrations-view {

@@ -10,12 +10,12 @@
 from rich.text import Text
 import webbrowser
 from textual.app import ComposeResult
-from textual.containers import Container, Center, Vertical
+from textual.containers import VerticalScroll, Center, Vertical
 from textual.widgets import Label, Button
 from textual.binding import Binding
 from ..etc.Constants import Constants
 
-class ACMEContainerAbout(Container):
+class ACMEContainerAbout(VerticalScroll):
 	"""	About view for the ACME text UI.
 	"""
 

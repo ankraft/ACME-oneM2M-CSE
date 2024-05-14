@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [TEXTUI] Added vertical scrolling for some views.
 
 
 ### Removed
