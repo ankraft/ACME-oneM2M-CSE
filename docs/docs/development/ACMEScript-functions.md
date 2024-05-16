@@ -789,7 +789,7 @@ The `quote` function returns a quoted version of the argument. It can be used to
 
 The `random` function generates a random float number in the given range. 
 
-The default for the range, when no argument is given, is [0.0, 1.0]. If one number argument is given then this indicates a range of [0.0, \<end number>]. If two number arguments are given then this indicates a range of [\<start number>, \<end number>].
+The default for the range, when no argument is given, is [0.0, 1.0]. If one number argument is given then this indicates a range of [0.0, &lt;end number>]. If two number arguments are given then this indicates a range of [&lt;start number>, &lt;end number>].
 
 ```lisp title="Examples"
 (random)         ;; Returns, for example, 0.748786
