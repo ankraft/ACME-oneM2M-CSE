@@ -58,17 +58,16 @@
 	 
    (print "
 
-
-       [${(color)}]   ..---..    [/${(color)}]
-       [${(color)}]  /       \   [/${(color)}]
-       [${(color)}] |         |  [/${(color)}]
-       [${(color)}] :  +^^^+  :  [/${(color)}]
-       [${(color)}]  \  \~/  /   [/${(color)}]
-       [${(color)}]   `. Y .´    [/${(color)}]
-       [${(color)}]    |_|_|     [/${(color)}]
-       [${(color)}]    |===|     [/${(color)}]
-       [${(color)}]    |===|     [/${(color)}]
-       [${(color)}]     \_/      [/${(color)}]
+       [${(color)}]   ..---..  
+       [${(color)}]  /       \ 
+       [${(color)}] |         |
+       [${(color)}] :  +^^^+  :
+       [${(color)}]  \  \~/  / 
+       [${(color)}]   `. Y .´  
+       [${(color)}]    |_|_|   
+       [${(color)}]    |===|   
+       [${(color)}]    |===|   
+       [${(color)}]     \_/    
 ")))
 
 
