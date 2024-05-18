@@ -189,6 +189,7 @@ nav:
       - 'Stand-alone Web UI': 'howtos/StandAloneWebUI.md'
   - 'Help': 
     - 'FAQ': 'help/FAQ.md'
+    - 'Notebook Tutorial': 'help/NotebookTutorial.md'
     - 'Contributing': 'help/Contributing.md'
 #  - 'Scripting':
 
