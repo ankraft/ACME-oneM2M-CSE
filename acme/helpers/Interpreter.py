@@ -215,6 +215,7 @@ class SSymbol(object):
 		'type',
 		'value',
 		'length',
+		'parent',
 	)
 	""" Slots of class attributes. """
 
@@ -223,13 +224,14 @@ class SSymbol(object):
 						symbolQuote:str = None,
 						number:Decimal = None,
 						boolean:bool = None,
-						lst:list[SSymbol] = None,
-						lstQuote:list[SSymbol] = None,
+						lst:SSymbolsList = None,
+						lstQuote:SSymbolsList = None,
 						listChar:str = None,
 						lmbda:Tuple[list[str], SSymbol] = None,
 						jsnString:str = None,
 						jsn:dict = None,
-						value:Union[bool, str, int, float, list, dict] = None) -> None:
+						value:Union[bool, str, int, float, list, dict] = None,
+						parent:Optional[SSymbol] = None) -> None:
 		"""	Initialization of a `SSymbol` object.
 			
 			Only one of the arguments must be passed to the function.
@@ -248,14 +250,17 @@ class SSymbol(object):
 				jsnString: `value` is a JSON string representation. It will be converted internally to a dictionary (`SType.tJson`).
 				jsn: `value` is a JSON dictionary (`SType.tJson`).
 				value: A value that is then automatically assigned to one of the basic, quoted types.
+				parent: Parent `SSymbol` object.
 		"""
 
-		self.value:Union[str, Decimal, bool, list[SSymbol], Tuple[list[str], SSymbol], Dict[str, Any]] = None
+		self.value:Union[str, Decimal, bool, SSymbolsList, Tuple[list[str], SSymbol], Dict[str, Any]] = None
 		"""	The actual stored value. This is either one of the the basic data typs, of a `SSymbol`, list of `SSymbol`, dictionary, etc."""
 		self.type:SType = SType.tNIL
 		""" `SType` to indicate the type. """
 		self.length:int = 0
 		""" The length of the symbol. Could be the length of a string, number of items in a list etc. """
+		self.parent:Optional[SSymbol] = parent
+		""" Parent `SSymbol` object. """
 
 		# Try to determine an unknown type
 		if value:
@@ -269,7 +274,7 @@ class SSymbol(object):
 				case dict():
 					jsn = value
 				case list():
-					lstQuote = [ SSymbol(value = _v) for _v in value ]
+					lstQuote = [ self.newSymbol(value = _v) for _v in value ]
 				case _:
 					raise ValueError(f'Unsupported type: {type(value)} for value: {value}')
 
@@ -299,13 +304,9 @@ class SSymbol(object):
 			self.value = boolean
 			self.length = 1
 		elif lst is not None:
-			self.type = SType.tList
-			self.value = lst
-			self.length = len(self.value)
+			self.setLst(lst)
 		elif lstQuote is not None:
-			self.type = SType.tListQuote
-			self.value = lstQuote
-			self.length = len(self.value)
+			self.setLstQuote(lstQuote)
 		elif lmbda is not None:
 			self.type = SType.tLambda
 			self.value = lmbda
@@ -324,6 +325,36 @@ class SSymbol(object):
 			self.length = 0
 
 
+	def setLst(self, lst:SSymbolsList) -> SSymbol:
+		"""	Set the value of a list of elements.
+
+			Args:
+				lst: List of elements.
+
+			Return:
+				Self.
+		"""
+		self.type = SType.tList
+		self.value = lst
+		self.length = len(self.value)
+		return self
+	
+
+	def setLstQuote(self, lstQuote:SSymbolsList) -> SSymbol:
+		"""	Set the value of a list of quoted elements.
+
+			Args:
+				lstQuote: List of quoted elements.
+
+			Return:
+				Self.
+		"""
+		self.type = SType.tListQuote
+		self.value = lstQuote
+		self.length = len(self.value)
+		return self
+
+
 	def __str__(self) -> str:
 		"""	Nicely printable version of `value`.
 
@@ -339,7 +370,16 @@ class SSymbol(object):
 			Return:
 				String representation.
 		"""
-		return self.__str__()
+		return self.toString(quoteStrings=True)
+	
+
+	def __len__(self) -> int:
+		"""	Return the length of the value.
+
+			Return:
+				Length of the value.
+		"""
+		return self.length
 
 
 	def __getitem__(self, key:int|slice) -> Any:
@@ -378,6 +418,48 @@ class SSymbol(object):
 		return False
 	
 
+	def __eq__(self, other:Any) -> bool:
+		"""	Check whether two `SSymbol` objects are equal.
+
+			Args:
+				other: The other object to compare.
+			
+			Return:
+				True if the two objects are equal, False otherwise.
+		"""
+		if isinstance(other, SSymbol):
+			return self.raw() == other.raw()
+		return self.raw() == other
+	
+
+	def __gt__(self, other:Any) -> bool:
+		"""	Check whether the value is greater than another value.
+
+			Args:
+				other: The other object to compare.
+			
+			Return:
+				True if the value is greater, False otherwise.
+		"""
+		if isinstance(other, SSymbol):
+			return self.raw() > other.raw()
+		return self.raw() > other
+	
+
+	def __lt__(self, other:Any) -> bool:
+		"""	Check whether the value is less than another value.
+
+			Args:
+				other: The other object to compare.
+			
+			Return:
+				True if the value is less, False otherwise.
+		"""
+		if isinstance(other, SSymbol):
+			return self.raw() < other.raw()
+		return self.raw() < other
+	
+
 	def toString(self, quoteStrings:bool = False, pythonList:bool = False) -> str:
 		"""	Return a string representation of the value.
 
@@ -394,9 +476,10 @@ class SSymbol(object):
 				lchar1 = '[' if pythonList else '('
 				lchar2 = ']' if pythonList else ')'
 				return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
-				# return f'( {" ".join(str(v) for v in cast(list, self.value))} )'
 			case SType.tLambda:
-				return f'( ( {", ".join(v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(tuple, self.value)[0])} ) {str(cast(tuple, self.value)[1])} )'
+				_p = (v.toString(quoteStrings = quoteStrings, pythonList = pythonList) if isinstance(v, SSymbol) else v
+					  for v in cast(tuple, self.value)[0])
+				return f'( lambda ( {", ".join(_p)} ) {str(cast(tuple, self.value)[1])} )'
 			case SType.tBool:
 				return str(self.value).lower()
 			case SType.tString:
@@ -409,6 +492,32 @@ class SSymbol(object):
 				return 'nil'
 			case _:
 				return str(self.value)
+			
+	
+	def printHierarchy(self, depth:int = 0, max_depth:int = None) -> str:
+		""" Print the hierarchy in reverse order (parent first) 
+			with reversed indentation.
+
+			Args:
+				depth: Current depth level.
+				max_depth: Maximum depth level.
+			
+			Return:
+				Parent hierarchy as a string.
+		"""
+
+		prefix = '->  ' if not max_depth else '    '
+		if max_depth is None:
+			# Calculate the maximum depth
+			max_depth = 0
+			node = self
+			while node.parent is not None:
+				node = node.parent
+				max_depth += 1
+
+		indentStr = '  ' * (max_depth - depth)
+		parentHierarchy = self.parent.printHierarchy(depth + 1, max_depth) if self.parent is not None else ''
+		return f'{parentHierarchy}{prefix}{indentStr}{self.toString()}\n'
 
 
 	def append(self, arg:SSymbol) -> SSymbol:
@@ -443,7 +552,20 @@ class SSymbol(object):
 				return int(cast(Decimal, self.value))
 			case _:
 				return str(self.value)
+	
 
+	def newSymbol(self,  *args:Any, **kwargs:Any) -> SSymbol:
+		"""	Create a new `SSymbol` object with the same parent.
+
+			Return:
+				New `SSymbol` object.
+		"""
+		# The following line produces a mypy error, but it is correct
+		return SSymbol(parent = self, *args, **kwargs) 	# type:ignore [misc] 
+
+
+# Define type for list of SSymbols
+SSymbolsList = List[SSymbol]
 
 class SExprParser(object):
 	"""	Class that implements an S-Expression parser. """
@@ -451,7 +573,7 @@ class SExprParser(object):
 	errorExpression:SSymbol = None
 	"""	In case of an error this attribute contains the error expression. """
 
-	def normalizeInput(self, input:str, allowBrackets:bool = False) -> List[SSymbol]:
+	def normalizeInput(self, input:str, allowBrackets:bool = False) -> SSymbolsList:
 		"""	Parse an input string into a list of opening and closing parentheses, and
 			atoms. Atoms include symbols, numbers and strings.
 
@@ -465,7 +587,7 @@ class SExprParser(object):
 			Return:
 				A list of paranthesis and atoms.
 		"""
-		normalizedInput:list[SSymbol] = []	# a list of normalized symbols
+		normalizedInput:SSymbolsList = []	# a list of normalized symbols
 		currentSymbol = ''
 		isEscaped = False
 		inString = False
@@ -545,9 +667,10 @@ class SExprParser(object):
 		return normalizedInput
 
 
-	def ast(self, input:List[SSymbol]|str, 
+	def ast(self, input:SSymbolsList|str, 
 				  topLevel:bool = True, 
-				  allowBrackets:bool = False) -> List[SSymbol]:
+				  allowBrackets:bool = False,
+				  parentSymbol:Optional[SSymbol] = None) -> SSymbolsList:
 		""" Generate an abstract syntax tree (AST) from normalized input.
 
 			The result is a list of elements. Each element is either an
@@ -557,6 +680,7 @@ class SExprParser(object):
 				input: Either a string or a list of `SSymbol` elements. A string would internally be parsed to a list of `SSymbol` elements before further processing.
 				topLevel: Indicating whether a parsed input is at the top level or a branch of a another AST.
 				allowBrackets: Allow "[" and "]" for opening and closing lists as well.
+				parentSymbol: The parent symbol of the current AST.
 			
 			Return:
 				A list that represents the abstract syntax tree.
@@ -569,7 +693,7 @@ class SExprParser(object):
 		if isinstance(input, str):
 			input = self.normalizeInput(input, allowBrackets)
 
-		ast:list[SSymbol] = []
+		_ast:SSymbolsList = []
 		# Go through each element in the normalizedInput:
 		# - if it is an open parenthesis, find matching parenthesis and make an recursive
 		#   call for content in-between. Add the result as an element to the current list.
@@ -579,6 +703,7 @@ class SExprParser(object):
 		isQuote = False
 		while index < len(input):
 			symbol = input[index]
+			symbol.parent = parentSymbol
 			
 			# A list may be prefixed with a single '. It is then traited as a plain list or symbol, and not executed
 			if symbol.value == '\'':
@@ -595,7 +720,7 @@ class SExprParser(object):
 						index += 1
 						if index >= len(input):
 							self.errorExpression = input	# type:ignore[assignment]
-							raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input}')
+							raise ValueError(f'Invalid input: Unmatched opening parenthesis: {input[startIndex-1:]}')
 						symbol = input[index]
 						
 						match symbol.type:
@@ -605,42 +730,45 @@ class SExprParser(object):
 								matchCtr -= 1
 							# ignore other types
 				
+					# Recursive call for the content in-between the paranthesis
+					_s = SSymbol(parent = parentSymbol)
+					_childAst = self.ast(input[startIndex:index], False, allowBrackets, parentSymbol = _s)
 					if isQuote:	# escaped with ' -> plain list
-						ast.append(SSymbol(lstQuote = self.ast(input[startIndex:index], False, allowBrackets)))
+						_ast.append(_s.setLstQuote(_childAst))
 					else:		# normal list
-						ast.append(SSymbol(lst = self.ast(input[startIndex:index], False, allowBrackets)))
+						_ast.append(_s.setLst(_childAst))
 				
 				case SType.tListEnd:
 					self.errorExpression = input	# type:ignore[assignment]
-					raise ValueError('Invalid input: Unmatched closing parenthesis.')
+					raise ValueError(f'Invalid input: Unmatched closing parenthesis: {input[:index+1]}')
 			
 				case SType.tJson | SType.tString:
-					ast.append(symbol)
+					_ast.append(symbol)
 
 				case _:				
 					try:
-						ast.append(SSymbol(number = Decimal(symbol.value))) # type:ignore [arg-type]
+						_ast.append(SSymbol(number = Decimal(symbol.value), parent = parentSymbol)) # type:ignore [arg-type]
 					except InvalidOperation:
 						match symbol.type:
 							case SType.tSymbol if symbol.value in [ 'true', 'false' ]:
-								ast.append(SSymbol(boolean = (symbol.value == 'true')))
+								_ast.append(SSymbol(boolean = (symbol.value == 'true'), parent = parentSymbol))
 							case SType.tSymbol if symbol.value == 'nil':
-								ast.append(SSymbol())
+								_ast.append(SSymbol(parent = parentSymbol))
 							case _:
-								if (_s := cast(str, symbol.value)).startswith('\''):
-									ast.append(SSymbol(symbolQuote = _s))
+								if (_str := cast(str, symbol.value)).startswith('\''):
+									_ast.append(SSymbol(symbolQuote = _str, parent = parentSymbol))
 								else:
-									ast.append(symbol)
+									_ast.append(symbol)
 			index += 1
 			isQuote = False
 		
 		# If we are on the top level, *all* the symbols must be S-expressions, not stand-alone symbols
 		if topLevel:
-			for a in ast:
+			for a in _ast:
 				if a.type != SType.tList:
 					raise ValueError(f'Invalid input: plain symbols are not allowed at top-level: {a}')
 
-		return ast
+		return _ast
 
 ###############################################################################
 
@@ -840,7 +968,7 @@ class PContext():
 		""" Allow "[" and "]" for opening and closing lists as well. """
 
 		# State, result and error attributes	
-		self.ast:list[SSymbol] = None
+		self.ast:SSymbolsList = None
 		""" The script's abstract syntax tree."""
 		self.result:SSymbol = None
 		""" Intermediate and final results during the execution. """
@@ -919,6 +1047,7 @@ class PContext():
 		self.error = PErrorState(PError.noError, 0, '', None)
 		self._callStack.clear()
 		self.pushCall(name = self.meta.get('name'))
+		self.functions.clear()
 		self.state = PState.ready
 
 
@@ -1257,7 +1386,7 @@ class PContext():
 		_symbol = symbol[idx] if idx is not None else symbol
 
 		if doEval:
-			pcontext = self._executeExpression(_symbol, symbol)
+			pcontext = self._executeExpression(_symbol)
 		else:
 			pcontext = self
 			pcontext.result = _symbol
@@ -1270,7 +1399,7 @@ class PContext():
 			if optional:
 				expectedType = expectedType + ( SType.tNIL, )
 			if pcontext.result is not None and pcontext.result.type not in expectedType: 
-				raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid type for argument: {_symbol}, expected type: {expectedType}, is: {pcontext.result.type}'))
+				raise PInvalidArgumentError(self.setError(PError.invalid, f'expression:\n{symbol.printHierarchy()}\nInvalid type for argument: {_symbol}, expected type: {expectedType}, is: {pcontext.result.type}'))
 
 		self.result = pcontext.result
 		self.state = pcontext.state
@@ -1299,7 +1428,7 @@ class PContext():
 			return (p, r.value)
 		elif optional:
 			return (self, None)
-		raise PInvalidArgumentError(self.setError(PError.invalid, f'expression: {symbol} - invalid argument index: {idx}'))
+		raise PInvalidArgumentError(self.setError(PError.invalid, f'Invalid argument index: {idx} for expression:\n{symbol.printHierarchy()}'))
 		
 
 	def resultFromArgument(self, symbol:SSymbol, 
@@ -1371,13 +1500,13 @@ class PContext():
 		"""
 
 		if symbol.type != SType.tList:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong expression format: {symbol}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong expression format:\n{symbol.printHierarchy()}'))
 		if length is not None and symbol.length != length:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments: {symbol.length - 1} for expression: {symbol} must be {length - 1}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments: {symbol.length - 1}. Must be {length - 1} for expression:\n{symbol.printHierarchy()} '))
 		if minLength is not None and symbol.length < minLength:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression: {symbol}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too few arguments:\n{symbol.printHierarchy()}'))
 		if maxLength is not None and symbol.length > maxLength:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression: {symbol}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too many arguments:\n{symbol.printHierarchy()}'))
 
 
 	def run(self,
@@ -1412,10 +1541,11 @@ class PContext():
 			if pcontext.error.error != PError.noError and  _onErrorFunction in pcontext.functions:
 				_p = deepcopy(pcontext)	# Save old pcontext state
 				try:
-					pcontext = pcontext._executeFunction(SSymbol(lst = [ SSymbol(symbol = _onErrorFunction), 
-																		 SSymbol(number = pcontext.error.error.name),
-																		 SSymbol(number = pcontext.error.message)
-																	   ]),
+					_s = SSymbol()
+					pcontext = pcontext._executeFunction(_s.setLst(lst = [	_s.newSymbol(symbol = _onErrorFunction), 
+																			_s.newSymbol(string = pcontext.error.error.name),
+																			_s.newSymbol(string = pcontext.error.message)
+																		 ]),
 														_onErrorFunction,
 														pcontext.functions[_onErrorFunction])
 				except Exception as e:
@@ -1463,7 +1593,7 @@ class PContext():
 		# execute all top level S-expressions
 		for symbol in self.ast:
 			try:
-				self._executeExpression(symbol, None)
+				self._executeExpression(symbol)
 			except PException as e:
 				if isSubCall:
 					raise e
@@ -1491,12 +1621,11 @@ class PContext():
 			raise PTimeoutError(self.setError(PError.timeout, f'Script timeout ({self.maxRuntime} s)'))
 
 
-	def _executeExpression(self, symbol:SSymbol, parentSymbol:SSymbol) -> PContext:
+	def _executeExpression(self, symbol:SSymbol) -> PContext:
 		"""	Recursively execute a symbol as an expression.
 
 			Args:
 				symbol: The symbol to execute.
-				parentSymbol: The parent symbol of the symbol to execute.
 
 			Return:
 				The updated `PContext` object with the result.
@@ -1514,7 +1643,7 @@ class PContext():
 		
 		# First resolve the S-Expression
 		if not symbol.length and symbol.type != SType.tString:
-			return self.setResult(SSymbol())
+			return self.setResult(symbol.newSymbol())
 		firstSymbol = symbol[0] if symbol.length and symbol.type == SType.tList else symbol
 
 		match firstSymbol.type:
@@ -1530,13 +1659,15 @@ class PContext():
 			case SType.tList:
 				if firstSymbol.length > 0:
 					# implicit progn
-					return _doProgn(self, SSymbol(lst = [ SSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
+					_ss = symbol.newSymbol()
+					return _doProgn(self, _ss.setLst(lst = [ _ss.newSymbol(symbol = 'progn') ] + symbol.value ))	#type:ignore[operator]
 				else:
-					self.result = SSymbol()
+					self.result = symbol.newSymbol()
 					return self
 			
 			case SType.tListQuote:
-				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(lst = firstSymbol.value)]))
+				_ss = symbol.newSymbol()
+				return _doQuote(self, _ss.newSymbol(lst = [ _ss.newSymbol(symbol = 'quote'), _ss.newSymbol(lst = firstSymbol.value)]))
 
 			case SType.tSymbol:
 				_s = cast(str, firstSymbol.value)
@@ -1562,16 +1693,17 @@ class PContext():
 				else:
 					if self.fallbackFunc:
 						return self.fallbackFunc(self, symbol)
-					raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s} | in symbol: {parentSymbol}'))
+					raise PUndefinedError(self.setError(PError.undefined, f'undefined symbol: {_s}\n{firstSymbol.printHierarchy()}'))
 
 			case SType.tSymbolQuote:
-				return _doQuote(self, SSymbol(lst = [ SSymbol(symbol = 'quote'), SSymbol(symbol = firstSymbol.value)]))	
+				_ss = symbol.newSymbol()
+				return _doQuote(self, _ss.newSymbol(lst = [ _ss.newSymbol(symbol = 'quote'), _ss.newSymbol(symbol = firstSymbol.value)]))	
 
 			case SType.tLambda:
 				return self._executeFunction(symbol, cast(str, firstSymbol.value))
 					
 			case _:
-				raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type} - {firstSymbol}'))
+				raise PInvalidArgumentError(self.setError(PError.invalid, f'Unexpected symbol: {firstSymbol.type}\n{firstSymbol.printHierarchy()}'))
 
 
 	def checkInStringExpressions(self, symbol:SSymbol) -> PContext:
@@ -1617,8 +1749,8 @@ class PContext():
 			line = line.replace(_p, _m[2:], 1)
 
 		if symbol.type == SType.tString:
-			return self.setResult(SSymbol(string = line))
-		return self.setResult(SSymbol(jsnString = line))
+			return self.setResult(symbol.newSymbol(string = line))
+		return self.setResult(symbol.newSymbol(jsnString = line))
 
 
 	def _executeFunction(self, symbol:SSymbol, functionName:str, functionDef:Optional[FunctionDefinition] = None) -> PContext:
@@ -1639,25 +1771,48 @@ class PContext():
 		# check arguments
 		if not (symbol.type == SType.tSymbol and len(_argNames) == 0) and not (symbol.type == SType.tList and len(_argNames) == symbol.length - 1):
 		# if symbol.type != SType.tList or len(_argNames) != symbol.length - 1:	# type:ignore
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'number of arguments doesn\'t match for function : {functionName}. Expected: {len(_argNames)}, got: {symbol.length - 1}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'number of arguments doesn\'t match for function : {functionName}. Expected: {len(_argNames)}, got: {symbol.length - 1}\n{symbol.printHierarchy()}'))
 
 		# execute and assign arguments
 		_args:dict[str, SSymbol] = {}
 		if symbol.length > 1:
 			for i in range(1, symbol.length):
-				_args[_argNames[i-1]] = self._executeExpression(symbol[i], symbol).result	# type:ignore [index]
+				_args[_argNames[i-1]] = self._executeExpression(symbol[i]).result	# type:ignore [index]
 
 		# Assign arguments to new scope
 		self.pushCall(functionName)
 		self.call.arguments = _args
 
 		# execute the code
-		self._executeExpression(_code, symbol)
+		self._executeExpression(_code)
 		self.popCall()
 		return self
 
 
-	def _joinExpression(self, symbols:list[SSymbol], sep:str = ' ') -> PContext:
+	def _executeSymbolWithArguments(self, symbol:SSymbol, arguments:PSymbolList = []) -> PContext:
+		"""	Execute a symbol with a list of arguments. A symbol can be a function,
+			a lambda function, or another (quoted) symbol.
+
+			Args:
+				symbol: The symbol/function/lambda to execute.
+				arguments: List of arguments to pass to the symbol.
+
+			Return:
+				The updated `PContext` object with the function result.
+		"""
+		# lambda functions are handled differently
+		if symbol.type == SType.tLambda:
+			_s = symbol.newSymbol()
+			pcontext = _doProgn(self, _s.setLst(lst = [ _s.newSymbol(symbol = 'progn'), symbol] +  arguments), doEval = False)	#type:ignore[operator]
+		else:
+			if symbol.value in self.symbols:
+				_symbol = symbol.newSymbol(symbol=symbol.value) if symbol.type == SType.tSymbolQuote else symbol
+				pcontext = self._executeExpression(symbol.newSymbol(lst = [_symbol] + arguments))
+			else:
+				pcontext = self._executeFunction(symbol.newSymbol(lst= [symbol] + arguments), cast(str, symbol.value))
+		return pcontext
+
+	def _joinExpression(self, symbols:SSymbolsList, parentSymbol:SSymbol, sep:str = ' ') -> PContext:
 		"""	Join all symbols in an expression. 
 
 			Args:
@@ -1676,7 +1831,7 @@ class PContext():
 			else:
 				strings.append(str(p.result))
 				
-		self.result = SSymbol(string = sep.join(strings))
+		self.result = parentSymbol.newSymbol(string = sep.join(strings))
 		return self
  
 ###############################################################################
@@ -1712,7 +1867,7 @@ PSymbolDict = Dict[str, PSymbolCallable]
 """	Dictionary of function callbacks for commands. 
 """
 
-PSymbolList = List[SSymbol]
+PSymbolList = SSymbolsList
 """	List of SSymbol instances.
 """
 
@@ -1734,6 +1889,116 @@ FunctionDefinition = Tuple[List[str], SSymbol]
 #
 #	build-in symbol functions
 #
+
+
+def _doAll(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Return *True* if all of the arguments are *True*. The arguments can be a list of symbols.
+		The type of all arguments must be *Bool*.
+
+		Example:
+			::
+
+				(any true false) -> false
+				(any true true) -> true
+				(any '(false false)) -> false
+				(any '(true true)) -> true
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result is either *True* or *False*.
+	"""
+
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# If we have only one argument, then this must be a list or a single boolean value
+	_values:SSymbolsList = []
+	if len(symbol) == 2:
+		pcontext, _v = pcontext.resultFromArgument(symbol, 1, (SType.tList, SType.tListQuote, SType.tBool, SType.tNIL))
+		match _v.type:
+			case SType.tBool:	# single boolean value
+				_values.append(_v)
+			case SType.tNIL:
+				return pcontext.setResult(symbol.newSymbol(boolean = False))
+			case SType.tList | SType.tListQuote:
+				_values = cast(list, _v.value)
+			
+
+	# Else build a list from the remaining arguments
+	else:
+		for i in range(1, symbol.length):
+			pcontext, _v = pcontext.resultFromArgument(symbol, i, SType.tBool)
+			_values.append(_v)
+
+	for v in _values:
+		match v.type:
+			case SType.tBool:
+				if not v.value:
+					return pcontext.setResult(symbol.newSymbol(boolean = False))
+			case SType.tNIL:
+				return pcontext.setResult(symbol.newSymbol(boolean = False))
+			case _:
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid argument type for any: {v.type} (must be boolean) in symbol\n{symbol.printHierarchy()}'))
+	return pcontext.setResult(symbol.newSymbol(boolean = True))
+
+
+def _doAny(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Return *True* if any of the arguments is *True*. The arguments can be a list of symbols.
+		The type of all arguments must be *Bool*.
+
+		Example:
+			::
+
+				(any true false) -> true
+				(any false false) -> false
+				(any '(false false)) -> false
+				(any '(false true)) -> true
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result is either *True* or *False*.
+	"""
+
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# If we have only one argument, then this must be a list or a single boolean value
+	_values:SSymbolsList = []
+	if len(symbol) == 2:
+		pcontext, _v = pcontext.resultFromArgument(symbol, 1, (SType.tList, SType.tListQuote, SType.tBool, SType.tNIL))
+		match _v.type:
+			case SType.tBool:	# single boolean value
+				return pcontext.setResult(symbol.newSymbol(boolean = _v.value))
+			case SType.tNIL:
+				return pcontext.setResult(symbol.newSymbol(boolean = False))
+			case SType.tList | SType.tListQuote:
+				_values = cast(SSymbolsList, _v.value)
+
+	# Else build a list from the remaining arguments
+	else:
+		for i in range(1, symbol.length):
+			pcontext, _v = pcontext.resultFromArgument(symbol, i, SType.tBool)
+			_values.append(_v)
+
+	for v in _values:
+		match v.type:
+			case SType.tBool:
+				if v.value:
+					# If any value is True, then we return True
+					return pcontext.setResult(symbol.newSymbol(boolean = True))
+			case SType.tNIL:
+				# NIL is treated as False, therefore we continue to the next value
+				pass
+			case _:
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid argument type for any: {v.type} (must be boolean) in symbol\n{symbol.printHierarchy()}'))
+
+	# If we reach this point, then all values are False
+	return pcontext.setResult(symbol.newSymbol(boolean = False))
+
 
 def _doArgv(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	With the *argv* function one can access the individual arguments of a script.
@@ -1760,13 +2025,13 @@ def _doArgv(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	"""
 	if symbol.type == SType.tSymbol or (symbol.type == SType.tList and symbol.length == 1):
-		return pcontext.setResult(SSymbol(string = ' '.join(pcontext.argv)))
+		return pcontext.setResult(symbol.newSymbol(string = ' '.join(pcontext.argv)))
 	else:
 		pcontext, _idx = pcontext.valueFromArgument(symbol, 1, SType.tNumber)
 		idx = int(_idx)
 		if idx < 0 or idx >= len(pcontext.argv):
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong index: {idx} for argv. Must be [0..{len(pcontext.argv)-1}]'))
-		return pcontext.setResult(SSymbol(string = pcontext.argv[idx]))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong index: {idx} for argv. Must be [0..{len(pcontext.argv)-1}]\n{symbol.printHierarchy()}'))
+		return pcontext.setResult(symbol.newSymbol(string = pcontext.argv[idx]))
 
 
 def _doAssert(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1790,7 +2055,7 @@ def _doAssert(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.assertSymbol(symbol, 2)
 	pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
 	if not value:
-		raise PAssertionFailed(pcontext.setError(PError.assertionFailed, f'Assertion failed: {symbol[1]}'))
+		raise PAssertionFailed(pcontext.setError(PError.assertionFailed, f'Assertion failed: {symbol[1]}\n{symbol.printHierarchy()}'))
 	return pcontext
 
 
@@ -1813,7 +2078,7 @@ def _doB64Encode(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# get string
 	pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tString)
-	return pcontext.setResult(SSymbol(string = base64.b64encode(value.encode('utf-8')).decode('utf-8')))
+	return pcontext.setResult(symbol.newSymbol(string = base64.b64encode(value.encode('utf-8')).decode('utf-8')))
 
 
 def _doBoolean(pcontext:PContext, symbol:SSymbol, value:bool) -> PContext:
@@ -1833,7 +2098,7 @@ def _doBoolean(pcontext:PContext, symbol:SSymbol, value:bool) -> PContext:
 			The updated `PContext` object. The result includes either *True* or *False*.
 	"""
 	pcontext.assertSymbol(symbol, 1)
-	return pcontext.setResult(SSymbol(boolean = value))
+	return pcontext.setResult(symbol.newSymbol(boolean = value))
 
 
 def _doBlock(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1865,14 +2130,14 @@ def _doBlock(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# get block name
 	if symbol[1].type != SType.tSymbol:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'block requires symbol name, got type: {symbol[1].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'block requires symbol name, got type: {symbol[1].type}\n{symbol.printHierarchy()}'))
 	_name = symbol[1].value
 
 	# execute block expressions
-	pcontext.result = SSymbol()	# Default result is NIL for empty blocks
+	pcontext.result = symbol.newSymbol()	# Default result is NIL for empty blocks
 	for e in symbol[2:]:
 		try:
-			pcontext = pcontext._executeExpression(e, symbol)
+			pcontext = pcontext._executeExpression(e)
 		except PReturnFrom as e:
 			# If the exception is raised for the current block, then return the result
 			if e.name == _name:	
@@ -1902,7 +2167,7 @@ def _doCar(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	pcontext, value = pcontext.valueFromArgument(symbol, 1, (SType.tListQuote, SType.tList, SType.tNIL))
 	if pcontext.result.length == 0 or pcontext.result.type == SType.tNIL:
-		return pcontext.setResult(SSymbol())	# nil
+		return pcontext.setResult(symbol.newSymbol())	# nil
 	return 	pcontext.setResult(cast(list, value)[0])
 
 
@@ -1941,16 +2206,16 @@ def _doCase(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 		# if it is the "orherwise" symbol (!) then execute that one and return
 		if e[0].type == SType.tSymbol and e[0].value == 'otherwise':
-			return pcontext._executeExpression(e[1], symbol)
+			return pcontext._executeExpression(e[1])
 
 		# Get match symbol
-		m = pcontext._executeExpression(e[0], symbol)
+		m = pcontext._executeExpression(e[0])
 
 		# match is string, number, or boolean
 		if m.result.type in [ SType.tString, SType.tNumber, SType.tBool] and m.result.value == value:
-			return pcontext._executeExpression(e[1], symbol)
+			return pcontext._executeExpression(e[1])
 		
-	return pcontext.setResult(SSymbol()) # NIL
+	return pcontext.setResult(symbol.newSymbol()) # NIL
 
 
 def _doCdr(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1973,8 +2238,8 @@ def _doCdr(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tList, SType.tNIL))
 	if result.length == 0 or result.type == SType.tNIL:
-		return pcontext.setResult(SSymbol())
-	return pcontext.setResult(SSymbol(lst = cast(list, result.value)[1:]))
+		return pcontext.setResult(symbol.newSymbol())
+	return pcontext.setResult(symbol.newSymbol(lst = cast(list, result.value)[1:]))
 
 
 def _doConcatenate(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1996,7 +2261,7 @@ def _doConcatenate(pcontext:PContext, symbol:SSymbol) -> PContext:
 			The updated `PContext` object. The result is a new string.
 	"""
 	pcontext.assertSymbol(symbol, minLength = 2)
-	return pcontext.setResult(pcontext._joinExpression(symbol[1:], sep = '').result)
+	return pcontext.setResult(pcontext._joinExpression(symbol[1:], symbol, sep = '').result)
 
 
 def _doCons(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2031,9 +2296,9 @@ def _doCons(pcontext:PContext, symbol:SSymbol) -> PContext:
 		case SType.tList | SType.tListQuote:
 			pcontext.result = deepcopy(_second)
 		case SType.tNIL:
-			pcontext.result = SSymbol(lst = [])
+			pcontext.result = symbol.newSymbol(lst = [])
 		case _:
-			pcontext.result = SSymbol(lst = [ deepcopy(_second) ])
+			pcontext.result = symbol.newSymbol(lst = [ deepcopy(_second) ])
 	
 	cast(list, pcontext.result.value).insert(0, deepcopy(_first))
 	return pcontext
@@ -2066,7 +2331,7 @@ def _doDatetime(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, format = pcontext.valueFromArgument(symbol, 1, SType.tString, optional = True)
 	if format is None:
 		format = _format
-	return pcontext.setResult(SSymbol(string = _utcNow().strftime(format)))
+	return pcontext.setResult(symbol.newSymbol(string = _utcNow().strftime(format)))
 
 
 def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2096,23 +2361,23 @@ def _doDefun(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# function name
 	if symbol[1].type != SType.tSymbol:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires symbol name, got type: {symbol[1].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires symbol name, got type: {symbol[1].type}\n{symbol.printHierarchy()}'))
 	_name = symbol[1].value
 	
 	# arguments
 	if symbol[2].type != SType.tList:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires symbol argument list, got type: {symbol[2].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires symbol argument list, got type: {symbol[2].type}\n{symbol.printHierarchy()}'))
 	_args = cast(PSymbolList, symbol[2].value)
 
 	_argNames:list[str] = []
-	for a in cast(List[SSymbol], _args):		# type:ignore[union-attr]
+	for a in cast(SSymbolsList, _args):		# type:ignore[union-attr]
 		if a.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun arguments must be symbol, got: {a}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun arguments must be symbol, got: {a}\n{symbol.printHierarchy()}'))
 		_argNames.append(a.value) 	# type:ignore[arg-type]
 	
 	# code
 	if symbol[3].type != SType.tList:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires code list, got: {symbol[3].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'defun requires code list, got: {symbol[3].type}\n{symbol.printHierarchy()}'))
 	_code = symbol[3]
 	pcontext.functions[str(_name)] = ( _argNames, _code )
 	return pcontext
@@ -2146,43 +2411,43 @@ def _doDolist(pcontext:PContext, symbol:SSymbol) -> PContext:
 		# get loop variable
 		_loopvar = cast(SSymbol, _arguments[0])
 		if _loopvar.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "var" must be a symbol, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "var" must be a symbol, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 
 		# get list to loop over
-		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		pcontext = pcontext._executeExpression(_arguments[1])
 		if pcontext.result.type not in (SType.tList, SType.tListQuote):
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "list" must be a (quoted) list, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "list" must be a (quoted) list, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 		_looplist = pcontext.result
 	else:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist first argument requires 2 or 3 arguments, got: {len(_arguments)}\n{symbol.printHierarchy()}'))
 
 	# Get result variable name	
 	if len(_arguments) == 3:
 		_resultvar = cast(SSymbol, _arguments[2])
 		if _resultvar.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "result" must be a symbol, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dolist "result" must be a symbol, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 		
 		# if the variable does not exist, create it as a nil symbol
 		if not str(_resultvar) in pcontext.variables:
-			pcontext.setVariable(str(_resultvar), SSymbol())
+			pcontext.setVariable(str(_resultvar), symbol.newSymbol())
 	else:
 		_resultvar = None
 
 	# code
 	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
-	_code = SSymbol(lst = _code)	# We got a python list, but need a SSymbol list
+	_code = symbol.newSymbol(lst = _code)	# We got a python list, but need a SSymbol list
 
 	# execute the code
-	pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(0)))
+	pcontext.setVariable(str(_loopvar), symbol.newSymbol(number = Decimal(0)))
 	for i in _looplist.value: # type:ignore[union-attr]
 		pcontext.setVariable(str(_loopvar), i) # type:ignore[arg-type]
-		pcontext = pcontext._executeExpression(_code, symbol)
+		pcontext = pcontext._executeExpression(_code)
 
 	# set the result
 	if _resultvar:
 		pcontext.result = pcontext.variables[str(_resultvar)]
 	else:
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 
 	# return
 	return pcontext
@@ -2218,45 +2483,45 @@ def _doDotimes(pcontext:PContext, symbol:SSymbol) -> PContext:
 		# get loop variable
 		_loopvar = cast(SSymbol, _arguments[0])
 		if _loopvar.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "counter" must be a symbol, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "counter" must be a symbol, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 
 		# get loop count
-		pcontext = pcontext._executeExpression(_arguments[1], _arguments)
+		pcontext = pcontext._executeExpression(_arguments[1])
 		if pcontext.result.type != SType.tNumber:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a number, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a number, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 		_loopcount = pcontext.result
 		if int(_loopcount.value) < 0:	# type:ignore[arg-type]
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a non-negative number, got: {_loopcount.value}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "count" must be a non-negative number, got: {_loopcount.value}\n{symbol.printHierarchy()}'))
 	else:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes first argument requires 2 or 3 arguments, got: {len(_arguments)}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes first argument requires 2 or 3 arguments, got: {len(_arguments)}\n{symbol.printHierarchy()}'))
 	
 	# Get result variable name	
 	if len(_arguments) == 3:
 		_resultvar = cast(SSymbol, _arguments[2])
 		if _resultvar.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "result" must be a symbol, got: {pcontext.result.type}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'dotimes "result" must be a symbol, got: {pcontext.result.type}\n{symbol.printHierarchy()}'))
 		
 		# if the variable does not exist, create it as a nil symbol
 		if not str(_resultvar) in pcontext.variables:
-			pcontext.setVariable(str(_resultvar), SSymbol())
+			pcontext.setVariable(str(_resultvar), symbol.newSymbol())
 	else:
 		_resultvar = None
 
 	# code
 	pcontext, _code = pcontext.valueFromArgument(symbol, 2, SType.tList, doEval = False)	# don't evaluate the argument (yet)
-	_code = SSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
+	_code = symbol.newSymbol(lst = _code)	# We got a python list, but must have a SSymbol list
 
 	# execute the code
-	pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(0)))
+	pcontext.setVariable(str(_loopvar), symbol.newSymbol(number = Decimal(0)))
 	for i in range(0, int(cast(Decimal, _loopcount.value))):
-		pcontext.setVariable(str(_loopvar), SSymbol(number = Decimal(i)))
-		pcontext = pcontext._executeExpression(_code, symbol)
+		pcontext.setVariable(str(_loopvar), symbol.newSymbol(number = Decimal(i)))
+		pcontext = pcontext._executeExpression(_code)
 
 	# set the result
 	if _resultvar:
 		pcontext.result = pcontext.variables[str(_resultvar)]
 	else:
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 
 	# return
 	return pcontext
@@ -2283,9 +2548,9 @@ def _doError(pcontext:PContext, symbol:SSymbol) -> PContext:
 			`PQuitWithError`: In case the function quits successfully with an error. This is expected.
 	"""
 	if symbol.type != SType.tList or symbol.length > 2:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong format for quitwitherror: {symbol}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong format for quitwitherror: {symbol.printHierarchy()}'))
 	if symbol.length == 2:
-		pcontext = pcontext._executeExpression(symbol[1], symbol)
+		pcontext = pcontext._executeExpression(symbol[1])
 		raise PQuitWithError(pcontext.setError(PError.quitWithError, str(pcontext.result.value)))
 	raise PQuitWithError(pcontext.setError(PError.quitWithError, ''))
 
@@ -2311,7 +2576,7 @@ def _doEval(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tListQuote, SType.tSymbolQuote, SType.tString, SType.tSymbol, SType.tNIL))
 	_s = deepcopy(result)
 	_s.type = _s.type.unquote()
-	return pcontext._executeExpression(_s, symbol)
+	return pcontext._executeExpression(_s)
 
 
 def _doEvaluateInline(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2337,6 +2602,54 @@ def _doEvaluateInline(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext
 
 
+def _doFilter(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Filter a list based on a condition.
+
+		Example:
+			::
+
+				(filter (lambda (x) (< x 3)) (1 2 3 4 5)) -> (1 2)
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result is a new list.
+	"""
+	pcontext.assertSymbol(symbol, 3)
+
+	# Get  function
+	pcontext, _function = pcontext.resultFromArgument(symbol, 1, (SType.tLambda, SType.tSymbol, SType.tSymbolQuote))
+
+	# Get list
+	pcontext, _list = pcontext.valueFromArgument(symbol, 2, (SType.tList, SType.tListQuote, SType.tNIL))
+	if symbol[2].type == SType.tNIL or not _list:	# type:ignore[union-attr]
+		# Return NIL if the input list is empty or nil
+		return pcontext.setResult(symbol.newSymbol())
+
+	# The first element of the list determines the type
+	_type = _list[0].type	# type:ignore[union-attr]
+
+	# apply the function to each element of the list
+	_result = []
+	for value in _list:	# type:ignore[union-attr]
+		
+		# Check the type of the value.
+		if value.type != _type:
+			raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'invalid type in list for value {value} (expected type {_type}, found {value.type}):\n{symbol.printHierarchy()}'))
+
+		# Execute the function/lambda/symbol and store the result for the next iteration	
+		pcontext = pcontext._executeSymbolWithArguments(_function, [ value ])
+		match pcontext.result.type:
+			case SType.tBool | SType.tNIL:
+				if pcontext.result.value:
+					_result.append(value)
+			case _:
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid return type for filter function: {pcontext.result.type} (must be boolean)\n{symbol.printHierarchy()}'))
+	return pcontext.setResult(symbol.newSymbol(lst = _result))
+
+
 def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 	""" Retrieve an attribute from a JSON structure via a key path. 
 	
@@ -2356,17 +2669,17 @@ def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 	def _toSymbol(value:Any) -> SSymbol:
 		match value:
 			case str():
-				return SSymbol(string = value)
+				return symbol.newSymbol(string = value)
 			case int(), float():
-				return SSymbol(number = Decimal(value))
+				return symbol.newSymbol(number = Decimal(value))
 			case dict():
-				return SSymbol(jsn = value)
+				return symbol.newSymbol(jsn = value)
 			case bool():
-				return SSymbol(boolean = value)
+				return symbol.newSymbol(boolean = value)
 			case list():
-				return SSymbol(lst = [ _toSymbol(l) for l in value])
+				return symbol.newSymbol(lst = [ _toSymbol(l) for l in value])
 			case _:
-				return SSymbol() # nil
+				return symbol.newSymbol() # nil
 
 	pcontext.assertSymbol(symbol, 3)
 
@@ -2378,7 +2691,7 @@ def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# value
 	if (_value := findXPath(_json, _key)) is None:
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(symbol.newSymbol())
 	return pcontext.setResult(_toSymbol(_value))
 
 
@@ -2406,7 +2719,7 @@ def _doHasJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
 	_key = _key.strip()
 
-	return pcontext.setResult(SSymbol(boolean = findXPath(_json, _key) is not None))
+	return pcontext.setResult(symbol.newSymbol(boolean = findXPath(_json, _key) is not None))
 
 
 def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2434,9 +2747,9 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 		_e = len(_e) > 0
 
 	if _e:
-		_p = pcontext._executeExpression(symbol[2], symbol)
+		_p = pcontext._executeExpression(symbol[2])
 	elif symbol.length == 4:
-		_p = pcontext._executeExpression(symbol[3], symbol)
+		_p = pcontext._executeExpression(symbol[3])
 	else:
 		_p = pcontext
 	return _p
@@ -2467,7 +2780,7 @@ def _doIn(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# Get symbol (!) to check
 	pcontext, _s = pcontext.resultFromArgument(symbol, 2, (SType.tString, SType.tList, SType.tListQuote))
 	# check
-	return pcontext.setResult(SSymbol(boolean = _v in _s))
+	return pcontext.setResult(symbol.newSymbol(boolean = _v in _s))
 
 
 def _doIncDec(pcontext:PContext, symbol:SSymbol, isInc:Optional[bool] = True) -> PContext:
@@ -2501,11 +2814,11 @@ def _doIncDec(pcontext:PContext, symbol:SSymbol, isInc:Optional[bool] = True) ->
 		pcontext, variable = pcontext.resultFromArgument(symbol, 1)
 
 	if variable.type not in [SType.tString, SType.tSymbol]:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'variable name must be a string: {variable}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'variable name must be a string: {variable}\n{symbol.printHierarchy()}'))
 	if variable.value not in pcontext.variables:
-		raise PInvalidArgumentError(pcontext.setError(PError.undefined, f'undefined variable: {variable}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.undefined, f'undefined variable: {variable}\n{symbol.printHierarchy()}'))
 	if (value := pcontext.variables[variable.value]).type != SType.tNumber:
-		raise PInvalidArgumentError(pcontext.setError(PError.notANumber, f'variable value must be a number for inc/dec: {value}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.notANumber, f'variable value must be a number for inc/dec: {value}\n{symbol.printHierarchy()}'))
 	
 	# Get increment/decrement value
 	pcontext, _idValue = pcontext.valueFromArgument(symbol, 2, SType.tNumber) if symbol.length == 3 else (pcontext, Decimal(1.0))
@@ -2548,11 +2861,11 @@ def _doIndexOf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, lst = pcontext.resultFromArgument(symbol, 2, (SType.tList, SType.tListQuote, SType.tString))
 
 	if lst.type == SType.tString and value.type !=SType.tString:
-		raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'index-of: first argument must be a string if second argument is a string'))
+		raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'index-of: first argument must be a string if second argument is a string\n{symbol.printHierarchy()}'))
 	try:
-		return pcontext.setResult(SSymbol(number = Decimal(operator.indexOf(lst.raw(), value.value))))
+		return pcontext.setResult(symbol.newSymbol(number = Decimal(operator.indexOf(lst.raw(), value.value))))
 	except ValueError as e:
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(symbol.newSymbol())
 
 
 def _doIsDefined(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2576,7 +2889,7 @@ def _doIsDefined(pcontext:PContext, symbol:SSymbol) -> PContext:
 	
 	# symbol name
 	pcontext, name = pcontext.valueFromArgument(symbol, 1, (SType.tString, SType.tSymbolQuote))
-	return pcontext.setResult(SSymbol(boolean = name in pcontext.variables or
+	return pcontext.setResult(symbol.newSymbol(boolean = name in pcontext.variables or
 												name in pcontext.functions or
 												name in pcontext.symbols or
 												name in pcontext.meta or 
@@ -2601,7 +2914,7 @@ def _doJsonify(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, 2)
 	pcontext, _s = pcontext.valueFromArgument(symbol, 1, SType.tString)
-	return pcontext.setResult(SSymbol(string = _s.replace('\n', '\\n').replace('"', '\\"')))
+	return pcontext.setResult(symbol.newSymbol(string = _s.replace('\n', '\\n').replace('"', '\\"')))
 
 
 def _doJsonToString(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2624,8 +2937,8 @@ def _doJsonToString(pcontext:PContext, symbol:SSymbol) -> PContext:
 	try:
 		_s = json.dumps(cast(str, _j))
 	except Exception as e:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid JSON: {str(e)}'))
-	return pcontext.setResult(SSymbol(string = _s))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid JSON: {str(e)}\n{symbol.printHierarchy()}'))
+	return pcontext.setResult(symbol.newSymbol(string = _s))
 
 
 def _doLambda(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2652,19 +2965,19 @@ def _doLambda(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# arguments
 	if symbol[1].type != SType.tList:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda requires symbol argument list, got: {symbol[1].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda requires symbol argument list, got: {symbol[1].type}\n{symbol.printHierarchy()}'))
 	_args = cast(PSymbolList, symbol[1].value)
 
 	_argNames:list[str] = []
-	for a in cast(List[SSymbol], _args):		# type:ignore[union-attr]
+	for a in cast(SSymbolsList, _args):		# type:ignore[union-attr]
 		if a.type != SType.tSymbol:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda arguments must be symbol, got: {a}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda arguments must be symbol, got: {a}\n{symbol.printHierarchy()}'))
 		_argNames.append(a.value) 	# type:ignore[arg-type]
 	
 	# code
 	if symbol[2].type != SType.tList:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda requires code list, got: {symbol[2].type}'))
-	return pcontext.setResult(SSymbol(lmbda = ( _argNames, symbol[2])))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'lambda requires code list, got: {symbol[2].type}\n{symbol.printHierarchy()}'))
+	return pcontext.setResult(symbol.newSymbol(lmbda = ( _argNames, symbol[2])))
 
 
 def _doLength(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2685,7 +2998,7 @@ def _doLength(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, 2)
 	pcontext, result = pcontext.resultFromArgument(symbol, 1, (SType.tString, SType.tList, SType.tListQuote))
-	return pcontext.setResult(SSymbol(number = Decimal(result.length)))
+	return pcontext.setResult(symbol.newSymbol(number = Decimal(result.length)))
 
 
 def _doLet(pcontext:PContext, symbol:SSymbol, sequential:bool = True) -> PContext:
@@ -2716,11 +3029,11 @@ def _doLet(pcontext:PContext, symbol:SSymbol, sequential:bool = True) -> PContex
 	if sequential:
 		for symbol in symbol[1:]:
 			if symbol.type != SType.tList or symbol.length != 2:
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong format for let variable assignment: {symbol}'))
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'wrong format for let variable assignment:\n{symbol.printHierarchy()}'))
 
 			# get variable name
 			if symbol.value[0].type != SType.tSymbol:	# type:ignore[index, union-attr]
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Variable name must be a symbol: {symbol}'))
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Variable name must be a symbol:\n{symbol.printHierarchy()}'))
 			variablename = cast(str, symbol.value[0].value)	# type:ignore[index, union-attr]
 
 			# get value and assign variable (symbol!)
@@ -2753,10 +3066,10 @@ def _doList(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# 3) Convert the zip() result into a list.
 	# 4) Get the second set (symbols) and convert it into a list as well
 	# 5) Create a new list symbol
-	return pcontext.setResult(SSymbol(lst = list(list(
+	return pcontext.setResult(symbol.newSymbol(lst = list(list(
 												zip(*[ pcontext.resultFromArgument(symbol, i) 
 													   for i in range(1, symbol.length) ])
-											)[1])
+											  )[1])
 							))
 
 
@@ -2778,7 +3091,7 @@ def _doLog(pcontext:PContext, symbol:SSymbol, isError:Optional[bool] = False, ex
 		Return:
 			The updated `PContext` object with the function result.
 	"""
-	p = pcontext._joinExpression(symbol[1:])
+	p = pcontext._joinExpression(symbol[1:], symbol)
 	if isError:
 		if pcontext.logErrorFunc:
 			pcontext.logErrorFunc(pcontext, p.result.value, exception)	# type:ignore[arg-type]
@@ -2813,6 +3126,50 @@ def _doLowerUpper(pcontext:PContext, symbol:SSymbol, toLower:bool = True) -> PCo
 	return pcontext
 
 
+def _doMap(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Apply a function to each element of a list or multiple lists, accumulating the result.
+
+		Example:
+			::
+
+				(map (lambda (x y) (+ x y)) '(1 2 3) '(4 6 7)) -> (5 8 10)
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the function result.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 3)
+
+	# function
+	pcontext, _function = pcontext.resultFromArgument(symbol, 1, (SType.tLambda, SType.tSymbol, SType.tSymbolQuote))
+
+	# get the list(s)
+	_lists:SSymbolsList = []
+	for i in range(2, symbol.length):
+		pcontext, _list = pcontext.resultFromArgument(symbol, i, (SType.tList, SType.tListQuote, SType.tNIL))
+		_lists.append(_list)
+
+	_result:SSymbolsList = []
+	# Get the length. The shortest list determines the length.
+	# Lists can be empty or nil, in which case the length is 0.
+	length = min([0 if not lst else len(cast(SSymbol, lst.value)) for lst in _lists])	# type:ignore[union-attr]
+
+	# apply the function to each element of the list(s)
+	for i in range(length):
+
+		# Get the arguments, one element from each list
+		_args = [cast(SSymbol, lst.value)[i] for lst in _lists]	# type:ignore[union-attr]
+
+		# Execute the function/lambda/symbol and store the result for the next iteration	
+		pcontext = pcontext._executeSymbolWithArguments(_function, _args)
+		_result.append(pcontext.result)
+
+	return pcontext.setResult(symbol.newSymbol(lst = _result))
+
+
 def _doMatch(pcontext:PContext, symbol:SSymbol) -> PContext:
 	""" Apply a regular expression to a string and return whether it matches.
 	
@@ -2842,8 +3199,64 @@ def _doMatch(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, _match = pcontext.valueFromArgument(symbol, 2, SType.tString)
 
 	# match
-	return pcontext.setResult(SSymbol(boolean = pcontext.matchFunc(pcontext, _in, _match)))
+	return pcontext.setResult(symbol.newSymbol(boolean = pcontext.matchFunc(pcontext, _in, _match)))
 
+
+def _doMinMax(pcontext:PContext, symbol:SSymbol, doMax:Optional[bool] = True) -> PContext:
+	"""	Get the minimum or maximum value of a list of numbers, strings or orher comparables.
+	
+		Example:
+			::
+
+				(min (1 2 3)) -> 1
+				(min 1 2) -> 1
+				(max (1 2 3)) -> 3
+				(max 1 2) -> 2
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+			doMax: Indicator whether to get the maximum (True) or minimum (False) value.
+
+		Return:
+			The updated `PContext` object with the function result.
+	"""
+
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# Assign the function to use
+	_func = max if doMax else min
+
+	# If we have only one argument, then this must be a list
+	_list:SSymbolsList = []
+	if len(symbol) == 2:
+		pcontext, _l = pcontext.resultFromArgument(symbol, 1, (SType.tList, SType.tListQuote, SType.tNIL))
+		if symbol[1].type == SType.tNIL or not _l:	# type:ignore[union-attr]
+			return pcontext.setResult(symbol.newSymbol())
+		_list = cast(SSymbolsList, _l.value)
+	
+	# Else build a list from the remaining arguments
+	else:
+		for i in range(1, symbol.length):
+			pcontext, _v = pcontext.resultFromArgument(symbol, i)
+			_list.append(_v)
+	
+	if not _list:
+		return pcontext.setResult(symbol.newSymbol())
+	_type = _list[0].type
+
+	_values:list[Any] = []
+	for _v in _list:
+		if _v.type != _type:
+			raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'invalid type in list for min/max. Expected {_type}, got {_v.type} in symbol\n{symbol.printHierarchy()}'))
+		_values.append(_v.value)
+		
+	# call the function
+	try:
+		return pcontext.setResult(_func(_values))
+	except ValueError as _e:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid list for min/max: {_values} in symbol\n{symbol.printHierarchy()}'))
+	
 
 def _doNot(pcontext:PContext, symbol:SSymbol) -> PContext:
 	""" Boolean *not* operation.
@@ -2862,7 +3275,7 @@ def _doNot(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	pcontext.assertSymbol(symbol, maxLength = 2)
 	pcontext, _v = pcontext.valueFromArgument(symbol, 1, (SType.tBool, SType.tNIL))
-	return pcontext.setResult(SSymbol(boolean = not _v))
+	return pcontext.setResult(symbol.newSymbol(boolean = not _v))
 
 
 def _doNth(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2892,7 +3305,7 @@ def _doNth(pcontext:PContext, symbol:SSymbol) -> PContext:
 	
 	# Get nth element
 	if _idx < 0 or _idx >= _value.length:
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 	else:
 		pcontext.result = _value[int(_idx)]
 	return pcontext
@@ -2946,12 +3359,12 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 
 	"""
 	pcontext.assertSymbol(symbol, minLength = 2)
-	r1 = deepcopy(pcontext._executeExpression(symbol[1], symbol).result)
+	r1 = deepcopy(pcontext._executeExpression(symbol[1]).result)
 
 	for i in range(2, symbol.length):
 		try:
 			# Get the second operant
-			r2 = pcontext._executeExpression(symbol[i], symbol).result
+			r2 = pcontext._executeExpression(symbol[i]).result
 			
 			# If the first operant is a list, then we have to perform a bit different
 			if r1.type in (SType.tList, SType.tListQuote):
@@ -2965,7 +3378,7 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 				# This is only possible for boolean operations
 				else:
 					if tp != SType.tBool:
-						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators: {symbol}'))
+						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators:\n{symbol.printHierarchy()}'))
 					_v1 = None
 					for s in cast(list, r1.value):
 						if _v1 := op(s.value, r2.value):	# True if any
@@ -2976,13 +3389,13 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 			else:
 				r1.value = op(r1.value, r2.value)
 		except ZeroDivisionError as e:
-			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
+			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, f'{str(e)}\n{symbol.printHierarchy()}'))
 		except TypeError as e:
-			raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'invalid types in expression: {str(e)}'))
+			raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'invalid types in expression: {str(e)}\n{symbol.printHierarchy()}'))
 		except InvalidOperation as e:
 			if DivisionUndefined in e.args:
 				raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid arguments in expression: {str(e)}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid arguments in expression: {str(e)}\n{symbol.printHierarchy()}'))
 
 	r1.type = tp
 	return pcontext.setResult(r1)
@@ -3014,7 +3427,7 @@ def _doParseString(pcontext:PContext, symbol:SSymbol) -> PContext:
 		# parse string
 		_lst = parser.ast(removeCommentsFromJSON(_string), allowBrackets = pcontext.allowBrackets)
 		# return result as quoted list
-		return pcontext.setResult(SSymbol(lstQuote = _lst))
+		return pcontext.setResult(symbol.newSymbol(lstQuote = _lst))
 	except ValueError as e:
 		pcontext.setError(PError.invalid, str(e), expression = parser.errorExpression)
 		return pcontext
@@ -3040,15 +3453,13 @@ def _doPrint(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	if symbol.type != SType.tList or symbol.length == 1:
 		pcontext.printFunc(pcontext, '')
-		return pcontext.setResult(SSymbol(string = ''))
-	pcontext.printFunc(pcontext, arg := str(pcontext._joinExpression(symbol[1:]).result.value))
-	return pcontext.setResult(SSymbol(string = arg))
+		return pcontext.setResult(symbol.newSymbol(string = ''))
+	pcontext.printFunc(pcontext, arg := str(pcontext._joinExpression(symbol[1:], symbol).result.value))
+	return pcontext.setResult(symbol.newSymbol(string = arg))
 
 
-def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
+def _doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool = True) -> PContext:
 	""" Evaluate one or multiple symbols in a list. This is the explicite function that many
-		evaluations automatically do
-	
 		Example:
 			::
 
@@ -3065,9 +3476,9 @@ def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
 			`PInvalidArgumentError`: In case of an invalid argument or parameter.
 	"""
 
-	# print(f'progn> {symbol} {symbol.len()}')
+	# print(f'progn> {symbol} {len(symbol)}')
 	for i in range(1, symbol.length):	# type:ignore [arg-type]
-		pcontext, result = pcontext.resultFromArgument(symbol, i)
+		pcontext, result = pcontext.resultFromArgument(symbol, i, doEval = doEval)
 		if pcontext.state == PState.returning:
 			return pcontext
 
@@ -3078,16 +3489,17 @@ def _doProgn(pcontext:PContext, symbol:SSymbol) -> PContext:
 			_call = cast(Tuple[List[str], SSymbol], result.value)
 			_arguments = _call[0]
 			_code = _call[1]
+			# print(f'progn> lambda: {_name} {_arguments} {_code}')
 			
 			# Check arguments
 			if len(_arguments) != symbol.length - 2:
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Number of arguments mismatch. Expected: {len(_arguments)}, got: {symbol.length - 2}'))
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Number of arguments mismatch. Expected: {len(_arguments)}, got: {symbol.length - 2}\n{symbol.printHierarchy()}'))
 			
 			# Temporarily add to functions
 			pcontext.functions[_name] = (_arguments, _code)
 
 			# Execute as function
-			pcontext = pcontext._executeFunction(SSymbol(lst = cast(List[SSymbol], symbol.value[1:])), _name)		# type:ignore[index]
+			pcontext = pcontext._executeFunction(symbol.newSymbol(lst = cast(SSymbolsList, symbol.value[1:])), _name)		# type:ignore[index]
 
 			# Remove temp function
 			del pcontext.functions[_name]
@@ -3124,7 +3536,7 @@ def _doQuit(pcontext:PContext, symbol:SSymbol) -> PContext:
 		pcontext.state = PState.terminatedWithResult
 	else:
 		pcontext.state = PState.terminated
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 	raise PQuitRegular(pcontext)
 
 
@@ -3178,7 +3590,63 @@ def _doRandom(pcontext:PContext, symbol:SSymbol) -> PContext:
 	elif symbol.length == 3:
 		pcontext, start = pcontext.valueFromArgument(symbol, 1, SType.tNumber)	# type:ignore [assignment]
 		pcontext, end = pcontext.valueFromArgument(symbol, 2, SType.tNumber)			# type:ignore [assignment]
-	return pcontext.setResult(SSymbol(number = Decimal(random.uniform(float(start), float(end)))))
+	return pcontext.setResult(symbol.newSymbol(number = Decimal(random.uniform(float(start), float(end)))))
+
+
+
+def _doReduce(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Apply a function to each element of a list or multiple lists, accumulating the result.
+
+		Example:
+			::
+
+				(reduce (lambda (x y) (+ x y)) '(1 2 3) '(4 6 7)) -> (5 8 10)
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the function result.
+	"""
+
+	pcontext.assertSymbol(symbol, minLength = 3, maxLength = 4)
+
+	# function
+	pcontext, _function = pcontext.resultFromArgument(symbol, 1, (SType.tLambda, SType.tSymbol, SType.tSymbolQuote))
+
+	# get the list
+	pcontext, _list = pcontext.resultFromArgument(symbol, 2, (SType.tList, SType.tListQuote, SType.tNIL))
+	if _list.type == SType.tNIL:
+		_list = symbol.newSymbol(lst = [])	# type:ignore[union-attr]
+
+	# Get the initial value. If there is one, then add it to the front of list
+	if symbol.length == 4:
+		pcontext, _initial = pcontext.resultFromArgument(symbol, 3)
+		_list = symbol.newSymbol(lst = [ _initial ] + cast(list, _list.value))	# type:ignore[union-attr]
+	
+	# Return the initial value if the list is empty, or NIL if there is no initial value
+	if len(_list) == 0:	# type:ignore[union-attr]
+		return pcontext.setResult(symbol.newSymbol())
+	
+	# The first element of the list determines the type
+	_type = _list[0].type	# type:ignore[union-attr]
+
+	# The initial value is the first element of the list
+	_result = _list[0]
+
+	# apply the function to each element of the list
+	for value in _list[1:]:	# type:ignore[union-attr]
+		
+		# Check the type of the value.
+		if value.type != _type:
+			raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'invalid type in list for value {value} (expected type {_type}, found {value.type}):\n{symbol.printHierarchy()}'))
+
+		# Execute the function/lambda/symbol and store the result for the next iteration	
+		pcontext = pcontext._executeSymbolWithArguments(_function, [ _result, value])
+		_result = pcontext.result
+	return pcontext.setResult(_result)
+
 
 
 def _doRemoveJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3211,7 +3679,7 @@ def _doRemoveJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 		# remove
 		setXPath(_json, _key.strip(), delete = True)
 
-	return pcontext.setResult(SSymbol(jsn = _json))
+	return pcontext.setResult(symbol.newSymbol(jsn = _json))
 
 
 def _doReturn(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3237,7 +3705,7 @@ def _doReturn(pcontext:PContext, symbol:SSymbol) -> PContext:
 		pcontext = pcontext.getArgument(symbol, 1)
 	else:
 		# result is nil
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 	pcontext.state = PState.returning
 	return pcontext
 
@@ -3264,7 +3732,7 @@ def _doReturnFrom(pcontext:PContext, symbol:SSymbol) -> None:
 
 	# get block name
 	if symbol[1].type != SType.tSymbol:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'return-from requires symbol name, got type: {symbol[1].type}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'return-from requires symbol name, got type: {symbol[1].type}\n{symbol.printHierarchy()}'))
 	_name = symbol[1].value
 
 	if symbol.length == 3:
@@ -3272,10 +3740,39 @@ def _doReturnFrom(pcontext:PContext, symbol:SSymbol) -> None:
 		pcontext = pcontext.getArgument(symbol, 2)
 	else:
 		# result is nil
-		pcontext.result = SSymbol()
+		pcontext.result = symbol.newSymbol()
 	
 	# do NOT return but raise an exception
 	raise PReturnFrom(pcontext, _name)
+
+
+
+def _doReverse(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Reverse a list or string.
+	
+		Example:
+			::
+
+				(reverse '(1 2 3)) -> (3 2 1)
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the function result.
+	"""
+	pcontext.assertSymbol(symbol, 2)
+	pcontext, _value = pcontext.resultFromArgument(symbol, 1, (SType.tList, SType.tListQuote, SType.tString, SType.tNIL))
+	match _value.type:
+		case SType.tList | SType.tListQuote:
+			return pcontext.setResult(symbol.newSymbol(lst = list(reversed(cast(list, _value.value)))))
+		case SType.tString:
+			return pcontext.setResult(symbol.newSymbol(string = cast(str, _value[::-1])))
+		case SType.tNIL:
+			return pcontext.setResult(symbol.newSymbol())
+		case _:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid argument type for reverse: {_value.type}\n{symbol.printHierarchy()}'))
 
 
 
@@ -3313,10 +3810,9 @@ def _doRound(pcontext:PContext, symbol:SSymbol) -> PContext:
 	
 	# Round
 	try:
-		return pcontext.setResult(SSymbol(number = round(_number, int(_precision))))
+		return pcontext.setResult(symbol.newSymbol(number = round(_number, int(_precision))))
 	except (InvalidOperation, ValueError) as e:
-		pcontext.setError(PError.invalid, f'Invalid argument: {str(e)}')
-		raise PInvalidArgumentError(pcontext)
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid argument: {str(e)}\n{symbol.printHierarchy()}'))
 
 
 def _doSetq(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3379,11 +3875,11 @@ def _doSetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 			pcontext, _result = pcontext.resultFromArgument(lst, i, (SType.tList, SType.tListQuote))
 			_n = _result.raw()
 			if (_l := len(_n)) != 2:
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid number of arguments: {_l} (must be 2)'))
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid number of arguments: {_l} (must be 2)\n{lst.printHierarchy()}'))
 			_key = _n[0]
 			_value = _n[1]
 			if not setXPath(_json, _key, _value):
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid key for set-json-attribute: {_key}'))
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid key for set-json-attribute: {_key}\n{lst.printHierarchy()}'))
 
 	else:	# length = 4
 		# key
@@ -3393,9 +3889,9 @@ def _doSetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
 		pcontext, _result = pcontext.resultFromArgument(symbol, 3, (SType.tString, SType.tNumber, SType.tBool, SType.tListQuote, SType.tList, SType.tJson))
 		_value = _result.raw()	
 		if not setXPath(_json, _key, _value):
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, 'invalid key for set-json-attribute: {key}'))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid key for set-json-attribute: {_key}\n{symbol.printHierarchy()}'))
 
-	return pcontext.setResult(SSymbol(jsn = _json))
+	return pcontext.setResult(symbol.newSymbol(jsn = _json))
 
 
 def _doSleep(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3427,9 +3923,9 @@ def _doSleep(pcontext:PContext, symbol:SSymbol) -> PContext:
 			pcontext._checkTimeout()
 			time.sleep(0.01)
 	except ValueError as e:
-		raise PNotANumberError(pcontext.setError(PError.notANumber, f'Not a number: {e}'))
+		raise PNotANumberError(pcontext.setError(PError.notANumber, f'Not a number: {e}\n{symbol.printHierarchy()}'))
 	except KeyboardInterrupt:
-		raise PInterruptedError(pcontext.setError(PError.canceled, 'Keyboard interrupt'))
+		raise PInterruptedError(pcontext.setError(PError.canceled, f'Keyboard interrupt\n{symbol.printHierarchy()}'))
 	return pcontext
 
 
@@ -3468,9 +3964,9 @@ def _doSlice(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext, lst = pcontext.resultFromArgument(symbol, 3, (SType.tList, SType.tListQuote, SType.tString))
 	
 	if lst.type == SType.tString:
-		return pcontext.setResult(SSymbol(string = lst[int(start):int(end)]))
+		return pcontext.setResult(symbol.newSymbol(string = lst[int(start):int(end)]))
 	else:	# list
-		return pcontext.setResult(SSymbol(lst = lst[int(start):int(end)]))
+		return pcontext.setResult(symbol.newSymbol(lst = lst[int(start):int(end)]))
 
 
 def _doStringToJson(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3494,9 +3990,9 @@ def _doStringToJson(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.assertSymbol(symbol, 2)
 	_s = (pcontext := pcontext.getArgument(symbol, 1, SType.tString)).result
 	try:
-		return pcontext.setResult(SSymbol(jsnString = cast(str, _s.value)))	# implicite conversion
+		return pcontext.setResult(symbol.newSymbol(jsnString = cast(str, _s.value)))	# implicite conversion
 	except Exception as e:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid JSON: {str(e)}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid JSON: {str(e)}\n{symbol.printHierarchy()}'))
 
 
 def _doToNumber(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3522,9 +4018,9 @@ def _doToNumber(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# string
 	pcontext, _string = pcontext.valueFromArgument(symbol, 1, SType.tString)
 	try:
-		pcontext = pcontext.setResult(SSymbol(number = Decimal(_string)))
+		pcontext = pcontext.setResult(symbol.newSymbol(number = Decimal(_string)))
 	except Exception as e:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable number, is: {_string}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable number, is: {_string}\n{symbol.printHierarchy()}'))
 	return pcontext
 
 
@@ -3552,9 +4048,9 @@ def _doToString(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# anything
 	pcontext, _string = pcontext.valueFromArgument(symbol, 1)
 	try:
-		pcontext = pcontext.setResult(SSymbol(string = str(_string)))
+		pcontext = pcontext.setResult(symbol.newSymbol(string = str(_string)))
 	except Exception as e:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable string, is: {_string}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable string, is: {_string}\n{symbol.printHierarchy()}'))
 	return pcontext
 
 
@@ -3581,9 +4077,9 @@ def _doToSymbol(pcontext:PContext, symbol:SSymbol) -> PContext:
 	# string
 	pcontext, _string = pcontext.valueFromArgument(symbol, 1, SType.tString)
 	try:
-		pcontext = pcontext.setResult(SSymbol(symbol = _string))
+		pcontext = pcontext.setResult(symbol.newSymbol(symbol = _string))
 	except Exception as e:
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable string, is: {_string}'))
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'input for conversion must be a convertable string, is: {_string}\n{symbol.printHierarchy()}'))
 	return pcontext
 
 
@@ -3651,7 +4147,7 @@ def _doURLEncode(pcontext:PContext, symbol:SSymbol) -> PContext:
 
 	# arg
 	pcontext, _url = pcontext.valueFromArgument(symbol, 1, SType.tString)
-	return pcontext.setResult(SSymbol(string = urllib.parse.quote_plus(_url)))
+	return pcontext.setResult(symbol.newSymbol(string = urllib.parse.quote_plus(_url)))
 
 
 def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -3673,7 +4169,7 @@ def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
 			The updated `PContext` object with the operation result, ie the result of the evaluated expression or a return statement in the loop.
 	"""
 	pcontext.assertSymbol(symbol, 3)
-	_lastResult = SSymbol()
+	_lastResult = symbol.newSymbol()
 	while True:
 		
 		# evaluate while expression
@@ -3692,6 +4188,41 @@ def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
 			return pcontext
 
 	return pcontext.setResult(_lastResult)
+
+
+def _doZip(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Zip lists together. 
+	
+		Example:
+			::
+
+				(zip '(1 2 3) '(4 5 6)) -> ((1 4) (2 5) (3 6))
+
+		Args:
+			pcontext: `PContext` object of the running script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object with the operation result.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 2)
+
+	# get the list(s)
+	_lists = []
+	for i in range(1, len(symbol)):
+		pcontext, _list = pcontext.resultFromArgument(symbol, i, (SType.tList, SType.tListQuote, SType.tNIL))
+		_lists.append(_list)
+
+	_result = []
+	# Get the length. The shortest list determines the length.
+	length = min([len(lst) for lst in _lists])	# type:ignore[union-attr]
+
+	# apply the function to each element of the list(s)
+	for i in range(length):
+		# Get the value of each list
+		_result.append(symbol.newSymbol([lst[i] for lst in _lists]))	# type:ignore[union-attr]
+
+	return pcontext.setResult(symbol.newSymbol(lst = _result))
 
 
 _builtinCommands:PSymbolDict = {
@@ -3717,6 +4248,8 @@ _builtinCommands:PSymbolDict = {
 	'**':				lambda p, a : _doOperation(p, a, operator.pow, SType.tNumber),
 	'%':				lambda p, a : _doOperation(p, a, operator.mod, SType.tNumber),
 
+	'all':					_doAll,
+	'any':					_doAny,
 	'argv':					_doArgv,
 	'assert':				_doAssert,
 	'base64-encode':		_doB64Encode,
@@ -3733,6 +4266,7 @@ _builtinCommands:PSymbolDict = {
 	'eval':					_doEval,
 	'evaluate-inline':		_doEvaluateInline,
 	'false':				lambda p, a: _doBoolean(p, a, False),
+	'filter':				_doFilter,
 	'get-json-attribute':	_doGetJSONAttribute,
 	'has-json-attribute':	_doHasJSONAttribute,
 	'if':					_doIf,
@@ -3748,7 +4282,10 @@ _builtinCommands:PSymbolDict = {
 	'log':					_doLog,
 	'lower':				lambda p, a: _doLowerUpper(p, a, True),
 	'log-error':			lambda p, a : _doLog(p, a, isError = True),
+	'map':					_doMap,
 	'match':				_doMatch,
+	'max':					lambda p, a: _doMinMax(p, a, True),
+	'min':					lambda p, a: _doMinMax(p, a, False),
 	'nth':					_doNth,
 	'parse-string':			_doParseString,
 	'print': 				_doPrint,
@@ -3757,9 +4294,11 @@ _builtinCommands:PSymbolDict = {
 	'quit-with-error':		_doError,
 	'quote':				_doQuote,
 	'random':				_doRandom,
+	'reduce':				_doReduce,
 	'remove-json-attribute':_doRemoveJSONAttribute,
 	'return':				_doReturn,
 	'return-from':			_doReturnFrom,
+	'reverse':				_doReverse,
 	'round':				_doRound,
 	'set-json-attribute':	_doSetJSONAttribute,
 	'setq':					_doSetq,
@@ -3774,6 +4313,7 @@ _builtinCommands:PSymbolDict = {
 	'upper':				lambda p, a: _doLowerUpper(p, a, False),
 	'url-encode':			_doURLEncode,
 	'while':				_doWhile,
+	'zip':					_doZip,
 
 	# characters
 	'nl':				lambda p, a: p.setResult(SSymbol(string = '\n')),
