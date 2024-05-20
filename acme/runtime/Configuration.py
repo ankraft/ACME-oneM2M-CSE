@@ -202,7 +202,7 @@ class Configuration(object):
 			Configuration._initDirectory = pathlib.Path(Configuration._argsInitDirectory)
 
 		# The path to the runtime data directory
-		Configuration._baseDirectory = os.getcwd()
+		Configuration._baseDirectory = pathlib.Path(os.getcwd())
 		if Configuration._argsBaseDirectory:	# Use the runtime data directory if given as argument
 			Configuration._baseDirectory = pathlib.Path(Configuration._argsBaseDirectory)
 
@@ -257,7 +257,7 @@ class Configuration(object):
 						}
 					}
 		# Add environment variables to the defaults
-		_defaults.update({ 'DEFAULT': copy(os.environ) })
+		_defaults.update({ 'DEFAULT': {k: v for k,v in os.environ.items()} })
 
 		# Set the defaults
 		config.read_dict(_defaults)

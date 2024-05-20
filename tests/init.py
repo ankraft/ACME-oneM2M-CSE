@@ -710,7 +710,7 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 				return resp['pc'] if 'pc' in resp else None, resp['rsc']
 			else:
 				console.print(response)
-				console.print('.', end='', flush=True)
+				console.print('.', end='')
 				return None
 	except TimeoutError:	# expected
 		console.print('timeout')
@@ -1269,7 +1269,7 @@ noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 
 # Set the TESTHOSTIP to the local IP address if it is not set
-if TESTHOSTIP is None:
+if TESTHOSTIP is None:	# type: ignore[used-before-def]
 	TESTHOSTIP = getIPAddress()
 NOTIFICATIONSERVER = NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
 NOTIFICATIONSERVERW = NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
