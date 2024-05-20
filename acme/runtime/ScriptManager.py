@@ -201,7 +201,7 @@ class ACMEPContext(PContext):
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
-			L.isDebug and L.logDebug(msg, stackOffset=1)
+			L.isDebug and L.logDebug(line, stackOffset=1)
 
 
 	def logError(self, pcontext:PContext, msg:str, exception:Optional[Exception] = None) -> None:
@@ -216,7 +216,7 @@ class ACMEPContext(PContext):
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
-			L.isWarn and L.logWarn(msg, stackOffset=1)
+			L.isWarn and L.logWarn(line, stackOffset=1)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
@@ -1123,13 +1123,14 @@ class ACMEPContext(PContext):
 
 		# script name
 		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		print(symbol)
 
 		# arguments
 		arguments:list[str] = []
 		if symbol.length > 2:
 			for idx in range(2, symbol.length):
 				pcontext, value = pcontext.valueFromArgument(symbol, idx)
-				arguments.append(str(value))
+				arguments.append(value.toString())
 
 		# find script
 		if len(scripts := CSE.script.findScripts(name = name)) == 0:

@@ -23,6 +23,42 @@ Concatenate and return the stringified versions of the symbol arguments.
 
 ---
 
+### all
+
+`(all <boolean>+ | <list of <boolean>+ >)`
+
+The `all` function returns *true* if all of the *boolean* expressions evaluate to *true*. If a *list of boolean* expressions is provided then the function returns *true* if all of the expressions in the list evaluate to *true*.
+
+!!! see-also "See also"
+	[any](#any)
+
+```lisp title="Examples"
+(all (< 1 2) (< 2 3))    ;; Returns true
+(all (< 1 2) (< 2 1))    ;; Returns false
+(all ((< 1 2) (< 2 3)))  ;; Returns true
+```
+
+---
+
+### any
+
+`(any <boolean>+ | <list of <boolean>+ >)`
+
+The `any` function returns *true* if at least one of the *boolean* expression evaluates to *true*. If a *list of boolean* expressions is provided then the function returns *true* if at least one of the expressions in the list evaluates to *true*.
+
+!!! see-also "See also"
+	[all](#all)
+
+```lisp title="Examples"
+(any (< 1 2) (< 2 1))    ;; Returns true
+(any (< 1 2) (< 2 3))    ;; Returns true
+(any (< 2 1) (< 3 2))    ;; Returns false
+(any ((< 1 2) (< 2 1)))  ;; Returns true
+```
+
+
+---
+
 ### argv
 
 `(argv [<n:integer>]*)`	
@@ -339,6 +375,21 @@ With this function one can disable or enable the [evaluation of s-expressions in
 
 ---
 
+### filter
+
+`(filter <function> <list>)`
+
+The `filter` function filters a list based on a *function*. The *function* is applied to each element of the list, and it must return a boolean value. If it returns *true* then the element is included in the result list, otherwise the element is excluded.
+
+!!! see-also "See also"
+	[map](#map), [reduce](#reduce)
+
+```lisp title="Example"
+(filter (lambda (x) (< x 3)) '(1 2 3 4 5))  ;; Returns (1 2)
+```
+
+---
+
 ### get-json-attribute
 
 `(get-json-attribute <JSON> <key:string>)`
@@ -631,6 +682,28 @@ The `lower` function returns a lower case copy of the input string.
 
 ---
 
+### map
+
+`(map <function> <list>+)`
+
+The `map` function iterates over one or more lists and applies a *function* to each element of the *list*(s). The function must take as many arguments as there are lists provided. The shortest *list* determines the number of iterations.
+
+The *function* could be a [lambda](#lambda), built-in or [user-defined](#defun) function.
+
+!!! note
+	The `map` function's arguments need to be quoted when used directly.
+
+!!! see-also "See also"
+	[reduce](#reduce), [zip](#zip)
+
+```lisp title="Examples"
+(map (lambda (x) (+ x 1)) '(1 2 3))  ;; Returns (2 3 4)
+(map '+ '(1 2 3) '(4 5 6))           ;; Returns (5 7 9)
+```
+
+
+---
+
 ### match
 
 `(match <string> <regex:string>`)
@@ -649,6 +722,41 @@ The `match` function determines whether a string matches a regular expression *r
 (match "aa" "a?")  ;; Returns true
 (match "aa" "b*")  ;; Returns false
 ```
+
+---
+
+### max
+
+`(max <list>+ | <any value>+ )`
+
+The `max` function returns the maximum value of a *list* of any comparable values. The function can take a *list* of values or any number of values as arguments.
+
+```lisp title="Examples"
+(max 1 2 3)              ;; Returns 3
+(max '(1 2 3))           ;; Returns 3
+(max '(1 2 3) '(4 5 6))  ;; Returns (4 5 6)
+(max 1 2 3 4 5 6)        ;; Returns 6
+```
+
+!!! see-also "See also"
+	[min](#min)
+
+
+---
+
+### min
+
+`(min <list>+ | <any value>+ )`
+
+The `min` function returns the minimum value of a *list* of any comparable values. The function can take a *list* of values or any number of values as arguments.
+
+```lisp title="Examples"
+(min 1 2 3)              ;; Returns 1
+(min '(1 2 3))           ;; Returns 1
+(min '(1 2 3) '(4 5 6))  ;; Returns (1 2 3)
+(min 1 2 3 4 5 6)        ;; Returns 1
+```
+
 
 ---
 
@@ -799,6 +907,29 @@ The default for the range, when no argument is given, is [0.0, 1.0]. If one numb
 
 ---
 
+### reduce
+
+`(reduce <function> <list> [<initial value>])`
+
+The `reduce` function applies a function to all elements of a list, starting with an optional initial value. The *function* is applied to the first two elements of the *list*, then to the result of the first application and the third element, and so on. If no *initial* value is provided, the first element of the list is used as the initial value, otherwise the *initial value* is used as the first argument.
+
+The &lt;function&gt; could be a [lambda](#lambda), built-in or [user-defined](#defun) function. The function must take two arguments.
+
+The optional *initial value* or the first element of the *list*, if no *initial value* is provided, determines the type for all further calculations. If the *initial value* is a number then the result is a number, if it is a string then the result is a string, and so on.	All elements of the *list* must be of that type, otherwise the function will fail.
+
+!!! note
+	The `reduce` function's arguments need to be quoted when used directly.
+
+!!! see-also "See also"
+	[map](#map), [zip](#zip)
+
+```lisp title="Examples"
+(reduce (lambda (x y) (+ x y)) '(1 2 3 4 5))  ;; Returns 15
+(reduce '+ '(1 2 3 4 5) 10)                   ;; Returns 25
+```
+
+---
+
 ### remove-json-attribute
 
 `(remove-json-attribute <JSON> <key:string>+)`
@@ -846,6 +977,19 @@ The function may return a symbol, or *nil*.
 
 ```lisp title="Examples"
 (block "myBlock" 1 (return-from "myBlock" 2) 3)  ;; Returns 2
+```
+
+---
+
+### reverse
+
+`(reverse <list> | <string>)`
+
+The `reverse` function returns a reversed copy of a list or a string.
+
+```lisp title="Examples"
+(reverse '(1 2 3))    ;; Returns (3 2 1)
+(reverse "abc")       ;; Returns "cba"
 ```
 
 ---
@@ -1085,6 +1229,23 @@ The `while` function returns the result of the last evaluated s-expression in th
 (while (< i 10)  ;; Loop 10 times
 	((print i)   ;; Print to the console
 	(inc i)))    ;; Increment loop variable
+```
+
+---
+
+### zip
+
+`(zip <list>+)`
+
+The `zip` function takes a *list* of lists and returns a list of lists where the first element of each input list is combined into a new list, the second element of each input list is combined into a new list, and so on. The function stops when the shortest list is exhausted.
+
+!!! see-also "See also"
+	[map](#map), [reduce](#reduce)
+
+```lisp title="Examples"
+(zip '(1 2 3) '(4 5 6))  ;; Returns ((1 4) (2 5) (3 6))
+(zip '(1 2 3) '(4 5))    ;; Returns ((1 4) (2 5))
+(zip '(1 2 3))           ;; Returns ((1) (2) (3))
 ```
 
 
@@ -1468,12 +1629,13 @@ The `import-raw` function creates a resource in the CSE without using the normal
 
 This function is primarily used when importing initial resources, and when restoring resources during the [startup](ACMEScript-metatags.md#init) of the CSE.
 
-`resource` is a valid oneM2M resource. All necessary attributes must be present in that resource, including the *parentID* ( *pi* ) attribute that determines the location in the resource tree.
+`resource` is a valid oneM2M resource. All necessary attributes must be present in that resource, including the *parentID* (*pi*) attribute that determines the location in the resource tree.
 
 The function returns a list:
 
 `(<response status:number> <resource:JSON>)`
-- *response status* is the oneM2M Response Status Code (RSC) for the request
+
+- *response status* is the oneM2M Response Status Code (*RSC*) for the request
 - *resource* is the response content (usually *nil* if successful)
 
 ```lisp title="Example"
