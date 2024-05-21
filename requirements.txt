@@ -69,7 +69,7 @@ python3-dtls==1.3.0
     # via acmecse-test (setup.py)
 rdflib==7.0.0
     # via acmecse-test (setup.py)
-requests==2.31.0
+requests==2.32.0
     # via acmecse-test (setup.py)
 rich==13.7.1
     # via
