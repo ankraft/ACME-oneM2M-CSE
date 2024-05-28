@@ -190,6 +190,7 @@ nav:
   - 'Help': 
     - 'FAQ': 'help/FAQ.md'
     - 'Notebook Tutorial': 'help/NotebookTutorial.md'
+    - 'oneM2M Recipes': 'help/oneM2MRecipes.md'
     - 'Contributing': 'help/Contributing.md'
 #  - 'Scripting':
 
