@@ -11,12 +11,14 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
-- [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `reduce`, `reverse` to the script interpreter.
+- [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
+- [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
 
 ### Experimental
 
 ### Changed
 - [SCRIPTS] Improved the script interpreter's error reporting. The error messages are now more informative and include the call stack.
+- [TESTS] Simplified internal test case registration.
 
 ### Fixed
 - [TEXTUI] Added vertical scrolling for some views.

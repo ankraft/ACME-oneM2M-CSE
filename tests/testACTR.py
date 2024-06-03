@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
 from acme.etc.Types import EvalMode, Operation, EvalCriteriaOperator
 from init import *
@@ -1127,61 +1126,66 @@ class TestACTR(unittest.TestCase):
 # TODO test action priorities
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestACTR, [
+
+		# basic tests
+		'test_createACTRWrongORCFail',
+		'test_createACTRNoAccessORCFail',
+		'test_createACTRNoAccessSRIFail',
+		'test_createACTRWrongEVCAttributeFail',
+		'test_createACTRInvalidAPVFail',
+		'test_createACTRInvalidFromFail',
+		'test_createACTRInvalidEVMRangeFail',
+		'test_createACTRInvalidEVMandECP1Fail',
+		'test_createACTRInvalidEVMandECP2Fail',
+		'test_createACTRwithInvalidSBJTFail',
+		'test_createACTRwithInvalidTHLDFail',
+		'test_createACTRwithInvalidOPTRFail',
+
+		# create tests
+		'test_createACTRnoSRI',
+		'test_createACTRwithSRI',
+		'test_createACTRwithSRIOnce',
+		'test_createACTRwithSRIPeriodic',
+		'test_createACTRwithSRIContinuous',
+
+		# update tests
+		'test_updateACTROnceECPFail',
+		'test_updateACTRContinuousWithOnceFail',
+		'test_updateACTRonceWrongSRIFail',
+		'test_updateACTRonceWrongORCFail',
+		'test_updateACTRonceWrongSBJTFail',
+		'test_updateACTRonceSRIWrongSBJTFail',
+		'test_updateACTRonceNewSRIOldWrongSBJTFail',
+		'test_updateACTRonceNewEVCWrongTHLDFail',
+		'test_updateACTRonceORCNullFail',
+		'test_updateACTRConceWithOnce',
+		'test_updateACTRConceWithPeriodic',
+		'test_updateACTRConceWithContinuous',
+		'test_updateACTRConceWithOff',
+
+		# delete tests
+		'test_deleteACTRnoSRI',
+		'test_deleteACTRwithSRI',
+		'test_deleteACTRwithSRIOnce',
+		'test_deleteACTRwithSRIPeriodic',
+		'test_deleteACTRwithSRIContinuous',
+
+		# parent subject
+		'test_testACTROnce',
+		'test_testACTRParentOnce',
+		'test_testACTRContinuous',
+		'test_testACTRPeriodic',
 		
-	# basic tests
-	addTest(suite, TestACTR('test_createACTRWrongORCFail'))
-	addTest(suite, TestACTR('test_createACTRNoAccessORCFail'))
-	addTest(suite, TestACTR('test_createACTRNoAccessSRIFail'))
-	addTest(suite, TestACTR('test_createACTRWrongEVCAttributeFail'))
-	addTest(suite, TestACTR('test_createACTRInvalidAPVFail'))
-	addTest(suite, TestACTR('test_createACTRInvalidFromFail'))
-	addTest(suite, TestACTR('test_createACTRInvalidEVMRangeFail'))
-	addTest(suite, TestACTR('test_createACTRInvalidEVMandECP1Fail'))
-	addTest(suite, TestACTR('test_createACTRInvalidEVMandECP2Fail'))
-	addTest(suite, TestACTR('test_createACTRwithInvalidSBJTFail'))
-	addTest(suite, TestACTR('test_createACTRwithInvalidTHLDFail'))
-	addTest(suite, TestACTR('test_createACTRwithInvalidOPTRFail'))
+		# 'test_createCIN'
+	
+	])
 
-	# create tests
-	addTest(suite, TestACTR('test_createACTRnoSRI'))
-	addTest(suite, TestACTR('test_createACTRwithSRI'))
-	addTest(suite, TestACTR('test_createACTRwithSRIOnce'))
-	addTest(suite, TestACTR('test_createACTRwithSRIPeriodic'))
-	addTest(suite, TestACTR('test_createACTRwithSRIContinuous'))
-
-	# update tests
-	addTest(suite, TestACTR('test_updateACTROnceECPFail'))
-	addTest(suite, TestACTR('test_updateACTRContinuousWithOnceFail'))
-	addTest(suite, TestACTR('test_updateACTRonceWrongSRIFail'))
-	addTest(suite, TestACTR('test_updateACTRonceWrongORCFail'))
-	addTest(suite, TestACTR('test_updateACTRonceWrongSBJTFail'))
-	addTest(suite, TestACTR('test_updateACTRonceSRIWrongSBJTFail'))
-	addTest(suite, TestACTR('test_updateACTRonceNewSRIOldWrongSBJTFail'))
-	addTest(suite, TestACTR('test_updateACTRonceNewEVCWrongTHLDFail'))
-	addTest(suite, TestACTR('test_updateACTRonceORCNullFail'))
-	addTest(suite, TestACTR('test_updateACTRConceWithOnce'))
-	addTest(suite, TestACTR('test_updateACTRConceWithPeriodic'))
-	addTest(suite, TestACTR('test_updateACTRConceWithContinuous'))
-	addTest(suite, TestACTR('test_updateACTRConceWithOff'))
-
-
-	# delete tests
-	addTest(suite, TestACTR('test_deleteACTRnoSRI'))
-	addTest(suite, TestACTR('test_deleteACTRwithSRI'))
-	addTest(suite, TestACTR('test_deleteACTRwithSRIOnce'))
-	addTest(suite, TestACTR('test_deleteACTRwithSRIPeriodic'))
-	addTest(suite, TestACTR('test_deleteACTRwithSRIContinuous'))
-
-	# parent subject
-	addTest(suite, TestACTR('test_testACTROnce'))
-	addTest(suite, TestACTR('test_testACTRParentOnce'))
-	addTest(suite, TestACTR('test_testACTRContinuous'))
-	addTest(suite, TestACTR('test_testACTRPeriodic'))
-
-	#addTest(suite, TestACTR('test_createCIN'))
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

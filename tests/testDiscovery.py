@@ -12,7 +12,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple, Dict
 from acme.etc.Types import ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.Types import DesiredIdentifierResultType, FilterOperation
@@ -929,73 +928,79 @@ class TestDiscovery(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+		# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestDiscovery, [
 		
-	addTest(suite, TestDiscovery('test_retrieveUnknownResource'))
-	addTest(suite, TestDiscovery('test_discoverUnknownResource'))
-	addTest(suite, TestDiscovery('test_discoverUnknownAttribute'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithWrongSZB'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAERCN6'))
-	addTest(suite, TestDiscovery('test_discoveryCNTunderAERCN11'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN1'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN4'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN5'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN8'))
-	addTest(suite, TestDiscovery('test_discoverCNTunderAEWrongRCN9'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN6'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN1'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN4'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN5'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAERCN8'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAEWrongRCN9'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAEWrongRCN11'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderCSE'))
-	addTest(suite, TestDiscovery('test_retrieveCINunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCINbyLBLunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty'))
-	addTest(suite, TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty2'))
-	addTest(suite, TestDiscovery('test_retrieveCNTorCINunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNTorCINunderAE2'))
-	addTest(suite, TestDiscovery('test_retrieveCINandLBLunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCINandLBLunderAE2'))
-	addTest(suite, TestDiscovery('test_retrieveCNTorLBLunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveWithCRBunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveWithCRAunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithCTYunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithSZBunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithSZAunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithMSunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithUSunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithEXBunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNIwithEXAunderAE'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAEStructured'))
-	addTest(suite, TestDiscovery('test_retrieveCNTunderAEUnstructured'))
-	addTest(suite, TestDiscovery('test_rcn4WithDifferentFUs'))
-	addTest(suite, TestDiscovery('test_appendArp'))
-	addTest(suite, TestDiscovery('test_createCNTwithRCN9'))
-	addTest(suite, TestDiscovery('test_updateCNTwithRCN9'))
-	addTest(suite, TestDiscovery('test_createCNTwithRCN0'))
-	addTest(suite, TestDiscovery('test_updateCNTwithWrongRCN2'))
-	addTest(suite, TestDiscovery('test_retrieveWithWrongArgument'))
-	addTest(suite, TestDiscovery('test_retrieveWithWrongFU'))
-	addTest(suite, TestDiscovery('test_retrieveWithWrongDRT'))
-	addTest(suite, TestDiscovery('test_retrieveWithWrongFO'))
-	addTest(suite, TestDiscovery('test_retrieveMgmtObjsRCN8'))
-	addTest(suite, TestDiscovery('test_retrieveCINmatchLabel'))
-	addTest(suite, TestDiscovery('test_createCNTwithRCN2'))
-	addTest(suite, TestDiscovery('test_createCNTwithRCN3'))
+		'test_retrieveUnknownResource',
+		'test_discoverUnknownResource',
+		'test_discoverUnknownAttribute',
+		'test_retrieveCNIwithWrongSZB',
+		'test_discoverCNTunderAERCN6',
+		'test_discoveryCNTunderAERCN11',
+		'test_discoverCNTunderAEWrongRCN1',
+		'test_discoverCNTunderAEWrongRCN4',
+		'test_discoverCNTunderAEWrongRCN5',
+		'test_discoverCNTunderAEWrongRCN8',
+		'test_discoverCNTunderAEWrongRCN9',
+		'test_retrieveCNTunderAERCN6',
+		'test_retrieveCNTunderAERCN1',
+		'test_retrieveCNTunderAERCN4',
+		'test_retrieveCNTunderAERCN5',
+		'test_retrieveCNTunderAERCN8',
+		'test_retrieveCNTunderAEWrongRCN9',
+		'test_retrieveCNTunderAEWrongRCN11',
+		'test_retrieveCNTunderCSE',
+		'test_retrieveCINunderAE',
+		'test_retrieveCINbyLBLunderAE',
+		'test_retrieveCNTbyCNIunderAE',
+		'test_retrieveCNTbyCNIunderAEEmpty',
+		'test_retrieveCNTbyCNIunderAEEmpty2',
+		'test_retrieveCNTorCINunderAE',
+		'test_retrieveCNTorCINunderAE2',
+		'test_retrieveCINandLBLunderAE',
+		'test_retrieveCINandLBLunderAE2',
+		'test_retrieveCNTorLBLunderAE',
+		'test_retrieveWithCRBunderAE',
+		'test_retrieveWithCRAunderAE',
+		'test_retrieveCNIwithCTYunderAE',
+		'test_retrieveCNIwithSZBunderAE',
+		'test_retrieveCNIwithSZAunderAE',
+		'test_retrieveCNIwithMSunderAE',
+		'test_retrieveCNIwithUSunderAE',
+		'test_retrieveCNIwithEXBunderAE',
+		'test_retrieveCNIwithEXAunderAE',
+		'test_retrieveCNTunderAEStructured',
+		'test_retrieveCNTunderAEUnstructured',
+		'test_rcn4WithDifferentFUs',
+		'test_appendArp',
+		'test_createCNTwithRCN9',
+		'test_updateCNTwithRCN9',
+		'test_createCNTwithRCN0',
+		'test_updateCNTwithWrongRCN2',
+		'test_retrieveWithWrongArgument',
+		'test_retrieveWithWrongFU',
+		'test_retrieveWithWrongDRT',
+		'test_retrieveWithWrongFO',
+		'test_retrieveMgmtObjsRCN8',
+		'test_retrieveCINmatchLabel',
+		'test_createCNTwithRCN2',
+		'test_createCNTwithRCN3',
 
-	# Retrieve under CNT and expect empty results
-	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN8'))
-	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN6'))
-	addTest(suite, TestDiscovery('test_retrieveUnderCNTRCN5'))
+		# Retrieve under CNT and expect empty results
+		'test_retrieveUnderCNTRCN8',
+		'test_retrieveUnderCNTRCN6',
+		'test_retrieveUnderCNTRCN5',
 
-	# Retrieve Permissions
-	addTest(suite, TestDiscovery('test_updateCNTwithRCN12Fail'))
-	# TODO addTest(suite, TestDiscovery('test_retrieveCNTwithRCN12'))
+		# Retrieve Permissions
+		'test_updateCNTwithRCN12Fail',
+		# TODO 'test_retrieveCNTwithRCN12'
 
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

@@ -14,7 +14,6 @@ from init import *
 from acme.etc.Types import CSEStatus
 from acme.etc.Types import ResponseStatusCode as RC
 from acme.etc.Constants import Constants as C
-from typing import Tuple
 
 
 class TestUpperTester(unittest.TestCase):
@@ -121,16 +120,21 @@ class TestUpperTester(unittest.TestCase):
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
-	suite = unittest.TestSuite()
-	
-	addTest(suite, TestUpperTester('test_checkStatus'))
-	addTest(suite, TestUpperTester('test_performReset'))
-	addTest(suite, TestUpperTester('test_enableShortRequestExpiration'))
-	addTest(suite, TestUpperTester('test_disableShortRequestExpiration'))
-	addTest(suite, TestUpperTester('test_enableShortResourceExpiration'))
-	addTest(suite, TestUpperTester('test_disableShortResourceExpiration'))
+def run(testFailFast:bool) -> TestResult:
 
+	# Assign tests
+	suite = unittest.TestSuite()
+	addTests(suite, TestUpperTester, [
+	
+		'test_checkStatus',
+		'test_performReset',
+		'test_enableShortRequestExpiration',
+		'test_disableShortRequestExpiration',
+		'test_enableShortResourceExpiration',
+		'test_disableShortResourceExpiration',
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

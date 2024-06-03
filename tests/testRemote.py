@@ -11,7 +11,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -214,17 +213,21 @@ class TestRemote(unittest.TestCase):
 
 # TODO Transfer requests
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-			
-	addTest(suite, TestRemote('test_retrieveLocalCSR'))
-	addTest(suite, TestRemote('test_retrieveRemoteCSR'))
-	addTest(suite, TestRemote('test_createCSRmissingCSI'))
-	addTest(suite, TestRemote('test_createCSRmissingCB'))
-	addTest(suite, TestRemote('test_createCSRwrongCSI'))
-	addTest(suite, TestRemote('test_createCSRnoCsi'))
-	addTest(suite, TestRemote('test_createCSRsameAsAE'))
+	addTests(suite, TestRemote, [
+		'test_retrieveLocalCSR',
+		'test_retrieveRemoteCSR',
+		'test_createCSRmissingCSI',
+		'test_createCSRmissingCB',
+		'test_createCSRwrongCSI',
+		'test_createCSRnoCsi',
+		'test_createCSRsameAsAE',
+	])
 	
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

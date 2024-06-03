@@ -10,7 +10,6 @@
 import unittest, sys, base64, urllib.parse
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.Types import ResultContentType as RCN, Permission
 from init import *
@@ -296,34 +295,40 @@ class TestSMD(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-	
-	# General attribute test cases
-	addTest(suite, TestSMD('test_createSMDdcrpIRIFail'))
-	addTest(suite, TestSMD('test_createSMDdspNotBase64Fail'))
+	addTests(suite, TestSMD, [
 
-	# Create tests
-	addTest(suite, TestSMD('test_createSMDdspBase64'))
-	addTest(suite, TestSMD('test_deleteSMD'))
-	addTest(suite, TestSMD('test_createSMDunderACPFail'))
+		# General attribute test cases
+		'test_createSMDdcrpIRIFail',
+		'test_createSMDdspNotBase64Fail',
 
-	# Update tests
-	addTest(suite, TestSMD('test_createSMDdspBase64'))
-	addTest(suite, TestSMD('test_updateSMDwithSOEandDSPFail'))
-	addTest(suite, TestSMD('test_updateSMDwithVLDEtrue'))
-	addTest(suite, TestSMD('test_updateSMDwithVLDEfalse'))
+		# Create tests
+		'test_createSMDdspBase64',
+		'test_deleteSMD',
+		'test_createSMDunderACPFail',
 
-	# Semantic query tests
-	addTest(suite, TestSMD('test_semanticQueryOnlyRCNFail'))
-	addTest(suite, TestSMD('test_semanticQueryOnlySQIFail'))
-	addTest(suite, TestSMD('test_semanticQueryOnlySMF'))
-	addTest(suite, TestSMD('test_semanticQueryAsDiscoveryFail'))
-	addTest(suite, TestSMD('test_semanticQuery'))
+		# Update tests
+		'test_createSMDdspBase64',
+		'test_updateSMDwithSOEandDSPFail',
+		'test_updateSMDwithVLDEtrue',
+		'test_updateSMDwithVLDEfalse',
 
+		# Semantic query tests
+		'test_semanticQueryOnlyRCNFail',
+		'test_semanticQueryOnlySQIFail',
+		'test_semanticQueryOnlySMF',
+		'test_semanticQueryAsDiscoveryFail',
+		'test_semanticQuery',
+	])
+
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

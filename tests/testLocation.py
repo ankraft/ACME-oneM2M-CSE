@@ -10,9 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
-from acme.etc.Types import NotificationEventType, NotificationEventType as NET
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 		
 
@@ -1495,104 +1493,111 @@ class TestLocation(unittest.TestCase):
 	#########################################################################
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
 	suite = unittest.TestSuite()
 
-	# basic tests
-	addTest(suite, TestLocation('test_createContainerWrongLocFail'))
+		# Assign tests
+	suite = unittest.TestSuite()
+	addTests(suite, TestLocation, [
 
-	# Point
-	addTest(suite, TestLocation('test_createContainerLocWrongAttributesFail'))
-	addTest(suite, TestLocation('test_createContainerLocPointIntCoordinatesFail'))
-	addTest(suite, TestLocation('test_createContainerLocPointWrongCountFail'))
-	addTest(suite, TestLocation('test_createContainerLocPoint'))
+		# basic tests
+		'test_createContainerWrongLocFail',
 
-	# LineString
-	addTest(suite, TestLocation('test_createContainerLocLineStringWrongCountFail'))
-	addTest(suite, TestLocation('test_createContainerLocLineString'))
+		# Point
+		'test_createContainerLocWrongAttributesFail',
+		'test_createContainerLocPointIntCoordinatesFail',
+		'test_createContainerLocPointWrongCountFail',
+		'test_createContainerLocPoint',
 
-	# Polygon
-	addTest(suite, TestLocation('test_createContainerLocPolygonWrongCountFail'))
-	addTest(suite, TestLocation('test_createContainerLocPolygonWrongFirstLastCoordinateFail'))
-	addTest(suite, TestLocation('test_createContainerLocPolygon'))
+		# LineString
+		'test_createContainerLocLineStringWrongCountFail',
+		'test_createContainerLocLineString',
 
-	# MultiPoint
-	addTest(suite, TestLocation('test_createContainerLocMultiPointWrongFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiPointWrongCountFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiPoint'))
+		# Polygon
+		'test_createContainerLocPolygonWrongCountFail',
+		'test_createContainerLocPolygonWrongFirstLastCoordinateFail',
+		'test_createContainerLocPolygon',
 
-	# MultiLineString
-	addTest(suite, TestLocation('test_createContainerLocMultiLineStringWrongFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiLineString2WrongFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiLineString'))
+		# MultiPoint
+		'test_createContainerLocMultiPointWrongFail',
+		'test_createContainerLocMultiPointWrongCountFail',
+		'test_createContainerLocMultiPoint',
 
-	# MultiPolygon
-	addTest(suite, TestLocation('test_createContainerLocMultiPolygonWrongFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiPolygonWrongFirstLastCoordinateFail'))
-	addTest(suite, TestLocation('test_createContainerLocMultiPolygon'))
+		# MultiLineString
+		'test_createContainerLocMultiLineStringWrongFail',
+		'test_createContainerLocMultiLineString2WrongFail',
+		'test_createContainerLocMultiLineString',
 
-	# geo-query
-	addTest(suite, TestLocation('test_geoQueryGmtyOnlyFail'))
-	addTest(suite, TestLocation('test_geoQueryGeomOnlyFail'))
-	addTest(suite, TestLocation('test_geoQueryGsfOnlyFail'))
-	addTest(suite, TestLocation('test_geoQueryGeomWrongFail'))
+		# MultiPolygon
+		'test_createContainerLocMultiPolygonWrongFail',
+		'test_createContainerLocMultiPolygonWrongFirstLastCoordinateFail',
+		'test_createContainerLocMultiPolygon',
 
-	addTest(suite, TestLocation('test_geoQueryPointWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPointOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryPointWithinPoint'))
-	addTest(suite, TestLocation('test_geoQueryPointContainsPoint'))
-	addTest(suite, TestLocation('test_geoQueryPointContainsPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsPoint'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsPointFail'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsPolygonFail'))
+		# geo-query
+		'test_geoQueryGmtyOnlyFail',
+		'test_geoQueryGeomOnlyFail',
+		'test_geoQueryGsfOnlyFail',
+		'test_geoQueryGeomWrongFail',
+
+		'test_geoQueryPointWithinPolygon',
+		'test_geoQueryPointOutsidePolygon',
+		'test_geoQueryPointWithinPoint',
+		'test_geoQueryPointContainsPoint',
+		'test_geoQueryPointContainsPolygonFail',
+		'test_geoQueryPointIntersectsPoint',
+		'test_geoQueryPointIntersectsPointFail',
+		'test_geoQueryPointIntersectsPolygon',
+		'test_geoQueryPointIntersectsPolygonFail',
 	
-	addTest(suite, TestLocation('test_geoQueryLineStringWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryLineStringOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryPointWithinLineString1'))
-	addTest(suite, TestLocation('test_geoQueryPointWithinLineString2'))
-	addTest(suite, TestLocation('test_geoQueryLineStringContainsLineString'))
-	addTest(suite, TestLocation('test_geoQueryLineStringContainsPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsLineString'))
-	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsLineStringFail'))
+		'test_geoQueryLineStringWithinPolygon',
+		'test_geoQueryLineStringOutsidePolygon',
+		'test_geoQueryPointWithinLineString1',
+		'test_geoQueryPointWithinLineString2',
+		'test_geoQueryLineStringContainsLineString',
+		'test_geoQueryLineStringContainsPolygonFail',
+		'test_geoQueryLineStringIntersectsLineString',
+		'test_geoQueryLineStringIntersectsLineStringFail',
 	
-	addTest(suite, TestLocation('test_geoQueryPolygonWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPolygonOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryPolygonPartlyWithinPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryPointContainsPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryPolygonContainsPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPolygonContainsPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsPolygonFail'))
+		'test_geoQueryPolygonWithinPolygon',
+		'test_geoQueryPolygonOutsidePolygon',
+		'test_geoQueryPolygonPartlyWithinPolygonFail',
+		'test_geoQueryPointContainsPolygonFail',
+		'test_geoQueryPolygonContainsPolygon',
+		'test_geoQueryPolygonContainsPolygonFail',
+		'test_geoQueryPolygonIntersectsPolygon',
+		'test_geoQueryPolygonIntersectsPolygonFail',
 
-	addTest(suite, TestLocation('test_geoQueryMultiPointWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointOutsidePolygonWrongGmtyFail'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointContainsPoint'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointContainsPointFail'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPoint'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPointFail'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointIntersectsMultiPoint'))
-	addTest(suite, TestLocation('test_geoQueryMultiPointIntersectsMultiPointFail'))
+		'test_geoQueryMultiPointWithinPolygon',
+		'test_geoQueryMultiPointOutsidePolygon',
+		'test_geoQueryMultiPointOutsidePolygonWrongGmtyFail',
+		'test_geoQueryMultiPointContainsPoint',
+		'test_geoQueryMultiPointContainsPointFail',
+		'test_geoQueryPointIntersectsMultiPoint',
+		'test_geoQueryPointIntersectsMultiPointFail',
+		'test_geoQueryMultiPointIntersectsMultiPoint',
+		'test_geoQueryMultiPointIntersectsMultiPointFail',
 	
-	addTest(suite, TestLocation('test_geoQueryMultiLinestringWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiLinestringOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiLineContainsPoint'))
-	addTest(suite, TestLocation('test_geoQueryMultiLineContainsPointFail'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiLine'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiLineFail'))
-	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsMultiLine'))
-	addTest(suite, TestLocation('test_geoQueryLineStringIntersectsMultiLineFail'))
+		'test_geoQueryMultiLinestringWithinPolygon',
+		'test_geoQueryMultiLinestringOutsidePolygon',
+		'test_geoQueryMultiLineContainsPoint',
+		'test_geoQueryMultiLineContainsPointFail',
+		'test_geoQueryPointIntersectsMultiLine',
+		'test_geoQueryPointIntersectsMultiLineFail',
+		'test_geoQueryLineStringIntersectsMultiLine',
+		'test_geoQueryLineStringIntersectsMultiLineFail',
 
-	addTest(suite, TestLocation('test_geoQueryMultiPolygonWithinPolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiPolygonOutsidePolygon'))
-	addTest(suite, TestLocation('test_geoQueryMultiPolygonContainsPoint'))
-	addTest(suite, TestLocation('test_geoQueryMultiPolygonContainsPointFail'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPointIntersectsMultiPolygonFail'))
-	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsMultiPolygon'))
-	addTest(suite, TestLocation('test_geoQueryPolygonIntersectsMultiPolygonFail'))
+		'test_geoQueryMultiPolygonWithinPolygon',
+		'test_geoQueryMultiPolygonOutsidePolygon',
+		'test_geoQueryMultiPolygonContainsPoint',
+		'test_geoQueryMultiPolygonContainsPointFail',
+		'test_geoQueryPointIntersectsMultiPolygon',
+		'test_geoQueryPointIntersectsMultiPolygonFail',
+		'test_geoQueryPolygonIntersectsMultiPolygon',
+		'test_geoQueryPolygonIntersectsMultiPolygonFail',
 
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 

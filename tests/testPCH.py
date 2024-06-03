@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
 from init import *
 
@@ -223,32 +222,37 @@ class TestPCH(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	# basic tests
-	addTest(suite, TestPCH('test_createPCHwithWrongOriginatorFail'))
-	addTest(suite, TestPCH('test_createPCH'))
-	addTest(suite, TestPCH('test_createSecondPCHFail'))
-	addTest(suite, TestPCH('test_createPCHunderCSEBaseFail'))
-	addTest(suite, TestPCH('test_retrievePCH'))
-	addTest(suite, TestPCH('test_retrievePCHwithWrongOriginatorFail'))
-	addTest(suite, TestPCH('test_retrievePCHWithAE2Fail'))
-	addTest(suite, TestPCH('test_attributesPCH'))
+	addTests(suite, TestPCH, [
 
-	addTest(suite, TestPCH('test_setAggreagstionState'))
-	addTest(suite, TestPCH('test_getAggreagstionState'))
+		# basic tests
+		'test_createPCHwithWrongOriginatorFail',
+		'test_createPCH',
+		'test_createSecondPCHFail',
+		'test_createPCHunderCSEBaseFail',
+		'test_retrievePCH',
+		'test_retrievePCHwithWrongOriginatorFail',
+		'test_retrievePCHWithAE2Fail',
+		'test_attributesPCH',
 
-	# delete tests
-	addTest(suite, TestPCH('test_deletePCHwrongOriginatorFail'))
-	addTest(suite, TestPCH('test_deletePCH'))
+		'test_setAggreagstionState',
+		'test_getAggreagstionState',
 
-	addTest(suite, TestPCH('test_retrievePCUAfterDeleteFail'))
+		# delete tests
+		'test_deletePCHwrongOriginatorFail',
+		'test_deletePCH',
 
+		'test_retrievePCUAfterDeleteFail',
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

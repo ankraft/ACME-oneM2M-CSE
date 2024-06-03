@@ -71,6 +71,7 @@ if __name__ == '__main__':
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load test suites')
 	parser.add_argument('--verbose-requests', '-v', action='store_true', dest='verboseRequests', default=False, help='show verbose requests, responses and notifications output')
 	parser.add_argument('--disable-teardown', '-notd', action='store_true', dest='disableTearDown', default=False, help='disable the tear-down / cleanup procedure at the end of a test suite')
+	parser.add_argument('--exclude-tests', '-et', action='store', dest='excludeTests', nargs='+', type=str, default=[], help='exclude the specified test cases from running')
 	parser.add_argument('--run-teardown', '-runtd', action='store_true', dest='runTearDown', default=False, help='run the specified test cases\' tear-down functions and exit')
 	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test suite n times (default: 1)')
 	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
@@ -132,12 +133,13 @@ if __name__ == '__main__':
 
 
 	# Run the tests and get some measurements
-	totalTimeStart		  = time.perf_counter()
-	totalProcessTimeStart = time.process_time()
-	totalSleepTime		  = 0.0
-	init.requestCount	  = 0
-	init.testCaseNames	  = args.testCaseName
-	init.enableTearDown   = not args.disableTearDown
+	totalTimeStart		  	= time.perf_counter()
+	totalProcessTimeStart 	= time.process_time()
+	totalSleepTime		  	= 0.0
+	init.requestCount	  	= 0
+	init.testCaseNames	  	= args.testCaseName
+	init.excludedTestNames	= args.excludeTests
+	init.enableTearDown		= not args.disableTearDown
 
 	# Run the tearDown functions of the test cases and then exit
 	if args.runTearDown:

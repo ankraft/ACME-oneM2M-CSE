@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acme.etc.Types import NotificationEventType, NotificationEventType as NET
 from init import *
@@ -380,6 +379,10 @@ class TestSCH(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	#
+	#	testing subscriptions with schedule
+	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_testSCHunderSUBinsideSchedule(self) -> None:
 		"""	CREATE <SCH> under <SUB> and receive notification within schedule """
@@ -501,6 +504,130 @@ class TestSCH(unittest.TestCase):
 
 
 	#
+	#	testing subscriptions' operationMonitor with schedule
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testSCHunderSUBWithOMinsideSchedule(self) -> None:
+		"""	CREATE <SCH> under <SUB> with operationMonitor and receive notification within schedule """
+		# create <SUB>
+		dct:JSON = 	{ 'm2m:sub' : { 
+					'rn' : f'{subRN}',
+			        'enc': {
+						'om': [ {
+							'ops' : Operation.RETRIEVE, 
+							'org' : TestSCH.originator 
+						} ]
+		   			},
+        			'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(aeURL, TestSCH.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct = { 'm2m:sch' : {
+					'rn' : 'notificationSchedule',
+					'se': { 'sce': [ createScheduleString(requestCheckDelay * 2) ] }
+				}}
+		r, rsc = CREATE(f'{aeURL}/{subRN}', TestSCH.originator, T.SCH, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve the AE to trigger a notification immediately
+		clearLastNotification()
+		r, rsc = RETRIEVE(aeURL, TestSCH.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Check notification
+		testSleep(requestCheckDelay)
+		notification = getLastNotification()
+		self.assertIsNotNone(notification)	# notification received
+
+		# DELETE again
+		r, rsc = DELETE(f'{aeURL}/{subRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testSCHunderSUBWithOMoutsideSchedule(self) -> None:
+		"""	CREATE <SCH> under <SUB> with operationMonitor and receive notification outside schedule """
+		# create <SUB>
+		dct:JSON = 	{ 'm2m:sub' : { 
+					'rn' : f'{subRN}',
+			        'enc': {
+						'om': [ {
+							'ops' : Operation.RETRIEVE, 
+							'org' : TestSCH.originator 
+						} ]
+        			},
+        			'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(aeURL, TestSCH.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# add schedule
+		dct = { 'm2m:sch' : {
+					'rn' : 'notificationSchedule',
+					'se': { 'sce': [ createScheduleString(requestCheckDelay * 2, requestCheckDelay * 2) ] }
+				}}
+		r, rsc = CREATE(f'{aeURL}/{subRN}', TestSCH.originator, T.SCH, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve the AE to trigger a notification immediately
+		clearLastNotification()
+		r, rsc = RETRIEVE(aeURL, TestSCH.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Check notification
+		testSleep(requestCheckDelay)	# wait a short time but run before the schedule starts
+		notification = getLastNotification()
+		self.assertIsNone(notification)	# notification received
+
+		# DELETE again
+		r, rsc = DELETE(f'{aeURL}/{subRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testSCHunderSUBWithOMoutsideScheduleImmediate(self) -> None:
+		"""	CREATE <SCH> under <SUB> with operationMonitor and receive notification outside schedule, nec = immediate """
+		# create <SUB>
+		dct:JSON = 	{ 'm2m:sub' : { 
+					'rn' : f'{subRN}',
+			        'enc': {
+						'om': [ {
+							'ops' : Operation.RETRIEVE, 
+							'org' : TestSCH.originator 
+						} ]
+        			},
+					'nec': 2, # immediate notification
+        			'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(aeURL, TestSCH.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Add schedule
+		dct = { 'm2m:sch' : {
+					'rn' : 'notificationSchedule',
+					'se': { 'sce': [ createScheduleString(requestCheckDelay * 2, requestCheckDelay * 2) ] }
+				}}
+		r, rsc = CREATE(f'{aeURL}/{subRN}', TestSCH.originator, T.SCH, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# RETRIEVE the AE to trigger a notification immediately
+		clearLastNotification()
+		r, rsc = RETRIEVE(aeURL, TestSCH.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Check notification
+		testSleep(requestCheckDelay)	# wait a short time but run before the schedule starts
+		notification = getLastNotification()
+		self.assertIsNotNone(notification)	# notification received
+
+		# DELETE again
+		r, rsc = DELETE(f'{aeURL}/{subRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	#
 	#	Testing crossResourceSubscription with schedule
 	#
 
@@ -600,36 +727,46 @@ class TestSCH(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestSCH, [
 
-	# basic tests
-	addTest(suite, TestSCH('test_createSCHunderCBwithNOCFail'))
-	addTest(suite, TestSCH('test_createSCHunderNODwithNOCUnsupportedFail'))
-	addTest(suite, TestSCH('test_createSCHunderCBwithoutNCO'))
-	addTest(suite, TestSCH('test_updateSCHunderCBwithNCOFail'))
-	addTest(suite, TestSCH('test_updateSCHunderNODwithNOCUnsupportedFail'))
+		# basic tests
+		'test_createSCHunderCBwithNOCFail',
+		'test_createSCHunderNODwithNOCUnsupportedFail',
+		'test_createSCHunderCBwithoutNCO',
+		'test_updateSCHunderCBwithNCOFail',
+		'test_updateSCHunderNODwithNOCUnsupportedFail',
 
-	# testing for specific parent types
-	addTest(suite, TestSCH('test_createSCHunderSUBwrongRn'))
-	addTest(suite, TestSCH('test_createSCHunderSUBemptyRn'))
-	addTest(suite, TestSCH('test_createSCHunderSUBcorrectRn'))
-	addTest(suite, TestSCH('test_createSCHunderCRSwrongRn'))
-	addTest(suite, TestSCH('test_createSCHunderCRSemptyRn'))
-	addTest(suite, TestSCH('test_createSCHunderCRScorrectRn'))
-	addTest(suite, TestSCH('test_createSCHunderCB'))
-	addTest(suite, TestSCH('test_createSCHunderCBTwiceFail'))
-	addTest(suite, TestSCH('test_createSCHunderNOD'))
+		# testing for specific parent types
+		'test_createSCHunderSUBwrongRn',
+		'test_createSCHunderSUBemptyRn',
+		'test_createSCHunderSUBcorrectRn',
+		'test_createSCHunderCRSwrongRn',
+		'test_createSCHunderCRSemptyRn',
+		'test_createSCHunderCRScorrectRn',
+		'test_createSCHunderCB',
+		'test_createSCHunderCBTwiceFail',
+		'test_createSCHunderNOD',
 
-	# testing subscriptions with schedule
-	addTest(suite, TestSCH('test_testSCHunderSUBinsideSchedule'))
-	addTest(suite, TestSCH('test_testSCHunderSUBoutsideSchedule'))
-	addTest(suite, TestSCH('test_testSCHunderSUBoutsideScheduleImmediate'))
+		# testing subscriptions with schedule
+		'test_testSCHunderSUBinsideSchedule',
+		'test_testSCHunderSUBoutsideSchedule',
+		'test_testSCHunderSUBoutsideScheduleImmediate',
 
-	# testing crossResourceSubscription with schedule
-	addTest(suite, TestSCH('test_testSCHunderCRSinsideSchedule'))
-	addTest(suite, TestSCH('test_testSCHunderCRSoutsideScheduleFail'))
+		# testing subscrtiptions' operationMonitor with schedule
+		'test_testSCHunderSUBWithOMinsideSchedule',
+		'test_testSCHunderSUBWithOMoutsideSchedule',
+		'test_testSCHunderSUBWithOMoutsideScheduleImmediate',
 
+		# testing crossResourceSubscription with schedule
+		'test_testSCHunderCRSinsideSchedule',
+		'test_testSCHunderCRSoutsideScheduleFail',
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 

@@ -8,10 +8,8 @@
 #
 
 import unittest, sys
-import requests
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -280,23 +278,27 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-			
-	addTest(suite, TestNOD('test_createNOD'))
-	addTest(suite, TestNOD('test_retrieveNOD'))
-	addTest(suite, TestNOD('test_retrieveNODWithWrongOriginator'))
-	addTest(suite, TestNOD('test_attributesNOD'))
-	addTest(suite, TestNOD('test_updateNODLbl'))
-	addTest(suite, TestNOD('test_updateNODUnknownAttribute'))
-	addTest(suite, TestNOD('test_createAEForNOD'))
-	addTest(suite, TestNOD('test_deleteAEForNOD'))
-	addTest(suite, TestNOD('test_moveAEToNOD2'))
-	addTest(suite, TestNOD('test_deleteNOD2'))
-	addTest(suite, TestNOD('test_deleteNOD'))
-	addTest(suite, TestNOD('test_createNODEmptyHael'))
-	addTest(suite, TestNOD('test_createNODDoubleHael'))
+	addTests(suite, TestNOD, [
+		'test_createNOD',
+		'test_retrieveNOD',
+		'test_retrieveNODWithWrongOriginator',
+		'test_attributesNOD',
+		'test_updateNODLbl',
+		'test_updateNODUnknownAttribute',
+		'test_createAEForNOD',
+		'test_deleteAEForNOD',
+		'test_moveAEToNOD2',
+		'test_deleteNOD2',
+		'test_deleteNOD',
+		'test_createNODEmptyHael',
+		'test_createNODDoubleHael',
+	])
 	
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

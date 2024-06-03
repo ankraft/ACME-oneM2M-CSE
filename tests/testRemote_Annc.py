@@ -11,7 +11,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import AnnounceSyncType, ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
@@ -859,7 +858,6 @@ class TestRemote_Annc(unittest.TestCase):
 					'aa': 	[ 'aei' ]
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		print(r)
 		self.assertEqual(rsc, RC.CREATED, r)
 		TestRemote_Annc.ae = r
 
@@ -872,70 +870,74 @@ class TestRemote_Annc(unittest.TestCase):
 
 # TODO Test: non-resource attribute in "aa" attribute
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+		# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestRemote_Annc, [
 		
-	# create an announced AE, but no extra attributes
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithoutAA'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedAEwithATwithoutAA'))
-	addTest(suite, TestRemote_Annc('test_retrieveCSEBaseAnnc'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnounceAE'))
+		# create an announced AE, but no extra attributes
+		'test_createAnnounceAEwithATwithoutAA',
+		'test_retrieveAnnouncedAEwithATwithoutAA',
+		'test_retrieveCSEBaseAnnc',
+		'test_deleteAnnounceAE',
 
-	# create an announced AE, including announced attribute
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA1Fail'))
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA2Fail'))
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithWrongAA3Fail'))
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithATwithAA'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedAEwithATwithAA'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnounceAE'))
+		# create an announced AE, including announced attribute
+		'test_createAnnounceAEwithATwithWrongAA1Fail',
+		'test_createAnnounceAEwithATwithWrongAA2Fail',
+		'test_createAnnounceAEwithATwithWrongAA3Fail',
+		'test_createAnnounceAEwithATwithAA',
+		'test_retrieveAnnouncedAEwithATwithAA',
+		'test_deleteAnnounceAE',
 
-	# create an announced AE, including NA announced attribute
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithNAAttributes'))
-	addTest(suite, TestRemote_Annc('test_addLBLtoAnnouncedAE'))
-	addTest(suite, TestRemote_Annc('test_removeLBLfromAnnouncedAE'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnounceAE'))
+		# create an announced AE, including NA announced attribute
+		'test_createAnnounceAEwithNAAttributes',
+		'test_addLBLtoAnnouncedAE',
+		'test_removeLBLfromAnnouncedAE',
+		'test_deleteAnnounceAE',
 
-	# create an announced AE, with non-resource announcedAttributes
-	addTest(suite, TestRemote_Annc('test_createAnnounceAEwithNonResourceAttributes'))
+		# create an announced AE, with non-resource announcedAttributes
+		'test_createAnnounceAEwithNonResourceAttributes',
 
-	# create an announced Node & MgmtObj [bat]
-	addTest(suite, TestRemote_Annc('test_createAnnounceNode'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedNode'))
-	addTest(suite, TestRemote_Annc('test_announceMgmtobj'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedMgmtobj'))
-	addTest(suite, TestRemote_Annc('test_retrieveRCNOriginalResource'))
-	addTest(suite, TestRemote_Annc('test_retrieveRCNOriginalResourceFail'))
-	addTest(suite, TestRemote_Annc('test_deleteRCNOriginalResourceFail'))
-	addTest(suite, TestRemote_Annc('test_updateMgmtObjAttribute'))
-	addTest(suite, TestRemote_Annc('test_addMgmtObjAttribute'))
-	addTest(suite, TestRemote_Annc('test_removeMgmtObjAttribute'))
-	addTest(suite, TestRemote_Annc('test_removeMgmtObjAA'))
-	addTest(suite, TestRemote_Annc('test_removeMgmtObjCSIfromAT'))
-	addTest(suite, TestRemote_Annc('test_addMgmtObjCSItoAT'))
-	addTest(suite, TestRemote_Annc('test_removeMgmtObjAT'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnounceNode'))
+		# create an announced Node & MgmtObj [bat]
+		'test_createAnnounceNode',
+		'test_retrieveAnnouncedNode',
+		'test_announceMgmtobj',
+		'test_retrieveAnnouncedMgmtobj',
+		'test_retrieveRCNOriginalResource',
+		'test_retrieveRCNOriginalResourceFail',
+		'test_deleteRCNOriginalResourceFail',
+		'test_updateMgmtObjAttribute',
+		'test_addMgmtObjAttribute',
+		'test_removeMgmtObjAttribute',
+		'test_removeMgmtObjAA',
+		'test_removeMgmtObjCSIfromAT',
+		'test_addMgmtObjCSItoAT',
+		'test_removeMgmtObjAT',
+		'test_deleteAnnounceNode',
 
-	# create an announced ACP
-	addTest(suite, TestRemote_Annc('test_createAnnouncedACP'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedACPwithWrongOriginator'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedACP'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedACPwithCSERelativeOriginatorFail'))
-	addTest(suite, TestRemote_Annc('test_retrieveAnnouncedACPwithCSI'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnounceACP'))
+		# create an announced ACP
+		'test_createAnnouncedACP',
+		'test_retrieveAnnouncedACPwithWrongOriginator',
+		'test_retrieveAnnouncedACP',
+		'test_retrieveAnnouncedACPwithCSERelativeOriginatorFail',
+		'test_retrieveAnnouncedACPwithCSI',
+		'test_deleteAnnounceACP',
 
-	# create an announced CNT with announcedSyncType = bi-directional
-	addTest(suite, TestRemote_Annc('test_createAnnouncedCNTSynced'))
-	addTest(suite, TestRemote_Annc('test_updateRemoteCNT'))
-	addTest(suite, TestRemote_Annc('test_deleteAnnouncedCNTSynced'))
+		# create an announced CNT with announcedSyncType = bi-directional
+		'test_createAnnouncedCNTSynced',
+		'test_updateRemoteCNT',
+		'test_deleteAnnouncedCNTSynced',
 
-	# announcement to own CSE
-	addTest(suite, TestRemote_Annc('test_announceToHostingCSE'))
-	addTest(suite, TestRemote_Annc('test_unannounceFromHostingCSE'))
+		# announcement to own CSE
+		'test_announceToHostingCSE',
+		'test_unannounceFromHostingCSE',
 
-	# annoncement with identifier attributes
-	addTest(suite, TestRemote_Annc('test_announceAEwithIdentifierAttributes'))
+		# annoncement with identifier attributes
+		'test_announceAEwithIdentifierAttributes',
 
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

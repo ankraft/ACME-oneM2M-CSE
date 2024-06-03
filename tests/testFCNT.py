@@ -12,7 +12,6 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
-from typing import Tuple
 
 
 CND = 'org.onem2m.common.moduleclass.temperature'
@@ -346,37 +345,44 @@ class TestFCNT(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
-	suite = unittest.TestSuite()
-		
-	addTest(suite, TestFCNT('test_createFCNTWrongCND'))
-	addTest(suite, TestFCNT('test_createFCNTWrongTPE'))
-	addTest(suite, TestFCNT('test_createFCNT'))
-	addTest(suite, TestFCNT('test_retrieveFCNT'))
-	addTest(suite, TestFCNT('test_retrieveFCNTWithWrongOriginator'))
-	addTest(suite, TestFCNT('test_attributesFCNT'))
-	addTest(suite, TestFCNT('test_updateFCNT'))
-	addTest(suite, TestFCNT('test_updateFCNTwithCnd'))
-	addTest(suite, TestFCNT('test_updateFCNTwithWrongType'))
-	addTest(suite, TestFCNT('test_updateFCNTwithUnkownAttribute'))
-	addTest(suite, TestFCNT('test_createFCNTUnknown'))
-	addTest(suite, TestFCNT('test_createCNTUnderFCNT'))
-	addTest(suite, TestFCNT('test_deleteCNTUnderFCNT'))
-	addTest(suite, TestFCNT('test_createFCNTUnderFCNT'))
-	addTest(suite, TestFCNT('test_deleteFCNTUnderFCNT'))
-	addTest(suite, TestFCNT('test_deleteFCNT'))
-	addTest(suite, TestFCNT('test_createGenericInterworking'))
-	addTest(suite, TestFCNT('test_createGenericInterworkingWrong'))
-	addTest(suite, TestFCNT('test_createGenericInterworkingWrong2'))
-	addTest(suite, TestFCNT('test_createGenericInterworkingOperationInstance'))
-	addTest(suite, TestFCNT('test_createGenericInterworkingOperationInstance2'))
-	addTest(suite, TestFCNT('test_deleteGenericInterworking'))
-	addTest(suite, TestFCNT('test_createFCNTWithCreatorWrong'))
-	addTest(suite, TestFCNT('test_createFCNTWithCreator'))
+def run(testFailFast:bool) -> TestResult:
 
+	# Assign tests
+	suite = unittest.TestSuite()
+	addTests(suite, TestFCNT, [
+
+		'test_createFCNTWrongCND',
+		'test_createFCNTWrongTPE',
+		'test_createFCNT',
+		'test_retrieveFCNT',
+		'test_retrieveFCNTWithWrongOriginator',
+		'test_attributesFCNT',
+		'test_updateFCNT',
+		'test_updateFCNTwithCnd',
+		'test_updateFCNTwithWrongType',
+		'test_updateFCNTwithUnkownAttribute',
+		'test_createFCNTUnknown',
+		'test_createCNTUnderFCNT',
+		'test_deleteCNTUnderFCNT',
+		'test_createFCNTUnderFCNT',
+		'test_deleteFCNTUnderFCNT',
+		'test_deleteFCNT',
+		'test_createGenericInterworking',
+		'test_createGenericInterworkingWrong',
+		'test_createGenericInterworkingWrong2',
+		'test_createGenericInterworkingOperationInstance',
+		'test_createGenericInterworkingOperationInstance2',
+		'test_deleteGenericInterworking',
+		'test_createFCNTWithCreatorWrong',
+		'test_createFCNTWithCreator',
+
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

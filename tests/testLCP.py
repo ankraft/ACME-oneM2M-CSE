@@ -10,9 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
-from acme.etc.Types import NotificationEventType, NotificationEventType as NET
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 		
 
@@ -353,27 +351,31 @@ class TestLCP(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestLCP, [
 
-	# basic tests
-	addTest(suite, TestLCP('test_createLCPMissingLosFail'))
-	addTest(suite, TestLCP('test_createMinimalLCP'))
-	addTest(suite, TestLCP('test_createLCPWithSameCNTRnFail'))
-	addTest(suite, TestLCP('test_createLCPWithLOS2LotFail'))
-	addTest(suite, TestLCP('test_createLCPWithLOS2AidFail'))
-	addTest(suite, TestLCP('test_createLCPWithLOS2LorFail'))
-	addTest(suite, TestLCP('test_createLCPWithLOS2RlklFail'))
-	addTest(suite, TestLCP('test_createLCPWithLOS2LuecFail'))
-	addTest(suite, TestLCP('test_createLCPWithWrongGtaFail'))
-	addTest(suite, TestLCP('test_createLCPWithGta'))
+		# basic tests
+		'test_createLCPMissingLosFail',
+		'test_createMinimalLCP',
+		'test_createLCPWithSameCNTRnFail',
+		'test_createLCPWithLOS2LotFail',
+		'test_createLCPWithLOS2AidFail',
+		'test_createLCPWithLOS2LorFail',
+		'test_createLCPWithLOS2RlklFail',
+		'test_createLCPWithLOS2LuecFail',
+		'test_createLCPWithWrongGtaFail',
+		'test_createLCPWithGta',
 
-	# periodic tests
-	addTest(suite, TestLCP('test_createLCPWithLit2Lou0'))
-	addTest(suite, TestLCP('test_testPeriodicUpdates'))
-	addTest(suite, TestLCP('test_testManualUpdates'))
+		# periodic tests
+		'test_createLCPWithLit2Lou0',
+		'test_testPeriodicUpdates',
+		'test_testManualUpdates',
+	])
 
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 

@@ -305,9 +305,13 @@ class TestLoad(unittest.TestCase):
 # TODO CNT + CIN
 # TODO CNT + CIN + SUB
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# TODO convert to addTests, but include arguments
+
+	# Assign tests
 	suite = unittest.TestSuite()
-	
+
 	# Create, retrieve and delete 10 <AE> one by one
 	addTest(suite, TestLoad('test_createAEs', 10))
 	addTest(suite, TestLoad('test_retrieveAEs', 10))
@@ -363,6 +367,7 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

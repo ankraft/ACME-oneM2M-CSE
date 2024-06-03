@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, ResponseType
 from init import *
 
@@ -187,29 +186,34 @@ class TestRequests(unittest.TestCase):
 		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestRequests, [
 		
-	addTest(suite, TestRequests('test_OETnow'))
-	addTest(suite, TestRequests('test_OETpast'))
-	addTest(suite, TestRequests('test_OETfuture'))
-	addTest(suite, TestRequests('test_OETfuturePeriod'))
-	addTest(suite, TestRequests('test_OETfutureSeconds'))
+		'test_OETnow',
+		'test_OETpast',
+		'test_OETfuture',
+		'test_OETfuturePeriod',
+		'test_OETfutureSeconds',
 
-	addTest(suite, TestRequests('test_RETnowFail'))
-	addTest(suite, TestRequests('test_RETpastFail'))
-	addTest(suite, TestRequests('test_RETfuture'))
-	addTest(suite, TestRequests('test_RETpastSecondsFail'))
-	addTest(suite, TestRequests('test_RETfutureSeconds'))
+		'test_RETnowFail',
+		'test_RETpastFail',
+		'test_RETfuture',
+		'test_RETpastSecondsFail',
+		'test_RETfutureSeconds',
 
-	addTest(suite, TestRequests('test_OETRETfutureSeconds'))
-	addTest(suite, TestRequests('test_OETRETfutureSecondsWrongFail'))
+		'test_OETRETfutureSeconds',
+		'test_OETRETfutureSecondsWrongFail',
 
-	addTest(suite, TestRequests('test_RSETsmallerThanRETFail'))
-	addTest(suite, TestRequests('test_RSETpastFail'))
-
-	addTest(suite, TestRequests('test_RSETNonBlockingSynchFail'))
+		'test_RSETsmallerThanRETFail',
+		'test_RSETpastFail',
+		
+		'test_RSETNonBlockingSynchFail',
+	])
 	
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	
 	printResult(result)

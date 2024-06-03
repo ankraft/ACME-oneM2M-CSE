@@ -12,7 +12,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -97,14 +96,19 @@ class TestRemote_GRP(unittest.TestCase):
 		self.assertIn(findXPath(r, 'm2m:agr/m2m:rsp/{1}/pc/m2m:cb/csi'), [ CSEID, REMOTECSEID ] )
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestRemote_GRP, [
 	
-	# create a group with the CSE and the remote CSE as members
-	addTest(suite, TestRemote_GRP('test_createGrp'))
-	addTest(suite, TestRemote_GRP('test_retrieveFOPT'))
+		# create a group with the CSE and the remote CSE as members
+		'test_createGrp',
+		'test_retrieveFOPT',
 
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

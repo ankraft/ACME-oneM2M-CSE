@@ -11,7 +11,6 @@ import unittest, sys
 import isodate
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResponseStatusCode as RC
 from acme.etc.Types import ResourceTypes as T
 from init import *
@@ -92,7 +91,6 @@ class TestCSE(unittest.TestCase):
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		parameters = lastHeaders()
-		print(lastHeaders())
 		self.assertIsNotNone(parameters)
 		self.assertIn('X-M2M-RVI', parameters)
 		self.assertIsNotNone(rvi := parameters.get('X-M2M-RVI'))
@@ -140,18 +138,23 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestCSE, [
 
-	addTest(suite, TestCSE('test_retrieveCSE'))
-	addTest(suite, TestCSE('test_retrieveCSEWithWrongOriginator'))
-	addTest(suite, TestCSE('test_attributesCSE'))
-	addTest(suite, TestCSE('test_attributeCSEctm'))
-	addTest(suite, TestCSE('test_CSESupportedResourceTypes'))
-	addTest(suite, TestCSE('test_deleteCSEFail'))
-	addTest(suite, TestCSE('test_updateCSEFail'))
-	addTest(suite, TestCSE('test_CSEreleaseVersion'))
+		'test_retrieveCSE',
+		'test_retrieveCSEWithWrongOriginator',
+		'test_attributesCSE',
+		'test_attributeCSEctm',
+		'test_CSESupportedResourceTypes',
+		'test_deleteCSEFail',
+		'test_updateCSEFail',
+		'test_CSEreleaseVersion',
+	])
 
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

@@ -60,43 +60,38 @@ The `--help` or `-h` command line argument provides a usage overview for the *ru
 
 ```text title="Test Runner Overview"
 $ python runTests.py -h
-usage: runTests.py [-h] [--all] [--load-only] [--verbose-requests]
-				[--disable-teardown] [--run-teardown]
-				[--run-count NUMBEROFRUNS]
-				[--run-tests TESTCASENAME [TESTCASENAME ...]]
-				[--show-skipped] [--no-failfast]
-				[--list-tests | --list-tests-sorted]
-				[TESTSUITE ...]
+
+usage: runTests.py [-h] [--all] [--load-only] [--verbose-requests] [--disable-teardown]
+                   [--exclude-tests EXCLUDETESTS [EXCLUDETESTS ...]] [--run-teardown] [--run-count NUMBEROFRUNS]
+                   [--run-tests TESTCASENAME [TESTCASENAME ...]] [--show-skipped] [--no-failfast]
+                   [--list-tests | --list-tests-sorted]
+                   [TESTSUITE ...]
 
 positional arguments:
-TESTSUITE             specific test suites to run. Run all test suites
-						if empty
+  TESTSUITE             specific test suites to run. Run all test suites if empty
 
 options:
--h, --help            show this help message and exit
---all                 run all test suites (including load tests)
---load-only           run only load test suites
---verbose-requests, -v
-						show verbose requests, responses and
-						notifications output
---disable-teardown, -notd
-						disable the tear-down / cleanup procedure at the
-						end of a test suite
---run-teardown, -runtd
-						run the specified test cases' tear-down
-						functions and exit
---run-count NUMBEROFRUNS
-						run each test suite n times (default: 1)
---run-tests TESTCASENAME [TESTCASENAME ...], -run TESTCASENAME [TESTCASENAME ...]
-						run only the specified test cases from the set
-						of test suites
---show-skipped        show skipped test cases in summary
---no-failfast         continue running test cases after a failure
---list-tests, -ls     list the test cases of the specified test suites
-						in the order they are defined and exit
---list-tests-sorted, -lss
-						alphabetical sorted list the test cases of the
-						specified test suites and exit
+  -h, --help            show this help message and exit
+  --all                 run all test suites (including load tests)
+  --load-only           run only load test suites
+  --verbose-requests, -v
+                        show verbose requests, responses and notifications output
+  --disable-teardown, -notd
+                        disable the tear-down / cleanup procedure at the end of a test suite
+  --exclude-tests EXCLUDETESTS [EXCLUDETESTS ...], -et EXCLUDETESTS [EXCLUDETESTS ...]
+                        exclude the specified test cases from running
+  --run-teardown, -runtd
+                        run the specified test cases' tear-down functions and exit
+  --run-count NUMBEROFRUNS
+                        run each test suite n times (default: 1)
+  --run-tests TESTCASENAME [TESTCASENAME ...], -run TESTCASENAME [TESTCASENAME ...]
+                        run only the specified test cases from the set of test suites
+  --show-skipped        show skipped test cases in summary
+  --no-failfast         continue running test cases after a failure
+  --list-tests, -ls     list the test cases of the specified test suites in the order they are defined and exit
+  --list-tests-sorted, -lss
+                        alphabetical sorted list the test cases of the specified test suites and exit
+
 ```
 
 ### Running the Tests
@@ -166,33 +161,40 @@ The *runTest.py* script by default will run all test suites, **except** scripts 
 
 ### Running Individual Test Cases
 
-It is also possible to run individual test cases from test suites. This is done by optionally specify the test suites and then with the `--run-tests` option a list of test case names to run:
+It is also possible to run individual test cases from test suites. This is done by optionally specify the test suites and then with the `--run-tests` or `-run`option a list of test case names to run:
 
 ```bash title="Run Single Test Case"
 $ python runTests.py testSUB --run-tests test_createCNTforEXC
 ```
 
-If test cases appear more than once one can specify the order in which the test cases are run. Example:
-
-- Order of test cases in the test suite: A, B, A, C
-- Desired test cases and order to run: B, A
-- Option: `--run-tests B A`
-
+The test cases can be specified in any order, and may appear more than once.
 
 !!! Note
-	Most unit tests in a test suite depend on each other (created resources, subscriptions, etc). Just running a single test case will most likely fail. 
+	Most unit tests in a test suite depend on each other (created resources, subscriptions, etc). Just running a single test case may fail. 
 
 The most interesting use of this functionionality is to run a whole test suite together with the `--disable-teardown` option up to the point of a failure, and then run the failed test case again:
 
 ```bash title="Run Single Test Case Without Tear-Down"
 $ python runTests.py testSUB --disable-teardown
 ...
-$ python runTests.py testSUB --run-tests test_createCNTforEXC
+$ python runTests.py testSUB  --disable-teardown --run-tests test_createCNTforEXC
 ```
 
 This disables the clean-up of the CSE after the test suite has run, so that the resources created by the test suite are still present in the CSE. This way one can investigate the state of the CSE after the test suite has run.
 
 To list the available test cases one can use the `--list-tests` (list in the order the test cases have been defined in the test suite) and the `--list-tests-sorted` (list alphabetically) options.
+
+
+### Exluding Test Cases
+
+One can exclude test cases from running by using the `--exclude-tests` or `-et` option. This option takes a list of test case names to exclude from the test run.
+
+The following example runs all test cases in the *testSUB* test suite except the *test_createCNTforEXC* test case:
+
+```bash title="Exclude Test Cases"
+$ python runTests.py testSUB --exclude-tests test_createCNTforEXC 
+```
+
 
 ### Tear-down and Clean-up
 
