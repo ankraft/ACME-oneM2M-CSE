@@ -1123,7 +1123,6 @@ class ACMEPContext(PContext):
 
 		# script name
 		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
-		print(symbol)
 
 		# arguments
 		arguments:list[str] = []
