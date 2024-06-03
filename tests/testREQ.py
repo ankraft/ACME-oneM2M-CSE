@@ -589,6 +589,27 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
+	#
+	#	Misc
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteREQFail(self) -> None:
+		""" DELETE <REQ> resource -> Fail """
+		clearLastNotification()
+		# Create a request by retrieving the CSE with a non-blocking request and delayed OET
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}&rp={requestETDuration2}', 
+						  TestREQ.originator,
+						  headers={ C.hfOET : DateUtils.getResourceDate(requestCheckDelay)})	# set OET to now+requestCheckDelay/2
+		self.assertEqual(rsc, RC.ACCEPTED_NON_BLOCKING_REQUEST_SYNC, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# try
+		r, rsc = DELETE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.UNABLE_TO_RECALL_REQUEST, r)
+
+
 
 def run(testFailFast:bool) -> TestResult:
 	# Reconfigure the server to check faster for expirations.
@@ -631,6 +652,9 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createCNTNBAsynch',
 		'test_updateCNTNBAsynch',
 		'test_deleteCNTNBASynch',
+
+		# Misc
+		'test_deleteREQFail',
 
 	])
 
