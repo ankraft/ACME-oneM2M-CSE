@@ -497,6 +497,8 @@ class Configuration(object):
 				'logging.queueSize'						: config.getint('logging', 'queueSize', 							fallback = 5000),	# Size of the log queue
 				'logging.size'							: config.getint('logging', 'size', 									fallback = 100000),
 				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',					fallback = True),
+				'logging.enableUTCTimezone'				: config.getboolean('logging', 'enableUTCTimezone',					fallback = False),
+
 
 
 				#

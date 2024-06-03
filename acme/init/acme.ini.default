@@ -493,6 +493,8 @@ enableBindingsLogging=False
 queueSize=5000
 ; List of component names to exclude from logging
 filter=werkzeug,markdown_it,asyncio
+; Write log messages in UTC time. Default: False (local time)
+enableUTCTimezone=False
 
 
 

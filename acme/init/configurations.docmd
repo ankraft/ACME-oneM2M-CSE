@@ -1071,6 +1071,15 @@ The default value is `True`.
 
 
 
+# logging.enableUTCTimezone
+
+This setting enables or disables the UTC timezone for screen and file logging timestamps.
+If disabled then the local time is used.
+
+The default value is `False`.
+
+
+
 # logging.filter
 
 This setting specifies a comma-separated list of non-CSE component names to exclude from logging.
