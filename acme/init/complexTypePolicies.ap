@@ -906,7 +906,8 @@
 			"ctype": "m2m:accessControlRule",
 			"lname": "accessControlOperations",
 			"ns": "m2m",
-			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"type": "enum",
+			"etype": "m2m:accessControlOperations",
 			"car": "1"
 		}
 	],

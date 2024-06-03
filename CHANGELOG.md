@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [CSE] Support for *operationMonitor* attribute in &lt;subscription> resources.
 - [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
 - [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
 

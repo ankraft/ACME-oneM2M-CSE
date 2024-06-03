@@ -14,7 +14,7 @@ from typing import Any, cast, Optional, List
 
 from copy import deepcopy
 
-from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType
+from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.ACMEUtils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict
 from ..etc.ACMEUtils import resourceDiff
@@ -276,7 +276,10 @@ class Resource(object):
 		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
-		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
+		CSE.notification.checkSubscriptions(self, 
+									  		NotificationEventType.resourceDelete, 
+											originator)
+		CSE.notification.checkOperationSubscription(self, Operation.DELETE, originator)
 		
 		# Remove directChildResources. Don't do checks (e.g. subscriptions) for the sub-resources
 		CSE.dispatcher.deleteChildResources(self, originator, doDeleteCheck = False)
@@ -380,7 +383,12 @@ class Resource(object):
 
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[_modified])
+		CSE.notification.checkSubscriptions(self, 
+									  		NotificationEventType.resourceUpdate, 
+											originator,
+									  		modifiedAttributes = self[_modified])
+		CSE.notification.checkOperationSubscription(self, Operation.UPDATE, originator)
+
 		self.dbUpdate()
 
 		# Check Attribute Trigger
@@ -436,6 +444,7 @@ class Resource(object):
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
 			CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())
+		CSE.notification.checkOperationSubscription(self, request.op, originator)	# could also be DISCOVERY
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
@@ -461,7 +470,12 @@ class Resource(object):
 				originator: The request originator.
  		"""
 		# Check Subscriptions
-		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
+		CSE.notification.checkSubscriptions(self, 
+									  		NotificationEventType.createDirectChild, 
+											originator,
+											childResource)
+		CSE.notification.checkOperationSubscription(self, Operation.CREATE, originator)
+
 
 
 	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
@@ -486,7 +500,10 @@ class Resource(object):
 			childResource: The removed child resource.
 			originator: The request originator.
 		"""
-		CSE.notification.checkSubscriptions(self, NotificationEventType.deleteDirectChild, childResource)
+		CSE.notification.checkSubscriptions(self, 
+									  		NotificationEventType.deleteDirectChild, 
+											originator,
+											childResource)
 
 
 	def canHaveChild(self, resource:Resource) -> bool:

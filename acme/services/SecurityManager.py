@@ -468,30 +468,30 @@ class SecurityManager(object):
 		return originator == resource.getOriginator()
 
 
-	def getRelevantACPforOriginator(self, originator:str, permission:Permission) -> list[ACP]:
-		"""	Return a list of relevant <ACP> resources that currently are relevant for an originator.
-			This list includes <ACP> resources with permissions for the originator, or for "all" originators.
+	# def getRelevantACPforOriginator(self, originator:str, permission:Permission) -> list[ACP]:
+	# 	"""	Return a list of relevant <ACP> resources that currently are relevant for an originator.
+	# 		This list includes <ACP> resources with permissions for the originator, or for "all" originators.
 
-			Args:
-				originator: ID of the originator.
-				permission: The operation permission to filter for.
+	# 		Args:
+	# 			originator: ID of the originator.
+	# 			permission: The operation permission to filter for.
 
-			Return:
-				List of <ACP> resources. This list might be empty.
-		"""
-		origs = [ originator, 'all' ]
+	# 		Return:
+	# 			List of <ACP> resources. This list might be empty.
+	# 	"""
+	# 	origs = [ originator, 'all' ]
 
-		def filter(doc:JSON) -> bool:
-			if (acr := findXPath(doc, 'pv/acr')):
-				for each in acr:
-					if (acop := each.get('acop')) is None or acop & permission == 0:
-						continue
-					if (acor := each.get('acor')) is None or not any(x in acor for x in origs):
-						continue
-					return True
-			return False
+	# 	def filter(doc:JSON) -> bool:
+	# 		if (acr := findXPath(doc, 'pv/acr')):
+	# 			for each in acr:
+	# 				if (acop := each.get('acop')) is None or acop & permission == 0:
+	# 					continue
+	# 				if (acor := each.get('acor')) is None or not any(x in acor for x in origs):
+	# 					continue
+	# 				return True
+	# 		return False
 
-		return cast(List[ACP], CSE.storage.searchByFragment(dct = { 'ty' : ResourceTypes.ACP }, filter = filter))
+	# 	return cast(List[ACP], CSE.storage.searchByFragment(dct = { 'ty' : ResourceTypes.ACP }, filter = filter))
 
 
 	##########################################################################

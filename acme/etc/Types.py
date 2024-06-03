@@ -13,7 +13,7 @@ from __future__ import annotations
 from copy import deepcopy
 import traceback
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
 from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
@@ -962,7 +962,7 @@ class Permission(ACMEIntEnum):
 
 
 	@classmethod
-	def fromBitfield(cls, bitfield:int) -> List[Permission]:
+	def fromBitfield(cls, bitfield:AccessControlOperations) -> List[Permission]:
 		""" Get a list of permissions from a bitfield.
 
 			Args:
@@ -1029,6 +1029,13 @@ _OperationPermissionsMapping =	{
 	Operation.DISCOVERY : Permission.DISCOVERY,
 }
 """	Mappings between request operations and permissions """
+
+
+AccessControlOperations:TypeAlias = int
+"""	Access Control Operations. This is a bitfield of Operation values, therefore difficult to implement as an enum. """
+
+OperationMonitor:TypeAlias = Dict[str, Tuple[AccessControlOperations, str]]
+	
 
 ##############################################################################
 #
@@ -1449,6 +1456,8 @@ class NotificationContentType(ACMEIntEnum):
 class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
 
+	notSet								=  0
+	""" Not Set (0). """
 	resourceUpdate						=  1 # A, default
 	""" Resource Update (1) - the default."""
 	resourceDelete						=  2 # B
@@ -2571,16 +2580,16 @@ class AttributePolicy:
 			return None
 
 
-AttributePolicyDict = Dict[str, AttributePolicy]
+AttributePolicyDict:TypeAlias = Dict[str, AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
 
-ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
+ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
 
-FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
+FlexContainerAttributes:TypeAlias = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
 
-FlexContainerSpecializations = Dict[str, str]
+FlexContainerSpecializations:Type = Dict[str, str]
 """ Type definition for a dictionary of specializations for a flexContainer. """
 
 
@@ -2590,24 +2599,24 @@ FlexContainerSpecializations = Dict[str, str]
 #
 
 
-Parameters = Dict[str, str]
+Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
-JSON = Dict[str, Any]
+JSON:TypeAlias = Dict[str, Any]
 """	Type definition for a JSON type, which is just a dictionary. """
-JSONLIST = List[JSON]
+JSONLIST:TypeAlias = List[JSON]
 """	Type definition for a list of JSON types. """
-ReqResp = Dict[str, Union[int, str, List[str], JSON]]
+ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
+RequestCallback:TypeAlias = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
 """ Type definition for a callback function to handle outgoing requests. """
-RequestHandler = Dict[Operation, RequestCallback]
+RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
-RequestResponse = namedtuple('RequestResponse', 'request result')
+RequestResponse:TypeAlias = namedtuple('RequestResponse', 'request result')
 """ Type definition for a request/response pair. """
-RequestResponseList = List[RequestResponse]
+RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """
 
-FactoryCallableT = Callable[ [ Dict[str, object], str, str, bool], object ]
+FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """

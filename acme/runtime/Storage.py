@@ -562,6 +562,7 @@ class Storage(object):
 			  'net' 	: subscription.attribute('enc/net'),	# TODO perhaps store enc as a whole?
 			  'atr' 	: subscription.attribute('enc/atr'),
 			  'chty'	: subscription.attribute('enc/chty'),
+			  'om'		: subscription.attribute('enc/om'),
 			  'exc' 	: subscription.exc,
 			  'ln'  	: subscription.ln,
 			  'nus' 	: subscription.nu,
