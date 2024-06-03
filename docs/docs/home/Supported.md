@@ -44,12 +44,12 @@ The ACME CSE supports the following oneM2M resource types:
 | LocationPolicy (LCP)            |  &check;  | Only *device based* location policy is supported. The LCP's *cnt* stores geo-coordinates and geo-fencing results.                                                                                                   |
 | Management Objects              |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                                     |
 | Node (NOD)                      |  &check;  |                                                                                                                                                                                                                     |
-| Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual resource. *requestAggregation* functionality is supported, too.                                                         |
+| Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual child resource. *requestAggregation* functionality is supported, too.                                                   |
 | Remote CSE (CSR)                |  &check;  | Announced resources are  supported. Transit request to resources on registered CSE's are supported.                                                                                                                 |
 | Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                  |
 | Schedule (SCH)                  |  &check;  | Support for CSE communication, nodes, subscriptions and crossResourceSubscriptions.                                                                                                                                 |
 | SemanticDescriptor (SMD)        |  &check;  | Support for basic resource handling and semantic queries.                                                                                                                                                           |
-| Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes, statistics. Not all features are supported yet.                                                            |
+| Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes, statistics, operation Monitor.                                                                             |
 | TimeSeries (TS)                 |  &check;  | Including missing data notifications.                                                                                                                                                                               |
 | TimeSeriesInstance (TSI)        |  &check;  | *dataGenerationTime* attribute only supports absolute timestamps.                                                                                                                                                   |
 | TimeSyncBeacon (TSB)            |  &check;  | Experimental. Implemented functionality might change according to specification changes.                                                                                                                            |
@@ -60,23 +60,16 @@ The ACME CSE supports the following oneM2M resource types:
 
 The following table presents the supported management object specifications.
 
-| Management Objects       |
-|--------------------------|
-| AreaNwkDeviceInfo (ANDI) |
-| AreaNwkInfo (ANI)        |
-| Battery (BAT)            |
-| DataCollect (DATC)       |
-| DeviceCapability (DVC)   |
-| DeviceInfo (DVI)         |
-| EventLog (EVL)           |
-| Firmware (FWR)           |
-| Memory (MEM)             |
-| MobileNetwork (MNWK)     |
-| MyCertFileCred (NYCFC)   |
-| Reboot (REB)             |
-| SIM (SIM)                |
-| Software (SWR)           |
-| WifiClient (WIFIC)       |
+| Management Objects       | Management Objects     |
+|--------------------------|------------------------|
+| AreaNwkDeviceInfo (ANDI) | Memory (MEM)           |
+| AreaNwkInfo (ANI)        | MobileNetwork (MNWK)   |
+| Battery (BAT)            | MyCertFileCred (NYCFC) |
+| DataCollect (DATC)       | Reboot (REB)           |
+| DeviceCapability (DVC)   | SIM (SIM)              |
+| DeviceInfo (DVI)         | Software (SWR)         |
+| EventLog (EVL)           | WifiClient (WIFIC)     |
+| Firmware (FWR)           |                        |
 
 
 ### FlexContainer Specializations
@@ -186,12 +179,12 @@ The following notification event types for Subscriptions are supported:
 ### Runtime Environments
 The ACME CSE runs at least on the following runtime environments:
 
-| Runtime Environment | Supported | Remark                                                                                |
-|:--------------------|:---------:|:--------------------------------------------------------------------------------------|
-| Generic Linux       |  &check;  | Including [Raspberry Pi OS (32bit)](../howtos/RaspberryPi.md) on Raspberry Pi 3 and 4. |
-| Mac OS              |  &check;  | Intel and Apple silicon.                                                              |
-| MS Windows          |  &check;  |                                                                                       |
-| Jupyter Notebooks   |  &check;  | ACME CSE can be run headless inside a Jupyter Notebook.                               |
+| Runtime Environment | Remark                                                                                |
+|:--------------------|:--------------------------------------------------------------------------------------|
+| Generic Linux       | Including [Raspberry Pi OS (32bit)](../howtos/RaspberryPi.md) on Raspberry Pi 3 and 4. |
+| Mac OS              | Intel and Apple silicon.                                                              |
+| MS Windows          |                                                                                       |
+| Jupyter Notebooks   | ACME CSE can be run headless inside a Jupyter Notebook.                               |
 
 | Functionality         | Remark                                                                                                                       |
 |:----------------------|:-----------------------------------------------------------------------------------------------------------------------------|
@@ -210,11 +203,11 @@ The ACME CSE runs at least on the following runtime environments:
 
 The following database bindings are supported:
 
-| Database Binding  | Supported | Remark                               |
-|:------------------|:---------:|:-------------------------------------|
-| PostgreSQL        |  &check;  |                                      |
-| TinyDB in-memory  |  &check;  | Fast and simple in-memory database.  |
-| TinyDB file-based |  &check;  | Fast and simple file-based database. |
+| Database Binding  | Remark                               |
+|:------------------|:-------------------------------------|
+| PostgreSQL        |                                      |
+| TinyDB in-memory  | Fast and simple in-memory database.  |
+| TinyDB file-based | Fast and simple file-based database. |
 
 
 
