@@ -15,7 +15,7 @@ from typing import List, cast, Optional, Any, Tuple
 import ssl
 
 from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
 from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
@@ -24,6 +24,7 @@ from ..resources.Resource import Resource
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
+from ..resources.ACPAnnc import ACPAnnc
 from ..runtime.Logging import Logging as L
 
 
@@ -53,7 +54,8 @@ class SecurityManager(object):
 		'verifyCertificateWs',
 		'tlsVersionWs',
 		'caCertificateFileWs',
-		'caPrivateKeyFileWs'
+		'caPrivateKeyFileWs',
+		'slashCseOriginator',
 	)
 
 
@@ -124,6 +126,9 @@ class SecurityManager(object):
 		self.caCertificateFileWs		= Configuration.get('websocket.security.caCertificateFile')
 		self.caPrivateKeyFileWs			= Configuration.get('websocket.security.caPrivateKeyFile')
 
+		# Optimizations
+		self.slashCseOriginator			= f'/{CSE.cseOriginator}'
+
 
 
 	def configUpdate(self, name:str, 
@@ -182,42 +187,89 @@ class SecurityManager(object):
 				Boolean indicating access.
 		"""
 
+		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
+			""" Check the access control policy for a single ACP resource.
+
+				Args:
+					originator: The originator to check for.
+					acpRo: The resourceID of the ACP resource.
+					requestedPermission: The permission to check.
+					ty: The resource type to check for.
+
+				Return:
+					Boolean indicating access.
+			"""
+			try:
+				if not (acp := CSE.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
+					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
+					return False
+				if self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty):
+					L.isDebug and L.logDebug('Permission granted')
+					return True
+			except ResponseException as e:
+				L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}: {e.dbg}')
+				return False
+			return False
+
+
 		#  Do or ignore the check
 		if not self.enableACPChecks:
 			return True
-		# L.logWarn(ty)
 		
+		#
 		# grant full access to the CSE originator
-		if originator is None or originator == CSE.cseOriginator or originator.endswith(f'/{CSE.cseOriginator}') and self.fullAccessAdmin:
+		#
+		if originator is None or originator == CSE.cseOriginator or originator.endswith(self.slashCseOriginator) and self.fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
-		
-		# Remove CSE-ID if this is the same CSE
+
+		#
+		# Always allow the CSE to NOTIFY
+		#
+		if requestedPermission == Permission.NOTIFY and originator == CSE.cseCsi:
+			L.isDebug and L.logDebug(f'NOTIFY permission granted for CSE: {originator}')
+			return True
+
+		#
+		# Preparation: Remove CSE-ID if this is the same CSE
+		#
 		if isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
-			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting to CSE-Relative format.')
+			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting it to CSE-Relative format.')
 			originator = toCSERelative(originator)
 			L.isDebug and L.logDebug(f'Converted originator: {originator}')
-	
+
+		#
+		#	Check parameters
+		#
+		if not requestedPermission or not (0 <= requestedPermission <= Permission.ALL):
+			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
+			return False
+
+		#
+		# Some Separate	tests for some types
+		#
 		if ty is not None:	# ty is an int
-			# Some Separate	 tests for some types
 
-			# Checking for AE	
-			if ty == ResourceTypes.AE and requestedPermission == Permission.CREATE:
-				# originator may be None or empty or C or S. 
-				# That is okay if type is AE and this is a create request
-				# Originator == None or len == 0
-				if not originator or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
-					L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
-					return True
+			if requestedPermission == Permission.CREATE:
 
-			# Checking for remoteCSE or CSEBaseAnnc
-			if ty in [ ResourceTypes.CSR, ResourceTypes.CSEBaseAnnc] and requestedPermission == Permission.CREATE:
-				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
-					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
-					return True
-				else:
-					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
-					return False
+				match ty:
+					case ResourceTypes.AE:
+						# originator may be None or empty or C or S. 
+						# That is okay if type is AE and this is a create request
+						# Originator == None or len == 0
+						if not originator or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
+							L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
+							return True
+						# fall-through
+					
+					case ResourceTypes.CSR | ResourceTypes.CSEBaseAnnc:
+						if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+							L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
+							return True
+						else:
+							L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to grant access for this originator.')
+							return False
+				# fall-through
 
 			if ty.isAnnounced():
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or (parentResource and originator[1:] == parentResource.ri):
@@ -227,9 +279,9 @@ class SecurityManager(object):
 					L.isWarn and L.logWarn('Originator for Announcement not found.')
 					return False
 		
-		# Check for resource == None
-		if not resource:
-			raise INTERNAL_SERVER_ERROR(L.logErr('Resource must not be None'))
+		# # Check for resource == None
+		# if not resource:
+		# 	raise INTERNAL_SERVER_ERROR(L.logErr('Resource must not be None'))
 
 		# Allow originator for announced resource
 		if resource.isAnnounced():
@@ -244,138 +296,130 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Announcement target originator. OK.')
 				return True
 
-		# Allow some Originators to RETRIEVE the CSEBase
-		if resource.ty == ResourceTypes.CSEBase and requestedPermission & Permission.RETRIEVE:
+		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission} resource type: {resource.ty} type: {ty}')
 
-			# Allow registered AEs to RETRIEVE the CSEBase
-			try:
-				if CSE.storage.retrieveResource(aei = originator):
-					L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
+		match resource.ty:
+
+			# Allow some Originators to RETRIEVE the CSEBase
+			case ResourceTypes.CSEBase if requestedPermission & Permission.RETRIEVE:
+				# Allow remote CSE to RETRIEVE the CSEBase
+				if originator == CSE.remote.registrarCSI:
+					L.isDebug and L.logDebug(f'Grant registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
 					return True
-			except NOT_FOUND:
-				pass # NOT Found is expected
-			
-			# Allow remote CSE to RETRIEVE the CSEBase
+				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+					L.isDebug and L.logDebug(f'Grant remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
+					return True
 
-			if originator == CSE.remote.registrarCSI:
-				L.isDebug and L.logDebug(f'Allow registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
+				# Allow registered AEs to RETRIEVE the CSEBase
+				# This comes last, since it is the most expensive check
+				try:
+					# TODO perhaps have a DB with all originators and their kind?
+
+					# TODO add a "raw" attribute that returns the JSON, but doesn't intantiate the object
+					if CSE.storage.retrieveResource(aei = originator):
+						L.isDebug and L.logDebug(f'Grant registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
+						return True
+				except NOT_FOUND:
+					pass # NOT Found is expected
+			
+				# Fall-through to further checks
+
+				# TODO can we return here already?
+				# TODO add a test for accessing the CSEBase by an AE + one that fails
+				
+
+			# Checking for PollingChannel
+			case ResourceTypes.PCH:
+				if originator != resource.getParentOriginator():
+					L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
+					return False
 				return True
-			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
-				L.isDebug and L.logDebug(f'Allow remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
-				return True
-
-		# Checking for PollingChannel
-		if resource.ty == ResourceTypes.PCH:
-			if originator != resource.getParentOriginator():
-				L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
-				return False
-			return True
-
-		# Check parameters
-		if not requestedPermission or not (0 <= requestedPermission <= Permission.ALL):
-			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
-			return False
-
-		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission}')
-		# L.logWarn(resource)
-
-		if resource.ty == ResourceTypes.GRP: # target is a group resource
-			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
 			
-			if not (macp := resource.macp):
-				L.isDebug and L.logDebug("MembersAccessControlPolicyIDs not provided, using AccessControlPolicyIDs")
-				# FALLTHROUGH to the permission checks below
-			
-			else: # handle the permission checks here
-				for a in macp:
-					if not (acp := CSE.dispatcher.retrieveResource(a)):
-						L.isDebug and L.logDebug(f'ACP resource not found: {a}')
-						continue
-					else:
-						if acp.checkPermission(originator, requestedPermission, ty):
-							L.isDebug and L.logDebug('Permission granted')
+			# target is a group resource
+			case ResourceTypes.GRP:
+				# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs are to be used
+				if not (macp := resource.macp):
+					L.isDebug and L.logDebug("MembersAccessControlPolicyIDs not provided for GRP, using AccessControlPolicyIDs")
+					# fall-through to the permission checks below
+				else:
+					# handle the permission already checks here
+					for acpRi in macp:
+						if _checkACPI(originator, acpRi, requestedPermission, ty):
 							return True
-				L.isDebug and L.logDebug('Permission NOT granted')
+					L.isDebug and L.logDebug('Permission NOT granted')
+					return False
+				
+			# target is an ACP or ACPAnnc resource
+			case ResourceTypes.ACP | ResourceTypes.ACPAnnc:
+				if self.checkACPSelfPermission(cast(ACP, resource), originator, requestedPermission):
+					L.isDebug and L.logDebug('Self-Permission granted')
+					return True
+
+				L.isDebug and L.logDebug('Self-Permission NOT granted')
 				return False
 
-
-		# target is an ACP or ACPAnnc resource
-		if resource.ty in [ResourceTypes.ACP, ResourceTypes.ACPAnnc]:	
-			if resource.checkSelfPermission(originator, requestedPermission):
-				L.isDebug and L.logDebug('Permission granted')
-				return True
-			# fall-through
-			return False
-
-		# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-		if ty == ResourceTypes.SUB and parentResource:
-			if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
-				return False
-
-		if requestedPermission == Permission.NOTIFY and originator == CSE.cseCsi:
-			L.isDebug and L.logDebug(f'NOTIFY permission granted for CSE: {originator}')
-			return True
+			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
+			case ResourceTypes.SUB if parentResource:
+				# check whether an originator has also RETRIEVES permissions on the parent resource		
+				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
+					return False
+				# fall-through to the permission checks below
+			
+			case _:
+				pass	# fall-through to the permission checks below
 
 		#
-		# target is any other resource type
+		# Further permission checks
 		#
 		
 		# When no acpi is configured for the resource
 		if not (acpi := resource.acpi):
 			L.isDebug and L.logDebug('Handle with missing acpi in resource')
 
-			# if the resource *may* have an acpi
+			# if the resource *may* have an acpi but doesn't have one set
 			if resource._attributes and 'acpi' in resource._attributes:
 
 				# Check custodian attribute
 				if custodian := resource.cstn:
 					if custodian == originator:	# resource.custodian == originator -> all access
-						L.isDebug and L.logDebug(f'Allow access for custodian: {custodian}')
+						L.isDebug and L.logDebug(f'Grant access for custodian: {custodian}')
 						return True
 					# When custodian is set, but doesn't match the originator then fall-through to fail
 					L.isDebug and L.logDebug(f'Resource creator: {custodian} != originator: {originator}')
+					# Fall-through to fail
 					
 				# Check resource creator
 				else:
 					if (creator := resource.getOriginator()) == originator:
-						L.isDebug and L.logDebug('Allow access for creator')
+						L.isDebug and L.logDebug('Grant access for creator')
 						return True
 					# if originator is not the original resource creator
 					L.isDebug and L.logDebug(f'Resource creator: {creator} != originator: {originator}')
-				
 				# Fall-through to fail
 
 			# resource doesn't support acpi attribute
 			else:
 				if resource.inheritACP:
 					L.isDebug and L.logDebug('Checking parent\'s permission')
-					if not parentResource:
-						parentResource = CSE.dispatcher.retrieveResource(resource.pi)
-					return self.hasAccess(originator, parentResource, requestedPermission, ty)
+					try:
+						if not parentResource:
+							parentResource = CSE.dispatcher.retrieveResource(resource.pi)
+						return self.hasAccess(originator, parentResource, requestedPermission, ty)
+					except ResponseException as e:
+						L.isWarn and L.logWarn(f'Parent resource not found: {resource.pi}: {e.dbg}')
+						return False
+				# Fall-through to fail
 
 			L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
 			return False
 
+		#
 		# Finally check the acpi
-		for a in acpi:
-			if not (acp := CSE.dispatcher.retrieveResource(a)):
-				L.isDebug and L.logDebug(f'ACP resource not found: {a}')
-				continue
-			# if checkSelf:	# forced check for self permissions
-			# 	if acp.checkSelfPermission(originator, requestedPermission):
-			# 		L.isDebug and L.logDebug('Permission granted')
-			# 		return True				
-			# else:
-			# 	# L.isWarn and L.logWarn(acp)
-			# 	if acp.checkPermission(originator, requestedPermission, ty):
-			# 		L.isDebug and L.logDebug('Permission granted')
-			# 		return True
-
-			# L.isWarn and L.logWarn(acp)
-			if acp.checkPermission(originator, requestedPermission, ty):
-				L.isDebug and L.logDebug('Permission granted')
+		#
+		for acpRi in acpi:
+			if _checkACPI(originator, acpRi, requestedPermission, ty):
 				return True
-
+			
 		# no fitting permission identified
 		L.isDebug and L.logDebug(f'Permission NOT granted. Originator: {originator} may not be listed in any of the linked ACPs')
 		return False
@@ -390,18 +434,18 @@ class SecurityManager(object):
 				originator: The request originator.
 			
 			Return:
-				Boolean value. *True* indicates that this is an ACPI update. *False* indicates that this NOT an ACPI update.
+				Boolean value. *True* indicates that this is an ACPI update. *False* indicates that this NOT an ACPI update. if no access is provided then an exception is raised.
 			
 			Raises
 				`BAD_REQUEST`: If the *acpi* attribute is not the only attribute in an UPDATE request.
 				`ORIGINATOR_HAS_NO_PRIVILEGE`: If the originator has no access.
 		"""
-		updatedAttributes = findXPath(request.pc, '{*}')
+		updatedAttributes = findXPath(request.pc, '{*}')	# Get the attributes under the resource element
 
 		# Check that acpi, if present, is the only attribute
 		if 'acpi' in updatedAttributes:
 			if len(updatedAttributes) > 1:
-				raise BAD_REQUEST(L.logDebug('"acpi" must be the only attribute in update'))
+				raise BAD_REQUEST(L.logDebug('"acpi" must be the only attribute in an update'))
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
 			_originator = getIdFromOriginator(originator)
@@ -412,17 +456,137 @@ class SecurityManager(object):
 					pass	# allowed for creating originator
 			else:
 				# test the current acpi whether the originator is allowed to update the acpi
-				for ri in targetResource.acpi:
-					if not (acp := CSE.dispatcher.retrieveResource(ri)):
-						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
+				for acpRi in targetResource.acpi:
+					try:
+						if not (acp := CSE.dispatcher.retrieveResource(acpRi)):
+							L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}')
+							continue
+						if self.checkACPSelfPermission(cast(ACP, acp), _originator, Permission.UPDATE):
+							break	# granted
+					except ResponseException as e:
+						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}: {e.dbg}')
 						continue
-					if acp.checkSelfPermission(_originator, Permission.UPDATE):
-						break
 				else:
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}'))
 
-			return True # True indicates that this is an ACPI update
+			return True # True indicates that this is an ACPI update with the correct permissions
 		return False	# False indicates that this NOT an ACPI update
+
+
+
+	def checkSingleACPPermission(self, acp:ACP, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
+		"""	Check whether an *originator* has the requested permissions.
+
+			Args:
+				acp: The ACP resource to check.
+				originator: The originator to test the permissions for.
+				requestedPermission: The permissions to test.
+				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
+			Return:
+				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
+		"""
+		for acr in acp['pv/acr']:
+
+			# Check Permission-to-check first
+			if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
+				continue
+
+			# Check accessControlObjectDetails
+			if acod := acr.get('acod'):
+				for eachAcod in acod:
+					# Check type of chty
+					if requestedPermission == Permission.CREATE:
+						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int, chty a list of ints
+							continue										# for CREATE: type not in chty
+					else:
+						if ty is not None and ty != eachAcod.get('ty'):		# ty is an int
+							continue								# any other Permission type: ty not in chty
+					break # found one, so apply the next checks further down
+				else:
+					continue	# NOT found, so continue the next acr
+
+				# TODO support acod/specialization
+
+			# Check originator
+			if self._checkAcor(acp, acr['acor'], originator):
+				return True
+
+		return False
+
+
+	def checkACPSelfPermission(self, acp:ACP|ACPAnnc, originator:str, requestedPermission:Permission) -> bool:
+		"""	Check whether an *originator* has the requested permissions to the `ACP` resource itself.
+
+			Args:
+				originator: The originator to test the permissions for.
+				requestedPermission: The permissions to test.
+			Return:
+				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
+		"""
+		# NOTE The same function also exists in ACPAnnc.py
+
+		match acp.ty:
+			case ResourceTypes.ACP:
+				for permission in acp['pvs/acr']:
+					if requestedPermission & permission['acop'] == 0:	# permission not fitting at all
+						continue
+
+					# Check originator
+					if self._checkAcor(acp, permission['acor'], originator):
+						return True
+				return False
+
+			case ResourceTypes.ACPAnnc:
+				# Check for self permissions in the ACPAnnc must be done a bit differently because we 
+				# don't have the optimizations that we have in the ACP resource
+				for permission in acp['pvs/acr']:
+					if requestedPermission & permission['acop'] == 0:	# permission not fitting at all
+						continue
+
+					# TODO check acod in pvs
+					if 'all' in permission['acor'] or originator in permission['acor']:
+						return True
+					
+					if any([ simpleMatch(originator, a) for a in permission['acor'] ]):	# check whether there is a wildcard match
+						return True
+				return False
+		return False
+
+
+	def _checkAcor(self, acp:ACP, acor:list[str], originator:str) -> bool:
+		""" Check whether an originator is in the list of acor entries.
+		
+			Args:
+				acor: The list of acor entries.
+				originator: The originator to check.
+				
+			Return:
+				True if the originator is in the list of acor entries, False otherwise.
+		"""
+
+		# Check originator
+		if 'all' in acor or originator in acor:
+			return True
+		
+		# Iterrate over all acor entries for either a group check or a wildcard check
+		for a in acor:
+
+			# Check for group. If the originator is a member of a group, then the originator has access
+			if acp.getTypeForRI(a) == ResourceTypes.GRP:
+				try:
+					if originator in CSE.dispatcher.retrieveResource(a).mid:
+						L.isDebug and L.logDebug(f'Originator found in group member')
+						return True
+				except ResponseException as e:
+					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
+					continue # Not much that we can do here
+
+			# Otherwise Check for wildcard match
+			if simpleMatch(originator, a):
+				return True
+		
+		# No match found
+		return False
 
 
 	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
@@ -467,31 +631,6 @@ class SecurityManager(object):
 		"""
 		return originator == resource.getOriginator()
 
-
-	# def getRelevantACPforOriginator(self, originator:str, permission:Permission) -> list[ACP]:
-	# 	"""	Return a list of relevant <ACP> resources that currently are relevant for an originator.
-	# 		This list includes <ACP> resources with permissions for the originator, or for "all" originators.
-
-	# 		Args:
-	# 			originator: ID of the originator.
-	# 			permission: The operation permission to filter for.
-
-	# 		Return:
-	# 			List of <ACP> resources. This list might be empty.
-	# 	"""
-	# 	origs = [ originator, 'all' ]
-
-	# 	def filter(doc:JSON) -> bool:
-	# 		if (acr := findXPath(doc, 'pv/acr')):
-	# 			for each in acr:
-	# 				if (acop := each.get('acop')) is None or acop & permission == 0:
-	# 					continue
-	# 				if (acor := each.get('acor')) is None or not any(x in acor for x in origs):
-	# 					continue
-	# 				return True
-	# 		return False
-
-	# 	return cast(List[ACP], CSE.storage.searchByFragment(dct = { 'ty' : ResourceTypes.ACP }, filter = filter))
 
 
 	##########################################################################
@@ -627,23 +766,3 @@ class SecurityManager(object):
 				L.logErr(f'Error reading token authentication file: {e}')
 
 
-	# def getSSLContextMqtt(self) -> ssl.SSLContext:
-	# 	"""	Depending on the configuration whether to use TLS for MQTT, this method creates a new `SSLContext`
-	# 		from the configured certificates and returns it. If TLS for MQTT is disabled then `None` is returned.
-	# 	"""
-	# 	context = None
-	# 	if self.useMqttTLS:
-	# 		L.isDebug and L.logDebug(f'Setup SSL context for MQTT. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
-	# 		context = ssl.SSLContext(
-	# 						{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
-	# 							'tls1.2' : ssl.PROTOCOL_TLSv1_2,
-	# 							'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
-	# 						}[self.tlsVersionMqtt.lower()]
-	# 					)
-	# 		if self.caCertificateFileMqtt:
-	# 			#context.load_cert_chain(self.caCertificateFileMqtt, self.caPrivateKeyFileMqtt)
-	# 			#print(self.caCertificateFileMqtt)
-	# 			context.load_verify_locations(cafile=self.caCertificateFileMqtt)
-	# 			#context.load_cert_chain(certfile=self.caCertificateFileMqtt)
-	# 		context.verify_mode = ssl.CERT_REQUIRED if self.verifyCertificateMqtt else ssl.CERT_NONE
-	# 	return context

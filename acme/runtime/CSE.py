@@ -168,7 +168,7 @@ cseRn:str = None
 """ The CSE's Resource Name. """
 
 cseOriginator:str = None
-"""	The CSE's admin originator. """
+"""	The CSE's admin originator, e.g. "CAdmin". """
 
 csePOA:list[str] = []
 """ The CSE's point-of-access's. """

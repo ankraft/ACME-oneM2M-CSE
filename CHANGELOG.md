@@ -20,6 +20,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 
 ### Changed
+- [CSE] Internal refactoring of the ACP and permission processing.
 - [SCRIPTS] Improved the script interpreter's error reporting. The error messages are now more informative and include the call stack.
 - [TESTS] Simplified internal test case registration.
 

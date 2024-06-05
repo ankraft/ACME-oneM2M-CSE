@@ -19,11 +19,10 @@ from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+_riTyMapping = Constants.attrRiTyMapping
 
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
-
-	_riTyMapping = Constants.attrRiTyMapping
 
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
@@ -79,6 +78,9 @@ class ACP(AnnounceableResource):
 
 		# Get types for the acor members. Ignore if not found
 		# This is an optimization used later in case there is a group in acor
+		# The dictionary is stored in the ACP resource itself and contains
+		# a mapping of resourceID's to resource types.
+		# It is later used by the security manager
 		riTyDict = {}
 
 		def _getAcorTypes(pv:JSON) -> None:
@@ -99,7 +101,7 @@ class ACP(AnnounceableResource):
 
 		_getAcorTypes(self.getFinalResourceAttribute('pv', dct))
 		_getAcorTypes(self.getFinalResourceAttribute('pvs', dct))
-		self.setAttribute(ACP._riTyMapping, riTyDict)
+		self.setAttribute(_riTyMapping, riTyDict)
 
 
 
@@ -166,101 +168,11 @@ class ACP(AnnounceableResource):
 			p.append({'acop' : permission, 'acor': list(set(originators))}) 	# list(set()) : Remove duplicates from list of originators
 
 
-	def checkPermission(self, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
-		"""	Check whether an *originator* has the requested permissions.
-
+	def getTypeForRI(self, ri:str) -> Optional[str]:
+		""" Get the resource type for a resourceID.
 			Args:
-				originator: The originator to test the permissions for.
-				requestedPermission: The permissions to test.
-				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
+				ri: The resourceID to get the type for.
 			Return:
-				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
+				The resource type if found, or *None* otherwise.
 		"""
-		# L.isDebug and L.logDebug(f'originator: {originator} requestedPermission: {requestedPermission}')
-		for acr in self['pv/acr']:
-			# L.isDebug and L.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
-
-			# Check Permission-to-check first
-			if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
-				continue
-
-			# Check acod : chty
-			if acod := acr.get('acod'):
-				for eachAcod in acod:
-					if requestedPermission == Permission.CREATE:
-						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int
-							continue										# for CREATE: type not in chty
-					else:
-						if ty is not None and ty != eachAcod.get('ty'):
-							continue								# any other Permission type: ty not in chty
-					break # found one, so apply the next checks further down
-				else:
-					continue	# NOT found, so continue the overall search
-
-				# TODO support acod/specialization
-
-			# Check originator
-			if self._checkAcor(acr['acor'], originator):
-				return True
-
-		return False
-
-
-	def checkSelfPermission(self, originator:str, requestedPermission:Permission) -> bool:
-		"""	Check whether an *originator* has the requested permissions to the `ACP` resource itself.
-
-			Args:
-				originator: The originator to test the permissions for.
-				requestedPermission: The permissions to test.
-			Return:
-				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
-		"""
-		# NOTE The same function also exists in ACPAnnc.py
-
-		for p in self['pvs/acr']:
-			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
-				continue
-
-			# Check originator
-			if self._checkAcor(p['acor'], originator):
-				return True
-
-		return False
-
-
-	def _checkAcor(self, acor:list[str], originator:str) -> bool:
-		""" Check whether an originator is in the list of acor entries.
-		
-			Args:
-				acor: The list of acor entries.
-				originator: The originator to check.
-				
-			Return:
-				True if the originator is in the list of acor entries, False otherwise.
-		"""
-
-		# Check originator
-		if 'all' in acor or \
-			originator in acor:
-			# or requestedPermission == Permission.NOTIFY:	# TODO not sure whether this is correct
-			return True
-		
-		# Iterrate over all acor entries for either a group check or a wildcard check
-		_riTypes = self.attribute(ACP._riTyMapping)
-		for a in acor:
-
-			# Check for group. If the originator is a member of a group, then the originator has access
-			if _riTypes.get(a) == ResourceTypes.GRP:
-				try:
-					if originator in CSE.dispatcher.retrieveResource(a).mid:
-						L.isDebug and L.logDebug(f'Originator found in group member')
-						return True
-				except Exception as e:
-					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
-					continue # Not much that we can do here
-
-			# Otherwise Check for wildcard match
-			if simpleMatch(originator, a):
-				return True
-		
-		return False
+		return self[_riTyMapping].get(ri)
