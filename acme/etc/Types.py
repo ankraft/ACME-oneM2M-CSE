@@ -2608,12 +2608,12 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback:TypeAlias = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
-RequestResponse:TypeAlias = namedtuple('RequestResponse', 'request result')
+RequestResponse = namedtuple('RequestResponse', 'request result')
 """ Type definition for a request/response pair. """
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """
