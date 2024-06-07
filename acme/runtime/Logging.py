@@ -759,7 +759,7 @@ class ACMERichLogHandler(RichHandler):
 			self._log_render(
 				self.console,
 				[ self.highlighter(Text(f'{threadID} - {message}')) ],
-				log_time	= self._fromtimestamp(record.created),
+				log_time	= self._fromtimestamp(record.created),	# type: ignore[no-untyped-call]
 				# time_format	= None if self.formatter is None else self.formatter.datefmt,
 				time_format	= self.formatter.datefmt,
 				# level		= Text(f'{record.levelname:<7}', style=record.levelname),
