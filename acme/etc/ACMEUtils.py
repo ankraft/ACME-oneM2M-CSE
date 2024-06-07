@@ -715,6 +715,8 @@ def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 	try:
 		return CSE.storage.retrieveResource(csi = csi)
 	except Exception as e:
+		import traceback
+		traceback.print_exc()
 		return None
 
 
