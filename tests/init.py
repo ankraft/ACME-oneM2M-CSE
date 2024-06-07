@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Any, Callable, Tuple, cast, Optional, TypeAlias
+from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
 
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit, base64
@@ -1192,7 +1192,7 @@ def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
 		suite.addTest(case)
 
 
-def addTests(suite:unittest.TestSuite, cls:unittest.TestCase, cases:list[str]) -> None:
+def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[str]) -> None:
 	"""	Add a list of test cases to a test suite. If the global variable `testCaseNames` is set
 		then only the test cases in that list are added in the order they are listed. Duplicates are
 		allowed.
