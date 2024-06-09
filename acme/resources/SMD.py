@@ -15,23 +15,24 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources import Factory as Factory
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 
+
+# internal attributes
+addToInternalAttributes(Constants.attrDecodedDsp)
 
 
 class SMD(AnnounceableResource):
 	""" The <semanticDescriptor> resource is used to store a semantic description pertaining to a
 		resource and potentially subresources.
 	"""
-
-	_decodedDsp = '__decodedDsp__'
-	""" Name of an internal string attribute that holds the description after base64 decode. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
@@ -79,8 +80,7 @@ class SMD(AnnounceableResource):
 					   fcntType:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.SMD, dct, pi, tpe = fcntType, create = create)
-		self._addToInternalAttributes(self._decodedDsp)
-		self.setAttribute(self._decodedDsp, None, overwrite = False)	
+		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -159,3 +159,15 @@ class SMD(AnnounceableResource):
 
 		# Remove semanticOpExec from result
 		self.delAttribute('soe')
+
+
+	def setDecodedDSP(self, dsp:str) -> None:
+		""" Set the decoded DSP internal attribute.
+		"""
+		self.setAttribute(Constants.attrDecodedDsp, dsp)
+
+
+	def getDecodeDSP(self) -> str:
+		""" Get the decoded DSP internal attribute.
+		"""
+		return self.attribute(Constants.attrDecodedDsp)

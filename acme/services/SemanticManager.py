@@ -198,7 +198,7 @@ class SemanticManager(object):
 			raise BAD_REQUEST(L.logDebug('dcrp format must not be IRI'))
 		try:
 			# Also store the decoded B64 string in the resource
-			smd.setAttribute(smd._decodedDsp, _desc := base64.b64decode(smd.dsp, validate = True).decode('UTF-8').strip())
+			smd.setDecodedDSP(_desc := base64.b64decode(smd.dsp, validate = True).decode('UTF-8').strip())
 		except binascii.Error as e:
 			raise BAD_REQUEST(L.logDebug(f'Invalid base64-encoded descriptor: {str(e)}'))
 
@@ -245,7 +245,8 @@ class SemanticManager(object):
 		L.isDebug and L.logDebug('Adding descriptor for: {smd.ri}')
 
 		try:
-			self.semanticHandler.addDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
+			
+			self.semanticHandler.addDescription(smd.getDecodeDSP(), smd.dcrp, smd.ri)
 		except ResponseException as e:
 			# if validation is enabled re-raise the event
 			if smd.vlde:
@@ -297,7 +298,7 @@ class SemanticManager(object):
 		L.isDebug and L.logDebug(f'Removing descriptor for: {smd.ri}')
 
 		# Update the semantic description
-		self.semanticHandler.updateDescription(smd.attribute(smd._decodedDsp), smd.dcrp, smd.ri)
+		self.semanticHandler.updateDescription(smd.getDecodeDSP(), smd.dcrp, smd.ri)
 		
 		# Add parent ID
 		self.semanticHandler.addParentID(smd.ri, smd.pi)

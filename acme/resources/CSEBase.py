@@ -106,7 +106,7 @@ class CSEBase(AnnounceableResource):
 
 		# Update the hcl attribute in the hosting node (similar to AE)
 		nl = self['nl']
-		_nl_ = self.__node__
+		_nl_ = self[Constants.attrNode]
 
 		if nl or _nl_:
 			if nl != _nl_:

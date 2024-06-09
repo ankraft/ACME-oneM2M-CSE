@@ -1606,20 +1606,20 @@ function createResource() {{
 			info = ''
 			match self.treeMode:
 				case TreeMode.COMPACT:
-					info = f'-> {res.__rtype__}'
+					info = f'-> {res[Constants.attrRtype]}'
 				case TreeMode.CONTENT:
 					if len(contentInfo) > 0:
-						info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} | {contentInfo}'
 					else:
-						info = f'-> {res.__rtype__}{extraInfo}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo}'
 				case TreeMode.CONTENTONLY:
 					if len(contentInfo) > 0:
 						info = f'-> {contentInfo}'
 				case _: # self.treeMode == NORMAL
 					if res.isVirtual():
-						info = f'-> {res.__rtype__}{extraInfo} (virtual)'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} (virtual)'
 					else:
-						info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
 

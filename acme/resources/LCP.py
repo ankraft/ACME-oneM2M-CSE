@@ -12,24 +12,27 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource, GeofenceEventCriteria, LocationUpdateEventCriteria, LocationInformationType
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource
+from ..etc.Constants import Constants
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory 
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.GeoTools import getGeoPolygon
+
+
+# Add to internal attributes
+addToInternalAttributes(Constants.attrGTA)
+
 
 # TODO add annc
 # TODO add to supported resources of CSE
 
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
-
-	_gta = '__gta__'
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
@@ -74,9 +77,6 @@ class LCP(AnnounceableResource):
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.LCP, dct, pi, create = create)
-
-		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._gta)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
@@ -172,9 +172,9 @@ class LCP(AnnounceableResource):
 
 		# Validate the polygon
 		if (gta := self.gta) is not None:
-			if (_gta := getGeoPolygon(gta)) is None:
+			if (g := getGeoPolygon(gta)) is None:
 				raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
-			self.setAttribute(self._gta, _gta)	# store the geoJSON polygon in the internal attribute
+			self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
 		
 
 

@@ -18,20 +18,23 @@ from ..etc.ACMEUtils import pureResource, toSPRelative, csiFromSPRelative, compa
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, TimeWindowType, EventEvaluationMode, CSERequest
-from ..etc.ResponseStatusCodes import ResponseException, NOT_FOUND
+from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 
+
+# add internal attribute to store the references to the created <sub> resources
+# Add to internal attributes to ignore in validation etc
+addToInternalAttributes(Constants.attrSubSratRIs)
+addToInternalAttributes(Constants.attrSudRI)
 
 
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
-	# TODO move to Constants
-	_subSratRIs = '__subSratRIs__'	# dict of really modified <sub> resources
-	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
@@ -74,13 +77,7 @@ class CRS(Resource):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.CRS, dct, pi, create = create)
-
-
-		# add internal attribute to store the references to the created <sub> resources
-		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._subSratRIs)
-		self._addToInternalAttributes(self._sudRI)
-		self.setAttribute(self._subSratRIs, {}, overwrite = False)	
+		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite = False)	
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -251,7 +248,7 @@ class CRS(Resource):
 				return
 			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
 			# Store the 'sur' to ignore that subscription resource during deletion
-			self.setAttribute(self._sudRI, _sur)
+			self.setAttribute(Constants.attrSudRI, _sur)
 			self.dbUpdate()
 
 			# Delete self. Use the resource's creator for the creator
@@ -263,8 +260,8 @@ class CRS(Resource):
 			raise BAD_REQUEST(L.logWarn('No or empty "sur" attribute in notification'))
 
 		# Test whether the received sur points to one of the rrat or srat resources	
-		_subSratRIs = self.attribute(self._subSratRIs)
-		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat) or (_subSratRIs.values() and sur in _subSratRIs.values()):
+		_subRIs = self.attribute(Constants.attrSubSratRIs)
+		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat) or (_subRIs.values() and sur in _subRIs.values()):
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
@@ -374,11 +371,11 @@ class CRS(Resource):
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
 
 		# Add <sub>'s SP-relative ri to internal references
-		_subRIs = self.attribute(self._subSratRIs)
+		_subRIs = self.attribute(Constants.attrSubSratRIs)
 		_sratCsi = csiFromSPRelative(_sratSpRelative)
 		_sratRi = resource.ri
 		_subRIs[srat] = f'{_sratCsi}/{_sratRi}'
-		self.setAttribute(self._subSratRIs, _subRIs)
+		self.setAttribute(Constants.attrSubSratRIs, _subRIs)
 
 
 	def _deleteSubscriptions(self, originator:str) -> None:
@@ -388,7 +385,7 @@ class CRS(Resource):
 				originator: The originator to use for the DELETE requests.
 		"""
 		L.isDebug and L.logDebug(f'Deleting all subscriptions for <CRS>: {self.ri}')
-		sudRI = self.attribute(self._sudRI)	# Optional RI given in a subscription deletion notification. Leave it out!
+		sudRI = self.attribute(Constants.attrSudRI)	# Optional RI given in a subscription deletion notification. Leave it out!
 
 		# Remove subscriptions for rrat. For this use the RI stored in the rrats attribute
 		if rrats := self.rrats:
@@ -403,9 +400,9 @@ class CRS(Resource):
 		
 		# Remove self from successfully done srat subscriptions
 		# This is the internal list, not srat, bc this list may be smaller
-		if _subSratRIs := self.attribute(self._subSratRIs):
+		if _subRIs := self.attribute(Constants.attrSubSratRIs):
 			L.isDebug and L.logDebug(f'Removing from srat subscriptions')
-			for subRI in list(_subSratRIs.keys()):
+			for subRI in list(_subRIs.keys()):
 				if sudRI and compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
 					L.isDebug and L.logDebug(f'Skipping deletion initiating subscription (from notification): {sudRI}')
 					continue
@@ -429,7 +426,7 @@ class CRS(Resource):
 
 
 	def _deleteFromSubscriptionsForSrat(self, srat:str, originator:str) -> None:
-		_subRIs = self.attribute(self._subSratRIs)
+		_subRIs = self.attribute(Constants.attrSubSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
 			try:
 				resource = CSE.dispatcher.retrieveResource(subRI, originator = originator)
@@ -459,4 +456,4 @@ class CRS(Resource):
 				L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e} {e.dbg}')
 
 			del _subRIs[srat]
-			self.setAttribute(self._subSratRIs, _subRIs)
+			self.setAttribute(Constants.attrSubSratRIs, _subRIs)

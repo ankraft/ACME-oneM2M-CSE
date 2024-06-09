@@ -30,19 +30,18 @@ from ..etc.Constants import Constants
 # TODO _remodeID - is anybody using that one??
 
 
-
-# Optimize access to names of internal attributes (fewer look-up)
-_rtype = Constants.attrRtype
-_srn = Constants.attrSrn
-_node = Constants.attrNode
-_createdInternallyRI = Constants.attrCreatedInternallyRI
-_imported = Constants.attrImported
-_isInstantiated = Constants.attrIsInstantiated
-_locCoordinate = Constants.attrLocCoordinage
-_originator = Constants.attrOriginator
-_modified = Constants.attrModified
-_remoteID = Constants.attrRemoteID
-_rvi = Constants.attrRvi
+internalAttributes	= [ Constants.attrRtype,
+					  	Constants.attrSrn, 
+						Constants.attrNode, 
+						Constants.attrCreatedInternallyRI, 
+						Constants.attrImported, 
+						Constants.attrIsInstantiated,
+						Constants.attrLocCoordinate,
+						Constants.attrOriginator, 
+						Constants.attrModified, 
+						Constants.attrRemoteID,
+						Constants.attrRvi ]
+"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 
 class Resource(object):
@@ -64,12 +63,6 @@ class Resource(object):
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	"""	Resource attributes that are excluded when updating the resource """
 
-	# ATTN: There is a similar definition in FCNT, TSB, and others! Don't Forget to add attributes there as well
-
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternallyRI, _imported, 
-							_isInstantiated, _locCoordinate,
-							_originator, _modified, _remoteID, _rvi ]
-	"""	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 	def __init__(self, 
 				 ty:ResourceTypes, 
@@ -111,18 +104,18 @@ class Resource(object):
 			self.tpe = ty.tpe() if not tpe else tpe
 
 		if dct is not None: 
-			self.isImported = dct.get(_imported)	# might be None, or boolean
+			self.isImported = dct.get(Constants.attrImported)	# might be None, or boolean
 			self.dict = deepcopy(dct.get(self.tpe))
 			if not self.dict:
 				self.dict = deepcopy(dct)
 			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
-			self.setAttribute(_isInstantiated, True)
+			self.setAttribute(Constants.attrIsInstantiated, True)
 
 		# if self.dict is not None:
 		if not self.tpe: 
-			self.tpe = self.__rtype__
+			self.tpe = self[Constants.attrRtype]
 		if not self.hasAttribute('ri'):
 			self.setAttribute('ri', uniqueRI(self.tpe), overwrite = False)
 		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
@@ -160,7 +153,7 @@ class Resource(object):
 		# But see also the comment in update() !!!
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
-		self.setAttribute(_rtype, self.tpe)
+		self.setAttribute(Constants.attrRtype, self.tpe)
 
 
 	# Default encoding implementation. Overwrite in subclasses
@@ -180,7 +173,7 @@ class Resource(object):
 		"""
 		# remove (from a copy) all internal attributes before printing
 		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
-					if k not in self.internalAttributes 				# if k is not in internal attributes (starting with __), AND
+					if k not in internalAttributes 				# if k is not in internal attributes (starting with __), AND
 					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
 					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
 				}
@@ -210,7 +203,7 @@ class Resource(object):
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
-		if not self[_isInstantiated] and not self.isVirtual() :
+		if not self[Constants.attrIsInstantiated] and not self.isVirtual() :
 			CSE.validator.validateAttributes(self._originalDict, 
 											 self.tpe, 
 											 self.ty, 
@@ -220,7 +213,7 @@ class Resource(object):
 											 isAnnounced = self.isAnnounced())
 
 		# Set the internal originator that creates the resource.
-		self.setAttribute(_originator, originator, overwrite = False)
+		self.setOriginator(originator, overwrite = False)
 
 		# validate the resource logic
 		self.validate(originator, parentResource = parentResource)
@@ -234,7 +227,7 @@ class Resource(object):
 				raise BAD_REQUEST('acpi must not be an empty list')
 			self.setAttribute('acpi', self._checkAndFixACPIreferences(self.acpi))
 
-		self.setAttribute(_rtype, self.tpe, overwrite = False) 
+		self.setAttribute(Constants.attrRtype, self.tpe, overwrite = False) 
 
 
 	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
@@ -379,20 +372,20 @@ class Resource(object):
 		self.validate(originator, dct = dct, parentResource = parentResource)
 
 		# store last modified attributes
-		self[_modified] = resourceDiff(dictOrg, self.dict, updatedAttributes)
+		self[Constants.attrModified] = resourceDiff(dictOrg, self.dict, updatedAttributes)
 
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, 
 									  		NotificationEventType.resourceUpdate, 
 											originator,
-									  		modifiedAttributes = self[_modified])
+									  		modifiedAttributes = self[Constants.attrModified])
 		CSE.notification.checkOperationSubscription(self, Operation.UPDATE, originator)
 
 		self.dbUpdate()
 
 		# Check Attribute Trigger
-		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[_modified])
+		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[Constants.attrModified])
 
 		# Notify parent that a child has been updated
 		parentResource.childUpdated(self, updatedAttributes, originator)
@@ -577,7 +570,7 @@ class Resource(object):
 				# Let's optimize and store the coordinates as a JSON object
 				crd = CSE.validator.validateGeoLocation(loc)
 				if dct is not None:
-					setXPath(dct, f'{self.tpe}/{_locCoordinate}', crd, overwrite = True)
+					setXPath(dct, f'{self.tpe}/{Constants.attrLocCoordinate}', crd, overwrite = True)
 				else:
 					self.setLocationCoordinates(crd)
 
@@ -590,7 +583,7 @@ class Resource(object):
 			Return:
 				True if this resource has been created for another resource.
 		"""
-		return self[_createdInternallyRI] is not None
+		return self[Constants.attrCreatedInternallyRI] is not None
 
 
 	def setCreatedInternally(self, ri:str) -> None:
@@ -602,7 +595,7 @@ class Resource(object):
 				ri: Resource ID of the resource for which this resource has been created for.
 
 		"""
-		self[_createdInternallyRI] = ri
+		self[Constants.attrCreatedInternallyRI] = ri
 
 
 	def isAnnounced(self) -> bool:
@@ -766,7 +759,7 @@ class Resource(object):
 		"""
 		_dct = deepcopy(self.dict)
 		if not includingInternal:
-			for key in self.internalAttributes:
+			for key in internalAttributes:
 				if key in _dct:
 					del _dct[key]
 		return _dct
@@ -899,18 +892,6 @@ class Resource(object):
 				newACPIList.append(ri)
 		return newACPIList
 	
-
-	def _addToInternalAttributes(self, name:str) -> None:
-		"""	Add a *name* to the names of internal attributes. 
-		
-			*name* is only added if	it is not already present.
-
-			Args:
-				name: Attribute name to add.
-		"""
-		if name not in self.internalAttributes:
-			self.internalAttributes.append(name)
-
 
 	def hasAttributeDefined(self, name:str) -> bool:
 		"""	Test whether a resource supports the specified attribute.
@@ -1083,10 +1064,10 @@ class Resource(object):
 			Return:
 				The resource's originator.
 		"""
-		return self[_originator]
+		return self[Constants.attrOriginator]
 	
 
-	def setOriginator(self, originator:str) -> None:
+	def setOriginator(self, originator:str, overwrite:Optional[bool] = True) -> None:
 		"""	Set a resource's originator.
 
 			This is the originator that created the resource. It is stored internally within the resource.
@@ -1094,7 +1075,7 @@ class Resource(object):
 			Args:
 				originator: The originator to assign to a resource.
 		"""
-		self.setAttribute(_originator, originator)
+		self.setAttribute(Constants.attrOriginator, originator, overwrite = overwrite)
 	
 	
 	def setResourceName(self, rn:str) -> None:
@@ -1109,7 +1090,7 @@ class Resource(object):
 
 		# determine and add the srn, only when this is a local resource, otherwise we don't need this information
 		# It is *not* a remote resource when the __remoteID__ is set
-		if not self[_remoteID]:
+		if not self[Constants.attrRemoteID]:
 			self.setSrn(self.structuredPath())
 
 
@@ -1119,7 +1100,7 @@ class Resource(object):
 			Return:
 				The resource's full structured resource name.
 		"""
-		return self[_srn]
+		return self[Constants.attrSrn]
 	
 
 	def setSrn(self, srn:str) -> None:
@@ -1128,7 +1109,7 @@ class Resource(object):
 			Args:
 				srn: The full structured resource name to assign to a resource.
 		"""
-		self.setAttribute(_srn, srn)
+		self.setAttribute(Constants.attrSrn, srn)
 
 
 	def getRVI(self) -> str:
@@ -1137,7 +1118,7 @@ class Resource(object):
 			Return:
 				The resource's *rvi*.
 		"""
-		return self[_rvi]
+		return self[Constants.attrRvi]
 	
 
 	def setRVI(self, rvi:str) -> None:
@@ -1148,7 +1129,7 @@ class Resource(object):
 			Args:
 				rvi: Original CREATE request's *rvi*.
 		"""
-		self.setAttribute(_rvi, rvi)
+		self.setAttribute(Constants.attrRvi, rvi)
 
 
 	def getLocationCoordinates(self) -> list:
@@ -1157,7 +1138,7 @@ class Resource(object):
 			Return:
 				The resource's location coordinates. Might be None.
 		"""
-		return self.attribute(_locCoordinate)
+		return self.attribute(Constants.attrLocCoordinate)
 	
 
 	def setLocationCoordinates(self, crd:JSON) -> None:
@@ -1166,4 +1147,21 @@ class Resource(object):
 			Args:
 				crd: The location coordinates to assign to a resource.
 		"""
-		self.setAttribute(_locCoordinate, crd)
+		self.setAttribute(Constants.attrLocCoordinate, crd)
+
+
+#########################################################################
+#
+#	Internal helper functions
+#
+
+def addToInternalAttributes(name:str) -> None:
+	"""	Add a *name* to the names of internal attributes. 
+	
+		*name* is only added if	it is not already present.
+
+		Args:
+			name: Attribute name to add.
+	"""
+	if name not in internalAttributes:
+		internalAttributes.append(name)

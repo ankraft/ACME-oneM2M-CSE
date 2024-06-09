@@ -18,9 +18,11 @@ from ..etc.Constants import Constants
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..etc.ACMEUtils import toSPRelative
-from .Resource import Resource
+from .Resource import Resource, addToInternalAttributes
 
-_announcedTo = Constants.attrAnnouncedTo
+# Add to internal attributes
+addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal attributes
+
 
 class AnnounceableResource(Resource):
 
@@ -34,9 +36,8 @@ class AnnounceableResource(Resource):
 					   rn:Optional[str] = None) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
 		
-		self._addToInternalAttributes(_announcedTo) # add announcedTo to internal attributes
 		self._origAA = None	# hold original announceableAttributes when doing an update
-		self.setAttribute(_announcedTo, [], overwrite = False)
+		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -312,7 +313,7 @@ class AnnounceableResource(Resource):
 			Return:
 				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
 		"""
-		return self[_announcedTo]
+		return self[Constants.attrAnnouncedTo]
 	
 
 	def setAnnouncedTo(self, announcedTo:list[Tuple[str, str]]) -> None:
@@ -321,4 +322,4 @@ class AnnounceableResource(Resource):
 			Args:
 				announcedTo: The list of *announcedTo* tupples (csi, remote resource ID) to assign to a resource.
 		"""
-		self.setAttribute(_announcedTo, announcedTo)
+		self.setAttribute(Constants.attrAnnouncedTo, announcedTo)
