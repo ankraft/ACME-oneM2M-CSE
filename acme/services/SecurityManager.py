@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from ..etc.Types import ResourceTypes, Permission, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
 from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
@@ -34,6 +35,7 @@ class ACPResult():
 	"""
 	allowed:bool
 	attributes:List[str]
+	authenticated:bool = False
 
 
 class SecurityManager(object):
@@ -452,7 +454,6 @@ class SecurityManager(object):
 		
 		# We reach here when no ACP has general granted direct access, but we may have further attributes to check
 
-		#
 		# Check the attributes
 		#
 		if allAcpAttributes:
@@ -571,7 +572,12 @@ class SecurityManager(object):
 
 
 
-	def checkSingleACPPermission(self, acp:ACP, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> ACPResult:
+	def checkSingleACPPermission(self, acp:ACP, 
+							  		   originator:str, 
+									   requestedPermission:Permission, 
+									   ty:ResourceTypes,
+									   context:Optional[str] = 'pv'
+									   ) -> ACPResult:
 		"""	Check whether an *originator* has the requested permissions.
 
 			Args:
@@ -579,6 +585,7 @@ class SecurityManager(object):
 				originator: The originator to test the permissions for.
 				requestedPermission: The permissions to test.
 				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
+				context: The context to check. Default is 'pv'.
 			
 			Return:
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise. Additionally, a list of accessControlAttributes combined is returned.
@@ -587,11 +594,64 @@ class SecurityManager(object):
 
 		# Get through all accessControlRules because we need to collect all attributes
 		# This means we cannot return early
-		for acr in acp['pv/acr']:
+		# The following loop iterates over the rules of 'pv' or 'pvs'
+		for acr in acp[f'{context}/acr']:
 
 			# Check Permission-to-check first
 			if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
+
+			# Check accessControlContexts
+			if (acco := acr.get('acco')) is not None:
+				found = False
+				_ts = utcDatetime()
+				for eachAcco in acco:
+
+					# Check accessControlWindows
+					if (actw := eachAcco.get('actw')) is not None:
+						for eachActw in actw:
+							if cronMatchesTimestamp(eachActw, _ts):
+								found = True
+								break
+						else:
+							continue
+		
+					# Check accessControlLocationRegion
+					if (aclr := eachAcco.get('aclr')) is not None:
+						L.isWarn and L.logWarn('AccessControlLocationRegion is not supported yet. Ignoring.')
+						found = True
+
+					# Check accessControlIpAddresses - acip
+					if (acip := eachAcco.get('acip')) is not None:
+						L.isWarn and L.logWarn('AccessControlIpAddresses is not supported yet. Ignoring.')
+						found = True
+
+					# Check accessControlUserIDs
+					if (acui := eachAcco.get('acui')) is not None:
+						L.isWarn and L.logWarn('AccessControlUserIDs is not supported yet. Ignoring.')
+						found = True
+					
+					# Check accessControlEvalCriteria
+					if (acec := eachAcco.get('acec')) is not None:
+						L.isWarn and L.logWarn('AccessControlEvalCriteria is not supported yet. Ignoring.')
+						found = True
+					
+					# Check accessControlLimit
+					if (acl := eachAcco.get('acl')) is not None:
+						L.isWarn and L.logWarn('AccessControlLimit is not supported yet. Ignoring.')
+						found = True
+
+					if found:
+						break
+				else:
+					continue	# Not in any context, so continue with the next acr
+
+			# Check accessControlAuthenticationFlag
+			if acr.get('acaf') is not None:
+				L.isWarn and L.logWarn('AccessControlAuthenticationFlag is not supported yet. Ignoring.')
+				# To support this, we need to check whether the request is authenticated.
+				# See TS-0003, 7.1.2
+			
 
 			# Check accessControlAttributes
 			if (aca := acr.get('aca')) is not None:
@@ -623,6 +683,7 @@ class SecurityManager(object):
 				return ACPResult(True, [])	# No need to collect attributes when the 
 
 		# Not general grant, but we may have further attributes to check
+
 		return ACPResult(False, allAttributes) 
 	
 
@@ -635,7 +696,9 @@ class SecurityManager(object):
 			Return:
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
 		"""
-		# NOTE The same function also exists in ACPAnnc.py
+
+		# TODO add attribute and other checks
+		# Perhaps move the attribute and other checks to a separate method
 
 		match acp.ty:
 			case ResourceTypes.ACP:

@@ -14,6 +14,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for *operationMonitor* attribute in &lt;subscription> resources.
 - [CSE] Improved support for DELETE operations on &lt;request> resources.
 - [CSE] Added support for attribute-level access control.
+- [CSE] Added support ACP access control contexts: accessControlWindow
 - [LOGGING] Added support for logging in UTC time.
 - [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
 - [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.

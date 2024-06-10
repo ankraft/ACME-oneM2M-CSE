@@ -1562,6 +1562,176 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	Athenticated originator
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACAFRetrieveCnt(self) -> None:
+		"""	Create an ACP with acaf attribut, create and retrieve CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							'acaf': True
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = RETRIEVE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	#
+	#	AccessControlWindow tests
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACTWRetrieveCnt(self) -> None:
+		"""	Create an ACP with actw attribute within timespan, create and retrieve CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							'acco': [ {
+								'actw': ['* * * * * * *']
+							}],
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = RETRIEVE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACTWRetrieveCntFail(self) -> None:
+		"""	Create an ACP with actw attribute outside timespan, create and retrieve CNT -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							'acco': [ {
+								'actw': ['* * * * * * 1984']
+							}],
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = RETRIEVE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
 
 # TODO reference a non-acp resource in acpi
 # TODO acod/specialization
@@ -1649,6 +1819,13 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createACPwithACACREATECnt',
 		'test_createACPwithACAUPDATECntFail',
 		'test_createACPwithACAUPDATECnt',
+
+		# ACP with acaf tests
+		'test_createACPwithACAFRetrieveCnt',
+
+		# ACP with accessControlWindow
+		'test_createACPwithACTWRetrieveCnt',
+		'test_createACPwithACTWRetrieveCntFail',
 	])
 
 	# Run tests
