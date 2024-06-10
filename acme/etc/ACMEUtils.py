@@ -688,21 +688,6 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
 
 
-def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
-	"""	Filter a dictionary by a list of attributes to include.
-	
-		Args:
-			dct: Dictionary to filter.
-			attributesToInclude: List of attributes to include.
-			
-		Return:
-			Filtered dictionary.
-	"""
-	return { k: v 
-			 for k, v in dct.items() 
-			 if k in attributesToInclude }
-			 
-
 def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 

@@ -29,7 +29,7 @@ from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BA
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, filterAttributes, riFromID
+from ..etc.ACMEUtils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, riFromID
 from ..etc.ACMEUtils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
@@ -132,12 +132,13 @@ class Dispatcher(object):
 
 
 		# Check attributeList in Content
-		attributeList:JSON = None
+
 		if request.pc is not None:
 			L.isDebug and L.logDebug(f'Found Content for RETRIEVE: {request.pc}')
 			if (attributeList := request.pc.get('m2m:atrl')) is None:
 				raise BAD_REQUEST(L.logWarn(f'Only "m2m:atrl" is allowed in Content for RETRIEVE.'))
 			CSE.validator.validateAttribute('atrl', attributeList)
+			request._attributeList = attributeList
 		
 		# Handle operation execution time , and check CSE schedule and request expiration
 		self.handleOperationExecutionTime(request)
@@ -175,7 +176,7 @@ class Dispatcher(object):
 
 
 				res = laOlResource.handleRetrieveRequest(request = request, originator = originator)
-				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE):
+				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE, request=request, resultResource = res.resource):
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {Permission.RETRIEVE}')
 				return res
 
@@ -215,7 +216,7 @@ class Dispatcher(object):
 
 					resource = self.retrieveResource(id, originator, request)
 
-					if not CSE.security.hasAccess(originator, resource, permission):
+					if not CSE.security.hasAccess(originator, resource, permission, request = request, resultResource = resource):
 						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
 
 					match rcn:
@@ -224,7 +225,8 @@ class Dispatcher(object):
 							resource.willBeRetrieved(originator, request)	# resource instance may be changed in this call
 							
 							# partial retrieve?
-							return self._partialFromResource(resource, attributeList)
+							resource.selectAttributes(request, request._attributeList)
+							return Result(rsc = ResponseStatusCode.OK, resource = resource)
 
 						case ResultContentType.originalResource:
 							# if rcn == original-resource we retrieve the linked resource
@@ -243,7 +245,8 @@ class Dispatcher(object):
 							# retrieveResource call by the hosting CSE
 
 							# partial retrieve?
-							return self._partialFromResource(linkedResource, attributeList)
+							linkedResource.selectAttributes(request, request._attributeList)
+							return Result(rsc = ResponseStatusCode.OK, resource = linkedResource)
 
 
 				case ResultContentType.semanticContent:
@@ -271,7 +274,7 @@ class Dispatcher(object):
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
 		for r in resources:
-			if CSE.security.hasAccess(originator, r, permission):
+			if CSE.security.hasAccess(originator, r, permission, request = request, resultResource = r):
 				try:
 					r.willBeRetrieved(originator, request)	# resource instance may be changed in this call
 					allowedResources.append(r)
@@ -453,7 +456,7 @@ class Dispatcher(object):
 				# Check existence and permissions for the .../{arp} resource
 				srn = f'{resource.getSrn()}/{filterCriteria.arp}'
 				_res = self.retrieveResource(srn)
-				if CSE.security.hasAccess(originator, _res, permission):
+				if CSE.security.hasAccess(originator, _res, permission, resultResource = _res):
 					_resources.append(_res)
 			discoveredResources = _resources	# re-assign the new resources to discoveredResources
 
@@ -505,7 +508,7 @@ class Dispatcher(object):
 			if self._matchResource(resource, 
 								   fo, 
 								   allLen, 
-								   filterCriteria) and CSE.security.hasAccess(originator, resource, permission):
+								   filterCriteria) and CSE.security.hasAccess(originator, resource, permission, resultResource = resource):
 				discoveredResources.append(resource)
 
 			# Iterate recursively over all (not only the filtered!) direct child resources
@@ -677,7 +680,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id)
 
-		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource):
+		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, request=request):
 			if ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
@@ -790,7 +793,7 @@ class Dispatcher(object):
 			resource = resourceFromDict(dct, ty = ty, pi = pID)
 
 			# Check Permission
-			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource):
+			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
@@ -962,7 +965,7 @@ class Dispatcher(object):
 		#	Permission check
 		#	If this is an 'acpi' update?
 		if not CSE.security.checkAcpiUpdatePermission(request, resource, originator):	#  == False indicates that this is NOT an ACPI update. In this case we need a normal permission check
-			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE):
+			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE, request=request, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 
@@ -1064,7 +1067,7 @@ class Dispatcher(object):
 				resource = self.retrieveLocalResource(rID, originator = originator)
 			
 			# Check Permission
-			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE):
+			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE, resultResource = resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 			# Update it locally
@@ -1141,7 +1144,7 @@ class Dispatcher(object):
 		# get resource to be removed and check permissions
 		resource = self.retrieveResource(id)
 
-		if not CSE.security.hasAccess(originator, resource, Permission.DELETE):
+		if not CSE.security.hasAccess(originator, resource, Permission.DELETE, request = request, resultResource = resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
 
 		# Check for virtual resource
@@ -1272,7 +1275,7 @@ class Dispatcher(object):
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 			# Check Permission
-			if not CSE.security.hasAccess(originator, resource, Permission.DELETE):
+			if not CSE.security.hasAccess(originator, resource, Permission.DELETE, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no DELETE access to: {resource.ri}'))
 
 			# delete it locally
@@ -1529,7 +1532,7 @@ class Dispatcher(object):
 		# check and filter by ACP
 		children = []
 		for r in resources:
-			if CSE.security.hasAccess(originator, r, permission):
+			if CSE.security.hasAccess(originator, r, permission, resultResource=r):
 				children.append(r)
 		return children
 
@@ -1587,7 +1590,7 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Retrieving resource with permissions: {ri} for originator: {originator} permission: {permission}')
 		resource = self.retrieveResource(riFromID(ri), originator)
-		if not CSE.security.hasAccess(originator, resource, permission):
+		if not CSE.security.hasAccess(originator, resource, permission, resultResource = resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no access to the resource: {ri}'))
 		return resource
 	
@@ -1887,28 +1890,28 @@ class Dispatcher(object):
 		return None
 
 
-	def _partialFromResource(self, resource:Resource, attributeList:JSON) -> Result:
-		"""	Filter attributes from a resource.
+	# def _partialFromResource(self, resource:Resource, attributeList:JSON) -> Result:
+	# 	"""	Filter attributes from a resource.
 
-			Args:
-				resource: The resource to filter the attributes from.
-				attributeList: The list of attributes to filter.
+	# 		Args:
+	# 			resource: The resource to filter the attributes from.
+	# 			attributeList: The list of attributes to filter.
 
-			Return:
-				A Result object with the filtered resource.
+	# 		Return:
+	# 			A Result object with the filtered resource.
 
-			Raises:
-				BAD_REQUEST: In case an attribute is not defined for the resource.
-		"""
-		if attributeList:
-			# Validate that the attribute(s) are actual resouce attributes
-			for a in attributeList:
-				if not resource.hasAttributeDefined(a):
-					raise BAD_REQUEST(L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {resource.ty}'))
+	# 		Raises:
+	# 			BAD_REQUEST: In case an attribute is not defined for the resource.
+	# 	"""
+	# 	if attributeList:
+	# 		# Validate that the attribute(s) are actual resouce attributes
+	# 		for a in attributeList:
+	# 			if not resource.hasAttributeDefined(a):
+	# 				raise BAD_REQUEST(L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {resource.ty}'))
 			
-			# Filter the attribute(s)
-			tpe = resource.tpe
-			return Result(resource = { tpe : filterAttributes(resource.asDict()[tpe], attributeList) }, 
-						  rsc = ResponseStatusCode.OK)
-		return Result(resource = resource, 
-					  rsc = ResponseStatusCode.OK)
+	# 		# Filter the attribute(s)
+	# 		tpe = resource.tpe
+	# 		return Result(resource = { tpe : filterAttributes(resource.asDict()[tpe], attributeList) }, 
+	# 					  rsc = ResponseStatusCode.OK)
+	# 	return Result(resource = resource, 
+	# 				  rsc = ResponseStatusCode.OK)

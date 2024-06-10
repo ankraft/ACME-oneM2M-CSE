@@ -138,7 +138,8 @@ def requestFromResult(inResult:Result,
 					  originator:Optional[str] = None, 
 					  ty:Optional[ResourceTypes] = None, 
 					  op:Optional[Operation] = None, 
-					  isResponse:Optional[bool] = False) -> Result:
+					  isResponse:Optional[bool] = False,
+					  originalRequest:Optional[CSERequest] = None) -> Result:
 	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
 		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
@@ -229,7 +230,6 @@ def requestFromResult(inResult:Result,
 		req['rset'] = inResult.request.rset
 
 
-
 	# If the response contains a request (ie. for polling), then add that request to the pc
 	pc = None
 	# L.isDebug and L.logDebug(inResult)
@@ -245,6 +245,13 @@ def requestFromResult(inResult:Result,
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
 	if pc:
+
+		# If the request has selected attributes, then the pc content must be filtered
+		if originalRequest and originalRequest.selectedAttributes:
+			_tpe = list(pc.keys())[0]
+			pc = { _tpe : filterAttributes(pc[_tpe], originalRequest.selectedAttributes) }
+
+
 		# if the request/result is actually an incoming request targeted to the receiver, then the
 		# whole request must be embeded as a "m2m:rqp" request.
 		if inResult.embeddedRequest and inResult.embeddedRequest.requestType == RequestType.REQUEST:
@@ -357,3 +364,18 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 	req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
 
 	return req, url, u
+
+
+def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
+	"""	Filter a dictionary by a list of attributes to include.
+	
+		Args:
+			dct: Dictionary to filter.
+			attributesToInclude: List of attributes to include.
+			
+		Return:
+	"""
+	return { k: v 
+			 for k, v in dct.items() 
+			 if k in attributesToInclude }
+			 

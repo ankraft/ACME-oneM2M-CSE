@@ -1150,6 +1150,27 @@ class Resource(object):
 		self.setAttribute(Constants.attrLocCoordinate, crd)
 
 
+	def selectAttributes(self, request:CSERequest, attributeList:Optional[list[str]] = None) -> None:
+		"""	Determine the selected attributes for a partial retrieve of a resource.
+
+			Args:
+				attributeList: The list of attributes to filter.
+
+
+			Raises:
+				BAD_REQUEST: In case an attribute is not defined for the resource.
+		"""
+		# Validate that the attribute(s) are actual resouce attributes
+		if attributeList:
+			for a in attributeList:
+				if not self.hasAttributeDefined(a):
+					raise BAD_REQUEST(L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {self.ty}'))
+		
+		# Set the selected attributes in the request. The actual filtering is done in the response processing.
+		request.selectedAttributes = attributeList
+		
+
+
 #########################################################################
 #
 #	Internal helper functions
@@ -1165,3 +1186,14 @@ def addToInternalAttributes(name:str) -> None:
 	"""
 	if name not in internalAttributes:
 		internalAttributes.append(name)
+
+
+def isInternalAttribute(name:str) -> bool:
+	"""	Check whether an attribute is an internal attribute.
+
+		Args:
+			name: Attribute name to check.
+		Return:
+			True if the attribute is an internal attribute.
+	"""
+	return name in internalAttributes

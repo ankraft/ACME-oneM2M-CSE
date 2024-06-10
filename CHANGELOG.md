@@ -11,8 +11,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
-- [CSE] Support for *operationMonitor* attribute in &lt;subscription> resources.
+- [CSE] Added support for *operationMonitor* attribute in &lt;subscription> resources.
 - [CSE] Improved support for DELETE operations on &lt;request> resources.
+- [CSE] Added support for attribute-level access control.
 - [LOGGING] Added support for logging in UTC time.
 - [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
 - [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
@@ -29,6 +30,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 
 ### Removed
+- [MISC] Moved the documentation for the website to the a separate repository (ACME-oneM2M-CSE-mkdocs).
 
 
 

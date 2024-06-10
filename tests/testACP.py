@@ -69,6 +69,10 @@ class TestACP(unittest.TestCase):
 	def tearDown(self) -> None:
 		testCaseEnd(self._testMethodName)
 
+	
+	def printTitle(self) -> None:
+		print("=========")
+
 
 	#########################################################################
 
@@ -830,6 +834,735 @@ class TestACP(unittest.TestCase):
 		DELETE(grp2URL, ORIGINATOR)
 		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
+	
+	#
+	#	AccessControlAttributes
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACA(self) -> None:
+		"""	Create an ACP with aca attribute"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.RETRIEVE,
+							'aca': [ 'lbl' ]	# only grant RETRIEVE permission to the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/aca'))
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/aca'), ['lbl'])
+
+		# Delete the AE+ACP again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateACPwithACA(self) -> None:
+		"""	Update an ACP with aca attribute"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.RETRIEVE,
+							'aca': [ 'lbl' ]	# only grant RETRIEVE permission to the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/aca'))
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/aca'), ['lbl'])
+
+		# Delete the AE+ACP again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACARetrieveCntFail(self) -> None:
+		"""	Create an ACP with aca attribut, create and retrieve CNT -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							'aca': [ 'lbl' ]	# only grant RETRIEVE permission to the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = RETRIEVE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACARetrieveCnt(self) -> None:
+		"""	Create an ACP with aca attribut, create and retrieve CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							# The following list may be updated for other tests
+							'aca': [ 'rn', 'acpi', 'ri', 'et', 'ct', 'pi', 'lt', 'ty', 'lbl', 'cni', 'cbs', 'st' ]	# grant access to all attributes.
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = RETRIEVE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACARetrieveCntPartial(self) -> None:
+		"""	Create an ACP with aca attribut, create and partial retrieve CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							# The following list may be updated for other tests
+							'aca': [ 'lbl']	# grant access to all attributes.
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve only lbl -> OK
+		r, rsc = RETRIEVE(f'{cntURL}?atrl=lbl', 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACARetrieveCntPartialFail(self) -> None:
+		"""	Create an ACP with aca attribut, create and partial retrieve CNT -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							# The following list may be updated for other tests
+							'aca': [ 'lbl']	# grant access to all attributes.
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve rn -> FAIL
+		r, rsc = RETRIEVE(f'{cntURL}?atrl=rn', 'Cae1')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACAAndSimpleACPRetrieveCntPartial(self) -> None:
+		"""	Create an ACP with aca attribut and a simple ACP, create and partial retrieve CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+							# The following list may be updated for other tests
+							'aca': [ 'lbl']	# grant access to all attributes.
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN+'2',
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.RETRIEVE,
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi2 = findXPath(r, 'm2m:acp/ri')
+
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi, acpRi2 ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve rn -> FAIL
+		r, rsc = RETRIEVE(f'{cntURL}?atrl=rn', 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACADeleteCntFail(self) -> None:
+		"""	Create an ACP with aca attribut, create and delete CNT -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.DELETE,
+							'aca': [ 'lbl' ]	# only grant DELETE permission to the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = DELETE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACADeleteCnt(self) -> None:
+		"""	Create an ACP with aca attribut, create and delete CNT"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.DELETE,
+							# The following list may be updated for other tests
+							'aca': [ 'rn', 'acpi', 'ri', 'et', 'ct', 'pi', 'lt', 'ty', 'lbl', 'cni', 'cbs', 'st' ]	# grant access to all attributes.
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Retrieve full resource -> Fail
+		r, rsc = DELETE(cntURL, 'Cae1')
+		self.assertEqual(rsc, RC.DELETED, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACACREATECntFail(self) -> None:
+		"""	Create an ACP with aca attribut, create new CNT with not allowed attribute -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.CREATE,
+							'aca': [ 'lbl', 'rn' ]	# only grant CREATE permission for the label and rn
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# create a second CNT under the CNT with a not-allowed attribute -> Fail
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'mni': 10,
+				}}
+		r, rsc = CREATE(cntURL, 'Cae1', T.CNT, dct)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACACREATECnt(self) -> None:
+		"""	Create an ACP with aca attribut, create new CNT with only allowed attributes"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.CREATE,
+							'aca': [ 'lbl', 'rn', 'mni' ]	# only grant CREATE permission for the label and rn and mni
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# create a second CNT under the CNT with a not-allowed attribute -> Fail
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'mni': 10,
+				}}
+		r, rsc = CREATE(cntURL, 'Cae1', T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/rn'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lbl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/mni'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/ri'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/pi'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/ct'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/lt'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/st'))
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACAUPDATECntFail(self) -> None:
+		"""	Create an ACP with aca attribut, update CNT with not allowed attribute -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.UPDATE,
+							'aca': [ 'lbl' ]	# only grant UPDARE permission for the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Update CNT's mni 	-> Fail
+		dct = 	{ 'm2m:cnt' : {
+					'mni': 10
+				}}
+		r, rsc = UPDATE(cntURL, 'Cae1', dct)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPwithACAUPDATECnt(self) -> None:
+		"""	Create an ACP with aca attribut, update CNT with allowed attribute -> Fail"""
+
+		DELETE(aeURL, ORIGINATOR)
+		dct = 	{ 'm2m:ae' : {
+			'rn': aeRN, 
+			'api': APPID,
+			'rr': False,
+			'srv': [ RELEASEVERSION ],
+		}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
+
+		dct = 	{ 'm2m:acp': {
+					'rn': acpRN,
+					'pv': {							
+						'acr': [ {
+							'acor': [ 'Cae1' ],	# different originator
+							'acop': Permission.UPDATE,
+							'aca': [ 'lbl' ]	# only grant UPDARE permission for the label
+						} ],
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ TestACP.originator ],
+							'acop': Permission.ALL,
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# Create a CNT under the AE -> OK
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+					'lbl': [ 'test' ],
+					'acpi': [ acpRi ]
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Update CNT's mni 	-> Fail
+		dct = 	{ 'm2m:cnt' : {
+					'lbl': [ 'test2' ]
+				}}
+		r, rsc = UPDATE(cntURL, 'Cae1', dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		# Delete the AE+ACP+CNT again
+		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
 # TODO reference a non-acp resource in acpi
 # TODO acod/specialization
 
@@ -841,6 +1574,8 @@ def run(testFailFast:bool) -> TestResult:
 	# Assign tests
 	suite = unittest.TestSuite()
 	addTests(suite, TestACP, [
+
+		# Basic ACP tests
 		'test_createACP',
 		'test_retrieveACP',
 		'test_retrieveACPwrongOriginator',
@@ -897,8 +1632,23 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createACPWithWrongTyFail',
 		'test_createACPWithTy',
 
-		# ACPT with GRP tests
+		# ACP with GRP tests 
 		'test_testACPacorGRP',
+
+		# ACP with accessControlAttributes
+		'test_createACPwithACA',
+		'test_updateACPwithACA',
+		'test_createACPwithACARetrieveCntFail',
+		'test_createACPwithACARetrieveCnt',
+		'test_createACPwithACARetrieveCntPartial',
+		'test_createACPwithACARetrieveCntPartialFail',
+		'test_createACPwithACAAndSimpleACPRetrieveCntPartial',
+		'test_createACPwithACADeleteCntFail',
+		'test_createACPwithACADeleteCnt',
+		'test_createACPwithACACREATECntFail',
+		'test_createACPwithACACREATECnt',
+		'test_createACPwithACAUPDATECntFail',
+		'test_createACPwithACAUPDATECnt',
 	])
 
 	# Run tests

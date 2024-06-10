@@ -16,10 +16,12 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 
-_riTyMapping = Constants.attrRiTyMapping
+# Add to internal attributes
+addToInternalAttributes(Constants.attrRiTyMapping)
+
 
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
@@ -57,8 +59,6 @@ class ACP(AnnounceableResource):
 					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
-
-		self._addToInternalAttributes(self._riTyMapping)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
@@ -101,7 +101,7 @@ class ACP(AnnounceableResource):
 
 		_getAcorTypes(self.getFinalResourceAttribute('pv', dct))
 		_getAcorTypes(self.getFinalResourceAttribute('pvs', dct))
-		self.setAttribute(_riTyMapping, riTyDict)
+		self.setAttribute(Constants.attrRiTyMapping, riTyDict)
 
 
 
@@ -175,4 +175,4 @@ class ACP(AnnounceableResource):
 			Return:
 				The resource type if found, or *None* otherwise.
 		"""
-		return self[_riTyMapping].get(ri)
+		return self[Constants.attrRiTyMapping].get(ri)

@@ -704,11 +704,12 @@ class HttpServer(object):
 			result.request.vsi = originalRequest.vsi
 			result.request.ec  = originalRequest.ec
 			result.request.rset = originalRequest.rset
+		
 	
 		#
 		#	Transform request to oneM2M request
 		#
-		outResult = requestFromResult(result, isResponse = True)
+		outResult = requestFromResult(result, isResponse = True, originalRequest = originalRequest)
 
 		#
 		#	Transform oneM2M request to http message

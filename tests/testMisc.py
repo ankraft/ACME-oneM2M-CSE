@@ -286,6 +286,7 @@ class TestMisc(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 		
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -295,6 +296,7 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
 		self.assertEqual(findXPath(r, 'm2m:cb/ty'), ResourceTypes.CSEBase, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -323,6 +325,7 @@ class TestMisc(unittest.TestCase):
 		""" Partial RETRIEVE of CSEBase with single RO attribute ctm (http only)"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=ctm', ORIGINATOR)	# try to get mni from CSEBase
 		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -337,6 +340,7 @@ class TestMisc(unittest.TestCase):
 		# RETRIEVE with single optional attribute
 		r, rsc = RETRIEVE(f'{cseURL}/{cntRN}?atrl=mni', ORIGINATOR)	# try to get mni from CSEBase
 		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 		# delete the CNT again
 		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)

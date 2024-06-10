@@ -13,19 +13,27 @@ from __future__ import annotations
 from typing import List, cast, Optional, Any, Tuple
 
 import ssl
+from dataclasses import dataclass
 
-from ..etc.Types import JSON, ResourceTypes, Permission, Result, CSERequest
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, INTERNAL_SERVER_ERROR
+from ..etc.Types import ResourceTypes, Permission, CSERequest
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
 from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
 from ..runtime.Logging import Logging as L
+
+@dataclass
+class ACPResult():
+	"""	An ACP result structure.
+	"""
+	allowed:bool
+	attributes:List[str]
 
 
 class SecurityManager(object):
@@ -174,7 +182,9 @@ class SecurityManager(object):
 						resource:Resource, 
 						requestedPermission:Permission, 
 						ty:Optional[ResourceTypes] = None, 
-						parentResource:Optional[Resource] = None) -> bool:
+						parentResource:Optional[Resource] = None,
+						request:Optional[CSERequest] = None,
+						resultResource:Optional[Resource] = None) -> bool:
 		""" Test whether an originator has access to a resource for the requested permission.
 		
 			Args:
@@ -187,7 +197,7 @@ class SecurityManager(object):
 				Boolean indicating access.
 		"""
 
-		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
+		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes) -> ACPResult:
 			""" Check the access control policy for a single ACP resource.
 
 				Args:
@@ -197,19 +207,25 @@ class SecurityManager(object):
 					ty: The resource type to check for.
 
 				Return:
-					Boolean indicating access.
+					A data structure with the result of the check.
+
 			"""
 			try:
 				if not (acp := CSE.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
 					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
-					return False
-				if self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty):
-					L.isDebug and L.logDebug('Permission granted')
-					return True
+					return ACPResult(False, [])
+				
+				# check general operation permission. This also returns the attributes (if any)
+				result = self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty)
+				if result.allowed:
+					return result
+				if result.attributes:
+					# L.isDebug and L.logDebug(f'Attributes to check further attributes {result.attributes}')
+					return result
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}: {e.dbg}')
-				return False
-			return False
+				return ACPResult(False, [])
+			return ACPResult(False, [])
 
 
 		#  Do or ignore the check
@@ -343,9 +359,17 @@ class SecurityManager(object):
 					# fall-through to the permission checks below
 				else:
 					# handle the permission already checks here
+					allAcpAttributes = []
+					allowed = False
+
+					# Check ALL acp
 					for acpRi in macp:
-						if _checkACPI(originator, acpRi, requestedPermission, ty):
-							return True
+						acpResult = _checkACPI(originator, acpRi, requestedPermission, ty)
+						allAcpAttributes.extend(acpResult.attributes)
+						allowed = allowed or acpResult.allowed	# OR all results together
+					if allowed:
+						return True
+					# TODO handle allACPAttributes
 					L.isDebug and L.logDebug('Permission NOT granted')
 					return False
 				
@@ -416,12 +440,85 @@ class SecurityManager(object):
 		#
 		# Finally check the acpi
 		#
+
+
+		# Check all ACPs and get also the optional accessControlAttributes
+		allAcpAttributes = []
 		for acpRi in acpi:
-			if _checkACPI(originator, acpRi, requestedPermission, ty):
+			if (acpResult := _checkACPI(originator, acpRi, requestedPermission, ty)).allowed:
 				return True
+			# not general grant, but we may need to check further
+			allAcpAttributes.extend(acpResult.attributes)
+		
+		# We reach here when no ACP has general granted direct access, but we may have further attributes to check
+
+		#
+		# Check the attributes
+		#
+		if allAcpAttributes:
 			
+			# This has to be done on a per-operation basis because the handling is always
+			# a bit different.
+			allAcpAttributes = list(set(allAcpAttributes))	# remove duplicates
+			L.isDebug and L.logDebug(f'Checking attributes: {allAcpAttributes}')
+
+			match requestedPermission:
+
+				case Permission.RETRIEVE:
+
+					# Compare with the result if this is a partial retrieval
+					if request and request._attributeList:
+						L.isDebug and L.logDebug(f'Checking attributes permissions for partial RETRIEVE: {request._attributeList}')
+						for attr in request._attributeList:
+							if attr not in allAcpAttributes:
+								L.isDebug and L.logDebug(f'RETRIEVE permission NOT granted for one or more attributes: e.g. {attr}')
+								return False
+						L.isDebug and L.logDebug('Grant partial RETRIEVE attribute access')
+						return True	# all found attributes are allowed
+					
+					# Else: Check all result attributes
+					L.isDebug and L.logDebug(f'Checking attribute permissions for full RETRIEVE')
+					for attr in resultResource.dict:	# Checking the result resource !
+						if not isInternalAttribute(attr) and attr not in allAcpAttributes:
+							L.isDebug and L.logDebug(f'RETRIEVE permission NOT granted for one or more attributes: e.g. {attr}')
+							return False
+					L.isDebug and L.logDebug('Grant RETRIEVE attribute access')
+					return True # all found attributes are allowed
+
+				case Permission.DELETE:
+
+					L.isDebug and L.logDebug(f'Checking attribute permissions for DELETE')
+					for attr in resource.dict:	# checking the full about-to-be deleted resource !
+						if not isInternalAttribute(attr) and attr not in allAcpAttributes:
+							L.isDebug and L.logDebug(f'DELETE permission NOT granted for one or more attributes: e.g. {attr}')
+							return False
+					L.isDebug and L.logDebug('Grant DELETE attribute access')
+					return True # all found attributes are allowed
+
+				case Permission.UPDATE:
+
+					L.isDebug and L.logDebug(f'Checking attribute permissions for UPDATE')
+					for attr in request.pc[list(request.pc.keys())[0]]:	# checking the attributes from the original request
+						if not isInternalAttribute(attr) and attr not in allAcpAttributes:
+							L.isDebug and L.logDebug(f'UPDATE permission NOT granted for one or more attributes: e.g. {attr}')
+							return False
+					request.selectedAttributes = allAcpAttributes	# Add list of allowed attributes for the response
+					L.isDebug and L.logDebug('Grant UPDATE attribute access')
+					return True # all found attributes are allowed
+
+				case Permission.CREATE:
+
+					L.isDebug and L.logDebug(f'Checking attribute permissions for CREATE')
+					for attr in request.pc[list(request.pc.keys())[0]]:	# checking the attributes from the original request
+						if not isInternalAttribute(attr) and attr not in allAcpAttributes:
+							L.isDebug and L.logDebug(f'CREATE permission NOT granted for one or more attributes: e.g. {attr}')
+							return False
+					request.selectedAttributes = allAcpAttributes	# Add list of allowed attributes for the response
+					L.isDebug and L.logDebug('Grant CREATE attribute access')
+					return True # all found attributes are allowed
+
 		# no fitting permission identified
-		L.isDebug and L.logDebug(f'Permission NOT granted. Originator: {originator} may not be listed in any of the linked ACPs')
+		L.isDebug and L.logDebug('Permission NOT granted.')
 		return False
 
 
@@ -474,7 +571,7 @@ class SecurityManager(object):
 
 
 
-	def checkSingleACPPermission(self, acp:ACP, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> bool:
+	def checkSingleACPPermission(self, acp:ACP, originator:str, requestedPermission:Permission, ty:ResourceTypes) -> ACPResult:
 		"""	Check whether an *originator* has the requested permissions.
 
 			Args:
@@ -482,14 +579,23 @@ class SecurityManager(object):
 				originator: The originator to test the permissions for.
 				requestedPermission: The permissions to test.
 				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
+			
 			Return:
-				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
+				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise. Additionally, a list of accessControlAttributes combined is returned.
 		"""
+		allAttributes:list[str] = []
+
+		# Get through all accessControlRules because we need to collect all attributes
+		# This means we cannot return early
 		for acr in acp['pv/acr']:
 
 			# Check Permission-to-check first
 			if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
+
+			# Check accessControlAttributes
+			if (aca := acr.get('aca')) is not None:
+				allAttributes.extend(aca)
 
 			# Check accessControlObjectDetails
 			if acod := acr.get('acod'):
@@ -508,11 +614,17 @@ class SecurityManager(object):
 				# TODO support acod/specialization
 
 			# Check originator
-			if self._checkAcor(acp, acr['acor'], originator):
-				return True
+			# If we arrive here, then all the checks have passed, and we can check the originator
+			originatorAllowed = self._checkAcor(acp, acr['acor'], originator)
 
-		return False
+			# We can return early if the originator is allowed and we don't have attributes for this
+			# rule. This is ageneral permit for the originator and this operation.
+			if originatorAllowed and not aca:
+				return ACPResult(True, [])	# No need to collect attributes when the 
 
+		# Not general grant, but we may have further attributes to check
+		return ACPResult(False, allAttributes) 
+	
 
 	def checkACPSelfPermission(self, acp:ACP|ACPAnnc, originator:str, requestedPermission:Permission) -> bool:
 		"""	Check whether an *originator* has the requested permissions to the `ACP` resource itself.

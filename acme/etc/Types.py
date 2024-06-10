@@ -1934,7 +1934,7 @@ class Result:
 	"""	This class represents the generic return state for many functions. It main contain
 		the general result, a status code, values, resources etc.
 	"""
-	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	resource:Resource|JSON					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	""" Resource instance. """
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
 	""" Data. """
@@ -2415,6 +2415,9 @@ class CSERequest:
 	requestType:RequestType	= RequestType.NOTSET
 	""" The struture is for a request or a response. """
 
+	selectedAttributes:list[str] = field(default_factory = list)
+	""" Selected attributes that filter the resource attributes in the response. This list refers to the resource attributes, ie. one level below the resource. """
+
 	#
 	#	HTTP specifics
 	#
@@ -2434,6 +2437,9 @@ class CSERequest:
 
 	_ot:Optional[float] = None
 	""" The timestamp when this request object was created. """
+
+	_attributeList:JSON = None
+	""" List of attribute names if this is a partial request. Otherwise not set. """
 
 
 
