@@ -18,14 +18,6 @@ from ..runtime import CSE
 
 class ACMEContainerRegistrations(VerticalScroll):
 
-	DEFAULT_CSS = '''
-	#registrations-view {
-		display: block;
-		overflow: auto auto;  
-		min-width: 100%;
-	}
-	'''
-
 	def compose(self) -> ComposeResult:
 		yield Static(expand = True, id = 'registrations-view')
 

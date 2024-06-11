@@ -22,44 +22,7 @@ from ..etc.ACMEUtils import uniqueRI
 from ..resources.Resource import Resource
 from ..runtime import CSE
 
-
-def validateOriginator(value: str) -> bool:
-	"""	Validate the originator.
-	
-		Args:	
-			value:	The value to validate.
-
-		Returns:
-			True if the value is valid, otherwise False.
-	"""
-	return len(value) > 1 and value.startswith('C')
-
 class ACMEContainerDelete(Container):
-
-	DEFAULT_CSS = """
-	#request-delete-view {
-		height: 12;
-	}
-
-	#request-delete-input-view {
-		width: 100%;
-		height: 6;
-	}
-
-	#request-delete-response-label {
-		width: 1fr;
-		display: block;
-		overflow: auto;
-		height: 1;
-		content-align: center middle;
-		background: $panel;
-	}
-
-	#request-delete-response-response {
-		margin: 1 1 1 1;
-	}
-	"""
-	"""	The CSS for the *Delete* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -126,7 +89,8 @@ class ACMEContainerDelete(Container):
 			# Prepare request structure
 			result = CSE.request.handleRequest( {
 					'op': Operation.DELETE,
-					'fr': self.fieldOriginator.originator,
+					# 'fr': self.fieldOriginator.originator,
+					'fr': self.fieldOriginator.value,
 					'to': self.resource.ri, 
 					'rvi': CSE.releaseVersion,
 					'rqi': uniqueRI(), 

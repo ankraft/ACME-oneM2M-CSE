@@ -56,58 +56,6 @@ class ACMEViewRequests(Vertical):
 				  Binding('ctrl+t', 'toggle_comment_style', 'Comments Style'),
 				]
 
-	DEFAULT_CSS = """
-	#requests-view {
-		overflow: auto auto;  
-		width: 1fr;
-		height: 1fr;
-	}
-
-	#request-list-view {
-		width: 1fr;
-		height: 1fr;
-	}
-
-	#request-list-header {
-		width: 1fr;
-		height: 1;
-		align-vertical: middle;
-		background: $panel;
-	}
-
-	#request-list-list {
-		overflow: auto auto;  
-		min-width: 100%;
-		height: 2fr;
-	}
-
-	#request-list-details-header {
-		overflow: auto;
-		height: 1;
-		align-vertical: middle;
-		background: $panel;
-	}
-
-	#request-list-details {
-		overflow: auto scroll;
-		height: 3fr;
-	}	
-
-	#request-list-request {
-		overflow: auto;  
-		width: 1fr;
-		min-height: 100%;
-		padding: 1 1;
-	}
-
-	#request-list-response {
-		overflow: auto;  
-		width: 1fr;
-		min-height: 100%;
-		border-left: $panel;
-		padding: 1 1;
-	}
-	"""
 
 	def __init__(self, id:str) -> None:
 		super().__init__(id = id)

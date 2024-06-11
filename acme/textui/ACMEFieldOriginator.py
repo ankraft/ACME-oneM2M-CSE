@@ -20,34 +20,6 @@ from textual.message import Message
 
 class ACMEInputField(Container):
 	
-	DEFAULT_CSS = """
-	ACMEInputField {
-		width: 1fr;
-		height: 3;
-		layout: horizontal;
-		overflow: hidden hidden;
-		# background: red;
-		content-align: left middle;
-		margin: 1 1 1 1;
-	}
-
-	#field-label {
-		height: 1fr;
-		content-align: left middle;
-		align: left middle;
-	}
-
-	#field-input-view {
-		width: 1fr;
-	}
-
-	#field-message {
-		height: 1fr;
-		width: 1fr;
-		margin-left: 1;
-		color: red;
-	}
-	"""
 
 	@dataclass
 	class Submitted(Message):
@@ -85,7 +57,7 @@ class ACMEInputField(Container):
 
 
 	@on(Input.Changed)
-	def show_invalid_reasons(self, event:Input.Changed) -> None:
+	def show_validation_feedback(self, event:Input.Changed) -> None:
 		# Updating the UI to show the reasons why validation failed
 		if event.validation_result and not event.validation_result.is_valid:  
 			self.msgField.update(event.validation_result.failure_descriptions[0])

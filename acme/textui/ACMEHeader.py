@@ -21,14 +21,6 @@ class ACMEHeaderClock(HeaderClock):
 	"""	Display a modified HeaderClock. It shows the time based on UTC to help
 	  	with working with oneM2M timestamps, which are all UTC based."""
 	
-	DEFAULT_CSS = """
-	ACMEHeaderClock {
-		background: transparent;
-		width: 26;
-
-	}
-	"""
-	
 	def render(self) -> RenderResult:
 		"""Render the header clock.
 
@@ -46,12 +38,6 @@ class ACMEHeaderTitle(HeaderTitle):
 
 
 class ACMEHeader(Header):
-
-	DEFAULT_CSS = '''
-	ACMEHeader {
-		height: 3;
-	}
-	'''
 
 	def compose(self) -> ComposeResult:
 		self.tall = True

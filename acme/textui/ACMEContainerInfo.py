@@ -14,20 +14,11 @@ from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static
 from ..runtime import CSE
+from ..textui import ACMETuiApp
 
 tabInfo = 'tab-info'
 
-
 class ACMEContainerInfo(VerticalScroll):
-
-	DEFAULT_CSS = '''
-	#stats-view {
-		display: block;
-		overflow: auto auto;  
-		min-width: 100%;
-	}
-	'''
-	from ..textui import ACMETuiApp
 
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
 		super().__init__(id = id)

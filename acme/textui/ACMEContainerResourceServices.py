@@ -21,95 +21,6 @@ from ..runtime import CSE
 
 class ACMEContainerResourceServices(Container):
 
-	DEFAULT_CSS = """
-	ACMEContainerResourceServices {
-		width: 100%;
-	}
-
-	/* Export Resource */
-
-	#services-export-resource, #services-export-instances {
-		height: 10;
-		width: 100%;
-	}
-
-	#services-export-resource-area, #services-export-instances-area {
-		margin-left: 4;
-		margin-right: 4;
-		width: 100%;
-	}
-
-	#services-export-resource-controls {
-		height: 1;
-	}
-
-	#services-export-resource-checkbox {
-		height: 1;
-		border: none;
-		margin-right: 0;
-		min-width: 17;
-	}
-
-	#services-export-resource-button, #services-export-instances-button {
-		height: 1;
-		border: none;
-		margin-right: 3;
-		min-width: 14;
-	}
-
-	#services-export-resource-loading-indicator, #services-export-instances-loading-indicator {
-		margin-top: 1;
-		height: 1;
-		color: $secondary;
-	}
-
-	#services-export-resource-result, #services-export-instances-result {
-		margin-top: 1;
-		height: 1;
-	}
-		
-	/* Toggle Button */
-
-	ToggleButton > .toggle--button {
-		color: $background;
-		text-style: bold;
-		background: $foreground 15%;
-	}
-
-	ToggleButton:focus > .toggle--button {
-		background: $foreground 25%;
-	}
-
-	ToggleButton.-on > .toggle--button {
-		background: $success 75%;
-	}
-
-	ToggleButton.-on:focus > .toggle--button {
-		background: $success;
-	}
-
-
-	ToggleButton:light > .toggle--button {
-			color: $background;
-			text-style: bold;
-			background: $foreground 15%;
-	}
-
-	ToggleButton:light:focus > .toggle--button {
-		background: $foreground 25%;
-	}
-
-	ToggleButton:light.-on > .toggle--button {
-		color: $foreground 10%;
-		background: $success;
-	}
-
-	ToggleButton:light.-on:focus > .toggle--button {
-		color: $foreground 10%;
-		background: $success 75%;
-	}
-	"""
-
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
@@ -129,8 +40,6 @@ class ACMEContainerResourceServices(Container):
 				The ComposeResult
 		"""
 		with VerticalScroll():
-			yield Markdown('## Services')
-
 			# Export resource
 			with Vertical(id = 'services-export-resource'):
 				yield Markdown(

@@ -22,21 +22,6 @@ class ACMEContainerAbout(VerticalScroll):
 	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
 	"""	The key bindings for the *About* view. """
 
-	DEFAULT_CSS = """
-	#about-view {
-		display: block;
-		overflow: auto auto;  
-		min-width: 100%;
-	}
-
-	#about-button {
-		height:0;
-		width:0;
-		border: none;
-	}
-	"""
-	"""	The CSS for the *About* view. """
-
 	text = \
 f"""\
 [dim]███╗[/dim]    [{Constants.logoColor}] █████╗  ██████╗███╗   ███╗███████╗[/{Constants.logoColor}]    [dim]███╗[/dim]

@@ -130,32 +130,6 @@ class ACMEContainerConfigurations(VerticalScroll):
 	"""	Container for the *Configurations* view.
 	"""
 	
-	DEFAULT_CSS = '''
-	#configs-tree-view {
-		display: block; 
-		scrollbar-gutter: stable;
-		overflow: auto;    
-		width: auto;    
-		min-height: 1fr;            
-		dock: left;
-		max-width: 50%;  
-	}
-
-	#configs-documentation {
-		display: block;
-		overflow: auto auto;  
-	}
-	MarkdownH1 {
-        content-align: center middle;
-        text-style: bold;
-        color: $error;
-        &:light {color: $primary;}
-    }
-
-	'''
-	"""	The CSS for the *Configurations* view. """
-
-
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""

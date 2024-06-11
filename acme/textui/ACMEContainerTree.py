@@ -76,7 +76,7 @@ class ACMEResourceTree(TextualTree):
 	
 
 	def on_tree_node_hover(self, event:events.MouseMove) -> None:
-		self.parentContainer.setResourceHeader('## Resources')
+		self.parentContainer.setResourceHeader('Resources')
 
 
 	_virtualResourcesParameter = {
@@ -107,7 +107,7 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'## {ResourceTypes.fullname(resource.ty)} - {resource.rn}' if resource else '## &nbsp;')
+		self.parentContainer.setResourceHeader(f'{ResourceTypes.fullname(resource.ty)} - {resource.rn}' if resource else '## &nbsp;')
 
 		# Set the visibility of the tabs
 		self.parentContainer.tabs.show_tab('tree-tab-requests')
@@ -124,7 +124,7 @@ class ACMEResourceTree(TextualTree):
 			Args:
 				label: The label of the type section.
 		"""
-		self.parentContainer.setResourceHeader(f'## {label} Resources')
+		self.parentContainer.setResourceHeader(f'{label} Resources')
 		self.parentContainer.resourceView.update('')
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
 		self.parentContainer.tabs.hide_tab('tree-tab-requests')
@@ -177,19 +177,6 @@ class ACMEContainerTree(Container):
 				# delete requests
 				]
 
-	DEFAULT_CSS = '''
-	#resource-view {
-		width: auto;
-		height: auto;
-		margin: 0 0 0 1;
-	}
-
-	#tree-tab-resource {
-		overflow: hidden auto;  
-		height: 100%;
-		/* TODO try to get padding working with later released of textualize */
-	}
-	'''
 
 	from ..textui import ACMETuiApp
 
@@ -230,7 +217,7 @@ class ACMEContainerTree(Container):
 				# 	yield Label('TODO')
 				
 				with TabPane('DELETE', id = 'tree-tab-delete'):
-					yield Markdown('## Send DELETE Request')
+					yield Markdown('# Send DELETE Request')
 					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
 				
 				
@@ -362,7 +349,7 @@ class ACMEContainerTree(Container):
 			Args:
 				header: The header to set.
 		"""
-		self.resourceHeader.update(header)
+		self.resourceHeader.update(f'# {header}')
 	
 
 	@property
@@ -403,51 +390,6 @@ class ACMEContainerTree(Container):
 # TODO move the following to a more generic dialog module
 class ACMEDialog(ModalScreen):
 	BINDINGS = [('escape', 'pop_dialog', 'Close')]
-
-	DEFAULT_CSS = '''
-
-/* The CSS for ACMERequest is in .css file. The transparency
-   doesn't work if it is in the DEFAULT_CSS. */
-
-#confirm {
-	width: 80%;
-	padding: 1;
-	height: 8;
-	border: heavy $accent;
-	background: $surface;
-}
-
-#confirm-label {
-	content-align: center middle;
-	width: 100%;
-}
-
-#confirm-buttons {
-	margin-top: 2;
-	align: center middle;
-}
-
-#confirm-buttons Button {
-	min-width: 12;
-	border-top: none;
-	border-bottom: none;
-	height: 1;
-	margin-left: 1;
-	margin-right: 1;
-	align: center middle;
-}
-
-#confirm-ok {
-	border-left: tall $success-lighten-2;
-	border-right: tall $success-darken-3;
-}
-
-#confirm-cancel {
-	border-left: tall $primary-lighten-2;
-	border-right: tall $primary-darken-3;
-}
-
-'''
 
 	def __init__(self, message:str = 'Really?', buttonOK:str = 'OK', buttonCancel:str = 'Cancel') -> None:
 		super().__init__()

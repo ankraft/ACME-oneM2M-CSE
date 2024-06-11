@@ -50,7 +50,7 @@ class ACMETuiApp(App):
 
 	from ..runtime import TextUI
 
-	CSS_PATH = 'ACMETUI.css'
+	CSS_PATH = 'ACMETUI.tcss'
 
 	BINDINGS = 	[ Binding('#', 'quit_tui', 'Console'),
 				  Binding('Q', 'quit_acme', 'Quit ACME', key_display = 'SHIFT-Q'),
