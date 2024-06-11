@@ -13,7 +13,7 @@
 @category oneM2M Resources and Tutorials
 @tuiTool
 @tuiSortOrder 600
-@description ## oneM2M Questions & Answers @ Stack Overflow\nStack Overflow, the question and answer site for programmers, offers a oneM2M tag for questions and answers. The tag `#onem2m` is used for questions related to the oneM2M standard, its implementations, and its usage.\n\nThe **Open...** button opens a web browser and launches the "oneM2M @ Stack Overflow" tag's page.
+@description # oneM2M Questions & Answers @ Stack Overflow\nStack Overflow, the question and answer site for programmers, offers a oneM2M tag for questions and answers. The tag `#onem2m` is used for questions related to the oneM2M standard, its implementations, and its usage.\n\nThe **Open...** button opens a web browser and launches the "oneM2M @ Stack Overflow" tag's page.
 @tuiExecuteButton Open "oneM2M @ Stack Overflow" Page in Browser
 
 (open-web-browser "https://stackoverflow.com/questions/tagged/onem2m")

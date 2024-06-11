@@ -23,7 +23,7 @@ class ACMEInputField(Container):
 	DEFAULT_CSS = """
 	ACMEInputField {
 		width: 1fr;
-		height: 4;
+		height: 3;
 		layout: horizontal;
 		overflow: hidden hidden;
 		# background: red;

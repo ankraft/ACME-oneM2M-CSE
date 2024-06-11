@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import cast, Any
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import VerticalScroll
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..runtime import CSE
@@ -114,7 +114,7 @@ class ACMEConfigurationTree(TextualTree):
 		if isinstance(value, list):
 			value = ','.join(value)
 		
-		header = f'## {topic}\n'
+		header = f'# {topic}\n'
 		if value is not None:
 			# header with link for later editing feature
 			if len(_s := str(value)):
@@ -145,6 +145,13 @@ class ACMEContainerConfigurations(VerticalScroll):
 		display: block;
 		overflow: auto auto;  
 	}
+	MarkdownH1 {
+        content-align: center middle;
+        text-style: bold;
+        color: $error;
+        &:light {color: $primary;}
+    }
+
 	'''
 	"""	The CSS for the *Configurations* view. """
 

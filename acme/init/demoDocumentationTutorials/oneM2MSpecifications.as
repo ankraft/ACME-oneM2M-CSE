@@ -13,7 +13,7 @@
 @category oneM2M Resources and Tutorials
 @tuiTool
 @tuiSortOrder 15
-@description ## oneM2M Home Page - Specifications\nThe specifications section of oneM2M's home page offers the published documents and technical reports for Release 1 - 5.\n\nThe **Open...** button opens a web browser and launches the "Specifications" page.
+@description # oneM2M Home Page - Specifications\nThe specifications section of oneM2M's home page offers the published documents and technical reports for Release 1 - 5.\n\nThe **Open...** button opens a web browser and launches the "Specifications" page.
 @tuiExecuteButton Open "oneM2M Specifications" Page in Browser
 
 (open-web-browser "https://onem2m.org/technical/published-specifications")
