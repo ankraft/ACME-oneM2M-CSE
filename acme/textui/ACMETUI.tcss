@@ -177,6 +177,7 @@ ACMEContainerDiagram {
 
 	ToggleButton.-on:focus > .toggle--button {
 		background: $success;
+
 	}
 
 	ToggleButton:light > .toggle--button {
@@ -190,12 +191,12 @@ ACMEContainerDiagram {
 	}
 
 	ToggleButton:light.-on > .toggle--button {
-		color: $foreground 10%;
+		color: $foreground 50%;
 		background: $success;
 	}
 
 	ToggleButton:light.-on:focus > .toggle--button {
-		color: $foreground 10%;
+		color: $foreground 50%;
 		background: $success 75%;
 	}
 }
@@ -327,14 +328,16 @@ ACMEDialog {
  ACMEContainerDelete {
 
 	#request-delete-view {
-		height: 12;
+		height: 14;
 		width: auto;
 		/* background: red; */
 	}
 
 	#request-delete-input-view {
 		width: 100%;
-		height: 6;
+		height: 4;
+		margin-left: 1;
+		margin-right: 1;
 	}
 
 	#request-delete-response-label {
@@ -495,12 +498,12 @@ ACMEContainerResourceServices {
 	}
 
 	ToggleButton:light.-on > .toggle--button {
-		color: $foreground 10%;
+		color: $foreground 50%;
 		background: $success;
 	}
 
 	ToggleButton:light.-on:focus > .toggle--button {
-		color: $foreground 10%;
+		color: $foreground 50%;
 		background: $success 75%;
 	}
 

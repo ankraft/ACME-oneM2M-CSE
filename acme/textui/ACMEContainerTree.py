@@ -217,7 +217,6 @@ class ACMEContainerTree(Container):
 				# 	yield Label('TODO')
 				
 				with TabPane('DELETE', id = 'tree-tab-delete'):
-					yield Markdown('# Send DELETE Request')
 					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
 				
 				
@@ -234,7 +233,8 @@ class ACMEContainerTree(Container):
 		self.resourceTree.focus()
 
 
-	def services_refresh_resources(self) -> None:
+	def action_refresh_resources(self) -> None:
+		self.tuiApp.scriptShowNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			

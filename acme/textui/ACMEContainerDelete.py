@@ -13,7 +13,7 @@ from typing import cast
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Center, VerticalScroll
-from textual.widgets import Button, Static, Label
+from textual.widgets import Button, Static, Label, Markdown
 from .ACMEFieldOriginator import ACMEFieldOriginator
 from ..etc.Types import Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import ResponseException
@@ -44,6 +44,9 @@ class ACMEContainerDelete(Container):
 		"""
 		self.fieldOriginator =ACMEFieldOriginator(self.requestOriginator, suggestions = [CSE.cseOriginator, self.requestOriginator])
 		with VerticalScroll(id = 'request-delete-view'):
+			yield Markdown(
+'''### Send DELETE Request
+Delete a resource and its children from the CSE.''')
 			with Container(id = 'request-delete-input-view'):
 				yield self.fieldOriginator
 			with Center():
