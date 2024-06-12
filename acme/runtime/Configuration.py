@@ -179,6 +179,7 @@ class Configuration(object):
 		Configuration._argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
 		Configuration._argsHttpPort				= args.httpport if args and 'httpport' in args else None
 		Configuration._argsInitDirectory		= args.initdirectory if args and 'initdirectory' in args else None
+		Configuration._argsLightScheme			= args.isLightScheme if args and 'isLightScheme' in args else None
 		Configuration._argsListenIF				= args.listenif if args and 'listenif' in args else None
 		Configuration._argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
@@ -351,7 +352,7 @@ class Configuration(object):
 				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 					fallback = 30),		# Seconds
 				'cse.registrar.cseID'					: config.get('cse.registrar', 'cseID', 								fallback = None),
 				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',			fallback = []),		# type: ignore [attr-defined]
-				'cse.registrar.resourceName'						: config.get('cse.registrar', 'resourceName', 						fallback = None),
+				'cse.registrar.resourceName'			: config.get('cse.registrar', 'resourceName', 						fallback = None),
 				'cse.registrar.root'					: config.get('cse.registrar', 'root', 								fallback = ''),
 				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',						fallback = 'json'),
 
@@ -769,11 +770,13 @@ class Configuration(object):
 		# Overwriting some configurations from command line
 		if Configuration._argsDBReset is True:					_put('database.resetOnStartup', True)									# Override DB reset from command line
 		if Configuration._argsDBDataDirectory is not None:		_put('database.path', Configuration._argsDBDataDirectory)				# Override DB data directory from command line
-		if Configuration._argsDBStorageMode is not None:		_put('database.type', Configuration._argsDBStorageMode)				# Override DB data directory from command line
+		if Configuration._argsDBStorageMode is not None:		_put('database.type', Configuration._argsDBStorageMode)					# Override DB storage mode from command line
 		if Configuration._argsHeadless is True:					_put('console.headless', True)
 		if Configuration._argsHttpAddress is not None:			_put('http.address', Configuration._argsHttpAddress)					# Override server http address
 		if Configuration._argsHttpPort is not None:				_put('http.port', Configuration._argsHttpPort)							# Override server http port
-		if Configuration._argsInitDirectory is not None:		_put('cse.resourcesPath', Configuration._argsInitDirectory)			# Override import directory from command line
+		if Configuration._argsInitDirectory is not None:		_put('cse.resourcesPath', Configuration._argsInitDirectory)				# Override import directory from command line
+		if Configuration._argsLightScheme is not None:			_put('console.theme', Configuration._argsLightScheme)					# Override console theme 
+		if Configuration._argsLightScheme is not None:			_put('textui.theme', Configuration._argsLightScheme)					# Override textui theme
 		if Configuration._argsListenIF is not None:				_put('http.listenIF', Configuration._argsListenIF)						# Override binding network interface
 		if Configuration._argsMqttEnabled is not None:			_put('mqtt.enable', Configuration._argsMqttEnabled)						# Override mqtt enable
 		if Configuration._argsRemoteCSEEnabled is not None:		_put('cse.enableRemoteCSE', Configuration._argsRemoteCSEEnabled)		# Override remote CSE enablement
@@ -781,7 +784,7 @@ class Configuration(object):
 		if Configuration._argsRunAsHttpWsgi is not None:		_put('http.wsgi.enable', Configuration._argsRunAsHttpWsgi)				# Override use WSGI
 		if Configuration._argsStatisticsEnabled is not None:	_put('cse.statistics.enable', Configuration._argsStatisticsEnabled)		# Override statistics enablement
 		if Configuration._argsTextUI is not None:				_put('textui.startWithTUI', Configuration._argsTextUI)
-		if Configuration._argsWsEnabled is not None:			_put('websocket.enable', Configuration._argsWsEnabled)						# Override mqtt enable
+		if Configuration._argsWsEnabled is not None:			_put('websocket.enable', Configuration._argsWsEnabled)					# Override websocket enable
 
 		# Correct urls
 		_put('cse.registrar.address', normalizeURL(Configuration._configuration['cse.registrar.address']))
@@ -1026,6 +1029,11 @@ class Configuration(object):
 		# Text UI settings
 		if _get('textui.maxRequestSize') <= 0:
 			return False, r'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s'
+		_put('textui.theme', (theme := _get('textui.theme').lower()))
+		if theme not in [ 'dark', 'light' ]:
+			return False, fr'Configuration Error: [i]\[textui]:theme[/i] must be "light" or "dark"'
+
+
 		
 		# Database settings
 		_put('database.type', (dbType := _get('database.type').lower()))
