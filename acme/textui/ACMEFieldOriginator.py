@@ -121,6 +121,8 @@ idFieldOriginator = 'field-originator'
 def validateOriginator(value: str) -> bool:
 	return value is not None and len(value) > 1 and value.startswith(('C', 'S', '/')) and not set(value) & set(' \t\n')
 
+#TODO add id to the field
+
 class ACMEFieldOriginator(ACMEInputField):
 	def __init__(self, originator:str, suggestions:list[str] = []) -> None:
 		super().__init__(label = 'Originator',

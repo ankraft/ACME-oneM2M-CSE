@@ -32,7 +32,7 @@ class ACMEContainerDelete(Container):
 		"""
 		super().__init__(id = id)
 
-		self.requestOriginator = 'CAdmin'
+		self.requestOriginator = CSE.cseOriginator
 		"""	The request originator. """
 
 		self.resource:Resource = None
@@ -46,7 +46,7 @@ class ACMEContainerDelete(Container):
 		with VerticalScroll(id = 'request-delete-view'):
 			yield Markdown(
 '''### Send DELETE Request
-Delete a resource and its children from the CSE.''')
+Delete a resource and its children from the CSE.''', id = 'request-delete-header')
 			with Container(id = 'request-delete-input-view'):
 				yield self.fieldOriginator
 			with Center():

@@ -644,7 +644,7 @@ class SecurityManager(object):
 					if found:
 						break
 				else:
-					continue	# Not in any context, so continue with the next acr
+					continue	# Not in any context, so continue with the next acr. Dont check further in this acr
 
 			# Check accessControlAuthenticationFlag
 			if acr.get('acaf') is not None:

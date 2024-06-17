@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added --dark and --light command line arguments.
 - [LOGGING] Added support for logging in UTC time.
 - [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
+- [TUI] Added support for sending UPDATE operations in the text UI.
 - [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
 
 ### Experimental
@@ -25,10 +26,11 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 - [CSE] Internal refactoring of the ACP and permission processing.
 - [SCRIPTS] Improved the script interpreter's error reporting. The error messages are now more informative and include the call stack.
+- [SCRIPTS] Changed the `http` function: Now supporting quoted list for headers.
 - [TESTS] Simplified internal test case registration.
 
 ### Fixed
-- [TEXTUI] Added vertical scrolling for some views.
+- [TUI] Added vertical scrolling for some views.
 
 ### Removed
 - [MISC] Moved the documentation for the website to the a separate repository (ACME-oneM2M-CSE-mkdocs).

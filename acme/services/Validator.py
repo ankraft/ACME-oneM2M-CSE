@@ -730,6 +730,104 @@ class Validator(object):
 		return str(value)
 
 
+	def getAttributeValueRepresentation(self, attr:str, resourceType:ResourceTypes) -> str:
+		"""	Return the representation of an attribute value. This is usually used for
+			the representation of an attribute where the value is not known yet.
+
+			Args:
+				attr: Attribute name.
+				resourceType: Type of the attribute's resource.
+				
+			Return:
+				String, representation of the attribute value. This might be a JSON representation of the value.
+		"""
+
+		def basicTypeDefaultValue(typ:BasicType, 
+								  policy:Optional[AttributePolicy] = None, 
+								  level:Optional[int] = 0) -> str:
+			"""	Return a default value for a basic type.
+			
+				Args:
+					typ: Basic type.
+					policy: Attribute policy.
+					level: Indentation level.
+					
+				Return:
+					String, default value for the basic type.
+			"""
+
+			match typ:
+				case BasicType.string:
+					return '<string>'
+				case BasicType.ID:
+					return '<ID>'
+				case BasicType.anyURI:
+					return '<uri>'
+				case BasicType.ncname:
+					return '<NCname>'
+				case BasicType.imsi:
+					return '<imsi>'
+				case BasicType.iccid:
+					return '<iccid>'
+				case BasicType.base64:
+					return '<base64 encoded string>'
+				case BasicType.positiveInteger:
+					return '<positiveInteger>'
+				case BasicType.nonNegInteger:
+					return '<nonNegativeInteger>'
+				case BasicType.unsignedInt:
+					return '<unsigned integer>'
+				case BasicType.unsignedLong:
+					return '<unsigned long>'
+				case BasicType.integer:
+					return '<integer>'
+				case BasicType.float:
+					return '<float>'
+				case BasicType.boolean:
+					return '<boolean true|false>'
+				case BasicType.timestamp:
+					return '<ISO 8601 timestamp>'
+				case BasicType.absRelTimestamp:
+					return '<ISO 8601 timestamp or integer>'
+				case BasicType.duration:
+					return '<ISO 8601 duration>'
+				case BasicType.schedule:
+					return '<schedule 7-digits cron-like>'
+				case BasicType.geoJsonCoordinate:
+					return '<GeoJsonCoordinate>'
+				case BasicType.list | BasicType.listNE:
+					if policy:
+						if policy.ltype == BasicType.complex:
+							_result = '[ {\n'
+							for a in self.getComplexTypeAttributePolicies(policy.lTypeName):
+								_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+							_result += f'        //{" "*4*(level+1)} }} ]'
+							return _result
+
+						return f'[ {basicTypeDefaultValue(policy.ltype, _policy, level+1)} ]'
+					return f'[ {policy.ltype} ]'
+				
+				case BasicType.enum:
+					if policy:
+						_enums = [ f'{k}:{v}' for k,v in policy.evalues.items()]
+						return f'<enum {policy.etype} {", ".join(_enums)}>'
+					return '""'
+				
+				case BasicType.complex:
+					if policy:
+						_result = '{\n'
+						for a in self.getComplexTypeAttributePolicies(policy.typeName):
+							_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+						_result += f'        //{" "*4*(level+1)} }}'
+						return _result
+					return '{ ... }'
+				case _:
+					return f'"{typ}"'
+
+		_policy = self.getAttributePolicy(resourceType, attr)
+		return basicTypeDefaultValue(_policy.type, _policy)
+
+
 	#
 	#	Internals.
 	#

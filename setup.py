@@ -45,6 +45,7 @@ setup(
 		'rich', 
 		'shapely',
 		'textual',
+		'textual[syntax]',
 		'textual-plotext',
 		'tinydb',
 		'waitress',
