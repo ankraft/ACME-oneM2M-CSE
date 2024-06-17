@@ -23,9 +23,9 @@ from threading import Semaphore
 _semaphores:Dict[Tuple[str, str], Semaphore]	= {}
 """	Dictionary for store semaphores states for (ID, state) tuples. """
 
-def  enterCriticalSection(id:str, 
-		     			  state:str, 
-		     			  timeout:Optional[float] = None) -> None:
+def enterCriticalSection(id:str, 
+		     			 state:str, 
+		     			 timeout:Optional[float] = None) -> None:
 	"""	Store the state of a resource, and enter or wait for entering a critical section.
 
 		This can be used by resources to store individual transient states
@@ -37,7 +37,7 @@ def  enterCriticalSection(id:str,
 		exception is raised. 
 
 		If *timeout* is not provided then the state is set immediately and a possible
-		existing state for *id* is overwritten.
+		existing state for *id* is overwritten. A timeout of 0.0 times out immediately.
 
 		Args:
 			id: Resource ID
@@ -57,7 +57,7 @@ def  enterCriticalSection(id:str,
 			raise TimeoutError(f'Timeout reached while waiting for semaphore state for: ({id}, {state})')
 
 
-def inCriticalSection(id:str, state:str) -> bool:
+def inCriticalSection(id:str, state:Optional[str] = '') -> bool:
 	"""	Check if a resource and state are in a critical section or waiting to enter.
 	
 		Args:
@@ -70,7 +70,7 @@ def inCriticalSection(id:str, state:str) -> bool:
 	return (id, state) in _semaphores
 
 
-def leaveCriticalSection(id:str, state:str) -> None:
+def leaveCriticalSection(id:str, state:Optional[str] = '') -> None:
 	"""	Clear the state of a resource.
 	
 		Args:
@@ -89,6 +89,7 @@ def criticalResourceSection(id:str = '', state:str = '') -> Callable:
 	"""	Decorator to set and remove a state when a resource method is called.
 	
 		Args:
+			id: The resource ID to set the state for.
 			state: The state to set.
 		Return:
 			Wrapped decorator.
@@ -122,6 +123,7 @@ class CriticalSection(object):
 			Args:
 				id: Resource ID of the resource to be monitored. This may also be any other ID in cases where the critical section is not a resource.
 				state: State of the resource.
+				timeout: Timeout for waiting for the critical section. A timeout of 0.0 times out immediately.
 		"""
 		self.id = id
 		self.state = state
@@ -137,9 +139,4 @@ class CriticalSection(object):
 						exctb: Optional[TracebackType]) -> Optional[bool]:
 		leaveCriticalSection(self.id, self.state)
 		return None
-
-
-
-
-
 
