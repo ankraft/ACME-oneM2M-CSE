@@ -217,6 +217,15 @@ class ResponseException(Exception):
 		return f'{self.__class__.__name__}({self.rsc}, {self.dbg})'
 
 
+	def name(self) -> str:
+		""" Return a string representation of the exception's name.
+
+			Returns:
+				A string representation of the exception's name.
+		"""
+		return f'{self.rsc.name.replace("_", " ")}'
+
+
 class ALREADY_EXISTS(ResponseException):
 	"""	ALREADY EXISTS Response Status Code.
 	"""
