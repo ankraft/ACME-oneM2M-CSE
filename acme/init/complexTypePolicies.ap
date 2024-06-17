@@ -1026,7 +1026,7 @@
 			"lname": "scheduleElement",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string", // ???
+			"ltype": "schedule",
 			"car": "1"
 		}
 	],
