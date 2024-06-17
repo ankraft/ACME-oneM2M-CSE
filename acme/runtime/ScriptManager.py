@@ -621,17 +621,36 @@ class ACMEPContext(PContext):
 		# Get optional headers
 		_headers:JSON = {}
 		if symbol.length > 3:
-			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tNIL))
-			if result.type != SType.tNIL:
-				_headers = cast(JSON, result.value)
+			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tListQuote, SType.tNIL))
+			match result.type:
+				case SType.tJson:
+					_headers = cast(JSON, result.value)
+				case SType.tListQuote:
+					for item in result.value:
+						if len(item) != 2:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header definition: {item}'))
+						pcontext, _key = pcontext.resultFromArgument(item, 0)
+						pcontext, _value = pcontext.resultFromArgument(item, 1)
+						if _key.type not in [SType.tSymbol, SType.tSymbolQuote, SType.tString]:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header key: {_key}'))
+						if _value.type not in [SType.tString, SType.tNumber]:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header value: {_value}'))
+						_headers[str(item.value[0])] = str(item.value[1])
+				case SType.tNIL:
+					pass
+
 
 		# get body, if present
 		_body:str|JSON = None
 		if symbol.length == 5:
-			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson))
-			_body = str(result)
-			if len(_body):
-				_headers['Content-Length'] = str(len(_body))
+			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson, SType.tNIL))
+			match result.type:
+				case SType.tString | SType.tJson:
+					_body = str(result)
+					if len(_body):
+						_headers['Content-Length'] = str(len(_body))
+				case SType.tNIL:
+					pass
 
 		# send http request
 		try:
