@@ -111,6 +111,14 @@ class ResponseStatusCode(ACMEIntEnum):
 		return _ResponseStatusCodeHttpStatusCodes[self]
 
 
+	def nname(self) -> str:
+		""" Return a "natural" string representation of the exception's name.
+
+			Returns:
+				A "natural" string representation of the exception's name.
+		"""
+		return f'{self.name.replace("_", " ")}'
+
 
 #
 #	Mapping of oneM2M return codes to http status codes
@@ -217,13 +225,13 @@ class ResponseException(Exception):
 		return f'{self.__class__.__name__}({self.rsc}, {self.dbg})'
 
 
-	def name(self) -> str:
-		""" Return a string representation of the exception's name.
+	def nname(self) -> str:
+		""" Return a "natural" string representation of the exception's name.
 
 			Returns:
-				A string representation of the exception's name.
+				A "natural" string representation of the exception's name.
 		"""
-		return f'{self.rsc.name.replace("_", " ")}'
+		return self.rsc.nname()
 
 
 class ALREADY_EXISTS(ResponseException):
