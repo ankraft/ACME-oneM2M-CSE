@@ -207,7 +207,7 @@ class TextUI(object):
 				timeout: Timeout in seconds.
 		"""
 		if self.tuiApp:
-			self.tuiApp.scriptShowNotification(msg, title, severity, timeout)
+			self.tuiApp.showNotification(msg, title, severity, timeout)
 
 
 	def scriptVisualBell(self, scriptName:str) -> None:

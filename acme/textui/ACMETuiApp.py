@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast
+from typing import Callable, cast, Optional
 
 from typing_extensions import Literal, get_args
 import asyncio
@@ -230,7 +230,10 @@ class ACMETuiApp(App):
 			self.containerTools.scriptClearConsole(scriptName)
 	
 
-	def scriptShowNotification(self, message:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:
+	def showNotification(self, message:str, 
+					  		   title:str, 
+							   severity:Literal['information', 'warning', 'error'], 
+							   timeout:Optional[float] = None) -> None:
 
 		async def _call() -> None:
 			self.notify(message = message, title = title, severity = severity, timeout = timeout)

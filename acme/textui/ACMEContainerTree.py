@@ -234,7 +234,7 @@ class ACMEContainerTree(Container):
 
 
 	def action_refresh_resources(self) -> None:
-		self.tuiApp.scriptShowNotification('Refreshing resources', 'info', 'information', 2)
+		self.tuiApp.showNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			

@@ -20,7 +20,7 @@ class ACMEViewResponse(VerticalScroll):
 	"""	View to display request responses.
 	"""
 
-	_title = '[b]Response'
+	_title = 'Response'
 
 	def __init__(self, id:str):
 		"""	Initialize the view.
@@ -28,8 +28,8 @@ class ACMEViewResponse(VerticalScroll):
 			Args:
 				id:	The view ID.
 		"""
-		super().__init__(id = id, classes = 'response-normal')
-		self.response = Static('', id = f'{id}-content', classes = 'response-content')
+		super().__init__(id = id, classes = 'response-view-normal')
+		self.response = Static('', id = f'{id}-content', classes = 'response-view-content')
 		self.clear()
 
 
@@ -42,7 +42,7 @@ class ACMEViewResponse(VerticalScroll):
 		"""
 		self.response.update('')
 		self.border_title = self._title
-		self.classes = 'response-normal'
+		self.classes = 'response-view-normal'
 
 
 	def success(self, renderable:RenderableType, rsc:Optional[ResponseStatusCode] = None) -> None:
@@ -53,7 +53,7 @@ class ACMEViewResponse(VerticalScroll):
 				rsc:		The response status code.
 		"""
 		self.response.update(renderable)
-		self.classes = 'response-success'
+		self.classes = 'response-view-success'
 		if rsc is not None:
 			self.border_title = f'{self._title} [r] {rsc.value} {rsc.nname()} [/r]'
 		else:
@@ -76,4 +76,4 @@ class ACMEViewResponse(VerticalScroll):
 				self.border_title = self._title
 		else:
 			self.response.update(renderable)
-		self.classes = 'response-error'
+		self.classes = 'response-view-error'

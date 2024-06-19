@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Callable
 
 from textual import on
 from textual.app import ComposeResult
@@ -27,7 +27,8 @@ class ACMEViewRequest(VerticalScroll):
 					   originator:str,
 					   buttonLabel:str, 
 					   buttonVariant:Optional[str] = 'primary',
-					   callback:Optional[Callable] = None):
+					   callback:Optional[Callable] = None,
+					   enableEditor:bool = True):
 		"""	Initialize the view.
 
 			Args:
@@ -37,6 +38,8 @@ class ACMEViewRequest(VerticalScroll):
 				originator: The originator.
 				buttonLabel: The label of the button.
 				buttonVariant: The button variant.
+				callback: The callback for the button action
+				enableEditor: Enable the editor.
 		"""
 		super().__init__(id = id, classes = 'request-view')
 		self.header = Label(header, classes = 'request-header')
@@ -49,9 +52,10 @@ class ACMEViewRequest(VerticalScroll):
 										 soft_wrap = False,
 										 tab_behavior = 'indent',
 				  						 show_line_numbers = True,
-										 theme = 'monokai',)
-		self.border_title = f'[b]{title}'
+										 theme = 'monokai')
+		self.border_title = title
 		self.callback = callback
+		self.enableEditor = enableEditor
 
 
 	def compose(self) -> ComposeResult:
@@ -61,7 +65,9 @@ class ACMEViewRequest(VerticalScroll):
 
 		with Container(classes = 'request-originator'):
 			yield self.inputOriginator
-		yield self.resourceTextArea
+		if self.enableEditor:
+			yield self.resourceTextArea
+
 
 	@property
 	def originator(self) -> str:
