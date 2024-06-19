@@ -21,6 +21,8 @@ from rich.style import Style
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
+from rich import box 
+
 import plotext
 
 from ..runtime import CSE
@@ -1190,10 +1192,12 @@ function createResource() {{
 			else:
 				_addCSERow(tableCSE, None, csr, cse, csr.dcse)
 		
-		gridCSE = Table.grid(expand = True)
-		gridCSE.add_column()
-		gridCSE.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n\n'))
-		gridCSE.add_row(tableCSE)
+		panelCSE = Panel(tableCSE, 
+				  		 box=box.ROUNDED, 
+						 title=_markup('[b]Common Services Entities (CSE)[/b]'), 
+						 title_align='left', 
+						 padding = (1, 0, 0, 0),
+						 expand=True)
 		
 
 		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
@@ -1212,21 +1216,17 @@ function createResource() {{
 							str(ae.rr), 
 							'' if ae.poa is None else ', '.join(ae.poa))
 
-		gridAE = Table.grid(expand = True)
-		gridAE.add_column()
-		gridAE.add_row(_markup('[u b]Application Entities (AE)[/u b]\n\n'))
-		gridAE.add_row(tableAE)
-
+		panelAE = Panel(tableAE, 
+				  		box=box.ROUNDED, 
+						title=_markup('[b]Application Entities (AE)[/b]'), 
+						title_align='left', 
+						padding = (1, 0, 0, 0),
+						expand=True)
 
 		result = Table.grid(expand = True)
 		result.add_column()
-		# result.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n'))
-		# result.add_row(Panel(tableCSE))
-		result.add_row(Panel(gridCSE))
-		# result.add_row(Text(' '))
-		# result.add_row(_markup('[u b]Application Entities (AE)[/u b]\n'))
-		# result.add_row(Panel(tableAE))
-		result.add_row(Panel(gridAE))
+		result.add_row(panelCSE)
+		result.add_row(panelAE)
 
 		return result
 		# result = ''
@@ -1339,23 +1339,42 @@ function createResource() {{
 				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
 
 
-				miscRight  = _markup('[underline]Logs[/underline]\n')
-				miscRight += '\n'
-				miscRight += f'LogLevel : {str(L.logLevel)}\n'
-				miscRight += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
-				miscRight += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
-				miscRight += '\n'
-				miscRight += _markup('[underline]Database[/underline]\n')
-				miscRight += '\n'
-				miscRight += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
+				miscLogs  = Text()
+				miscLogs += f'LogLevel : {str(L.logLevel)}\n'
+				miscLogs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
+				miscLogs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}'
+
+				panelMiscLogs = Panel(miscLogs, 
+									  box = box.ROUNDED, 
+									  title = _markup('[b]Logs[/b]'), 
+									  title_align = 'left', 
+									  padding = (1, 1, 0, 1),
+									  expand = True,
+									  style = style)
+
+
+				miscDB   = Text()
+				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
 				match _dbType:
 					case 'postgresql':
-						miscRight += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
-						miscRight += f'Role     : {Configuration.get("database.postgresql.role")}\n'
-						miscRight += f'Database : {Configuration.get("database.postgresql.database")}\n'
-						miscRight += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
+						miscDB += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
+						miscDB += f'Role     : {Configuration.get("database.postgresql.role")}\n'
+						miscDB += f'Database : {Configuration.get("database.postgresql.database")}\n'
+						miscDB += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
 					case 'tinydb':
-						miscRight += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+						miscDB += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+						miscDB += '\n\n\n'
+					case 'memory':
+						miscDB += '\n\n\n\n'
+
+				
+				panelMiscDB = Panel(miscDB, 
+									box = box.ROUNDED, 
+									title = _markup('[b]Database[/b]'), 
+									title_align = 'left', 
+									padding = (1, 1, 4, 1),
+									expand = True,
+									style = style)
 
 
 			else:
@@ -1365,8 +1384,7 @@ function createResource() {{
 				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n')
 
 
-			miscLeft  = _markup('[underline]Misc[/underline]\n',)
-			miscLeft += '\n'
+			miscLeft  = Text()
 			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
@@ -1393,14 +1411,20 @@ function createResource() {{
 			else:
 				miscLeft += '\n'
 			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
 
 			# Adapt the following line when adding resources to keep formatting. 
 			# It fills up the right columns to match the length of the left column.
-			miscLeft += '\n' * ( (3 if CSE.statistics.statisticsEnabled else 4) - len(CSE.csePOA))
+			#miscLeft += '\n' * ( (3 if CSE.statistics.statisticsEnabled else 4) - len(CSE.csePOA))
 
-			workers = _markup('[underline]Workers[/underline]\n')
-			workers += '\n'
+			panelMiscLeft = Panel(miscLeft, 
+								  box = box.ROUNDED, 
+								  title = _markup('[b]Misc[/b]'), 
+								  title_align = 'left', 
+								  padding = (1, 1, 0, 1),
+								  expand = True,
+								  style = style)
+
 			tableWorkers = Table(expand=True, row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0, 0, 1))
 			tableWorkers.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
 			tableWorkers.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
@@ -1410,14 +1434,31 @@ function createResource() {{
 				a = 'Actor' if w.maxCount == 1 else 'Worker'
 				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
 			
-			threads = _markup('[underline]Threads[/underline]\n')
-			threads += '\n'
-			tableThreads = Table(row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0))
-			tableThreads.add_column(_markup('[u]Queues  \n[/u]'), no_wrap = True)
-			tableThreads.add_column(_markup('[u]Count   \n[/u]'), no_wrap = True, justify = 'right')
+			panelWorkers = Panel(tableWorkers, 
+								 box = box.ROUNDED, 
+								 title = _markup('[b]Workers[/b]'), 
+								 title_align = 'left', 
+								 padding = (1, 1, 0, 1),
+								 expand = True,
+								 style = style)
+
+			tableThreads = Table(box = None, padding = (0, 0))
+			tableThreads.add_column(_markup('[u]Queues[/u]    \n'), no_wrap = True)
+			tableThreads.add_column(_markup('[u]Count[/u]\n'), no_wrap = True, justify = 'right')
 			r, p = BackgroundWorkerPool.countJobs()
 			tableThreads.add_row('Running', str(r))
 			tableThreads.add_row('Paused', str(p))
+			for _ in range(len(tableWorkers.rows)-2):	# Fill up lines
+				tableThreads.add_row('', '')
+			
+			panelThreads = Panel(tableThreads, 
+						   box = box.ROUNDED, 
+						   title = _markup('[b]Threads[/b]'), 
+						   title_align = 'left', 
+						   padding = (1, 1, 0, 1),
+						   expand = True,
+						   style = style)
+
 
 			requestsGrid = Table.grid(expand = True)
 			requestsGrid.add_column(ratio = 28)
@@ -1429,22 +1470,35 @@ function createResource() {{
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
-			infoGrid = Table.grid(expand=True, padding=(0,0,0,3))
+			panelRequests = Panel(requestsGrid, 
+								  box = box.ROUNDED, 
+								  title = _markup('[b]Requests[/b]'), 
+								  title_align = 'left', 
+								  padding = (1, 0, 0, 1),
+								  expand = True,
+								  style = style)
+
+
+			panelMiscRight = Table.grid(expand = True,)
+			panelMiscRight.add_column()
+			panelMiscRight.add_row(panelMiscLogs)
+			panelMiscRight.add_row(panelMiscDB)
+
+			infoGrid = Table.grid(expand=True, padding = (0, 1, 0, 0))
 			infoGrid.add_column(ratio = 70, no_wrap=True)
 			infoGrid.add_column(ratio = 30)
-			infoGrid.add_row(miscLeft, miscRight)
+			infoGrid.add_row(panelMiscLeft, panelMiscRight)
 
-			workerGrid = Table.grid(expand = True, padding=(0,0,0,3))
+			workerGrid = Table.grid(expand = True, padding = (0, 1, 0, 0))
 			workerGrid.add_column(ratio = 70)
 			workerGrid.add_column(ratio = 30)
-			workerGrid.add_row(workers, threads)
-			workerGrid.add_row(tableWorkers, tableThreads)
+			workerGrid.add_row(panelWorkers, panelThreads)
 
 			rightGrid = Table.grid(expand = True)
 			rightGrid.add_column()
-			rightGrid.add_row(Panel(requestsGrid, style = style))
-			rightGrid.add_row(Panel(workerGrid, style = style))
-			rightGrid.add_row(Panel(infoGrid, style = style))
+			rightGrid.add_row(panelRequests)
+			rightGrid.add_row(workerGrid)
+			rightGrid.add_row(infoGrid)
 
 			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
 															ResourceTypes.CNT_OL,
@@ -1459,8 +1513,7 @@ function createResource() {{
 			#	Left column
 			#
 
-			resourceTypes = _markup('[underline]Resources[/underline]\n')
-			resourceTypes += '\n'
+			resourceTypes = Text()
 			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
 			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
 			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
@@ -1486,14 +1539,23 @@ function createResource() {{
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
 			resourceTypes += '\n'
 			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
-			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 12)
+			# # Correct height
+			# resourceTypes += '\n' * (tableWorkers.row_count + 12)
 
 
-			result = Table.grid(expand = True)
+			panelResources = Panel(resourceTypes, 
+								   box = box.ROUNDED, 
+								   title = _markup('[b]Resources[/b]'), 
+								   title_align = 'left', 
+								   padding = (1, 0, 18, 1),
+								   expand = True,
+								   style = style)
+
+			result = Table.grid(expand = True, padding = (0, 1, 0, 0))
 			result.add_column(width = 15)
 			result.add_column()
-			result.add_row(Panel(resourceTypes, style = style), rightGrid )
+			# result.add_row(Panel(resourceTypes, style = style), rightGrid )
+			result.add_row(panelResources, rightGrid )
 
 			return result
 
