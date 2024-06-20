@@ -42,9 +42,6 @@ class ACMEContainerUpdate(Container):
 		self.resource:Resource = None
 		"""	The resource to delete. """
 
-		self.responseView:ACMEViewResponse = ACMEViewResponse(id = 'request-update-response')
-		"""	The response view. """
-
 		self.requestView:ACMEViewRequest = ACMEViewRequest(id = 'request-update-request', 
 													 	   title = 'UPDATE Request',
 													 	   header = 'Add, modify, and remove resource attributes.',
@@ -52,6 +49,10 @@ class ACMEContainerUpdate(Container):
 														   buttonLabel = 'UPDATE Resource',
 														   callback = self.doUpdate)
 		"""	The request view. """
+
+		self.responseView:ACMEViewResponse = ACMEViewResponse(id = 'request-update-response')
+		"""	The response view. """
+
 
 
 	def compose(self) -> ComposeResult:

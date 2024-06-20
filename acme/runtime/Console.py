@@ -1295,8 +1295,54 @@ function createResource() {{
 			#
 			#	Right columns
 			#
-
 			stats = CSE.statistics.getStats()
+
+			#
+			#	Misc
+			#
+
+			miscLeft  = Text(style = textStyle)
+			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
+			miscLeft += f'Hostname          : {socket.gethostname()}\n'
+			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
+			try:
+				miscLeft += f'IP-Address        : {getIPAddress()}\n'
+			except Exception as e:
+				print(e)
+			miscLeft += f'PoA               : {CSE.csePOA[0]}\n'
+			if len(CSE.csePOA) > 1:
+				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+
+			miscLeft += '\n'
+			miscLeft += f'CWD               : {os.getcwd()}\n'
+			miscLeft += f'Runtime Directory : {Configuration.get("baseDirectory")}\n'
+			miscLeft += f'Config File       : {Configuration.get("configfile")}\n'
+			miscLeft += '\n'
+			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
+			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
+
+			miscLeft += '\n'
+			if hasattr(os, 'getloadavg'):
+				load = os.getloadavg()
+				miscLeft += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+			else:
+				miscLeft += '\n'
+			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
+			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+
+			miscHeight = len(miscLeft.split('\n'))
+
+			panelMiscLeft = Panel(miscLeft, 
+								  box = box.ROUNDED, 
+								  title = _markup('[b]Misc[/b]'), 
+								  title_align = 'left', 
+								  padding = (1, 1, 0, 1),
+								  expand = True,
+								  style = style)
+
+			#
+			#	Request stats
+			#
 
 			if CSE.statistics.statisticsEnabled:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
@@ -1357,6 +1403,9 @@ function createResource() {{
 				wsSent +=   	f'D: {stats.get(Statistics.wsSendDeletes, 0)}\n'
 				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
 
+				#
+				#	Logs
+				#
 
 				miscLogs  = Text(style = textStyle)
 				miscLogs += f'LogLevel : {str(L.logLevel)}\n'
@@ -1372,6 +1421,10 @@ function createResource() {{
 									  style = style)
 
 
+				#
+				#	Database
+				#
+
 				miscDB  = Text(style = textStyle)
 				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
 				match _dbType:
@@ -1385,13 +1438,12 @@ function createResource() {{
 						miscDB += '\n\n\n'
 					case 'memory':
 						miscDB += '\n\n\n\n'
-
 				
 				panelMiscDB = Panel(miscDB, 
 									box = box.ROUNDED, 
 									title = _markup('[b]Database[/b]'), 
 									title_align = 'left', 
-									padding = (1, 1, 4, 1),
+									padding = (1, 1, (miscHeight - 12), 1),	# adapt height accoring to misc panel height
 									expand = True,
 									style = style)
 
@@ -1402,47 +1454,6 @@ function createResource() {{
 				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
 				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
 
-
-			miscLeft  = Text(style = textStyle)
-			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
-			miscLeft += f'Hostname          : {socket.gethostname()}\n'
-			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
-			try:
-				miscLeft += f'IP-Address        : {getIPAddress()}\n'
-			except Exception as e:
-				print(e)
-			miscLeft += f'PoA               : {CSE.csePOA[0]}\n'
-			if len(CSE.csePOA) > 1:
-				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
-
-			miscLeft += '\n'
-			miscLeft += f'CWD               : {os.getcwd()}\n'
-			miscLeft += f'Runtime Directory : {Configuration.get("baseDirectory")}\n'
-			miscLeft += f'Config File       : {Configuration.get("configfile")}\n'
-			miscLeft += '\n'
-			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
-
-			miscLeft += '\n'
-			if hasattr(os, 'getloadavg'):
-				load = os.getloadavg()
-				miscLeft += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
-			else:
-				miscLeft += '\n'
-			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
-
-			# Adapt the following line when adding resources to keep formatting. 
-			# It fills up the right columns to match the length of the left column.
-			#miscLeft += '\n' * ( (3 if CSE.statistics.statisticsEnabled else 4) - len(CSE.csePOA))
-
-			panelMiscLeft = Panel(miscLeft, 
-								  box = box.ROUNDED, 
-								  title = _markup('[b]Misc[/b]'), 
-								  title_align = 'left', 
-								  padding = (1, 1, 0, 1),
-								  expand = True,
-								  style = style)
 
 			tableWorkers = Table(expand=True, row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0, 0, 1))
 			tableWorkers.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
@@ -1556,24 +1567,26 @@ function createResource() {{
 			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
 			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
+			resourceTypes += f'{miscHeight}\n'
 			resourceTypes += '\n'
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
-			# # Correct height
-			# resourceTypes += '\n' * (tableWorkers.row_count + 12)
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
 
-
+			# ATTN: The padding is calculated dynamically.
+			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
+			# we need to multiply the number of lines with 2 to get the correct padding.
+			_padding = 16 + (miscHeight - 15) * 2
+			
 			panelResources = Panel(resourceTypes, 
 								   box = box.ROUNDED, 
 								   title = _markup('[b]Resources[/b]'), 
 								   title_align = 'left', 
-								   padding = (1, 0, 18, 1),
+								   padding = (1, 0, _padding, 1),
 								   expand = True,
 								   style = style)
 
 			result = Table.grid(expand = True, padding = (0, 1, 0, 0))
 			result.add_column(width = 15)
 			result.add_column()
-			# result.add_row(Panel(resourceTypes, style = style), rightGrid )
 			result.add_row(panelResources, rightGrid )
 
 			return result

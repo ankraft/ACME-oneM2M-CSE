@@ -2595,7 +2595,7 @@ ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], st
 FlexContainerAttributes:TypeAlias = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
 
-FlexContainerSpecializations:Type = Dict[str, str]
+FlexContainerSpecializations:TypeAlias = Dict[str, str]
 """ Type definition for a dictionary of specializations for a flexContainer. """
 
 
