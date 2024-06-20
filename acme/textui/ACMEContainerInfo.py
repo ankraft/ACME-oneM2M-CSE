@@ -13,8 +13,10 @@ from typing import cast
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static
+from rich.style import Style
 from ..runtime import CSE
 from ..textui import ACMETuiApp
+from ..runtime.Logging import fontDark, fontLight
 
 tabInfo = 'tab-info'
 
@@ -23,6 +25,7 @@ class ACMEContainerInfo(VerticalScroll):
 	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
 		super().__init__(id = id)
 		self.tuiApp = tuiApp
+		self._colors = self.app.get_css_variables()
 
 
 	def compose(self) -> ComposeResult:
@@ -41,5 +44,6 @@ class ACMEContainerInfo(VerticalScroll):
 
 	def _statsUpdate(self, force:bool = False) -> None:
 		if force or self.tuiApp.tabs.active == tabInfo:
-			self.statsView.update(CSE.console.getStatisticsRich())
+			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self._colors['primary']), 
+													   		    textStyle = Style(color = fontDark if self.app.dark else fontLight)))
 

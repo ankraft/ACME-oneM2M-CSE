@@ -64,6 +64,11 @@ class ACMETuiApp(App):
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
 
+		# Set some default color values
+		self._colors = self.get_css_variables()
+		self.objectColor = self._colors['primary-lighten-1']
+
+
 		# Add the resource types to the attribute explanations
 		for n in ResourceTypes:
 			self.attributeExplanations[ResourceTypes(n).tpe()] = f'{ResourceTypes.fullname(n)} resource type'

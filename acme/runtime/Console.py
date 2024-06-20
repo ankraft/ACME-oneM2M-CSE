@@ -1153,13 +1153,22 @@ function createResource() {{
 	#	Generators for rich output
 	#
 
-	def getRegistrationsRich(self) -> Table:
+	def getRegistrationsRich(self, style:Optional[Style] = Style(), 
+						  		   textStyle:Optional[Style] = None) -> Table:
 		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
+
+			Args:
+				style: Style for the general output.
+				textStyle: Style for the text.
 
 			Return:
 				Rich formatted string.
 		"""
+
+		# Assign the text style if not None.
+		if textStyle is None:
+			textStyle = style
 
 		def _addCSERow(table:Table, style:Style, cse:Resource, registrarCSE:Resource, registrees:List[str]) -> None:
 			table.add_row(cse.csi, 
@@ -1174,39 +1183,45 @@ function createResource() {{
 						  style = style)
 
 		tableCSE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Resource ID[/u]\n'), width = 12, no_wrap = True)
-		tableCSE.add_column(_markup('[u]Release[/u]\n'), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Reachable[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]POA[/u]\n'), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Registrar[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Registrees[/u]\n'), no_wrap = False)
+		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 12, no_wrap = True)
+		tableCSE.add_column(_markup('[u]Release[/u]\n', style = textStyle), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]POA[/u]\n', style = textStyle), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style = textStyle), no_wrap = False)
 
 		cse = getCSE()
-		_addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+		_addCSERow(tableCSE, 
+			 	   Style.combine((Style(italic = True, bold = True), textStyle)), 
+				   cse, 
+				   CSE.remote.registrarCSE, 
+				   CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+		# _addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
-				_addCSERow(tableCSE, None, csr, None, [cse.csi] + csr.dcse)
+				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
 			else:
-				_addCSERow(tableCSE, None, csr, cse, csr.dcse)
+				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
 		
 		panelCSE = Panel(tableCSE, 
 				  		 box=box.ROUNDED, 
 						 title=_markup('[b]Common Services Entities (CSE)[/b]'), 
 						 title_align='left', 
 						 padding = (1, 0, 0, 0),
-						 expand=True)
+						 expand=True,
+						 style = style)
 		
 
 		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableAE.add_column(_markup('[u]AE-ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Name[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Resource ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]APP-ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Reachable[/u]\n'), width = 5, no_wrap = True)
-		tableAE.add_column(_markup('[u]POA[/u]\n'), width = 15, no_wrap = False)
+		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Name[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), width = 5, no_wrap = True)
+		tableAE.add_column(_markup('[u]POA[/u]\n', style = textStyle), width = 15, no_wrap = False)
 
 		for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 			tableAE.add_row(ae.aei, 
@@ -1214,14 +1229,16 @@ function createResource() {{
 							ae.ri, 
 							ae.api, 
 							str(ae.rr), 
-							'' if ae.poa is None else ', '.join(ae.poa))
+							'' if ae.poa is None else ', '.join(ae.poa),
+							style = textStyle)
 
 		panelAE = Panel(tableAE, 
 				  		box=box.ROUNDED, 
 						title=_markup('[b]Application Entities (AE)[/b]'), 
 						title_align='left', 
 						padding = (1, 0, 0, 0),
-						expand=True)
+						expand=True,
+						style = style)
 
 		result = Table.grid(expand = True)
 		result.add_column()
@@ -1261,12 +1278,14 @@ function createResource() {{
 # TODO notifications
 	def getStatisticsRich(self, 
 						  style:Optional[Style] = Style(), 
-						  withProgress:Optional[bool] = True) -> Table:
+						  withProgress:Optional[bool] = True,
+						  textStyle:Optional[Style] = None) -> Table:
 		"""	Generate an overview about various resources, event counts, and more.
 
 			Args:
 				style: Rich style.
 				withProgress: Display with progress indicator.
+				textStyle: Rich text style. If this is not set then the style is used for the text as well.
 			
 			Return:
 				Rich Table object.
@@ -1280,7 +1299,7 @@ function createResource() {{
 			stats = CSE.statistics.getStats()
 
 			if CSE.statistics.statisticsEnabled:
-				resourceOps  =  _markup('[underline]Operations[/underline]\n')
+				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
 				resourceOps += 	'\n'
 				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
 				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
@@ -1290,7 +1309,7 @@ function createResource() {{
 				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
 				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
 
-				httpReceived  = _markup('[underline]HTTP:R[/underline]\n')
+				httpReceived  = _markup('[underline]HTTP:R[/underline]\n', style = textStyle)
 				httpReceived += '\n'
 				httpReceived += f'C: {stats.get(Statistics.httpCreates, 0)}\n'
 				httpReceived += f'R: {stats.get(Statistics.httpRetrieves, 0)}\n'
@@ -1298,7 +1317,7 @@ function createResource() {{
 				httpReceived += f'D: {stats.get(Statistics.httpDeletes, 0)}\n'
 				httpReceived += f'N: {stats.get(Statistics.httpNotifies, 0)}\n'
 
-				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n')
+				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n', style = textStyle)
 				httpSent += 	'\n'
 				httpSent += 	f'C: {stats.get(Statistics.httpSendCreates, 0)}\n'
 				httpSent += 	f'R: {stats.get(Statistics.httpSendRetrieves, 0)}\n'
@@ -1306,7 +1325,7 @@ function createResource() {{
 				httpSent += 	f'D: {stats.get(Statistics.httpSendDeletes, 0)}\n'
 				httpSent += 	f'N: {stats.get(Statistics.httpSendNotifies, 0)}\n'
 
-				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n')
+				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n', style = textStyle)
 				mqttReceived += 	'\n'
 				mqttReceived += f'C: {stats.get(Statistics.mqttCreates, 0)}\n'
 				mqttReceived += f'R: {stats.get(Statistics.mqttRetrieves, 0)}\n'
@@ -1314,7 +1333,7 @@ function createResource() {{
 				mqttReceived += f'D: {stats.get(Statistics.mqttDeletes, 0)}\n'
 				mqttReceived += f'N: {stats.get(Statistics.mqttNotifies, 0)}\n'
 
-				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n')
+				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n', style = textStyle)
 				mqttSent += 	'\n'
 				mqttSent += 	f'C: {stats.get(Statistics.mqttSendCreates, 0)}\n'
 				mqttSent += 	f'R: {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
@@ -1322,7 +1341,7 @@ function createResource() {{
 				mqttSent += 	f'D: {stats.get(Statistics.mqttSendDeletes, 0)}\n'
 				mqttSent += 	f'N: {stats.get(Statistics.mqttSendNotifies, 0)}\n'
 
-				wsReceived  =	_markup('[underline]WS:R[/underline]\n')
+				wsReceived  =	_markup('[underline]WS:R[/underline]\n', style = textStyle)
 				wsReceived +=	'\n'
 				wsReceived +=	f'C: {stats.get(Statistics.wsCreates, 0)}\n'
 				wsReceived +=	f'R: {stats.get(Statistics.wsRetrieves, 0)}\n'
@@ -1330,7 +1349,7 @@ function createResource() {{
 				wsReceived +=	f'D: {stats.get(Statistics.wsDeletes, 0)}\n'
 				wsReceived +=	f'N: {stats.get(Statistics.wsNotifies, 0)}\n'
 
-				wsSent  =   	_markup('[underline]WS:S[/underline]\n')
+				wsSent  =   	_markup('[underline]WS:S[/underline]\n', style = textStyle)
 				wsSent +=   	'\n'
 				wsSent +=   	f'C: {stats.get(Statistics.wsSendCreates, 0)}\n'
 				wsSent +=   	f'R: {stats.get(Statistics.wsSendRetrieves, 0)}\n'
@@ -1339,7 +1358,7 @@ function createResource() {{
 				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
 
 
-				miscLogs  = Text()
+				miscLogs  = Text(style = textStyle)
 				miscLogs += f'LogLevel : {str(L.logLevel)}\n'
 				miscLogs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
 				miscLogs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}'
@@ -1353,7 +1372,7 @@ function createResource() {{
 									  style = style)
 
 
-				miscDB   = Text()
+				miscDB  = Text(style = textStyle)
 				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
 				match _dbType:
 					case 'postgresql':
@@ -1378,13 +1397,13 @@ function createResource() {{
 
 
 			else:
-				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n')
-				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n')
-				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n')
-				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n')
+				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
 
 
-			miscLeft  = Text()
+			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
@@ -1426,13 +1445,13 @@ function createResource() {{
 								  style = style)
 
 			tableWorkers = Table(expand=True, row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0, 0, 1))
-			tableWorkers.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
-			tableWorkers.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
-			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n'), no_wrap = True, justify = 'right')
-			tableWorkers.add_column(_markup('[u]#Runs[/u]\n'), no_wrap = True, justify = 'right')
+			tableWorkers.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
+			tableWorkers.add_column(_markup('[u]#Runs[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
 			for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
 				a = 'Actor' if w.maxCount == 1 else 'Worker'
-				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
+				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '', style = textStyle)
 			
 			panelWorkers = Panel(tableWorkers, 
 								 box = box.ROUNDED, 
@@ -1443,11 +1462,11 @@ function createResource() {{
 								 style = style)
 
 			tableThreads = Table(box = None, padding = (0, 0))
-			tableThreads.add_column(_markup('[u]Queues[/u]    \n'), no_wrap = True)
-			tableThreads.add_column(_markup('[u]Count[/u]\n'), no_wrap = True, justify = 'right')
+			tableThreads.add_column(_markup('[u]Queues[/u]    \n', style = textStyle), no_wrap = True)
+			tableThreads.add_column(_markup('[u]Count[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
 			r, p = BackgroundWorkerPool.countJobs()
-			tableThreads.add_row('Running', str(r))
-			tableThreads.add_row('Paused', str(p))
+			tableThreads.add_row('Running', str(r), style = textStyle)
+			tableThreads.add_row('Paused', str(p), style = textStyle)
 			for _ in range(len(tableWorkers.rows)-2):	# Fill up lines
 				tableThreads.add_row('', '')
 			
@@ -1513,7 +1532,7 @@ function createResource() {{
 			#	Left column
 			#
 
-			resourceTypes = Text()
+			resourceTypes = Text(style = textStyle)
 			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
 			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
 			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
@@ -1559,6 +1578,9 @@ function createResource() {{
 
 			return result
 
+		# Assign the text style if not None.
+		if textStyle is None:
+			textStyle = style
 		if withProgress:
 			with L.consoleStatusWait('Collecting...'):
 				return _stats()

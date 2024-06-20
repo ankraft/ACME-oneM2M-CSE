@@ -55,10 +55,12 @@ levelName = {
 terminalColorDark		= '#2DFE54' 
 terminalColorErrorDark	= '#FF073A'
 tableRowColorDark		= 'grey15'
+fontDark				= '#E4E4E4'
 
 terminalColorLight		= '#137E6D'
 terminalColorErrorLight	= '#FF073A'
 tableRowColorLight		= 'grey89'
+fontLight				= '#1C1C1C'
 
 
 class LogLevel(ACMEIntEnum):

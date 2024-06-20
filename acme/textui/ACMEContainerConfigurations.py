@@ -74,7 +74,7 @@ class ACMEConfigurationTree(TextualTree):
 					break
 			else:	# not found
 				# Add new node to the tree. "data" contains the path to this node
-				_n = node.add(f'[{CSE.textUI.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
+				_n = node.add(f'[{self.app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 			if level == len(splits) - 1:
 				_n.allow_expand = False
 				_n.label = _s
@@ -133,7 +133,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""
-		yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', 
+		yield ACMEConfigurationTree(f'[{self.app.objectColor}]Configurations[/]', 
 							  		id = 'configs-tree-view',
 									parentContainer = self)
 		yield Markdown('', id = 'configs-documentation')

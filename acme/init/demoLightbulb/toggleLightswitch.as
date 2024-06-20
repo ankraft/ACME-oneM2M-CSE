@@ -9,10 +9,10 @@
 ;;	This script is execued by pressing the toggle button in the TUI.
 ;;
 
-@category Lightbulb Demo
 @name Toggle Lightswitch
+@category Lightbulb Demo
 @tuiTool
-@description # Lightbulb Demo - Toggle Switch\n\nThis page is used to toggle the status of the *Lightswitch* from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\nPress the **Toggle Lightswitch** button to toggle the *Lightswitch* status.\nSwitch to the *Lightbulb* tool to see the effect.\n\n
+@description This page is used to toggle the status of the *Lightswitch* from **on** to **off** and vice versa. This will also create a *Notification* that is send to the subscribed *Lightbulb*.\nPress the **Toggle Lightswitch** button to toggle the *Lightswitch* status.\nSwitch to the *Lightbulb* tool to see the effect.\n\n
 @tuiExecuteButton Toggle Lightswitch
 @tuiAutoRun
 @onKey 8

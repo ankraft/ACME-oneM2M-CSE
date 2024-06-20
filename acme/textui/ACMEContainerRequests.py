@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional, List, cast, Any
 from textual.app import ComposeResult
-from textual.containers import Vertical, Horizontal, Center
+from textual.containers import Vertical, Horizontal, Center, VerticalScroll
 from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
@@ -109,17 +109,14 @@ class ACMEViewRequests(Vertical):
 		# Request List
 		yield ListView(id = 'request-list-list')
 
-		# Details Header
-		with Horizontal(id = 'request-list-details-header'):
-			with Center():
-				yield Label('[u b]Request[/u b]')
-			with Center():
-				yield Label('[u b]Response[/u b]')
-
 		# Details
 		with Horizontal(id = 'request-list-details'):
-			yield Static(id = 'request-list-request')
-			yield Static(id = 'request-list-response')
+			with (_c := VerticalScroll(classes = 'request-response')):
+				_c.border_title = 'Request'
+				yield Static(id = 'request-list-request')
+			with (_c := VerticalScroll(classes = 'request-response')):
+				_c.border_title = 'Response'
+				yield Static(id = 'request-list-response')
 	
 
 	def onShow(self) -> None:
@@ -168,11 +165,6 @@ class ACMEViewRequests(Vertical):
 			type = 'text'
 		_l2 = jsns.count('\n')
 
-		# Make sure the response has the same number of lines as the request
-		# (This is a hack to make sure the separator line covers the entire height of the view)
-		if _l1 > _l2:
-			jsns += '\n' * (_l1 - _l2)
-			
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListResponse.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 

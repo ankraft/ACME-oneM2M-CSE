@@ -13,7 +13,7 @@
 @category Lightbulb Demo
 @tuiTool
 @onNotification acme://demo-lightbulb/lightswitch
-@description # Lightbulb Demo - Lightbulb\n\nThis page displays the status of the *lightbulb*.\n\nThe state changes automatically when notifications from the *lightswitch* are received.\n\nPress the **Refresh** button to refresh the status manually.
+@description This page displays the status of the *lightbulb*.\n\nThe state changes automatically when notifications from the *lightswitch* are received.\n\nPress the **Refresh** button to refresh the status manually.
 @tuiExecuteButton Refresh Lightbulb
 
 

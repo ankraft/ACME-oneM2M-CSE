@@ -48,7 +48,7 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(CSE.cseRi):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				self.root.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				self.root.add(f'[{self.app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			self.root.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 		self._update_content(self.cursor_node.data)
@@ -71,7 +71,7 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(node.node.data):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				node.node.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				node.node.add(f'[{self.app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			node.node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 	
@@ -108,7 +108,7 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'{ResourceTypes.fullname(resource.ty)} - {resource.rn}' if resource else '## &nbsp;')
+		self.parentContainer.setResourceHeader(f'{resource.rn} ({ResourceTypes.fullname(resource.ty)})' if resource else '')
 
 		# Set the visibility of the tabs
 		self.parentContainer.tabs.show_tab('tree-tab-requests')
@@ -188,8 +188,9 @@ class ACMEContainerTree(Container):
 			yield ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view', parentContainer = self)
 			with TabbedContent(id = 'tree-tabs'):
 				with TabPane('Resource', id = 'tree-tab-resource'):
-					yield Markdown(id = 'tree-tab-resource-header')
-					yield Static(id = 'resource-view', expand = True)
+					with Container(id = 'resource-view-container'):
+						yield (Static(id = 'resource-view', expand = True))
+
 
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield ACMEViewRequests(id = 'tree-tab-requests-view')
@@ -221,8 +222,8 @@ class ACMEContainerTree(Container):
 
 				
 	@property
-	def resourceHeader(self) -> Label:
-		return cast(Label, self.query_one('#tree-tab-resource-header'))
+	def resourceContainer(self) -> Container:
+		return cast(Container, self.query_one('#resource-view-container'))
 
 
 	def on_mount(self) -> None:
@@ -368,12 +369,12 @@ class ACMEContainerTree(Container):
 	
 
 	def setResourceHeader(self, header:str) -> None:
-		"""	Set the header of the tree view.
+		"""	Set the header of the resource view.
 		
 			Args:
 				header: The header to set.
 		"""
-		self.resourceHeader.update(f'# {header}')
+		self.resourceContainer.border_title = header
 	
 
 	@property

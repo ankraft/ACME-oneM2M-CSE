@@ -13,7 +13,7 @@ from time import sleep
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical, Center, Middle, Horizontal
+from textual.containers import Vertical, Center, Horizontal, Container
 from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
 from textual.widgets.tree import TreeNode
 from ..runtime import CSE
@@ -57,7 +57,7 @@ class ACMEToolsTree(TextualTree):
 							break
 					else:	# not found
 						# Add new node to the tree for the category
-						_n = root.add(f'[{CSE.textUI.objectColor}]{category}[/]', allow_expand = False, expand = True)
+						_n = root.add(f'[{self.app.objectColor}]{category}[/]', allow_expand = False, expand = True)
 				# Add the script to a category or to the root
 				_nn = _n.add(name, allow_expand = False)
 				self.nodes[name] = _nn
@@ -102,7 +102,8 @@ class ACMEToolsTree(TextualTree):
 
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
-			self.parentContainer.toolsHeader.update(f'# {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
+			self.parentContainer.updateHeader(node.label, 
+									 		  f'{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False
 			self.parentContainer.toolsLog.clear()
@@ -114,15 +115,12 @@ class ACMEToolsTree(TextualTree):
 			description = description.replace('\n', '\n\n') if description is not None else ''
 
 			# Update the header and the button
-			if description.startswith('#'):
-				self.parentContainer.toolsHeader.update(description)
-			else:    
-				self.parentContainer.toolsHeader.update(
-f"""\
-# {node.label}
-
-{description}
-""")
+			# if description.startswith('#'):
+			# 	self.parentContainer.updateHeader(description)
+			# else:    
+			# 	self.parentContainer.updateHeader(node.label, description)
+			
+			self.parentContainer.updateHeader(node.label, description)
 
 			# Add input field if the meta tag "tuiInput" is set
 			if (_l := ctx.getMeta('tuiInput')):
@@ -166,7 +164,8 @@ f"""\
 					_executeScript(ctx.scriptName, autoRun = True)
 
 		else:
-			self.parentContainer.toolsHeader.update('')
+			self.parentContainer.updateHeader('')
+			# self.parentContainer.toolsHeader.update('')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False
 		
@@ -210,7 +209,7 @@ class ACMEContainerTools(Horizontal):
 	def compose(self) -> ComposeResult:
 
 		# Prepare some widgets in advance
-		self._toolsTree = ACMEToolsTree(f'[{CSE.textUI.objectColor}]Tools & Commands[/]', 
+		self._toolsTree = ACMEToolsTree(f'[{self.app.objectColor}]Tools & Commands[/]', 
 								 		id = 'tools-tree-view',
 										parentContainer = self)
 
@@ -218,23 +217,31 @@ class ACMEContainerTools(Horizontal):
 		with Vertical():
 			with Center(id = 'tools-top-view'):
 				yield Markdown('', id = 'tools-header')
-			with Middle(id = 'tools-arguments-view'):
-				with Center():
-					yield ACMEInputField(label = 'Argument', id = 'tools-argument')
-				with Center():
-					yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
+				with Container(id = 'tools-arguments-view'):
+					with Center():
+						yield ACMEInputField(label = 'Argument', id = 'tools-argument')
+					with Center():
+						yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
 			yield RichLog(id = 'tools-log-view', markup=True)
 	
 
 	def on_mount(self) -> None:
 		self.toolsInput.display = False
 		self.toolsExecButton.display = False
+		self.toolsLog.border_title = 'Output'
 
 
-	@property
-	def toolsHeader(self) -> Markdown:
-		return cast(Markdown, self.query_one('#tools-header'))
+	def updateHeader(self, title:str, description:Optional[str] = '') -> None:
+		"""	Set the header and description of the tools view.
 
+			Args:
+				title: The title text.
+				description: The description text.
+		"""
+		t = cast(Center, self.query_one('#tools-top-view'))
+		t.border_title = title
+		d = cast(Markdown, self.query_one('#tools-header'))
+		d.update(description)
 
 	@property
 	def toolsInput(self) -> ACMEInputField:

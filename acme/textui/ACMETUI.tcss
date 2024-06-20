@@ -24,24 +24,6 @@ TabPane {
 	padding: 0 0;
 }
 
-/* Additional CSS for highlight outgoing requests in ACMEListItem */
-/* ACMEListItem.--outgoing { */
-ListItem.--outgoing {
-	color: $text;
-	height: auto;
-	background: $panel-lighten-1;
-	overflow: hidden hidden;
-}
-
-/* ACMEListView:focus > ACMEListItem.--outgoing { */
-ListView:focus > ListItem.--outgoing {
-	background:  $panel-lighten-2;
-}
-
-/* ACMEListView > ACMEListItem.--outgoing.--highlight { */
-ListView > ListItem.--outgoing.--highlight {
-	background: $accent;
-}
 
 
 /*
@@ -64,7 +46,7 @@ ListView > ListItem.--outgoing.--highlight {
 
 	.request-header {
 		height: 4;
-		overflow: hidden; 
+		overflow: hidden;
 		padding-top: 2;
 		margin-left: 2;
 		width: 2fr;
@@ -108,11 +90,11 @@ ListView > ListItem.--outgoing.--highlight {
 
 
 ACMEResourceTree {
-	display: block; 
+	display: block;
 	scrollbar-gutter: stable;
-	overflow: auto;    
-	width: auto;    
-	min-height: 1fr;            
+	overflow: auto;
+	width: auto;
+	min-height: 1fr;
 	dock: left;
 	max-width: 50%;
 	padding-left: 1;
@@ -128,17 +110,18 @@ ACMEContainerTree {
 
 	}
 
-	#tree-tab-resource {
-		overflow: hidden auto;  
+	#resource-view-container {
+		border: round $primary;
+		overflow: hidden auto;
 		height: 100%;
-		/* TODO try to get padding working with later released of textualize */
+		padding: 1 1 1 1;
 	}
 
 }
 
 
 ACMEContainerDiagram {
-	
+
 	height: 100%;
 	padding: 0 1 1 1;
 
@@ -267,7 +250,7 @@ ACMEHeaderClock {
 
 /*
  *	ACME Input Field
- 
+
  */
 
  ACMEInputField {
@@ -284,11 +267,11 @@ ACMEHeaderClock {
 		content-align: left middle;
 		align: left middle;
 	}
-	
+
 	#field-input-view {
 		width: 1fr;
 	}
-	
+
 	#field-message {
 		height: 1fr;
 		width: 1fr;
@@ -345,24 +328,22 @@ ACMEDialog {
 	}
 
 	#confirm-ok {
-		border-left: tall $success-lighten-2;
 		border-right: tall $success-darken-3;
 	}
 
 	#confirm-cancel {
-		border-left: tall $primary-lighten-2;
 		border-right: tall $primary-darken-3;
 	}
 
 }
 
 
-/* 
+/*
  * Debug Console line
  */
 
 #debug-console {
-	overflow: auto scroll;  
+	overflow: auto scroll;
 	width: 1fr;
 	height: 3;
 	background:darkblue;
@@ -392,114 +373,98 @@ ACMEContainerUpdate {
 ACMEContainerTools {
 
 	#tools-tree-view {
-	   display: block; 
-	   scrollbar-gutter: stable;
-	   overflow: auto;    
-	   width: auto;    
-	   min-height: 1fr;            
-	   dock: left;
-	   max-width: 50%;  
-   }
+		display: block;
+		scrollbar-gutter: stable;
+		overflow: auto;
+		width: auto;
+		min-height: 1fr;
+		dock: left;
+		max-width: 50%;
+		padding-left: 1;
+		padding-top: 1;
+	}
 
-   #tools-top-view {
-	   display: block;
-	   overflow: auto auto;
-	   min-width: 100%;
-	   margin: 0 0 0 0;
-	   height: 3fr;
-   }
+	#tools-top-view {
+		border: round $primary;
+		display: block;
+		overflow: auto auto;
+		min-width: 100%;
+		height: 1fr;
+		padding: 1 0 0 0;
 
-   #tools-arguments-view {
-	   display: block;
-	   overflow: auto auto;
-	   min-width: 100%;
-	   height: 1fr;
-	   margin: 0 0 0 0;
-   }
+		#tools-arguments-view {
+			align-vertical: bottom;
+			display: block;
+			overflow: auto auto;
+			min-width: 100%;
+			height: 1fr;
+			padding: 0 1 1 1;
+		}
+	}
 
-   #tools-arguments-view {
-	   display: block;
-	   overflow: auto auto;
-	   min-width: 100%;
-	   height: 1.5fr;
-	   margin: 0 0 0 0;
-   }
-
-   #tools-log-view {
-	   display: block;
-	   overflow: auto auto;
-	   height: 3fr;
-	   padding: 0 0 0 1;
-	   border-top: $panel;
-   }
-
-   #tools-run-button {
-	   background: red;
-   }
-
-   #tools-argument-view {
-	   display: block;
-	   overflow: auto auto;  
-	   margin: 0 4 1 4;
-	   layout: vertical;
-	   height: 1fr;
-   }
-
-   #tool-log {
-	   display: block;
-	   min-width: 100%;
-	   overflow: auto auto;  
-	   margin: 0 0 0 0;
-	   padding: 1 0 1 1;
-	   border-top: $panel;
-   }
+	#tools-log-view {
+		border: round $primary;
+		display: block;
+		overflow: auto auto;
+		height: 1fr;
+		padding: 1 1 0 2;
+	}
 }
+
 
 ACMEContainerResourceServices {
 	width: 100%;
-	
+
 	/* Export Resource */
 
 	#services-export-resource, #services-export-instances {
-		height: 10;
+		border: round $primary;
 		width: 100%;
+		height: 9;
+
+		.label {
+			margin-top: 1;
+			margin-left: 2;
+			width: 100%;
+		}
+
+		.service-command-area {
+			margin-top: 1;
+			margin-left: 2;
+			width: 100%;
+		}
+
+		.services-export-controls {
+			height: 1;
+		}
+
+		.button {
+			height: 1;
+			border: none;
+			margin-right: 3;
+			min-width: 14;
+		}
+
+		#services-export-resource-checkbox {
+			height: 1;
+			border: none;
+			margin-right: 0;
+			min-width: 17;
+		}
+
+		.loading-indicator {
+			margin-top: 1;
+			height: 1;
+			color: $secondary;
+		}
+
+		.result {
+			margin-top: 1;
+			height: 1;
+		}
 	}
 
-	#services-export-resource-area, #services-export-instances-area {
-		margin-left: 4;
-		margin-right: 4;
-		width: 100%;
-	}
 
-	#services-export-resource-controls {
-		height: 1;
-	}
-
-	#services-export-resource-checkbox {
-		height: 1;
-		border: none;
-		margin-right: 0;
-		min-width: 17;
-	}
-
-	#services-export-resource-button, #services-export-instances-button {
-		height: 1;
-		border: none;
-		margin-right: 3;
-		min-width: 14;
-	}
-
-	#services-export-resource-loading-indicator, #services-export-instances-loading-indicator {
-		margin-top: 1;
-		height: 1;
-		color: $secondary;
-	}
-
-	#services-export-resource-result, #services-export-instances-result {
-		margin-top: 1;
-		height: 1;
-	}
-		
 	/* Toggle Button */
 
 	ToggleButton > .toggle--button {
@@ -547,18 +512,59 @@ ACMEContainerResourceServices {
  * Request view
  */
 
+
 ACMEContainerRequests {
-	overflow: auto auto;  
+	overflow: auto auto;
 	width: 1fr;
 	height: 1fr;
 }
 
+
+
 ACMEViewRequests {
+	
+
+
+	/* Additional CSS for highlight outgoing requests in ACMEListItem */
+	ACMEListItem.--outgoing {
+		color: $text;
+		height: auto;
+		overflow: hidden hidden;
+	}
+	
+	ACMEListItem {
+        color: $text;
+        height: auto;
+        background: $surface;
+        overflow: hidden hidden;
+    }
+
+	ListView > ACMEListItem.--highlight {
+        background: $accent 50%;
+    }
+
+	ACMEListItem > Widget :hover {
+        background: $accent;
+    }
+
+	ListView > ACMEListItem.--outgoing {
+		background:  $secondary-background 50%;
+	}
+
+	ListView:focus > ACMEListItem.--outgoing {
+		background:  $secondary-background 50%;
+	}
+	
+	ListView > ACMEListItem.--outgoing.--highlight {
+		background: $accent;
+	}
+
+	
 	#request-list-view {
 		width: 1fr;
 		height: 1fr;
 	}
-
+	
 	#request-list-header {
 		width: 1fr;
 		height: 1;
@@ -567,37 +573,35 @@ ACMEViewRequests {
 	}
 	
 	#request-list-list {
-		overflow: auto auto;  
+		overflow: auto auto;
 		min-width: 100%;
-		height: 2fr;
+		height: 1fr;
+        background: $surface;
+        /* background: $panel-lighten-1; */
 	}
-	#request-list-details-header {
-		overflow: auto;
-		height: 1;
-		align-vertical: middle;
-		background: $panel;
+
+	.request-response {
+		border: round $primary;
 	}
-	
+
 	#request-list-details {
-		overflow: auto scroll;
-		height: 3fr;
-	}	
-	
+		height: 1fr;
+	}
+
 	#request-list-request {
-		overflow: auto;  
+		overflow: auto;
 		width: 1fr;
 		min-height: 100%;
 		padding: 1 1;
 	}
-	
+
 	#request-list-response {
-		overflow: auto;  
+		overflow: auto;
 		width: 1fr;
 		min-height: 100%;
-		border-left: $panel;
 		padding: 1 1;
 	}
-	
+
 }
 
 
@@ -607,7 +611,7 @@ ACMEViewRequests {
 
  #registrations-view {
 	 display: block;
-	 overflow: auto auto;  
+	 overflow: auto auto;
 	 min-width: 100%;
  }
 
@@ -617,7 +621,7 @@ ACMEViewRequests {
  */
 #stats-view {
 	display: block;
-	overflow: auto auto;  
+	overflow: auto auto;
 	min-width: 100%;
 }
 
@@ -628,17 +632,19 @@ ACMEViewRequests {
 
 ACMEContainerConfigurations {
 	#configs-tree-view {
-		display: block; 
+		display: block;
 		scrollbar-gutter: stable;
-		overflow: auto;    
-		width: auto;    
-		min-height: 1fr;            
+		overflow: auto;
+		width: auto;
+		min-height: 1fr;
 		dock: left;
-		max-width: 50%;  
+		max-width: 50%;
+		padding-left: 1;
+		padding-top: 1;
 
 		#configs-documentation {
 			display: block;
-			overflow: auto auto;  
+			overflow: auto auto;
 		}
 	}
 }
@@ -650,7 +656,7 @@ ACMEContainerConfigurations {
 
 #about-view {
 	display: block;
-	overflow: auto auto;  
+	overflow: auto auto;
 	min-width: 100%;
 
 	#about-button {

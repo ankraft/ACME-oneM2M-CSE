@@ -13,7 +13,7 @@ from typing import cast
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll, Vertical
-from textual.widgets import Button, Rule, Static, Markdown, Checkbox, LoadingIndicator
+from textual.widgets import Button, Rule, Static, Markdown, Checkbox, LoadingIndicator, Label
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Types import ResourceTypes
 from ..resources.Resource import Resource
@@ -41,30 +41,24 @@ class ACMEContainerResourceServices(Container):
 		"""
 		with VerticalScroll():
 			# Export resource
-			with Vertical(id = 'services-export-resource'):
-				yield Markdown(
-'''### Export Resource
-Export the resource to a file in the *./tmp* directory as a *curl* command.
-''')
-				with Container(id = 'services-export-resource-area'):
-					with Horizontal(id = 'services-export-resource-controls'):
-						yield Button('Export', variant = 'primary', id = 'services-export-resource-button')
+			with (v := Vertical(id = 'services-export-resource')):
+				v.border_title = 'Export Resource'
+				yield Label('Export the resource to a file in the *./tmp* directory as a *curl* command.', classes='label')
+				with Container(classes='service-command-area'):
+					with Horizontal(classes = 'services-export-controls'):
+						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
 						yield Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
-					yield LoadingIndicator(id = 'services-export-resource-loading-indicator')
-					yield Static('', id = 'services-export-resource-result')
-					yield Rule()
+					yield LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+					yield Static('', id = 'services-export-resource-result', classes = 'result')
 			
 			# Export Instances
-			with Vertical(id = 'services-export-instances'):
-				yield Markdown(
-'''### Export Instances
-Export the instances of the container resource to a CSV file in the *./tmp* directory.
-''')
-				with Container(id = 'services-export-instances-area'):
-					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button')
-					yield LoadingIndicator(id = 'services-export-instances-loading-indicator')
-					yield Static('', id = 'services-export-instances-result')
-					yield Rule()
+			with (v := Vertical(id = 'services-export-instances')):
+				v.border_title = 'Export Instances'
+				yield Label('Export the instances of the container resource to a CSV file in the *./tmp* directory.', classes='label')
+				with Container(classes='service-command-area'):
+					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
+					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+					yield Static('', id = 'services-export-instances-result', classes = 'result')
 
 
 	@property

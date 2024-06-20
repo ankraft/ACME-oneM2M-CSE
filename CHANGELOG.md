@@ -28,6 +28,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Improved the script interpreter's error reporting. The error messages are now more informative and include the call stack.
 - [SCRIPTS] Changed the `http` function: Now supporting quoted list for headers.
 - [TESTS] Simplified internal test case registration.
+- [TUI] Improved the design and layout of many views in the text UI.
 
 ### Fixed
 - [TUI] Added vertical scrolling for some views.
