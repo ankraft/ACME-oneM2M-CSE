@@ -10,14 +10,15 @@
 @description This script is run to initialize the CSE structure
 @hidden
 
-;;	Provide a description for the categories. These are displayed in the Text UI
-(set-category-description "CSE Operation" 
-"Scripts under this category are used to perform CSE operations. 
+;; ;;	Provide a description for the categories. These are displayed in the Text UI
+;; (set-category-description "CSE Operation" 
+;; "Scripts under this category are used to perform CSE operations. 
 
-These scripts are not exposed to oneM2M AEs.
-They can usually only be executed from the console or text UI, or the Upper Tester API.")
+;; These scripts are not exposed to oneM2M AEs.
+;; They can usually only be executed from the console or text UI, or the Upper Tester API.")
 
 
+(setq cse-originator (get-config "cse.originator"))
 
 
 ;;
@@ -35,7 +36,7 @@ They can usually only be executed from the console or text UI, or the Upper Test
 	}})
 (setq cb (set-json-attribute cb "m2m:cb/poa" (get-config "cse.poa")))
 
-(import-raw (get-config "cse.originator") cb)
+(import-raw cse-originator cb)
 
 
 ;;
@@ -43,7 +44,7 @@ They can usually only be executed from the console or text UI, or the Upper Test
 ;;
 
 (import-raw 
-	(get-config "cse.originator")
+	cse-originator
 	{ "m2m:acp": {
 		"rn": "acpCreateACPs",
 		"ri": "acpCreateACPs",
@@ -57,7 +58,7 @@ They can usually only be executed from the console or text UI, or the Upper Test
 		},
 		"pvs": {
 			"acr": [ {
-				"acor": [ "${get-config \"cse.originator\"}" ],
+				"acor": [ "${cse-originator}" ],
 				"acop": 63
 			} ]
 		}
@@ -68,14 +69,14 @@ They can usually only be executed from the console or text UI, or the Upper Test
 ;;
 
 (import-raw 
-	(get-config "cse.originator")
+	cse-originator
 	{ "m2m:ae": {
-		"ri":  "${get-config \"cse.originator\"}",
-		"rn":  "${get-config \"cse.originator\"}",
+		"ri":  "${cse-originator}",
+		"rn":  "${cse-originator}",
 		"pi":  "${get-config \"cse.resourceID\"}",
 		"rr":  true,
-		"api": "N${get-config \"cse.originator\"}",
-		"aei": "${get-config \"cse.originator\"}",
+		"api": "N${cse-originator}",
+		"aei": "${cse-originator}",
 		"csz": [ "application/json", "application/cbor" ]
 	}})
 
