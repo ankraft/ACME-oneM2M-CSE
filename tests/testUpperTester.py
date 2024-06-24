@@ -81,6 +81,9 @@ class TestUpperTester(unittest.TestCase):
 		self.assertIsNotNone(newCt := findXPath(cse, 'm2m:cb/ct'))
 		self.assertGreater(newCt, oldCt)
 
+		# Wait a bit
+		testSleep(2)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_enableShortRequestExpiration(self) -> None:
