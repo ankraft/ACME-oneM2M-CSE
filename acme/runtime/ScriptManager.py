@@ -626,8 +626,11 @@ class ACMEPContext(PContext):
 				case SType.tJson:
 					_headers = cast(JSON, result.value)
 				case SType.tListQuote:
-					for item in result.value:
-						if len(item) != 2:
+					for item in result.value:	# type: ignore[union-attr]
+						item = cast(SSymbol, item)
+						try:
+							pcontext.assertSymbol(item, 2)
+						except:
 							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header definition: {item}'))
 						pcontext, _key = pcontext.resultFromArgument(item, 0)
 						pcontext, _value = pcontext.resultFromArgument(item, 1)
@@ -635,7 +638,7 @@ class ACMEPContext(PContext):
 							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header key: {_key}'))
 						if _value.type not in [SType.tString, SType.tNumber]:
 							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header value: {_value}'))
-						_headers[str(item.value[0])] = str(item.value[1])
+						_headers[str(_key.value)] = str(_value.value)
 				case SType.tNIL:
 					pass
 
@@ -1441,7 +1444,7 @@ class ACMEPContext(PContext):
 				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
 				# L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				responseResource = SSymbol(jsn = res.resource.asDict())
+				responseResource = SSymbol(jsn = cast(Resource, res.resource).asDict())
 			elif res.data:
 				# L.isDebug and L.logDebug(f'Request response: {res.data}')
 				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))

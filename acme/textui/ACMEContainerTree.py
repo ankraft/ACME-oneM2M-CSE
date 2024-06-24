@@ -32,8 +32,11 @@ class ACMEResourceTree(TextualTree):
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 
 	
 	def on_mount(self) -> None:
@@ -48,7 +51,7 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(CSE.cseRi):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				self.root.add(f'[{self.app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				self.root.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			self.root.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 		self._update_content(self.cursor_node.data)
@@ -71,7 +74,7 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(node.node.data):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				node.node.add(f'[{self.app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				node.node.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			node.node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 	

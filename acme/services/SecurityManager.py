@@ -728,10 +728,11 @@ class SecurityManager(object):
 		return False
 
 
-	def _checkAcor(self, acp:ACP, acor:list[str], originator:str) -> bool:
+	def _checkAcor(self, acp:ACP|ACPAnnc, acor:list[str], originator:str) -> bool:
 		""" Check whether an originator is in the list of acor entries.
 		
 			Args:
+				acp: The ACP resource to check.
 				acor: The list of acor entries.
 				originator: The originator to check.
 				

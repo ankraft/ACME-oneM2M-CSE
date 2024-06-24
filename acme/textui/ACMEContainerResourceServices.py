@@ -24,6 +24,8 @@ class ACMEContainerResourceServices(Container):
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		super().__init__(id = id)
 		
 		self.resource:Resource = None
@@ -31,6 +33,9 @@ class ACMEContainerResourceServices(Container):
 
 		self.exportIncludingChildResources:bool = True
 		"""	Flag to indicate if child resources should be included in the export. """
+
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	def compose(self) -> ComposeResult:
@@ -132,7 +137,7 @@ class ACMEContainerResourceServices(Container):
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
-			self.exportResourceResult.update(f'Exported [{CSE.textUI.objectColor}]{count}[/] resource(s) to file [{CSE.textUI.objectColor}]{filename}[/]')
+			self.exportResourceResult.update(f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
 	
 
 		# Show the loading indicator instead of the result
@@ -156,7 +161,7 @@ class ACMEContainerResourceServices(Container):
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self.exportInstancesResult.update(f"Exported [{CSE.textUI.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self.exportInstancesResult.update(f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
 	
 
 		# Show the loading indicator instead of the result

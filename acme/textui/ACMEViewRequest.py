@@ -14,6 +14,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll, Horizontal, Container
 from textual.widgets import Label, Button, TextArea
+from textual.widgets.button import ButtonVariant
 from .ACMEFieldOriginator import ACMEFieldOriginator
 from ..runtime import CSE
 
@@ -26,7 +27,7 @@ class ACMEViewRequest(VerticalScroll):
 			  		   header:str, 
 					   originator:str,
 					   buttonLabel:str, 
-					   buttonVariant:Optional[str] = 'primary',
+					   buttonVariant:Optional[ButtonVariant] = 'primary',
 					   callback:Optional[Callable] = None,
 					   enableEditor:bool = True):
 		"""	Initialize the view.

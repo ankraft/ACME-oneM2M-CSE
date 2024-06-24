@@ -366,7 +366,7 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 	return req, url, u
 
 
-def filterAttributes(dct:JSON, attributesToInclude:JSON) -> JSON:
+def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 	"""	Filter a dictionary by a list of attributes to include.
 	
 		Args:

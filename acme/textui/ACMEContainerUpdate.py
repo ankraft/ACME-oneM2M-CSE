@@ -34,6 +34,8 @@ class ACMEContainerUpdate(Container):
 			Args:
 				id:	The view ID.
 		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		super().__init__(id = id)
 
 		self.requestOriginator = CSE.cseOriginator
@@ -41,6 +43,9 @@ class ACMEContainerUpdate(Container):
 
 		self.resource:Resource = None
 		"""	The resource to delete. """
+
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 		self.requestView:ACMEViewRequest = ACMEViewRequest(id = 'request-update-request', 
 													 	   title = 'UPDATE Request',
@@ -149,12 +154,13 @@ class ACMEContainerUpdate(Container):
 				# The following is a critical section, because the resource tree has to be updated
 				# but we don't want to update the editor. The 'updateResource()' method would do that.
 				# There is a check for the critical section in the 'updateResource()' method above.
+				_resource = cast(Resource, result.resource)
 				with CriticalSection('tuiUpdate', timeout = 0.0):
-					cast(ACMETuiApp, self.app).containerTree.updateResource(result.resource)
+					self._app.containerTree.updateResource(_resource)
 				
-				self.responseView.success(Syntax(json.dumps(result.resource.asDict(), indent = 4),
+				self.responseView.success(Syntax(json.dumps(_resource.asDict(), indent = 4),
 									 			 'json', 
-												 theme = self.app.syntaxTheme),
+												 theme = self._app.syntaxTheme),
 										  result.rsc)
 				# self.responseView.refresh()
 		except ResponseException as e:

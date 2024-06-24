@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import cast, Optional, List
+from typing import cast, Optional, List, Any
 from time import sleep
 from textual import on
 from textual.app import ComposeResult
@@ -28,7 +28,9 @@ from ..textui.ACMEFieldOriginator import ACMEInputField
 
 class ACMEToolsTree(TextualTree):
 
-	def __init__(self, *args, **kwargs) -> None:	# type: ignore[no-untyped-def]
+	def __init__(self, *args:Any, **kwargs:Any) -> None:	# type: ignore[no-untyped-def]
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
 
@@ -37,6 +39,7 @@ class ACMEToolsTree(TextualTree):
 		self.nodes:dict[str, TreeNode] = {}
 		self.autoRunWorker:BackgroundWorker = None
 		self.autoRunName:str = None
+		self._app = cast(ACMETuiApp, self.app)
 
 		
 	def on_mount(self) -> None:
@@ -57,7 +60,7 @@ class ACMEToolsTree(TextualTree):
 							break
 					else:	# not found
 						# Add new node to the tree for the category
-						_n = root.add(f'[{self.app.objectColor}]{category}[/]', allow_expand = False, expand = True)
+						_n = root.add(f'[{self._app.objectColor}]{category}[/]', allow_expand = False, expand = True)
 				# Add the script to a category or to the root
 				_nn = _n.add(name, allow_expand = False)
 				self.nodes[name] = _nn
@@ -205,11 +208,16 @@ class ACMEContainerTools(Horizontal):
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
 
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+
+		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 
 	def compose(self) -> ComposeResult:
 
 		# Prepare some widgets in advance
-		self._toolsTree = ACMEToolsTree(f'[{self.app.objectColor}]Tools & Commands[/]', 
+		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
 								 		id = 'tools-tree-view',
 										parentContainer = self)
 
@@ -379,7 +387,7 @@ class ACMEContainerTools(Horizontal):
 		"""
 		with CriticalSection(scriptName):
 			oldLabel = self.toolsTree.nodes[scriptName]._label
-			self.toolsTree.nodes[scriptName].set_label(f'[reverse {CSE.textUI.objectColor}]{oldLabel}')
+			self.toolsTree.nodes[scriptName].set_label(f'[reverse {self._app.objectColor}]{oldLabel}')
 			self.toolsTree.refresh()
 			sleep(0.3)
 			self.toolsTree.nodes[scriptName].set_label(oldLabel)

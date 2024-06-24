@@ -17,6 +17,7 @@ from textual.widgets.tree import TreeNode
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 
+
 # TODO Add editing of configuration values
 
 idConfigs = 'configurations'
@@ -39,8 +40,11 @@ class ACMEConfigurationTree(TextualTree):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 		
 
 	def on_mount(self) -> None:
@@ -73,8 +77,8 @@ class ACMEConfigurationTree(TextualTree):
 					_n = c
 					break
 			else:	# not found
+				_n = node.add(f'[{self._app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 				# Add new node to the tree. "data" contains the path to this node
-				_n = node.add(f'[{self.app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 			if level == len(splits) - 1:
 				_n.allow_expand = False
 				_n.label = _s
@@ -129,11 +133,24 @@ class ACMEConfigurationTree(TextualTree):
 class ACMEContainerConfigurations(VerticalScroll):
 	"""	Container for the *Configurations* view.
 	"""
+
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		"""	Constructor.
+
+			Args:
+				args:	Variable length argument list.
+				kwargs:	Arbitrary keyword arguments.
+		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
+		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
+		
 	
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""
-		yield ACMEConfigurationTree(f'[{self.app.objectColor}]Configurations[/]', 
+		yield ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
 							  		id = 'configs-tree-view',
 									parentContainer = self)
 		yield Markdown('', id = 'configs-documentation')

@@ -125,6 +125,8 @@ class Configuration(object):
 	""" The http port passed as argument. This overrides the respective value in the configuration file. """
 	_argsInitDirectory:str = None
 	""" The import directory passed as argument. This overrides the respective value in the configuration file. """
+	_argsLightScheme:bool = None
+	""" The light scheme flag passed as argument. This overrides the respective value in the configuration file. """
 	_argsListenIF:str = None
 	""" The network interface passed as argument. This overrides the respective value in the configuration file. """
 	_argsMqttEnabled:bool = None
