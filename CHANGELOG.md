@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased 2024.DEV] - xxxx-xx-xx
+## [unreleased 2024.06] - 2024-06-26
 
 ### Added
 - [CSE] Added support for *operationMonitor* attribute in &lt;subscription> resources.
@@ -20,8 +20,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
 - [TUI] Added support for sending UPDATE operations in the text UI.
 - [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
-
-### Experimental
 
 ### Changed
 - [CSE] Internal refactoring of the ACP and permission processing.

@@ -14,7 +14,7 @@ print(directories)
 
 setup(
 	name='acmecse-test',
-	version='2024.DEV',
+	version='2024.06',
 
 
 	author='Andreas Kraft',

@@ -47,7 +47,7 @@ mdit-py-plugins==0.4.1
     # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
-numpy==1.26.4
+numpy==2.0.0
     # via shapely
 paho-mqtt==2.1.0
     # via acmecse-test (setup.py)
@@ -79,7 +79,7 @@ shapely==2.0.4
     # via acmecse-test (setup.py)
 six==1.16.0
     # via isodate
-textual[syntax]==0.68.0
+textual[syntax]==0.70.0
     # via
     #   acmecse-test (setup.py)
     #   textual-plotext
