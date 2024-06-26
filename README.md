@@ -25,8 +25,6 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-The following changes can be expected for the next release.
-
 ### Improvements
 
 - Added support for *operationMonitor* attribute in &lt;subscription> resources.
