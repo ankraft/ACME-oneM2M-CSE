@@ -35,7 +35,7 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 - Added support for logging in UTC time.
 - Added support for sending UPDATE operations via the Text UI.
 
-## Misc
+### Misc
 
 - Moved the documentation for the website to the a separate repository ([ACME-oneM2M-CSE-mkdocs](https://github.com/ankraft/ACME-oneM2M-CSE-mkdocs)).
 
