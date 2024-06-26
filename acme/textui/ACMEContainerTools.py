@@ -8,12 +8,12 @@
 """
 
 from __future__ import annotations
-from typing import cast, Optional, List
+from typing import cast, Optional, List, Any
 from time import sleep
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical, Center, Middle, Horizontal
+from textual.containers import Vertical, Center, Horizontal, Container
 from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
 from textual.widgets.tree import TreeNode
 from ..runtime import CSE
@@ -28,7 +28,9 @@ from ..textui.ACMEFieldOriginator import ACMEInputField
 
 class ACMEToolsTree(TextualTree):
 
-	def __init__(self, *args, **kwargs) -> None:	# type: ignore[no-untyped-def]
+	def __init__(self, *args:Any, **kwargs:Any) -> None:	# type: ignore[no-untyped-def]
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
 
@@ -37,6 +39,7 @@ class ACMEToolsTree(TextualTree):
 		self.nodes:dict[str, TreeNode] = {}
 		self.autoRunWorker:BackgroundWorker = None
 		self.autoRunName:str = None
+		self._app = cast(ACMETuiApp, self.app)
 
 		
 	def on_mount(self) -> None:
@@ -57,7 +60,7 @@ class ACMEToolsTree(TextualTree):
 							break
 					else:	# not found
 						# Add new node to the tree for the category
-						_n = root.add(f'[{CSE.textUI.objectColor}]{category}[/]', allow_expand = False, expand = True)
+						_n = root.add(f'[{self._app.objectColor}]{category}[/]', allow_expand = False, expand = True)
 				# Add the script to a category or to the root
 				_nn = _n.add(name, allow_expand = False)
 				self.nodes[name] = _nn
@@ -102,7 +105,8 @@ class ACMEToolsTree(TextualTree):
 
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
-			self.parentContainer.toolsHeader.update(f'## {node.label}\n{CSE.script.categoryDescriptions.get(str(node.label), "")}')
+			self.parentContainer.updateHeader(node.label, 
+									 		  f'{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False
 			self.parentContainer.toolsLog.clear()
@@ -114,15 +118,12 @@ class ACMEToolsTree(TextualTree):
 			description = description.replace('\n', '\n\n') if description is not None else ''
 
 			# Update the header and the button
-			if description.startswith('#'):
-				self.parentContainer.toolsHeader.update(description)
-			else:    
-				self.parentContainer.toolsHeader.update(
-f"""\
-## {node.label}
-
-{description}
-""")
+			# if description.startswith('#'):
+			# 	self.parentContainer.updateHeader(description)
+			# else:    
+			# 	self.parentContainer.updateHeader(node.label, description)
+			
+			self.parentContainer.updateHeader(node.label, description)
 
 			# Add input field if the meta tag "tuiInput" is set
 			if (_l := ctx.getMeta('tuiInput')):
@@ -166,7 +167,8 @@ f"""\
 					_executeScript(ctx.scriptName, autoRun = True)
 
 		else:
-			self.parentContainer.toolsHeader.update('')
+			self.parentContainer.updateHeader('')
+			# self.parentContainer.toolsHeader.update('')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False
 		
@@ -206,75 +208,16 @@ class ACMEContainerTools(Horizontal):
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
 
-	DEFAULT_CSS = '''
-	 #tools-tree-view {
-		display: block; 
-		scrollbar-gutter: stable;
-		overflow: auto;    
-		width: auto;    
-		min-height: 1fr;            
-		dock: left;
-		max-width: 50%;  
-	}
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
 
-	#tools-top-view {
-		display: block;
-		overflow: auto auto;
-		min-width: 100%;
-		margin: 0 0 0 0;
-		height: 3fr;
-	}
-
-	#tools-arguments-view {
-		display: block;
-		overflow: auto auto;
-		min-width: 100%;
-		height: 1fr;
-		margin: 0 0 0 0;
-	}
-
-	#tools-arguments-view {
-		display: block;
-		overflow: auto auto;
-		min-width: 100%;
-		height: 1.5fr;
-		margin: 0 0 0 0;
-	}
-
-	#tools-log-view {
-		display: block;
-		overflow: auto auto;
-		height: 3fr;
-		padding: 0 0 0 1;
-		border-top: $panel;
-	}
-
-	#tools-run-button {
-		background: red;
-	}
-
-	#tools-argument-view {
-		display: block;
-		overflow: auto auto;  
-		margin: 0 4 1 4;
-		layout: vertical;
-		height: 1fr;
-	}
-
-	#tool-log {
-		display: block;
-		min-width: 100%;
-		overflow: auto auto;  
-		margin: 0 0 0 0;
-		padding: 1 0 1 1;
-		border-top: $panel;
-	}
-	'''
+		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 
 	def compose(self) -> ComposeResult:
 
 		# Prepare some widgets in advance
-		self._toolsTree = ACMEToolsTree(f'[{CSE.textUI.objectColor}]Tools & Commands[/]', 
+		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
 								 		id = 'tools-tree-view',
 										parentContainer = self)
 
@@ -282,23 +225,31 @@ class ACMEContainerTools(Horizontal):
 		with Vertical():
 			with Center(id = 'tools-top-view'):
 				yield Markdown('', id = 'tools-header')
-			with Middle(id = 'tools-arguments-view'):
-				with Center():
-					yield ACMEInputField(label = 'Argument', id = 'tools-argument')
-				with Center():
-					yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
+				with Container(id = 'tools-arguments-view'):
+					with Center():
+						yield ACMEInputField(label = 'Argument', id = 'tools-argument')
+					with Center():
+						yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
 			yield RichLog(id = 'tools-log-view', markup=True)
 	
 
 	def on_mount(self) -> None:
 		self.toolsInput.display = False
 		self.toolsExecButton.display = False
+		self.toolsLog.border_title = 'Output'
 
 
-	@property
-	def toolsHeader(self) -> Markdown:
-		return cast(Markdown, self.query_one('#tools-header'))
+	def updateHeader(self, title:str, description:Optional[str] = '') -> None:
+		"""	Set the header and description of the tools view.
 
+			Args:
+				title: The title text.
+				description: The description text.
+		"""
+		t = cast(Center, self.query_one('#tools-top-view'))
+		t.border_title = title
+		d = cast(Markdown, self.query_one('#tools-header'))
+		d.update(description)
 
 	@property
 	def toolsInput(self) -> ACMEInputField:
@@ -436,7 +387,7 @@ class ACMEContainerTools(Horizontal):
 		"""
 		with CriticalSection(scriptName):
 			oldLabel = self.toolsTree.nodes[scriptName]._label
-			self.toolsTree.nodes[scriptName].set_label(f'[reverse {CSE.textUI.objectColor}]{oldLabel}')
+			self.toolsTree.nodes[scriptName].set_label(f'[reverse {self._app.objectColor}]{oldLabel}')
 			self.toolsTree.refresh()
 			sleep(0.3)
 			self.toolsTree.nodes[scriptName].set_label(oldLabel)

@@ -178,7 +178,7 @@ class ACTR(AnnounceableResource):
 			dataType = CSE.action.checkAttributeThreshold(sbjt, (dctEvc['thld']), sriResource.ty)
 
 			# Check evalCriteria operator
-			self._checkOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)
+			CSE.action.checkAttributeOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)
 
 		# Store some attributes for later evaluation
 		newEcp = findXPath(dct, 'm2m:actr/ecp')

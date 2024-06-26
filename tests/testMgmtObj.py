@@ -11,7 +11,6 @@ from audioop import getsample
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -1433,114 +1432,118 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	addTest(suite, TestMgmtObj('test_createFWR'))
-	addTest(suite, TestMgmtObj('test_retrieveFWR'))
-	addTest(suite, TestMgmtObj('test_attributesFWR'))
-	addTest(suite, TestMgmtObj('test_deleteFWR'))
-	
-	addTest(suite, TestMgmtObj('test_createSWR'))
-	addTest(suite, TestMgmtObj('test_retrieveSWR'))
-	addTest(suite, TestMgmtObj('test_attributesSWR'))
-	addTest(suite, TestMgmtObj('test_deleteSWR'))
-	
-	addTest(suite, TestMgmtObj('test_createMEM'))
-	addTest(suite, TestMgmtObj('test_retrieveMEM'))
-	addTest(suite, TestMgmtObj('test_attributesMEM'))
-	addTest(suite, TestMgmtObj('test_deleteMEM'))
-	
-	addTest(suite, TestMgmtObj('test_createANI'))
-	addTest(suite, TestMgmtObj('test_retrieveANI'))
-	addTest(suite, TestMgmtObj('test_attributesANI'))
-	addTest(suite, TestMgmtObj('test_deleteANI'))
-	
-	addTest(suite, TestMgmtObj('test_createANDI'))
-	addTest(suite, TestMgmtObj('test_retrieveANDI'))
-	addTest(suite, TestMgmtObj('test_attributesANDI'))
-	addTest(suite, TestMgmtObj('test_deleteANDI'))
-	
-	addTest(suite, TestMgmtObj('test_createBATWrong'))
-	addTest(suite, TestMgmtObj('test_createBAT'))
-	addTest(suite, TestMgmtObj('test_retrieveBAT'))
-	addTest(suite, TestMgmtObj('test_attributesBAT'))
-	addTest(suite, TestMgmtObj('test_deleteBAT'))
-	
-	addTest(suite, TestMgmtObj('test_createDVI'))
-	addTest(suite, TestMgmtObj('test_retrieveDVI'))
-	addTest(suite, TestMgmtObj('test_attributesDVI'))
-	addTest(suite, TestMgmtObj('test_deleteDVI'))
-	
-	addTest(suite, TestMgmtObj('test_createDVC'))
-	addTest(suite, TestMgmtObj('test_retrieveDVC'))
-	addTest(suite, TestMgmtObj('test_attributesDVC'))
-	addTest(suite, TestMgmtObj('test_updateDVCEnaTrue'))
-	addTest(suite, TestMgmtObj('test_updateDVCEnaFalse'))
-	addTest(suite, TestMgmtObj('test_updateDVCDisTrue'))
-	addTest(suite, TestMgmtObj('test_updateDVCDisFalse'))
-	addTest(suite, TestMgmtObj('test_updateDVCEnaDisTrue'))
-	addTest(suite, TestMgmtObj('test_updateDVCEnaDisFalse'))
-	addTest(suite, TestMgmtObj('test_deleteDVC'))
-	
-	addTest(suite, TestMgmtObj('test_createRBO'))
-	addTest(suite, TestMgmtObj('test_retrieveRBO'))
-	addTest(suite, TestMgmtObj('test_attributesRBO'))
-	addTest(suite, TestMgmtObj('test_updateRBORboTrue'))
-	addTest(suite, TestMgmtObj('test_updateRBORboFalse'))
-	addTest(suite, TestMgmtObj('test_updateRBOFarTrue'))
-	addTest(suite, TestMgmtObj('test_updateRBOFarFalse'))
-	addTest(suite, TestMgmtObj('test_updateRBORboFarTrue'))
-	addTest(suite, TestMgmtObj('test_updateRBORboFarFalse'))
-	addTest(suite, TestMgmtObj('test_deleteRBO'))
-	
-	addTest(suite, TestMgmtObj('test_createNYCFCwrongSUID'))
-	addTest(suite, TestMgmtObj('test_createNYCFC'))
-	addTest(suite, TestMgmtObj('test_retrieveNYCFC'))
-	addTest(suite, TestMgmtObj('test_attributesNYCFC'))
-	addTest(suite, TestMgmtObj('test_deleteNYCFC'))
+	addTests(suite, TestMgmtObj, [
 
-	addTest(suite, TestMgmtObj('test_createEVL'))
-	addTest(suite, TestMgmtObj('test_retrieveEVL'))
-	addTest(suite, TestMgmtObj('test_attributesEVL'))
-	addTest(suite, TestMgmtObj('test_deleteEVL'))
+		'test_createFWR',
+		'test_retrieveFWR',
+		'test_attributesFWR',
+		'test_deleteFWR',
+	
+		'test_createSWR',
+		'test_retrieveSWR',
+		'test_attributesSWR',
+		'test_deleteSWR',
+	
+		'test_createMEM',
+		'test_retrieveMEM',
+		'test_attributesMEM',
+		'test_deleteMEM',
+	
+		'test_createANI',
+		'test_retrieveANI',
+		'test_attributesANI',
+		'test_deleteANI',
+	
+		'test_createANDI',
+		'test_retrieveANDI',
+		'test_attributesANDI',
+		'test_deleteANDI',
+	
+		'test_createBATWrong',
+		'test_createBAT',
+		'test_retrieveBAT',
+		'test_attributesBAT',
+		'test_deleteBAT',
+	
+		'test_createDVI',
+		'test_retrieveDVI',
+		'test_attributesDVI',
+		'test_deleteDVI',
+	
+		'test_createDVC',
+		'test_retrieveDVC',
+		'test_attributesDVC',
+		'test_updateDVCEnaTrue',
+		'test_updateDVCEnaFalse',
+		'test_updateDVCDisTrue',
+		'test_updateDVCDisFalse',
+		'test_updateDVCEnaDisTrue',
+		'test_updateDVCEnaDisFalse',
+		'test_deleteDVC',
+	
+		'test_createRBO',
+		'test_retrieveRBO',
+		'test_attributesRBO',
+		'test_updateRBORboTrue',
+		'test_updateRBORboFalse',
+		'test_updateRBOFarTrue',
+		'test_updateRBOFarFalse',
+		'test_updateRBORboFarTrue',
+		'test_updateRBORboFarFalse',
+		'test_deleteRBO',
+	
+		'test_createNYCFCwrongSUID',
+		'test_createNYCFC',
+		'test_retrieveNYCFC',
+		'test_attributesNYCFC',
+		'test_deleteNYCFC',
 
-	addTest(suite, TestMgmtObj('test_createWIFIC'))
-	addTest(suite, TestMgmtObj('test_retrieveWIFIC'))
-	addTest(suite, TestMgmtObj('test_attributesWIFIC'))
-	addTest(suite, TestMgmtObj('test_deleteWIFIC'))
-	addTest(suite, TestMgmtObj('test_createWIFICCred1Fail'))
-	addTest(suite, TestMgmtObj('test_createWIFICCred2Fail'))
-	addTest(suite, TestMgmtObj('test_createWIFICCred3Fail'))
+		'test_createEVL',
+		'test_retrieveEVL',
+		'test_attributesEVL',
+		'test_deleteEVL',
 
-	addTest(suite, TestMgmtObj('test_createDATC'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpscIntegerFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCmescIntegerFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpscInvalidSchedule1Fail'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpscInvalidSchedule2Fail'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpscValidSchedule'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpilWhileRpscFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCrpscRpilFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCmescInvalidSchedule1Fail'))
-	addTest(suite, TestMgmtObj('test_updateDATCmescInvalidSchedule2Fail'))
-	addTest(suite, TestMgmtObj('test_updateDATCmescValidSchedule'))
-	addTest(suite, TestMgmtObj('test_updateDATCmeilWhileMescFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCmescMeilFail'))
-	addTest(suite, TestMgmtObj('test_updateDATCremoveMescAddMeil'))
-	addTest(suite, TestMgmtObj('test_attributesDATC'))
-	addTest(suite, TestMgmtObj('test_deleteDATC'))
+		'test_createWIFIC',
+		'test_retrieveWIFIC',
+		'test_attributesWIFIC',
+		'test_deleteWIFIC',
+		'test_createWIFICCred1Fail',
+		'test_createWIFICCred2Fail',
+		'test_createWIFICCred3Fail',
 
-	addTest(suite, TestMgmtObj('test_createSIM'))
-	addTest(suite, TestMgmtObj('test_retrieveSIM'))
-	addTest(suite, TestMgmtObj('test_attributesSIM'))
-	addTest(suite, TestMgmtObj('test_deleteSIM'))
+		'test_createDATC',
+		'test_updateDATCrpscIntegerFail',
+		'test_updateDATCmescIntegerFail',
+		'test_updateDATCrpscInvalidSchedule1Fail',
+		'test_updateDATCrpscInvalidSchedule2Fail',
+		'test_updateDATCrpscValidSchedule',
+		'test_updateDATCrpilWhileRpscFail',
+		'test_updateDATCrpscRpilFail',
+		'test_updateDATCmescInvalidSchedule1Fail',
+		'test_updateDATCmescInvalidSchedule2Fail',
+		'test_updateDATCmescValidSchedule',
+		'test_updateDATCmeilWhileMescFail',
+		'test_updateDATCmescMeilFail',
+		'test_updateDATCremoveMescAddMeil',
+		'test_attributesDATC',
+		'test_deleteDATC',
 
-	addTest(suite, TestMgmtObj('test_createMNWK'))
-	addTest(suite, TestMgmtObj('test_retrieveMNWK'))
-	addTest(suite, TestMgmtObj('test_attributesMNWK'))
-	addTest(suite, TestMgmtObj('test_deleteMNWK'))
+		'test_createSIM',
+		'test_retrieveSIM',
+		'test_attributesSIM',
+		'test_deleteSIM',
 
+		'test_createMNWK',
+		'test_retrieveMNWK',
+		'test_attributesMNWK',
+		'test_deleteMNWK',
+	])
 
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

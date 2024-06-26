@@ -13,12 +13,18 @@ from __future__ import annotations
 from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources import Factory		# attn: circular import
 from ..resources import PCH_PCU
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+
+
+# Add to internal attributes
+addToInternalAttributes(Constants.attrParentOriginator)	
+addToInternalAttributes(Constants.attrPCURI)
 
 
 # Tests for special access to PCH resource is done in SecurityManager.hasAccess()
@@ -27,11 +33,6 @@ class PCH(Resource):
 	"""	PollingChannel resource class.
 	"""
 
-	_parentOriginator = '__parentOriginator__'
-	"""	Parent resource originator attribute name. """
-
-	_pcuRI = '__pcuRI__'
-	"""	PCU resource ID attribute name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
@@ -69,10 +70,6 @@ class PCH(Resource):
 		# PCH inherits from its parent, the <AE>
 		super().__init__(ResourceTypes.PCH, dct, pi, create = create, inheritACP = True)
 
-		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._parentOriginator)	
-		self._addToInternalAttributes(self._pcuRI)
-
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	
 
@@ -95,14 +92,14 @@ class PCH(Resource):
 		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU)	# rn is assigned by resource itself
 		
 		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
-		self.setAttribute(PCH._pcuRI, resource.ri)	# store own PCU ri
+		self.setAttribute(Constants.attrPCURI, resource.ri)	# store own PCU ri
 
 		# General activation + validation
 		super().activate(parentResource, originator)
 
 		# Store the parent's orginator/AE-ID/CSE-ID
 		if parentResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.AE]:
-			self.setAttribute(PCH._parentOriginator, parentResource.getOriginator())
+			self.setAttribute(Constants.attrParentOriginator, parentResource.getOriginator())
 		else:
 			raise BAD_REQUEST(L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
 
@@ -123,7 +120,7 @@ class PCH(Resource):
 
 		# Set the aggregation state in the own PCU
 		# This is done in activate and update
-		resource = CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))
+		resource = CSE.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
 		pcu = cast(PCH_PCU.PCH_PCU, resource)
 		pcu.setAggregate(self.rqag)
 		pcu.dbUpdate(True)
@@ -135,4 +132,4 @@ class PCH(Resource):
 			Return:
 				The <PCU>'s parent originator.
 		"""
-		return self.attribute(PCH._parentOriginator)
+		return self.attribute(Constants.attrParentOriginator)

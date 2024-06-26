@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, Permission
 from init import *
 
@@ -450,37 +449,41 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
 	enableShortRequestExpirations()
 	if not isShortRequestExpirations():
 		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		console.print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1,0.0
 	
+	# Assign tests
 	suite = unittest.TestSuite()
-	
-	# basic tests
-	addTest(suite, TestPCH_PCU('test_createSUBunderCNTFail'))
-	addTest(suite, TestPCH_PCU('test_createPCHunderAE2'))
-	addTest(suite, TestPCH_PCU('test_accessPCUwithshortExpiration'))
-	addTest(suite, TestPCH_PCU('test_retrievePCUunderAE2Fail'))
-	addTest(suite, TestPCH_PCU('test_createSUBunderCNT'))
-	addTest(suite, TestPCH_PCU('test_DeleteSUBunderCNT'))
-	addTest(suite, TestPCH_PCU('test_accesPCUwithWrongOriginator'))
-	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTargetFail'))
-	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithEmptyAnswerFail'))
-	addTest(suite, TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongAnswerFail'))
+	addTests(suite, TestPCH_PCU, [
 
-	addTest(suite, TestPCH_PCU('test_aggregation'))
+		# basic tests
+		'test_createSUBunderCNTFail',
+		'test_createPCHunderAE2',
+		'test_accessPCUwithshortExpiration',
+		'test_retrievePCUunderAE2Fail',
+		'test_createSUBunderCNT',
+		'test_DeleteSUBunderCNT',
+		'test_accesPCUwithWrongOriginator',
+		'test_createSUB2underCNTAnswerWithWrongTargetFail',
+		'test_createSUB2underCNTAnswerWithEmptyAnswerFail',
+		'test_createSUB2underCNTAnswerWithWrongAnswerFail',
 
-	#TODO addTest(suite, TestPCH_PCU('test_createNotificationDoPolling'))
+		# Aggregation
+		'test_aggregation',
 
+		#TODO  'test_createNotificationDoPolling',
+	])
 
-
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortRequestExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

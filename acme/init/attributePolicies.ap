@@ -260,7 +260,7 @@
 			"annc": "OA"
 		},
 		{
-			"rtypes": [ "DVI", "DVIAnnc" ],
+			"rtypes": [ "DVI", "DVIAnnc", "MGMTOBJ", "MGMTOBJAnnc" ],
 			"lname": "location",
 			"ns": "m2m",
 			"type": "string",

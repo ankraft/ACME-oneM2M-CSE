@@ -11,17 +11,21 @@ from __future__ import annotations
 from typing import cast, Optional
 
 from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes, JSON, CSERequest, Result
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
+from ..resources.Resource import addToInternalAttributes
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..etc.DateUtils import timeUntilTimestamp
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 
 
-class PCH_PCU(VirtualResource):
+# Add to internal attributes to ignore in validation etc
+addToInternalAttributes(Constants.attrPCUAggregate)	
 
-	_aggregate = '__aggregate__'
+
+class PCH_PCU(VirtualResource):
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
@@ -43,10 +47,7 @@ class PCH_PCU(VirtualResource):
 						 readOnly = True, 
 						 rn = 'pcu')
 
-		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._aggregate)	
-
-		self.setAttribute(PCH_PCU._aggregate, False, overwrite = False)
+		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
 		
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
@@ -147,7 +148,7 @@ class PCH_PCU(VirtualResource):
 			Args:
 				aggregate: Boolean indicating whether requests shall be aggregated in a response.
 		"""
-		self.setAttribute(PCH_PCU._aggregate, aggregate)
+		self.setAttribute(Constants.attrPCUAggregate, aggregate)
 		
 
 	def getAggregate(self) -> bool:
@@ -156,4 +157,4 @@ class PCH_PCU(VirtualResource):
 			Return:
 				Boolean, the agregated state.
 		"""
-		return self.attribute(PCH_PCU._aggregate)
+		return self.attribute(Constants.attrPCUAggregate)

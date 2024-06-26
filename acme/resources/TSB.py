@@ -11,16 +11,23 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.DateUtils import fromDuration
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 
 
+# Add to internal attributes 
+addToInternalAttributes(Constants.attrBCNI)	
+addToInternalAttributes(Constants.attrBCNT)
+
+
 # DISCUSS Only one TSB with loss_of_sync, but only one is relevant for a requester. Only one is allowed? Check in update/create
+
 
 
 class TSB(AnnounceableResource):
@@ -56,11 +63,6 @@ class TSB(AnnounceableResource):
 		'bcnu': None,
 	}
 
-	# internal attributes to store durations in s
-	_bcni	= '__bcni__'
-	_bcnt	= '__bcnt__'
-
-
 
 
 # DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
@@ -71,9 +73,6 @@ class TSB(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.TSB, dct, pi, create = create)
-		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._bcni)	
-		self._addToInternalAttributes(self._bcnt)
 
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
 
@@ -116,7 +115,7 @@ class TSB(AnnounceableResource):
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
 			self.setAttribute('bcni', Configuration.get('resource.tsb.bcni'))
 		if self.hasAttribute('bcni'):
-			self.setAttribute(self._bcni, fromDuration(self.bcni))
+			self.setAttribute(Constants.attrBCNI, fromDuration(self.bcni))
 		
 		# Check beaconThreshold
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
@@ -124,7 +123,7 @@ class TSB(AnnounceableResource):
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
 			self.setAttribute('bcnt', Configuration.get('resource.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
-			self.setAttribute(self._bcnt, fromDuration(self.bcnt))
+			self.setAttribute(Constants.attrBCNI, fromDuration(self.bcnt))
 		
 		# Check beaconRequester
 		if self.hasAttribute('bcnr'):
@@ -141,5 +140,5 @@ class TSB(AnnounceableResource):
 			Returns:
 				Beacon interval as a float representing seconds.
 		"""
-		return self[self._bcni]
+		return self[Constants.attrBCNI]
 

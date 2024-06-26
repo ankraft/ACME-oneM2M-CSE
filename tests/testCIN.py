@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.DateUtils import getResourceDate
 from init import *
@@ -292,27 +291,30 @@ class TestCIN(unittest.TestCase):
 
 # More tests of la, ol etc in testCNT_CNI.py
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestCIN, [
+		'test_createCIN',
+		'test_retrieveCIN',
+		'test_attributesCIN',
+		'test_updateCINFail',
+		'test_createCINUnderAE',
+		'test_createCINwithNoneString',
+		'test_deleteCIN',
+		'test_createCINWithCreatorWrong',
+		'test_createCINWithCnfWrong1',
+		'test_createCINWithCnfWrong2',
+		'test_createCINWithCnfWrong3',
+		'test_createCINWithCnfWrong4',
+		'test_createCINWithCnfWrong5',
+		'test_createCINWithCreator',
+		'test_createRetrieveCINWithDcnt',
+		'test_createCINwithAcpi',
+		'test_createCINwithDgt'
+	])
 	
-	addTest(suite, TestCIN('test_createCIN'))
-	addTest(suite, TestCIN('test_retrieveCIN'))
-	addTest(suite, TestCIN('test_attributesCIN'))
-	addTest(suite, TestCIN('test_updateCINFail'))
-	addTest(suite, TestCIN('test_createCINUnderAE'))
-	addTest(suite, TestCIN('test_createCINwithNoneString'))
-	addTest(suite, TestCIN('test_deleteCIN'))
-	addTest(suite, TestCIN('test_createCINWithCreatorWrong'))
-	addTest(suite, TestCIN('test_createCINWithCnfWrong1'))
-	addTest(suite, TestCIN('test_createCINWithCnfWrong2'))
-	addTest(suite, TestCIN('test_createCINWithCnfWrong3'))
-	addTest(suite, TestCIN('test_createCINWithCnfWrong4'))
-	addTest(suite, TestCIN('test_createCINWithCnfWrong5'))
-	addTest(suite, TestCIN('test_createCINWithCreator'))
-	addTest(suite, TestCIN('test_createRetrieveCINWithDcnt'))
-	addTest(suite, TestCIN('test_createCINwithAcpi'))
-	addTest(suite, TestCIN('test_createCINwithDgt'))
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

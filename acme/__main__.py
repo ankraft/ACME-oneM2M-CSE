@@ -68,6 +68,10 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
 	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
 
+	groupDarkLight = parser.add_mutually_exclusive_group()
+	groupDarkLight.add_argument('--dark', action='store_const', const='dark', dest='isLightScheme', default=None, help='enable dark UI scheme')
+	groupDarkLight.add_argument('--light', action='store_const', const='light', dest='isLightScheme', default=None, help='enable light UI scheme')
+
 	# two mutual exlcusive arguments
 	groupEnableHttp = parser.add_mutually_exclusive_group()
 	groupEnableHttp.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
@@ -89,6 +93,7 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats = parser.add_mutually_exclusive_group()
 	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
+
 
 	parser.add_argument('--db-directory', action='store', dest='dbdirectory', metavar='<directory>', default=None, help='specify the TinyDB data directory')
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')

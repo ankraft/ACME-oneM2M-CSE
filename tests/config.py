@@ -7,6 +7,8 @@
 #	Configurations for unit tests
 #
 
+from typing import Optional
+
 BINDING						= 'http'	# possible values: http, https, mqtt, ws
 
 match BINDING:
@@ -47,17 +49,17 @@ match BINDING:
 
 
 
-SPID 					= 'acme.example.com'# Service Provide ID
-APPID					= 'NMyApp1Id'		# Application ID
-ORIGINATOR				= 'CAdmin'			# Admin originator
-ORIGINATORSelfReg		= 'C'				# Originator for self registration
-ORIGINATOREmpty			= ''				# Originator for empty originator/self registration 
-ORIGINATORNotifResp		= 'CTester'			# Originator for Notification responses
-RECONFIGURATIONENABLED	= True				# The CSE allowes for reconfigurations via Upper Tester
-UPPERTESTERENABLED		= True				# Enable or Disable Upper Tester extensions
-RELEASEVERSION			= '4'				# Supported Release Version for requests & registrations
-TESTHOSTIP				= None				# IP address of the host running the tests. 
-											# If None, the IP address is determined automatically
+SPID 							= 'acme.example.com'# Service Provide ID
+APPID							= 'NMyApp1Id'		# Application ID
+ORIGINATOR						= 'CAdmin'			# Admin originator
+ORIGINATORSelfReg				= 'C'				# Originator for self registration
+ORIGINATOREmpty					= ''				# Originator for empty originator/self registration 
+ORIGINATORNotifResp				= 'CTester'			# Originator for Notification responses
+RECONFIGURATIONENABLED			= True				# The CSE allowes for reconfigurations via Upper Tester
+UPPERTESTERENABLED				= True				# Enable or Disable Upper Tester extensions
+RELEASEVERSION					= '4'				# Supported Release Version for requests & registrations
+TESTHOSTIP:Optional[str]		= None				# IP address of the host running the tests. 
+													# If None, the IP address is determined automatically
 
 
 #

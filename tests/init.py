@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Any, Callable, Tuple, cast, Optional
+from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
 
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit, base64
@@ -36,12 +36,22 @@ from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from config import *
 
 
-verifyCertificate = False					# verify the certificate when using https?
-oauthToken = None							# current OAuth Token
-verboseRequests = False						# Print requests and responses
-testCaseNames:Optional[list[str]] = None	# List of test cases to run
-enableTearDown:bool = True  				# Run or don't run TearDownClass test case methods
-initialRequestTimeout = 10.0				# Timeout in s for the initial connectivity test.
+TestResult:TypeAlias = Tuple[int, int, int, float]
+"""	Results of a test case. The tuple contains the following values:
+
+	- number of tests executed
+	- number of errors
+	- number of skipped tests
+	- time spent sleeping in the test cases
+"""
+
+verifyCertificate = False						# verify the certificate when using https?
+oauthToken = None								# current OAuth Token
+verboseRequests = False							# Print requests and responses
+testCaseNames:Optional[list[str]] = None		# List of test cases to run
+excludedTestNames:Optional[list[str]] = []		# List of test cases to exclude
+enableTearDown:bool = True  					# Run or don't run TearDownClass test case methods
+initialRequestTimeout = 10.0					# Timeout in s for the initial connectivity test.
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -710,7 +720,7 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 				return resp['pc'] if 'pc' in resp else None, resp['rsc']
 			else:
 				console.print(response)
-				console.print('.', end='', flush=True)
+				console.print('.', end='')
 				return None
 	except TimeoutError:	# expected
 		console.print('timeout')
@@ -1166,13 +1176,42 @@ def getIPAddress() -> str:
 
 
 def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
+	"""	Add a test case to a test suite.
+
+		Args:
+			suite: The test suite
+			case: The test case
+	"""
 	global testCaseNames
 
 	if testCaseNames is None:
 		suite.addTest(case)
-	elif testCaseNames and case._testMethodName == testCaseNames[0]:
-		testCaseNames = testCaseNames[1:]
+
+	elif testCaseNames and case._testMethodName in testCaseNames:
+		testCaseNames.remove(case._testMethodName)
 		suite.addTest(case)
+
+
+def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[str]) -> None:
+	"""	Add a list of test cases to a test suite. If the global variable `testCaseNames` is set
+		then only the test cases in that list are added in the order they are listed. Duplicates are
+		allowed.
+	
+		Args:
+			suite: The test suite
+			cls: The class of the test cases
+			cases: The list of test case names
+	"""
+	def _addTest(case:str) -> None:
+		if case not in excludedTestNames:
+			suite.addTest(cls(case))
+
+	if testCaseNames is None:
+		for case in cases:
+			_addTest(case)
+	else:
+		for case in testCaseNames:
+			_addTest(case)
 
 
 def isTearDownEnabled() -> bool:
@@ -1269,7 +1308,7 @@ noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 
 # Set the TESTHOSTIP to the local IP address if it is not set
-if TESTHOSTIP is None:
+if TESTHOSTIP is None:	# type: ignore[used-before-def]
 	TESTHOSTIP = getIPAddress()
 NOTIFICATIONSERVER = NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
 NOTIFICATIONSERVERW = NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)

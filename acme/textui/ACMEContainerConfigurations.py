@@ -11,11 +11,12 @@ from __future__ import annotations
 from typing import cast, Any
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal
+from textual.containers import VerticalScroll
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
+
 
 # TODO Add editing of configuration values
 
@@ -39,8 +40,11 @@ class ACMEConfigurationTree(TextualTree):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 		
 
 	def on_mount(self) -> None:
@@ -73,8 +77,8 @@ class ACMEConfigurationTree(TextualTree):
 					_n = c
 					break
 			else:	# not found
+				_n = node.add(f'[{self._app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 				# Add new node to the tree. "data" contains the path to this node
-				_n = node.add(f'[{CSE.textUI.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
 			if level == len(splits) - 1:
 				_n.allow_expand = False
 				_n.label = _s
@@ -114,7 +118,7 @@ class ACMEConfigurationTree(TextualTree):
 		if isinstance(value, list):
 			value = ','.join(value)
 		
-		header = f'## {topic}\n'
+		header = f'# {topic}\n'
 		if value is not None:
 			# header with link for later editing feature
 			if len(_s := str(value)):
@@ -126,33 +130,27 @@ class ACMEConfigurationTree(TextualTree):
 		self.parentContainer.updateDocumentation(header, doc)
 
 
-class ACMEContainerConfigurations(Horizontal):
+class ACMEContainerConfigurations(VerticalScroll):
 	"""	Container for the *Configurations* view.
 	"""
+
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		"""	Constructor.
+
+			Args:
+				args:	Variable length argument list.
+				kwargs:	Arbitrary keyword arguments.
+		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
+		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
+		
 	
-	DEFAULT_CSS = '''
-	#configs-tree-view {
-		display: block; 
-		scrollbar-gutter: stable;
-		overflow: auto;    
-		width: auto;    
-		min-height: 1fr;            
-		dock: left;
-		max-width: 50%;  
-	}
-
-	#configs-documentation {
-		display: block;
-		overflow: auto auto;  
-	}
-	'''
-	"""	The CSS for the *Configurations* view. """
-
-
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""
-		yield ACMEConfigurationTree(f'[{CSE.textUI.objectColor}]Configurations[/]', 
+		yield ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
 							  		id = 'configs-tree-view',
 									parentContainer = self)
 		yield Markdown('', id = 'configs-documentation')

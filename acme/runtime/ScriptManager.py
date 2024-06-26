@@ -201,7 +201,7 @@ class ACMEPContext(PContext):
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
-			L.isDebug and L.logDebug(msg, stackOffset=1)
+			L.isDebug and L.logDebug(line, stackOffset=1)
 
 
 	def logError(self, pcontext:PContext, msg:str, exception:Optional[Exception] = None) -> None:
@@ -216,7 +216,7 @@ class ACMEPContext(PContext):
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
-			L.isWarn and L.logWarn(msg, stackOffset=1)
+			L.isWarn and L.logWarn(line, stackOffset=1)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
@@ -621,17 +621,39 @@ class ACMEPContext(PContext):
 		# Get optional headers
 		_headers:JSON = {}
 		if symbol.length > 3:
-			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tNIL))
-			if result.type != SType.tNIL:
-				_headers = cast(JSON, result.value)
+			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tListQuote, SType.tNIL))
+			match result.type:
+				case SType.tJson:
+					_headers = cast(JSON, result.value)
+				case SType.tListQuote:
+					for item in result.value:	# type: ignore[union-attr]
+						item = cast(SSymbol, item)
+						try:
+							pcontext.assertSymbol(item, 2)
+						except:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header definition: {item}'))
+						pcontext, _key = pcontext.resultFromArgument(item, 0)
+						pcontext, _value = pcontext.resultFromArgument(item, 1)
+						if _key.type not in [SType.tSymbol, SType.tSymbolQuote, SType.tString]:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header key: {_key}'))
+						if _value.type not in [SType.tString, SType.tNumber]:
+							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header value: {_value}'))
+						_headers[str(_key.value)] = str(_value.value)
+				case SType.tNIL:
+					pass
+
 
 		# get body, if present
 		_body:str|JSON = None
 		if symbol.length == 5:
-			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson))
-			_body = str(result)
-			if len(_body):
-				_headers['Content-Length'] = str(len(_body))
+			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson, SType.tNIL))
+			match result.type:
+				case SType.tString | SType.tJson:
+					_body = str(result)
+					if len(_body):
+						_headers['Content-Length'] = str(len(_body))
+				case SType.tNIL:
+					pass
 
 		# send http request
 		try:
@@ -1129,7 +1151,7 @@ class ACMEPContext(PContext):
 		if symbol.length > 2:
 			for idx in range(2, symbol.length):
 				pcontext, value = pcontext.valueFromArgument(symbol, idx)
-				arguments.append(str(value))
+				arguments.append(value.toString())
 
 		# find script
 		if len(scripts := CSE.script.findScripts(name = name)) == 0:
@@ -1422,7 +1444,7 @@ class ACMEPContext(PContext):
 				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
 				# L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				responseResource = SSymbol(jsn = res.resource.asDict())
+				responseResource = SSymbol(jsn = cast(Resource, res.resource).asDict())
 			elif res.data:
 				# L.isDebug and L.logDebug(f'Request response: {res.data}')
 				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))

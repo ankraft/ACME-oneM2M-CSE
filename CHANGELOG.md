@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [unreleased 2024.06] - 2024-06-26
+
+### Added
+- [CSE] Added support for *operationMonitor* attribute in &lt;subscription> resources.
+- [CSE] Improved support for DELETE operations on &lt;request> resources.
+- [CSE] Added support for attribute-level access control.
+- [CSE] Added support ACP access control contexts: accessControlWindow.
+- [CSE] Added --dark and --light command line arguments.
+- [LOGGING] Added support for logging in UTC time.
+- [SCRIPTS] Added new functions `all`, `any`, `filter`, `map`, `min`, `max`, `reduce`, `reverse` to the script interpreter.
+- [TUI] Added support for sending UPDATE operations in the text UI.
+- [TESTS] Added `--exlcude-tests` command line argument to exclude specific test cases from the test run.
+
+### Changed
+- [CSE] Internal refactoring of the ACP and permission processing.
+- [SCRIPTS] Improved the script interpreter's error reporting. The error messages are now more informative and include the call stack.
+- [SCRIPTS] Changed the `http` function: Now supporting quoted list for headers.
+- [TESTS] Simplified internal test case registration.
+- [TUI] Improved the design and layout of many views in the text UI.
+
+### Fixed
+- [TUI] Added vertical scrolling for some views.
+
+### Removed
+- [MISC] Moved the documentation for the website to the a separate repository (ACME-oneM2M-CSE-mkdocs).
+
+
+
 ## [2024.05] - 2024-05-13
 
 ### Added

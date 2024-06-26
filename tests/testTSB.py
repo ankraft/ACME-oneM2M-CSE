@@ -13,7 +13,6 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, BeaconCriteria
-from typing import Tuple
 
 
 # TODO update
@@ -218,20 +217,26 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestTSB, [
 
-	addTest(suite, TestTSB('test_createTSB'))
-	addTest(suite, TestTSB('test_createTSBEmptyNuFail'))
-	addTest(suite, TestTSB('test_createTSBBcniFail'))
-	addTest(suite, TestTSB('test_createTSBLOSNoBcnrFail'))
-	addTest(suite, TestTSB('test_createTSBBcniDefault'))
-	addTest(suite, TestTSB('test_createTSBBcntDefault'))
-	addTest(suite, TestTSB('test_createTSBPeriodic'))
+		'test_createTSB',
+		'test_createTSBEmptyNuFail',
+		'test_createTSBBcniFail',
+		'test_createTSBLOSNoBcnrFail',
+		'test_createTSBBcniDefault',
+		'test_createTSBBcntDefault',
+		'test_createTSBPeriodic',
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

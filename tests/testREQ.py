@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from rich import print
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType, RequestStatus
 from init import *
@@ -590,8 +589,29 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
+	#
+	#	Misc
+	#
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteREQFail(self) -> None:
+		""" DELETE <REQ> resource -> Fail """
+		clearLastNotification()
+		# Create a request by retrieving the CSE with a non-blocking request and delayed OET
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}&rp={requestETDuration2}', 
+						  TestREQ.originator,
+						  headers={ C.hfOET : DateUtils.getResourceDate(requestCheckDelay)})	# set OET to now+requestCheckDelay/2
+		self.assertEqual(rsc, RC.ACCEPTED_NON_BLOCKING_REQUEST_SYNC, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# try
+		r, rsc = DELETE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.UNABLE_TO_RECALL_REQUEST, r)
+
+
+
+def run(testFailFast:bool) -> TestResult:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()	# switched off in tear-down
 	if not isTestResourceExpirations():
@@ -599,38 +619,46 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1,0.0
 
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestREQ, [
 
-	addTest(suite, TestREQ('test_createREQFail'))
+		'test_createREQFail',
 
-	# nonBlockingSync
-	addTest(suite, TestREQ('test_retrieveCSENBSynch'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchValidateREQ'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchMissingRP'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchWrongRT'))
-	addTest(suite, TestREQ('test_retrieveUnknownNBSynch'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchExpireRequest'))
-	addTest(suite, TestREQ('test_testResultPersistence'))
-	addTest(suite, TestREQ('test_retrieveCNTNBFlex'))					# flex
-	addTest(suite, TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
-	addTest(suite, TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
-	addTest(suite, TestREQ('test_createCNTNBSynch'))
-	addTest(suite, TestREQ('test_updateCNTNBSynch'))
-	addTest(suite, TestREQ('test_deleteCNTNBSynch'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchWithRET'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchWithRETshort'))
-	addTest(suite, TestREQ('test_retrieveCSENBSynchWithVSI'))
+		# nonBlockingSync
+		'test_retrieveCSENBSynch',
+		'test_retrieveCSENBSynchValidateREQ',
+		'test_retrieveCSENBSynchMissingRP',
+		'test_retrieveCSENBSynchWrongRT',
+		'test_retrieveUnknownNBSynch',
+		'test_retrieveCSENBSynchExpireRequest',
+		'test_testResultPersistence',
+		'test_retrieveCNTNBFlex',					# flex
+		'test_retrieveCNTNBFlexIntegerDuration',		# flex
+		'test_retrieveCNTNBFlexWrongDuration',		# flex
+		'test_createCNTNBSynch',
+		'test_updateCNTNBSynch',
+		'test_deleteCNTNBSynch',
+		'test_retrieveCSENBSynchWithRET',
+		'test_retrieveCSENBSynchWithRETshort',
+		'test_retrieveCSENBSynchWithVSI',
 
-	# nonBlockingAsync
-	addTest(suite, TestREQ('test_retrieveCSENBAsynch'))
-	addTest(suite, TestREQ('test_retrieveCSENBAsynch2'))
-	addTest(suite, TestREQ('test_retrieveCSENBAsynchEmptyRTU'))
-	addTest(suite, TestREQ('test_retrieveCSENBAsynchNoRTU'))
-	addTest(suite, TestREQ('test_retrieveUnknownNBAsynch'))
-	addTest(suite, TestREQ('test_createCNTNBAsynch'))
-	addTest(suite, TestREQ('test_updateCNTNBAsynch'))
-	addTest(suite, TestREQ('test_deleteCNTNBASynch'))
+		# nonBlockingAsync
+		'test_retrieveCSENBAsynch',
+		'test_retrieveCSENBAsynch2',
+		'test_retrieveCSENBAsynchEmptyRTU',
+		'test_retrieveCSENBAsynchNoRTU',
+		'test_retrieveUnknownNBAsynch',
+		'test_createCNTNBAsynch',
+		'test_updateCNTNBAsynch',
+		'test_deleteCNTNBASynch',
 
+		# Misc
+		'test_deleteREQFail',
+
+	])
+
+	# Run tests
 	try:
 		result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 		printResult(result)

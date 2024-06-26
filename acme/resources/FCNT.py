@@ -11,15 +11,19 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, BAD_REQUEST
 from ..etc.ACMEUtils import getAttributeSize
 from ..etc.DateUtils import getResourceDate
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources import Factory				# attn: circular import
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
 
+
+# Add to internal attributes
+addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ignore in validation etc
 
 class FCNT(ContainerResource):
 
@@ -69,15 +73,12 @@ class FCNT(ContainerResource):
 	}
 
 
-	_hasFCI	= '__hasFCI__'
-	"""	Internal attribute to indicate whether this FCNT has la/ol installed. """
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.FCNT, dct, pi, tpe = fcntType, create = create)
-		self._addToInternalAttributes(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
@@ -85,10 +86,10 @@ class FCNT(ContainerResource):
 		# Indicates whether this FC has flexContainerInstances. 
 		# Might change during the lifetime of a resource. Used for optimization
 		self._hasInstances 	= False		# not stored in DB
-		self.setAttribute(self._hasFCI, False, False)	# stored in DB
+		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
 		self.__validating = False
-		self.ignoreAttributes = self.internalAttributes + [ a for a in self._attributes.keys() ]
+		self.ignoreAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -114,7 +115,7 @@ class FCNT(ContainerResource):
 		super().update(dct, originator, doValidateAttributes)
 		
 		# Remove <latest>/<oldest> child resources when necessary (mni etc set to null)
-		hasFCI = self[self._hasFCI]
+		hasFCI = self[Constants.attrHasFCI]
 		if self._hasInstances and not hasFCI:
 			self._prepareForInstances()
 		elif not self._hasInstances and hasFCI:
@@ -196,11 +197,11 @@ class FCNT(ContainerResource):
 			# Add FCI only 
 			# - if mni etc is set, and
 			# - if this is NOT a deleteFCI validation, and any of the following is true:
-			#   - the _hasFCI attriubte is NOT set (which means we are in progress to add FCI), or
+			#   - the Constants.attrHasFCI attriubte is NOT set (which means we are in progress to add FCI), or
 			#   - the update dct is empty, or
 			#   - there is any of the custom attributes OR lbl attribute present
 			_updateCustomAttributes = dct is not None and any([each not in self.ignoreAttributes or each in [ 'lbl' ] for each in dct[self.tpe].keys()])
-			if not deletingFCI and (_updateCustomAttributes or dct is None or not self[self._hasFCI]):
+			if not deletingFCI and (_updateCustomAttributes or dct is None or not self[Constants.attrHasFCI]):
 				self.addFlexContainerInstance(originator)
 			
 			fcis = self.flexContainerInstances()
@@ -308,7 +309,7 @@ class FCNT(ContainerResource):
 	def _prepareForInstances(self) -> None:
 		"""	Add <latest> and <oldest> virtual child resources.
 		"""
-		if self[self._hasFCI]:	# Not necessary
+		if self[Constants.attrHasFCI]:	# Not necessary
 			return
 		
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -328,7 +329,7 @@ class FCNT(ContainerResource):
 		resource = CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)
 		
-		self.setAttribute(self._hasFCI, True)
+		self.setAttribute(Constants.attrHasFCI, True)
 	
 		# Also adding cni and cbs attribute to the FCNT
 		self.setAttribute('cni', 0)
@@ -350,7 +351,7 @@ class FCNT(ContainerResource):
 		if len(chs := CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
 			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 	
-		self.setAttribute(self._hasFCI, False)
+		self.setAttribute(Constants.attrHasFCI, False)
 
 
 	def _removeFCIs(self) -> None:

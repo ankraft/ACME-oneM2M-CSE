@@ -12,9 +12,9 @@ from typing import cast
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Center, VerticalScroll
-from textual.widgets import Button, Static, Label
-from .ACMEFieldOriginator import ACMEFieldOriginator
+from textual.containers import Container
+from .ACMEViewRequest import ACMEViewRequest
+from .ACMEViewResponse import ACMEViewResponse
 from ..etc.Types import Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import getResourceDate
@@ -22,44 +22,7 @@ from ..etc.ACMEUtils import uniqueRI
 from ..resources.Resource import Resource
 from ..runtime import CSE
 
-
-def validateOriginator(value: str) -> bool:
-	"""	Validate the originator.
-	
-		Args:	
-			value:	The value to validate.
-
-		Returns:
-			True if the value is valid, otherwise False.
-	"""
-	return len(value) > 1 and value.startswith('C')
-
 class ACMEContainerDelete(Container):
-
-	DEFAULT_CSS = """
-	#request-delete-view {
-		height: 12;
-	}
-
-	#request-delete-input-view {
-		width: 100%;
-		height: 6;
-	}
-
-	#request-delete-response-label {
-		width: 1fr;
-		display: block;
-		overflow: auto;
-		height: 1;
-		content-align: center middle;
-		background: $panel;
-	}
-
-	#request-delete-response-response {
-		margin: 1 1 1 1;
-	}
-	"""
-	"""	The CSS for the *Delete* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -69,35 +32,32 @@ class ACMEContainerDelete(Container):
 		"""
 		super().__init__(id = id)
 
-		self.requestOriginator = 'CAdmin'
+		self.requestOriginator = CSE.cseOriginator
 		"""	The request originator. """
 
 		self.resource:Resource = None
 		"""	The resource to delete. """
 
+		self.deleteRequest:ACMEViewRequest = ACMEViewRequest(id = 'request-delete-request', 
+													 	   title = 'DELETE Request',
+													 	   header = 'Delete a resource and its children from the CSE.',
+														   originator = self.requestOriginator,
+														   buttonLabel = 'DELETE Resource',
+														   buttonVariant = 'error',
+														   callback = self.doDelete,
+														   enableEditor = False
+													)
+		"""	The request view. """
+		
+		self.deleteResponse = ACMEViewResponse(id = 'request-delete-response')
+		"""	The response view. """
+
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Delete* view.
-		"""
-		self.fieldOriginator =ACMEFieldOriginator(self.requestOriginator, suggestions = [CSE.cseOriginator, self.requestOriginator])
-		with VerticalScroll(id = 'request-delete-view'):
-			with Container(id = 'request-delete-input-view'):
-				yield self.fieldOriginator
-			with Center():
-				yield Button('Send DELETE Request', variant = 'error', id = 'request-delete-button')
-		with VerticalScroll(id = 'request-delete-response'):
-			yield Label('[u b]Response[/u b]', id = 'request-delete-response-label')
-			yield Static('', id = 'request-delete-response-response')
-
-
-	@property
-	def deleteResponse(self) -> Static:
-		""" Get the delete response widget.
-
-			Returns:
-				The delete response widget.
-		"""
-		return cast(Static, self.query_one('#request-delete-response-response'))
+		"""		
+		yield self.deleteRequest
+		yield self.deleteResponse
 
 
 	def updateResource(self, resource:Resource) -> None:
@@ -110,15 +70,14 @@ class ACMEContainerDelete(Container):
 		# Update the request originator. Important for getting a default request originator
 		self.requestOriginator = self.resource.getOriginator()
 		if self.requestOriginator:	
-			self.fieldOriginator.update(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+			self.deleteRequest.updateOriginator(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
-			self.fieldOriginator.update(CSE.cseOriginator, [CSE.cseOriginator])
-		self.deleteResponse.update('')	# Clear the response field
+			self.deleteRequest.updateOriginator(self.requestOriginator, [CSE.cseOriginator])
+		self.deleteResponse.clear()
 	
 
-	@on(Button.Pressed, '#request-delete-button')
-	def buttonExecute(self) -> None:
-		"""	Handle the *Send DELETE Request* button event.
+	def doDelete(self) -> None:
+		"""	Handle the *DELETE Request* button event. This is a callback function.
 		"""
 		from .ACMETuiApp import ACMETuiApp
 
@@ -126,7 +85,7 @@ class ACMEContainerDelete(Container):
 			# Prepare request structure
 			result = CSE.request.handleRequest( {
 					'op': Operation.DELETE,
-					'fr': self.fieldOriginator.originator,
+					'fr': self.deleteRequest.originator,
 					'to': self.resource.ri, 
 					'rvi': CSE.releaseVersion,
 					'rqi': uniqueRI(), 
@@ -135,16 +94,9 @@ class ACMEContainerDelete(Container):
 			if result.rsc != ResponseStatusCode.DELETED:
 				raise ResponseException(result.rsc, result.dbg)
 			
+			# Display a success message and update the container tree
+			cast(ACMETuiApp, self.app).showNotification(f'Resource {self.resource.ri} deleted', 'DELETE Resource', 'information')
 			cast(ACMETuiApp, self.app).containerTree.update()
 		except ResponseException as e:
-			self.deleteResponse.update(f'Response Status: {e.rsc}\n\n[red]{e.dbg}[/red]')
+			self.deleteResponse.error(e.dbg, rsc = e.rsc)
 
-
-	@on(ACMEFieldOriginator.Submitted)
-	def inputFieldSubmitted(self, value:str) -> None:
-		"""	Handle the input field submission event.
-
-			Args:
-				value:	The value of the input field.
-		"""
-		self.buttonExecute()

@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple, Optional
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -417,36 +416,39 @@ class TestAE(unittest.TestCase):
 # TODO register with S
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestAE, [
+		'test_createAE',
+		'test_createAEUnderAEFail',
+		'test_createAEAgainFail',
+		'test_createAEWithExistingOriginatorFail',
+		'test_createAECSIoriginatorFail',
+		'test_retrieveAE',
+		'test_retrieveAEWithWrongOriginator',
+		'test_attributesAE',
+		'test_updateAELbl',
+		'test_updateAETy',
+		'test_updateAEPi',
+		'test_updateAEUnknownAttribute',
+		'test_deleteAEByUnknownOriginator',
+		'test_deleteAEByAssignedOriginator',
+		'test_createAEWrongCSZ',
+		'test_createAECSZ',
+		'test_deleteAECSZ',
+		'test_createAENoAPI',
+		'test_createAEAPIWrongPrefix',
+		'test_createAEAPICorrectR',
+		'test_createAEAPICorrectN',
+		'test_createAEAPIRVI3LowerCaseR',
+		'test_createAEAPIRVI4LowerCaseRFail',
+		'test_createAENoOriginator',
+		'test_createAEEmptyOriginator',
+		'test_createAEInvalidRNFail'
+	])
 
-	addTest(suite, TestAE('test_createAE'))
-	addTest(suite, TestAE('test_createAEUnderAEFail'))
-	addTest(suite, TestAE('test_createAEAgainFail'))
-	addTest(suite, TestAE('test_createAEWithExistingOriginatorFail'))
-	addTest(suite, TestAE('test_createAECSIoriginatorFail'))
-	addTest(suite, TestAE('test_retrieveAE'))
-	addTest(suite, TestAE('test_retrieveAEWithWrongOriginator'))
-	addTest(suite, TestAE('test_attributesAE'))
-	addTest(suite, TestAE('test_updateAELbl'))
-	addTest(suite, TestAE('test_updateAETy'))
-	addTest(suite, TestAE('test_updateAEPi'))
-	addTest(suite, TestAE('test_updateAEUnknownAttribute'))
-	addTest(suite, TestAE('test_deleteAEByUnknownOriginator'))
-	addTest(suite, TestAE('test_deleteAEByAssignedOriginator'))
-	addTest(suite, TestAE('test_createAEWrongCSZ'))
-	addTest(suite, TestAE('test_createAECSZ'))	
-	addTest(suite, TestAE('test_deleteAECSZ'))	
-	addTest(suite, TestAE('test_createAENoAPI'))	
-	addTest(suite, TestAE('test_createAEAPIWrongPrefix'))	
-	addTest(suite, TestAE('test_createAEAPICorrectR'))	
-	addTest(suite, TestAE('test_createAEAPICorrectN'))	
-	addTest(suite, TestAE('test_createAEAPIRVI3LowerCaseR'))	
-	addTest(suite, TestAE('test_createAEAPIRVI4LowerCaseRFail'))
-	addTest(suite, TestAE('test_createAENoOriginator'))	
-	addTest(suite, TestAE('test_createAEEmptyOriginator'))	
-	addTest(suite, TestAE('test_createAEInvalidRNFail'))
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

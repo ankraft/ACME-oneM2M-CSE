@@ -172,7 +172,7 @@ class GroupManager(object):
 
 			# check privileges
 			if isLocalResource:
-				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE):
+				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource = resource):
 					raise RECEIVER_HAS_NO_PRIVILEGES(f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members

@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import NotificationEventType, ResourceTypes as T, ResponseStatusCode as RC, ResultContentType
 from init import *
 
@@ -579,47 +578,53 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(cbs - len(testValue), findXPath(r, 'm2m:cnt/cbs'))
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-	
-	addTest(suite, TestCNT_CIN('test_addCIN'))
-	addTest(suite, TestCNT_CIN('test_addMoreCIN'))
-	addTest(suite, TestCNT_CIN('test_retrieveCNTLa'))
-	addTest(suite, TestCNT_CIN('test_retrieveCNTOl'))
-	addTest(suite, TestCNT_CIN('test_changeCNTMni'))
-	addTest(suite, TestCNT_CIN('test_deleteCINCheckCNT'))
-	addTest(suite, TestCNT_CIN('test_deleteCNT'))
+	addTests(suite, TestCNT_CIN, [
+			
+		'test_addCIN',
+		'test_addMoreCIN',
+		'test_retrieveCNTLa',
+		'test_retrieveCNTOl',
+		'test_changeCNTMni',
+		'test_deleteCINCheckCNT',
+		'test_deleteCNT',
 
-	addTest(suite, TestCNT_CIN('test_createCNTwithMBS'))
-	addTest(suite, TestCNT_CIN('test_createCINexactSize'))
-	addTest(suite, TestCNT_CIN('test_createCINtooBig'))
-	addTest(suite, TestCNT_CIN('test_createCINsForCNTwithSize'))
-	addTest(suite, TestCNT_CIN('test_deleteCNT'))
+		'test_createCNTwithMBS',
+		'test_createCINexactSize',
+		'test_createCINtooBig',
+		'test_createCINsForCNTwithSize',
+		'test_deleteCNT',
 
-	addTest(suite, TestCNT_CIN('test_createCNTwithDISR'))
-	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_retrieveLAwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_retrieveOLwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_discoverCINwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_deleteCINwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_deleteLAwithDISRFail'))
-	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRFalse'))
-	addTest(suite, TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
-	addTest(suite, TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
-	addTest(suite, TestCNT_CIN('test_deleteCNT'))
-	addTest(suite, TestCNT_CIN('test_deleteCNTwithCINandDisr'))
+		'test_createCNTwithDISR',
+		'test_retrieveCINwithDISRFail',
+		'test_retrieveLAwithDISRFail',
+		'test_retrieveOLwithDISRFail',
+		'test_discoverCINwithDISRFail',
+		'test_deleteCINwithDISRFail',
+		'test_deleteLAwithDISRFail',
+		'test_updateCNTwithDISRFalse',
+		'test_updateCNTwithDISRNullFalse',
+		'test_retrieveCINwithDISRAllowed',
+		'test_deleteCNT',
+		'test_deleteCNTwithCINandDisr',
 
-	addTest(suite, TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
-	addTest(suite, TestCNT_CIN('test_deleteCNT'))
+		'test_autoDeleteCINnoNotifiction',
+		'test_deleteCNT',
 
-	addTest(suite, TestCNT_CIN('test_createCNT5CIN'))
-	addTest(suite, TestCNT_CIN('test_deleteCNTOl'))
-	addTest(suite, TestCNT_CIN('test_deleteCNTLA'))
-	addTest(suite, TestCNT_CIN('test_deleteCNT'))
+		'test_createCNT5CIN',
+		'test_deleteCNTOl',
+		'test_deleteCNTLA',
+		'test_deleteCNT',
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

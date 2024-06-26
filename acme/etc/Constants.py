@@ -11,7 +11,7 @@ class Constants(object):
 	""" Various CSE and oneM2M constants """
 
 	
-	version	= '2024.05.01'
+	version	= '2024.06'
 	"""	ACME's release version """
 
 	logoColor = '#b42025'
@@ -76,50 +76,86 @@ class Constants(object):
 	# 	Contstants for internal Resource attributes
 	#	They are here for easier access and to help not to include the "Resource" class all the time
 
+	attrAnnouncedTo = '__announcedTo__'			# List
+	""" Constant: Name of the 'Resource' internal *__announcedTo__* attribute. This attribute holds internal announcement information. """
+
+	attrCreatedInternallyRI = '__createdInternallyRI__'
+	""" Constant: Name of the `Resource` internal *__createdInternally__* attribute. This attribute indicates whether a resource was created internally or by an external request. """
+
+	attrBCNI = '__bcni__'
+	""" Constant: Name of the `Resource` internal *__bcni__* attribute. This attribute holds the value of the *bcni* attribute in s. """
+
+	attrBCNT = '__bcnt__'
+	""" Constant: Name of the `Resource` internal *__bcnt__* attribute. This attribute holds the value of the *bcnt* attribute in s. """
+
+	attrDecodedDsp = '__decodedDsp__'
+	""" Name of an internal string attribute that holds the semantic description after base64 decode. """
+
+	attrGTA = '__gta__'
+	""" Constant: Name of the `Resource` internal *__gta__* attribute. This attribute holds the geoJSON polygon of the geographical target area. """
+
+	attrHasFCI	= '__hasFCI__'
+	""" Constant: Name of the `Resource` internal *__hasFCI__* attribute. This attribute indicates whether this resource has la/ol installed. """
+
+	attrImported = '__imported__'
+	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
+
+	attrIsInstantiated = '__isInstantiated__'
+	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
+
+	attrLaRi = '__lari__'
+	""" Constant: Name of the `Resource` internal *__lari__* attribute. This attribute holds the resourceID's of the *latest* child-resource for some resource types. """
+
+	attrLCPLink = '__li__'
+	""" Constant: Name of the `Resource` internal *__li__* attribute. This attribute holds the link to the LCP resource (from the parent <container> resource). """
+
+	attrLocCoordinate = '__locCoordinate__'
+	""" Constant: Name of the `Resource` internal *__locCoordinate__* attribute. This attribute holds the location coordinate of a resource. """
+
+	attrModified = '__modified__'
+	""" Constant: Name of the `Resource` internal *__modified__* attribute. This attribute holds the resource's precise modification timestamp. """
+
+	attrNode = '__node__'
+	"""	Constant: Name of the `Resource` internal __node__ attribute. This attribute is used in some resource types to hold a reference to the hosting <node> resource. """
+
+	attrOlRi = '__olri__'
+	""" Constant: Name of the 'Resource internal *__olri__* attribute. This attribute holds the resourceID's of the *oldest* child-resource for some resource types. """
+
+	attrOriginator = '__originator__'			# Or creator
+	""" Constant: Name of the `Resource` internal *__originator__* attribute. This attribute holds the original creator of a resource."""
+	
+	attrParentOriginator = '__parentOriginator__'
+	""" Constant: Name of the `Resource` internal *__parentOriginator__* attribute. This attribute holds the parent resource's originator. """
+
+	attrPCUAggregate = '__aggregate__'
+	""" Constant: Name of the `Resource` internal *__aggregate__* attribute. This attribute holds the parent PCH resource's aggregate value. """
+
+	attrPCURI = '__pcuRI__'
+	""" Constant: Name of the `Resource` internal *__pcuRI__* attribute. This attribute holds the resourceID of the parent PCH resource. """
+
+	attrRemoteID = '__remoteID__'			# When this is a resource from another CSE
+	""" Constant: Name of the `Resource` internal *__remoteID__* attribute. This attribute holds a list of the resource's announced variants. """
+
+	attrRiTyMapping = '__riTyMapping__'
+	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
+
+	attrRvi = '__rvi__'					# Request version indicator when created
+	""" Constant: Name of the `Resource` internal *__rvi__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
+
 	attrRtype = '__rtype__'
 	"""	Constant: Name of the `Resource` internal *__rtype__* attribute. This attribute holds the resource type name, e.g. "m2m:cnt". """
 
 	attrSrn = '__srn__'
 	"""	Constant: Name of the `Resource` internal *__srn__* attribute. This attribute holds the resource's structured resource name. """
 
-	attrNode = '__node__'
-	"""	Constant: Name of the `Resource` internal __node__ attribute. This attribute is used in some resource types to hold a reference to the hosting <node> resource. """
+	attrSubSratRIs = '__subSratRIs__'
+	""" Constant: Name of the `Resource` internal *__subSratRIs__* attribute. This attribute holds the resourceIDs of the <sub> resources that are subscribed to the <srat> resource. """
 
-	attrCreatedInternallyRI = '__createdInternallyRI__'
-	""" Constant: Name of the `Resource` internal *__createdInternally__* attribute. This attribute indicates whether a resource was created internally or by an external request. """
+	attrSudRI = '__sudRI__'
+	""" Constant: Name of the `Resource` internal *__sudRI__* attribute.  when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty. """
 
-	attrImported = '__imported__'
-	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
 
-	attrAnnouncedTo = '__announcedTo__'			# List
-	""" Constant: Name of the 'Resource' internal *__announcedTo__* attribute. This attribute holds internal announcement information. """
 
-	attrIsInstantiated = '__isInstantiated__'
-	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
-
-	attrOriginator = '__originator__'			# Or creator
-	""" Constant: Name of the `Resource` internal *__originator__* attribute. This attribute holds the original creator of a resource."""
-
-	attrModified = '__modified__'
-	""" Constant: Name of the `Resource` internal *__modified__* attribute. This attribute holds the resource's precise modification timestamp. """
-
-	attrRemoteID = '__remoteID__'			# When this is a resource from another CSE
-	""" Constant: Name of the `Resource` internal *__remoteID__* attribute. This attribute holds a list of the resource's announced variants. """
-
-	attrRvi = '__rvi__'					# Request version indicator when created
-	""" Constant: Name of the `Resource` internal *__rvi__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
-
-	attrLaRi = '__lari__'
-	""" Constant: Name of the 'Resource internal *__lari__* attribute. This attribute holds the resourceID's of the *latest* child-resource for some resource types. """
-
-	attrOlRi = '__olri__'
-	""" Constant: Name of the 'Resource internal *__olri__* attribute. This attribute holds the resourceID's of the *oldest* child-resource for some resource types. """
-
-	attrRiTyMapping = '__riTyMapping__'
-	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
-
-	attrLocCoordinage = '__locCoordinate__'
-	""" Constant: Name of the 'Resource internal *__locCoordinate__* attribute. This attribute holds the location coordinate of a resource. """
 
 
 	#

@@ -21,6 +21,8 @@ from rich.style import Style
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
+from rich import box 
+
 import plotext
 
 from ..runtime import CSE
@@ -1151,13 +1153,22 @@ function createResource() {{
 	#	Generators for rich output
 	#
 
-	def getRegistrationsRich(self) -> Table:
+	def getRegistrationsRich(self, style:Optional[Style] = Style(), 
+						  		   textStyle:Optional[Style] = None) -> Table:
 		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
+
+			Args:
+				style: Style for the general output.
+				textStyle: Style for the text.
 
 			Return:
 				Rich formatted string.
 		"""
+
+		# Assign the text style if not None.
+		if textStyle is None:
+			textStyle = style
 
 		def _addCSERow(table:Table, style:Style, cse:Resource, registrarCSE:Resource, registrees:List[str]) -> None:
 			table.add_row(cse.csi, 
@@ -1172,37 +1183,45 @@ function createResource() {{
 						  style = style)
 
 		tableCSE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Resource ID[/u]\n'), width = 12, no_wrap = True)
-		tableCSE.add_column(_markup('[u]Release[/u]\n'), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Reachable[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]POA[/u]\n'), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Registrar[/u]\n'), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Registrees[/u]\n'), no_wrap = False)
+		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 12, no_wrap = True)
+		tableCSE.add_column(_markup('[u]Release[/u]\n', style = textStyle), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]POA[/u]\n', style = textStyle), no_wrap = False)
+		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style = textStyle), no_wrap = True)
+		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style = textStyle), no_wrap = False)
 
 		cse = getCSE()
-		_addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+		_addCSERow(tableCSE, 
+			 	   Style.combine((Style(italic = True, bold = True), textStyle)), 
+				   cse, 
+				   CSE.remote.registrarCSE, 
+				   CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+		# _addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
-				_addCSERow(tableCSE, None, csr, None, [cse.csi] + csr.dcse)
+				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
 			else:
-				_addCSERow(tableCSE, None, csr, cse, csr.dcse)
+				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
 		
-		gridCSE = Table.grid(expand = True)
-		gridCSE.add_column()
-		gridCSE.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n\n'))
-		gridCSE.add_row(tableCSE)
+		panelCSE = Panel(tableCSE, 
+				  		 box=box.ROUNDED, 
+						 title=_markup('[b]Common Services Entities (CSE)[/b]'), 
+						 title_align='left', 
+						 padding = (1, 0, 0, 0),
+						 expand=True,
+						 style = style)
 		
 
 		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableAE.add_column(_markup('[u]AE-ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Name[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Resource ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]APP-ID[/u]\n'), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Reachable[/u]\n'), width = 5, no_wrap = True)
-		tableAE.add_column(_markup('[u]POA[/u]\n'), width = 15, no_wrap = False)
+		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Name[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
+		tableAE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), width = 5, no_wrap = True)
+		tableAE.add_column(_markup('[u]POA[/u]\n', style = textStyle), width = 15, no_wrap = False)
 
 		for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 			tableAE.add_row(ae.aei, 
@@ -1210,23 +1229,21 @@ function createResource() {{
 							ae.ri, 
 							ae.api, 
 							str(ae.rr), 
-							'' if ae.poa is None else ', '.join(ae.poa))
+							'' if ae.poa is None else ', '.join(ae.poa),
+							style = textStyle)
 
-		gridAE = Table.grid(expand = True)
-		gridAE.add_column()
-		gridAE.add_row(_markup('[u b]Application Entities (AE)[/u b]\n\n'))
-		gridAE.add_row(tableAE)
-
+		panelAE = Panel(tableAE, 
+				  		box=box.ROUNDED, 
+						title=_markup('[b]Application Entities (AE)[/b]'), 
+						title_align='left', 
+						padding = (1, 0, 0, 0),
+						expand=True,
+						style = style)
 
 		result = Table.grid(expand = True)
 		result.add_column()
-		# result.add_row(_markup('[u b]Common Services Entities (CSE)[/u b]\n'))
-		# result.add_row(Panel(tableCSE))
-		result.add_row(Panel(gridCSE))
-		# result.add_row(Text(' '))
-		# result.add_row(_markup('[u b]Application Entities (AE)[/u b]\n'))
-		# result.add_row(Panel(tableAE))
-		result.add_row(Panel(gridAE))
+		result.add_row(panelCSE)
+		result.add_row(panelAE)
 
 		return result
 		# result = ''
@@ -1261,12 +1278,14 @@ function createResource() {{
 # TODO notifications
 	def getStatisticsRich(self, 
 						  style:Optional[Style] = Style(), 
-						  withProgress:Optional[bool] = True) -> Table:
+						  withProgress:Optional[bool] = True,
+						  textStyle:Optional[Style] = None) -> Table:
 		"""	Generate an overview about various resources, event counts, and more.
 
 			Args:
 				style: Rich style.
 				withProgress: Display with progress indicator.
+				textStyle: Rich text style. If this is not set then the style is used for the text as well.
 			
 			Return:
 				Rich Table object.
@@ -1276,97 +1295,13 @@ function createResource() {{
 			#
 			#	Right columns
 			#
-
 			stats = CSE.statistics.getStats()
 
-			if CSE.statistics.statisticsEnabled:
-				resourceOps  =  _markup('[underline]Operations[/underline]\n')
-				resourceOps += 	'\n'
-				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
-				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
-				resourceOps +=  f'Delete: {stats.get(Statistics.deletedResources, 0)}\n'
-				resourceOps +=  f'Notify: {stats.get(Statistics.notifications, 0)}\n'
-				resourceOps += 	'\n'
-				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
-				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
+			#
+			#	Misc
+			#
 
-				httpReceived  = _markup('[underline]HTTP:R[/underline]\n')
-				httpReceived += '\n'
-				httpReceived += f'C: {stats.get(Statistics.httpCreates, 0)}\n'
-				httpReceived += f'R: {stats.get(Statistics.httpRetrieves, 0)}\n'
-				httpReceived += f'U: {stats.get(Statistics.httpUpdates, 0)}\n'
-				httpReceived += f'D: {stats.get(Statistics.httpDeletes, 0)}\n'
-				httpReceived += f'N: {stats.get(Statistics.httpNotifies, 0)}\n'
-
-				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n')
-				httpSent += 	'\n'
-				httpSent += 	f'C: {stats.get(Statistics.httpSendCreates, 0)}\n'
-				httpSent += 	f'R: {stats.get(Statistics.httpSendRetrieves, 0)}\n'
-				httpSent += 	f'U: {stats.get(Statistics.httpSendUpdates, 0)}\n'
-				httpSent += 	f'D: {stats.get(Statistics.httpSendDeletes, 0)}\n'
-				httpSent += 	f'N: {stats.get(Statistics.httpSendNotifies, 0)}\n'
-
-				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n')
-				mqttReceived += 	'\n'
-				mqttReceived += f'C: {stats.get(Statistics.mqttCreates, 0)}\n'
-				mqttReceived += f'R: {stats.get(Statistics.mqttRetrieves, 0)}\n'
-				mqttReceived += f'U: {stats.get(Statistics.mqttUpdates, 0)}\n'
-				mqttReceived += f'D: {stats.get(Statistics.mqttDeletes, 0)}\n'
-				mqttReceived += f'N: {stats.get(Statistics.mqttNotifies, 0)}\n'
-
-				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n')
-				mqttSent += 	'\n'
-				mqttSent += 	f'C: {stats.get(Statistics.mqttSendCreates, 0)}\n'
-				mqttSent += 	f'R: {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
-				mqttSent += 	f'U: {stats.get(Statistics.mqttSendUpdates, 0)}\n'
-				mqttSent += 	f'D: {stats.get(Statistics.mqttSendDeletes, 0)}\n'
-				mqttSent += 	f'N: {stats.get(Statistics.mqttSendNotifies, 0)}\n'
-
-				wsReceived  =	_markup('[underline]WS:R[/underline]\n')
-				wsReceived +=	'\n'
-				wsReceived +=	f'C: {stats.get(Statistics.wsCreates, 0)}\n'
-				wsReceived +=	f'R: {stats.get(Statistics.wsRetrieves, 0)}\n'
-				wsReceived +=	f'U: {stats.get(Statistics.wsUpdates, 0)}\n'
-				wsReceived +=	f'D: {stats.get(Statistics.wsDeletes, 0)}\n'
-				wsReceived +=	f'N: {stats.get(Statistics.wsNotifies, 0)}\n'
-
-				wsSent  =   	_markup('[underline]WS:S[/underline]\n')
-				wsSent +=   	'\n'
-				wsSent +=   	f'C: {stats.get(Statistics.wsSendCreates, 0)}\n'
-				wsSent +=   	f'R: {stats.get(Statistics.wsSendRetrieves, 0)}\n'
-				wsSent +=   	f'U: {stats.get(Statistics.wsSendUpdates, 0)}\n'
-				wsSent +=   	f'D: {stats.get(Statistics.wsSendDeletes, 0)}\n'
-				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
-
-
-				miscRight  = _markup('[underline]Logs[/underline]\n')
-				miscRight += '\n'
-				miscRight += f'LogLevel : {str(L.logLevel)}\n'
-				miscRight += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
-				miscRight += f'Warnings : {stats.get(Statistics.logWarnings, 0)}\n'
-				miscRight += '\n'
-				miscRight += _markup('[underline]Database[/underline]\n')
-				miscRight += '\n'
-				miscRight += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
-				match _dbType:
-					case 'postgresql':
-						miscRight += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
-						miscRight += f'Role     : {Configuration.get("database.postgresql.role")}\n'
-						miscRight += f'Database : {Configuration.get("database.postgresql.database")}\n'
-						miscRight += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
-					case 'tinydb':
-						miscRight += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
-
-
-			else:
-				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n')
-				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n')
-				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n')
-				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n')
-
-
-			miscLeft  = _markup('[underline]Misc[/underline]\n',)
-			miscLeft += '\n'
+			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
@@ -1393,31 +1328,167 @@ function createResource() {{
 			else:
 				miscLeft += '\n'
 			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
 
-			# Adapt the following line when adding resources to keep formatting. 
-			# It fills up the right columns to match the length of the left column.
-			miscLeft += '\n' * ( (3 if CSE.statistics.statisticsEnabled else 4) - len(CSE.csePOA))
+			miscHeight = len(miscLeft.split('\n'))
 
-			workers = _markup('[underline]Workers[/underline]\n')
-			workers += '\n'
+			panelMiscLeft = Panel(miscLeft, 
+								  box = box.ROUNDED, 
+								  title = _markup('[b]Misc[/b]'), 
+								  title_align = 'left', 
+								  padding = (1, 1, 0, 1),
+								  expand = True,
+								  style = style)
+
+			#
+			#	Request stats
+			#
+
+			if CSE.statistics.statisticsEnabled:
+				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
+				resourceOps += 	'\n'
+				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
+				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
+				resourceOps +=  f'Delete: {stats.get(Statistics.deletedResources, 0)}\n'
+				resourceOps +=  f'Notify: {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps += 	'\n'
+				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
+				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
+
+				httpReceived  = _markup('[underline]HTTP:R[/underline]\n', style = textStyle)
+				httpReceived += '\n'
+				httpReceived += f'C: {stats.get(Statistics.httpCreates, 0)}\n'
+				httpReceived += f'R: {stats.get(Statistics.httpRetrieves, 0)}\n'
+				httpReceived += f'U: {stats.get(Statistics.httpUpdates, 0)}\n'
+				httpReceived += f'D: {stats.get(Statistics.httpDeletes, 0)}\n'
+				httpReceived += f'N: {stats.get(Statistics.httpNotifies, 0)}\n'
+
+				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n', style = textStyle)
+				httpSent += 	'\n'
+				httpSent += 	f'C: {stats.get(Statistics.httpSendCreates, 0)}\n'
+				httpSent += 	f'R: {stats.get(Statistics.httpSendRetrieves, 0)}\n'
+				httpSent += 	f'U: {stats.get(Statistics.httpSendUpdates, 0)}\n'
+				httpSent += 	f'D: {stats.get(Statistics.httpSendDeletes, 0)}\n'
+				httpSent += 	f'N: {stats.get(Statistics.httpSendNotifies, 0)}\n'
+
+				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n', style = textStyle)
+				mqttReceived += 	'\n'
+				mqttReceived += f'C: {stats.get(Statistics.mqttCreates, 0)}\n'
+				mqttReceived += f'R: {stats.get(Statistics.mqttRetrieves, 0)}\n'
+				mqttReceived += f'U: {stats.get(Statistics.mqttUpdates, 0)}\n'
+				mqttReceived += f'D: {stats.get(Statistics.mqttDeletes, 0)}\n'
+				mqttReceived += f'N: {stats.get(Statistics.mqttNotifies, 0)}\n'
+
+				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n', style = textStyle)
+				mqttSent += 	'\n'
+				mqttSent += 	f'C: {stats.get(Statistics.mqttSendCreates, 0)}\n'
+				mqttSent += 	f'R: {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
+				mqttSent += 	f'U: {stats.get(Statistics.mqttSendUpdates, 0)}\n'
+				mqttSent += 	f'D: {stats.get(Statistics.mqttSendDeletes, 0)}\n'
+				mqttSent += 	f'N: {stats.get(Statistics.mqttSendNotifies, 0)}\n'
+
+				wsReceived  =	_markup('[underline]WS:R[/underline]\n', style = textStyle)
+				wsReceived +=	'\n'
+				wsReceived +=	f'C: {stats.get(Statistics.wsCreates, 0)}\n'
+				wsReceived +=	f'R: {stats.get(Statistics.wsRetrieves, 0)}\n'
+				wsReceived +=	f'U: {stats.get(Statistics.wsUpdates, 0)}\n'
+				wsReceived +=	f'D: {stats.get(Statistics.wsDeletes, 0)}\n'
+				wsReceived +=	f'N: {stats.get(Statistics.wsNotifies, 0)}\n'
+
+				wsSent  =   	_markup('[underline]WS:S[/underline]\n', style = textStyle)
+				wsSent +=   	'\n'
+				wsSent +=   	f'C: {stats.get(Statistics.wsSendCreates, 0)}\n'
+				wsSent +=   	f'R: {stats.get(Statistics.wsSendRetrieves, 0)}\n'
+				wsSent +=   	f'U: {stats.get(Statistics.wsSendUpdates, 0)}\n'
+				wsSent +=   	f'D: {stats.get(Statistics.wsSendDeletes, 0)}\n'
+				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
+
+				#
+				#	Logs
+				#
+
+				miscLogs  = Text(style = textStyle)
+				miscLogs += f'LogLevel : {str(L.logLevel)}\n'
+				miscLogs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
+				miscLogs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}'
+
+				panelMiscLogs = Panel(miscLogs, 
+									  box = box.ROUNDED, 
+									  title = _markup('[b]Logs[/b]'), 
+									  title_align = 'left', 
+									  padding = (1, 1, 0, 1),
+									  expand = True,
+									  style = style)
+
+
+				#
+				#	Database
+				#
+
+				miscDB  = Text(style = textStyle)
+				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
+				match _dbType:
+					case 'postgresql':
+						miscDB += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
+						miscDB += f'Role     : {Configuration.get("database.postgresql.role")}\n'
+						miscDB += f'Database : {Configuration.get("database.postgresql.database")}\n'
+						miscDB += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
+					case 'tinydb':
+						miscDB += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+						miscDB += '\n\n\n'
+					case 'memory':
+						miscDB += '\n\n\n\n'
+				
+				panelMiscDB = Panel(miscDB, 
+									box = box.ROUNDED, 
+									title = _markup('[b]Database[/b]'), 
+									title_align = 'left', 
+									padding = (1, 1, (miscHeight - 12), 1),	# adapt height accoring to misc panel height
+									expand = True,
+									style = style)
+
+
+			else:
+				resourceOps  = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				httpReceived = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				httpSent     = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+				miscRight    = _markup('\n[dim]statistics are disabled[/dim]\n', style = textStyle)
+
+
 			tableWorkers = Table(expand=True, row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0, 0, 1))
-			tableWorkers.add_column(_markup('[u]Name[/u]\n'), no_wrap = True)
-			tableWorkers.add_column(_markup('[u]Type[/u]\n'), no_wrap = True)
-			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n'), no_wrap = True, justify = 'right')
-			tableWorkers.add_column(_markup('[u]#Runs[/u]\n'), no_wrap = True, justify = 'right')
+			tableWorkers.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
+			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
+			tableWorkers.add_column(_markup('[u]#Runs[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
 			for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
 				a = 'Actor' if w.maxCount == 1 else 'Worker'
-				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
+				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '', style = textStyle)
 			
-			threads = _markup('[underline]Threads[/underline]\n')
-			threads += '\n'
-			tableThreads = Table(row_styles = [ '', L.tableRowStyle], box = None, padding = (0, 0))
-			tableThreads.add_column(_markup('[u]Queues  \n[/u]'), no_wrap = True)
-			tableThreads.add_column(_markup('[u]Count   \n[/u]'), no_wrap = True, justify = 'right')
+			panelWorkers = Panel(tableWorkers, 
+								 box = box.ROUNDED, 
+								 title = _markup('[b]Workers[/b]'), 
+								 title_align = 'left', 
+								 padding = (1, 1, 0, 1),
+								 expand = True,
+								 style = style)
+
+			tableThreads = Table(box = None, padding = (0, 0))
+			tableThreads.add_column(_markup('[u]Queues[/u]    \n', style = textStyle), no_wrap = True)
+			tableThreads.add_column(_markup('[u]Count[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
 			r, p = BackgroundWorkerPool.countJobs()
-			tableThreads.add_row('Running', str(r))
-			tableThreads.add_row('Paused', str(p))
+			tableThreads.add_row('Running', str(r), style = textStyle)
+			tableThreads.add_row('Paused', str(p), style = textStyle)
+			for _ in range(len(tableWorkers.rows)-2):	# Fill up lines
+				tableThreads.add_row('', '')
+			
+			panelThreads = Panel(tableThreads, 
+						   box = box.ROUNDED, 
+						   title = _markup('[b]Threads[/b]'), 
+						   title_align = 'left', 
+						   padding = (1, 1, 0, 1),
+						   expand = True,
+						   style = style)
+
 
 			requestsGrid = Table.grid(expand = True)
 			requestsGrid.add_column(ratio = 28)
@@ -1429,22 +1500,35 @@ function createResource() {{
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
-			infoGrid = Table.grid(expand=True, padding=(0,0,0,3))
+			panelRequests = Panel(requestsGrid, 
+								  box = box.ROUNDED, 
+								  title = _markup('[b]Requests[/b]'), 
+								  title_align = 'left', 
+								  padding = (1, 0, 0, 1),
+								  expand = True,
+								  style = style)
+
+
+			panelMiscRight = Table.grid(expand = True,)
+			panelMiscRight.add_column()
+			panelMiscRight.add_row(panelMiscLogs)
+			panelMiscRight.add_row(panelMiscDB)
+
+			infoGrid = Table.grid(expand=True, padding = (0, 1, 0, 0))
 			infoGrid.add_column(ratio = 70, no_wrap=True)
 			infoGrid.add_column(ratio = 30)
-			infoGrid.add_row(miscLeft, miscRight)
+			infoGrid.add_row(panelMiscLeft, panelMiscRight)
 
-			workerGrid = Table.grid(expand = True, padding=(0,0,0,3))
+			workerGrid = Table.grid(expand = True, padding = (0, 1, 0, 0))
 			workerGrid.add_column(ratio = 70)
 			workerGrid.add_column(ratio = 30)
-			workerGrid.add_row(workers, threads)
-			workerGrid.add_row(tableWorkers, tableThreads)
+			workerGrid.add_row(panelWorkers, panelThreads)
 
 			rightGrid = Table.grid(expand = True)
 			rightGrid.add_column()
-			rightGrid.add_row(Panel(requestsGrid, style = style))
-			rightGrid.add_row(Panel(workerGrid, style = style))
-			rightGrid.add_row(Panel(infoGrid, style = style))
+			rightGrid.add_row(panelRequests)
+			rightGrid.add_row(workerGrid)
+			rightGrid.add_row(infoGrid)
 
 			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
 															ResourceTypes.CNT_OL,
@@ -1459,8 +1543,7 @@ function createResource() {{
 			#	Left column
 			#
 
-			resourceTypes = _markup('[underline]Resources[/underline]\n')
-			resourceTypes += '\n'
+			resourceTypes = Text(style = textStyle)
 			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
 			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
 			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
@@ -1484,19 +1567,33 @@ function createResource() {{
 			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
 			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
 			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
+			resourceTypes += f'{miscHeight}\n'
 			resourceTypes += '\n'
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}\n')	# substract the virtual resources
-			# Correct height
-			resourceTypes += '\n' * (tableWorkers.row_count + 12)
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
 
+			# ATTN: The padding is calculated dynamically.
+			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
+			# we need to multiply the number of lines with 2 to get the correct padding.
+			_padding = 16 + (miscHeight - 15) * 2
+			
+			panelResources = Panel(resourceTypes, 
+								   box = box.ROUNDED, 
+								   title = _markup('[b]Resources[/b]'), 
+								   title_align = 'left', 
+								   padding = (1, 0, _padding, 1),
+								   expand = True,
+								   style = style)
 
-			result = Table.grid(expand = True)
+			result = Table.grid(expand = True, padding = (0, 1, 0, 0))
 			result.add_column(width = 15)
 			result.add_column()
-			result.add_row(Panel(resourceTypes, style = style), rightGrid )
+			result.add_row(panelResources, rightGrid )
 
 			return result
 
+		# Assign the text style if not None.
+		if textStyle is None:
+			textStyle = style
 		if withProgress:
 			with L.consoleStatusWait('Collecting...'):
 				return _stats()
@@ -1606,20 +1703,20 @@ function createResource() {{
 			info = ''
 			match self.treeMode:
 				case TreeMode.COMPACT:
-					info = f'-> {res.__rtype__}'
+					info = f'-> {res[Constants.attrRtype]}'
 				case TreeMode.CONTENT:
 					if len(contentInfo) > 0:
-						info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} | {contentInfo}'
 					else:
-						info = f'-> {res.__rtype__}{extraInfo}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo}'
 				case TreeMode.CONTENTONLY:
 					if len(contentInfo) > 0:
 						info = f'-> {contentInfo}'
 				case _: # self.treeMode == NORMAL
 					if res.isVirtual():
-						info = f'-> {res.__rtype__}{extraInfo} (virtual)'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} (virtual)'
 					else:
-						info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+						info = f'-> {res[Constants.attrRtype]}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
 

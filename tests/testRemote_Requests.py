@@ -12,7 +12,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -130,7 +129,8 @@ class TestRemote_GRP(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
 	suite = unittest.TestSuite()
 		
 	# create a group with the CSE and the remote CSE as members

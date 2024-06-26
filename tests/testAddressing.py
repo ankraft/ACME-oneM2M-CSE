@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -164,23 +163,28 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestAddressing, [
+		'test_cseRelativeStructured',
+		'test_cseRelativeUnstructured',
+		'test_spRelativeStructured',
+		'test_spRelativeUnstructured',
+		'test_spRelativeCSEIDFail',
+		'test_absoluteStructuredWrongSPIDFail',
+		'test_absoluteUnstructuredWrongSPIDFail',
+		'test_absoluteStructured',
+		'test_absoluteUnstructured',
+		'test_absoluteCSEIDFail',
+	])
 	
-	addTest(suite, TestAddressing('test_cseRelativeStructured'))
-	addTest(suite, TestAddressing('test_cseRelativeUnstructured'))
-	addTest(suite, TestAddressing('test_spRelativeStructured'))
-	addTest(suite, TestAddressing('test_spRelativeUnstructured'))
-	addTest(suite, TestAddressing('test_spRelativeCSEIDFail'))
-	addTest(suite, TestAddressing('test_absoluteStructuredWrongSPIDFail'))
-	addTest(suite, TestAddressing('test_absoluteUnstructuredWrongSPIDFail'))
-	addTest(suite, TestAddressing('test_absoluteStructured'))
-	addTest(suite, TestAddressing('test_absoluteUnstructured'))
-	addTest(suite, TestAddressing('test_absoluteCSEIDFail'))
-	
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast
+from typing import Callable, cast, Optional
 
 from typing_extensions import Literal, get_args
 import asyncio
@@ -50,7 +50,7 @@ class ACMETuiApp(App):
 
 	from ..runtime import TextUI
 
-	CSS_PATH = 'ACMETUI.css'
+	CSS_PATH = 'ACMETUI.tcss'
 
 	BINDINGS = 	[ Binding('#', 'quit_tui', 'Console'),
 				  Binding('Q', 'quit_acme', 'Quit ACME', key_display = 'SHIFT-Q'),
@@ -63,6 +63,11 @@ class ACMETuiApp(App):
 		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
+
+		# Set some default color values
+		self._colors = self.get_css_variables()
+		self.objectColor = self._colors['primary-lighten-1']
+
 
 		# Add the resource types to the attribute explanations
 		for n in ResourceTypes:
@@ -230,7 +235,10 @@ class ACMETuiApp(App):
 			self.containerTools.scriptClearConsole(scriptName)
 	
 
-	def scriptShowNotification(self, message:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:
+	def showNotification(self, message:str, 
+					  		   title:str, 
+							   severity:Literal['information', 'warning', 'error'], 
+							   timeout:Optional[float] = None) -> None:
 
 		async def _call() -> None:
 			self.notify(message = message, title = title, severity = severity, timeout = timeout)

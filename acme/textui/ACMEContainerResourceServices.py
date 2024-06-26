@@ -13,7 +13,7 @@ from typing import cast
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll, Vertical
-from textual.widgets import Button, Rule, Static, Markdown, Checkbox, LoadingIndicator
+from textual.widgets import Button, Rule, Static, Markdown, Checkbox, LoadingIndicator, Label
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Types import ResourceTypes
 from ..resources.Resource import Resource
@@ -21,98 +21,11 @@ from ..runtime import CSE
 
 class ACMEContainerResourceServices(Container):
 
-	DEFAULT_CSS = """
-	ACMEContainerResourceServices {
-		width: 100%;
-	}
-
-	/* Export Resource */
-
-	#services-export-resource, #services-export-instances {
-		height: 10;
-		width: 100%;
-	}
-
-	#services-export-resource-area, #services-export-instances-area {
-		margin-left: 4;
-		margin-right: 4;
-		width: 100%;
-	}
-
-	#services-export-resource-controls {
-		height: 1;
-	}
-
-	#services-export-resource-checkbox {
-		height: 1;
-		border: none;
-		margin-right: 0;
-		min-width: 17;
-	}
-
-	#services-export-resource-button, #services-export-instances-button {
-		height: 1;
-		border: none;
-		margin-right: 3;
-		min-width: 14;
-	}
-
-	#services-export-resource-loading-indicator, #services-export-instances-loading-indicator {
-		margin-top: 1;
-		height: 1;
-		color: $secondary;
-	}
-
-	#services-export-resource-result, #services-export-instances-result {
-		margin-top: 1;
-		height: 1;
-	}
-		
-	/* Toggle Button */
-
-	ToggleButton > .toggle--button {
-		color: $background;
-		text-style: bold;
-		background: $foreground 15%;
-	}
-
-	ToggleButton:focus > .toggle--button {
-		background: $foreground 25%;
-	}
-
-	ToggleButton.-on > .toggle--button {
-		background: $success 75%;
-	}
-
-	ToggleButton.-on:focus > .toggle--button {
-		background: $success;
-	}
-
-
-	ToggleButton:light > .toggle--button {
-			color: $background;
-			text-style: bold;
-			background: $foreground 15%;
-	}
-
-	ToggleButton:light:focus > .toggle--button {
-		background: $foreground 25%;
-	}
-
-	ToggleButton:light.-on > .toggle--button {
-		color: $foreground 10%;
-		background: $success;
-	}
-
-	ToggleButton:light.-on:focus > .toggle--button {
-		color: $foreground 10%;
-		background: $success 75%;
-	}
-	"""
-
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		super().__init__(id = id)
 		
 		self.resource:Resource = None
@@ -120,6 +33,9 @@ class ACMEContainerResourceServices(Container):
 
 		self.exportIncludingChildResources:bool = True
 		"""	Flag to indicate if child resources should be included in the export. """
+
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	def compose(self) -> ComposeResult:
@@ -129,33 +45,25 @@ class ACMEContainerResourceServices(Container):
 				The ComposeResult
 		"""
 		with VerticalScroll():
-			yield Markdown('## Services')
-
 			# Export resource
-			with Vertical(id = 'services-export-resource'):
-				yield Markdown(
-'''### Export Resource
-Export the resource to a file in the *./tmp* directory as a *curl* command.
-''')
-				with Container(id = 'services-export-resource-area'):
-					with Horizontal(id = 'services-export-resource-controls'):
-						yield Button('Export', variant = 'primary', id = 'services-export-resource-button')
+			with (v := Vertical(id = 'services-export-resource')):
+				v.border_title = 'Export Resource'
+				yield Label('Export the resource to a file in the *./tmp* directory as a *curl* command.', classes='label')
+				with Container(classes='service-command-area'):
+					with Horizontal(classes = 'services-export-controls'):
+						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
 						yield Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
-					yield LoadingIndicator(id = 'services-export-resource-loading-indicator')
-					yield Static('', id = 'services-export-resource-result')
-					yield Rule()
+					yield LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+					yield Static('', id = 'services-export-resource-result', classes = 'result')
 			
 			# Export Instances
-			with Vertical(id = 'services-export-instances'):
-				yield Markdown(
-'''### Export Instances
-Export the instances of the container resource to a CSV file in the *./tmp* directory.
-''')
-				with Container(id = 'services-export-instances-area'):
-					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button')
-					yield LoadingIndicator(id = 'services-export-instances-loading-indicator')
-					yield Static('', id = 'services-export-instances-result')
-					yield Rule()
+			with (v := Vertical(id = 'services-export-instances')):
+				v.border_title = 'Export Instances'
+				yield Label('Export the instances of the container resource to a CSV file in the *./tmp* directory.', classes='label')
+				with Container(classes='service-command-area'):
+					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
+					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+					yield Static('', id = 'services-export-instances-result', classes = 'result')
 
 
 	@property
@@ -229,7 +137,7 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
-			self.exportResourceResult.update(f'Exported [{CSE.textUI.objectColor}]{count}[/] resource(s) to file [{CSE.textUI.objectColor}]{filename}[/]')
+			self.exportResourceResult.update(f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
 	
 
 		# Show the loading indicator instead of the result
@@ -253,7 +161,7 @@ Export the instances of the container resource to a CSV file in the *./tmp* dire
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self.exportInstancesResult.update(f"Exported [{CSE.textUI.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self.exportInstancesResult.update(f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
 	
 
 		# Show the loading indicator instead of the result

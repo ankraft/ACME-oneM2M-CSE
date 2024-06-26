@@ -6,6 +6,20 @@
 // The enumTypesPolicies.ep file contains a dictionary of enumeration data types and their allowed values
 
 {
+	"m2m:accessControlOperations" : {
+		// This enum has empty values, because the values can be combined
+		"1": "CREATE",
+		"2": "RETRIEVE",
+		"3": "",
+		"4": "UPDATE",
+		"5..7": "",
+		"8": "DELETE",
+		"9..15": "",
+		"16": "NOTIFY",
+		"17..31": "",
+		"32": "DISCOVERY",
+		"33..63": ""
+	},
 	"m2m:batteryStatus" : {
 		"1": "Normal",
 		"2": "Charging",

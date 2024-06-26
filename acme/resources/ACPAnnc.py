@@ -49,29 +49,3 @@ class ACPAnnc(AnnouncedResource):
 	def __init__(self, dct:JSON, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.ACPAnnc, dct, pi = pi, create = create)
 
-
-	#########################################################################
-	#
-	#	Resource specific
-	#
-	
-	def checkSelfPermission(self, originator:str, requestedPermission:Permission) -> bool:
-		"""	Check whether an *originator* has the requested permissions to the `ACP` resource itself.
-
-			Args:
-				originator: The originator to test the permissions for.
-				requestedPermission: The permissions to test.
-			Return:
-				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
-		"""
-		# TODO this is the same function as in ACP.py. Move it to SecurityManager?
-		
-		for p in self['pvs/acr']:
-			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
-				continue
-			# TODO check acod in pvs
-			if 'all' in p['acor'] or originator in p['acor']:
-				return True
-			if any([ simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
-				return True
-		return False

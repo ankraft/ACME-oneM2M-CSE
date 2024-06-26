@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
-from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
 from ..runtime.Configuration import Configuration
@@ -64,6 +64,18 @@ class REQ(Resource):
 		super().__init__(ResourceTypes.REQ, dct, pi, create = create)
 
 
+	def willBeDeactivated(self, originator: str, parentResource: Resource) -> None:
+		match self['rs']:
+			case RequestStatus.PENDING:
+				# We cannot really cancel a request. This is for further study.
+				raise UNABLE_TO_RECALL_REQUEST('Unable to cancel PENDING request')
+			case RequestStatus.FORWARDED:
+				raise UNABLE_TO_RECALL_REQUEST('Unable to cancel FORWARDED request')
+			case RequestStatus.PARTIALLY_COMPLETED:
+				raise UNABLE_TO_RECALL_REQUEST('Unable to cancel PARTIALLY_COMPLETED request')
+		return super().willBeDeactivated(originator, parentResource)
+	
+	
 	@staticmethod
 	def createRequestResource(request:CSERequest) -> Resource:
 		"""	Create an initialized <request> resource.

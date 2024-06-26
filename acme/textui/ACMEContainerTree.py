@@ -23,6 +23,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
 from ..helpers.TextTools import commentJson
 from .ACMEContainerDelete import ACMEContainerDelete
+from .ACMEContainerUpdate import ACMEContainerUpdate
 from .ACMEContainerDiagram import ACMEContainerDiagram
 from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
@@ -31,8 +32,11 @@ class ACMEResourceTree(TextualTree):
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
+		self._app = cast(ACMETuiApp, self.app)
 
 	
 	def on_mount(self) -> None:
@@ -47,7 +51,7 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(CSE.cseRi):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				self.root.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				self.root.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			self.root.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 		self._update_content(self.cursor_node.data)
@@ -70,13 +74,13 @@ class ACMEResourceTree(TextualTree):
 		for resource in self._retrieve_resource_children(node.node.data):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				node.node.add(f'[{CSE.textUI.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				node.node.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
 				prevType = ty
 			node.node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 	
 
 	def on_tree_node_hover(self, event:events.MouseMove) -> None:
-		self.parentContainer.setResourceHeader('## Resources')
+		self.parentContainer.setResourceHeader('Resources')
 
 
 	_virtualResourcesParameter = {
@@ -107,15 +111,10 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'## {ResourceTypes.fullname(resource.ty)} - {resource.rn}' if resource else '## &nbsp;')
+		self.parentContainer.setResourceHeader(f'{resource.rn} ({ResourceTypes.fullname(resource.ty)})' if resource else '')
 
 		# Set the visibility of the tabs
 		self.parentContainer.tabs.show_tab('tree-tab-requests')
-		if ri == CSE.cseRi:	
-			# Don't allow to delete the CSE
-			self.parentContainer.tabs.hide_tab('tree-tab-delete')
-		else:
-			self.parentContainer.tabs.show_tab('tree-tab-delete')
 
 
 	def _update_type_section(self, label:str) -> None:
@@ -124,12 +123,13 @@ class ACMEResourceTree(TextualTree):
 			Args:
 				label: The label of the type section.
 		"""
-		self.parentContainer.setResourceHeader(f'## {label} Resources')
+		self.parentContainer.setResourceHeader(f'{label} Resources')
 		self.parentContainer.resourceView.update('')
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
 		self.parentContainer.tabs.hide_tab('tree-tab-requests')
 		self.parentContainer.tabs.hide_tab('tree-tab-services')	
 		self.parentContainer.tabs.hide_tab('tree-tab-delete')
+		self.parentContainer.tabs.hide_tab('tree-tab-update')
 
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
@@ -177,19 +177,6 @@ class ACMEContainerTree(Container):
 				# delete requests
 				]
 
-	DEFAULT_CSS = '''
-	#resource-view {
-		width: auto;
-		height: auto;
-		margin: 0 0 0 1;
-	}
-
-	#tree-tab-resource {
-		overflow: hidden auto;  
-		height: 100%;
-		/* TODO try to get padding working with later released of textualize */
-	}
-	'''
 
 	from ..textui import ACMETuiApp
 
@@ -204,16 +191,12 @@ class ACMEContainerTree(Container):
 			yield ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view', parentContainer = self)
 			with TabbedContent(id = 'tree-tabs'):
 				with TabPane('Resource', id = 'tree-tab-resource'):
-					yield Markdown(id = 'tree-tab-resource-header')
-					yield Static(id = 'resource-view', expand = True)
+					with Container(id = 'resource-view-container'):
+						yield (Static(id = 'resource-view', expand = True))
+
 
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield ACMEViewRequests(id = 'tree-tab-requests-view')
-
-				with TabPane('Diagram', id = 'tree-tab-diagram'):
-					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), 
-											   tuiApp = self.tuiApp,
-											   id = 'tree-tab-diagram-view')
 
 				with TabPane('Services', id = 'tree-tab-services'):
 					yield ACMEContainerResourceServices(id = 'tree-tab-resource-services')
@@ -229,14 +212,21 @@ class ACMEContainerTree(Container):
 				# 	yield Markdown('## Send UPDATE Request')
 				# 	yield Label('TODO')
 				
+				with TabPane('UPDATE', id = 'tree-tab-update'):
+					yield ACMEContainerUpdate(id = 'tree-tab-resource-update')
+
 				with TabPane('DELETE', id = 'tree-tab-delete'):
-					yield Markdown('## Send DELETE Request')
 					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
 				
+				with TabPane('Diagram', id = 'tree-tab-diagram'):
+					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), 
+											   tuiApp = self.tuiApp,
+											   id = 'tree-tab-diagram-view')
+
 				
 	@property
-	def resourceHeader(self) -> Label:
-		return cast(Label, self.query_one('#tree-tab-resource-header'))
+	def resourceContainer(self) -> Container:
+		return cast(Container, self.query_one('#resource-view-container'))
 
 
 	def on_mount(self) -> None:
@@ -247,7 +237,8 @@ class ACMEContainerTree(Container):
 		self.resourceTree.focus()
 
 
-	def services_refresh_resources(self) -> None:
+	def action_refresh_resources(self) -> None:
+		self.tuiApp.showNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			
@@ -273,45 +264,69 @@ class ACMEContainerTree(Container):
 			self.deleteView.updateResource(self.currentResource)
 			self.deleteView.disabled = False
 
+			# Update the UPDATE view
+			self.updateView.updateResource(self.currentResource)
+			self.updateView.disabled = False
+
 			# Update the services view
 			self.servicesView.updateResource(self.currentResource)
 			self.tabs.show_tab('tree-tab-services')
 
 			# Update Diagram view
 			try:
-				if self.currentResource.ty in (ResourceTypes.CNT, ResourceTypes.TS):
-					instances = CSE.dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
-					
-					# The following lines may fail if the content cannot be converted to a float or a boolean.
-					# This is expected! This just means that any content is not a number and we cannot raw a diagram.
-					# The exception is caught below and the diagram view is hidden.
-					try:
-						values = [float(r.con) for r in instances]
-					except ValueError:
-						# Number (int or float) failed. Now try boolean
-						values = []
-						for r in instances:
-							_con = r.con
-							if isinstance(_con, str):
-								if _con.lower() in ['true', 'on', 'yes', 'high']:
-									values.append(1)
-								elif _con.lower() in ['false', 'off', 'no', 'low']:
-									values.append(0)
+
+				match self.currentResource.ty:
+					case ResourceTypes.CSEBase:
+						# Don't allow to send request to the CSE resource - hide all tabs
+						self.tabs.hide_tab('tree-tab-update')
+						self.tabs.hide_tab('tree-tab-delete')
+						self.tabs.hide_tab('tree-tab-diagram') 
+
+					case ResourceTypes.CNT | ResourceTypes.TS:
+						instances = CSE.dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
+						
+						# The following lines may fail if the content cannot be converted to a float or a boolean.
+						# This is expected! This just means that any content is not a number and we cannot raw a diagram.
+						# The exception is caught below and the diagram view is hidden.
+						try:
+							values = [float(r.con) for r in instances]
+						except ValueError:
+							# Number (int or float) failed. Now try boolean
+							values = []
+							for r in instances:
+								_con = r.con
+								if isinstance(_con, str):
+									if _con.lower() in ['true', 'on', 'yes', 'high']:
+										values.append(1)
+									elif _con.lower() in ['false', 'off', 'no', 'low']:
+										values.append(0)
+									else:
+										self.app.bell()
+										raise ValueError	# not a "boolean" value
 								else:
-									self.app.bell()
-									raise ValueError	# not a "boolean" value
-							else:
-								raise ValueError	# Not a string in the first place
+									raise ValueError	# Not a string in the first place
 
-					dates = [r.ct for r in instances]
+						dates = [r.ct for r in instances]
 
-					self.diagram.setData(values, dates)
-					self.diagram.plotGraph()
-					self.tabs.show_tab('tree-tab-diagram') 
-				else:
-					self.tabs.hide_tab('tree-tab-diagram') 
+						self.diagram.setData(values, dates)
+						self.diagram.plotGraph()
+						self.tabs.show_tab('tree-tab-diagram')
+						self.tabs.show_tab('tree-tab-delete')
+						self.tabs.show_tab('tree-tab-update')
+
+					case ResourceTypes.CIN | ResourceTypes.TSI | ResourceTypes.FCI:
+						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.hide_tab('tree-tab-update')
+						self.tabs.show_tab('tree-tab-delete')
+
+					case _:
+						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.show_tab('tree-tab-update')
+						self.tabs.show_tab('tree-tab-delete')
 			except:
 				self.tabs.hide_tab('tree-tab-diagram')
+				self.tabs.show_tab('tree-tab-update')
+				self.tabs.show_tab('tree-tab-delete')
 
 		else:
 			jsns = ''
@@ -357,12 +372,12 @@ class ACMEContainerTree(Container):
 	
 
 	def setResourceHeader(self, header:str) -> None:
-		"""	Set the header of the tree view.
+		"""	Set the header of the resource view.
 		
 			Args:
 				header: The header to set.
 		"""
-		self.resourceHeader.update(header)
+		self.resourceContainer.border_title = header
 	
 
 	@property
@@ -379,6 +394,9 @@ class ACMEContainerTree(Container):
 	def deleteView(self) -> ACMEContainerDelete:
 		return cast(ACMEContainerDelete, self.query_one('#tree-tab-resource-delete'))
 
+	@property
+	def updateView(self) -> ACMEContainerUpdate:
+		return cast(ACMEContainerUpdate, self.query_one('#tree-tab-resource-update'))
 
 	@property
 	def servicesView(self) -> ACMEContainerResourceServices:
@@ -403,51 +421,6 @@ class ACMEContainerTree(Container):
 # TODO move the following to a more generic dialog module
 class ACMEDialog(ModalScreen):
 	BINDINGS = [('escape', 'pop_dialog', 'Close')]
-
-	DEFAULT_CSS = '''
-
-/* The CSS for ACMERequest is in .css file. The transparency
-   doesn't work if it is in the DEFAULT_CSS. */
-
-#confirm {
-	width: 80%;
-	padding: 1;
-	height: 8;
-	border: heavy $accent;
-	background: $surface;
-}
-
-#confirm-label {
-	content-align: center middle;
-	width: 100%;
-}
-
-#confirm-buttons {
-	margin-top: 2;
-	align: center middle;
-}
-
-#confirm-buttons Button {
-	min-width: 12;
-	border-top: none;
-	border-bottom: none;
-	height: 1;
-	margin-left: 1;
-	margin-right: 1;
-	align: center middle;
-}
-
-#confirm-ok {
-	border-left: tall $success-lighten-2;
-	border-right: tall $success-darken-3;
-}
-
-#confirm-cancel {
-	border-left: tall $primary-lighten-2;
-	border-right: tall $primary-darken-3;
-}
-
-'''
 
 	def __init__(self, message:str = 'Really?', buttonOK:str = 'OK', buttonCancel:str = 'Cancel') -> None:
 		super().__init__()

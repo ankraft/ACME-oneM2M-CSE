@@ -1,0 +1,668 @@
+/*
+ *	ACMETUI.tcss
+ *
+ *	(c) 2023 by Andreas Kraft
+ *	License: BSD 3-Clause License. See the LICENSE file for further details.
+ *
+ *	CSS file for the Text UI based on Textualize
+ */
+
+/*
+ *	Changes to Textualize default CSS
+ */
+
+Screen {
+	background: $surface;
+}
+
+TabbedContent ContentSwitcher {
+    height: 1fr;
+	width: 1fr;
+}
+
+TabPane {
+	padding: 0 0;
+}
+
+
+
+/*
+ *	ACME TUI own components
+ */
+
+
+.request-view {
+	border: round $primary;
+	height: 1fr;
+
+	.request-button {
+		height: 3;
+		width: auto;
+		margin-top: 1;
+		margin-right: 2;
+		padding-left: 2;
+		padding-right: 2;
+	}
+
+	.request-header {
+		height: 4;
+		overflow: hidden;
+		padding-top: 2;
+		margin-left: 2;
+		width: 2fr;
+	}
+
+	.request-originator {
+		width: 100%;
+		height: 4;
+		margin-top: 0;
+		margin-left: 1;
+		margin-right: 1;
+	}
+	.request-resource-textarea {
+		width: 100%;
+		height: 22;
+		background: $panel;
+		margin-left: 1;
+		margin-right: 1;
+	}
+}
+
+
+.response-view-normal {
+	border: round $primary;
+	height: 1fr;
+}
+
+.response-view-error {
+	border: round $error;
+	height: 1fr;
+}
+
+.response-view-success {
+	border: round $success;
+	height: 1fr;
+}
+
+.response-view-content {
+	margin: 1 1 1 1;
+}
+
+
+ACMEResourceTree {
+	display: block;
+	scrollbar-gutter: stable;
+	overflow: auto;
+	width: auto;
+	min-height: 1fr;
+	dock: left;
+	max-width: 50%;
+	padding-left: 1;
+	padding-top: 1;
+
+}
+
+ACMEContainerTree {
+	#resource-view {
+		width: auto;
+		height: auto;
+		width: 1fr;
+
+	}
+
+	#resource-view-container {
+		border: round $primary;
+		overflow: hidden auto;
+		height: 100%;
+		padding: 1 1 1 1;
+	}
+
+}
+
+
+ACMEContainerDiagram {
+
+	height: 100%;
+	padding: 0 1 1 1;
+
+	#diagram-plot {
+		/*height: 100%;*/
+	}
+
+	#diagram-footer {
+		width: 100%;
+		margin-top: 1;
+		height: 1;
+	}
+
+	#diagram-button-set {
+		width: auto;
+		margin-bottom: 0;
+	}
+
+	#diagram-line-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 10;
+	}
+
+	#diagram-graph-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 11;
+	}
+
+	#diagram-scatter-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 13;
+	}
+
+	#diagram-bar-button {
+		height: 1;
+		border: none;
+		margin-right: 1;
+		min-width: 9;
+	}
+
+	#diagram-timeline-button {
+		height: 1;
+		border: none;
+		margin-right: 0;
+		min-width: 14;
+	}
+
+	#diagram-refresh-button {
+		height: 1;
+		border: none;
+		margin-left: 4;
+		margin-right: 0;
+		min-width: 13;
+	}
+
+	#diagram-autorefresh-checkbox {
+		height: 1;
+		border: none;
+		margin-left: 2;
+		margin-right: 0;
+		min-width: 17;
+	}
+
+	/* Toggle Button */
+
+	ToggleButton > .toggle--button {
+		color: $background;
+		text-style: bold;
+		background: $foreground 15%;
+	}
+
+	ToggleButton:focus > .toggle--button {
+		background: $foreground 25%;
+	}
+
+	ToggleButton.-on > .toggle--button {
+		background: $success 75%;
+	}
+
+	ToggleButton.-on:focus > .toggle--button {
+		background: $success;
+
+	}
+
+	ToggleButton:light > .toggle--button {
+			color: $background;
+			text-style: bold;
+			background: $foreground 15%;
+	}
+
+	ToggleButton:light:focus > .toggle--button {
+		background: $foreground 25%;
+	}
+
+	ToggleButton:light.-on > .toggle--button {
+		color: $foreground 50%;
+		background: $success;
+	}
+
+	ToggleButton:light.-on:focus > .toggle--button {
+		color: $foreground 50%;
+		background: $success 75%;
+	}
+}
+
+
+/*
+ *	ACMEHeader
+ */
+
+ACMEHeader {
+	height: 3;
+
+}
+
+ACMEHeaderClock {
+	background: transparent;
+	width: 26;
+}
+
+/*
+ *	ACME Input Field
+
+ */
+
+ ACMEInputField {
+	width: 1fr;
+	height: 2;
+	layout: horizontal;
+	overflow: hidden hidden;
+	/* background: red; */
+	content-align: left middle;
+	margin: 1 1 1 1;
+
+	#field-label {
+		height: 1fr;
+		content-align: left middle;
+		align: left middle;
+	}
+
+	#field-input-view {
+		width: 1fr;
+	}
+
+	#field-message {
+		height: 1fr;
+		width: 1fr;
+		/* margin-left: 0; */
+		color: red;
+	}
+
+	Input {
+		height: 1;
+		border: none;
+		padding: 0;
+		background: $panel;
+		/* background: $secondary-background-darken-1; */
+	}
+}
+
+
+/*
+ * Request dialog
+ *
+ * The background transparency only works if it is in the .css file, not in the DEFAULT_CSS.
+ */
+
+ACMEDialog {
+    align: center middle;
+	background: $surface 60%;
+
+	#confirm {
+		width: 80%;
+		padding: 1;
+		height: 8;
+		border: heavy $accent;
+		background: $surface;
+	}
+
+	#confirm-label {
+		content-align: center middle;
+		width: 100%;
+	}
+
+	#confirm-buttons {
+		margin-top: 2;
+		align: center middle;
+	}
+
+	#confirm-buttons Button {
+		min-width: 12;
+		border-top: none;
+		border-bottom: none;
+		height: 1;
+		margin-left: 1;
+		margin-right: 1;
+		align: center middle;
+	}
+
+	#confirm-ok {
+		border-right: tall $success-darken-3;
+	}
+
+	#confirm-cancel {
+		border-right: tall $primary-darken-3;
+	}
+
+}
+
+
+/*
+ * Debug Console line
+ */
+
+#debug-console {
+	overflow: auto scroll;
+	width: 1fr;
+	height: 3;
+	background:darkblue;
+	border: solid red;
+}
+
+
+/*
+ * Resource View
+ */
+
+ACMEContainerDelete {
+
+	#request-delete-request {
+		height: 11;
+	}
+}
+
+
+ACMEContainerUpdate {
+	#request-update-request {
+		height:32;
+	}
+}
+
+
+ACMEContainerTools {
+
+	#tools-tree-view {
+		display: block;
+		scrollbar-gutter: stable;
+		overflow: auto;
+		width: auto;
+		min-height: 1fr;
+		dock: left;
+		max-width: 50%;
+		padding-left: 1;
+		padding-top: 1;
+	}
+
+	#tools-top-view {
+		border: round $primary;
+		display: block;
+		overflow: auto auto;
+		min-width: 100%;
+		height: 1fr;
+		padding: 1 0 0 0;
+
+		#tools-arguments-view {
+			align-vertical: bottom;
+			display: block;
+			overflow: auto auto;
+			min-width: 100%;
+			height: 1fr;
+			padding: 0 1 1 1;
+		}
+	}
+
+	#tools-log-view {
+		border: round $primary;
+		display: block;
+		overflow: auto auto;
+		height: 1fr;
+		padding: 1 1 0 2;
+	}
+}
+
+
+ACMEContainerResourceServices {
+	width: 100%;
+
+	/* Export Resource */
+
+	#services-export-resource, #services-export-instances {
+		border: round $primary;
+		width: 100%;
+		height: 9;
+
+		.label {
+			margin-top: 1;
+			margin-left: 2;
+			width: 100%;
+		}
+
+		.service-command-area {
+			margin-top: 1;
+			margin-left: 2;
+			width: 100%;
+		}
+
+		.services-export-controls {
+			height: 1;
+		}
+
+		.button {
+			height: 1;
+			border: none;
+			margin-right: 3;
+			min-width: 14;
+		}
+
+		#services-export-resource-checkbox {
+			height: 1;
+			border: none;
+			margin-right: 0;
+			min-width: 17;
+		}
+
+		.loading-indicator {
+			margin-top: 1;
+			height: 1;
+			color: $secondary;
+		}
+
+		.result {
+			margin-top: 1;
+			height: 1;
+		}
+	}
+
+
+	/* Toggle Button */
+
+	ToggleButton > .toggle--button {
+		color: $background;
+		text-style: bold;
+		background: $foreground 15%;
+	}
+
+	ToggleButton:focus > .toggle--button {
+		background: $foreground 25%;
+	}
+
+	ToggleButton.-on > .toggle--button {
+		background: $success 75%;
+	}
+
+	ToggleButton.-on:focus > .toggle--button {
+		background: $success;
+	}
+
+
+	ToggleButton:light > .toggle--button {
+			color: $background;
+			text-style: bold;
+			background: $foreground 15%;
+	}
+
+	ToggleButton:light:focus > .toggle--button {
+		background: $foreground 25%;
+	}
+
+	ToggleButton:light.-on > .toggle--button {
+		color: $foreground 50%;
+		background: $success;
+	}
+
+	ToggleButton:light.-on:focus > .toggle--button {
+		color: $foreground 50%;
+		background: $success 75%;
+	}
+
+}
+
+/*
+ * Request view
+ */
+
+
+ACMEContainerRequests {
+	overflow: auto auto;
+	width: 1fr;
+	height: 1fr;
+}
+
+
+
+ACMEViewRequests {
+	
+
+
+	/* Additional CSS for highlight outgoing requests in ACMEListItem */
+	ACMEListItem.--outgoing {
+		color: $text;
+		height: auto;
+		overflow: hidden hidden;
+	}
+	
+	ACMEListItem {
+        color: $text;
+        height: auto;
+        background: $surface;
+        overflow: hidden hidden;
+    }
+
+	ListView > ACMEListItem.--highlight {
+        background: $accent 50%;
+    }
+
+	ACMEListItem > Widget :hover {
+        background: $accent;
+    }
+
+	ListView > ACMEListItem.--outgoing {
+		background:  $secondary-background 50%;
+	}
+
+	ListView:focus > ACMEListItem.--outgoing {
+		background:  $secondary-background 50%;
+	}
+	
+	ListView > ACMEListItem.--outgoing.--highlight {
+		background: $accent;
+	}
+
+	
+	#request-list-view {
+		width: 1fr;
+		height: 1fr;
+	}
+	
+	#request-list-header {
+		width: 1fr;
+		height: 1;
+		align-vertical: middle;
+		background: $panel;
+	}
+	
+	#request-list-list {
+		overflow: auto auto;
+		min-width: 100%;
+		height: 1fr;
+        background: $surface;
+        /* background: $panel-lighten-1; */
+	}
+
+	.request-response {
+		border: round $primary;
+	}
+
+	#request-list-details {
+		height: 1fr;
+	}
+
+	#request-list-request {
+		overflow: auto;
+		width: 1fr;
+		min-height: 100%;
+		padding: 1 1;
+	}
+
+	#request-list-response {
+		overflow: auto;
+		width: 1fr;
+		min-height: 100%;
+		padding: 1 1;
+	}
+
+}
+
+
+/*
+ * registration view
+ */
+
+ #registrations-view {
+	 display: block;
+	 overflow: auto auto;
+	 min-width: 100%;
+ }
+
+
+/*
+ * Infos view
+ */
+#stats-view {
+	display: block;
+	overflow: auto auto;
+	min-width: 100%;
+}
+
+
+/*
+ * Configs view
+ */
+
+ACMEContainerConfigurations {
+	#configs-tree-view {
+		display: block;
+		scrollbar-gutter: stable;
+		overflow: auto;
+		width: auto;
+		min-height: 1fr;
+		dock: left;
+		max-width: 50%;
+		padding-left: 1;
+		padding-top: 1;
+
+		#configs-documentation {
+			display: block;
+			overflow: auto auto;
+		}
+	}
+}
+
+
+/*
+ * About view
+ */
+
+#about-view {
+	display: block;
+	overflow: auto auto;
+	min-width: 100%;
+
+	#about-button {
+		height:0;
+		width:0;
+		border: none;
+	 }
+}
+

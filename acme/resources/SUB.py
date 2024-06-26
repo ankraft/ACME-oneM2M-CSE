@@ -86,9 +86,6 @@ class SUB(Resource):
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ResourceTypes.SUB, dct, pi, create = create)
 
-		# Set defaults for some attribute
-		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
-		
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
@@ -99,7 +96,7 @@ class SUB(Resource):
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
-		if len(net) > 0:
+		if net is not None and len(net) > 0:
 			match net[0]:
 				case NotificationEventType.resourceUpdate |\
 					 NotificationEventType.resourceDelete |\
@@ -167,10 +164,6 @@ class SUB(Resource):
 		# Do actual update
 		super().update(dct, originator, doValidateAttributes = False)
 		
-		# Check whether 'enc' is removed in the update
-		if 'enc' in dct['m2m:sub'] and dct['m2m:sub']['enc'] is None:
-			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ])
-
 
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
@@ -187,25 +180,46 @@ class SUB(Resource):
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 		attrs = self.dict if dct is None else pureResource(dct)[0]
-		enc = attrs.get('enc')
+		newEnc = attrs.get('enc')
+
+		newNet = newEnc.get('net') if newEnc is not None else None
+		newOm = newEnc.get('om') if newEnc is not None else None
+
+		# Test whether notificationEventType and operationMonitor are specified together
+		if newNet is not None and newOm is not None:
+			raise BAD_REQUEST(L.logDebug('enc/net and enc/om cannot be specified together'))
+
+		# Test whether operationMonitor is specified and is a valid value
+		if newOm is not None:
+			for om in newOm:
+				if om.get('ops') is None and om.get('org') is None:
+					raise BAD_REQUEST(L.logDebug('Entries in enc/om must contain at least one of "ops" or "org"'))
+				
+		# ensure that enc isalways present
+		if self['enc'] is None:
+			self.setAttribute('enc', {})	
+		
+		# Apply default enc/net value.
+		if self['enc/net'] is None and self['enc/om'] is None:
+			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
 
 		# Check NotificationEventType
-		if (net := findXPath(attrs, 'enc/net')) is not None:
-			if not NotificationEventType.has(net):
-				raise BAD_REQUEST(L.logDebug(f'enc/net={str(net)} is not an allowed or supported NotificationEventType'))
+		if (newNet := findXPath(attrs, 'enc/net')) is not None and not NotificationEventType.has(newNet):
+			raise BAD_REQUEST(L.logDebug(f'enc/net={str(newNet)} is not an allowed or supported NotificationEventType'))
 
 		# Check if blocking RETRIEVE or blocking UPDATE is the only NET in the subscription, 
 		# AND that there is no other NET for this resource
-		if net and self._hasBlockingNET(net):
+		if newNet and self._hasBlockingNET(newNet):
 
 			# only one entry in NET must exist per blocking subscription
-			if len(net) > 1:
+			L.isWarn and L.logWarn(f'Blocking subscription: {newNet}')
+			if len(newNet) > 1:
 				raise BAD_REQUEST(L.logDebug(f'blockingRetrieve/blockingUpdate must be the only value in enc/net'))
 
 			# Only one of each blocking UPDATE or RETRIEVE etc must exist for this resource
 			# This works here in validate bc it is only allowed in CREATE/activate, and this resource has 
 			# not been written to DB yet.
-			if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = net):
+			if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = newNet):
 				raise BAD_REQUEST(L.logDebug(f'a subscription with blockingRetrieve/blockingUpdate/blockingRetrieveDirectChild already exsists for this resource'))
 
 			# Only one NU is allowed for blocking UPDATE or RETRIEVE
@@ -217,7 +231,7 @@ class SUB(Resource):
 				raise BAD_REQUEST(L.logDebug(f'disallowed attribute(s) in blocking-subscription'))
 
 			# Disallow condition tags other than 'atr' (and perhaps 'chty')
-			if enc and self._hasDisallowedENCAttributes(enc):
+			if newEnc and self._hasDisallowedENCAttributes(newEnc):
 				raise BAD_REQUEST(L.logDebug(f'disallowed "enc" attribute(s) in blocking-subscription'))
 
 			# TODO Where is it specified that the nu must target the parent's originator? -> Remove if not necessary
@@ -228,7 +242,7 @@ class SUB(Resource):
 		
 
 		# Validate missingData
-		if net and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
+		if newNet and NotificationEventType.reportOnGeneratedMissingDataPoints in newNet:
 			# missing data must be created only under a <TS> resource
 			if parentResource is not None and parentResource.ty != ResourceTypes.TS:
 				raise BAD_REQUEST(L.logDebug(f'parent resource must be a TimeSeries resource when "enc/md" is provided'))
@@ -240,10 +254,10 @@ class SUB(Resource):
 				raise BAD_REQUEST(L.logDebug(f'"enc/md" is missing in subscription for "reportOnGeneratedMissingDataPoints"'))
 			
 		# check nct and net combinations
-		if (nct := self.nct) is not None and net is not None:
-			for n in net:
+		if (nct := self.nct) is not None and newNet is not None:
+			for n in newNet:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					raise BAD_REQUEST(L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
+					raise BAD_REQUEST(L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={newNet}'))
 				# fallthrough
 				if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
 					# TODO is this necessary, parent resource should be provided
@@ -260,8 +274,8 @@ class SUB(Resource):
 					CSE.validator.validateAttribute('dur', md.get('dur'))
 		
 		# if nct is not provided, check that net contains only event types that have the same default nct
-		if nct is None and net is not None:
-			if len(set([ NotificationEventType(t).defaultNCT() for t in net ])) > 1:
+		if nct is None and newNet is not None:
+			if len(set([ NotificationEventType(t).defaultNCT() for t in newNet ])) > 1:
 				raise BAD_REQUEST(L.logDebug(f'nct is not provided, and enc/net contains multiple NotificationEventTypes with different default NotificationContentType'))
 
 		# check other attributes

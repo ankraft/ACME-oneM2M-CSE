@@ -49,6 +49,36 @@ def removeCommentsFromJSON(data:str) -> str:
 	return _commentRegex.sub(_replacer, data)
 
 
+def flattenJSON(data:Union[str, dict]) -> str:
+	"""	Flatten a JSON string or dictionary.
+
+		Args:
+			data: The JSON string or as a dictionary.
+		
+		Return:
+			The flattened JSON string.
+	"""
+	if isinstance(data, dict):
+		return json.dumps(data) # default of dumps flattens the JSON
+	return ' '.join([ l.strip() for l in data.split()])	# remove all whitespace
+
+
+def parseJSONDecodingError(e:json.JSONDecodeError) -> str:
+	"""	Parse a JSON decoding error and return a readable error message including the error location.
+
+		Args:
+			e: The JSON decoding error.
+
+		Return:
+			A readable error message.
+	"""
+	start, stop = max(0, e.pos - 20), e.pos + 20
+	snippet = e.doc[start:stop].replace('\n', ' ')
+	errorline = f'{"... " if start else ""}{snippet}{" ..." if stop < len(e.doc) else ""}'
+	errorline += f'\n{("^".rjust(21 if not start else 25))}'
+	return errorline
+
+
 def commentJson(data:Union[str, dict], 
 				explanations:Dict[str,str], 
 				getAttributeValueName:Optional[Callable] = lambda k, v: '',

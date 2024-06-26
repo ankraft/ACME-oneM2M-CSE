@@ -11,7 +11,6 @@ import unittest, sys
 import requests
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -264,21 +263,27 @@ class TestFCNT_FCI(unittest.TestCase):
 # TODO other FCNT controlling attributes
 # TODO Add similar tests from testCNT_CIN for mni, etc
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestFCNT_FCI, [
 			
-	addTest(suite, TestFCNT_FCI('test_createFCNT'))
-	addTest(suite, TestFCNT_FCI('test_attributesFCNT'))
-	addTest(suite, TestFCNT_FCI('test_updateFCNT'))
-	addTest(suite, TestFCNT_FCI('test_retrieveFCNTLaOl'))
-	addTest(suite, TestFCNT_FCI('test_updateFCNTMni'))
-	addTest(suite, TestFCNT_FCI('test_updateLBL'))
-	addTest(suite, TestFCNT_FCI('test_updateMNInoFCICreated'))
-	addTest(suite, TestFCNT_FCI('test_createFCIFail'))
-	addTest(suite, TestFCNT_FCI('test_updateFCIFail'))
-	addTest(suite, TestFCNT_FCI('test_updateFCNTMniNull'))
-	addTest(suite, TestFCNT_FCI('test_deleteFCNT'))
+		'test_createFCNT',
+		'test_attributesFCNT',
+		'test_updateFCNT',
+		'test_retrieveFCNTLaOl',
+		'test_updateFCNTMni',
+		'test_updateLBL',
+		'test_updateMNInoFCICreated',
+		'test_createFCIFail',
+		'test_updateFCIFail',
+		'test_updateFCNTMniNull',
+		'test_deleteFCNT',
+
+	])
 	
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

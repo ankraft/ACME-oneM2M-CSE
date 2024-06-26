@@ -3,7 +3,7 @@
 @category Utilities
 @tuiInput Attribute
 @tuiExecuteButton Search
-@description ## Attribute Info Search\n\nThis tool provides fuzzy searches for an attribute name or short name, and prints out the attribute(s) information.\n\n*Note, that some scalar types are mapped to a more general type, such as "string"*.
+@description This tool provides fuzzy searches for an attribute name or short name, and prints out the attribute(s) information.\n\n*Note, that some scalar types are mapped to a more general type, such as "string"*.
 
 
 (clear-console)

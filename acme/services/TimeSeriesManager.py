@@ -47,7 +47,7 @@ class TimeSeriesManager(object):
 			a CSE.
 		"""
 		for each in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
-			if NotificationEventType.reportOnGeneratedMissingDataPoints in each.attribute('enc/net'):
+			if NotificationEventType.reportOnGeneratedMissingDataPoints in each.attribute('enc/net', []): # enc/net might be empty
 				L.isDebug and L.logDebug(f'Restoring structures for TSI subscription: {each.ri}')
 				self.addSubscription(each.retrieveParentResource(), each)
 		return True
@@ -116,7 +116,11 @@ class TimeSeriesManager(object):
 				
 				# L.logDebug(rts.missingData)
 				# Check for sending the missing data subscriptions in  general
-				CSE.notification.checkSubscriptions(None, NotificationEventType.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData)
+				CSE.notification.checkSubscriptions(None, 
+													NotificationEventType.reportOnGeneratedMissingDataPoints, 
+													None,
+													ri = tsRi, 
+													missingData = rts.missingData)
 			else:
 				L.isDebug and L.logDebug(f'<tsi> with dgt:{dgt} within expected dataGenerationTimeRange')
 
@@ -242,7 +246,7 @@ class TimeSeriesManager(object):
 	def addSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		"""	Add a subscription for the <TS> resource. Setup the internal structures.
 		"""
-		if NotificationEventType.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
+		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Adding missing-data <sub>: {subscription.ri}. Not started yet.')
 			tsRi = timeSeries.ri
 			if not (rts := runningTimeserieses.get(timeSeries.ri)):
@@ -255,7 +259,7 @@ class TimeSeriesManager(object):
 	def updateSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		""" Update an existing missing data subscription.
 		"""
-		if NotificationEventType.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
+		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Updating missing data <sub>: {subscription.ri}')
 			if (rts := runningTimeserieses.get(timeSeries.ri)) and (md := rts.missingData.get(subscription.ri)):
 				md.missingDataDuration = fromDuration(subscription['enc/md/dur'])
@@ -265,7 +269,7 @@ class TimeSeriesManager(object):
 	def removeSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		"""	Remove a subcription from a <TS> resource. Remove the internal structures.
 		"""
-		if NotificationEventType.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
+		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Removing missing data <sub>: {subscription.ri}')
 			if (rts := runningTimeserieses.get(timeSeries.ri)) and subscription.ri in rts.missingData:
 				del rts.missingData[subscription.ri]

@@ -112,7 +112,7 @@ class AE(AnnounceableResource):
 		# the AE is now on a different node. This shouldn't be happen in reality,
 		# but technically it is allowed.
 		nl = self.nl
-		_nl_ = self.__node__
+		_nl_ = self[Constants.attrNode]
 		if nl or _nl_:
 			if nl != _nl_:	# if different node
 				ri = self.ri

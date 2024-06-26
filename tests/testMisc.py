@@ -11,7 +11,6 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 import isodate
-from typing import Tuple
 from acme.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T
 from acme.etc.DateUtils import getResourceDate
 from init import *
@@ -287,6 +286,7 @@ class TestMisc(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 		
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -296,6 +296,7 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
 		self.assertEqual(findXPath(r, 'm2m:cb/ty'), ResourceTypes.CSEBase, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -324,6 +325,7 @@ class TestMisc(unittest.TestCase):
 		""" Partial RETRIEVE of CSEBase with single RO attribute ctm (http only)"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=ctm', ORIGINATOR)	# try to get mni from CSEBase
 		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -338,6 +340,7 @@ class TestMisc(unittest.TestCase):
 		# RETRIEVE with single optional attribute
 		r, rsc = RETRIEVE(f'{cseURL}/{cntRN}?atrl=mni', ORIGINATOR)	# try to get mni from CSEBase
 		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 
 		# delete the CNT again
 		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
@@ -394,45 +397,50 @@ class TestMisc(unittest.TestCase):
 # TODO test json with comments
 # TODO test for ISO8601 format validation
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	addTest(suite, TestMisc('test_checkHTTPRVI'))
-	addTest(suite, TestMisc('test_checkHTTPRET'))
-	addTest(suite, TestMisc('test_checkHTTPVSI'))
-	addTest(suite, TestMisc('test_checkHTTPRETRelative'))
-	addTest(suite, TestMisc('test_checkHTTPRETWrong'))
-	addTest(suite, TestMisc('test_checkHTTPRETRelativeWrong'))
-	addTest(suite, TestMisc('test_checkHTTPRVIWrongInRequest'))
-	addTest(suite, TestMisc('test_createUnknownResourceType'))
-	addTest(suite, TestMisc('test_createEmpty'))
-	addTest(suite, TestMisc('test_updateEmpty'))
-	addTest(suite, TestMisc('test_createAlphaResourceType'))
-	addTest(suite, TestMisc('test_createWithWrongResourceType'))
-	addTest(suite, TestMisc('test_checkHTTPmissingOriginator'))
-	addTest(suite, TestMisc('test_checkResponseOT'))
-	addTest(suite, TestMisc('test_checkTargetRVI'))
-	addTest(suite, TestMisc('test_validateListFail'))
-	addTest(suite, TestMisc('test_resourceWithoutRN'))
-	addTest(suite, TestMisc('test_subWithoutRN'))
-	addTest(suite, TestMisc('test_createAEContentTypeWithSpacesHeader'))
+	addTests(suite, TestMisc, [
 
-	# Partial retrieve
-	addTest(suite, TestMisc('test_partialRetrieveCSEBaseSingle'))
-	addTest(suite, TestMisc('test_partialRetrieveCSEBaseMultiple'))
-	addTest(suite, TestMisc('test_partialDeleteCSEBaseFail'))
-	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongRcnFail'))
-	addTest(suite, TestMisc('test_partialRetrieveCSEBaseWrongAttributeFail'))
-	addTest(suite, TestMisc('test_partialRetrieveCSEBaseROAttribute'))
-	addTest(suite, TestMisc('test_partialRetrieveCSingleOptionalAttribute'))
+		'test_checkHTTPRVI',
+		'test_checkHTTPRET',
+		'test_checkHTTPVSI',
+		'test_checkHTTPRETRelative',
+		'test_checkHTTPRETWrong',
+		'test_checkHTTPRETRelativeWrong',
+		'test_checkHTTPRVIWrongInRequest',
+		'test_createUnknownResourceType',
+		'test_createEmpty',
+		'test_updateEmpty',
+		'test_createAlphaResourceType',
+		'test_createWithWrongResourceType',
+		'test_checkHTTPmissingOriginator',
+		'test_checkResponseOT',
+		'test_checkTargetRVI',
+		'test_validateListFail',
+		'test_resourceWithoutRN',
+		'test_subWithoutRN',
+		'test_createAEContentTypeWithSpacesHeader',
 
-	# send NOTIFY requests
-	addTest(suite, TestMisc('test_notifyAE'))
+		# Partial retrieve
+		'test_partialRetrieveCSEBaseSingle',
+		'test_partialRetrieveCSEBaseMultiple',
+		'test_partialDeleteCSEBaseFail',
+		'test_partialRetrieveCSEBaseWrongRcnFail',
+		'test_partialRetrieveCSEBaseWrongAttributeFail',
+		'test_partialRetrieveCSEBaseROAttribute',
+		'test_partialRetrieveCSingleOptionalAttribute',
+
+		# send NOTIFY requests
+		'test_notifyAE',
+	])
 	
-
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

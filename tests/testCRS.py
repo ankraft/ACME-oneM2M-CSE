@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acme.etc.Types import ResultContentType as RCN
 from acme.etc.DateUtils import getResourceDate
@@ -1964,148 +1963,152 @@ class TestCRS(unittest.TestCase):
 	#########################################################################
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestCRS, [
+
+		# General test cases
+		'test_createCRSmissingRratSratFail',
+		'test_createCRSmissingNuFail',
+		'test_createCRSmissingTwtFail',
+		'test_createCRSwrongTwtFail',
+		'test_createCRSmissingTwsFail',
+		'test_createCRSemptyEncsFail',
+		'test_createCRSWrongNumberEncsFail',
+		'test_createCRSwithRratsFail',
+
+		# Test rrat
+		'test_createCRSwithRrat',
+		'test_updateCRSwithNewRratFail',
+		'test_updateCRSwithrratsFail',
+		'test_updateCRSwithNecFail',
+		'test_updateCRSwithEncsFail',
+		'test_updateCRSwithDeletedEncsFail',
+		'test_deleteCRSwithRrat',
+		'test_createCRSwithRratAndEt',
+		'test_deleteCRSwithRrat',
+		'test_createCRSwithRratWrongTarget',
+
+		'test_createCRSwithSingleRratAndNSI',
+		'test_createTwoNotificationOneNotification',
+		'test_deleteCRSwithRrat',
+
+		# Test srat
+		'test_createCRSwithSratNonSubFail',
+		'test_createSubscriptions',
+		'test_createCRSwithSrat',
+		'test_updateCRSwithNewSratFail',
+		'test_deleteCRSwithSrat',
+		'test_deleteSubscriptions',
+
+		# Test Delete and Update via Subscription
+		'test_createCRSwithRrat',
+		'test_deleteRratSubscription',
+
+		'test_createSubscriptions',			# create subs again
+		'test_createSrat2Subscriptions',
+		'test_deleteSratSubscription',
+		'test_deleteSubscriptions',
+
+		'test_createSubscriptions',			# create subs again
+		'test_createSrat2Subscriptions',		# create crs again
+		'test_updateSubAcrs',
+		'test_deleteSubscriptions',
+
+		# Test Periodic Window
+		'test_createCRSwithRrat',
+		'test_createSingleNotificationNoNotification',
+		'test_createTwoSingleNotificationNoNotifications',
+		'test_createTwoNotificationOneNotification',
+		'test_updateCRSPeriodicWindowSize',
+
+		# Test Sliding Window
+		'test_enableSlidingWindow',
+		'test_createSingleNotificationNoNotification',
+		'test_createTwoSingleNotificationNoNotifications',
+		'test_createTwoNotificationOneNotification',
+		'test_updateCRSSlidingWindowSize',
+		'test_deleteCRSwithRrat',
+
+		# Test Notification Stats
+		'test_createCRSwithRratSlidingStatsEnabled', 		# Sliding
+		'test_retrieveCRSwithNSENSINone', 
+		'test_createTwoNotificationOneNotification', 
+		'test_deleteCRSwithRrat', 
+
+		'test_createCRSwithRratSlidingStatsEnabled',		# Sliding
+		'test_updateCRSwithDeletedNse',
+		'test_updateCRSwithDeletedNsi',
+		'test_updateCRSwithEnableNSE',
+		'test_testEmptyNsi',
+		'test_createTwoNotificationOneNotification',
+		'test_testNonEmptyNsi',
+		'test_updateCRSwithNseFalse',
+		'test_updateCRSwithNseTrue',	# NSI should be empty
+		'test_testEmptyNsi',
+		'test_createTwoNotificationOneNotification',
+		'test_testNonEmptyNsi',
+		'test_updateCRSwithNseTrue',	# NSI should be empty
+		'test_testEmptyNsi',
+		'test_deleteCRSwithRrat',
+
+		# Test Expiration
+		'test_createCRSwithExpiration',
+
+		# Test Deletion Notification
+		'test_testCRSwithSu',
+
+		# Test eventEvaluationMode create and update
+		'test_createCorrectEEM12345TWT1',
+		'test_createCorrectEEM125TWT2',
+		'test_createWrongEEM34TWT2',
+
+		'test_updateCorrectEEM12345TWT1',
+		'test_updateCorrectEEM125TWT2',
+		'test_updateWrongEEM34TWT2',
+
+		# Test eventEvaluationMode: Periodic ALL_OR_SOME_EVENTS_PRESENT
+		'test_createCRSPeriodicAllSomeEventsPresentAll',
+		'test_createCRSPeriodicAllSomeEventsPresentSome',
+		'test_createCRSPeriodicAllSomeEventsPresentNone',
+
+		# Test eventEvaluationMode: Sliding ALL_OR_SOME_EVENTS_PRESENT
+		'test_createCRSSlidingAllSomeEventsPresentAll',
+		'test_createCRSSlidingAllSomeEventsPresentSome',
+		'test_createCRSSlidingAllSomeEventsPresentNone',
+
+
+		# Test eventEvaluationMode: Periodic ALL_OR_SOME_EVENTS_MISSING
+		'test_createCRSPeriodicAllSomeEventsMissingAll',
+		'test_createCRSPeriodicAllSomeEventsMissingSome',
+		'test_createCRSPeriodicAllSomeEventsMissingNone',
+
+		# No test for eventEvaluationMode: Sliding ALL_OR_SOME_EVENTS_MISSING and All_EVENTS_MISSING necessary
+
+		# Test eventEvaluationMode: Periodic All_EVENTS_MISSING
+		'test_createCRSPeriodicAllEventsMissingAll',
+		'test_createCRSPeriodicAllEventsMissingSome',
+		'test_createCRSPeriodicAllEventsMissingNone',
+
+		# Test eventEvaluationMode: Periodic SOME_EVENTS_MISSING
+		'test_createCRSPeriodicSomeEventsMissingAll',
+		'test_createCRSPeriodicSomeEventsMissingSome',
+		'test_createCRSPeriodicSomeEventsMissingNone',
+
+		# Test eventEvaluationMode: Sliding SOME_EVENTS_MISSING
+		'test_createCRSSlidingSomeEventsMissingAll',
+		'test_createCRSSlidingSomeEventsMissingSome',
+		'test_createCRSSlidingSomeEventsMissingNone',
 	
-	# General test cases
-	addTest(suite, TestCRS('test_createCRSmissingRratSratFail'))
-	addTest(suite, TestCRS('test_createCRSmissingNuFail'))
-	addTest(suite, TestCRS('test_createCRSmissingTwtFail'))
-	addTest(suite, TestCRS('test_createCRSwrongTwtFail'))
-	addTest(suite, TestCRS('test_createCRSmissingTwsFail'))
-	addTest(suite, TestCRS('test_createCRSemptyEncsFail'))
-	addTest(suite, TestCRS('test_createCRSWrongNumberEncsFail'))
-	addTest(suite, TestCRS('test_createCRSwithRratsFail'))
+	])
 
-	# Test rrat
-	addTest(suite, TestCRS('test_createCRSwithRrat'))
-	addTest(suite, TestCRS('test_updateCRSwithNewRratFail'))
-	addTest(suite, TestCRS('test_updateCRSwithrratsFail'))
-	addTest(suite, TestCRS('test_updateCRSwithNecFail'))
-	addTest(suite, TestCRS('test_updateCRSwithEncsFail'))
-	addTest(suite, TestCRS('test_updateCRSwithDeletedEncsFail'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-	addTest(suite, TestCRS('test_createCRSwithRratAndEt'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-	addTest(suite, TestCRS('test_createCRSwithRratWrongTarget'))
-
-	addTest(suite, TestCRS('test_createCRSwithSingleRratAndNSI'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-
-
-	# Test srat
-	addTest(suite, TestCRS('test_createCRSwithSratNonSubFail'))
-	addTest(suite, TestCRS('test_createSubscriptions'))
-	addTest(suite, TestCRS('test_createCRSwithSrat'))
-	addTest(suite, TestCRS('test_updateCRSwithNewSratFail'))
-	addTest(suite, TestCRS('test_deleteCRSwithSrat'))
-	addTest(suite, TestCRS('test_deleteSubscriptions'))
-
-
-	# Test Delete and Update via Subscription
-	addTest(suite, TestCRS('test_createCRSwithRrat'))
-	addTest(suite, TestCRS('test_deleteRratSubscription'))
-
-	addTest(suite, TestCRS('test_createSubscriptions'))			# create subs again
-	addTest(suite, TestCRS('test_createSrat2Subscriptions'))
-	addTest(suite, TestCRS('test_deleteSratSubscription'))
-	addTest(suite, TestCRS('test_deleteSubscriptions'))
-
-	addTest(suite, TestCRS('test_createSubscriptions'))			# create subs again
-	addTest(suite, TestCRS('test_createSrat2Subscriptions'))		# create crs again
-	addTest(suite, TestCRS('test_updateSubAcrs'))
-	addTest(suite, TestCRS('test_deleteSubscriptions'))
-
-	# Test Periodic Window
-	addTest(suite, TestCRS('test_createCRSwithRrat'))
-	addTest(suite, TestCRS('test_createSingleNotificationNoNotification'))
-	addTest(suite, TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_updateCRSPeriodicWindowSize'))
-
-	# Test Sliding Window
-	addTest(suite, TestCRS('test_enableSlidingWindow'))
-	addTest(suite, TestCRS('test_createSingleNotificationNoNotification'))
-	addTest(suite, TestCRS('test_createTwoSingleNotificationNoNotifications'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_updateCRSSlidingWindowSize'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-
-	# Test Notification Stats
-	addTest(suite, TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
-	addTest(suite, TestCRS('test_retrieveCRSwithNSENSINone'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-
-	addTest(suite, TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
-	addTest(suite, TestCRS('test_updateCRSwithDeletedNse'))
-	addTest(suite, TestCRS('test_updateCRSwithDeletedNsi'))
-	addTest(suite, TestCRS('test_updateCRSwithEnableNSE'))
-	addTest(suite, TestCRS('test_testEmptyNsi'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_testNonEmptyNsi'))
-	addTest(suite, TestCRS('test_updateCRSwithNseFalse'))
-	addTest(suite, TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
-	addTest(suite, TestCRS('test_testEmptyNsi'))
-	addTest(suite, TestCRS('test_createTwoNotificationOneNotification'))
-	addTest(suite, TestCRS('test_testNonEmptyNsi'))
-	addTest(suite, TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
-	addTest(suite, TestCRS('test_testEmptyNsi'))
-	addTest(suite, TestCRS('test_deleteCRSwithRrat'))
-
-	# Test Expiration
-	addTest(suite, TestCRS('test_createCRSwithExpiration'))
-
-	# Test Deletion Notification
-	addTest(suite, TestCRS('test_testCRSwithSu'))
-
-	# Test eventEvaluationMode create and update
-	addTest(suite, TestCRS('test_createCorrectEEM12345TWT1'))
-	addTest(suite, TestCRS('test_createCorrectEEM125TWT2'))
-	addTest(suite, TestCRS('test_createWrongEEM34TWT2'))
-
-	addTest(suite, TestCRS('test_updateCorrectEEM12345TWT1'))
-	addTest(suite, TestCRS('test_updateCorrectEEM125TWT2'))
-	addTest(suite, TestCRS('test_updateWrongEEM34TWT2'))
-
-	# Test eventEvaluationMode: Periodic ALL_OR_SOME_EVENTS_PRESENT
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentAll'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentSome'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsPresentNone'))
-
-	# Test eventEvaluationMode: Sliding ALL_OR_SOME_EVENTS_PRESENT
-	addTest(suite, TestCRS('test_createCRSSlidingAllSomeEventsPresentAll'))
-	addTest(suite, TestCRS('test_createCRSSlidingAllSomeEventsPresentSome'))
-	addTest(suite, TestCRS('test_createCRSSlidingAllSomeEventsPresentNone'))
-
-
-	# Test eventEvaluationMode: Periodic ALL_OR_SOME_EVENTS_MISSING
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsMissingAll'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsMissingSome'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllSomeEventsMissingNone'))
-
-	# No test for eventEvaluationMode: Sliding ALL_OR_SOME_EVENTS_MISSING and All_EVENTS_MISSING necessary
-
-	# Test eventEvaluationMode: Periodic All_EVENTS_MISSING
-	addTest(suite, TestCRS('test_createCRSPeriodicAllEventsMissingAll'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllEventsMissingSome'))
-	addTest(suite, TestCRS('test_createCRSPeriodicAllEventsMissingNone'))
-
-	# Test eventEvaluationMode: Periodic SOME_EVENTS_MISSING
-	addTest(suite, TestCRS('test_createCRSPeriodicSomeEventsMissingAll'))
-	addTest(suite, TestCRS('test_createCRSPeriodicSomeEventsMissingSome'))
-	addTest(suite, TestCRS('test_createCRSPeriodicSomeEventsMissingNone'))
-
-	# Test eventEvaluationMode: Sliding SOME_EVENTS_MISSING
-	addTest(suite, TestCRS('test_createCRSSlidingSomeEventsMissingAll'))
-	addTest(suite, TestCRS('test_createCRSSlidingSomeEventsMissingSome'))
-	addTest(suite, TestCRS('test_createCRSSlidingSomeEventsMissingNone'))
-
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

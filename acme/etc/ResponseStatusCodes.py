@@ -91,6 +91,8 @@ class ResponseStatusCode(ACMEIntEnum):
 	"""	SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE """
 	NOT_ACCEPTABLE 								= 5207
 	"""	NOT ACCEPTABLE """
+	UNABLE_TO_RECALL_REQUEST					= 5220
+	"""	UNABLE TO RECALL REQUEST """
 	CROSS_RESOURCE_OPERATION_FAILURE 			= 5221
 	"""	CROSS RESOURCE OPERATION FAILURE """
 	MAX_NUMBER_OF_MEMBER_EXCEEDED				= 6010
@@ -108,6 +110,14 @@ class ResponseStatusCode(ACMEIntEnum):
 		""" Map the oneM2M RSC to an http status code. """
 		return _ResponseStatusCodeHttpStatusCodes[self]
 
+
+	def nname(self) -> str:
+		""" Return a "natural" string representation of the exception's name.
+
+			Returns:
+				A "natural" string representation of the exception's name.
+		"""
+		return f'{self.name.replace("_", " ")}'
 
 
 #
@@ -137,7 +147,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.RECEIVER_HAS_NO_PRIVILEGES					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
 	ResponseStatusCode.SECURITY_ASSOCIATION_REQUIRED				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
 	ResponseStatusCode.SUBSCRIPTION_CREATER_HAS_NO_PRIVILEGE		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-	ResponseStatusCode.SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+	ResponseStatusCode.SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
 	ResponseStatusCode.ORIGINATOR_HAS_ALREADY_REGISTERED			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
 	ResponseStatusCode.APP_RULE_VALIDATION_FAILED					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
 	ResponseStatusCode.OPERATION_DENIED_BY_REMOTE_ENTITY			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
@@ -147,6 +157,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.REMOTE_ENTITY_NOT_REACHABLE					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
 	ResponseStatusCode.OPERATION_NOT_ALLOWED						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
 	ResponseStatusCode.NOT_ACCEPTABLE 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+	ResponseStatusCode.UNABLE_TO_RECALL_REQUEST 					: HTTPStatus.CONFLICT,					# UNABLE TO RECALL REQUEST
 	ResponseStatusCode.CROSS_RESOURCE_OPERATION_FAILURE				: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
 	ResponseStatusCode.CONFLICT										: HTTPStatus.CONFLICT,					# CONFLICT
 	ResponseStatusCode.UNSUPPORTED_MEDIA_TYPE						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
@@ -212,6 +223,15 @@ class ResponseException(Exception):
 				A string representation of the exception.
 		"""
 		return f'{self.__class__.__name__}({self.rsc}, {self.dbg})'
+
+
+	def nname(self) -> str:
+		""" Return a "natural" string representation of the exception's name.
+
+			Returns:
+				A "natural" string representation of the exception's name.
+		"""
+		return self.rsc.nname()
 
 
 class ALREADY_EXISTS(ResponseException):
@@ -609,6 +629,19 @@ class TARGET_NOT_SUBSCRIBABLE(ResponseException):
 				data: Optional data.
 		"""
 		super().__init__(ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE, dbg, data)
+
+
+class UNABLE_TO_RECALL_REQUEST(ResponseException):
+	"""	UNABLE TO RECALL REQUEST Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.UNABLE_TO_RECALL_REQUEST, dbg, data)
 
 
 class UNSUPPORTED_MEDIA_TYPE(ResponseException):

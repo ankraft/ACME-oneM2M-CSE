@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -493,48 +492,53 @@ class TestGRP(unittest.TestCase):
 #TODO check GRP itself: members
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	addTest(suite, TestGRP('test_createGRP'))
-	addTest(suite, TestGRP('test_retrieveGRP'))
-	addTest(suite, TestGRP('test_retrieveGRPWithWrongOriginator'))
-	addTest(suite, TestGRP('test_attributesGRP'))
-	addTest(suite, TestGRP('test_updateGRP'))
-	addTest(suite, TestGRP('test_updateGRPwithCNT'))
-	addTest(suite, TestGRP('test_addCNTtoGRP'))
-	addTest(suite, TestGRP('test_addCINviaFOPT'))
-	addTest(suite, TestGRP('test_retrieveLAviaFOPT'))
-	addTest(suite, TestGRP('test_updateCNTviaFOPT'))
-	addTest(suite, TestGRP('test_addExistingCNTtoGRP'))
-	addTest(suite, TestGRP('test_deleteCNTviaFOPT'))
-	addTest(suite, TestGRP('test_deleteGRPByUnknownOriginator'))
-	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
+	addTests(suite, TestGRP, [
 
-	addTest(suite, TestGRP('test_createGRP2'))	# create <GRP> again
-	addTest(suite, TestGRP('test_addTooManyCNTToGRP2'))
-	addTest(suite, TestGRP('test_attributesGRP2'))
+		'test_createGRP',
+		'test_retrieveGRP',
+		'test_retrieveGRPWithWrongOriginator',
+		'test_attributesGRP',
+		'test_updateGRP',
+		'test_updateGRPwithCNT',
+		'test_addCNTtoGRP',
+		'test_addCINviaFOPT',
+		'test_retrieveLAviaFOPT',
+		'test_updateCNTviaFOPT',
+		'test_addExistingCNTtoGRP',
+		'test_deleteCNTviaFOPT',
+		'test_deleteGRPByUnknownOriginator',
+		'test_deleteGRPByAssignedOriginator',
 
-	addTest(suite, TestGRP('test_createGRPWithCreatorWrong'))
-	addTest(suite, TestGRP('test_createGRPWithCreator'))
-	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
+		'test_createGRP2',	# create <GRP> again
+		'test_addTooManyCNTToGRP2',
+		'test_attributesGRP2',
 
-	addTest(suite, TestGRP('test_createGRP'))	# create <GRP> again
-	addTest(suite, TestGRP('test_addDeleteContainerCheckMID'))	
-	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
+		'test_createGRPWithCreatorWrong',
+		'test_createGRPWithCreator',
+		'test_deleteGRPByAssignedOriginator',
 
-	# Test fopt
-	addTest(suite, TestGRP('test_createGRP'))	# create <GRP> again
-	addTest(suite, TestGRP('test_createCNTviaFopt'))
-	addTest(suite, TestGRP('test_retrieveCNTviaFopt'))
-	addTest(suite, TestGRP('test_createCNTCNTviaFopt'))
-	addTest(suite, TestGRP('test_deleteGRPByAssignedOriginator'))
+		'test_createGRP',	# create <GRP> again
+		'test_addDeleteContainerCheckMID',	
+		'test_deleteGRPByAssignedOriginator',
 
+		# Test fopt
+		'test_createGRP',	# create <GRP> again
+		'test_createCNTviaFopt',
+		'test_retrieveCNTviaFopt',
+		'test_createCNTCNTviaFopt',
+		'test_deleteGRPByAssignedOriginator',
 
+	])
 
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

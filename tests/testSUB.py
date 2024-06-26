@@ -10,8 +10,8 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
+from acme.etc.Types import Operation
 from init import *
 
 numberOfBatchNotifications = 5
@@ -1576,6 +1576,299 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:sub/nsi'), r)
 
 #
+#	Test operationMonitor
+#
+
+	def test_createSUBForOperationMonitor(self) -> None:
+		"""	CREATE <SUB> under POA <AE> with operationMonitor enabled. """
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/om'))
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/om'), [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ])
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_updateSUBForOperationMonitor(self) -> None:
+		"""	CREATE <SUB> under POA <AE> with operationMonitor enabled. """
+
+		# First create a SUB
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.resourceUpdate ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+					'nse': True
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# update the SUB with operationMonitor and remove the net
+		dct = 	{ 'm2m:sub' : { 
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{subRN}', TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/enc/net'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/om'))
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/om'), [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ])
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_createSUBForOperationMonitorFail(self) -> None:
+		"""	UPDATE <SUB> under POA <AE> with operationMonitor AND notificationEventType enabled -> Fail"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+						'net': [ NET.resourceUpdate ],
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	def test_updateSUBForOperationMonitorFail(self) -> None:
+		"""	UPDATE <SUB> under POA <AE> with operationMonitor AND notificationEventType enabled -> Fail"""
+
+		# First create a SUB
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.resourceUpdate ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+					'nse': True
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# update the SUB with operationMonitor and remove the net
+		dct = 	{ 'm2m:sub' : { 
+			        'enc': {
+						'net': [ NET.resourceUpdate ],
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{subRN}', TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_createSUBForOperationMonitorEmptyOmFail(self) -> None:
+		"""	CREATE <SUB> under POA <AE> with operationMonitor with empty entry -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						},
+						{} ]	# empty
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	def test_correctOperationMonitor(self) -> None:
+		"""	Test operationMonitor with UPDATE to parent"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		clearLastNotification()	# clear the notification first
+
+		dct = 	{ 'm2m:ae': {
+					'lbl': [ 'test' ]
+				}}
+		r, rsc = UPDATE(aeURL, TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		n = getLastNotification(wait = notificationDelay)
+		self.assertIsNotNone(n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/rep/m2m:ae/lbl'), [ 'test' ], n)
+		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_correctOperationMonitorMultiple(self) -> None:
+		"""	Test operationMonitor with UPDATE to parent with multiple operation monitors"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.CREATE, 
+							'org' : TestSUB.originator 
+						},
+						{							
+							'ops' : Operation.UPDATE, 
+							'org' : TestSUB.originator 
+						}]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		testSleep(notificationDelay)
+		clearLastNotification()	# clear the notification first
+
+
+		# Send an UPDATE
+		dct = 	{ 'm2m:ae': {
+					'lbl': [ 'test' ]
+				}}
+		r, rsc = UPDATE(aeURL, TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		# Test UPDATE notification
+		n = getLastNotification(wait = notificationDelay)
+		self.assertIsNotNone(n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/rep/m2m:ae/lbl'), [ 'test' ], n)
+		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_correctOperationMonitorRetrieve(self) -> None:
+		"""	Test operationMonitor with RETRIEVE to parent"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.RETRIEVE, 
+							'org' : TestSUB.originator 
+						} ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		clearLastNotification()	# clear the notification first
+		r, rsc = RETRIEVE(aeURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		n = getLastNotification(wait = notificationDelay)
+		self.assertIsNotNone(n)
+		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 2, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
+	def test_OperationMonitorOtherOriginatorFail(self) -> None:
+		"""	Test operationMonitor with UPDATE to parent with other originator -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'om': [ {
+							'ops' : Operation.UPDATE, 
+							'org' : 'CWrong' 
+						} ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		testSleep(notificationDelay)
+		clearLastNotification()	# clear the notification first
+
+		dct = 	{ 'm2m:ae': {
+					'lbl': [ 'test' ]
+				}}
+		r, rsc = UPDATE(aeURL, TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		n = getLastNotification(wait = notificationDelay)
+		self.assertIsNone(n)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
+
+#
 #	Test defaults
 #
 
@@ -1629,132 +1922,148 @@ class TestSUB(unittest.TestCase):
 
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	addTest(suite, TestSUB('test_createSUB'))
-	addTest(suite, TestSUB('test_retrieveSUB'))
-	addTest(suite, TestSUB('test_retrieveSUBWithWrongOriginator'))
-	addTest(suite, TestSUB('test_attributesSUB'))
+	addTests(suite, TestSUB, [
+		'test_createSUB',
+		'test_retrieveSUB',
+		'test_retrieveSUBWithWrongOriginator',
+		'test_attributesSUB',
 
-	addTest(suite, TestSUB('test_createSUBWrong'))
-	addTest(suite, TestSUB('test_updateSUB'))
-	addTest(suite, TestSUB('test_updateSUBwithNu'))
-	addTest(suite, TestSUB('test_updateCNT'))
-	addTest(suite, TestSUB('test_addCIN2CNT'))
-	addTest(suite, TestSUB('test_removeCNT'))
-	addTest(suite, TestSUB('test_addCNTAgain'))
+		'test_createSUBWrong',
+		'test_updateSUB',
+		'test_updateSUBwithNu',
+		'test_updateCNT',
+		'test_addCIN2CNT',
+		'test_removeCNT',
+		'test_addCNTAgain',
 
-	addTest(suite, TestSUB('test_createSUB'))
-	addTest(suite, TestSUB('test_deleteSUBByUnknownOriginator'))
-	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
+		'test_createSUB',
+		'test_deleteSUBByUnknownOriginator',
+		'test_deleteSUBByAssignedOriginator',
 
-	addTest(suite, TestSUB('test_createSUBModifedAttributesWrong'))
-	addTest(suite, TestSUB('test_createSUBModifedAttributes'))
-	addTest(suite, TestSUB('test_updateCNTModifiedAttributes'))
-	addTest(suite, TestSUB('test_updateCNTSameModifiedAttributes'))
-	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
+		'test_createSUBModifedAttributesWrong',
+		'test_createSUBModifedAttributes',
+		'test_updateCNTModifiedAttributes',
+		'test_updateCNTSameModifiedAttributes',
+		'test_deleteSUBByAssignedOriginator',
 
-	addTest(suite, TestSUB('test_createSUBRI'))
-	addTest(suite, TestSUB('test_updateCNTRI'))
-	addTest(suite, TestSUB('test_deleteSUBByAssignedOriginator'))
+		'test_createSUBRI',
+		'test_updateCNTRI',
+		'test_deleteSUBByAssignedOriginator',
 
-	# Batch Notify
-	addTest(suite, TestSUB('test_createSUBForBatchNotificationNumber'))
-	addTest(suite, TestSUB('test_updateCNTBatch'))
-	addTest(suite, TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
+		# Batch Notify
+		'test_createSUBForBatchNotificationNumber',
+		'test_updateCNTBatch',
+		'test_deleteSUBForBatchReceiveRemainingNotifications',
 
-	addTest(suite, TestSUB('test_createSUBForBatchNotificationDuration'))
-	addTest(suite, TestSUB('test_updateCNTBatchDuration'))
-	addTest(suite, TestSUB('test_deleteSUBForBatchNotificationDuration'))
+		'test_createSUBForBatchNotificationDuration',
+		'test_updateCNTBatchDuration',
+		'test_deleteSUBForBatchNotificationDuration',
 
 
-	addTest(suite, TestSUB('test_createSUBWithEncAtr'))	# attribute
-	addTest(suite, TestSUB('test_updateCNTWithEncAtrLbl'))
-	addTest(suite, TestSUB('test_updateCNTWithEncAtrLblWrong'))
-	addTest(suite, TestSUB('test_updateSUBWithEncRemoved'))	# Check default enc in UPDATE
-	addTest(suite, TestSUB('test_deleteSUBWithEncAtr'))
+		'test_createSUBWithEncAtr',	# attribute
+		'test_updateCNTWithEncAtrLbl',
+		'test_updateCNTWithEncAtrLblWrong',
+		'test_updateSUBWithEncRemoved',	# Check default enc in UPDATE
+		'test_deleteSUBWithEncAtr',
 
-	addTest(suite, TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
-	addTest(suite, TestSUB('test_updateCNTBatchWithLn'))
-	addTest(suite, TestSUB('test_deleteSUBBatchNotificationNumberWithLn'))
+		'test_createSUBBatchNotificationNumberWithLn',	# Batch + latestNotify
+		'test_updateCNTBatchWithLn',
+		'test_deleteSUBBatchNotificationNumberWithLn',
 
-	addTest(suite, TestSUB('test_createSUBWithEncChty'))	# child resource type
-	addTest(suite, TestSUB('test_createCINWithEncChty'))
-	addTest(suite, TestSUB('test_createCNTWithEncChty'))
-	addTest(suite, TestSUB('test_deleteSUBWithEncChty'))
+		'test_createSUBWithEncChty',	# child resource type
+		'test_createCINWithEncChty',
+		'test_createCNTWithEncChty',
+		'test_deleteSUBWithEncChty',
 
-	addTest(suite, TestSUB('test_createAESUBwithOriginatorPOA'))
-	addTest(suite, TestSUB('test_createCNTwithOriginatorPOA'))
-	addTest(suite, TestSUB('test_updateAECSZwithOriginatorPOA'))
-	addTest(suite, TestSUB('test_createCNTwithOriginatorPOACBOR'))
-	addTest(suite, TestSUB('test_deleteAEwithOriginatorPOA'))
+		'test_createAESUBwithOriginatorPOA',
+		'test_createCNTwithOriginatorPOA',
+		'test_updateAECSZwithOriginatorPOA',
+		'test_createCNTwithOriginatorPOACBOR',
+		'test_deleteAEwithOriginatorPOA',
 
-	# With non-reqzest reachable 
-	addTest(suite, TestSUB('test_createAESUBwithOriginatorPOANotReachable'))
-	addTest(suite, TestSUB('test_deleteAEwithOriginatorPOA'))
+		# With non-reqzest reachable 
+		'test_createAESUBwithOriginatorPOANotReachable',
+		'test_deleteAEwithOriginatorPOA',
 
-	addTest(suite, TestSUB('test_createAESUBwithURIctCBOR'))
-	addTest(suite, TestSUB('test_createCNTwithURIctCBOR'))
-	addTest(suite, TestSUB('test_deleteAEwithURIctCBOR'))
+		'test_createAESUBwithURIctCBOR',
+		'test_createCNTwithURIctCBOR',
+		'test_deleteAEwithURIctCBOR',
 
-	# ExpirationCounter
-	addTest(suite, TestSUB('test_createSUBwithEXC'))
-	addTest(suite, TestSUB('test_createCNTforEXC'))
+		# ExpirationCounter
+		'test_createSUBwithEXC',
+		'test_createCNTforEXC',
 
-	addTest(suite, TestSUB('test_createSUBwithUnknownPoa'))
-	addTest(suite, TestSUB('test_createSUBWithCreatorWrong'))
-	addTest(suite, TestSUB('test_createSUBWithCreatorNull'))
-	addTest(suite, TestSUB('test_notifySUBWithCreatorNull'))
+		'test_createSUBwithUnknownPoa',
+		'test_createSUBWithCreatorWrong',
+		'test_createSUBWithCreatorNull',
+		'test_notifySUBWithCreatorNull',
 
-	# Missing Data
-	addTest(suite, TestSUB('test_createSUBForMissingDataFail'))
-	addTest(suite, TestSUB('test_createSUBForMissingDataFail2'))
-	addTest(suite, TestSUB('test_createSUBForMissingData'))
-	addTest(suite, TestSUB('test_updateSUBForMissingData'))
-	addTest(suite, TestSUB('test_deleteSUBForMissingData'))
-	addTest(suite, TestSUB('test_createSUBForMissingDataWrongDataFail'))
+		# Missing Data
+		'test_createSUBForMissingDataFail',
+		'test_createSUBForMissingDataFail2',
+		'test_createSUBForMissingData',
+		'test_updateSUBForMissingData',
+		'test_deleteSUBForMissingData',
+		'test_createSUBForMissingDataWrongDataFail',
 
-	# Wrong CHTY
-	addTest(suite, TestSUB('test_createSUBWithWrongCHTYFail'))
-	addTest(suite, TestSUB('test_updateSUBWithWrongCHTYFail'))
+		# Wrong CHTY
+		'test_createSUBWithWrongCHTYFail',
+		'test_updateSUBWithWrongCHTYFail',
 
-	# Structured NU
-	addTest(suite, TestSUB('test_createSUBWithStructuredNu'))
+		# Structured NU
+		'test_createSUBWithStructuredNu',
 
-	# blocking update tests
-	addTest(suite, TestSUB('test_createSubBlockingUpdateWrongNUFail'))
-	addTest(suite, TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
-	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedAttributeFail'))
-	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedENCAttributeFail'))
-	addTest(suite, TestSUB('test_createSubBlockingUpdateDisallowedNCTvaluel'))
-	addTest(suite, TestSUB('test_createSubBlockingUpdate'))
-	addTest(suite, TestSUB('test_updateSubBlockingUpdateFail'))
-	addTest(suite, TestSUB('test_doBlockingUpdate'))
-	addTest(suite, TestSUB('test_doBlockingUpdateAttributeCondition'))
-	addTest(suite, TestSUB('test_doBlockingUpdateNegativeNotificationResponse'))
-	addTest(suite, TestSUB('test_deleteSubBlockingUpdate'))
+		# blocking update tests
+		'test_createSubBlockingUpdateWrongNUFail',
+		'test_createSubBlockingUpdateMultipleNUFail',
+		'test_createSubBlockingUpdateDisallowedAttributeFail',
+		'test_createSubBlockingUpdateDisallowedENCAttributeFail',
+		'test_createSubBlockingUpdateDisallowedNCTvaluel',
+		'test_createSubBlockingUpdate',
+		'test_updateSubBlockingUpdateFail',
+		'test_doBlockingUpdate',
+		'test_doBlockingUpdateAttributeCondition',
+		'test_doBlockingUpdateNegativeNotificationResponse',
+		'test_deleteSubBlockingUpdate',
 
-	# TODO blocking RETRIEVE tests when official
+		# TODO blocking RETRIEVE tests when official
 
-	# NotificationStats tests
-	addTest(suite, TestSUB('test_createSUBForNotificationStats'))
-	addTest(suite, TestSUB('test_updateAECheckStats'))
-	addTest(suite, TestSUB('test_updateSUBNSEFalse'))
-	addTest(suite, TestSUB('test_updateSUBNSETrue'))
-	addTest(suite, TestSUB('test_updateSUBNSETrueAgain'))
-	addTest(suite, TestSUB('test_updateSUBcountBatchNotifications'))
-	addTest(suite, TestSUB('test_updateSUBDeleteNSE'))
+		# NotificationStats tests
+		'test_createSUBForNotificationStats',
+		'test_updateAECheckStats',
+		'test_updateSUBNSEFalse',
+		'test_updateSUBNSETrue',
+		'test_updateSUBNSETrueAgain',
+		'test_updateSUBcountBatchNotifications',
+		'test_updateSUBDeleteNSE',
 
-	# Test defaults
-	addTest(suite, TestSUB('test_createSUBnoNCTwrongNETFail'))
+		# Test operationMonitor
+		'test_createSUBForOperationMonitor',
+		'test_updateSUBForOperationMonitor',
+		'test_createSUBForOperationMonitorFail',
+		'test_updateSUBForOperationMonitorFail',
+		'test_createSUBForOperationMonitorEmptyOmFail',
+		'test_correctOperationMonitor',
+		'test_correctOperationMonitorRetrieve',
+		'test_correctOperationMonitorMultiple',
+		'test_OperationMonitorOtherOriginatorFail',
 
-	# Misc tests
-	addTest(suite, TestSUB('test_deleteNuAttributeFail'))
+		# Test defaults
+		'test_createSUBnoNCTwrongNETFail',
 
+		# Misc tests
+		'test_deleteNuAttributeFail',
+	])
+
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

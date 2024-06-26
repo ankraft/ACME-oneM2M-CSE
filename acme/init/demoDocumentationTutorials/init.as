@@ -1,12 +1,8 @@
 ;;
 ;;	init.as
 ;;
-;;	Initialize the lightbulb demo.
-;;
 ;;	(c) 2023 by Andreas Kraft
 ;;	License: BSD 3-Clause License. See the LICENSE file for further details.
-;;
-;;	This script is executed on CSE startup and restart to create the necessary resources.
 ;;
 
 @name Init Documentation Tutorials

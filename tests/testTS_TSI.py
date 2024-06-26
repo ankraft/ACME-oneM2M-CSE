@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.DateUtils import toISO8601Date, getResourceDate
 from init import *
@@ -699,47 +698,51 @@ class TestTS_TSI(unittest.TestCase):
 # TODO: instead of mdt:9999 set the mdn to None etc.
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestTS_TSI, [
 	
-	addTest(suite, TestTS_TSI('test_addTSI'))
-	addTest(suite, TestTS_TSI('test_addMoreTSI'))
-	addTest(suite, TestTS_TSI('test_retrieveTSLa'))
-	addTest(suite, TestTS_TSI('test_retrieveTSOl'))
-	addTest(suite, TestTS_TSI('test_changeTSMni'))
-	addTest(suite, TestTS_TSI('test_deleteTS'))
+		'test_addTSI',
+		'test_addMoreTSI',
+		'test_retrieveTSLa',
+		'test_retrieveTSOl',
+		'test_changeTSMni',
+		'test_deleteTS',
 	
-	addTest(suite, TestTS_TSI('test_createTSwithMBS'))
-	addTest(suite, TestTS_TSI('test_createTSIexactSize'))
-	addTest(suite, TestTS_TSI('test_createTSItooLarge'))
-	addTest(suite, TestTS_TSI('test_createTSIsForTSwithSize'))
-	addTest(suite, TestTS_TSI('test_createTSIwithoutDGT'))
-	addTest(suite, TestTS_TSI('test_createTSIwithSameDGT'))
-	addTest(suite, TestTS_TSI('test_createTSIwithSNR'))
-	addTest(suite, TestTS_TSI('test_deleteTS'))
+		'test_createTSwithMBS',
+		'test_createTSIexactSize',
+		'test_createTSItooLarge',
+		'test_createTSIsForTSwithSize',
+		'test_createTSIwithoutDGT',
+		'test_createTSIwithSameDGT',
+		'test_createTSIwithSNR',
+		'test_deleteTS',
 
-	addTest(suite, TestTS_TSI('test_setMddToFalseAfterAWhile'))
-	addTest(suite, TestTS_TSI('test_deleteTS'))
+		'test_setMddToFalseAfterAWhile',
+		'test_deleteTS',
 
-	addTest(suite, TestTS_TSI('test_createTSwithMonitoring'))
-	addTest(suite, TestTS_TSI('test_createTSIinPeriod'))					# Start monitoring
-	addTest(suite, TestTS_TSI('test_createTSInotInPeriod'))				# Start monitoring
-	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtTooEarly'))		# dgt too early
-	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtTooLate'))		# dgt too late
-	addTest(suite, TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
-	addTest(suite, TestTS_TSI('test_createTSIinPeriodDgtWayTooEarly'))	# dgt way to early
+		'test_createTSwithMonitoring',
+		'test_createTSIinPeriod',					# Start monitoring
+		'test_createTSInotInPeriod',				# Start monitoring
+		'test_createTSIinPeriodDgtTooEarly',		# dgt too early
+		'test_createTSIinPeriodDgtTooLate',		# dgt too late
+		'test_createTSInotInPeriodLarger',		# run the test again to overflow mdlt
+		'test_createTSIinPeriodDgtWayTooEarly',	# dgt way to early
 
-	addTest(suite, TestTS_TSI('test_updateTSMddEnable'))
+		'test_updateTSMddEnable',
 
-	# Test MissingData subscriptions
-	addTest(suite, TestTS_TSI('test_deleteTS'))
-	addTest(suite, TestTS_TSI('test_createTSwithMonitoring'))
-	addTest(suite, TestTS_TSI('test_createMissingDataSubUnderTS'))
-	addTest(suite, TestTS_TSI('test_createMissingDataForSub'))
-	addTest(suite, TestTS_TSI('test_deleteMissingDataSubUnderTS'))
+		# Test MissingData subscriptions
+		'test_deleteTS',
+		'test_createTSwithMonitoring',
+		'test_createMissingDataSubUnderTS',
+		'test_createMissingDataForSub',
+		'test_deleteMissingDataSubUnderTS',
+	])
 
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
-	
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 

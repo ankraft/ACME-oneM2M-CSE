@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import List, Any, Union, Optional, cast
 
 import traceback
-import logging, logging.handlers, os, inspect, sys, datetime, time, threading
+import logging, logging.handlers, os, inspect, sys, datetime, dateutil.tz, time, threading
 from queue import Queue
 from logging import LogRecord
 
@@ -55,10 +55,12 @@ levelName = {
 terminalColorDark		= '#2DFE54' 
 terminalColorErrorDark	= '#FF073A'
 tableRowColorDark		= 'grey15'
+fontDark				= '#E4E4E4'
 
 terminalColorLight		= '#137E6D'
 terminalColorErrorLight	= '#FF073A'
 tableRowColorLight		= 'grey89'
+fontLight				= '#1C1C1C'
 
 
 class LogLevel(ACMEIntEnum):
@@ -94,13 +96,11 @@ class LogFilter(logging.Filter):
 				sources: A tuple of sources to filter out.
 		"""
 		super().__init__()
-		self.sources = sources
+		self.sources = sources if sources else ()
 
 
 	def filter(self, record:LogRecord) -> bool:
 		# filter out unwanted debug messages's loggings
-		if not self.sources:
-			return True
 		return not record.name.startswith(self.sources)
 
 
@@ -128,6 +128,7 @@ class Logging:
 	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
 	filterSources:tuple[str, ...]	= ()		# List of log sources that will be removed while processing the log messages
 	maxLogMessageLength:int			= 0			# Max length of a log message. Longer messages will be truncated
+	utcTime							= False		# Use UTC time for logging
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
@@ -159,6 +160,7 @@ class Logging:
 		Logging.queueSize				= Configuration.get('logging.queueSize')
 		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
 		Logging.maxLogMessageLength		= Configuration.get('logging.maxLogMessageLength')
+		Logging.utcTime					= Configuration.get('logging.enableUTCTimezone')
 
 		Logging._configureColors(Configuration.get('console.theme'))
 
@@ -178,7 +180,10 @@ class Logging:
 
 		# List of log handlers
 		Logging._handlers = [ Logging._richHandler ]
-		#Logging._handlers = [ ACMERichLogHandler() ]
+
+		# Configurable: Set the timezone converter for file logging to UTC
+		if Logging.utcTime:
+			logging.Formatter.converter = time.gmtime
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -659,6 +664,13 @@ class ACMERichLogHandler(RichHandler):
 	)
 
 
+	_levels = {
+		'DEBUG': Text(f'{"DEBUG":<7}', style='DEBUG'),
+		'INFO': Text(f'{"INFO":<7}', style='INFO'),
+		'WARNING': Text(f'{"WARNING":<7}', style='WARNING'),
+		'ERROR': Text(f'{"ERROR":<7}', style='ERROR'),
+	}
+
 	def __init__(self, level: int = logging.NOTSET) -> None:
 
 		# Add own styles to the default styles and create a new theme for the console
@@ -721,16 +733,18 @@ class ACMERichLogHandler(RichHandler):
 
 		]
 
-		# small optimized calls
-		self._fromtimestamp = datetime.datetime.fromtimestamp
+		# Set the time conversion function, depending on the setting of UTC time
+		if Logging.utcTime:
+			self._fromtimestamp = lambda t : datetime.datetime.fromtimestamp(t, tz=dateutil.tz.gettz('UTC'))
+		else:
+			self._fromtimestamp = datetime.datetime.fromtimestamp
+
 
 		
 	def emit(self, record:LogRecord) -> None:
 		"""	Invoked by logging. """
-		# if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
 		if not Logging.enableScreenLogging:
 			return
-		#path = Path(record.pathname).name
 		
 		message	= self.format(record)
 		if len(messageElements := message.split('\x04', 3)) == 4:
@@ -747,11 +761,11 @@ class ACMERichLogHandler(RichHandler):
 			self._log_render(
 				self.console,
 				[ self.highlighter(Text(f'{threadID} - {message}')) ],
-				log_time	= self._fromtimestamp(record.created),
+				log_time	= self._fromtimestamp(record.created),	# type: ignore[no-untyped-call]
 				# time_format	= None if self.formatter is None else self.formatter.datefmt,
 				time_format	= self.formatter.datefmt,
-				#level		= Text(f'{record.levelname:<7}', style=f'logging.level.{record.levelname.lower()}'),
-				level		= Text(f'{record.levelname:<7}', style=record.levelname),
+				# level		= Text(f'{record.levelname:<7}', style=record.levelname),
+				level		= self._levels[record.levelname],
 				path		= path,
 				line_no		= lineno,
 			)

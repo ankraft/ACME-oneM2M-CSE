@@ -11,7 +11,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from rich import print
 from acme.etc.Constants import Constants as C
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
@@ -290,7 +289,7 @@ class TestExpiration(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()
 	if not isTestResourceExpirations():
@@ -298,23 +297,27 @@ def run(testFailFast:bool) -> Tuple[int, int, int, float]:
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1,0.0	
 
+	# Assign tests
 	suite = unittest.TestSuite()
-			
-	addTest(suite, TestExpiration('test_expireCNT'))
-	addTest(suite, TestExpiration('test_expireCNTAndCIN'))
-	addTest(suite, TestExpiration('test_createCNTWithToLargeET'))
-	addTest(suite, TestExpiration('test_createCNTExpirationInThePast'))
-	addTest(suite, TestExpiration('test_updateCNTWithEtNull'))
-	addTest(suite, TestExpiration('test_expireCNTViaMIA'))
-	addTest(suite, TestExpiration('test_expireCNTViaMIALarge'))
-	addTest(suite, TestExpiration('test_expireFCNTViaMIA'))
-	addTest(suite, TestExpiration('test_expirationLaterThanParents'))
+	addTests(suite, TestExpiration, [
 
+		'test_expireCNT',
+		'test_expireCNTAndCIN',
+		'test_createCNTWithToLargeET',
+		'test_createCNTExpirationInThePast',
+		'test_updateCNTWithEtNull',
+		'test_expireCNTViaMIA',
+		'test_expireCNTViaMIALarge',
+		'test_expireFCNTViaMIA',
+		'test_expirationLaterThanParents',
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortResourceExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

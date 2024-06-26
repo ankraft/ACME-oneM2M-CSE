@@ -14,14 +14,15 @@ from ..etc.Types import ResourceTypes, JSON
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources.Resource import Resource
+from ..resources.Resource import Resource, addToInternalAttributes
 from ..runtime import CSE
 
 
-class ContainerResource(AnnounceableResource):
+# Add to internal attributes
+addToInternalAttributes(Constants.attrLaRi)
+addToInternalAttributes(Constants.attrOlRi)
 
-	_lari = Constants.attrLaRi
-	_olri = Constants.attrOlRi
+class ContainerResource(AnnounceableResource):
 
 	def __init__(self, ty:ResourceTypes, 
 					   dct:Optional[JSON] = None, 
@@ -29,8 +30,6 @@ class ContainerResource(AnnounceableResource):
 					   tpe:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
 		super().__init__(ty, dct, pi, tpe = tpe, create = create)
-		self._addToInternalAttributes(self._lari)
-		self._addToInternalAttributes(self._olri)
 
 
 	def getOldestRI(self) -> str:
@@ -39,7 +38,7 @@ class ContainerResource(AnnounceableResource):
 			Return:
 				The resource ID.
 		"""
-		return self[self._olri]
+		return self[Constants.attrOlRi]
 	
 
 	def setOldestRI(self, ri:str) -> None:
@@ -48,7 +47,7 @@ class ContainerResource(AnnounceableResource):
 			Args:
 				ri: The resource ID of an *oldest* resource.
 		"""
-		self.setAttribute(self._olri, ri, overwrite = True)
+		self.setAttribute(Constants.attrOlRi, ri, overwrite = True)
 
 
 	def getLatestRI(self) -> str:
@@ -57,7 +56,7 @@ class ContainerResource(AnnounceableResource):
 			Return:
 				The resource ID.
 		"""
-		return self[self._lari]
+		return self[Constants.attrLaRi]
 	
 
 	def setLatestRI(self, ri:str) -> None:
@@ -66,7 +65,7 @@ class ContainerResource(AnnounceableResource):
 			Args:
 				ri: The resource ID of an *latest* resource.
 		"""
-		self.setAttribute(self._lari, ri, overwrite = True)
+		self.setAttribute(Constants.attrLaRi, ri, overwrite = True)
 
 
 	def updateLaOlLatestTimestamp(self) -> None:
@@ -91,7 +90,6 @@ class ContainerResource(AnnounceableResource):
 			self.dbUpdate(True)
 		except TypeError:
 			pass # Ignore if cni or cbs is not set
-
 
 
 	def instanceRemoved(self, instance:Resource) -> None:

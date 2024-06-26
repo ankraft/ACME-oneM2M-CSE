@@ -18,7 +18,7 @@ from threading import Lock, current_thread
 
 import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, EventEvaluationMode
-from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation
+from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation, OperationMonitor
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
@@ -212,8 +212,6 @@ class NotificationManager(object):
 										chty:Optional[ResourceTypes] = None) -> JSONLIST:
 		"""	Returns a (possible empty) list of subscriptions for a resource. 
 		
-			An optional filter can be used 	to return only those subscriptions with a specific enc/net.
-			
 			Args:
 				net: optional filter for enc/net
 				chty: optional single child resource typ
@@ -225,8 +223,9 @@ class NotificationManager(object):
 			return []
 		result:JSONLIST = []
 		for each in subs:
-			if net and any(x in net for x in each['net']):
-				result.append(each)
+			if _n := each.get('net'):	# net might be empty of None
+				if net and any(x in net for x in _n):
+					result.append(each)
 		
 		# filter by chty if set
 		if chty:
@@ -235,13 +234,24 @@ class NotificationManager(object):
 		return result
 
 
+	def checkOperationSubscription(self, resource:Resource,
+								op:Operation,
+								originator:str) -> None:
+		# TODO doc
+		L.isDebug and L.logDebug(f'Checking operation subscriptions ({op.name}) originator: {originator}')
+
+		self.checkSubscriptions(resource, reason = NotificationEventType.notSet, originator = originator, operation = op)
+
+
 	def checkSubscriptions(	self, 
 							resource:Optional[Resource], 
 							reason:NotificationEventType, 
+							originator:str,
 							childResource:Optional[Resource] = None, 
 							modifiedAttributes:Optional[JSON] = None,
 							ri:Optional[str] = None,
-							missingData:Optional[dict[str, MissingData]] = None) -> None:
+							missingData:Optional[dict[str, MissingData]] = None,
+							operation:Optional[Operation] = None) -> None:
 		"""	Check and handle resource events.
 
 			This method looks for subscriptions of a resource and tests, whether an event, like *update* etc, 
@@ -250,11 +260,13 @@ class NotificationManager(object):
 			Args:
 				resource: The resource that received the event resp. request.
 				reason: The `NotificationEventType` to check.
+				originator: The originator of the request that caused the event.
 				childResource: An optional child resource of *resource* that might be updated or created etc.
 				modifiedAttributes: An optional `JSON` structure that contains updated attributes.
 				ri: Optionally provided resource ID of `Resource`. If it is provided, then *resource* might be *None*.
 					It will then be used to retrieve the resource.
 				missingData: An optional dictionary of missing data structures in case the *TimeSeries* missing data functionality is handled.
+				operation: An optional operation that is checked against the subscription's operationMonitor. This overrides the *reason*.
 		"""
 		
 		if resource and resource.isVirtual():
@@ -263,7 +275,7 @@ class NotificationManager(object):
 			return
 			
 		ri = resource.ri if not ri else ri
-		L.isDebug and L.logDebug(f'Checking subscriptions ({reason.name}) ri: {ri}')
+		L.isDebug and L.logDebug(f'Checking subscriptions ({reason.name}({reason.value})) ri: {ri}')
 
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
@@ -282,13 +294,39 @@ class NotificationManager(object):
 
 		for sub in subs:
 
-			if reason not in sub.get('net'):	# check whether reason is actually included in the subscription
-				continue
+			# Test for operationMonitor condition first. Any will match successfull.
+			# Only if the operationMonitor is set
+			foundOperationMonitor:OperationMonitor|None = None
+			if operation is not None:
+				if (om := sub.get('om')) is not None:
+					for o in om:
+						_org = o.get('org')
+						_op = o.get('ops')
+
+						# Test whether a originator is set and if it is NOT the same as the originator of the request
+						if _org is not None and _org != originator:
+							continue
+						if _op is not None and _op != operation:
+							continue
+						foundOperationMonitor = o
+						break
+				# Skip if no operationMonitor condition is found
+				if not foundOperationMonitor:
+					continue
+
+			# Now test for the reason, only if no operationMonitor is set
+			if foundOperationMonitor is None:
+				net = sub.get('net')
+				# Test for the NET condition
+				if net is None:
+					continue
+				if reason not in net:
+					continue
 
 			# Prevent own notifications for subscriptions 
 			ri = sub.get('ri')
 
-			# Check whether reason is included in the subscription
+			# Test whether reason is included in the subscription
 			if childResource and \
 				ri == childResource.ri and \
 				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
@@ -316,7 +354,8 @@ class NotificationManager(object):
 														 reason, 
 														 resource = childResource, 
 														 modifiedAttributes = modifiedAttributes, 
-														 asynchronous = self.asyncSubscriptionNotifications)
+														 asynchronous = self.asyncSubscriptionNotifications,
+														 operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 			
 				# Check Update and enc/atr vs the modified attributes 
@@ -330,7 +369,8 @@ class NotificationManager(object):
 															 reason, 
 															 resource = resource, 
 															 modifiedAttributes = modifiedAttributes,
-															 asynchronous = self.asyncSubscriptionNotifications)
+															 asynchronous = self.asyncSubscriptionNotifications,
+															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 					else:
 						L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
@@ -342,7 +382,8 @@ class NotificationManager(object):
 						self._handleSubscriptionNotification(sub, 
 															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
 															 missingData = copy.deepcopy(md),
-															 asynchronous = self.asyncSubscriptionNotifications)
+															 asynchronous = self.asyncSubscriptionNotifications,
+															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 						md.clearMissingDataList()
 
@@ -351,8 +392,12 @@ class NotificationManager(object):
 														reason, 
 														resource, 
 														modifiedAttributes = modifiedAttributes,
-														asynchronous = False)	# blocking NET always synchronous!
+														asynchronous = False,
+														operationMonitor = foundOperationMonitor)	# blocking NET always synchronous!
 					self.countNotificationEvents(ri)
+
+				# case NotificationEventType.notSet:	# ignore
+				# 	pass
 
 				# all other reasons that target the resource
 				case _:
@@ -360,7 +405,8 @@ class NotificationManager(object):
 														reason, 
 														resource, 
 														modifiedAttributes = modifiedAttributes,
-														asynchronous = self.asyncSubscriptionNotifications)
+														asynchronous = self.asyncSubscriptionNotifications,
+														operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 
 
@@ -468,7 +514,6 @@ class NotificationManager(object):
 		subs = self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingRetrieve])
 		# get and add blockingRetrieveDirectChild <sub> for this resource type, if any
 		subs.extend(self.getSubscriptionsByNetChty(resource.pi, [NotificationEventType.blockingRetrieveDirectChild], chty = resource.ty))
-		# L.logWarn(resource)
 
 		# Do this for all subscriptions
 		countNotifications = 0
@@ -1124,11 +1169,12 @@ class NotificationManager(object):
 											  resource:Optional[Resource] = None, 
 											  modifiedAttributes:Optional[JSON] = None, 
 											  missingData:Optional[MissingData] = None,
-											  asynchronous:bool = False) ->  bool:
+											  asynchronous:bool = False,
+											  operationMonitor:Optional[OperationMonitor] = None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		# TODO doc
-		L.isDebug and L.logDebug(f'Handling notification for notificationEventType: {notificationEventType}')
+		L.isDebug and L.logDebug(f'Handling notification for notificationEventType: {notificationEventType} for notificationContentType: {sub["nct"]}')
 
 
 		def _sendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
@@ -1151,28 +1197,41 @@ class NotificationManager(object):
 			notificationRequest:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
-						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
 					'sur' : toSPRelative(sub['ri'])
 				}
 			}
 
-			# L.logDebug(missingData)
-
+			# get the notificationContentType
 			nct = sub['nct']
+			# TODO check whether the following is correct. The Standard is not clear about the nct
+			# for operationMonitor
+			if operationMonitor is not None:	# special case of operationMonitor
+				nct = NotificationContentType.allAttributes
+
 			creator = sub.get('cr')	# creator, might be None
 			# switch to populate data
-			data = None
-			nct == NotificationContentType.allAttributes						and (data := resource.asDict())
-			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
-			nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
-			nct == NotificationContentType.timeSeriesNotification	and (data := { 'm2m:tsn' : missingData.asDict() })
+			match nct:
+				case NotificationContentType.allAttributes:
+					data = resource.asDict()
+				case NotificationContentType.ri:
+					data = { 'm2m:uri' : resource.ri }
+				case NotificationContentType.modifiedAttributes:
+					data = { resource.tpe : modifiedAttributes }
+				case NotificationContentType.timeSeriesNotification:
+					data = { 'm2m:tsn' : missingData.asDict() }
+				# TODO
+				case NotificationContentType.triggerPayload:
+					pass
+				case _:
+					data = None
 			# TODO nct == NotificationContentType.triggerPayload
 
-			# Add some values to the notification
+			# Add some attributes to the notification
 			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
 			data is not None and setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
+			operationMonitor is not None and setXPath(notificationRequest, 'm2m:sgn/nev/om', operationMonitor)
 			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
 			# Check for batch notifications

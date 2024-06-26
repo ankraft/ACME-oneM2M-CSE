@@ -12,7 +12,6 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
-from typing import Tuple
 
 
 class TestTS(unittest.TestCase):
@@ -520,52 +519,56 @@ class TestTS(unittest.TestCase):
 
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestTS, [
+
+		'test_createTS',
+		'test_attributesTS',
+		'test_createTSunderTS',
+		'test_updateTSmni',
+		'test_updateTSmbs',
+		'test_updateTSpeiFail',
+		'test_updateTSpeidFail',
+
+		'test_updateTSmddTrue',
+		'test_updateTSmddTrueAndMdtFail',
+		'test_updateTSmddTrueAndMdnFail',
+		'test_updateTSmddTrueAndMdnNoneFail',
+		'test_updateTSmddTrueAndPeiFail',
+		'test_updateTSmddTrueAndPeidFail',
 	
-	addTest(suite, TestTS('test_createTS'))
-	addTest(suite, TestTS('test_attributesTS'))
-	addTest(suite, TestTS('test_createTSunderTS'))
-	addTest(suite, TestTS('test_updateTSmni'))
-	addTest(suite, TestTS('test_updateTSmbs'))
-	addTest(suite, TestTS('test_updateTSpeiFail'))
-	addTest(suite, TestTS('test_updateTSpeidFail'))
-
-	addTest(suite, TestTS('test_updateTSmddTrue'))
-	addTest(suite, TestTS('test_updateTSmddTrueAndMdtFail'))
-	addTest(suite, TestTS('test_updateTSmddTrueAndMdnFail'))
-	addTest(suite, TestTS('test_updateTSmddTrueAndMdnNoneFail'))
-	addTest(suite, TestTS('test_updateTSmddTrueAndPeiFail'))
-	addTest(suite, TestTS('test_updateTSmddTrueAndPeidFail'))
-	
-	addTest(suite, TestTS('test_updateTSmddFalse'))
-	addTest(suite, TestTS('test_updateTSmddWithMdtFail'))
-	addTest(suite, TestTS('test_updateTSmddWithMdnFail'))
-	addTest(suite, TestTS('test_updateTSmddWithPeiFail'))
-	addTest(suite, TestTS('test_updateTSmddWithPeidFail'))
-	addTest(suite, TestTS('test_updateTSmddWithWrongPeiPeidFail'))
+		'test_updateTSmddFalse',
+		'test_updateTSmddWithMdtFail',
+		'test_updateTSmddWithMdnFail',
+		'test_updateTSmddWithPeiFail',
+		'test_updateTSmddWithPeidFail',
+		'test_updateTSmddWithWrongPeiPeidFail',
 
 	
-	addTest(suite, TestTS('test_updateTSmdn'))
-	addTest(suite, TestTS('test_updateTSmdc'))
-	addTest(suite, TestTS('test_updateTSmdlt'))
-	addTest(suite, TestTS('test_updateTSremoveMdn'))
-	addTest(suite, TestTS('test_updateTScnf'))
-	addTest(suite, TestTS('test_deleteTS'))
-	addTest(suite, TestTS('test_createTSnoMdd'))
-	addTest(suite, TestTS('test_updateTSMddwrong'))
-	addTest(suite, TestTS('test_createTSwithPeid'))
-	addTest(suite, TestTS('test_createTSwithPeidWrong'))
-	addTest(suite, TestTS('test_createTSwithCnfWrong'))
+		'test_updateTSmdn',
+		'test_updateTSmdc',
+		'test_updateTSmdlt',
+		'test_updateTSremoveMdn',
+		'test_updateTScnf',
+		'test_deleteTS',
+		'test_createTSnoMdd',
+		'test_updateTSMddwrong',
+		'test_createTSwithPeid',
+		'test_createTSwithPeidWrong',
+		'test_createTSwithCnfWrong',
 
-	addTest(suite, TestTS('test_createTSwithMissingMdtFail'))
+		'test_createTSwithMissingMdtFail',
 
-	addTest(suite, TestTS('test_deleteTS'))
-	addTest(suite, TestTS('test_MddMdltMdcHandling'))
+		'test_deleteTS',
+		'test_MddMdltMdcHandling',
 
-	addTest(suite, TestTS('test_updatePeiCheckPeid'))
+		'test_updatePeiCheckPeid',
+	])
 
-
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

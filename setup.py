@@ -14,7 +14,7 @@ print(directories)
 
 setup(
 	name='acmecse',
-	version='2024.05.01',
+	version='2024.06',
 
 
 	author='Andreas Kraft',
@@ -45,6 +45,7 @@ setup(
 		'rich', 
 		'shapely',
 		'textual',
+		'textual[syntax]',
 		'textual-plotext',
 		'tinydb',
 		'waitress',

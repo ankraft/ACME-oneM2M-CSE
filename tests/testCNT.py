@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -287,37 +286,44 @@ class TestCNT(unittest.TestCase):
 		self.assertNotEqual(rsc, RC.CREATED)
 
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
-		
-	addTest(suite, TestCNT('test_createCNT'))
-	addTest(suite, TestCNT('test_retrieveCNT'))
-	addTest(suite, TestCNT('test_retrieveCNTWithWrongOriginator'))
-	addTest(suite, TestCNT('test_attributesCNT'))
-	addTest(suite, TestCNT('test_updateCNT'))
-	addTest(suite, TestCNT('test_updateCNTTy'))
-	addTest(suite, TestCNT('test_updateCNTempty'))
-	addTest(suite, TestCNT('test_updateCNTPi'))
-	addTest(suite, TestCNT('test_updateCNTUnknownAttribute'))
-	addTest(suite, TestCNT('test_updateCNTWrongMNI'))
-	addTest(suite, TestCNT('test_createCNTUnderCNT'))
-	addTest(suite, TestCNT('test_retrieveCNTUnderCNT'))
-	addTest(suite, TestCNT('test_deleteCNTUnderCNT'))
-	addTest(suite, TestCNT('test_createCNTWithCreatorWrong'))
-	addTest(suite, TestCNT('test_createCNTWithCreator'))
+	addTests(suite, TestCNT, [
+				
+		'test_createCNT',
+		'test_retrieveCNT',
+		'test_retrieveCNTWithWrongOriginator',
+		'test_attributesCNT',
+		'test_updateCNT',
+		'test_updateCNTTy',
+		'test_updateCNTempty',
+		'test_updateCNTPi',
+		'test_updateCNTUnknownAttribute',
+		'test_updateCNTWrongMNI',
+		'test_createCNTUnderCNT',
+		'test_retrieveCNTUnderCNT',
+		'test_deleteCNTUnderCNT',
+		'test_createCNTWithCreatorWrong',
+		'test_createCNTWithCreator',
 
-	addTest(suite, TestCNT('test_deleteCNTByUnknownOriginator'))
-	addTest(suite, TestCNT('test_deleteCNTByAssignedOriginator'))
-	addTest(suite, TestCNT('test_createCNTUnderCSE'))
-	addTest(suite, TestCNT('test_retrieveCNTUnderCSE'))
-	addTest(suite, TestCNT('test_deleteCNTUnderCSE'))
+		'test_deleteCNTByUnknownOriginator',
+		'test_deleteCNTByAssignedOriginator',
+		'test_createCNTUnderCSE',
+		'test_retrieveCNTUnderCSE',
+		'test_deleteCNTUnderCSE',
 
-	addTest(suite, TestCNT('test_createCNTWithoutOriginator'))
-	addTest(suite, TestCNT('test_createCNTwithWrongTPE'))
+		'test_createCNTWithoutOriginator',
+		'test_createCNTwithWrongTPE',
+	
+	])
 
+	# Run the tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+
 
 if __name__ == '__main__':
 	r, errors, s, t = run(True)

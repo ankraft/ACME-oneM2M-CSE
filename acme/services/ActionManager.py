@@ -336,6 +336,9 @@ class ActionManager(object):
 
 			Return:
 				The basic type of the attribute value.
+
+			Raises:
+				BAD_REQUEST: If the threshold value is invalid.
 		"""
 		# TODO doc
 		
@@ -354,6 +357,9 @@ class ActionManager(object):
 				optr: The operator.
 				dataType: The basic type of the attribute value.
 				sbjt: The subject attribute name.
+
+			Raises:
+				BAD_REQUEST: If the operator is not allowed for the given data type.
 		"""
 		if not optr.isAllowedType(dataType):
 			raise BAD_REQUEST(L.logDebug(f'optr - invalid data type: {dataType} and operator: {optr} for attribute: {sbjt}'))

@@ -10,7 +10,6 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
 from acme.etc.Types import EvalMode, Operation, EvalCriteriaOperator
 from init import *
@@ -818,39 +817,41 @@ class TestDEPR(unittest.TestCase):
 
 	#########################################################################
 
-def run(testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testFailFast:bool) -> TestResult:
+
+	# Assign tests
 	suite = unittest.TestSuite()
+	addTests(suite, TestDEPR, [
 		
-	# basic tests - CREATE
-	addTest(suite, TestDEPR('test_createDEPRUnderAE'))
-	addTest(suite, TestDEPR('test_createDEPRWrongRRIFail'))
-	addTest(suite, TestDEPR('test_createDEPRWrongSBJTFail'))
-	addTest(suite, TestDEPR('test_createDEPRWrongTHLDTypeFail'))
-	addTest(suite, TestDEPR('test_createDEPR'))
+		# basic tests - CREATE
+		'test_createDEPRUnderAE',
+		'test_createDEPRWrongRRIFail',
+		'test_createDEPRWrongSBJTFail',
+		'test_createDEPRWrongTHLDTypeFail',
+		'test_createDEPR',
 
-	# basic tests - UPDATE
-	addTest(suite, TestDEPR('test_updateDEPRWrongTypeFail'))
-	addTest(suite, TestDEPR('test_updateDEPRsfc'))
-	addTest(suite, TestDEPR('test_updateDEPRrri'))
-	addTest(suite, TestDEPR('test_updateDEPRevc'))
+		# basic tests - UPDATE
+		'test_updateDEPRWrongTypeFail',
+		'test_updateDEPRsfc',
+		'test_updateDEPRrri',
+		'test_updateDEPRevc',
 	
-	# update <ACTR> with dependencies
-	addTest(suite, TestDEPR('test_updateACTRdepWrongFail'))
-	addTest(suite, TestDEPR('test_updateACTRdep'))
+		# update <ACTR> with dependencies
+		'test_updateACTRdepWrongFail',
+		'test_updateACTRdep',
 
-	# Test <action> & <dependency>
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcTrue'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalse'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcTrueMissingConditionFail'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcTrueAddedCondition'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseAddedCondition'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseTwoDependenciesOneChangeFail'))
-	addTest(suite, TestDEPR('test_ACTRDEPRsfcFalseTwoDependencies'))
-
-
+		# Test <action> & <dependency>
+		'test_ACTRDEPRsfcTrue',
+		'test_ACTRDEPRsfcFalse',
+		'test_ACTRDEPRsfcTrueMissingConditionFail',
+		'test_ACTRDEPRsfcTrueAddedCondition',
+		'test_ACTRDEPRsfcFalseAddedCondition',
+		'test_ACTRDEPRsfcFalseTwoDependenciesOneChangeFail',
+		'test_ACTRDEPRsfcFalseTwoDependencies',
 	
-
-
+	])
+	
+	# Run tests
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

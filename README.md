@@ -3,9 +3,10 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.05.01
+Version 2024.06
 
-[![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
+[![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-52C82D.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-52C82D)](LICENSE) ![MyPy](https://img.shields.io/badge/MyPy-covered-52C82D)  
+[![](https://img.shields.io/pypi/v/acmecse)](https://pypi.org/project/acmecse/) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ankraft/ACME-oneM2M-CSE/main.yml?label=docs)](https://acmecse.net)   
 [![Mastodon](https://img.shields.io/badge/-@acmeCSE@mstdn.social-FFF?label=mastodon&logo=mastodon&style=social)](https://mstdn.social/@acmeCSE)  
 [![Discord](https://img.shields.io/badge/-ACME%20oneM2M%20CSE-FFF?label=discord&logo=discord&style=social)](https://discord.gg/6ryMHQC2Uj)
 
@@ -20,27 +21,34 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/152) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/157) for a detailed list of changes.
 
 ### Highlights in this release
-- The CSE can now be installed via pip: `pip install acmecse`
-- ACME CSE got its own domain: [https://acmecse.net](https://acmecse.net)
-- The working directory for the CSE can now be changed.
-  
-### Improvements
-- Lots of small improvements and bug fixes.
 
-### Breaking Changes
-- Moved the *init* directory to the acme module.
-- Moved the *acme.ini.default* file to the new *init* directory location.
+The following changes can be expected for the next release.
+
+### Improvements
+
+- Added support for *operationMonitor* attribute in &lt;subscription> resources.
+- Added support for attribute-level access control.
+- Added support ACP access control contexts: accessControlWindow
+- Added support for logging in UTC time.
+- Various new functions and improvements to the 
+- Added support for logging in UTC time.
+- Added support for sending UPDATE operations via the Text UI.
+
+## Misc
+
+- Moved the documentation for the website to the a separate repository ([ACME-oneM2M-CSE-mkdocs](https://github.com/ankraft/ACME-oneM2M-CSE-mkdocs)).
+
 
 ### What to expect in the next release
 
-See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/157) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/160) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 
-Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](docs/Contributing.md#acknowledgements) for the list of contributors.
+Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](https://acmecse.net/home/Acknowledgements/) for the list of contributors.
 
 
 ## Join the Discussions on Discord
