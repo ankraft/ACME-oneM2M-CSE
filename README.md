@@ -31,7 +31,7 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 - Added support for attribute-level access control.
 - Added support ACP access control contexts: accessControlWindow
 - Added support for logging in UTC time.
-- Various new functions and improvements to the 
+- Various new functions and improvements to the script interpreter.
 - Added support for logging in UTC time.
 - Added support for sending UPDATE operations via the Text UI.
 
