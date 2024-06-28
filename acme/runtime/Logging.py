@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import List, Any, Union, Optional, cast
 
 import traceback
-import logging, logging.handlers, os, inspect, sys, datetime, dateutil.tz, time, threading
+import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from logging import LogRecord
 
@@ -735,7 +735,7 @@ class ACMERichLogHandler(RichHandler):
 
 		# Set the time conversion function, depending on the setting of UTC time
 		if Logging.utcTime:
-			self._fromtimestamp = lambda t : datetime.datetime.fromtimestamp(t, tz=dateutil.tz.gettz('UTC'))
+			self._fromtimestamp = lambda t : datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
 		else:
 			self._fromtimestamp = datetime.datetime.fromtimestamp
 

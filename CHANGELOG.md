@@ -8,7 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased 2024.06] - 2024-06-26
+
+## [2024.06.01] - 2024-06-28
+
+### Fixed
+- [CSE] Fixed support for UTC time logging for the supported Python versions.
+
+
+
+## [2024.06] - 2024-06-26
 
 ### Added
 - [CSE] Added support for *operationMonitor* attribute in &lt;subscription> resources.
