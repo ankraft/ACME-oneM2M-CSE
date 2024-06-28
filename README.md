@@ -21,23 +21,17 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/157) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/160) for a detailed list of changes.
 
 ### Highlights in this release
 
 ### Improvements
 
-- Added support for *operationMonitor* attribute in &lt;subscription> resources.
-- Added support for attribute-level access control.
-- Added support ACP access control contexts: accessControlWindow
-- Added support for logging in UTC time.
-- Various new functions and improvements to the 
-- Added support for logging in UTC time.
-- Added support for sending UPDATE operations via the Text UI.
+- ...
 
 ### Misc
 
-- Moved the documentation for the website to the a separate repository ([ACME-oneM2M-CSE-mkdocs](https://github.com/ankraft/ACME-oneM2M-CSE-mkdocs)).
+- ...
 
 
 ### What to expect in the next release
