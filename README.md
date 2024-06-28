@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.06.01
+Version 2024.DEV
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-52C82D.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-52C82D)](LICENSE) ![MyPy](https://img.shields.io/badge/MyPy-covered-52C82D)  
 [![](https://img.shields.io/pypi/v/acmecse)](https://pypi.org/project/acmecse/) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ankraft/ACME-oneM2M-CSE/main.yml?label=docs)](https://acmecse.net)   
@@ -21,7 +21,7 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/157) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/160) for a detailed list of changes.
 
 ### Highlights in this release
 
@@ -36,7 +36,7 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Misc
 
-- Moved the documentation for the website to the a separate repository ([ACME-oneM2M-CSE-mkdocs](https://github.com/ankraft/ACME-oneM2M-CSE-mkdocs)).
+- ...
 
 
 ### What to expect in the next release

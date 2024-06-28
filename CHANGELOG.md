@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [unreleased 2024.DEV] - xxxx-xx-xx
+
+### Added
+
+### Experimental
+
+### Changed
+
+### Fixed
+
+### Removed
+
+
 
 ## [2024.06.01] - 2024-06-28
 
