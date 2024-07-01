@@ -687,6 +687,27 @@ class Resource(object):
 
 	#########################################################################
 	#
+	#	Other directed request handling
+	#
+
+	def handleNotification(self, request:CSERequest, originator:str) -> None:
+		"""	Process a notification request that is directed to a resource.
+		
+			This method is implemented in some sub-classes. Those implementations
+			override this method to handle the notification request.
+
+			Args:
+				request: The request to process.
+				originator: The request's originator.
+			
+			Raises:
+				`INTERNAL_SERVER_ERROR`: In case the method is not implemented and overridden in a sub-class.
+		"""
+		raise INTERNAL_SERVER_ERROR('handleNotification() not implemented')
+
+
+	#########################################################################
+	#
 	#	Attribute handling
 	#
 
