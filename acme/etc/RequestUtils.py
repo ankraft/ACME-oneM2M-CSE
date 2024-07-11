@@ -17,6 +17,7 @@ from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCo
 from .Types import Result, ResourceTypes, Operation, CSERequest
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 from ..helpers import TextTools
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 
@@ -379,3 +380,27 @@ def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 			 for k, v in dct.items() 
 			 if k in attributesToInclude }
 			 
+
+
+def curlFromRequest(request:JSON) -> str:
+	"""	Create a cURL command from a request.
+	
+		Args:
+			request: The request to create the cURL command from.
+		
+		Return:
+			A cURL command.
+	"""
+	curl = f"""\
+curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.httpServer.serverAddress}{CSE.httpServer.rootPath}/{request['to']}' \\
+  -H 'X-M2M-Origin: {request['fr']}' \\
+  -H 'Content-Type: {request['csz']}' \\
+  -H 'X-M2M-RVI: {request['rvi']}' \\
+  -H 'X-M2M-RI: {request['rqi']}'"""
+	
+	if (ot := request.get('ot')):
+		curl += f" \\\n  -H 'X-M2M-OT: {ot}'"
+	if (pc := request.get('pc')):
+		curl += f" \\\n  -d '{json.dumps(pc)}'"
+	
+	return curl
