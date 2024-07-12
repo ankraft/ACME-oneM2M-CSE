@@ -11,6 +11,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
+
 
 ### Experimental
 

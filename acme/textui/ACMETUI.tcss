@@ -666,3 +666,36 @@ ACMEContainerConfigurations {
 	 }
 }
 
+
+/*
+ * cURL request dialog
+ */
+
+ACMEContentDialog {
+	align: center middle;
+	layout: vertical;
+	background: $background 60%;
+
+	#dialog-area {
+		padding: 1 1;
+		width: 80;
+		height: 20;
+		border: round $primary;
+		background: $surface;
+		
+		#dialog-content {
+			width: 1fr;
+			height: 12;
+			align: left top;
+			overflow: auto auto;
+		}
+		
+		#dialog-button {
+			margin-top: 1;
+		}
+	}
+}
+
+
+
+

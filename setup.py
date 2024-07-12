@@ -39,6 +39,7 @@ setup(
 		'paho-mqtt>=2.0.0',
 		'plotext',
 		'psycopg2-binary',
+		'pyperclip',
 		'python3-dtls',
 		'rdflib',
 		'requests', 

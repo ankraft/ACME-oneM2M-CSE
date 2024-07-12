@@ -17,16 +17,20 @@ from textual.containers import Container
 from rich.syntax import Syntax
 from .ACMEViewResponse import ACMEViewResponse
 from .ACMEViewRequest import ACMEViewRequest
+from .ACMEContentDialog import ACMEContentDialog
+
 from ..etc.Types import Operation, ResponseStatusCode, RequestOptionality, JSON
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.DateUtils import getResourceDate
 from ..etc.ACMEUtils import uniqueRI
+from ..etc.RequestUtils import curlFromRequest
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..helpers.ResourceSemaphore import CriticalSection, inCriticalSection
 from ..resources.Resource import Resource
 from ..runtime import CSE
 
 class ACMEContainerUpdate(Container):
+
+	BINDINGS = [('c', 'show_request', 'cURL command')]
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -118,13 +122,14 @@ class ACMEContainerUpdate(Container):
 
 		self.requestView.resource = _text
 		self.responseView.clear()
-	
 
-	def doUpdate(self) -> None:
-		"""	Handle the *Send UPDATE Request* button event.
+
+	def _prepareRequest(self) -> JSON:
+		"""	Prepare the request for the UPDATE operation.
+
+			Returns:
+				The request structure.
 		"""
-		from .ACMETuiApp import ACMETuiApp
-
 		# get pure JSON text without comments and flattened
 		text = flattenJSON(removeCommentsFromJSON(self.requestView.resource))
 
@@ -135,18 +140,25 @@ class ACMEContainerUpdate(Container):
 			self.responseView.error(f'JSON Error: {e.msg}\n{parseJSONDecodingError(e)}')
 			return
 
+		return {
+				'op': Operation.UPDATE,
+				'fr': self.requestView.originator,
+				'to': self.resource.ri, 
+				'csz': 'application/json',
+				'rvi': CSE.releaseVersion,
+				'rqi': uniqueRI(), 
+				'pc': jsn,
+			}
+	
+
+	def doUpdate(self) -> None:
+		"""	Handle the *Send UPDATE Request* button event.
+		"""
+
 		# Send the UPDATE request and handle the response
 		try:			
 			# Prepare request structure
-			result = CSE.request.handleRequest( {
-					'op': Operation.UPDATE,
-					'fr': self.requestView.originator,
-					'to': self.resource.ri, 
-					'rvi': CSE.releaseVersion,
-					'rqi': uniqueRI(), 
-					'ot': getResourceDate(),
-					'pc': jsn,
-				})
+			result = CSE.request.handleRequest(self._prepareRequest())
 			if result.rsc != ResponseStatusCode.UPDATED:
 				raise ResponseException(result.rsc, result.dbg)
 			else:
@@ -165,4 +177,11 @@ class ACMEContainerUpdate(Container):
 				# self.responseView.refresh()
 		except ResponseException as e:
 			self.responseView.error(e.dbg, e.rsc)
-			
+
+
+# TODO make this more reactive like in DELETE -> generate even when there is no request!
+	def action_show_request(self) -> None:
+		"""	Show the last / current request as cURL command.
+		"""
+		self.app.push_screen(ACMEContentDialog(curlFromRequest(self._prepareRequest()), 'cURL Command'))
+

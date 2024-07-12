@@ -15,14 +15,18 @@ from textual.app import ComposeResult
 from textual.containers import Container
 from .ACMEViewRequest import ACMEViewRequest
 from .ACMEViewResponse import ACMEViewResponse
-from ..etc.Types import Operation, ResponseStatusCode
+from .ACMEContentDialog import ACMEContentDialog
+from ..etc.Types import Operation, ResponseStatusCode, JSON
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import getResourceDate
 from ..etc.ACMEUtils import uniqueRI
+from ..etc.RequestUtils import curlFromRequest
 from ..resources.Resource import Resource
 from ..runtime import CSE
 
 class ACMEContainerDelete(Container):
+
+	BINDINGS = [('c', 'show_request', 'cURL command')]
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -76,6 +80,21 @@ class ACMEContainerDelete(Container):
 		self.deleteResponse.clear()
 	
 
+	def _prepareRequest(self) -> JSON:
+		"""	Prepare the request for the DELETE operation.
+
+			Returns:
+				The request structure.
+		"""
+		return {
+				'op': Operation.DELETE,
+				'fr': self.deleteRequest.originator,
+				'to': self.resource.ri, 
+				'rvi': CSE.releaseVersion,
+				'rqi': uniqueRI(), 
+			}
+
+
 	def doDelete(self) -> None:
 		"""	Handle the *DELETE Request* button event. This is a callback function.
 		"""
@@ -83,14 +102,7 @@ class ACMEContainerDelete(Container):
 
 		try:			
 			# Prepare request structure
-			result = CSE.request.handleRequest( {
-					'op': Operation.DELETE,
-					'fr': self.deleteRequest.originator,
-					'to': self.resource.ri, 
-					'rvi': CSE.releaseVersion,
-					'rqi': uniqueRI(), 
-					'ot': getResourceDate(),
-				})
+			result = CSE.request.handleRequest( self._prepareRequest())
 			if result.rsc != ResponseStatusCode.DELETED:
 				raise ResponseException(result.rsc, result.dbg)
 			
@@ -99,4 +111,10 @@ class ACMEContainerDelete(Container):
 			cast(ACMETuiApp, self.app).containerTree.update()
 		except ResponseException as e:
 			self.deleteResponse.error(e.dbg, rsc = e.rsc)
+
+
+	def action_show_request(self) -> None:
+		"""	Show the current request as cURL command.
+		"""
+		self.app.push_screen(ACMEContentDialog(curlFromRequest(self._prepareRequest()), 'cURL Command'))
 

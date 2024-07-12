@@ -394,13 +394,13 @@ def curlFromRequest(request:JSON) -> str:
 	curl = f"""\
 curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.httpServer.serverAddress}{CSE.httpServer.rootPath}/{request['to']}' \\
   -H 'X-M2M-Origin: {request['fr']}' \\
-  -H 'Content-Type: {request['csz']}' \\
   -H 'X-M2M-RVI: {request['rvi']}' \\
   -H 'X-M2M-RI: {request['rqi']}'"""
 	
 	if (ot := request.get('ot')):
 		curl += f" \\\n  -H 'X-M2M-OT: {ot}'"
 	if (pc := request.get('pc')):
+		curl += f" \\\n  -H 'Content-Type: {request['csz']}'"
 		curl += f" \\\n  -d '{json.dumps(pc)}'"
 	
 	return curl
