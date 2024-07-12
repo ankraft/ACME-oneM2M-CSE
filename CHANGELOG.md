@@ -19,6 +19,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [CSE] Fixed crash when the environment variables contain "$" characters.
 
 ### Removed
 

@@ -14,7 +14,6 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional, cast
 
 import configparser, argparse, os, os.path, pathlib
-from copy import copy
 import isodate
 from rich.console import Console
 
@@ -260,7 +259,7 @@ class Configuration(object):
 						}
 					}
 		# Add environment variables to the defaults
-		_defaults.update({ 'DEFAULT': {k: v for k,v in os.environ.items()} })
+		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
 
 		# Set the defaults
 		config.read_dict(_defaults)
