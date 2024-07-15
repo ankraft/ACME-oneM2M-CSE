@@ -474,9 +474,9 @@ _ResourceTypeDetails = {
 	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
 	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
 	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
-	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
-	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
-	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='Cross Resource Subscription'),
+	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
+	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
+	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='CrossResourceSubscription'),
 	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True, fullName='CSEBase'),
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True, fullName='CSEBase Announced'),
 	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True, fullName='RemoteCSE'),
@@ -486,11 +486,11 @@ _ResourceTypeDetails = {
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
-	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),	# not an official type name
-	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),	# not an official type name
+	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),	# not an official type name
+	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),	# not an official type name
 	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
 	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
-	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', fullName='Fanout Point'),	# not an official type name
+	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', isRequestCreatable = False, fullName='Fanout Point'),	# not an official type name
 	ResourceTypes.LCP			: ResourceDescription(typeName = 'm2m:lcp', announcedType = ResourceTypes.LCPAnnc, fullName='LocationPolicy'),
 	ResourceTypes.LCPAnnc		: ResourceDescription(typeName = 'm2m:lcpA', isAnnouncedResource = True, fullName='LocationPolicy Announced'),
 	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
@@ -498,7 +498,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
-	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
+	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
 	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
 	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
@@ -511,8 +511,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
 	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, isContainer = True, fullName='TimeSeries'),
 	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, isContainer = True, fullName='TimeSeries Announced'),
-	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
-	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
+	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
+	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
 	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
 	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True, fullName='TimeSeriesInstance Announced'),
 	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
