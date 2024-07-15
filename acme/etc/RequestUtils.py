@@ -17,7 +17,6 @@ from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCo
 from .Types import Result, ResourceTypes, Operation, CSERequest
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..helpers import TextTools
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 
@@ -391,6 +390,8 @@ def curlFromRequest(request:JSON) -> str:
 		Return:
 			A cURL command.
 	"""
+	from ..runtime import CSE
+
 	curl = f"""\
 curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.httpServer.serverAddress}{CSE.httpServer.rootPath}/{request['to']}' \\
   -H 'X-M2M-Origin: {request['fr']}' \\
