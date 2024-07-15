@@ -804,7 +804,7 @@ class Validator(object):
 							_result += f'        //{" "*4*(level+1)} }} ]'
 							return _result
 
-						return f'[ {basicTypeDefaultValue(policy.ltype, _policy, level+1)} ]'
+						return f'[ {basicTypeDefaultValue(policy.ltype, policy, level+1)} ]'
 					return f'[ {policy.ltype} ]'
 				
 				case BasicType.enum:
