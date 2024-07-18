@@ -141,8 +141,9 @@ class ACMEContainerResourceServices(Container):
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
-			self.exportResourceResult.update(f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
-	
+			self.exportResourceResult.update(n := f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
+			self._app.showNotification(n, 'Export Resources', 'information')
+
 
 		# Show the loading indicator instead of the result
 		self.exportResourceLoadingIndicator.display = True
@@ -165,7 +166,8 @@ class ACMEContainerResourceServices(Container):
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self.exportInstancesResult.update(f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self.exportInstancesResult.update(n := f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self._app.showNotification(n, 'Export Data Points', 'information')
 
 		# Show the loading indicator instead of the result
 		self.exportInstancesLoadingIndicator.display = True
@@ -185,7 +187,9 @@ class ACMEContainerResourceServices(Container):
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			pyperclip.copy(data)
-			self.exportInstancesResult.update(f"Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard")
+			self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
+			self._app.showNotification(n, 'Copy Data Points', 'information')
+
 
 		# Show the loading indicator instead of the result
 		self.exportInstancesLoadingIndicator.display = True

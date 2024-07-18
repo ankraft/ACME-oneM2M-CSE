@@ -15,7 +15,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 - [TUI] Added copy of CSV data to the clipboard for instance resources.
 
-
 ### Experimental
 
 ### Changed
