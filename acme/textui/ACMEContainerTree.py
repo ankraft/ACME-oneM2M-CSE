@@ -214,9 +214,13 @@ class ACMEContainerTree(Container):
 
 	from ..textui import ACMETuiApp
 
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, id:str) -> None:
 		super().__init__(id = id)
-		self.tuiApp = tuiApp
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+		
 		self.currentResource:Resource = None
 
 
@@ -227,7 +231,6 @@ class ACMEContainerTree(Container):
 				with TabPane('Resource', id = 'tree-tab-resource'):
 					with Container(id = 'resource-view-container'):
 						yield (Static(id = 'resource-view', expand = True))
-
 
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield ACMEViewRequests(id = 'tree-tab-requests-view')
@@ -246,7 +249,6 @@ class ACMEContainerTree(Container):
 				
 				with TabPane('Diagram', id = 'tree-tab-diagram'):
 					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), 
-											   tuiApp = self.tuiApp,
 											   id = 'tree-tab-diagram-view')
 
 				
@@ -264,7 +266,7 @@ class ACMEContainerTree(Container):
 
 
 	def action_refresh_resources(self) -> None:
-		self.tuiApp.showNotification('Refreshing resources', 'info', 'information', 2)
+		self._app.showNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			

@@ -122,6 +122,6 @@ class ACMEContainerCreate(Container):
 				value:	The value of the select.
 		"""
 		self.requestView.updateResourceView(self.resource, 
-									  		resourceType = ResourceTypes(self.requestView.childResourceType), 
+									  		resourceType = self.requestView.childResourceType, 
 											requestOriginator = self.requestOriginator)
 

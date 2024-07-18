@@ -92,7 +92,7 @@ class ACMETuiApp(App):
 
 		with TabbedContent(id = 'tabs'):
 			with TabPane('Resources', id = tabResources):
-				yield ACMEContainerTree(self, id = 'container-tree')
+				yield ACMEContainerTree(id = 'container-tree')
 
 			with TabPane('Requests', id = tabRequests):
 				yield ACMEContainerRequests(id = 'container-requests')
@@ -105,7 +105,7 @@ class ACMETuiApp(App):
 				yield self._toolsView
 
 			with TabPane('Infos', id = tabInfo):
-				yield ACMEContainerInfo(self, id = 'container-info')
+				yield ACMEContainerInfo(id = 'container-info')
 
 			with TabPane('Configurations', id = tabConfigurations):
 				yield ACMEContainerConfigurations(id = 'container-configurations')

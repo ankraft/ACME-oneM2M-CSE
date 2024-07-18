@@ -179,15 +179,15 @@ class ACMEViewRequest(VerticalScroll):
 
 	
 	@property
-	def childResourceType(self) -> Optional[int]:
+	def childResourceType(self) -> Optional[ResourceTypes]:
 		"""	Return the selected child resource type.
 
 			Returns:
 				The selected child resource type.
 		"""
 		if self.childResources.is_blank():
-			return None							# type: ignore [return-value]
-		return self.childResources.value		# type: ignore [return-value]
+			return None									# type: ignore [return-value]
+		return ResourceTypes(self.childResources.value)	# type: ignore [arg-type]
 	
 
 	@on(Button.Pressed, '#request-button')
@@ -298,13 +298,11 @@ class ACMEViewRequest(VerticalScroll):
 				text = flattenJSON(removeCommentsFromJSON(self.resourceText))
 				# Check the validity of the JSON by trying to parse it
 				jsn = json.loads(text)
-				# Get the type
-				resourceType = self.childResourceType
 				# Create and return the request structure
 				return {
 						'op': self.operation,
 						'fr': self.originator,
-						'ty': resourceType,
+						'ty': self.childResourceType.value,
 						'to': targetResource.ri, 
 						'csz': 'application/json',
 						'rvi': CSE.releaseVersion,

@@ -22,11 +22,15 @@ tabInfo = 'tab-info'
 
 class ACMEContainerInfo(VerticalScroll):
 
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, id:str) -> None:
 		super().__init__(id = id)
-		self.tuiApp = tuiApp
-		self._colors = self.app.get_css_variables()
 
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
+		self._colors = self._app.get_css_variables()
+	
 
 	def compose(self) -> ComposeResult:
 		yield Static(expand = True, id = 'stats-view')
@@ -38,12 +42,12 @@ class ACMEContainerInfo(VerticalScroll):
 
 
 	def on_show(self) -> None:
-		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
+		self.set_interval(self._app.textUI.refreshInterval, self._statsUpdate)
 		self._statsUpdate(True)	# Update once at the beginning
 	
 
 	def _statsUpdate(self, force:bool = False) -> None:
-		if force or self.tuiApp.tabs.active == tabInfo:
+		if force or self._app.tabs.active == tabInfo:
 			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self._colors['primary']), 
-													   		    textStyle = Style(color = fontDark if self.app.dark else fontLight)))
+													   		    textStyle = Style(color = fontDark if self._app.dark else fontLight)))
 
