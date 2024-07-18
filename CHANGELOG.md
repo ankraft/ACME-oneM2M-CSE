@@ -12,6 +12,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
+- [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 
 
 ### Experimental

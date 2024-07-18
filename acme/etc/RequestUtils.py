@@ -392,6 +392,9 @@ def curlFromRequest(request:JSON) -> str:
 	"""
 	from ..runtime import CSE
 
+	if not request:
+		return 'No request available'
+
 	curl = f"""\
 curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.httpServer.serverAddress}{CSE.httpServer.rootPath}/{request['to']}' \\
   -H 'X-M2M-Origin: {request['fr']}' \\

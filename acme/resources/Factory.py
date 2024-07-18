@@ -206,7 +206,8 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 					 pi:Optional[str] = None, 
 					 ty:Optional[ResourceTypes] = None, 
 					 create:Optional[bool] = False, 
-					 isImported:Optional[bool] = False) -> Resource:
+					 isImported:Optional[bool] = False,
+					 template:Optional[bool] = True) -> Resource:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
@@ -218,6 +219,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			ty: The resource type of the resource that shall be created.
 			create: The resource will be newly created.
 			isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
+			template: True when the resource is used as a template. In this case some checks may not be performed.
 
 		Return:
 			`Result` object with the *resource* attribute set to the created resource object.
@@ -226,7 +228,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 	resDict, tpe, _attr = pureResource(resDict)	# remove optional "m2m:xxx" level
 	
 	# Check resouce type name (tpe), especially in FCT resources
-	if tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
+	if not template and tpe is None and ty in [ None, ResourceTypes.FCNT, ResourceTypes.FCI ]:
 		raise BAD_REQUEST(L.logWarn(f'Resource type name  has the wrong format (must be "<domain>:<name>", not "{_attr})"'))
 
 	# Determine type
@@ -241,7 +243,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			raise BAD_REQUEST(L.logWarn(f'Parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# Check for Parent
-	if pi is None and typ != ResourceTypes.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
+	if not template and pi is None and typ != ResourceTypes.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
 		raise BAD_REQUEST(L.logWarn(f'pi missing in resource: {tpe}'))
 
 	# store the import status in the original resDict
@@ -258,6 +260,10 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 		case ResourceTypes.MGMTOBJAnnc:
 			# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
 			factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
+		case ResourceTypes.FCNT | ResourceTypes.FCNTAnnc:
+			if template:
+				tpe = 'NS:TYPE'	# Set a default type for FCNT resources
+			factory = typ.resourceFactory()
 		case _:
 			factory = typ.resourceFactory()
 	

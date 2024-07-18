@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
@@ -34,10 +34,14 @@ class ACMEContentDialog(ModalScreen):
 		self.button = Button('Copy', variant='primary', id='dialog-copy')
 		self.button.disabled = not buttonEnabled
 
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 
 	def compose(self) -> ComposeResult:
 		content = Vertical(
-			ScrollableContainer(Label(Syntax(self.content, 'shell', theme = self.app.syntaxTheme)), id = 'dialog-content'),
+			ScrollableContainer(Label(Syntax(self.content, 'shell', theme = self._app.syntaxTheme)), id = 'dialog-content'),
 			Center(self.button, id = 'dialog-button'),
 			id='dialog-area'		
 		)

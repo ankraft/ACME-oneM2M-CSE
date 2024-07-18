@@ -10,19 +10,15 @@
 from __future__ import annotations
 from typing import cast
 
-from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
 from .ACMEViewRequest import ACMEViewRequest
 from .ACMEViewResponse import ACMEViewResponse
-from .ACMEContentDialog import ACMEContentDialog
-from ..etc.Types import Operation, ResponseStatusCode, JSON
-from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.DateUtils import getResourceDate
-from ..etc.ACMEUtils import uniqueRI
-from ..etc.RequestUtils import curlFromRequest
+from ..etc.Types import Operation
+from ..helpers.ResourceSemaphore import CriticalSection
 from ..resources.Resource import Resource
 from ..runtime import CSE
+
 
 class ACMEContainerDelete(Container):
 
@@ -42,26 +38,32 @@ class ACMEContainerDelete(Container):
 		self.resource:Resource = None
 		"""	The resource to delete. """
 
-		self.deleteRequest:ACMEViewRequest = ACMEViewRequest(id = 'request-delete-request', 
+		self.responseView = ACMEViewResponse(id = 'request-delete-response')
+		"""	The response view. """
+
+		self.requestView:ACMEViewRequest = ACMEViewRequest(id = 'request-delete-request', 
 													 	   title = 'DELETE Request',
 													 	   header = 'Delete a resource and its children from the CSE.',
 														   originator = self.requestOriginator,
 														   buttonLabel = 'DELETE Resource',
 														   buttonVariant = 'error',
+														   operation = Operation.DELETE,
 														   callback = self.doDelete,
-														   enableEditor = False
+														   enableEditor = False,
+														   responseView = self.responseView
 													)
 		"""	The request view. """
 		
-		self.deleteResponse = ACMEViewResponse(id = 'request-delete-response')
-		"""	The response view. """
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Delete* view.
 		"""		
-		yield self.deleteRequest
-		yield self.deleteResponse
+		yield self.requestView
+		yield self.responseView
 
 
 	def updateResource(self, resource:Resource) -> None:
@@ -71,50 +73,34 @@ class ACMEContainerDelete(Container):
 				resource:	The resource to delete.
 		"""
 		self.resource = resource
+
 		# Update the request originator. Important for getting a default request originator
 		self.requestOriginator = self.resource.getOriginator()
 		if self.requestOriginator:	
-			self.deleteRequest.updateOriginator(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
-			self.deleteRequest.updateOriginator(self.requestOriginator, [CSE.cseOriginator])
-		self.deleteResponse.clear()
+			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator])
+		self.responseView.clear()
 	
-
-	def _prepareRequest(self) -> JSON:
-		"""	Prepare the request for the DELETE operation.
-
-			Returns:
-				The request structure.
-		"""
-		return {
-				'op': Operation.DELETE,
-				'fr': self.deleteRequest.originator,
-				'to': self.resource.ri, 
-				'rvi': CSE.releaseVersion,
-				'rqi': uniqueRI(), 
-			}
-
 
 	def doDelete(self) -> None:
 		"""	Handle the *DELETE Request* button event. This is a callback function.
 		"""
-		from .ACMETuiApp import ACMETuiApp
 
-		try:			
-			# Prepare request structure
-			result = CSE.request.handleRequest( self._prepareRequest())
-			if result.rsc != ResponseStatusCode.DELETED:
-				raise ResponseException(result.rsc, result.dbg)
-			
+		# Send the request and handle the response
+		if self.requestView.runRequest(self.resource):
+
+			# The following is a critical section, because the resource tree has to be updated
+			# but we don't want to update the editor. The 'updateResource()' method would do that.
+			# There is a check for the critical section in the 'updateResource()' method above.
 			# Display a success message and update the container tree
-			cast(ACMETuiApp, self.app).showNotification(f'Resource {self.resource.ri} deleted', 'DELETE Resource', 'information')
-			cast(ACMETuiApp, self.app).containerTree.update()
-		except ResponseException as e:
-			self.deleteResponse.error(e.dbg, rsc = e.rsc)
+			with CriticalSection('tuiRequest', timeout = 0.0):
+				self._app.containerTree.refreshCurrentParrentNode()
+				self._app.containerTree.updateResource(self.resource)
 
-
+		
 	def action_show_request(self) -> None:
 		"""	Show the current request as cURL command.
 		"""
-		self.app.push_screen(ACMEContentDialog(curlFromRequest(self._prepareRequest()), 'cURL Command'))
+		self.requestView.showCurlDialog(self.resource)
 

@@ -48,7 +48,7 @@ class ACMEContainerResourceServices(Container):
 			# Export resource
 			with (v := Vertical(id = 'services-export-resource')):
 				v.border_title = 'Export Resource'
-				yield Label('Export the resource to a file in the *./tmp* directory as a *curl* command.', classes='label')
+				yield Label('Export the resource to a file in the [i]./tmp[/i] directory as a [i]curl[/i] command.', classes='label')
 				with Container(classes='service-command-area'):
 					with Horizontal(classes = 'services-export-controls'):
 						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
@@ -59,7 +59,7 @@ class ACMEContainerResourceServices(Container):
 			# Export Instances
 			with (v := Vertical(id = 'services-export-instances')):
 				v.border_title = 'Export Instances'
-				yield Label('Export the instances of the container resource to a CSV file in the *./tmp* directory.', classes='label')
+				yield Label('Export the instances of the container resource to a [i]CSV[/i] file in the [i]./tmp[/i] directory.', classes='label')
 				with Container(classes='service-command-area'):
 					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
 					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
