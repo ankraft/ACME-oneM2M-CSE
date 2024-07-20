@@ -11,12 +11,16 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
+- [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
+- [TUI] Added copy of CSV data to the clipboard for instance resources.
 
 ### Experimental
 
 ### Changed
 
 ### Fixed
+- [CSE] Fixed crash when the environment variables contain "$" characters.
 
 ### Removed
 

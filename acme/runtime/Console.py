@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import List, cast, Optional, Any, Tuple
 
-import csv, datetime, json, os, sys, webbrowser, socket, platform
+import csv, datetime, json, os, sys, webbrowser, socket, platform, io
 from enum import IntEnum, auto
 from rich.live import Live
 from rich.panel import Panel
@@ -840,11 +840,16 @@ function createResource() {{
 
 
 
-	def doExportInstances(self, ri:str) -> Tuple[int, str]:
-		"""	Export instances of a container resource to a CSV file in the tmp directory.
+	def doExportInstances(self, ri:str, asString:bool = False) -> Tuple[int, str]:
+		"""	Export instances of a container resource to a CSV file in the tmp directory, or return as a string.
 
 			Args:
 				ri: Resource ID of the container resource.
+				asString: Return the CSV string instead of writing to a file.
+
+			Return:
+				Tuple with the number of instances exported, and the filename of the exported file or the CSV string.
+
 		"""
 		_instanceMapping = {
 			ResourceTypes.CNT: ResourceTypes.CIN,
@@ -853,6 +858,19 @@ function createResource() {{
 			ResourceTypes.TS: ResourceTypes.TSI,
 			ResourceTypes.TSAnnc: ResourceTypes.TSIAnnc
 		}
+
+		count:int = 0
+
+		def _writeTo(f:io.TextIOWrapper, instances:List[Resource]) -> None:
+			nonlocal count
+
+			writer = csv.writer(f)
+			# Write CIN and TSI instances
+			writer.writerow(['ri', 'st', 'ct', 'con', 'cnf', 'structured_resource_identifier'])
+			for instance in instances:
+				writer.writerow([instance.ri, instance.st, instance.ct, instance.con, instance.cnf, instance.getSrn()])
+				count += 1
+
 
 		try:
 			L.console('Export Instance Resources', isHeader = True)
@@ -863,26 +881,29 @@ function createResource() {{
 
 			if not ResourceTypes.isContainerResource(container.ty):
 				return 0, L.console(f'{ri} is not a container resource', isError = True)
-			count = 0
 			if not (instances := CSE.dispatcher.retrieveDirectChildResources(ri, _instanceMapping[container.ty])):
 				L.console(f'No instances found under {ri}', isError = True)
+				return 0, f'No instances found under {ri}'
+
 			else:
-				# Create a temporary directory for the export
-				outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
-				os.makedirs(outdir, exist_ok = True)
+				if not asString:
+					# Create a temporary directory for the export
+					outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
+					os.makedirs(outdir, exist_ok = True)
 
-				# get the filename and open the file for writing
-				filename = f'instances-{getResourceDate().rsplit(",", 1)[0]}.csv'
-				path = f'{outdir}/{filename}'
-				with open(path, 'w') as f:
-					writer = csv.writer(f)
-					# Write CIN and TSI instances
-					writer.writerow(['ri', 'st', 'ct', 'con', 'cnf', 'structured_resource_identifier'])
-					for instance in instances:
-						writer.writerow([instance.ri, instance.st, instance.ct, instance.con, instance.cnf, instance.getSrn()])
-						count += 1
-
-				L.console(f'Exported {count} instances to {filename}')
+					# get the filename and open the file for writing
+					filename = f'instances-{getResourceDate().rsplit(",", 1)[0]}.csv'
+					path = f'{outdir}/{filename}'
+					with open(path, 'w') as f:
+						_writeTo(f, instances)
+					L.console(f'Exported {count} instances to {filename}')
+					return count, f'tmp/{filename}'
+				
+				# return the CSV string
+				else:
+					with io.StringIO() as csvString:
+						_writeTo(csvString, instances)
+						return count, csvString.getvalue()
 		except Exception as e:
 			if hasattr(e, 'dbg'):
 				L.console(e.dbg, isError = True)
@@ -890,7 +911,6 @@ function createResource() {{
 			else:
 				L.console(str(e), isError = True)
 				return 0, str(e)
-		return count, f'tmp/{filename}'
 		
 
 	def exportInstances(self, key:str) -> None:

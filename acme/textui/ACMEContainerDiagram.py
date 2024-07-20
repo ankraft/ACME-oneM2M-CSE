@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 from textual import on
 from textual.app import ComposeResult
@@ -47,7 +47,7 @@ class ACMEContainerDiagram(Container):
 
 	from ..textui import ACMETuiApp
 
-	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, refreshCallback:Callable, id:str) -> None:
 		"""	Initialize the Diagram view.
 
 			Args:
@@ -57,8 +57,9 @@ class ACMEContainerDiagram(Container):
 		"""
 		super().__init__(id = id)
 		
-		self.tuiApp = tuiApp
-		"""	Backlink to the TUI application."""
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 		self.color = (0, 120, 212)
 		"""	The color of the diagram."""
@@ -84,7 +85,7 @@ class ACMEContainerDiagram(Container):
 		self.autoRefresh = False
 		"""	Whether the diagram should be refreshed automatically."""
 
-		self.autoRefreshInterval = self.tuiApp.textUI.refreshInterval
+		self.autoRefreshInterval = self._app.textUI.refreshInterval
 		"""	The interval for the automatic refresh."""
 
 		self.refreshTimer:Timer = None

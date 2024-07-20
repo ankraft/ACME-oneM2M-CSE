@@ -19,7 +19,7 @@ class ACMEContainerAbout(VerticalScroll):
 	"""	About view for the ACME text UI.
 	"""
 
-	BINDINGS = 	[ Binding('a', 'goto_repo', 'Open ACME @ GitHub') ]
+	BINDINGS = 	[ Binding('a', 'goto_homepage', 'Open ACME Homepage') ]
 	"""	The key bindings for the *About* view. """
 
 	text = \
@@ -105,7 +105,7 @@ Available under the BSD 3-Clause License"""
 				yield Button('hidden', id = 'about-button')
 
 
-	def action_goto_repo(self) -> None:
-		"""	Open the ACME @ GitHub page in the browser.
+	def action_goto_homepage(self) -> None:
+		"""	Open the ACME homepage in the browser.
 		"""
-		webbrowser.open('https://github.com/ankraft/ACME-oneM2M-CSE')
+		webbrowser.open('https://acmecse.net')

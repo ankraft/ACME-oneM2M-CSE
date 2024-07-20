@@ -46,7 +46,7 @@ class ACMEInputField(Container):
 
 
 	def compose(self) -> ComposeResult:
-		yield Label(f'[b]{self._labelText}[/b] ', id = f'field-label')
+		yield Label(f'[b]{self._labelText}[/b] ', id = 'field-label')
 		with Vertical(id = 'field-input-view'):
 			yield Input(value = self._value, 
 						placeholder = self._placeholder,
