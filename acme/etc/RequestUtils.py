@@ -404,7 +404,7 @@ curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.h
 	if (ot := request.get('ot')):
 		curl += f" \\\n  -H 'X-M2M-OT: {ot}'"
 	if (pc := request.get('pc')):
-		curl += f" \\\n  -H 'Content-Type: {request['csz']}'"
+		curl += f" \\\n  -H 'Content-Type: {request['csz']}{';ty=' + str(request['ty']) if 'ty' in request else ''}'"
 		curl += f" \\\n  -d '{json.dumps(pc)}'"
 	
 	return curl
