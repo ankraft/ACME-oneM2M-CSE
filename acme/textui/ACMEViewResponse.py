@@ -77,11 +77,10 @@ class ACMEViewResponse(VerticalScroll):
 			self.response.update(f'[red]{renderable}[/red]')
 			if rsc is not None:
 				self.border_title = f'{self._title} [r] {rsc.value} {rsc.nname()} [/r]'
+				# popup error notification
+				self._app.showNotification(f'\n{rsc.nname()}\n\n{renderable}', title, 'error')
 			else:
 				self.border_title = self._title
-
-			# popup error notification
-			self._app.showNotification(f'\n{rsc.nname()}\n\n{renderable}', title, 'error')
 
 		else:
 			self.response.update(renderable)
