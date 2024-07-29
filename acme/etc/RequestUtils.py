@@ -72,13 +72,12 @@ def toHttpUrl(url:str) -> str:
 	"""
 	u = list(urlparse(url))
 	match u[2]:
-		case x if x.startswith('///'):
-			u[2] = f'/_{u[2][2:]}'
+		case x if '///' in x:
+			u[2] = x.replace('///', '/_/')	# replace /// with /_/, also in the middle of the path
 			url = urlunparse(u)
-		case x if x.startswith('//'):
-			u[2] = f'/~{u[2][1:]}'
+		case x if '//' in x:
+			u[2] = x.replace('//', '/~/')	# replace // with /~/, also in the middle of the path
 			url = urlunparse(u)
-
 	return url
 
 
