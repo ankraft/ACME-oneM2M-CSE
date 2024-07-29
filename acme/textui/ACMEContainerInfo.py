@@ -17,6 +17,7 @@ from rich.style import Style
 from ..runtime import CSE
 from ..textui import ACMETuiApp
 from ..runtime.Logging import fontDark, fontLight
+from ..runtime.Configuration import Configuration
 
 tabInfo = 'tab-info'
 
@@ -42,7 +43,7 @@ class ACMEContainerInfo(VerticalScroll):
 
 
 	def on_show(self) -> None:
-		self.set_interval(self._app.textUI.refreshInterval, self._statsUpdate)
+		self.set_interval(Configuration.textui_refreshInterval, self._statsUpdate)
 		self._statsUpdate(True)	# Update once at the beginning
 	
 

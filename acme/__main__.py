@@ -69,8 +69,8 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
 
 	groupDarkLight = parser.add_mutually_exclusive_group()
-	groupDarkLight.add_argument('--dark', action='store_const', const='dark', dest='isLightScheme', default=None, help='enable dark UI scheme')
-	groupDarkLight.add_argument('--light', action='store_const', const='light', dest='isLightScheme', default=None, help='enable light UI scheme')
+	groupDarkLight.add_argument('--dark', action='store_const', const='dark', dest='lightScheme', default=None, help='enable dark UI scheme')
+	groupDarkLight.add_argument('--light', action='store_const', const='light', dest='lightScheme', default=None, help='enable light UI scheme')
 
 	# two mutual exlcusive arguments
 	groupEnableHttp = parser.add_mutually_exclusive_group()

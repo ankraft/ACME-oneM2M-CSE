@@ -12,11 +12,13 @@
 from __future__ import annotations
 from typing import Optional
 
+from configparser import ConfigParser
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource
 from ..etc.Constants import Constants
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory 
@@ -85,8 +87,8 @@ class LCP(AnnounceableResource):
 		# Creating extra <container> resource
 		# Set the li attribute to the LCP's ri afterwards
 		_cnt:JSON = {
-			'mni': Configuration.get('resource.lcp.mni'),
-			'mbs': Configuration.get('resource.lcp.mbs'),
+			'mni': Configuration.resource_lcp_mni,
+			'mbs': Configuration.resource_lcp_mbs,
 		}
 		if self.lon is not None:	# add container's resourcename if provided
 			_cnt['rn'] = self.lon
@@ -202,3 +204,17 @@ class LCP(AnnounceableResource):
 #  under the created <container> resource. However, if no value (e.g. null or zero) is set and locationUpdateEventCriteria is absent, 
 # the positioning procedure shall be performed when an Originator requests to retrieve the <latest> resource of the <container>
 #  resource and the result shall be stored as a <contentInstance> resource under the <container> resource.
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Defaults for LocationPolicy Resources
+
+	config.resource_lcp_mni = parser.getint('resource.lcp', 'mni', fallback = 10)
+	config.resource_lcp_mbs = parser.getint('resource.lcp', 'mbs', fallback = 10000)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	if config.resource_lcp_mni <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.lcp]:mni[/i] must be > 0')
+	if config.resource_lcp_mbs <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.lcp]:mbs[/i] must be > 0')

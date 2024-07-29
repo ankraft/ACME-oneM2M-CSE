@@ -19,6 +19,7 @@ from textual.timer import Timer
 from textual_plotext import PlotextPlot
 
 from ..etc.DateUtils import fromISO8601Date
+from ..runtime.Configuration import Configuration
 
 
 class DiagramTypes(IntEnum):
@@ -85,9 +86,6 @@ class ACMEContainerDiagram(Container):
 		self.autoRefresh = False
 		"""	Whether the diagram should be refreshed automatically."""
 
-		self.autoRefreshInterval = self._app.textUI.refreshInterval
-		"""	The interval for the automatic refresh."""
-
 		self.refreshTimer:Timer = None
 		"""	The timer for the automatic refresh."""
 
@@ -127,7 +125,7 @@ class ACMEContainerDiagram(Container):
 	def on_mount(self) -> None:
 		"""	Callback when the view is mounted.
 		"""
-		self.refreshTimer = self.set_interval(self.autoRefreshInterval, 
+		self.refreshTimer = self.set_interval(Configuration.textui_refreshInterval, 
 											  self._refreshChart, 
 											  pause = True)
 

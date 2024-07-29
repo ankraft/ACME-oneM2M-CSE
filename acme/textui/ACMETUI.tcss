@@ -137,6 +137,7 @@ ACMEContainerTree {
 
 	#resource-view-container {
 		border: round $primary;
+		border-subtitle-align: left;
 		overflow: hidden auto;
 		height: 100%;
 		padding: 1 1 1 1;
@@ -570,24 +571,23 @@ ACMEViewRequests {
         overflow: hidden hidden;
     }
 
-	ListView > ACMEListItem.--highlight {
-        background: $accent 50%;
+	ListView > ACMEListItem.--highlight > Widget {
+        background: $secondary;
     }
 
-	ACMEListItem > Widget :hover {
-        background: $accent;
-    }
-
-	ListView > ACMEListItem.--outgoing {
+	ListView > ACMEListItem.--outgoing > Widget {
 		background:  $secondary-background 50%;
+		background:  $accent;
 	}
 
-	ListView:focus > ACMEListItem.--outgoing {
+	ListView:focus > ACMEListItem.--outgoing > Widget {
 		background:  $secondary-background 50%;
+		background:  $accent;
 	}
 	
-	ListView > ACMEListItem.--outgoing.--highlight {
+	ListView > ACMEListItem.--outgoing.--highlight > Widget {
 		background: $accent;
+		background: $secondary;
 	}
 
 	

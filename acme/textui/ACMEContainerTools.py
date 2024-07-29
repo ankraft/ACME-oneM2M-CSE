@@ -105,7 +105,7 @@ class ACMEToolsTree(TextualTree):
 
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
-			self.parentContainer.updateHeader(node.label, 
+			self.parentContainer.updateHeader(str(node.label), 
 									 		  f'{CSE.script.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False

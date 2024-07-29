@@ -19,6 +19,7 @@ import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from logging import LogRecord
+from configparser import ConfigParser
 
 
 from rich import inspect as richInspect
@@ -35,10 +36,10 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.syntax import Syntax
 
-from ..etc.Types import JSON, ACMEIntEnum, Result, ContentSerializationType
+from ..etc.Types import JSON, LogLevel, Result, ContentSerializationType
 from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 
 levelName = {
 	logging.INFO :    'ℹ️  I',
@@ -61,26 +62,6 @@ terminalColorLight		= '#137E6D'
 terminalColorErrorLight	= '#FF073A'
 tableRowColorLight		= 'grey89'
 fontLight				= '#1C1C1C'
-
-
-class LogLevel(ACMEIntEnum):
-	INFO 	= logging.INFO
-	DEBUG 	= logging.DEBUG
-	ERROR 	= logging.ERROR
-	WARNING = logging.WARNING
-	OFF		= sys.maxsize
-	
-
-	def next(self) -> LogLevel:
-		"""	Return next log level. This cycles through the levels.
-		"""
-		return {
-			LogLevel.DEBUG:		LogLevel.INFO,
-			LogLevel.INFO:		LogLevel.WARNING,
-			LogLevel.WARNING:	LogLevel.ERROR,
-			LogLevel.ERROR:		LogLevel.OFF,
-			LogLevel.OFF:		LogLevel.DEBUG,
-		}[self]
 
 
 class LogFilter(logging.Filter):
@@ -153,16 +134,16 @@ class Logging:
 		if Logging.logger:
 			return
 
-		Logging.enableFileLogging 		= Configuration.get('logging.enableFileLogging')
-		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
-		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
-		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
-		Logging.queueSize				= Configuration.get('logging.queueSize')
-		Logging.filterSources			= tuple(Configuration.get('logging.filter'))
-		Logging.maxLogMessageLength		= Configuration.get('logging.maxLogMessageLength')
-		Logging.utcTime					= Configuration.get('logging.enableUTCTimezone')
+		Logging.enableFileLogging 		= Configuration.logging_enableFileLogging
+		Logging.enableScreenLogging		= Configuration.logging_enableScreenLogging
+		Logging.stackTraceOnError		= Configuration.logging_stackTraceOnError
+		Logging.enableBindingsLogging	= Configuration.logging_enableBindingsLogging
+		Logging.queueSize				= Configuration.logging_queueSize
+		Logging.filterSources			= tuple(Configuration.logging_filter)
+		Logging.maxLogMessageLength		= Configuration.logging_maxLogMessageLength
+		Logging.utcTime					= Configuration.logging_enableUTCTimezone
 
-		Logging._configureColors(Configuration.get('console.theme'))
+		Logging._configureColors(Configuration.console_theme)
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
@@ -172,7 +153,7 @@ class Logging:
 		# Add logging filter
 		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
 
-		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
+		Logging.setLogLevel(cast(LogLevel, Configuration.logging_level))					# Assign the initial log level
 
 		# Add logging queue
 		Logging.queue = Queue(maxsize = Logging.queueSize)
@@ -189,12 +170,12 @@ class Logging:
 		if Logging.enableFileLogging:
 			from ..runtime import CSE as CSE
 
-			logpath = Configuration.get('logging.path')
+			logpath = Configuration.logging_path
 			os.makedirs(logpath, exist_ok = True)# create log directory if necessary
 			logfile = f'{logpath}/cse-{CSE.cseType.name}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
-														 maxBytes = Configuration.get('logging.size'),
-														 backupCount = Configuration.get('logging.count'))
+														 maxBytes = Configuration.logging_size,
+														 backupCount = Configuration.logging_count)
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			logfp.addFilter(LogFilter(Logging.filterSources))
@@ -237,12 +218,14 @@ class Logging:
 		restartNeeded = False
 		if key.startswith('logging.'):
 			# No special action needed
-			if key in [ 'logging.enableScreenLogging', 'logging.stackTraceOnError',	'logging.enableBindingsLogging' ]:
+			if key in [ 'logging.enableScreenLogging', 
+			  			'logging.stackTraceOnError',
+						'logging.enableBindingsLogging' ]:
 				return
 			
 			# Use the log level function to perform extra actions
 			if key == 'logging.level':
-				Logging.setLogLevel(Configuration.get('logging.level'))
+				Logging.setLogLevel(cast(LogLevel, Configuration.logging_level))
 				return 
 
 			restartNeeded = True
@@ -770,3 +753,42 @@ class ACMERichLogHandler(RichHandler):
 				line_no		= lineno,
 			)
 		)
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Logging
+
+	config.logging_count = parser.getint('logging', 'count', fallback = 10)		# Number of log files
+	config.logging_enableBindingsLogging = parser.getboolean('logging', 'enableBindingsLogging', fallback = False)
+	config.logging_enableFileLogging = parser.getboolean('logging', 'enableFileLogging', fallback = False)
+	config.logging_enableScreenLogging = parser.getboolean('logging', 'enableScreenLogging', fallback = True)
+	config.logging_filter = parser.getlist('logging', 'filter', fallback = [])		# type: ignore [attr-defined]
+	config.logging_level = parser.get('logging', 'level', fallback = 'debug')
+	config.logging_maxLogMessageLength = parser.getint('logging', 'maxLogMessageLength', fallback = 1000)	# Max length of a log message
+	config.logging_path = parser.get('logging', 'path', fallback = './logs')
+	config.logging_queueSize = parser.getint('logging', 'queueSize', fallback = 5000)	# Size of the log queue
+	config.logging_size = parser.getint('logging', 'size', fallback = 100000)
+	config.logging_stackTraceOnError = parser.getboolean('logging', 'stackTraceOnError', fallback = True)
+	config.logging_enableUTCTimezone = parser.getboolean('logging', 'enableUTCTimezone', fallback = False)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+
+	# Loglevel and various overrides from command line
+	logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.websocket_loglevel
+	logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
+	if isinstance(logLevel, str):
+		if (ll := LogLevel.toLogLevel(logLevel)) is None:
+			raise ConfigurationError(fr'Configuration Error: Unsupported \[logging]:level: {logLevel}')
+		config.logging_level = ll
+	else:
+		raise ConfigurationError(fr'Configuration Error: Unsupported \[logging]:level: {logLevel}')
+
+	# max message length
+	if config.logging_maxLogMessageLength < 0:
+		raise ConfigurationError(fr'Configuration Error: \[logging]:maxLogMessageLength must be 0 or greater')
+	
+	# Test for correct logging queue size
+	if config.logging_queueSize < 0:
+		raise ConfigurationError(fr'Configuration Error: \[logging]:queueSize must be 0 or greater')

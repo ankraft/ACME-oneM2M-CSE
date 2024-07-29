@@ -208,11 +208,11 @@ class RequestManager(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the manager.
 		"""
-		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
-		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
-		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
-		self.sendToFromInResponses	= Configuration.get('cse.sendToFromInResponses')
-		self.enableRequestRecording	= Configuration.get('cse.operation.requests.enable')
+		self.flexBlockingBlocking = Configuration.cse_flexBlockingPreference == 'blocking'
+		self.requestExpirationDelta = Configuration.cse_requestExpirationDelta
+		self.maxExpirationDelta = Configuration.cse_maxExpirationDelta
+		self.sendToFromInResponses = Configuration.cse_sendToFromInResponses
+		self.enableRequestRecording	= Configuration.cse_operation_requests_enable
 
 
 	def configUpdate(self, name:str, 
@@ -225,7 +225,10 @@ class RequestManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta', 'cse.maxExpirationDelta', 'cse.operation.requests.enable']:
+		if key not in ( 'cse.flexBlockingPreference', 
+				 		'cse.requestExpirationDelta', 
+						'cse.maxExpirationDelta', 
+						'cse.operation.requests.enable'):
 			return
 
 		# Configuration values
@@ -904,7 +907,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.rqi}')
 
 		try: 
-			response = self.waitForPollingRequest(request.originator, request.rqi, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)
+			response = self.waitForPollingRequest(request.originator, request.rqi, timeout=self.requestExpirationDelta, reqType=RequestType.RESPONSE)
 		except ResponseException:
 			raise
 	

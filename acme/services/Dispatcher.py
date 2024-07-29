@@ -65,9 +65,9 @@ class Dispatcher(object):
 	def __init__(self) -> None:
 		""" Initialize the Dispatcher. """
 
-		self.csiSlashLen 				= len(CSE.cseCsiSlash)
+		self.csiSlashLen = len(CSE.cseCsiSlash)
 		""" Length of the CSI with a slash. """
-		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
+		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
 
 		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
@@ -122,7 +122,7 @@ class Dispatcher(object):
 				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 				INTERNAL_SERVER_ERROR: If an internal error occurred.
 		"""
-		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn}')
+		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn} Originator: {originator}')
 
 		# handle transit requests first
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
@@ -212,7 +212,8 @@ class Dispatcher(object):
 					 ResultContentType.attributesAndChildResources |\
 					 ResultContentType.childResources |\
 					 ResultContentType.attributesAndChildResourceReferences|\
-					 ResultContentType.originalResource:
+					 ResultContentType.originalResource|\
+					 ResultContentType.permissions:
 
 					resource = self.retrieveResource(id, originator, request)
 
@@ -305,6 +306,12 @@ class Dispatcher(object):
 
 			case ResultContentType.discoveryResultReferences:
 				return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
+		
+			case ResultContentType.permissions:
+				# TODO
+				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+				print(resource)
+				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case _:
 				raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')

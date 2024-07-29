@@ -13,9 +13,10 @@ from __future__ import annotations
 
 from typing import Optional, Any, Literal
 import asyncio
+from configparser import ConfigParser
 
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..etc.Types import CSEStatus
@@ -35,24 +36,15 @@ _textUI:TextUI = None
 class TextUI(object):
 
 	__slots__ = (
-		'startWithTUI',
-		'theme',
-		'refreshInterval',
 		'tuiApp'
 	)
 	
 	def __init__(self) -> None:
 		global _textUI
-		self.startWithTUI:bool = None
-		self.theme:str = None
-		self.refreshInterval:float = None
 		self.tuiApp:ACMETuiApp = None
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
-
-		# Get configs
-		self._assignConfig()
 
 		# Add handlers for registrations here. This is not done in the textUI classes because it it
 		# is not always clear when they are removed and re-created
@@ -80,17 +72,8 @@ class TextUI(object):
 	def restart(self) -> None:
 		"""	Restart the TextUI service.
 		"""
-		self._assignConfig()
 		L.logDebug('TextUI restarted')
 
-
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.startWithTUI = Configuration.get('textui.startWithTUI')
-		self.theme = Configuration.get('textui.theme')
-		self.refreshInterval = Configuration.get('textui.refreshInterval')
-	
 
 	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
 		if self.tuiApp and self.tuiApp.containerRegistrations:
@@ -107,11 +90,11 @@ class TextUI(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'textui.startWithTUI', 'textui.theme', 'textui.refreshInterval']:
+		if key not in [ 'textui.startWithTUI', 
+				 		'textui.theme', 
+						'textui.refreshInterval', 
+						'textui.maxRequestSize' ]:
 			return
-		
-		# Configuration values
-		self._assignConfig()
 
 		# Restart TUI
 		self.tuiApp.restart()
@@ -123,7 +106,7 @@ class TextUI(object):
 		previousScreenLogging = L.enableScreenLogging
 		L.enableScreenLogging = False
 		while True and CSE.cseStatus == CSEStatus.RUNNING:
-			self.tuiApp = ACMETuiApp(self)
+			self.tuiApp = ACMETuiApp()
 			try:
 				asyncio.run(self.tuiApp.run())
 			except ValueError:	# This may have something to do with running in a non-async context. Ignore for now.
@@ -216,3 +199,32 @@ class TextUI(object):
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptVisualBell(scriptName)
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Text UI
+	config.textui_refreshInterval = parser.getfloat('textui', 'refreshInterval', fallback = 2.0)
+	config.textui_startWithTUI = parser.getboolean('textui', 'startWithTUI', fallback = False)
+	config.textui_theme = parser.get('textui', 'theme', fallback = 'dark')
+	config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback = 10000)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	
+	# override configuration with command line arguments
+	if Configuration._args_lightScheme is not None:
+		Configuration.textui_theme = Configuration._args_lightScheme
+	if Configuration._args_textUI is not None:
+		Configuration.textui_startWithTUI = Configuration._args_textUI
+
+	# Text UI settings
+	if config.textui_maxRequestSize <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s')
+	config.textui_theme = config.textui_theme.lower()
+	if config.textui_theme not in [ 'dark', 'light' ]:
+		raise ConfigurationError(fr'Configuration Error: [i]\[textui]:theme[/i] must be "light" or "dark"')
+	if config.textui_maxRequestSize < 0:
+		raise ConfigurationError(fr'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be >= 0')
+
+

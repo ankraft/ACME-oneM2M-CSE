@@ -11,12 +11,14 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
+from configparser import ConfigParser
+
 from ..etc.ACMEUtils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, NotificationContentType
 from ..etc.Types import NotificationEventType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -92,7 +94,7 @@ class SUB(Resource):
 
 		# set batchNotify default attributes
 		if self.bn:		
-			self.setAttribute('bn/dur', Configuration.get('resource.sub.batchNotifyDuration'), overwrite = False)
+			self.setAttribute('bn/dur', Configuration.resource_sub_batchNotifyDuration, overwrite = False)
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
@@ -355,3 +357,16 @@ class SUB(Resource):
 	
 			"""
 		return len(set(dct.keys()).difference(self._allowedENCAttributes)) > 0
+	
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Defaults for Subscription Resources
+
+	config.resource_sub_batchNotifyDuration = parser.getint('resource.sub', 'batchNotifyDuration', fallback = 60)	# seconds
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	# Check default subscription duration
+	if config.resource_sub_batchNotifyDuration < 1:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0')

@@ -14,16 +14,17 @@ from pathlib import Path
 import json, os, fnmatch, traceback
 import requests, webbrowser
 from decimal import Decimal
+from configparser import ConfigParser
 from rich.text import Text
 
 
 from ..helpers.KeyHandler import FunctionKey
-from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy
+from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.ACMEUtils import uniqueRI, uniqueID, pureResource
 from ..etc.Utils import runsInIPython, isURL
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -33,7 +34,7 @@ from ..helpers.NetworkTools import pingTCPServer, isValidPort
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..runtime import CSE
-from ..runtime.Logging import Logging as L, LogLevel
+from ..runtime.Logging import Logging as L
 
 #
 #	Meta Tags
@@ -118,41 +119,41 @@ class ACMEPContext(PContext):
 
 						# !!! Always use lower case when adding new macros and commands below
 						 symbols = {	
-							 			'clear-console':			self.doClearConsole,
-							 			'create-resource':			self.doCreateResource,
-										'cse-attribute-infos':		self.doCseAttributeInfos,
-										'cse-status':				self.doCseStatus,
-							 			'delete-resource':			self.doDeleteResource,
-										'get-config':				self.doGetConfiguration,
-										'get-loglevel':				self.doGetLogLevel,
-										'get-storage':				self.doGetStorage,
-										'has-config':				self.doHasConfiguration,
-										'has-storage':				self.doHasStorage,
-										'http':						self.doHttp,
-										'import-raw':				self.doImportRaw,
-										'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
-										'log-divider':				self.doLogDivider,
-										'open-web-browser':			self.doOpenWebBrowser,
-										'ping-tcp-service':			self.doPingTcpService,
-										'print-json':				self.doPrintJSON,
-										'put-storage':				self.doPutStorage,
-										'query-resource':			self.doQueryResource,
-						 				'remove-storage':			self.doRemoveStorage,
-										'reset-cse':				self.doReset,
-							 			'retrieve-resource':		self.doRetrieveResource,
-										'run-script':				self.doRunScript,
-										'runs-in-ipython':			self.doRunsInIPython,
-										'runs-in-tui':				self.doRunsInTUI,
-							 			'send-notification':		self.doNotify,
-										'set-category-description':	self.doSetCategoryDescription,
-										'set-config':				self.doSetConfig,
-										'set-console-logging':		self.doSetLogging,
-										'schedule-next-script':		self.doScheduleNextScript,
-										'tui-notify':				self.doTuiNotify,
-										'tui-refresh-resources':	self.doTuiRefreshResources,
-										'tui-visual-bell':			self.doTuiVisualBell,
-							 			'update-resource':			self.doUpdateResource,
-						  			},
+							'clear-console':			self.doClearConsole,
+							'create-resource':			self.doCreateResource,
+							'cse-attribute-infos':		self.doCseAttributeInfos,
+							'cse-status':				self.doCseStatus,
+							'delete-resource':			self.doDeleteResource,
+							'get-config':				self.doGetConfiguration,
+							'get-loglevel':				self.doGetLogLevel,
+							'get-storage':				self.doGetStorage,
+							'has-config':				self.doHasConfiguration,
+							'has-storage':				self.doHasStorage,
+							'http':						self.doHttp,
+							'import-raw':				self.doImportRaw,
+							'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
+							'log-divider':				self.doLogDivider,
+							'open-web-browser':			self.doOpenWebBrowser,
+							'ping-tcp-service':			self.doPingTcpService,
+							'print-json':				self.doPrintJSON,
+							'put-storage':				self.doPutStorage,
+							'query-resource':			self.doQueryResource,
+							'remove-storage':			self.doRemoveStorage,
+							'reset-cse':				self.doReset,
+							'retrieve-resource':		self.doRetrieveResource,
+							'run-script':				self.doRunScript,
+							'runs-in-ipython':			self.doRunsInIPython,
+							'runs-in-tui':				self.doRunsInTUI,
+							'send-notification':		self.doNotify,
+							'set-category-description':	self.doSetCategoryDescription,
+							'set-config':				self.doSetConfig,
+							'set-console-logging':		self.doSetLogging,
+							'schedule-next-script':		self.doScheduleNextScript,
+							'tui-notify':				self.doTuiNotify,
+							'tui-refresh-resources':	self.doTuiRefreshResources,
+							'tui-visual-bell':			self.doTuiVisualBell,
+							'update-resource':			self.doUpdateResource,
+						},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
 						 printFunc = self.prnt,
@@ -163,7 +164,8 @@ class ACMEPContext(PContext):
 						 fallbackFunc = fallbackFunc,
 						 monitorFunc = monitorFunc,
 						 allowBrackets = allowBrackets,
-						 verbose = CSE.script.verbose)
+						 verbose = Configuration.scripting_verbose
+					)
 
 		self.scriptFilename = filename if filename else None
 		self.meta[_metaFilename] = filename if filename else None
@@ -660,8 +662,8 @@ class ACMEPContext(PContext):
 			response = _method(_url, 
 							  data = _body,
 							  headers = _headers, 
-							  verify = CSE.security.verifyCertificateHttp,
-							  timeout = CSE.httpServer.requestTimeout)		# type: ignore[operator, call-arg]
+							  verify = Configuration.http_security_verifyCertificate,
+							  timeout = Configuration.http_timeout)		# type: ignore[operator, call-arg]
 		except requests.exceptions.ConnectionError:
 			pcontext.variables['response.status'] = SSymbol()	# nil
 			return pcontext.setResult(SSymbol())
@@ -1589,12 +1591,8 @@ class ScriptManager(object):
 			scripts: Dictionary of scripts and script `ACMEPContext`.
 			storage: Dictionary for internal global variable storage.
 
-			verbose: Verbosity configuration value.
-			scriptMonitorInterval: Interval for monitoring scripts files.
-			scriptDirectories: List of script directories to monitoe.
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
 			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
-			maxRuntime: Maximum runtime for a script.
 	"""
 
 	__slots__ = (
@@ -1604,10 +1602,6 @@ class ScriptManager(object):
 		'scriptCronWorker',
 
 		'categoryDescriptions',
-		'scriptDirectories',
-		'scriptMonitorInterval',
-		'verbose',
-		'maxRuntime'
 	)
 	""" Slots of class attributes. """
 
@@ -1621,8 +1615,6 @@ class ScriptManager(object):
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
-
-		self._assignConfig()
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
@@ -1659,15 +1651,6 @@ class ScriptManager(object):
 		return True
 	
 	
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.verbose = Configuration.get('scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('scripting.fileMonitoringInterval')
-		self.scriptDirectories = Configuration.get('scripting.scriptDirectories')
-		self.maxRuntime = Configuration.get('scripting.maxRuntime')
-
-
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
@@ -1685,13 +1668,10 @@ class ScriptManager(object):
 					  ]:
 			return
 
-		# assign new values
-		self._assignConfig()
-
 		# restart or stop monitor worker
 		if self.scriptUpdatesMonitor:
-			if self.scriptMonitorInterval > 0.0:
-				self.scriptUpdatesMonitor.restart(interval = self.scriptMonitorInterval)
+			if Configuration.scripting_fileMonitoringInterval > 0.0:
+				self.scriptUpdatesMonitor.restart(interval = Configuration.scripting_fileMonitoringInterval)
 			else:
 				self.scriptUpdatesMonitor.stop()
 
@@ -1707,10 +1687,10 @@ class ScriptManager(object):
 			Start a background worker to monitor directories for scripts.
 		"""
 		# Add a worker to monitor changes in the scripts
-		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, 
+		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(Configuration.scripting_fileMonitoringInterval,
 							     								   self.checkScriptUpdates, 
 																   'scriptUpdatesMonitor')
-		if self.scriptMonitorInterval > 0.0:
+		if Configuration.scripting_fileMonitoringInterval > 0.0:
 			self.scriptUpdatesMonitor.start()
 
 		# Add a worker to check scheduled script, fixed interval of 1 second
@@ -1807,8 +1787,8 @@ class ScriptManager(object):
 		if CSE.importer.extendedScriptPaths:	# from the init directory
 			if self.loadScriptsFromDirectory(CSE.importer.extendedScriptPaths) == -1:
 				L.isWarn and L.logWarn('Cannot import script(s)')
-		if self.scriptDirectories:	# from the extra script directories
-			if self.loadScriptsFromDirectory(self.scriptDirectories) == -1:
+		if Configuration.scripting_scriptDirectories:	# from the extra script directories
+			if self.loadScriptsFromDirectory(Configuration.scripting_scriptDirectories) == -1:
 				L.isWarn and L.logWarn('Cannot import script(s)')
 		return True
 
@@ -2029,10 +2009,10 @@ class ScriptManager(object):
 				return False
 			
 			# Set script timeout
-			pcontext.setMaxRuntime(self.maxRuntime)
+			pcontext.setMaxRuntime(Configuration.scripting_maxRuntime)
 
 			# Set environemt
-			environment['tui.theme'] = SSymbol(string = CSE.textUI.theme)
+			environment['tui.theme'] = SSymbol(string = Configuration.textui_theme)
 			pcontext.setEnvironment(environment)
 
 			# Handle arguments
@@ -2269,3 +2249,28 @@ class ScriptManager(object):
 					self.runScript(each, arguments = getPrompt(), background = background, environment = environment)
 			else:
 				self.runScript(each, arguments = getPrompt(), background = background, environment = environment)
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	config.scripting_fileMonitoringInterval = parser.getfloat('scripting', 'fileMonitoringInterval', fallback = 2.0)
+	config.scripting_scriptDirectories = parser.getlist('scripting', 'scriptDirectories', fallback = []) # type: ignore[attr-defined]
+	config.scripting_verbose = parser.getboolean('scripting', 'verbose', fallback = False)
+	config.scripting_maxRuntime = parser.getfloat('scripting', 'maxRuntime', fallback = 60.0)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+
+	# Script settings
+	if config.scripting_fileMonitoringInterval < 0.0:
+		raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0')
+	if config.scripting_maxRuntime < 0.0:
+		raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0')
+	if (scriptDirs := config.scripting_scriptDirectories):
+		lst = []
+		for each in scriptDirs:
+			if not each:
+				continue
+			if not os.path.isdir(each):
+				raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible')
+			lst.append(each)
+		config.scripting_scriptDirectories = lst

@@ -14,6 +14,8 @@ from __future__ import annotations
 from typing import Optional, Tuple, List, cast, Any
 
 import time
+from configparser import ConfigParser
+
 from ..etc.ACMEUtils import isSPRelative
 from ..helpers.TextTools import findXPath
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
@@ -27,6 +29,7 @@ from ..resources.CSEBase import getCSE
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration, ConfigurationError
 
 # TODO for anounceable resource:
 # - update: update resource here
@@ -34,18 +37,7 @@ from ..runtime.Logging import Logging as L
 
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
-
-		Attributes:
-			checkInterval: Number of seconds to wait between tries to announce resources to remote CSEs (configurable).
-			allowAnnouncementsToHostingCSE: Allow or disallow resources to announce to the own hosting CSE (configurable).
-			delayAfterRegistration: Number of seconds to wait before performing announcements when a new CSE has registered (configurable).
 	"""
-
-	__slots__ = (
-		'checkInterval',
-		'allowAnnouncementsToHostingCSE',
-		'delayAfterRegistration',
-	)
 
 
 	def __init__(self) -> None:
@@ -54,12 +46,6 @@ class AnnouncementManager(object):
 		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
 		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSEHasRegistered)			# type: ignore
 		
-		# Configuration values
-		self._assignConfig()
-
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
-
 		L.isInfo and L.log('AnnouncementManager initialized')
 
 
@@ -77,32 +63,6 @@ class AnnouncementManager(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the announcement manager.
-		"""
-		self.checkInterval = Configuration.get('cse.announcements.checkInterval')
-		self.allowAnnouncementsToHostingCSE	= Configuration.get('cse.announcements.allowAnnouncementsToHostingCSE')
-		self.delayAfterRegistration	= Configuration.get('cse.announcements.delayAfterRegistration')
-
-
-	def configUpdate(self, name:str, key:Optional[str] = None, value:Optional[Any] = None) -> None:
-		"""	Callback for the *configUpdate* event.
-			
-			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
-		"""
-		if key not in [ 'cse.announcements.checkInterval', 
-						'cse.announcements.allowAnnouncementsToHostingCSE',
-						'cse.announcements.delayAfterRegistration',
-					  ]:
-			return
-
-		# assign new values
-		self._assignConfig()
-
-
 	#########################################################################
 	#
 	#	Event Handlers. Listen on remote CSE registrations
@@ -116,7 +76,7 @@ class AnnouncementManager(object):
 				remoteCSE: The remote `CSEBase` resource.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
-		time.sleep(self.delayAfterRegistration)	# Give some time until remote CSE fully connected
+		time.sleep(Configuration.cse_announcements_delayAfterRegistration)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
@@ -127,7 +87,7 @@ class AnnouncementManager(object):
 				name:Event name.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""
-		time.sleep(self.delayAfterRegistration) 	# Give some time until remote CSE is fully connected
+		time.sleep(Configuration.cse_announcements_delayAfterRegistration) 	# Give some time until remote CSE is fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
@@ -175,7 +135,7 @@ class AnnouncementManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for at in resource.at:
-			if (at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash)) and not self.allowAnnouncementsToHostingCSE:
+			if (at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash)) and not Configuration.cse_announcements_allowAnnouncementsToHostingCSE:
 				L.isWarn and L.logWarn('Targeting own CSE for announcement. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
@@ -441,10 +401,12 @@ class AnnouncementManager(object):
 				csi: The CSE-ID of the CSE where the announced resource is hosted.
 				remoteRI: The resource ID of the remote announced resource.
 		"""
+		print(resource)
 		dct = resource.createAnnouncedResourceDict(isCreate = False)
 		# Create the announed resource on the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
+		print(dct)
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
 													   to = csrID, 
 													   originator = CSE.cseCsi, 
@@ -565,3 +527,20 @@ class AnnouncementManager(object):
 		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))
 
 
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Announcements
+
+	config.cse_announcements_allowAnnouncementsToHostingCSE = parser.getboolean('cse.announcements', 'allowAnnouncementsToHostingCSE', fallback = True)
+	config.cse_announcements_checkInterval = parser.getint('cse.announcements', 'checkInterval', fallback = 10)
+	config.cse_announcements_delayAfterRegistration = parser.getfloat('cse.announcements', 'delayAfterRegistration', fallback = 3.0)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+
+	# check intervals
+	if config.cse_announcements_checkInterval < 0:
+		raise ConfigurationError(fr'Configuration Error: \[cse.announcements]:checkInterval must be 0 or greater')
+	if config.cse_announcements_delayAfterRegistration < 0.0:
+		raise ConfigurationError(fr'Configuration Error: \[cse.announcements]:delayAfterRegistration must be 0 or greater')

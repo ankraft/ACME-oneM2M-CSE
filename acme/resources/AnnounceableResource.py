@@ -202,7 +202,7 @@ class AnnounceableResource(Resource):
 
 			if not (modifiedAttributes := self[Constants.attrModified]):
 				return None
-
+			print(f'Modified attributes: {modifiedAttributes}')
 			dct = { tpe : { } } # with the announced variant of the tpe
 			body = dct[tpe]
 

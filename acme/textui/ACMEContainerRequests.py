@@ -62,7 +62,6 @@ class ACMEViewRequests(Vertical):
 
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
-		self.maxRequestSize = Configuration.get('textui.maxRequestSize')
 
 		self.listDetails = False
 		"""Show list details."""
@@ -104,7 +103,7 @@ class ACMEViewRequests(Vertical):
 
 		# Requests List Header
 		with Horizontal(id = 'request-list-header'):
-			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]')
+			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]     ')
 
 		# Request List
 		yield ListView(id = 'request-list-list')
@@ -147,7 +146,7 @@ class ACMEViewRequests(Vertical):
 						explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
 						getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
 						width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
-		if len(jsns) > self.maxRequestSize:
+		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Request is too large to display'
 			type = 'text'
 		_l1 = jsns.count('\n')
@@ -160,7 +159,7 @@ class ACMEViewRequests(Vertical):
 					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
 					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
 					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
-		if len(jsns) > self.maxRequestSize:
+		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Response is too large to display'
 			type = 'text'
 		_l2 = jsns.count('\n')
@@ -215,9 +214,8 @@ class ACMEViewRequests(Vertical):
 
 		def rscFmt(rsc:int) -> str:
 			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
-			# _c = 'green1' if isSuccessRSC(_rsc) else 'red'
 			_c = 'green3' if isSuccessRSC(_rsc) else 'red'
-			return f'[{_c}]{_rsc.name}[/{_c}]'
+			return f'[{_c}]{_rsc.name:30.30}[/{_c}]'
 
 		self.requestList.clear()
 		self.requestListRequest.update()

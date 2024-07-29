@@ -34,10 +34,6 @@ class ActionManager(object):
 		Attributes:
 	"""
 
-	__slots__ = (
-		'ecpPeriodicDefault',
-		'ecpContinuousDefault',
-	)
 	
 	# Imported here because of circular import
 	from ..resources.Resource import Resource
@@ -46,12 +42,6 @@ class ActionManager(object):
 	def __init__(self) -> None:
 		"""	Initialization of an *ActionManager* instance.
 		"""
-
-		# Get the configuration settings
-		self._assignConfig()
-
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		# Add handler for any resource change event
 		CSE.event.addHandler(CSE.event.changeResource, self.evaluateActions)	# type: ignore
@@ -75,21 +65,6 @@ class ActionManager(object):
 		"""
 		L.isDebug and L.logDebug('ActionManager restarted')
 
-
-	def _assignConfig(self) -> None:
-		"""	Assign default configurations.
-		"""
-		self.ecpPeriodicDefault = Configuration.get('resource.actr.ecpPeriodic')
-		self.ecpContinuousDefault = Configuration.get('resource.actr.ecpContinuous')
-
-
-	def configUpdate(self, name:str, key:Optional[str] = None, value:Any = None) -> None:
-		"""	Handle configuration updates.
-		"""
-		if key not in [ 'resource.actr.ecpPeriodic', 'resource.actr.ecpContinuous' ]:
-			return
-		self._assignConfig()
-		return
 
 	###############################################################################################
 
@@ -298,12 +273,12 @@ class ActionManager(object):
 			CSE.storage.upsertAction(action, 0, 0)
 			return
 		if evm == EvalMode.periodic:
-			ecp = action.ecp if action.ecp else self.ecpPeriodicDefault
+			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpPeriodic
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
 			CSE.storage.upsertAction(action, utcTime(), 0)
 			return
 		if evm == EvalMode.continous:
-			ecp = action.ecp if action.ecp else self.ecpContinuousDefault
+			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpContinuous
 			L.isDebug and L.logDebug(f'evm: continuous for action: {action.ri}, counter: {ecp}')
 			CSE.storage.upsertAction(action, 0, ecp)
 			return

@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 from typing import Dict, Union, Optional
+from configparser import ConfigParser
 
 import datetime
 from urllib.parse import urlparse
@@ -20,7 +21,7 @@ from threading import Lock
 from ..etc.Types import CSEType, ResourceTypes
 from ..etc.DateUtils import utcTime, toISO8601Date
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -117,13 +118,11 @@ class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 
 		Attributes:
-			statisticsEnabled:		Flag whether statistics are enabled.
 			statLock:				Internal lock for statistic handling.
 			stats:					Statistics records
 	"""
 
 	__slots__ = (
-		'statisticsEnabled',
 		'statLock',
 		'stats',
 	)
@@ -131,7 +130,6 @@ class Statistics(object):
 
 
 	def __init__(self) -> None:
-		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
 		# create lock
 		self.statLock = Lock()
@@ -139,11 +137,11 @@ class Statistics(object):
 		# retrieve or create statistics record, even when statistics are disabled
 		self.stats = self.setupStats()
 
-		if self.statisticsEnabled:
+		if Configuration.cse_statistics_enable:
 
 			# Start background worker to handle writing to DB
 			L.isInfo and L.log('Starting statistics DB thread')
-			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
+			BackgroundWorkerPool.newWorker(Configuration.cse_statistics_writeInterval, self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
@@ -198,7 +196,7 @@ class Statistics(object):
 			Return:
 				True if shutdown was successful, False otherwise.
 		"""
-		if self.statisticsEnabled:
+		if Configuration.cse_statistics_enable:
 			# Stop the worker
 			L.isInfo and L.log('Stopping statistics DB thread')
 			BackgroundWorkerPool.stopWorkers('statsDBWorker')
@@ -418,13 +416,13 @@ skinparam rectangle {
 
 		# Own CSE node & http interface
 		result += 'rectangle << CSE >> {\n'
-		address = urlparse(CSE.httpServer.serverAddress)
+		address = urlparse(Configuration.http_address)
 		(ip, _) = tuple(address.netloc.split(':'))
 		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
 
 		# Own http interface
-		http = 'https' if CSE.security.useTLSHttp else 'http'
-		result += f'interface "{http}\\n{CSE.httpServer.port}" as http_own #white\n'
+		http = 'https' if Configuration.http_security_useTLS else 'http'
+		result += f'interface "{http}\\n{Configuration.http_port}" as http_own #white\n'
 
 		# Build Resource Tree
 		result += 'note right of CSE\n'
@@ -439,14 +437,14 @@ skinparam rectangle {
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if CSE.cseType != CSEType.IN and CSE.remote.registrarAddress:
+		if CSE.cseType != CSEType.IN and Configuration.cse_registrar_address:
 			registrarCSE = CSE.remote.registrarCSE
 			bg = 'white' if registrarCSE else 'lightgrey'
 			color = 'green' if registrarCSE else 'black'
-			address = urlparse(CSE.remote.registrarAddress)
+			address = urlparse(Configuration.cse_registrar_address)
 			(ip, port) = tuple(address.netloc.split(':'))
 			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.registrarAddress}" #{bg}\n'
+			result += f'cloud PARENT as "<color:{color}>{Configuration.cse_registrar_cseID[1:]}</color> ({registrarType})\\n{Configuration.cse_registrar_address}" #{bg}\n'
 			result += 'CSE -UP- PARENT\n'
 
 		
@@ -457,10 +455,10 @@ skinparam rectangle {
 			for desc in CSE.remote.descendantCSR.keys():
 				csi = desc[1:]
 				(csr, atCsi) = CSE.remote.descendantCSR[desc]
-				address = f'\\n{csr.poa}' if csr else ''
+				poa = f'\\n{csr.poa}' if csr else ''
 				tpe = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
 				shape = 'node' if csr else 'rectangle'
-				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{address}" #white\n'
+				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{poa}" #white\n'
 				connections[desc] = (cnt, atCsi)
 				cnt += 1
 			
@@ -478,3 +476,17 @@ skinparam rectangle {
 		# end
 		result += '@enduml'
 		return result
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Statistics
+
+	config.cse_statistics_enable = parser.getboolean('cse.statistics', 'enable', fallback = True)
+	config.cse_statistics_writeInterval = parser.getint('cse.statistics', 'writeInterval', fallback = 60)		# Seconds
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	if config.cse_statistics_writeInterval <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[cse.statistics]:writeInterval[/i] must be > 0')
+	

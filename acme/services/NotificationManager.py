@@ -52,9 +52,6 @@ class NotificationManager(object):
 		'lockBatchNotification',
 		'lockNotificationEventStats',
 
-		'asyncSubscriptionNotifications',
-		'enableSubscriptionVerificationRequests',
-
 		'_eventNotification',
 	)
 
@@ -62,12 +59,6 @@ class NotificationManager(object):
 	def __init__(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
 		"""
-
-		# Get the configuration settings
-		self._assignConfig()
-
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
 		self.lockBatchNotification = Lock()					# Lock for batchNotifications
 		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
@@ -107,29 +98,6 @@ class NotificationManager(object):
 			worker.start(**worker.args)
 
 		L.isDebug and L.logDebug('NotificationManager restarted')
-
-
-	def _assignConfig(self) -> None:
-		"""	Assign configuration settings.
-		"""
-		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
-		self.enableSubscriptionVerificationRequests	= Configuration.get('cse.enableSubscriptionVerificationRequests')
-
-
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
-		"""	Handle configuration updates.
-
-			Args:
-				name: The name of the event.
-				key: The configuration key that has changed.
-				value: The new value of the configuration key.
-		"""
-		if key not in ( 'cse.asyncSubscriptionNotifications', 'cse.enableSubscriptionVerificationRequests' ):
-			return
-		self._assignConfig()
-
 
 	###########################################################################
 	#
@@ -354,7 +322,7 @@ class NotificationManager(object):
 														 reason, 
 														 resource = childResource, 
 														 modifiedAttributes = modifiedAttributes, 
-														 asynchronous = self.asyncSubscriptionNotifications,
+														 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 														 operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 			
@@ -369,7 +337,7 @@ class NotificationManager(object):
 															 reason, 
 															 resource = resource, 
 															 modifiedAttributes = modifiedAttributes,
-															 asynchronous = self.asyncSubscriptionNotifications,
+															 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 					else:
@@ -382,7 +350,7 @@ class NotificationManager(object):
 						self._handleSubscriptionNotification(sub, 
 															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
 															 missingData = copy.deepcopy(md),
-															 asynchronous = self.asyncSubscriptionNotifications,
+															 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 						md.clearMissingDataList()
@@ -405,7 +373,7 @@ class NotificationManager(object):
 														reason, 
 														resource, 
 														modifiedAttributes = modifiedAttributes,
-														asynchronous = self.asyncSubscriptionNotifications,
+														asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 														operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 
@@ -1093,7 +1061,7 @@ class NotificationManager(object):
 		"""
 
 		# Skip verification requests if disabled
-		if not self.enableSubscriptionVerificationRequests:
+		if not Configuration.cse_enableSubscriptionVerificationRequests:
 			L.isDebug and L.logDebug('Skipping verification request (disabled)')
 			return True
 

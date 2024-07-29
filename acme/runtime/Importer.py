@@ -51,7 +51,7 @@ class Importer(object):
 	def __init__(self) -> None:
 		"""	Initialization of an *Importer* instance.
 		"""
-		self.resourcePath = Configuration.get('cse.resourcesPath')
+		self.resourcePath = Configuration.cse_resourcesPath
 		self.extendedScriptPaths:list[str] = []
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
@@ -77,7 +77,7 @@ class Importer(object):
 			return False
 		
 		# Do extra imports from the init directory of the runtime data directory
-		rtDir = f'{Configuration.get("baseDirectory")}{os.sep}init'
+		rtDir = f'{Configuration.baseDirectory}{os.sep}init'
 		if os.path.exists(rtDir):
 			L.isInfo and L.log(f'Importing additional resources from runtime data directory: {rtDir}')
 			if not (self.importEnumPolicies(rtDir) and
@@ -98,8 +98,8 @@ class Importer(object):
 		# - modify and simplify import functions
 		# - add test script in /tmp/acme/init
 				
-		if CSE.script.scriptDirectories:
-			if not self.importScripts(CSE.script.scriptDirectories):
+		if Configuration.scripting_scriptDirectories:
+			if not self.importScripts(Configuration.scripting_scriptDirectories):
 				return False
 		return True		
 
@@ -641,7 +641,7 @@ class Importer(object):
 		"""	Prepare the importing process.
 		"""
 		# temporarily disable access control
-		self._oldacp = Configuration.get('cse.security.enableACPChecks')
+		self._oldacp = Configuration.cse_security_enableACPChecks
 		Configuration.update('cse.security.enableACPChecks', False)
 		self.isImporting = True
 

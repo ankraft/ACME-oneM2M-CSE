@@ -17,6 +17,7 @@ from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCo
 from .Types import Result, ResourceTypes, Operation, CSERequest
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 from ..helpers import TextTools
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 
@@ -396,7 +397,7 @@ def curlFromRequest(request:JSON) -> str:
 		return 'No request available'
 
 	curl = f"""\
-curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{CSE.httpServer.serverAddress}{CSE.httpServer.rootPath}/{request['to']}' \\
+curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{Configuration.http_address}{Configuration.http_root}/{request['to']}' \\
   -H 'X-M2M-Origin: {request['fr']}' \\
   -H 'X-M2M-RVI: {request['rvi']}' \\
   -H 'X-M2M-RI: {request['rqi']}'"""

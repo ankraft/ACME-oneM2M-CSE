@@ -10,11 +10,13 @@
 from __future__ import annotations
 from typing import Optional
 
+from configparser import ConfigParser
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import getResourceDate, toISO8601Date
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -83,10 +85,10 @@ class TS(ContainerResource):
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		self.setAttribute('mdc', 0, overwrite = False)
-		if Configuration.get('resource.ts.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('resource.ts.mni'), overwrite = False)
-			self.setAttribute('mbs', Configuration.get('resource.ts.mbs'), overwrite = False)
-			self.setAttribute('mdn', Configuration.get('resource.ts.mdn'), overwrite = False)
+		if Configuration.resource_ts_enableLimits:	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
+			self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
+			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -433,3 +435,22 @@ class TS(ContainerResource):
 			self.setAttribute('mdc', len(self.mdlt), overwrite = True)		# Set the mdc
 		self.dbUpdate(True)													# Update in DB
 
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Defaults for timeSeries Resources
+
+	config.resource_ts_enableLimits = parser.getboolean('resource.ts', 'enableLimits', fallback = False)
+	config.resource_ts_mbs = parser.getint('resource.ts', 'mbs', fallback = 10000)
+	config.resource_ts_mdn = parser.getint('resource.ts', 'mdn', fallback = 10)
+	config.resource_ts_mni = parser.getint('resource.ts', 'mni', fallback = 10)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	if config.resource_ts_mbs <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mbs[/i] must be > 0')
+	if config.resource_ts_mdn < 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mdn[/i] must be >= 0')
+	if config.resource_ts_mni <= 0:
+		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mni[/i] must be > 0')

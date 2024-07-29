@@ -8,8 +8,9 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any, Tuple
-import logging, uuid
+from typing import Optional, Any, Tuple, cast
+import logging, uuid, os
+from configparser import ConfigParser
 
 from websockets.sync.connection import Connection as WSConnection
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
@@ -20,12 +21,13 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from ..etc.Constants import Constants
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
+from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
 from ..etc.ACMEUtils import uniqueID, csiFromSPRelative
-from ..etc.Utils import renameThread
-from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
+from ..etc.Utils import renameThread, normalizeURL
+from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, LogLevel
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
@@ -35,11 +37,6 @@ class WebSocketServer(object):
 	"""
 
 	__slots__ = [ 
-		'enable', 
-		'interface',
-		'port', 
-		'logLevel',
-		'requestTimeout',
 		'isPaused', 
 		'websocketServer', 
 		'wsConnections', 
@@ -54,9 +51,6 @@ class WebSocketServer(object):
 	def __init__(self) -> None:
 		"""	Initialization of the WebSocket Server.
 		"""
-
-		# Get the configuration settings
-		self._assignConfig()
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
@@ -106,25 +100,6 @@ class WebSocketServer(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.enable = Configuration.get('websocket.enable')
-		"""	Flag whether the WebSocket server is enabled. """
-
-		self.port = Configuration.get('websocket.port')
-		"""	The port the WebSocket server is listening on."""
-
-		self.interface = Configuration.get('websocket.listenIF')
-		"""	The interface the WebSocket server is listening on."""
-
-		self.logLevel = Configuration.get('websocket.loglevel')
-		"""	The log level for the WebSocket server."""
-
-		self.requestTimeout = Configuration.get('websocket.timeout')
-		"""	The timeout for requests."""
-
-
 	def _configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
@@ -143,8 +118,7 @@ class WebSocketServer(object):
 					  ]:
 			return
 
-		# assign new values
-		self._assignConfig()
+		# Restart the server if the configuration has changed
 		self.shutdown()
 		self.run()		# Restart the server
 
@@ -179,7 +153,7 @@ class WebSocketServer(object):
 	def run(self) -> bool:
 		"""	Initialize and run the WebSocket server as a BackgroundWorker/Actor.
 		"""
-		if not self.enable:
+		if not Configuration.websocket_enable:	# type:ignore[attr-defined]
 			L.isInfo and L.log('WebSocket: server NOT enabled')
 			return True
 		# Actually start the actor to run the WebSocket Server as a thread
@@ -194,11 +168,11 @@ class WebSocketServer(object):
 		"""	WebSocket server main loop.
 		"""
 		self.websocketServer = serve(self.handleIncomingConnection, 
-							   		 self.interface, 
-									 self.port, 
+							   		 Configuration.websocket_listenIF,
+									 Configuration.websocket_port, 
 									 subprotocols = ContentSerializationType.supportedContentSerializationsWS(), # type:ignore[arg-type]
-									 ssl_context = CSE.security.getSSLContextWs()) # type:ignore[list-item]	
-		logging.getLogger('websockets.server').setLevel(self.logLevel)
+									 ssl_context = CSE.security.getSSLContextWs())		
+		logging.getLogger('websockets.server').setLevel(Configuration.websocket_loglevel)
 		with self.websocketServer as server:
 			server.serve_forever()	# Will block until the server is shutdown
 		L.isDebug and L.logDebug('WebSocket server shut down')
@@ -634,7 +608,7 @@ class WebSocketServer(object):
 			return createPositiveResponseResult()
 
 		# Receiving the response
-		resResp, _ = CSE.request.waitForResponse(req.request.rqi, self.requestTimeout)
+		resResp, _ = CSE.request.waitForResponse(req.request.rqi, Configuration.websocket_timeout)
 
 		if resResp is None:
 			disconnectWS(targetOriginator, isSenderWS)
@@ -644,3 +618,85 @@ class WebSocketServer(object):
 		disconnectWS(targetOriginator, isSenderWS)
 
 		return resResp
+
+
+
+
+
+# TODO new format
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	# override configuration with command line arguments
+	if Configuration._args_wsEnabled is not None:
+		Configuration.websocket_enable = Configuration._args_wsEnabled
+
+	# Basic configs
+	config.websocket_enable = parser.getboolean('websocket', 'enable', fallback = False)
+	config.websocket_listenIF = parser.get('websocket', 'listenIF', fallback = '0.0.0.0')
+	config.websocket_port = parser.getint('websocket', 'port', fallback = 8180)
+	config.websocket_address = parser.get('websocket', 'address', fallback = 'ws://127.0.0.1:8180')
+	config.websocket_loglevel = parser.get('websocket', 'loglevel', fallback = 'debug')
+	config.websocket_timeout = parser.getfloat('websocket', 'timeout', fallback = 10.0)
+
+	# Security configs
+	config.websocket_security_caCertificateFile = parser.get('websocket.security', 'caCertificateFile', fallback = None)
+	config.websocket_security_caPrivateKeyFile = parser.get('websocket.security', 'caPrivateKeyFile', fallback = None)
+	config.websocket_security_tlsVersion = parser.get('websocket.security', 'tlsVersion', fallback ='auto')
+	config.websocket_security_useTLS = parser.getboolean('websocket.security', 'useTLS', fallback = False)
+	config.websocket_security_verifyCertificate = parser.getboolean('websocket.security', 'verifyCertificate', fallback = False)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	config.websocket_address = normalizeURL(config.websocket_address)
+
+	# override configuration with command line arguments
+	if Configuration._args_wsEnabled is not None:
+		Configuration.websocket_enable = Configuration._args_wsEnabled
+
+	if config.websocket_security_useTLS:
+		if (val := config.websocket_address).startswith('ws:'):
+			Configuration._print(r'[orange3]Configuration Warning: Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
+			config.websocket_address = val.replace('ws:', 'wss:')
+		# registrar might still be accessible via another protocol
+	else: 
+		if (val := config.websocket_address).startswith('wss:'):
+			Configuration._print(r'[orange3]Configuration Warning: Changing "wss" to "ws" in [i]\[websocket]:address[/i]')
+			config.websocket_address = val.replace('wss:', 'ws:')
+		# registrar might still be accessible via another protocol
+
+	if not isValidPort(config.websocket_port):
+		raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {config.websocket_port}')
+	if not (isValidateHostname(config.websocket_listenIF) or isValidateIpAddress(config.websocket_listenIF)):
+		raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {config.websocket_listenIF}')
+
+	# Override loglevel with command line argument
+	logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.websocket_loglevel
+	logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
+	if isinstance(logLevel, str):
+		if (ll := LogLevel.toLogLevel(logLevel)) is None:
+			raise ConfigurationError(fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}')
+		config.websocket_loglevel = ll
+	else:
+		raise ConfigurationError(fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}')
+
+	# WebSocket TLS & certificates
+	if not config.websocket_security_useTLS:	# clear certificates configuration if not in use
+		config.websocket_security_verifyCertificate = False
+		config.websocket_security_tlsVersion = 'auto'
+		config.websocket_security_caCertificateFile = ''
+		config.websocket_security_caPrivateKeyFile = ''
+	else:
+		config.websocket_security_tlsVersion = config.websocket_security_tlsVersion.lower()
+		if not (val := config.websocket_security_tlsVersion) in [ 'tls1.1', 'tls1.2', 'auto' ]:
+			raise ConfigurationError(fr'Configuration Error: Unknown value for [i]\[websocket.security]:tlsVersion[/i]: {val}')
+		
+		if not (val := config.websocket_security_caCertificateFile):
+			raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] must be set when TLS is enabled')
+		if not os.path.exists(val):
+			raise ConfigurationError(fr'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+		
+		if not (val := config.websocket_security_caPrivateKeyFile):
+			raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+		if not os.path.exists(val):
+			raise ConfigurationError(fr'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
+

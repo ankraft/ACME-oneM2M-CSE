@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 
 ### Changed
+- [CSE] Internal refactoring of the configuration handling. The main configuration handling is still done in the old module, but the assignments and validations are now done in the using modules. Configuration settings are now stored in attributes, not a central dictionary anymore.
 
 ### Fixed
 - [CSE] Fixed crash when the environment variables contain "$" characters.

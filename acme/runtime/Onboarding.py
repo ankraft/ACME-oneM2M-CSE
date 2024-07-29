@@ -120,7 +120,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 		runtimeDirectory = inquirer.text(
 							message = 'Runtime data directory:',
-							default = str(Configuration.Configuration._baseDirectory),
+							default = str(Configuration.Configuration.baseDirectory),
 							long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
 							amark = '✓', 
 						).execute()

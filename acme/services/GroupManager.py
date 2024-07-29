@@ -10,7 +10,9 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List, Optional, Any
+from typing import cast, List, Optional
+
+from configparser import ConfigParser
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ..etc.Types import CSERequest, JSON, ResponseType
@@ -25,7 +27,7 @@ from ..resources.GRP_FOPT import GRP_FOPT
 from ..resources.Factory import resourceFromDict
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 
 
 class GroupManager(object):
@@ -38,14 +40,8 @@ class GroupManager(object):
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
 
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
-		# Assign configuration values
-		self._assignConfig()
 
 		L.isInfo and L.log('GroupManager initialized')
 
@@ -60,26 +56,9 @@ class GroupManager(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		"""	Assign the configuration values.
-		"""
-		self.resultExpirationTime = Configuration.get('resource.grp.resultExpirationTime')
-
-
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
-		"""	Handle configuration updates.
-		"""
-		if key not in ( 'resource.grp.resultExpirationTime' ):
-			return
-		self._assignConfig()
-
-
 	def restart(self, name:str) -> None:
 		"""	Restart the registration services.
 		"""
-		self._assignConfig()
 		L.isDebug and L.logDebug('GroupManager restarted')
 
 
@@ -264,8 +243,8 @@ class GroupManager(object):
 		# Else use the default configuration, if set to a value > 0
 		if request.rset is not None:
 			_timeoutTS = request._rsetUTCts
-		elif self.resultExpirationTime > 0:
-			_timeoutTS = utcTime() + self.resultExpirationTime
+		elif Configuration.resource_grp_resultExpirationTime > 0:
+			_timeoutTS = utcTime() + Configuration.resource_grp_resultExpirationTime
 		else:
 			_timeoutTS = 0
 
@@ -339,3 +318,15 @@ class GroupManager(object):
 			group['cnm'] = group.cnm - 1
 			group.dbUpdate(True)
 
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Defaults for Group Resources
+
+	config.resource_grp_resultExpirationTime = parser.getint('resource.grp', 'resultExpirationTime', fallback = 0)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	# Check group resource defaults
+	if config.resource_grp_resultExpirationTime < 0:
+		raise ConfigurationError(fr'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')

@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 from typing import Optional
+from configparser import ConfigParser
+import isodate
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
 from ..etc.Constants import Constants
@@ -18,7 +20,7 @@ from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 
 
 # Add to internal attributes 
@@ -113,7 +115,7 @@ class TSB(AnnounceableResource):
 		if self.hasAttribute('bcni') and self.bcnc != BeaconCriteria.PERIODIC:
 			raise BAD_REQUEST(L.logWarn(f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC'))
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
-			self.setAttribute('bcni', Configuration.get('resource.tsb.bcni'))
+			self.setAttribute('bcni', Configuration.resource_tsb_bcni)
 		if self.hasAttribute('bcni'):
 			self.setAttribute(Constants.attrBCNI, fromDuration(self.bcni))
 		
@@ -121,7 +123,7 @@ class TSB(AnnounceableResource):
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
 			raise BAD_REQUEST(L.logWarn(f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
-			self.setAttribute('bcnt', Configuration.get('resource.tsb.bcnt'))
+			self.setAttribute('bcnt', Configuration.resource_tsb_bcnt)
 		if self.hasAttribute('bcnt'):
 			self.setAttribute(Constants.attrBCNI, fromDuration(self.bcnt))
 		
@@ -142,3 +144,19 @@ class TSB(AnnounceableResource):
 		"""
 		return self[Constants.attrBCNI]
 
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Defaults for TimeSyncBeacon Resources
+
+	config.resource_tsb_bcni = parser.get('resource.tsb', 'bcni', fallback = 'PT1H')	# duration
+	config.resource_tsb_bcnt = parser.getfloat('resource.tsb', 'bcnt', fallback = 60.0)	# seconds
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	
+	# TimeSyncBeacon defaults
+	try:
+		isodate.parse_duration(Configuration.resource_tsb_bcni)
+	except Exception as e:
+		raise ConfigurationError(fr'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration')

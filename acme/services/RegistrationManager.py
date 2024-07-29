@@ -10,6 +10,8 @@
 from __future__ import annotations
 from typing import Any, Optional
 
+from configparser import ConfigParser
+
 from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
@@ -27,12 +29,6 @@ class RegistrationManager(object):
 	__slots__ = (
 		'expWorker',
 
-		'allowedCSROriginators',
-		'allowedAEOriginators',
-		'checkExpirationsInterval',
-		'enableResourceExpiration',
-		'acpPvsAcop',
-
 		'_eventRegistreeCSEHasRegistered',
 		'_eventRegistreeCSEHasDeregistered',
 		'_eventAEHasRegistered',
@@ -42,9 +38,6 @@ class RegistrationManager(object):
 	)
 
 	def __init__(self) -> None:
-
-		# Get the configuration settings
-		self._assignConfig()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -73,32 +66,21 @@ class RegistrationManager(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
-		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
-		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
-		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
-		self.acpPvsAcop					= Configuration.get('resource.acp.selfPermission')
-
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
 		if key not in ( 'cse.checkExpirationsInterval', 
-						'cse.registration.allowedCSROriginators',
-						'cse.registration.allowedAEOriginators',
-						'cse.enableResourceExpiration',
-						'resource.acp.selfPermission'):
+						'cse.enableResourceExpiration'
+						):
 			return
-		self._assignConfig()
 		self.restartExpirationMonitor()
 
 
 	def restart(self, name:str) -> None:
 		"""	Restart the registration services.
 		"""
-		self._assignConfig()
 		self.restartExpirationMonitor()
 		L.isDebug and L.logDebug('RegistrationManager restarted')
 
@@ -221,7 +203,7 @@ class RegistrationManager(object):
 
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
-		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
+		if not CSE.security.isAllowedOriginator(originator, Configuration.cse_registration_allowedAEOriginators):
 			raise APP_RULE_VALIDATION_FAILED(L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
@@ -378,13 +360,13 @@ class RegistrationManager(object):
 
 	def startExpirationMonitor(self) -> None:
 		# Start background monitor to handle expired resources
-		if not self.enableResourceExpiration:
+		if not Configuration.cse_enableResourceExpiration:
 			L.isDebug and L.logDebug('Expiration disabled. NOT starting expiration monitor')
 			return
 
 		L.isDebug and L.logDebug('Starting expiration monitor')
-		if self.checkExpirationsInterval > 0:
-			self.expWorker = BackgroundWorkerPool.newWorker(self.checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
+		if Configuration.cse_checkExpirationsInterval > 0:
+			self.expWorker = BackgroundWorkerPool.newWorker(Configuration.cse_checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
 
 
 	def stopExpirationMonitor(self) -> None:
@@ -398,7 +380,7 @@ class RegistrationManager(object):
 		# Stop the expiration monitor
 		L.isDebug and L.logDebug('Restart expiration monitor')
 		if self.expWorker:
-			self.expWorker.restart(self.checkExpirationsInterval)
+			self.expWorker.restart(Configuration.cse_checkExpirationsInterval)
 
 
 	def expirationDBMonitor(self) -> bool:
@@ -471,4 +453,17 @@ class RegistrationManager(object):
 	# 	# only delete the ACP when it was created in the course of AE registration internally
 	# 	if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
 	# 		CSE.dispatcher.deleteLocalResource(acpResourse)
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	Registrations
+
+	config.cse_registration_allowedAEOriginators = parser.getlist('cse.registration', 'allowedAEOriginators', fallback = ['C*','S*'])		# type: ignore [attr-defined]
+	config.cse_registration_allowedCSROriginators = parser.getlist('cse.registration', 'allowedCSROriginators', fallback = [])				# type: ignore [attr-defined]
+	config.cse_registration_checkLiveliness = parser.getboolean('cse.registration', 'checkLiveliness', fallback = True)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	pass
 

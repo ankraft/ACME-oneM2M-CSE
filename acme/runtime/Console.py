@@ -14,6 +14,8 @@ from typing import List, cast, Optional, Any, Tuple
 
 import csv, datetime, json, os, sys, webbrowser, socket, platform, io
 from enum import IntEnum, auto
+from configparser import ConfigParser
+
 from rich.live import Live
 from rich.panel import Panel
 from rich.pretty import Pretty
@@ -33,14 +35,15 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants
-from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality
+from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
 from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..runtime import Statistics
-from .Configuration import Configuration, documentationLinks
+from ..runtime.Configuration import Configuration, ConfigurationError
+from .Configuration import Configuration
 from .Logging import Logging as L
 
 # Used in many "rich" functions
@@ -50,66 +53,6 @@ _markup = Text.from_markup
 # TODO move some of the functions to a more general place because they are used here and in the TUI
 
 
-
-class TreeMode(IntEnum):
-	""" Available modes do display the resource tree
-	"""
-
-	NORMAL				= auto()
-	"""	Mode - Normal """
-
-	CONTENT				= auto()
-	""" Mode - Show content """
-
-	COMPACT				= auto()
-	""" Mode - Compact """
-
-	CONTENTONLY			= auto()
-	"""	Mode - Content only """
-
-
-	def __str__(self) -> str:
-		"""	String representation of the TreeMode.
-
-			Return:
-				String representation.
-		"""
-		return self.name
-
-
-	def succ(self) -> TreeMode:
-		"""	Return the next enum value, and cycle to the beginning when reaching the end.
-
-			Return:
-				TreeMode value.
-		"""
-		members:list[TreeMode] = list(self.__class__)
-		index = members.index(self) + 1
-		return members[index] if index < len(members) else members[0]
-	
-
-	@classmethod
-	def to(cls, t:str) -> TreeMode:
-		"""	Return the enum from a string.
-
-			Args:
-				t: String representation of an enum value.
-
-			Return:
-				Enum value or *None*.
-		"""
-		return dict(cls.__members__.items()).get(t.upper())
-
-
-	@classmethod
-	def names(cls) -> list[str]:
-		"""	Return all the enum names.
-
-			Return:
-				List of enum value.
-		"""
-		return list(cls.__members__.keys())
-
 ##############################################################################
 
 
@@ -117,12 +60,6 @@ class Console(object):
 	"""	Console Manager class.
 	
 		Attributes:
-			refreshInterval: Configuration setting. Refresh interval for various continuous display functions.
-			hideResources: Configuration setting. List of resources to hide from tree view.
-			treeMode: Configuration setting. Default tree mode.
-			treeIncludeVirtualResources: Configuration setting. Indicates whether the tree view will include or exclude virtual resources.
-			confirmQuit: Configuration setting. Terminating and quitting the CSE must be confirmed.
-
 			interruptContinous: Indication whether any continuous display function should terminate.
 			previousTreeRi: Resource ID of the previous sub-tree display.
 			previousInspectRi: Resource ID of the previous resource inspection.
@@ -148,12 +85,7 @@ class Console(object):
 		'previousInstanceExportRi',
 		'tuiApp',
 		
-		'refreshInterval',
-		'hideResources',
 		'treeMode',
-		'treeIncludeVirtualResources',
-		'confirmQuit',
-		'theme',
 
 		'_eventKeyboard',
 		'_exitFromTUI',
@@ -211,12 +143,7 @@ class Console(object):
 	def _assignConfig(self) -> None:
 		"""	Assign configuration settings.
 		"""
-		self.refreshInterval:float = Configuration.get('console.refreshInterval')
-		self.hideResources:list[str] = Configuration.get('console.hideResources')
-		self.treeMode:TreeMode = Configuration.get('console.treeMode')
-		self.treeIncludeVirtualResources:bool = Configuration.get('console.treeIncludeVirtualResources')
-		self.confirmQuit:bool = Configuration.get('console.confirmQuit')
-		self.theme:str = Configuration.get('console.theme')
+		self.treeMode:TreeMode = cast(TreeMode, Configuration.console_treeMode)	# Assigned because it is changed during runtime
 
 
 	def configUpdate(self, name:str,
@@ -291,7 +218,7 @@ class Console(object):
 			 catchKeyboardInterrupt = True, 
 			 headless = CSE.isHeadless,
 			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
-			 nextKey = '#' if CSE.textUI.startWithTUI else None,
+			 nextKey = '#' if Configuration.textui_startWithTUI else None,
 			 postCommandHandler = self._postCommandHandler,
 			 ignoreException = False,
 			 exceptionHandler = lambda ch: L.setEnableScreenLogging(True))
@@ -430,7 +357,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		if not CSE.isHeadless:
-			if self.confirmQuit:
+			if Configuration.console_confirmQuit:
 				L.off()
 				L.console('Press quit-key again to confirm -> ', plain=True, end='')
 				if waitForKeypress(5) not in ['Q', '\x03']:
@@ -543,7 +470,7 @@ Available under the BSD 3-Clause License
 			# Register events for which the tree is refreshed
 			CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateTree)		# type:ignore[attr-defined]
 
-			while (ch := waitForKeypress(self.refreshInterval)) in [None, '\x14']:
+			while (ch := waitForKeypress(Configuration.console_refreshInterval)) in [None, '\x14']:
 				if ch == '\x14':	# Toggle through tree modes
 					self.treeMode = self.treeMode.succ()
 					_updateTree()
@@ -596,7 +523,7 @@ Available under the BSD 3-Clause License
 		self.clearScreen(key)
 		self._about('Statistics')
 		with Live(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), auto_refresh = False) as live:
-			while not waitForKeypress(self.refreshInterval):
+			while not waitForKeypress(Configuration.console_refreshInterval):
 				live.update(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), refresh=True)
 				if self.interruptContinous:
 					break
@@ -703,7 +630,7 @@ Available under the BSD 3-Clause License
 					# Register events for which the resource is refreshed
 					CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateResource)		# type:ignore[attr-defined]
 
-					while waitForKeypress(self.refreshInterval) in [None, '\x09']:
+					while waitForKeypress(Configuration.console_refreshInterval) in [None, '\x09']:
 						if self.interruptContinous:
 							break
 
@@ -764,12 +691,12 @@ Available under the BSD 3-Clause License
 			count = 0
 
 			# Create a temporary directory for the export
-			outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
+			outdir = f'{CSE.Configuration.baseDirectory}/tmp'
 			os.makedirs(outdir, exist_ok = True)
 
 			filename = f'export-{getResourceDate().rsplit(",", 1)[0]}.sh'
 			path = f'{outdir}/{filename}'
-			cseUrl = CSE.httpServer.serverAddress
+			cseUrl = Configuration.http_address
 			with open(path, 'w') as f:
 
 				# Write shell file header
@@ -888,7 +815,7 @@ function createResource() {{
 			else:
 				if not asString:
 					# Create a temporary directory for the export
-					outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
+					outdir = f'{CSE.Configuration.baseDirectory}/tmp'
 					os.makedirs(outdir, exist_ok = True)
 
 					# get the filename and open the file for writing
@@ -1007,7 +934,7 @@ function createResource() {{
 			Args:
 				key: Input key. Ignored.
 		"""
-		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
+		webbrowser.open(f'{Configuration.http_address}?open')
 
 
 	def _plotGraph(self, resource:Resource) -> None:
@@ -1106,7 +1033,7 @@ function createResource() {{
 
 				# Wait for any keypress
 				self.interruptContinous = False
-				while waitForKeypress(self.refreshInterval) is None:
+				while waitForKeypress(Configuration.console_refreshInterval) is None:
 					if self.interruptContinous:
 						break
 
@@ -1273,7 +1200,7 @@ function createResource() {{
 		# 	if CSE.remote.registrarAddress:
 		# 		registrarCSE = CSE.remote.registrarCSE
 		# 		registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-		# 		result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
+		# 		result += f'    - {Configuration.cse_registrar_cseID[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
 		# 	else:
 		# 		result += '   - None'
 
@@ -1335,8 +1262,8 @@ function createResource() {{
 
 			miscLeft += '\n'
 			miscLeft += f'CWD               : {os.getcwd()}\n'
-			miscLeft += f'Runtime Directory : {Configuration.get("baseDirectory")}\n'
-			miscLeft += f'Config File       : {Configuration.get("configfile")}\n'
+			miscLeft += f'Runtime Directory : {Configuration.baseDirectory}\n'
+			miscLeft += f'Config File       : {Configuration.configfile}\n'
 			miscLeft += '\n'
 			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
@@ -1364,7 +1291,7 @@ function createResource() {{
 			#	Request stats
 			#
 
-			if CSE.statistics.statisticsEnabled:
+			if Configuration.cse_statistics_enable:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
 				resourceOps += 	'\n'
 				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
@@ -1446,15 +1373,15 @@ function createResource() {{
 				#
 
 				miscDB  = Text(style = textStyle)
-				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
-				match _dbType:
+				miscDB += f'Type     : {Configuration.database_type}\n'
+				match Configuration.database_type:
 					case 'postgresql':
-						miscDB += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
-						miscDB += f'Role     : {Configuration.get("database.postgresql.role")}\n'
-						miscDB += f'Database : {Configuration.get("database.postgresql.database")}\n'
-						miscDB += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
+						miscDB += f'Host     : {Configuration.database_postgresql_host}:{Configuration.database_postgresql_port}\n'
+						miscDB += f'Role     : {Configuration.database_postgresql_role}\n'
+						miscDB += f'Database : {Configuration.database_postgresql_database}\n'
+						miscDB += f'Schema   : {Configuration.database_postgresql_schema}\n'
 					case 'tinydb':
-						miscDB += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+						miscDB += f'Path     : ./{os.path.relpath(Configuration.database_tinydb_path, Configuration.baseDirectory)}\n'
 						miscDB += '\n\n\n'
 					case 'memory':
 						miscDB += '\n\n\n\n'
@@ -1640,7 +1567,7 @@ function createResource() {{
 			if table:
 				grid = Table.grid(expand = True)
 				grid.add_column()
-				grid.add_row(_markup(f'[u b]{previousTop}[/u b]  ') + Text('(info)\n\n', style = f'link {documentationLinks.get(previousTop)}'))
+				grid.add_row(_markup(f'[u b]{previousTop}[/u b]'))
 				grid.add_row(table)
 
 				result.add_row(Panel(grid, style = style))
@@ -1753,11 +1680,11 @@ function createResource() {{
 				return
 			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
-				if ch.isVirtual() and not self.treeIncludeVirtualResources:	# Ignore virual resources
+				if ch.isVirtual() and not Configuration.console_treeIncludeVirtualResource:	# Ignore virual resources
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri
-				if len([ p for p in self.hideResources if simpleMatch(p, ri) ]) > 0:
+				if len([ p for p in Configuration.console_hideResources if simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
@@ -1883,3 +1810,43 @@ skinparam BoxPadding 60
 		uml += '@enduml\n'
 
 		return (table, uml)
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+				
+	#	Console
+	config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback = False)
+	config.console_headless = parser.getboolean('console', 'headless', fallback = False)
+	config.console_hideResources = parser.getlist('console', 'hideResources', fallback = [])		# type: ignore[attr-defined]
+	config.console_refreshInterval = parser.getfloat('console', 'refreshInterval', fallback = 2.0)
+	config.console_theme = parser.get('console', 'theme', fallback = 'dark')
+	config.console_treeIncludeVirtualResource = parser.getboolean('console', 'treeIncludeVirtualResources', fallback = False)
+	config.console_treeMode = parser.get('console', 'treeMode', fallback = 'normal')
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+
+	# override configuration with command line arguments
+	if Configuration._args_headless is True:
+		Configuration.console_headless = True
+	if Configuration._args_lightScheme is not None:
+		Configuration.console_theme = Configuration._args_lightScheme 					# Override console theme 
+
+	# Console settings
+
+	if config.console_refreshInterval <= 0.0:
+		raise ConfigurationError(r'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0')
+	
+	if isinstance(Configuration.console_treeMode, str):
+		if not (treeMode := TreeMode.to(Configuration.console_treeMode, insensitive = True)):
+			raise ConfigurationError(fr'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}')
+		Configuration.console_treeMode = treeMode
+	
+	Configuration.console_theme = Configuration.console_theme.lower()
+	if Configuration.console_theme not in [ 'dark', 'light' ]:
+		raise ConfigurationError(fr'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"')
+
+	if Configuration.console_headless:
+		Configuration.logging_enableScreenLogging = False
+		Configuration.textui_startWithTUI = False
+

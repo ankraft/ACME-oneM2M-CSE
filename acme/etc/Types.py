@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import traceback
+import traceback, logging, sys
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
@@ -2604,6 +2604,106 @@ FlexContainerSpecializations:TypeAlias = Dict[str, str]
 #	Generic Types
 #
 
+class LogLevel(ACMEIntEnum):
+	INFO 	= logging.INFO
+	DEBUG 	= logging.DEBUG
+	ERROR 	= logging.ERROR
+	WARNING = logging.WARNING
+	OFF		= sys.maxsize
+	
+
+	def next(self) -> LogLevel:
+		"""	Return next log level. This cycles through the levels.
+		"""
+		return {
+			LogLevel.DEBUG:		LogLevel.INFO,
+			LogLevel.INFO:		LogLevel.WARNING,
+			LogLevel.WARNING:	LogLevel.ERROR,
+			LogLevel.ERROR:		LogLevel.OFF,
+			LogLevel.OFF:		LogLevel.DEBUG,
+		}[self]
+
+
+	@classmethod
+	def toLogLevel(cls, logLevel:str) -> Optional[LogLevel]:
+
+		logLevel = logLevel.lower()
+		# logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
+		match logLevel:
+			case 'off':
+				return LogLevel.OFF
+			case 'info':
+				return LogLevel.INFO
+			case 'warn' | 'warning':
+				return LogLevel.WARNING
+			case 'error':
+				return LogLevel.ERROR
+			case 'debug':
+				return LogLevel.DEBUG
+			case _:
+				return None
+
+
+
+class TreeMode(ACMEIntEnum):
+	""" Available modes do display the resource tree in the console.
+	"""
+
+	NORMAL				= auto()
+	"""	Mode - Normal """
+
+	CONTENT				= auto()
+	""" Mode - Show content """
+
+	COMPACT				= auto()
+	""" Mode - Compact """
+
+	CONTENTONLY			= auto()
+	"""	Mode - Content only """
+
+
+	def __str__(self) -> str:
+		"""	String representation of the TreeMode.
+
+			Return:
+				String representation.
+		"""
+		return self.name
+
+
+	def succ(self) -> TreeMode:
+		"""	Return the next enum value, and cycle to the beginning when reaching the end.
+
+			Return:
+				TreeMode value.
+		"""
+		members:list[TreeMode] = list(self.__class__)
+		index = members.index(self) + 1
+		return members[index] if index < len(members) else members[0]
+	
+
+	# @classmethod
+	# def to(cls, t:str) -> TreeMode:
+	# 	"""	Return the enum from a string.
+
+	# 		Args:
+	# 			t: String representation of an enum value.
+
+	# 		Return:
+	# 			Enum value or *None*.
+	# 	"""
+	# 	return dict(cls.__members__.items()).get(t.upper())
+
+
+	@classmethod
+	def names(cls) -> list[str]:
+		"""	Return all the enum names.
+
+			Return:
+				List of enum value.
+		"""
+		return list(cls.__members__.keys())
+	
 
 Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
@@ -2626,3 +2726,5 @@ RequestResponseList:TypeAlias = List[RequestResponse]
 
 FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """
+
+

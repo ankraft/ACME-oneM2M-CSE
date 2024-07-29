@@ -13,18 +13,20 @@
 """
 
 from __future__ import annotations
+from typing import Dict, Any, cast, Optional
 
 import atexit, argparse, sys
 from threading import Lock
-from typing import Dict, Any
+from configparser import ConfigParser
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
-from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
+from ..etc.Types import CSEStatus, CSEType, ContentSerializationType, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
+from ..etc.ACMEUtils import isValidCSI	# cannot import at the top because of circel import
 from ..services.ActionManager import ActionManager
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.Console import Console
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
@@ -50,6 +52,7 @@ from ..protocols.MQTTClient import MQTTClient
 from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
+
 
 
 
@@ -170,6 +173,9 @@ cseRn:str = None
 cseOriginator:str = None
 """	The CSE's admin originator, e.g. "CAdmin". """
 
+slashCseOriginator:str = None
+"""	The CSE's admin originator with a leading /. """
+
 csePOA:list[str] = []
 """ The CSE's point-of-access's. """
 
@@ -211,7 +217,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	global timeSeries, validator, webSocketServer
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
-	global cseOriginator
+	global cseOriginator, slashCseOriginator
 	global isHeadless, cseStatus
 
 	# Set status
@@ -234,29 +240,33 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		return False
 
 	# Initialize configurable constants
-	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
-	cseType					 = Configuration.get('cse.type')
-	cseCsi					 = Configuration.get('cse.cseID')
+	# cseType					 = Configuration.cse_type
+	supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
+	cseType					 = cast(CSEType, Configuration.cse_type)
+	cseCsi					 = Configuration.cse_cseID
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseCsiSlashLess			 = cseCsi[1:]
-	cseSpid					 = Configuration.get('cse.serviceProviderID')
+	cseSpid					 = Configuration.cse_serviceProviderID
 	cseAbsoluteSlash		 = f'{cseAbsolute}/'
-	cseRi					 = Configuration.get('cse.resourceID')
-	cseRn					 = Configuration.get('cse.resourceName')
-	cseOriginator			 = Configuration.get('cse.originator')
+	cseRi					 = Configuration.cse_resourceID
+	cseRn					 = Configuration.cse_resourceName
+	cseOriginator			 = Configuration.cse_originator
+	slashCseOriginator		= f'/{cseOriginator}'
+
 	cseSPRelative			 = f'{cseCsi}/{cseRn}'
 	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'
 
-	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
-	releaseVersion 			 = Configuration.get('cse.releaseVersion')
-	isHeadless				 = Configuration.get('console.headless')
+	defaultSerialization	 = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
+	releaseVersion 			 = Configuration.cse_releaseVersion
+	isHeadless				 = Configuration.console_headless
 
 	# Set the CSE's point-of-access
-	csePOA					 = [ Configuration.get('http.address') ]
-	if Configuration.get('mqtt.enable'):
-		csePOA.append(f'mqtt://{Configuration.get("mqtt.address")}:{Configuration.get("mqtt.port")}')
-	if Configuration.get('websocket.enable'):
-		csePOA.append(Configuration.get('websocket.address'))
+	print(Configuration.print())
+	csePOA = [ Configuration.http_address ]
+	if Configuration.mqtt_enable:
+		csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
+	if Configuration.websocket_enable:
+		csePOA.append(Configuration.websocket_address)
 
 	#
 	# init Logging
@@ -272,9 +282,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
 	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
-	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.get('cse.operation.jobs.balanceTarget'),
-										balanceLatency = Configuration.get('cse.operation.jobs.balanceLatency'),
-										balanceReduceFactor = Configuration.get('cse.operation.jobs.balanceReduceFactor'))
+	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.cse_operation_jobs_balanceTarget,
+										balanceLatency = Configuration.cse_operation_jobs_balanceLatency,
+										balanceReduceFactor = Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
 		textUI = TextUI()						# Start the textUI
@@ -301,6 +311,17 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		time = TimeManager()					# Initialize the time mamanger
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
+
+		# → Experimental late loading
+		#
+		# import importlib
+		# mod = importlib.import_module('acme.services.ActionManager')
+		# action = mod.ActionManager()	
+
+		# mod = importlib.import_module('acme.runtime.ScriptManager')			# Initialize the action manager
+		# # script = mod.ScriptManager()				# Initialize the script manager
+		# thismodule = sys.modules[__name__]
+		# setattr(thismodule, 'script', mod.ScriptManager())
 
 		# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 		# Import extra attribute policies for specializations first
@@ -440,9 +461,9 @@ def resetCSE() -> None:
 	with _cseResetLock:
 		cseStatus = CSEStatus.RESETTING
 		L.isWarn and L.logWarn('Resetting CSE started')
-		L.enableScreenLogging = Configuration.get('logging.enableScreenLogging')	# Set screen logging to the originally configured values
+		L.enableScreenLogging = Configuration.logging_enableScreenLogging	# Set screen logging to the originally configured values
 
-		L.setLogLevel(Configuration.get('logging.level'))
+		L.setLogLevel(cast(LogLevel, Configuration.logging_level))
 		L.queueOff()	# Disable log queuing for restart
 		
 		httpServer.pause()
@@ -481,3 +502,106 @@ def run() -> None:
 		console.run()
 	else:
 		raise TimeoutError(L.logErr(f'CSE did not start within {_cseStartupDelay * 3} seconds'))
+
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	CSE
+
+	config.cse_asyncSubscriptionNotifications = parser.getboolean('cse', 'asyncSubscriptionNotifications', fallback = True)
+	config.cse_checkExpirationsInterval = parser.getint('cse', 'checkExpirationsInterval', fallback = 60)		# Seconds
+	config.cse_cseID = parser.get('cse', 'cseID', fallback = '/id-in')
+	config.cse_defaultSerialization = parser.get('cse', 'defaultSerialization', fallback = 'json')
+	config.cse_enableRemoteCSE = parser.getboolean('cse', 'enableRemoteCSE', fallback = True)
+	config.cse_enableResourceExpiration = parser.getboolean('cse', 'enableResourceExpiration', fallback = True)
+	config.cse_enableSubscriptionVerificationRequests = parser.getboolean('cse', 'enableSubscriptionVerificationRequests', fallback = True)
+	config.cse_flexBlockingPreference = parser.get('cse', 'flexBlockingPreference', fallback = 'blocking')
+	config.cse_maxExpirationDelta = parser.getint('cse', 'maxExpirationDelta', fallback = 60*60*24*365*5)	# 5 years, in seconds
+	config.cse_originator = parser.get('cse', 'originator', fallback = 'CAdmin')
+	config.cse_poa = parser.getlist('cse', 'poa', fallback = ['http://127.0.0.1:8080'])	 # type: ignore [attr-defined]
+	config.cse_releaseVersion = parser.get('cse', 'releaseVersion', fallback = '4')
+	config.cse_requestExpirationDelta = parser.getfloat('cse', 'requestExpirationDelta', fallback = 10.0)	# 10 seconds
+	config.cse_resourcesPath = parser.get('cse', 'resourcesPath', fallback = './init')
+	config.cse_resourceID = parser.get('cse', 'resourceID', fallback = 'id-in')
+	config.cse_resourceName = parser.get('cse', 'resourceName', fallback = 'cse-in')
+	config.cse_sendToFromInResponses = parser.getboolean('cse', 'sendToFromInResponses', fallback = True)
+	config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback = True)
+	config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback = ['2a', '3', '4', '5']) # type: ignore [attr-defined]
+	config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback = 'acme.example.com')
+	config.cse_type = parser.get('cse', 'type', fallback = 'IN')		# IN, MN, ASN
+
+	#	CSE Operation : Jobs
+
+	config.cse_operation_jobs_balanceLatency = parser.getint('cse.operation.jobs', 'jobBalanceLatency', fallback = 1000)
+	config.cse_operation_jobs_balanceReduceFactor = parser.getfloat('cse.operation.jobs', 'jobBalanceReduceFactor', fallback = 2.0)
+	config.cse_operation_jobs_balanceTarget = parser.getfloat('cse.operation.jobs', 'jobBalanceTarget', fallback = 3.0)
+
+	#	CSE Operation : Requests
+
+	config.cse_operation_requests_enable = parser.getboolean('cse.operation.requests', 'enable', fallback = False)
+	config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback = 1000)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+
+	# override configuration with command line arguments
+	if Configuration._args_initDirectory is not None:
+		Configuration.cse_resourcesPath = Configuration._args_initDirectory
+	if Configuration._args_remoteCSEEnabled is not None:
+		Configuration.cse_enableRemoteCSE = Configuration._args_remoteCSEEnabled
+	if Configuration._args_statisticsEnabled is not None:
+		Configuration.cse_statistics_enable = Configuration._args_statisticsEnabled
+
+	# CSE type
+	if isinstance(config.cse_type, str):
+		config.cse_type = config.cse_type.lower()
+		match config.cse_type:
+			case 'asn':
+				config.cse_type = CSEType.ASN
+			case 'mn':
+				config.cse_type = CSEType.MN
+			case 'in':
+				config.cse_type = CSEType.IN
+			case _:
+				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:type: {cseType}')
+
+	# CSE Serialization
+	if isinstance(config.cse_defaultSerialization, str):
+		config.cse_defaultSerialization = ContentSerializationType.getType(config.cse_defaultSerialization)
+		if config.cse_defaultSerialization == ContentSerializationType.UNKNOWN:
+			raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
+		
+		# Operation
+		if config.cse_operation_jobs_balanceTarget <= 0.0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
+		if config.cse_operation_jobs_balanceLatency < 0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
+		if config.cse_operation_jobs_balanceReduceFactor < 1.0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
+
+		# check the csi format and value
+		if not isValidCSI(config.cse_cseID):
+			raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
+		if config.cse_cseID[1:] == config.cse_resourceName:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
+
+		# Check flexBlocking value
+		config.cse_flexBlockingPreference = config.cse_flexBlockingPreference.lower()
+		if config.cse_flexBlockingPreference not in ['blocking', 'nonblocking']:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
+
+		# Check release versions
+		if len(config.cse_supportedReleaseVersions) == 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty')
+		if len(config.cse_releaseVersion) == 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty')
+		if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
+
+		# Check various intervals
+		if config.cse_checkExpirationsInterval <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0')
+		if config.cse_maxExpirationDelta <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0')
+
+

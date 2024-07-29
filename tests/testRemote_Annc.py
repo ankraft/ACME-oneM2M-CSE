@@ -360,7 +360,7 @@ class TestRemote_Annc(unittest.TestCase):
 		# retrieve the announced AE
 		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNone(findXPath(r, 'm2m:aeA/lbl'))
+		self.assertIsNone(findXPath(r, 'm2m:aeA/lbl'), r)
 
 
 	#

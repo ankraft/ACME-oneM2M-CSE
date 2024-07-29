@@ -14,6 +14,7 @@ from typing import List, cast, Optional, Any, Tuple
 
 import ssl
 from dataclasses import dataclass
+from configparser import ConfigParser
 
 from ..etc.Types import ResourceTypes, Permission, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
@@ -21,7 +22,7 @@ from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
@@ -43,36 +44,14 @@ class SecurityManager(object):
 	"""
 
 	__slots__ = (
-		'enableACPChecks',
-		'fullAccessAdmin',
-		'useTLSHttp',
-		'verifyCertificateHttp',
-		'tlsVersionHttp',
-		'caCertificateFileHttp',
-		'caPrivateKeyFileHttp',
-		'useTlsMqtt',
-		'verifyCertificateMqtt',
-		'caCertificateFileMqtt',
-		'usernameMqtt',
-		'passwordMqtt',
-		'allowedCredentialIDsMqtt',
-		'httpBasicAuthFile',
-		'httpTokenAuthFile',
 		'httpBasicAuthData',
 		'httpTokenAuthData',
-		'useTLSWs',
-		'verifyCertificateWs',
-		'tlsVersionWs',
-		'caCertificateFileWs',
-		'caPrivateKeyFileWs',
-		'slashCseOriginator',
 	)
 
 
 	def __init__(self) -> None:
 
 		# Get the configuration settings
-		self._assignConfig()
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
 
@@ -83,7 +62,7 @@ class SecurityManager(object):
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		L.isInfo and L.log('SecurityManager initialized')
-		if self.enableACPChecks:
+		if Configuration.cse_security_enableACPChecks:
 			L.isInfo and L.log('ACP checking ENABLED')
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
@@ -97,48 +76,9 @@ class SecurityManager(object):
 	def restart(self, name:str) -> None:
 		"""	Restart the Security manager service.
 		"""
-		self._assignConfig()
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
 		L.logDebug('SecurityManager restarted')
-
-
-	def _assignConfig(self) -> None:
-		"""	Assign configurations.
-		"""
-
-		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
-		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
-
-		# TLS configurations (http)
-		self.useTLSHttp 				= Configuration.get('http.security.useTLS')
-		self.verifyCertificateHttp		= Configuration.get('http.security.verifyCertificate')
-		self.tlsVersionHttp				= Configuration.get('http.security.tlsVersion').lower()
-		self.caCertificateFileHttp		= Configuration.get('http.security.caCertificateFile')
-		self.caPrivateKeyFileHttp		= Configuration.get('http.security.caPrivateKeyFile')
-
-		# HTTP authentication
-		self.httpBasicAuthFile			= Configuration.get('http.security.basicAuthFile')
-		self.httpTokenAuthFile			= Configuration.get('http.security.tokenAuthFile')
-
-		# TLS and other configuration (mqtt)
-		self.useTlsMqtt 				= Configuration.get('mqtt.security.useTLS')
-		self.verifyCertificateMqtt		= Configuration.get('mqtt.security.verifyCertificate')
-		self.caCertificateFileMqtt		= Configuration.get('mqtt.security.caCertificateFile')
-		self.usernameMqtt				= Configuration.get('mqtt.security.username')
-		self.passwordMqtt				= Configuration.get('mqtt.security.password')
-		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
-
-		# TLS configurations (websocket)
-		self.useTLSWs	 				= Configuration.get('websocket.security.useTLS')
-		self.verifyCertificateWs		= Configuration.get('websocket.security.verifyCertificate')
-		self.tlsVersionWs				= Configuration.get('websocket.security.tlsVersion').lower()
-		self.caCertificateFileWs		= Configuration.get('websocket.security.caCertificateFile')
-		self.caPrivateKeyFileWs			= Configuration.get('websocket.security.caPrivateKeyFile')
-
-		# Optimizations
-		self.slashCseOriginator			= f'/{CSE.cseOriginator}'
-
 
 
 	def configUpdate(self, name:str, 
@@ -151,28 +91,14 @@ class SecurityManager(object):
 				key: The key of the configuration value.
 				value: The new value of the configuration value.
 		"""
-		if key not in ( 'cse.security.enableACPChecks', 
-						'cse.security.fullAccessAdmin',
-						'http.security.useTLS',
-						'http.security.verifyCertificate',
-						'http.security.tlsVersion',
-						'http.security.caCertificateFile',
+		if key not in (	'http.security.caCertificateFile',
 						'http.security.caPrivateKeyFile',
 						'http.security.basicAuthFile',
-						'mqtt.security.useTLS',
-						'mqtt.security.verifyCertificate',
-						'mqtt.security.caCertificateFile',
-						'mqtt.security.username',
-						'mqtt.security.password',
-						'mqtt.security.allowedCredentialIDs',
-						'websocket.security.useTLS',
-						'websocket.security.verifyCertificate',
-						'websocket.security.tlsVersion',
+						'http_security_tokenAuthFile',
 						'websocket.security.caCertificateFile',
 						'websocket.security.caPrivateKeyFile',
 					  ):
 			return
-		self._assignConfig()
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
 
@@ -231,13 +157,13 @@ class SecurityManager(object):
 
 
 		#  Do or ignore the check
-		if not self.enableACPChecks:
+		if not Configuration.cse_security_enableACPChecks:
 			return True
 		
 		#
 		# grant full access to the CSE originator
 		#
-		if originator is None or originator == CSE.cseOriginator or originator.endswith(self.slashCseOriginator) and self.fullAccessAdmin:
+		if originator is None or originator == CSE.cseOriginator or originator.endswith(CSE.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
 
@@ -275,13 +201,13 @@ class SecurityManager(object):
 						# originator may be None or empty or C or S. 
 						# That is okay if type is AE and this is a create request
 						# Originator == None or len == 0
-						if not originator or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
+						if not originator or self.isAllowedOriginator(originator, Configuration.cse_registration_allowedAEOriginators):
 							L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
 							return True
 						# fall-through
 					
 					case ResourceTypes.CSR | ResourceTypes.CSEBaseAnnc:
-						if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+						if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators):
 							L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 							return True
 						else:
@@ -290,7 +216,7 @@ class SecurityManager(object):
 				# fall-through
 
 			if ty.isAnnounced():
-				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or (parentResource and originator[1:] == parentResource.ri):
+				if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators) or (parentResource and originator[1:] == parentResource.ri):
 					L.isDebug and L.logDebug('Originator for Announcement. OK.')
 					return True
 				else:
@@ -303,7 +229,7 @@ class SecurityManager(object):
 
 		# Allow originator for announced resource
 		if resource.isAnnounced():
-			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
+			if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
 				L.isDebug and L.logDebug('Announcement originator. OK.')
 				return True
 		
@@ -321,10 +247,10 @@ class SecurityManager(object):
 			# Allow some Originators to RETRIEVE the CSEBase
 			case ResourceTypes.CSEBase if requestedPermission & Permission.RETRIEVE:
 				# Allow remote CSE to RETRIEVE the CSEBase
-				if originator == CSE.remote.registrarCSI:
+				if originator == Configuration.cse_registrar_cseID:
 					L.isDebug and L.logDebug(f'Grant registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
 					return True
-				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+				if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators):
 					L.isDebug and L.logDebug(f'Grant remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
 					return True
 
@@ -845,11 +771,11 @@ class SecurityManager(object):
 				SSL / TLD context.
 		"""
 		L.isDebug and L.logDebug(f'Setup HTTPS SSL context.')
-		return self._getContext(self.useTLSHttp, 
-						  		self.verifyCertificateHttp, 
-								self.tlsVersionHttp, 
-								self.caCertificateFileHttp, 
-								self.caPrivateKeyFileHttp)	# type: ignore
+		return self._getContext(Configuration.http_security_useTLS, 
+						  		Configuration.http_security_verifyCertificate, 
+								Configuration.http_security_tlsVersion, 
+								Configuration.http_security_caCertificateFile,
+								Configuration.http_security_caPrivateKeyFile)	# type: ignore
 
 
 	def getSSLContextWs(self) -> ssl.SSLContext:
@@ -862,11 +788,11 @@ class SecurityManager(object):
 				SSL / TLD context.
 		"""
 		L.isDebug and L.logDebug(f'Setup WSS SSL context.')
-		return self._getContext(self.useTLSWs,
-						  		self.verifyCertificateWs,
-								self.tlsVersionWs,
-								self.caCertificateFileWs,
-								self.caPrivateKeyFileWs)	# type: ignore
+		return self._getContext(Configuration.websocket_security_useTLS,
+						  		Configuration.websocket_security_verifyCertificate,
+								Configuration.websocket_security_tlsVersion,
+								Configuration.websocket_security_caCertificateFile,
+								Configuration.websocket_security_caPrivateKeyFile)
 
 
 	##########################################################################
@@ -907,9 +833,9 @@ class SecurityManager(object):
 		"""
 		self.httpBasicAuthData = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.get('http.security.enableBasicAuth') and self.httpBasicAuthFile:
+		if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
 			try:
-				with open(self.httpBasicAuthFile, 'r') as f:
+				with open(Configuration.http_security_basicAuthFile, 'r') as f:
 					for line in f:
 						if line.startswith('#'):
 							continue
@@ -929,9 +855,9 @@ class SecurityManager(object):
 		"""
 		self.httpTokenAuthData = []
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.get('http.security.enableTokenAuth') and self.httpTokenAuthFile:
+		if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
 			try:
-				with open(self.httpTokenAuthFile, 'r') as f:
+				with open(Configuration.http_security_tokenAuthFile, 'r') as f:
 					for line in f:
 						if line.startswith('#'):
 							continue
@@ -942,3 +868,13 @@ class SecurityManager(object):
 				L.logErr(f'Error reading token authentication file: {e}')
 
 
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+
+	#	CSE Security
+
+	config.cse_security_enableACPChecks = parser.getboolean('cse.security', 'enableACPChecks', fallback = True)
+	config.cse_security_fullAccessAdmin = parser.getboolean('cse.security', 'fullAccessAdmin', fallback = True)
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	pass

@@ -15,11 +15,13 @@ from typing import Optional, Callable, Sequence, cast
 import shutil, os
 from threading import Lock
 from pathlib import Path
+from configparser import ConfigParser
 
 from .DBBinding import DBBinding
 from ..etc.Types import JSON, ResourceTypes
 
 from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration, ConfigurationError
 
 from tinydb import TinyDB, Query
 from tinydb.table import Document
@@ -759,3 +761,18 @@ class TinyDBBinding(DBBinding):
 	def removeSchedule(self, ri:str) -> bool:
 		with self.lockSchedules:
 			return len(self.tabSchedules.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
+		
+
+def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	config.database_tinydb_path = parser.get('database.tinydb', 'path', fallback = './data')
+	config.database_tinydb_cacheSize = parser.getint('database.tinydb', 'cacheSize', fallback = 0)		# Default: no caching
+	config.database_tinydb_writeDelay = parser.getint('database.tinydb', 'writeDelay', fallback = 1)		# Default: 1 second
+
+
+
+def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	
+	# override configuration with command line arguments
+	if Configuration._args_DBDataDirectory is not None:
+		Configuration.database_tinydb_path = Configuration._args_DBDataDirectory
+

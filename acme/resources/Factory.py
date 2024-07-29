@@ -207,7 +207,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 					 ty:Optional[ResourceTypes] = None, 
 					 create:Optional[bool] = False, 
 					 isImported:Optional[bool] = False,
-					 template:Optional[bool] = True) -> Resource:
+					 template:Optional[bool] = False) -> Resource:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
