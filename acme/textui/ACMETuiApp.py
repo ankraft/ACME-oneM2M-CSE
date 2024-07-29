@@ -28,6 +28,7 @@ from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
 from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Utils import openFileWithDefaultApplication
@@ -56,17 +57,16 @@ class ACMETuiApp(App):
 				  Binding('Q', 'quit_acme', 'Quit ACME', key_display = 'SHIFT-Q'),
 				]
 
-	def __init__(self, textUI:TextUI.TextUI):
+	def __init__(self) -> None:
 		super().__init__()
 		self.debugging = False
 
-		self.textUI = textUI	# Keep backward link to the textUI manager
 		self.quitReason = ACMETuiQuitReason.undefined
 		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
 
 		# Set some default color values
 		self._colors = self.get_css_variables()
-		self.objectColor = self._colors['primary-lighten-1']
+		self.objectColor = self._colors['secondary'] if Configuration.textui_theme == 'dark' else self._colors['secondary-darken-1']
 
 
 		# Add the resource types to the attribute explanations
@@ -159,7 +159,7 @@ class ACMETuiApp(App):
 	
 
 	def on_load(self) -> None:
-		self.dark = self.textUI.theme == 'dark'
+		self.dark = Configuration.textui_theme == 'dark'
 		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		self.event_loop = asyncio.get_event_loop()
 

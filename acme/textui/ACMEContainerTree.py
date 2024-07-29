@@ -131,6 +131,7 @@ class ACMEResourceTree(TextualTree):
 
 		# Update the header
 		self.parentContainer.setResourceHeader(f'{resource.rn} ({ResourceTypes.fullname(resource.ty)})' if resource else '')
+		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri})' if resource else '')
 
 		# Set the visibility of the tabs
 		self.parentContainer.tabs.show_tab('tree-tab-requests')
@@ -215,6 +216,11 @@ class ACMEContainerTree(Container):
 	from ..textui import ACMETuiApp
 
 	def __init__(self, id:str) -> None:
+		"""	Initialize the view.
+		
+			Args:
+				id:	The view ID.
+		"""
 		super().__init__(id = id)
 
 		from ..textui.ACMETuiApp import ACMETuiApp
@@ -248,7 +254,7 @@ class ACMEContainerTree(Container):
 					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
 				
 				with TabPane('Diagram', id = 'tree-tab-diagram'):
-					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), 
+					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
 											   id = 'tree-tab-diagram-view')
 
 				
@@ -448,6 +454,15 @@ class ACMEContainerTree(Container):
 				header: The header to set.
 		"""
 		self.resourceContainer.border_title = header
+
+	
+	def setResourceSubtitle(self, subtitle:str) -> None:
+		"""	Set the subtitle of the resource view.
+		
+			Args:
+				subtitle: The subtitle to set.
+		"""
+		self.resourceContainer.border_subtitle = subtitle
 	
 
 	@property
