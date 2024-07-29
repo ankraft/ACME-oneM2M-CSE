@@ -49,7 +49,7 @@ match BINDING:
 
 
 
-SPID 								= 'acme.example.com'# Service Provide ID
+SPID 							= 'acme.example.com'# Service Provide ID
 APPID							= 'NMyApp1Id'		# Application ID
 ORIGINATOR						= 'CAdmin'			# Admin originator
 ORIGINATORSelfReg				= 'C'				# Originator for self registration
@@ -58,7 +58,7 @@ ORIGINATORNotifResp				= 'CTester'			# Originator for Notification responses
 RECONFIGURATIONENABLED			= True				# The CSE allowes for reconfigurations via Upper Tester
 UPPERTESTERENABLED				= True				# Enable or Disable Upper Tester extensions
 RELEASEVERSION					= '4'				# Supported Release Version for requests & registrations
-TESTHOSTIP:Optional[str]		= '127.0.0.1'				# IP address of the host running the tests. 
+TESTHOSTIP:Optional[str]		= None				# IP address of the host running the tests. 
 													# If None, the IP address is determined automatically
 
 
@@ -68,7 +68,8 @@ TESTHOSTIP:Optional[str]		= '127.0.0.1'				# IP address of the host running the 
 
 CSEHOST					= 'localhost'		# CSE Server address.
 CSEPORT					= 8080				# CSE Server port.
-CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}/'	# CSE Server address.
+HTTPROOT				= '/'				# Root of the HTTP path. Needs a leading and trailing slash (or a single slash)
+CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}'	# CSE Server address.
 CSERN					= 'cse-in'			# CSEBase Resource Name
 CSERI					= 'id-in'			# CSEBase Resource ID
 CSEID					= '/id-in'			# CSE-ID
@@ -156,6 +157,6 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 #
 #	Upper Tester
 #
-UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}/__ut__'	# CSE's Upper Tester URL
+UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}__ut__'	# CSE's Upper Tester URL
 UTCMD	= 'X-M2M-UTCMD'
 UTRSP	= 'X-M2M-UTRSP'
