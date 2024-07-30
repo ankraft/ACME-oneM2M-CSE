@@ -9,6 +9,8 @@
 from __future__ import annotations
 from typing import List, Tuple, Optional, Any, cast
 
+import pyperclip, json
+
 from textual import events
 from textual.app import ComposeResult
 from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Label, Button
@@ -22,7 +24,7 @@ from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
-from ..helpers.TextTools import commentJson
+from ..helpers.TextTools import commentJson, limitLines
 from .ACMEContainerCreate import ACMEContainerCreate
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerUpdate import ACMEContainerUpdate
@@ -269,6 +271,44 @@ class ACMEContainerTree(Container):
 
 	def on_show(self) -> None:
 		self.resourceTree.focus()
+
+
+	def on_click(self, event:events.Click) -> None:
+		"""Handle Click events.
+
+			Args:
+				event: The Click event.
+		"""
+
+		# When clicking on the container of the resource view
+		if self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceContainer):
+			
+			# When clicking on the bottom border: Copy the structured or unstructured resource identifier
+			if event.y == _cnt.outer_size.height-1:
+				v = self.currentResource.getSrn()
+				ri = self.currentResource.ri
+				t = 'Structured Resource Identifier Copied'
+				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
+					v = ri
+					t = 'Resource Identifier Copied'
+				pyperclip.copy(v)
+				self._app.showNotification(v, t, 'information')
+
+			# When clicking on the top border: Copy the resource name or type
+			elif event.y == 0:
+				v = self.currentResource.rn
+				ri = ResourceTypes.fullname(self.currentResource.ty)
+				t = 'Resource Name Copied'
+				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
+					v = ri
+					t = 'Resource Type Copied'
+				pyperclip.copy(v)
+				self._app.showNotification(v, t, 'information')
+
+		# When clicking on the resource view
+		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceView):
+			pyperclip.copy(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
+			self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
 
 
 	def action_refresh_resources(self) -> None:

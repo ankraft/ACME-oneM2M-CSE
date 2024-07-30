@@ -14,6 +14,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
 - [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 - [TUI] Added copy of CSV data to the clipboard for instance resources.
+- [TUI] Added copy of resource & resource names/IDs/types to the clipboard for the resource and request views.
 - [TESTS] Added support for an additional root path for the test cases when using HTTP requests.
 
 ### Experimental

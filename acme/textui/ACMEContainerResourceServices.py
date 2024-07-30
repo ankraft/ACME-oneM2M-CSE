@@ -142,7 +142,7 @@ class ACMEContainerResourceServices(Container):
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
 			self.exportResourceResult.update(n := f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
-			self._app.showNotification(n, 'Export Resources', 'information')
+			self._app.showNotification(n, 'Resource Export', 'information')
 
 
 		# Show the loading indicator instead of the result
@@ -167,7 +167,7 @@ class ACMEContainerResourceServices(Container):
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			self.exportInstancesResult.update(n := f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
-			self._app.showNotification(n, 'Export Data Points', 'information')
+			self._app.showNotification(n, 'Data Points Export', 'information')
 
 		# Show the loading indicator instead of the result
 		self.exportInstancesLoadingIndicator.display = True
@@ -188,7 +188,7 @@ class ACMEContainerResourceServices(Container):
 			self.exportInstancesResult.display = True
 			pyperclip.copy(data)
 			self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
-			self._app.showNotification(n, 'Copy Data Points', 'information')
+			self._app.showNotification(n, 'Data Points Copy', 'information')
 
 
 		# Show the loading indicator instead of the result

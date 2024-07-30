@@ -8,7 +8,10 @@
 """
 
 from __future__ import annotations
+import pyperclip, json
+
 from typing import Optional, List, cast, Any
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal, Center, VerticalScroll
 from textual.binding import Binding
@@ -22,7 +25,7 @@ from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..helpers.TextTools import commentJson
+from ..helpers.TextTools import commentJson, limitLines
 
 class ACMEContainerRequests(Vertical):
 
@@ -63,12 +66,22 @@ class ACMEViewRequests(Vertical):
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
 
+		self.currentRequest:JSON = None
+		"""	The current request. """
+
+		self.currentResponse:JSON = None
+		"""	The current response. """
+
 		self.listDetails = False
 		"""Show list details."""
 
 		self.commentsOneLine = True
 		"""Show comments in requests and responses in one line."""
-		
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 	
 	@property
 	def currentRI(self) -> Optional[str]:
@@ -123,6 +136,27 @@ class ACMEViewRequests(Vertical):
 		self.requestList.focus()
 
 
+
+	def on_click(self, event:events.Click) -> None:
+		"""Handle Click events. Copy the request or response to the clipboard.
+
+			Args:
+				event: The Click event.
+		"""
+
+		match self.screen.get_widget_at(event.screen_x, event.screen_y)[0]:
+			case self.requestListRequest:
+				v = json.dumps(self.currentRequest, indent = 2)
+				t = 'Request Copied'
+			case self.requestListResponse:
+				v = json.dumps(self.currentResponse, indent = 2)
+				t = 'Response Copied'
+			case _:
+				return
+		pyperclip.copy(v)
+		self._app.showNotification(limitLines(v, 5), t, 'information')
+
+
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
 		self._showRequests(cast(ACMEListItem, selected.item))
 
@@ -142,10 +176,11 @@ class ACMEViewRequests(Vertical):
 		type = 'json'
 
 		# Get the request's json
-		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-						explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-						getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
-						width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		self.currentRequest = self._currentRequests[cast(ACMEListItem, item)._data]['req']
+		jsns = commentJson(	self.currentRequest, 
+							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+							getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Request is too large to display'
 			type = 'text'
@@ -155,10 +190,11 @@ class ACMEViewRequests(Vertical):
 		self.requestListRequest.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
-		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
-					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
-					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		self.currentResponse = self._currentRequests[cast(ACMEListItem, item)._data]['rsp']
+		jsns = commentJson(	self.currentResponse, 
+							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+							getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
+							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Response is too large to display'
 			type = 'text'
