@@ -451,6 +451,24 @@ def isBase64(value:str) -> bool:
 		return False
 	return True
 
+def limitLines(text:str, maxLines:int, cont:str = '...') -> str:
+	"""	Limit the number of lines and the length of lines in a text.
+
+		Args:
+			text: The text to limit.
+			maxLines: The maximum number of lines.
+			cont: The continuation string.
+		
+		Return:
+			The limited text.
+	"""
+	lines = text.splitlines()
+	if (orgLen := len(lines)) > maxLines:
+		lines = lines[:maxLines]
+		if orgLen > maxLines and cont:
+			lines.append(cont)
+		return '\n'.join(lines)
+	return text
 
 def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool = False) -> bool:
 	r"""	Simple string match function. 
