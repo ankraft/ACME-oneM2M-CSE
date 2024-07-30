@@ -208,6 +208,7 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 	config.textui_startWithTUI = parser.getboolean('textui', 'startWithTUI', fallback = False)
 	config.textui_theme = parser.get('textui', 'theme', fallback = 'dark')
 	config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback = 10000)
+	config.textui_notificationTimeout = parser.getfloat('textui', 'notificationTimeout', fallback = 2.0)
 
 
 def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
@@ -226,5 +227,8 @@ def validateConfiguration(config:Configuration, initial:Optional[bool] = False) 
 		raise ConfigurationError(fr'Configuration Error: [i]\[textui]:theme[/i] must be "light" or "dark"')
 	if config.textui_maxRequestSize < 0:
 		raise ConfigurationError(fr'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be >= 0')
+	if config.textui_notificationTimeout < 0.0:
+		raise ConfigurationError(fr'Configuration Error: [i]\[textui]:notificationTimeout[/i] must be >= 0')
+
 
 

@@ -242,6 +242,7 @@ class Configuration(object):
 	textui_startWithTUI:bool
 	textui_theme:str
 	textui_maxRequestSize:int
+	textui_notificationTimeout:float
 
 	webui_root:str
 

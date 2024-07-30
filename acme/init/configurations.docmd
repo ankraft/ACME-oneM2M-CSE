@@ -1547,6 +1547,22 @@ This section contains settings that control the CSE's terminal user interface.
 Settings in this section are listed under the `[textui]` section.
 
 
+# textui.maxRequestSize
+
+Max size of a request or response in bytes to display. 
+Requests or responses larger than this threshold will not be displayed.
+
+The default value is `10000`
+
+
+
+# textui.notificationTimeout
+
+This setting specifies the timeout, in seconds, for displaying notifications in the CSE's terminal user interface.
+
+The default value is `2.0 seconds`.
+
+
 
 # textui.refreshInterval
 
@@ -1573,13 +1589,6 @@ This setting specifies the CSE's terminal user interface's theme.
 
 The default value is the same value as the `console.theme` setting.
 
-
-# textui.maxRequestSize
-
-Max size of a request or response in bytes to display. 
-Requests or responses larger than this threshold will not be displayed.
-
-The default value is `10000`
 
 
 

@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 - [TUI] Added copy of CSV data to the clipboard for instance resources.
 - [TUI] Added copy of resource & resource names/IDs/types to the clipboard for the resource and request views.
+- [TUI] Added configuration to set the default timeout for notifications in the text UI.
 - [TESTS] Added support for an additional root path for the test cases when using HTTP requests.
 
 ### Experimental

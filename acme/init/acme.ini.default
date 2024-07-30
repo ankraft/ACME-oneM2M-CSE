@@ -687,6 +687,9 @@ refreshInterval=2.0
 ; Requests or responses larger than this threshold will not be displayed.
 ; Default: 10000
 maxRequestSize=10000
+; How long to display a notification in seconds.
+; Default: 2.0
+notificationTimeout=2.0
 
 ;
 ;	Scripting settings

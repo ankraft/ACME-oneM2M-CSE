@@ -244,7 +244,7 @@ class ACMETuiApp(App):
 			self.notify(message = message, title = title, severity = severity, timeout = timeout)
 		
 		if timeout is None:
-			timeout = Notification.timeout
+			timeout = Configuration.textui_notificationTimeout
 		
 		if severity is None:
 			severity = 'information'
