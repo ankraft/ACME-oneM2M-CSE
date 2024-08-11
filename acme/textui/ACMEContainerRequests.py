@@ -133,7 +133,9 @@ class ACMEViewRequests(Vertical):
 
 	def onShow(self) -> None:
 		self.updateRequests()
-		self.requestList.focus()
+	# 	self.requestList.focus()
+		self.requestList.index = 0
+	# 	self.requestList.action_select_cursor()
 
 
 

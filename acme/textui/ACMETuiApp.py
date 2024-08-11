@@ -15,14 +15,14 @@ import asyncio
 from enum import IntEnum, auto
 from textual.app import App, ComposeResult
 from textual import on
-from textual.widgets import Tab, Footer, TabbedContent, TabPane, Static
+from textual.widgets import Footer, TabbedContent, TabPane, Static
 from textual.binding import Binding
-from textual.notifications import Notification, SeverityLevel
+from textual.notifications import SeverityLevel
 
 from ..textui.ACMEHeader import ACMEHeader
 from ..textui.ACMEContainerAbout import ACMEContainerAbout
 from ..textui.ACMEContainerConfigurations import ACMEContainerConfigurations
-from ..textui.ACMEContainerInfo import ACMEContainerInfo, tabInfo
+from ..textui.ACMEContainerInfo import ACMEContainerInfo
 from ..textui.ACMEContainerTree import ACMEContainerTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
 from ..textui.ACMEContainerRequests import ACMEContainerRequests
@@ -38,6 +38,7 @@ tabRequests = 'tab-requests'
 tabRegistrations = 'tab-registrations'
 tabConfigurations = 'tab-configurations'
 tabTools = 'tab-tools'
+tabInfo = 'tab-info'
 tabAbout = 'tab-about'
 
 class ACMETuiQuitReason(IntEnum):
@@ -76,7 +77,7 @@ class ACMETuiApp(App):
 		# This is used to keep track of the current tab.
 		# This is a bit different from the actual current tab from the self.tabs
 		# attribute because at one point it is used to determine the previous tab.
-		self.currentTab:Tab = None	
+		self.currentTab:TabbedContent.TabActivated = None	
 
 		# This is used to keep a pointer to the current event loop to use it
 		# for async calls from non-async functions.
@@ -167,11 +168,17 @@ class ACMETuiApp(App):
 	@on(TabbedContent.TabActivated)
 	def tabChanged(self, tab:TabbedContent.TabActivated) -> None:
 		# Use the self.currentTab shortly to determine where we come from and call a 
-		if self.currentTab is not None and self.currentTab.id == tabTools:
-			self.containerTools.leaving_tab()
+		if self.currentTab is not None:
+			match self.currentTab.pane.id:
+				case _i if _i == tabTools:
+					self.containerTools.leaving_tab()
+		
 		# Set self.currenTab to the new tab.
-		self.currentTab = tab.tab
+		self.currentTab = tab
 
+		# Notify containers that the tab has changed
+		self.containerInfo.tab_changed(self.currentTab.pane.id)
+		
 
 	async def action_quit_tui(self) -> None:
 		self.quitReason = ACMETuiQuitReason.quitTUI
