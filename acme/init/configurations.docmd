@@ -1084,7 +1084,7 @@ The default value is `False`.
 
 This setting specifies a comma-separated list of non-CSE component names to exclude from logging.
 
-The default value is `werkzeug,markdown_it`.
+The default value is `werkzeug,markdown_it,asyncio`.
 
 
 

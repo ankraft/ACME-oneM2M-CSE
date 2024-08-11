@@ -78,12 +78,14 @@ class ACMEConfigurationTree(TextualTree):
 					break
 			else:	# not found
 				_n = node.add(f'[{self._app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
+				node.children
 				# Add new node to the tree. "data" contains the path to this node
 			if level == len(splits) - 1:
 				_n.allow_expand = False
 				_n.label = _s
 			else:
 				_addSetting(splits, level + 1, _n)
+			node._children.sort(key=lambda x: (len(x._children) == 0, str(x.label)))
 
 		# Add all keys as paths recursively to the tree
 		for k in CSE.Configuration.all().keys():
