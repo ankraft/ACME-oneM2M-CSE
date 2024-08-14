@@ -28,6 +28,26 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 
 
+coRetrieves			= 'coqRet'
+""" Attribute name for number of CoAP RETRIEVE requests. """
+coCreates			= 'coCre'
+""" Attribute name for number of CoAP CREATE requests. """
+coUpdates			= 'coUpd'
+""" Attribute name for number of CoAP UPDATE requests. """
+coDeletes			= 'coDel'
+""" Attribute name for number of CoAP DELETE requests. """
+coNotifies			= 'coNot'
+""" Attribute name for number of CoAP NOTIFY requests. """
+coSendRetrieves		= 'coSRt'
+""" Attribute name for number of CoAP SEND RETRIEVE requests. """
+coSendCreates		= 'coSCr'
+""" Attribute name for number of CoAP SEND CREATE requests. """
+coSendUpdates		= 'coSUp'
+""" Attribute name for number of CoAP SEND UPDATE requests. """
+coSendDeletes		= 'coSDl'
+""" Attribute name for number of CoAP SEND DELETE requests. """
+coSendNotifies		= 'coSNo'
+""" Attribute name for number of CoAP SEND NOTIFY requests. """
 deletedResources	= 'rmRes'
 """ Attribute name for number of deleted resources in the storage. """
 createdResources	= 'crRes'
@@ -149,6 +169,16 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))	# type: ignore
 			CSE.event.addHandler(CSE.event.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))	# type: ignore
 			CSE.event.addHandler(CSE.event.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.coapRetrieve, lambda n: self._handleStatsEvent(coRetrieves))				# type: ignore
+			CSE.event.addHandler(CSE.event.coapCreate, lambda n: self._handleStatsEvent(coCreates))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapUpdate, lambda n: self._handleStatsEvent(coUpdates))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapDelete, lambda n: self._handleStatsEvent(coDeletes))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapNotify, lambda n: self._handleStatsEvent(coNotifies))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendRetrieve, lambda n: self._handleStatsEvent(coSendRetrieves))		# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendCreate, lambda n: self._handleStatsEvent(coSendCreates))			# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendUpdate, lambda n: self._handleStatsEvent(coSendUpdates))			# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendDelete, lambda n: self._handleStatsEvent(coSendDeletes))			# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendNotify, lambda n: self._handleStatsEvent(coSendNotifies))			# type: ignore
 			CSE.event.addHandler(CSE.event.httpRetrieve, lambda n: self._handleStatsEvent(httpRetrieves))			# type: ignore
 			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))				# type: ignore
@@ -234,6 +264,16 @@ class Statistics(object):
 			updatedResources	: 0,
 			expiredResources 	: 0,
 			notifications		: 0,
+			coRetrieves			: 0,
+			coCreates			: 0,
+			coUpdates 			: 0,
+			coDeletes 			: 0,
+			coNotifies 			: 0,
+			coSendRetrieves		: 0,
+			coSendCreates		: 0,
+			coSendUpdates 		: 0,
+			coSendDeletes 		: 0,
+			coSendNotifies 		: 0,
 			httpRetrieves		: 0,
 			httpCreates			: 0,
 			httpUpdates 		: 0,

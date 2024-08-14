@@ -22,6 +22,17 @@ class EventManager(HelpersEventManager.EventManager):
 	def __init__(self) -> None:
 		super().__init__()
 
+		self.addEvent('coapRetrieve')
+		self.addEvent('coapCreate')
+		self.addEvent('coapDelete')
+		self.addEvent('coapUpdate')
+		self.addEvent('coapNotify')
+		self.addEvent('coapSendRetrieve')
+		self.addEvent('coapSendCreate')
+		self.addEvent('coapSendUpdate')
+		self.addEvent('coapSendDelete')
+		self.addEvent('coapSendNotify')
+
 		self.addEvent('httpRetrieve')
 		self.addEvent('httpCreate')
 		self.addEvent('httpDelete')
