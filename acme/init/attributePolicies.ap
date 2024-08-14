@@ -342,6 +342,20 @@
 			"annc": "NA"
 		}
 	],
+	"adds": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "additions",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:attribute",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"adri": [
 		{
 			"rtypes": [ "ALL" ],
@@ -468,6 +482,20 @@
 			"lname": "apn",
 			"ns": "dcfg",
 			"type": "string",	// TODO dcfg:apn
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"appl": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "applicability",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -1120,6 +1148,20 @@
 			"annc": "OA"
 		}
 	],
+	"dels": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "deletions",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ncname",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"dep": [
 		{
 			"rtypes": [ "ACTR", "ACTRAnnc", "REQRESP" ],
@@ -1620,6 +1662,20 @@
 			"ns": "dcfg",
 			"type": "iccid",
 			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"idl": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "IDList",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ID",
+			"car": "1L",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",
@@ -2635,6 +2691,21 @@
 			"annc": "OA"
 		}
 	],
+	"ops": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "operations",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum",
+			"etype": "m2m:operation",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"or": [
 		{
 			"rtypes": [ "AE", "AEAnnc", 
@@ -3098,6 +3169,20 @@
 			"annc": "NA"
 		}
 	],
+	"rsds": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "resourceIDs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"rss": [
 		{
 			"rtypes": [ "MNWK", "MNWKAnnc", "REQRESP" ],
@@ -3107,6 +3192,35 @@
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"rtys" : [
+		{
+			"rtypes": [ "PRP","PRPAnnc", "REQRESP" ],
+			"lname": "resourceTypes",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum",
+			"etype": "m2m:resourceType",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"rvs": [
+		{
+			"rtypes": [ "PRP", "PRPAnnc", "REQRESP" ],
+			"lname": "releaseVersions",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L",
+			"oc": "O",
+			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
 		}

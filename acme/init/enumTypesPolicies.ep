@@ -208,6 +208,14 @@
 		"4": "Delete",
 		"5": "Notify"
 	},
+	"m2m:primitiveProfileApplicability" : {
+		// This enum has empty values, because the values can be combined
+		"1": "REQUESTS_TO_CSE",
+		"2": "RESPONSES_FROM_CSE",
+		"3": "",
+		"4": "NOTIFICATIONS_FROM_CSE",
+		"5..7": ""
+	},
 	"m2m:processControl" : {
 		"1": "Enable",
 		"2": "Disable",
@@ -253,6 +261,7 @@
 		"58": "flexContainerInstance",
 		"60": "timeSyncBeacon",
 		"63": "processManagement",
+		"62": "primitiveProfile",
 		"64": "state",
 		"65": "action",
 		"66": "dependency",
@@ -273,6 +282,7 @@
 		"10029": "timeSeriesAnnc",
 		"10030": "timeSeriesInstanceAnnc",
 		"10060": "timeSyncBeaconAnnc",
+		"10062": "primitiveProfileAnnc",
 		"10063": "processManagementAnnc",
 		"10064": "stateAnnc",
 		"10065": "actionAnnc",
