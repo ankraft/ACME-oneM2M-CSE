@@ -19,6 +19,9 @@ from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.DateUtils import utcTime, getResourceDate
+from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
+from coapthon.defines import Content_types as CoAPContentTypes
+
 
 
 #
@@ -1308,6 +1311,26 @@ class ContentSerializationType(ACMEIntEnum):
 				return None
 	
 
+	def toCoAPContentType(self) -> int:
+		"""	Return the CoAP content header for an enum value.
+
+			Return:
+				The number for the CoAP content type.
+		"""
+		# TODO hard code values for performance reasons
+		match self.value:
+			case self.JSON:	
+				return CoAPContentTypes['application/json']
+			case self.CBOR:	
+				return CoAPContentTypes['application/cbor']
+			case self.XML:	
+				return CoAPContentTypes['application/xml']
+			case _:
+				return None
+
+		return self.toHttpContentType()
+	
+
 	def toSimple(self) -> str:
 		"""	Return the simple string for an enum value.
 
@@ -1336,6 +1359,7 @@ class ContentSerializationType(ACMEIntEnum):
 			Return:
 				The enum value.
 		"""
+		# TODO add more of the defined oneM2M content types
 		if not t:
 			return cls.UNKNOWN if not default else default
 		match t.lower():
@@ -1393,6 +1417,27 @@ class ContentSerializationType(ACMEIntEnum):
 			case _:
 				return cls.UNKNOWN
 
+
+	@classmethod
+	def fromCoAP(cls, t:int) -> ContentSerializationType:
+		"""	Return the enum from a string for a content serialization.
+
+			Args:
+				t: content type number to convert
+
+			Return:
+				The enum value.
+		"""
+		match t:
+			case 41 | 10014 | 10002 | 10006 | 10008 | 10014 | 10016:
+				return cls.XML
+			case 50 | 10001 | 10003 | 10007 | 10009 | 10015:
+				return cls.JSON
+			case 60 | 10010 | 10011 | 10012 | 10013:
+				return cls.CBOR
+			case _:
+				return cls.UNKNOWN
+			
 
 	@classmethod
 	def supportedContentSerializationsSimple(cls) -> list[str]:
@@ -2426,6 +2471,14 @@ class CSERequest:
 	"""	http Accept header media type. """
 
 	#
+	#	CoAP specifics
+	#
+
+	coapAccept:Optional[ContentSerializationType] = None
+	""" CoAP Accept Option media type. """
+
+
+	#
 	#	Helpers
 	#
 
@@ -2714,7 +2767,7 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest coapEvent httpEvent mqttEvent wsEvent')
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
