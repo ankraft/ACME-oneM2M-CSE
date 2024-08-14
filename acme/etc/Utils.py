@@ -109,7 +109,7 @@ def renameThread(prefix:Optional[str] = None,
 #	URL and Addressung related
 #
 _urlregex = re.compile(
-		r'^(?:http|ftp|mqtt|ws)s?://|^(?:coap|acme)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
+		r'^(?:http|ftp|mqtt|ws|coap)s?://|^(?:acme)://' 	# http://, https://, ftp://, ftps://, coap://, coaps://, mqtt://, mqtts://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
@@ -133,6 +133,17 @@ def isURL(url:str) -> bool:
 	return isinstance(url, str) and re.match(_urlregex, url) is not None
 
 
+def isCoAPUrl(url:str) -> bool:
+	"""	Test whether a URL is a valid URL, and indicates a coap or coaps scheme.
+
+		Args:
+			url: String to check.
+		Returns:
+			True if the argument is a URL, and is an coap or coaps scheme.
+	"""
+	return isURL(url) and url.startswith(('coap:', 'coaps:'))
+
+
 def isHttpUrl(url:str) -> bool:
 	"""	Test whether a URL is a valid URL, and indicates an http or https scheme.
 
@@ -141,7 +152,7 @@ def isHttpUrl(url:str) -> bool:
 		Returns:
 			True if the argument is a URL, and is an http or https scheme.
 	"""
-	return isURL(url) and url.startswith(('http', 'https'))
+	return isURL(url) and url.startswith(('http:', 'https:'))
 
 
 def isMQTTUrl(url:str) -> bool:
@@ -152,7 +163,7 @@ def isMQTTUrl(url:str) -> bool:
 		Returns:
 			True if the argument is a URL, and is an mqtt or mqtts scheme.
 	"""
-	return isURL(url) and url.startswith(('mqtt', 'mqtts'))
+	return isURL(url) and url.startswith(('mqtt:', 'mqtts:'))
 
 
 def isWSUrl(url:str) -> bool:
@@ -163,7 +174,7 @@ def isWSUrl(url:str) -> bool:
 		Returns:
 			True if the argument is a URL, and is a ws or wss scheme.
 	"""
-	return isURL(url) and url.startswith(('ws', 'wss'))
+	return isURL(url) and url.startswith(('ws:', 'wss:'))
 
 
 def isAcmeUrl(url:str) -> bool:
@@ -174,7 +185,7 @@ def isAcmeUrl(url:str) -> bool:
 		Returns:
 			True if the argument is a URL, and is an internal ACME scheme.
 	"""
-	return isURL(url) and url.startswith('acme')
+	return isURL(url) and url.startswith('acme:')
 
 
 def normalizeURL(url:str) -> str:
