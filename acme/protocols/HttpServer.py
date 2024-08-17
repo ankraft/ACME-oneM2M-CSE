@@ -73,7 +73,7 @@ class HttpServer(object):
 
 		'_eventHttpRetrieve',
 		'_eventHttpCreate',
-		'_eventNotify',
+		'_eventHttpNotify',
 		'_eventHttpUpdate',
 		'_eventHttpDelete',
 		'_eventResponseReceived',
@@ -151,7 +151,7 @@ class HttpServer(object):
 		# Optimize event handling
 		self._eventHttpRetrieve =  CSE.event.httpRetrieve			# type: ignore [attr-defined]
 		self._eventHttpCreate = CSE.event.httpCreate				# type: ignore [attr-defined]
-		self._eventNotify =  CSE.event.httpNotify					# type: ignore [attr-defined]
+		self._eventHttpNotify =  CSE.event.httpNotify				# type: ignore [attr-defined]
 		self._eventHttpUpdate = CSE.event.httpUpdate				# type: ignore [attr-defined]
 		self._eventHttpDelete = CSE.event.httpDelete				# type: ignore [attr-defined]
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
@@ -337,7 +337,7 @@ class HttpServer(object):
 			return self._handleRequest(path, Operation.CREATE)
 		else:
 			renameThread('HT_N')
-			self._eventNotify()
+			self._eventHttpNotify()
 			return self._handleRequest(path, Operation.NOTIFY)
 
 

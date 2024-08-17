@@ -27,7 +27,7 @@ from ..etc.RequestUtils import requestFromResult, determineSerialization, deseri
 from ..etc.ACMEUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
 from ..etc.ACMEUtils import compareIDs, localResourceID, getIDFromPath, getIdFromOriginator
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
-from ..etc.Utils import isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl
+from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL
 from ..helpers.TextTools import setXPath
 from ..runtime.Configuration import Configuration
@@ -75,6 +75,11 @@ class RequestManager(object):
 
 		'_eventRequestReceived',
 		'_eventRequestReceived',
+		'_eventCoAPSendRetrieve',
+		'_eventCoAPSendCreate',
+		'_eventCoAPSendUpdate',
+		'_eventCoAPSendDelete',
+		'_eventCoAPSendNotify',
 		'_eventHttpSendRetrieve',
 		'_eventHttpSendCreate',
 		'_eventHttpSendUpdate',
@@ -116,6 +121,11 @@ class RequestManager(object):
 
 		# Optimized access to events
 		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
+		self._eventCoAPSendRetrieve = CSE.event.coapSendRetrieve 	# type: ignore [attr-defined]
+		self._eventCoAPSendCreate = CSE.event.coapSendCreate		# type: ignore [attr-defined]
+		self._eventCoAPSendUpdate = CSE.event.coapSendUpdate		# type: ignore [attr-defined]
+		self._eventCoAPSendDelete = CSE.event.coapSendDelete		# type: ignore [attr-defined]
+		self._eventCoAPSendNotify = CSE.event.coapSendNotify		# type: ignore [attr-defined]
 		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
 		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
 		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
@@ -139,6 +149,7 @@ class RequestManager(object):
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
+												  self._eventCoAPSendRetrieve,
 												  self._eventHttpSendRetrieve,
 												  self._eventMqttSendRetrieve,
 												  self._eventWsSendRetrieve),
@@ -146,6 +157,7 @@ class RequestManager(object):
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
+												  self._eventCoAPSendRetrieve,
 												  self._eventHttpSendRetrieve,
 												  self._eventMqttSendRetrieve,
 												  self._eventWsSendRetrieve),
@@ -153,6 +165,7 @@ class RequestManager(object):
 			Operation.CREATE	: RequestCallback(self.createRequest,
 												  CSE.dispatcher.processCreateRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendCreate,
 												  self._eventHttpSendCreate,
 												  self._eventMqttSendCreate,
 												  self._eventWsSendCreate),
@@ -160,6 +173,7 @@ class RequestManager(object):
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
 												  CSE.dispatcher.processUpdateRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendUpdate,
 												  self._eventHttpSendUpdate,
 												  self._eventMqttSendUpdate,
 												  self._eventWsSendUpdate),
@@ -167,6 +181,7 @@ class RequestManager(object):
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
 												  CSE.dispatcher.processDeleteRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendDelete,
 												  self._eventHttpSendDelete,
 												  self._eventMqttSendDelete,
 												  self._eventWsSendDelete),
@@ -174,6 +189,7 @@ class RequestManager(object):
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
 												  CSE.dispatcher.processNotifyRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendNotify,
 												  self._eventHttpSendNotify,
 												  self._eventMqttSendNotify,
 												  self._eventWsSendNotify),
@@ -1060,30 +1076,36 @@ class RequestManager(object):
 			_request.ct = ct
 
 			# Otherwise send it via one of the bindings
-			if isHttpUrl(url):
-				self.requestHandlers[_request.op].httpEvent()	# send event
-				results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
-				continue
+			match url:
+				case _ if isHttpUrl(url):
+					self.requestHandlers[_request.op].httpEvent()	# send event
+					results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
+					continue
+			
+				case _ if isMQTTUrl(url):
+					self.requestHandlers[_request.op].mqttEvent()	# send event
+					results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+					continue
 
-			elif isMQTTUrl(url):
-				self.requestHandlers[_request.op].mqttEvent()	# send event
-				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
-				continue
+				case _ if isCoAPUrl(url):
+					self.requestHandlers[_request.op].coapEvent()	# send event
+					results.append( RequestResponse(_request, CSE.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+					continue
 
-			elif isWSUrl(url):
-				self.requestHandlers[_request.op].wsEvent()	# send event
-				try:
-					results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
-				except TARGET_NOT_REACHABLE as e:
-					L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
-				continue
+				case _ if isWSUrl(url):
+					self.requestHandlers[_request.op].wsEvent()	# send event
+					try:
+						results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
+					except TARGET_NOT_REACHABLE as e:
+						L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
+					continue
 
-			# Special handling for ACME internal events.
-			# This might be more generalize when other opeations are supported as well
-			elif isAcmeUrl(url) and request.op == Operation.NOTIFY:
-				self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
-				results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
-				continue
+				# Special handling for ACME internal events.
+				# This might be more generalize when other opeations are supported as well
+				case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
+					self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+					results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+					continue
 
 			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
 		

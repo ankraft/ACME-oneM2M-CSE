@@ -19,6 +19,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TESTS] Added support for an additional root path for the test cases when using HTTP requests.
 
 ### Experimental
+- [CSE] Added statistics event for local resource retrieval. If this impacts performance too much, it may be removed again.
 
 ### Changed
 - [CSE] Internal refactoring of the configuration handling. The main configuration handling is still done in the old module, but the assignments and validations are now done in the using modules. Configuration settings are now stored in attributes, not a central dictionary anymore.

@@ -55,6 +55,7 @@ class Dispatcher(object):
 		'csiSlashLen',
 		'sortDiscoveryResources',
 
+		'_eventRetrieveResource',
 		'_eventCreateResource',
 		'_eventCreateChildResource',
 		'_eventUpdateResource',
@@ -78,6 +79,8 @@ class Dispatcher(object):
 		""" Event handler for resource update events. """
 		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
 		""" Event handler for resource deletion events. """
+		self._eventRetrieveResource = CSE.event.retrieveResource		# type: ignore [attr-defined]
+		""" Event handler for resource retrieval events. """
 
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -375,11 +378,17 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
-			return CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
+			resource = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
 		elif srn:
-			return CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			resource = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			raise NOT_FOUND(f'resource: {ri}|{srn} not found')
+
+		# send a retrieve event
+		self._eventRetrieveResource(resource)
+
+		return resource
+
 
 		# EXPERIMENTAL remove this
 		# if resource := cast(Resource, result.resource):	# Resource found

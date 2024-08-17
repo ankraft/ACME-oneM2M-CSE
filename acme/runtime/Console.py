@@ -1294,13 +1294,30 @@ function createResource() {{
 			if Configuration.cse_statistics_enable:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
 				resourceOps += 	'\n'
-				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
-				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
-				resourceOps +=  f'Delete: {stats.get(Statistics.deletedResources, 0)}\n'
-				resourceOps +=  f'Notify: {stats.get(Statistics.notifications, 0)}\n'
-				resourceOps += 	'\n'
-				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
+				resourceOps +=  f'Create:   {stats.get(Statistics.createdResources, 0)}\n'
+				resourceOps +=  f'Retrieve: {stats.get(Statistics.retrievedResources, 0)}\n'
+				resourceOps +=  f'Update:   {stats.get(Statistics.updatedResources, 0)}\n'
+				resourceOps +=  f'Delete:   {stats.get(Statistics.deletedResources, 0)}\n'
+				resourceOps +=  f'Notify:   {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps +=  f'Expire:   {stats.get(Statistics.expiredResources, 0)}\n'
 				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
+
+				coapReceived  = _markup('[underline]CoAP:R[/underline]\n', style = textStyle)
+				coapReceived += '\n'
+				coapReceived += f'C: {stats.get(Statistics.coCreates, 0)}\n'
+				coapReceived += f'R: {stats.get(Statistics.coRetrieves, 0)}\n'
+				coapReceived += f'U: {stats.get(Statistics.coUpdates, 0)}\n'
+				coapReceived += f'D: {stats.get(Statistics.coDeletes, 0)}\n'
+				coapReceived += f'N: {stats.get(Statistics.coNotifies, 0)}\n'
+
+				coapSent  = 	_markup('[underline]CoAP:S[/underline]\n', style = textStyle)
+				coapSent += 	'\n'
+				coapSent += 	f'C: {stats.get(Statistics.coSendCreates, 0)}\n'
+				coapSent += 	f'R: {stats.get(Statistics.coSendRetrieves, 0)}\n'
+				coapSent += 	f'U: {stats.get(Statistics.coSendUpdates, 0)}\n'
+				coapSent += 	f'D: {stats.get(Statistics.coSendDeletes, 0)}\n'
+				coapSent += 	f'N: {stats.get(Statistics.coSendNotifies, 0)}\n'
+
 
 				httpReceived  = _markup('[underline]HTTP:R[/underline]\n', style = textStyle)
 				httpReceived += '\n'
@@ -1445,7 +1462,9 @@ function createResource() {{
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_column(ratio = 12)
-			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_row(resourceOps, coapReceived, coapSent, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
 			panelRequests = Panel(requestsGrid, 
 								  box = box.ROUNDED, 

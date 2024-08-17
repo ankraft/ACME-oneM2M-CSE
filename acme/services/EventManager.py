@@ -66,6 +66,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('wsSendDelete')
 		self.addEvent('wsSendNotify')
 
+		self.addEvent('retrieveResource')
 		self.addEvent('createResource')
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
