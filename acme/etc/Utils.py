@@ -87,7 +87,7 @@ def renameThread(prefix:Optional[str] = None,
 	"""	Rename a thread.
 
 		If *name* is provided then the thread is renamed to that name.
-		If *name* is not provided, but *prefix* is, then the thread is renamed to the prefix + its thread ID.
+		If *name* is not provided, but *prefix* is, then the thread is renamed to the prefix + the last 5 digits of its thread ID.
 		If neither *name* nor *prefix* is provided, then the thread is renamed to its own ID.
 	
 		Args:
@@ -99,7 +99,7 @@ def renameThread(prefix:Optional[str] = None,
 	if name is not None:
 		thread.name = name 
 	elif prefix is not None:
-		thread.name = f'{prefix}_{thread.native_id}'
+		thread.name = f'{prefix}_{str(thread.native_id)[-5:]}'
 	else:
 		thread.name = str(thread.native_id)
 
