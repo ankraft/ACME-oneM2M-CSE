@@ -133,6 +133,7 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING in [ 'coap', 'coaps' ], 'Not for CoAP binding tests')
 	def test_createAlphaResourceType(self) -> None:
 		""" Create a resource with alphanumerical type -> Fail """
 		dct = 	{ 'foo:bar' : { 
@@ -284,7 +285,7 @@ class TestMisc(unittest.TestCase):
 	def test_partialRetrieveCSEBaseSingle(self) -> None:
 		""" Partial RETRIEVE of CSEBase with single attribute in atrl argument"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
 		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 		

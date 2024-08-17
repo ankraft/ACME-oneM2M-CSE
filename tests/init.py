@@ -11,11 +11,12 @@ from __future__ import annotations
 from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
 
 from urllib.parse import ParseResult, urlparse, parse_qs
-import sys, io, atexit, base64
+import sys, io, atexit, base64, urllib
 import unittest
 
+from rich import inspect
 from rich.console import Console
-import requests, sys, json, time, ssl, urllib3, random, re, random
+import requests, sys, json, time, ssl, urllib3, random, re, random, importlib
 from datetime import datetime, timezone
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -27,6 +28,23 @@ from websockets.exceptions import ConnectionClosed
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
+
+# Hack to import defines from acme.helpers.coapthon instead of coapthon
+if importlib.util.find_spec('defines', 'acme.helpers.coapthon') is None:
+	__import__('acme.helpers.coapthon.defines')
+	sys.modules['coapthon.defines'] = sys.modules.pop('acme.helpers.coapthon.defines')
+	__import__('acme.helpers.coapthon.client.helperclient')
+	sys.modules['coapthon.client.helperclient'] = sys.modules.pop('acme.helpers.coapthon.client.helperclient')
+
+
+# CoAP Libraries
+from coapthon import defines	# actually this is the import from ACME
+from coapthon.client.helperclient import HelperClient as CoAPClient
+from coapthon.messages.option import Option as CoAPOption
+from coapthon.messages.request import Request as CoAPRequest
+from coapthon.messages.response import Response as	CoAPResponse
+
+
 from acme.etc import RequestUtils, DateUtils
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.helpers.OAuth as OAuth
@@ -200,6 +218,10 @@ mqttClient:MQTTConnection = None
 mqttHandler:MQTTClientHandler = None
 
 
+# CoAP Client
+coapClient:CoAPClient = None
+
+
 # HTTP Session
 httpSession:requests.Session = None
 
@@ -241,6 +263,7 @@ lcpRN	= 'testLCP'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
 prmrRN	= 'testPRMR'
+prpRN	= 'testPRP'
 reqRN	= 'testREQ'
 schRN 	= 'testSCH'
 smdRN	= 'testSMD'
@@ -273,6 +296,7 @@ tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{cntURL}/{actrRN}'
 deprURL = f'{actrURL}/{deprRN}'
 prmrURL = f'{aeURL}/{prmrRN}'
+prpURL 	= f'{cseURL}/{prpRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
@@ -289,10 +313,13 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 def shutdown() -> None:
 	"""	Shutdown the system. 
 	"""
-	global mqttClient
+	global mqttClient, coapClient
 	if mqttClient:
 		mqttClient.shutdown()
 		mqttClient = None
+	if coapClient:
+		coapClient.close()
+		coapClient = None
 	
 	for _, websocket in websockets.items():
 		websocket.close()
@@ -305,42 +332,49 @@ def shutdown() -> None:
 
 requestCount:int = 0
 
-def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str|JSON, int]:
+def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.RETRIEVE, url, originator, timeout=timeout, headers=headers)
 
-def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str, int]:
+def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[str, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return cast(JSON, x), rsc
 
-def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = sendRequest(Operation.CREATE, url, originator, ty, data, headers=headers)
 	return cast(JSON, x), rsc
 
-def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = sendRequest(Operation.NOTIFY, url, originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
-def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
+def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters={}) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.UPDATE, url, originator, data=data, headers=headers)
 
-def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters=None) -> Tuple[str, int]:
+def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters={}) -> Tuple[str, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
 	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def UPDATE(url:str, originator:str, data:JSON, headers:Parameters=None) -> Tuple[JSON, int]:
+def UPDATE(url:str, originator:str, data:JSON, headers:Parameters={}) -> Tuple[JSON, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
-def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]:
+def DELETE(url:str, originator:str, headers:Parameters={}) -> Tuple[JSON, int]:
 	x, rsc = sendRequest(Operation.DELETE, url, originator, headers=headers)
 	return cast(JSON, x), rsc
 
 
-def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendRequest(operation:Operation, 
+				url:str, 
+				originator:str, 
+				ty:ResourceTypes=None, 
+				data:JSON|str=None, 
+				ct:str='application/json', 
+				timeout:float=None, 
+				headers:Parameters = {}) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	"""	Send a request. Call the appropriate framework, depending on the protocol.
 	"""
 	global requestCount, httpSession
@@ -397,6 +431,19 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 				return sendWsRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.NOTIFY:
 				return sendWsRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+
+	elif url.startswith(('coap', 'coaps')):
+		match operation:
+			case Operation.CREATE:
+				return sendCoapRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendCoapRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendCoapRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendCoapRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendCoapRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 
 	else:
 		print('ERROR')
@@ -663,7 +710,14 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 websockets:dict[str, ClientConnection] = dict()
 wsin:int = 0
 
-def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=10.0, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendWsRequest(operation:Operation, 
+				  url:str, 
+				  originator:str, 
+				  ty:int=None, 
+				  data:JSON|str=None, 
+				  ct:str=None, 
+				  timeout:float=10.0, 
+				  headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	req, rqi, urlComponents = _packRequest(operation, url, originator, ty, data, ct, headers)
 
 	def isWSOpen(websocket:WSConnection) -> bool:
@@ -728,6 +782,171 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 	return None
 
 
+
+def sendCoapRequest(operation:Operation, 
+					url:str, 
+					originator:str, 
+					ty:ResourceTypes=None, 
+					data:JSON|str = None, 
+					ct:str=None, 
+					timeout:float=None, 
+					headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+	
+	if timeout is None:
+		timeout = coapTimeout	# not an argument default, because a calling function might set it to None
+
+	def _addCoAPOption(request:CoAPRequest, number:int, value:Any) -> None:
+		option = CoAPOption()
+		option.number = number
+		option.value = value
+		request.add_option(option)
+	
+
+	urlComponents:ParseResult = urlparse(RequestUtils.toHttpUrl(url))
+
+	# TODO DTLS socket
+	# TODO add verboserequest output
+	global coapClient
+	if not coapClient:
+		coapClient = CoAPClient(server=(urlComponents.hostname, urlComponents.port))
+
+	request = CoAPRequest()
+
+	# Set the appropriate CoAP code
+	match operation:
+		case Operation.CREATE:
+			request.code = defines.Codes.POST.number
+		case Operation.RETRIEVE if RELEASEVERSION == '5':
+			request.code = defines.Codes.FETCH.number
+		case Operation.RETRIEVE:
+			request.code = defines.Codes.GET.number
+		case Operation.UPDATE:
+			request.code = defines.Codes.PUT.number
+		case Operation.DELETE:
+			request.code = defines.Codes.DELETE.number
+		case Operation.NOTIFY:
+			request.code = defines.Codes.POST.number
+
+	request.type = defines.Types['CON']
+	request.destination = urlComponents.hostname, urlComponents.port
+	request.uri_path = urlComponents.path[1:]
+
+
+	# CoAP Options
+	_addCoAPOption(request, defines.OptionRegistry.CONTENT_TYPE.number, defines.Content_types[ct])
+
+	if RELEASEVERSION == '5':
+		console.print('[red]Warning: CoAP binding for Release 5 is not yet supported')
+		quit()
+		# if data is None:
+		# 	data = dict()
+		# else:
+		# 	data_pc = data
+		# 	data = dict()
+		# 	data['pc'] = data_pc
+
+		# if ty is not None:
+		# 	data['ty'] = int(ty)
+
+		# if originator is not None:
+		# 	data['fr'] = originator
+
+		# data['rqi'] = uniqueID()
+		# if C.hfRVI in headers:	# overwrite RVI option
+		# 	data['rvi'] = headers[C.hfRVI]
+		# 	del headers[C.hfRVI]
+		# else:
+		# 	data['rvi'] = RELEASEVERSION
+
+	else:
+		# OneM2M Options
+		if ty is not None:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_TY.number, int(ty))
+
+		if originator is not None:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_FR.number, originator)
+
+		_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQI.number, rid := uniqueID())
+		setLastRequestID(rid)
+
+		if C.hfRVI in headers:	# overwrite RVI option
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, headers[C.hfRVI])
+			del headers[C.hfRVI]
+		else:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, RELEASEVERSION)
+		if C.hfVSI in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_VSI.number, headers[C.hfVSI])
+			del headers[C.hfVSI]
+		if C.hfRET in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQET.number, headers[C.hfRET])
+			del headers[C.hfRET]
+		if C.hfOET in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OET.number, headers[C.hfOET])
+			del headers[C.hfOET]
+		if C.hfRST in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RSET.number, headers[C.hfRST])
+			del headers[C.hfRST]
+		if C.hfRTU in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RTURI.number, headers[C.hfRTU])
+			del headers[C.hfRTU]
+		if C.hfOT in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OT.number, headers[C.hfOT])
+			del headers[C.hfOT]
+
+	if len(headers):
+		console.print(f'[red]Warning: {headers} not used in CoAP request')
+
+	# Set CoAP payload
+	if data is not None and isinstance(data, dict):
+		request.payload = json.dumps(data)
+	
+	# Add query parameters 
+	request.uri_query = urlComponents.query
+
+	# Send the CoAP request
+	try:
+		response = coapClient.send_request(request, timeout = timeout)
+	except Exception as e:
+		return 'Failed to send CoAP request', 5103
+
+	if response is None:
+		return 'No response received', 5103
+
+	content_type = response.content_type
+
+	options = response.options
+	rsc = None
+	rvi = None
+	resp:JSON = {}
+	for option in options:
+		match option.number:
+			case defines.OptionRegistry.oneM2M_RSC.number:
+				rsc = option.value
+				resp['rsc'] = rsc
+			case defines.OptionRegistry.oneM2M_RVI.number:
+				rvi = option.value
+				resp['rvi'] = rvi
+			case defines.OptionRegistry.oneM2M_VSI.number:
+				resp['vsi'] = option.value
+			case defines.OptionRegistry.oneM2M_OT.number:
+				resp['ot'] = option.value
+			case defines.OptionRegistry.oneM2M_RSET.number:
+				resp['rset'] = option.value
+	
+	# Set the last response header for the test cases to check later
+	setLastHeaders(fillLastHeaders(resp))
+
+	if response.payload:
+		payload = json.loads(response.payload)
+		if rvi == '5':
+			if 'pc' in payload:
+				return payload['pc'], rsc
+		else:
+			return payload, rsc
+	else:
+		return response.payload, rsc
+
+
 _lastRequstID = None
 
 def setLastRequestID(rid:str) -> None:
@@ -762,6 +981,7 @@ def connectionPossible(url:str) -> bool:
 	except Exception as e:
 		print(e)
 		return False
+		
 
 _lastHeaders:Parameters = None
 
@@ -1203,7 +1423,7 @@ def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[s
 			cases: The list of test case names
 	"""
 	def _addTest(case:str) -> None:
-		if case not in excludedTestNames:
+		if case and case not in excludedTestNames:
 			suite.addTest(cls(case))
 
 	if testCaseNames is None:
@@ -1333,4 +1553,3 @@ if UPPERTESTERENABLED:
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
 		shutdown()
 		quit(-1)
-

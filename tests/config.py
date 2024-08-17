@@ -37,9 +37,19 @@ match BINDING:
 		CONFIGPROTOCOL			= 'http'
 		NOTIFICATIONPROTOCOL	= 'http'
 		REMOTEPROTOCOL			= 'http'
+	case 'coap':
+		PROTOCOL				= 'coap'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'coaps':
+		PROTOCOL				= 'coaps'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
 
 	case _:
-		assert False, 'Supported values for BINDING are "mqtt", "ws", "http", and "https"'
+		assert False, 'Supported values for BINDING are "coap", "coaps", "http", "https", "mqtt", "mqtts", "ws", and "wss"'
 
 # TODO ENCODING 			= 
 
@@ -74,6 +84,7 @@ CSERN					= 'cse-in'			# CSEBase Resource Name
 CSERI					= 'id-in'			# CSEBase Resource ID
 CSEID					= '/id-in'			# CSE-ID
 
+
 ##############################################################################
 
 #
@@ -101,6 +112,24 @@ MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 wsAddress			= 'localhost'
 wsPort				= 8180
 wsSubProtocols		= ('oneM2M.json',)
+
+
+##############################################################################
+
+#
+#	CoAP (if configured)
+#
+
+coapAddress			= '127.0.0.1'	# CoAP Server address. must be IP address, not hostname!
+coapPort			= 5683
+coapTimeout			= 10.0			# Timeout for CoAP requests
+
+if BINDING in ('coap', 'coaps'):
+	CSEURL			= f'{PROTOCOL}://{coapAddress}:{coapPort}/'	# CSE Server address.
+
+
+
+
 
 ##############################################################################
 

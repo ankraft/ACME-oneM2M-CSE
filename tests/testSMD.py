@@ -297,6 +297,7 @@ class TestSMD(unittest.TestCase):
 
 def run(testFailFast:bool) -> TestResult:
 
+
 	# Assign tests
 	suite = unittest.TestSuite()
 	addTests(suite, TestSMD, [
@@ -325,6 +326,10 @@ def run(testFailFast:bool) -> TestResult:
 	])
 
 	# Run the tests
+	#if BINDING in ('coap', 'coapps'):
+	#	console.print('[yellow]skipping tests (not supported for CoAP binding)')
+	#	return 0, 0, len(suite._tests), 0
+	
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
