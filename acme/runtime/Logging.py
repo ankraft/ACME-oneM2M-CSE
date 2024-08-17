@@ -700,11 +700,11 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response>[^-]+Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
 			#r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
-			r"(?P<number>\nHeaders: )",
-			r"(?P<number> \- Headers: )",
-			r"(?P<number>\nBody: )",
-			r"(?P<number> \- Body: )",
-			r"(?P<number> \- Operation: )",
+			r"(?P<number>\n(?:Headers|Options|Body): )",
+			r"(?P<number> \- (?:Operation|Headers|Body|Payload|Source): )",
+			# r"(?P<number>\nBody: )",
+			# r"(?P<number> \- Body: )",
+			# r"(?P<number> \- Operation: )",
 			r"(?P<start>=+[^=]*=+$)",
 
 			# r"(?P<request>CSE started$)",					# CSE startup message
