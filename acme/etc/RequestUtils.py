@@ -54,6 +54,8 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 		return {}
 	match ct:
 		case ContentSerializationType.JSON:
+			if isinstance(data, str):
+				return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data)))	# String doesn't need to be decoded
 			return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
 		case ContentSerializationType.CBOR:
 			return cast(JSON, cbor2.loads(data))
@@ -80,6 +82,26 @@ def toHttpUrl(url:str) -> str:
 			url = urlunparse(u)
 	return url
 
+
+def fromHttpURL(path:str) -> str:
+	"""	Make the *path* a valid oneM2M ID (unescape /~/ and /_/) and return it.
+		This is valid of CoAP URL paths as well.
+
+		Args:
+			path: The path to convert.
+		
+		Return:
+			A valid ID with unescaped special characters.
+	"""
+	# resolve http's /~ and /_ special prefixs
+	match path[0]:
+		case '~':
+			return path[1:]			# ~/xxx -> /xxx
+		case '_':
+			return f'/{path[1:]}'	# _/xxx -> //xxx
+		case _:
+			return path
+	
 
 def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> Optional[ContentSerializationType]:
 	"""	Determine the type of serialization for a notification from either the *url*'s *ct* query parameter,
