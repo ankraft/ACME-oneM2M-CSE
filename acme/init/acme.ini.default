@@ -335,10 +335,15 @@ caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
 ; Enable the CoAP binding.
 ; Default: false
 enable=false
-serverPort=5683
+; The listening port for the CoAP server.
+; Default: 5683
+port=5683
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
 ; Default:
 listenIF=${basic.config:networkInterface}
+; Own address. Should be a local/public reachable address.
+; Default: coap://127.0.0.1:5683
+address=coap://${basic.config:cseHost}:${port}
 
 
 ;

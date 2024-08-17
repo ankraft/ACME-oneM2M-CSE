@@ -40,6 +40,7 @@ _deprecatedSections:Set[Tuple[str, str]] = None
 _configModules = ( 
 	'acme.databases.PostgreSQLBinding',
 	'acme.databases.TinyDBBinding',
+	'acme.protocols.CoAPServer',
 	'acme.protocols.HttpServer',
 	'acme.protocols.MQTTClient',
 	'acme.protocols.WebSocketServer',
@@ -79,6 +80,18 @@ class Configuration(object):
 		
 			
 	"""
+
+	coap_enable:bool
+	coap_listenIF:str
+	coap_port:int
+	coap_address:str
+
+	coap_security_certificateFile:str
+	coap_security_privateKeyFile:str
+	coap_security_dtlsVersion:str
+	coap_security_useDTLS:bool
+	coap_security_verifyCertificate:bool
+
 	console_confirmQuit:bool
 	console_headless:bool
 	console_hideResources:list[str]
@@ -269,8 +282,6 @@ class Configuration(object):
 	""" The configuration file. """
 
 
-	_configuration: Dict[str, Any] = {}
-	""" The configuration values as a dictionary. """
 	_configurationDocs: Dict[str, str] = {}
 	""" The configuration values documentation as a dictionary. """
 
@@ -302,6 +313,8 @@ class Configuration(object):
 	""" The light scheme flag passed as argument. This overrides the respective value in the configuration file. """
 	_args_listenIF:str = None
 	""" The network interface passed as argument. This overrides the respective value in the configuration file. """
+	_args_coapEnabled:bool = None
+	""" The coap enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_args_mqttEnabled:bool = None
 	""" The mqtt enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_args_wsEnabled:bool = None
@@ -362,6 +375,7 @@ class Configuration(object):
 		Configuration._args_runAsHttpWsgi		= args.httpWsgi if args and 'httpWsgi' in args else None
 		Configuration._args_statisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 		Configuration._args_textUI				= args.textui if args and 'textui' in args else None
+		Configuration._args_coapEnabled			= args.coapenabled if args and 'coapenabled' in args else None
 		Configuration._args_wsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
 
 		# The path to the ACME module directory
@@ -414,7 +428,6 @@ class Configuration(object):
 			return False
 
 
-
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
 											# Convert csv to list, ignore empty elements
@@ -458,28 +471,8 @@ class Configuration(object):
 					Configuration._print(fr'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
 					return False
 
-
 		#	Retrieve configuration values
 		try:
-			Configuration._configuration = {
-
-				# TODO Move these sections later to the respective modules
-				# TODO Same with th evalidation
-				#	CoAP Client
-
-				'coap.enable'							: config.getboolean('coap', 'enable', 								fallback = False),
-				'coap.listenIF' 						: config.get('coap', 'listenIF',									fallback = '0.0.0.0'),
-				'coap.port' 							: config.getint('coap', 'port', 									fallback = None),	# Default will be determined later (s.b.)
-
-				#	CoAP Client Security
-
-				'coap.security.certificateFile'			: config.get('coap.security', 'certificateFile', 					fallback = None),
-				'coap.security.privateKeyFile'			: config.get('coap.security', 'privateKeyFile', 					fallback = None),
-				'coap.security.dtlsVersion'				: config.get('coap.security', 'dtlsVersion', 						fallback = 'auto'),
-				'coap.security.useDTLS'					: config.getboolean('coap.security', 'useDTLS', 					fallback = False),
-				'coap.security.verifyCertificate'		: config.getboolean('coap.security', 'verifyCertificate',			fallback = False),
-
-			}
 
 			# Call the configuration handlerfor each module
 			for m in _configModules:
@@ -502,62 +495,7 @@ class Configuration(object):
 				Configuration._print(f'[red]{str(e)}')
 				return False
 
-		# Validate the general configuration
-		# TODO remove this later
-		if not (v := Configuration.validate(True))[0]:
-			Configuration._print(f'[red]{v[1]}')
-		return v[0]
-
-
-	@staticmethod
-	def validate(initial:Optional[bool] = False) -> Tuple[bool, str]:
-		""" Validates the configuration and returns a tuple (bool, str) with the result and an error message if applicable. 
-
-			Args:
-				initial:	True if this is the initial validation during startup, False otherwise. Default: False
-
-			Returns:
-				A tuple (bool, str) with the result and an error message if applicable.
-		"""
-
-
-		def _get(key:str) -> Any:
-			""" Helper function to retrieve a configuration value. If the value is not found, None is returned.
-			
-				Args:
-					key:	The configuration key to retrieve.
-			"""
-			return Configuration.get(key)
-		
-
-		def _put(key:str, value:Any) -> None:
-			""" Helper function to set a configuration value.
-			
-				Args:
-					key:	The configuration key to set.
-			"""
-			Configuration._configuration[key] = value
-						
-		# COAP TLS & certificates
-		if not _get('coap.security.useDTLS'):	# clear certificates configuration if not in use
-			_put('coap.security.verifyCertificate', False)
-			_put('coap.security.tlsVersion', 'auto')
-			_put('coap.security.caCertificateFile', '')
-			_put('coap.security.caPrivateKeyFile', '')
-		else:
-			if not (val := _get('coap.security.dtlsVersion')).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				return False, fr'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}'
-			if not (val := _get('coap.security.certificateFile')):
-				return False, r'Configuration Error: [i]\[coap.security]:certificateFile[/i] must be set when DTLS is enabled'
-			if not os.path.exists(val):
-				return False, fr'Configuration Error: [i]\[coap.security]:certificateFile[/i] does not exists or is not accessible: {val}'
-			if not (val := _get('coap.security.privateKeyFile')):
-				return False, r'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] must be set when TLS is enabled'
-			if not os.path.exists(val):
-				return False, fr'Configuration Error: [i]\[coap.security]:privateKeyFile[/i] does not exists or is not accessible: {val}'
-
-		# Everything is fine
-		return True, None
+		return True
 
 
 	@staticmethod

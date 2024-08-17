@@ -469,7 +469,7 @@ class Importer(object):
 				if hasattr(rc, '_attributes'):										# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
 						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):
-							L.logErr(f'No attribute policy for: {str(ty)}.{sn}', showStackTrace=False)
+							L.logErr(f'No attribute policy for: {ty.name}.{sn}', showStackTrace=False)
 							noErrors = False
 							continue
 						rc._attributes[sn] = ap

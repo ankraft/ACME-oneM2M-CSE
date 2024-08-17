@@ -57,6 +57,7 @@ except ImportError as e:
 	quit(1)
 
 
+
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
 	""" Parse the command line arguments.
@@ -77,6 +78,10 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableHttp.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
 	groupEnableHttp.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
 	groupEnableHttp.add_argument('--http-wsgi', action='store_true', dest='httpWsgi', default=None, help='run CSE with http WSGI support')
+
+	groupEnableCoAP = parser.add_mutually_exclusive_group()
+	groupEnableCoAP.add_argument('--coap', action='store_true', dest='coapenabled', default=None, help='enable CoAP binding')
+	groupEnableCoAP.add_argument('--no-coap', action='store_false', dest='coapenabled', default=None, help='disable CoAP binding')
 
 	groupEnableMqtt = parser.add_mutually_exclusive_group()
 	groupEnableMqtt.add_argument('--mqtt', action='store_true', dest='mqttenabled', default=None, help='enable mqtt binding')
