@@ -1,4 +1,4 @@
- #
+#
 #	WebSocketServer.py
 #
 #	(c) 2023 by Andreas Kraft
@@ -185,6 +185,9 @@ class WebSocketServer(object):
 			L.isDebug and L.logDebug('Stopping WebSocket server')
 			self.websocketServer.shutdown()
 			self.websocketServer = None
+		if self.actor is not None:
+			self.actor.stop()
+			self.actor = None
 
 
 	def pause(self) -> None:
@@ -620,15 +623,7 @@ class WebSocketServer(object):
 		return resResp
 
 
-
-
-
-# TODO new format
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	# override configuration with command line arguments
-	if Configuration._args_wsEnabled is not None:
-		Configuration.websocket_enable = Configuration._args_wsEnabled
 
 	# Basic configs
 	config.websocket_enable = parser.getboolean('websocket', 'enable', fallback = False)
