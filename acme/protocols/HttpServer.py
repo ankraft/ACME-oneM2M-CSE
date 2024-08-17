@@ -33,7 +33,7 @@ from ..etc.Utils import renameThread, isURL, normalizeURL
 from ..helpers.TextTools import findXPath
 from ..helpers.NetworkTools import isValidateHostname, isValidPort, isValidateIpAddress
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult, fromHttpURL
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
@@ -284,7 +284,7 @@ class HttpServer(object):
 		"""
 		L.isDebug and L.logDebug(f'==> HTTP Request: {path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
-		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
+		L.isDebug and L.logDebug(f'Headers: { { k:v for k,v in request.headers.items()} }')
 		try:
 			dissectResult = self._dissectHttpRequest(request, operation, path)
 		except ResponseException as e:
@@ -761,6 +761,8 @@ class HttpServer(object):
 				args[argName] = lst
 
 
+		# TODO: change the args handling to the MultiDict like in CoAP
+
 
 		cseRequest 					= CSERequest()
 		req:ReqResp 				= {}
@@ -769,12 +771,7 @@ class HttpServer(object):
 		req['op']   				= operation.value		# Needed later for validation
 
 		# resolve http's /~ and /_ special prefixs
-		match path[0]:
-			case '~':
-				path = path[1:]			# ~/xxx -> /xxx
-			case '_':
-				path = f'/{path[1:]}'	# _/xxx -> //xxx
-		req['to'] 		 			= path
+		req['to'] = fromHttpURL(path)
 
 
 		# Copy and parse the original request headers
@@ -794,7 +791,7 @@ class HttpServer(object):
 		if (rtu := _headers.get(Constants.hfRTU)) is not None:	# handle rtu as a list AND it might be an empty list!
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
-			req['rt'] = rt					# req.rt.rtu
+			req['rt'] = rt					# req.rt.rtu Create a new dict for the rt here. Might be used later
 		if f := _headers.get(Constants.hfVSI):
 			req['vsi'] = f
 		if f := _headers.get(Constants.hfOT):
@@ -844,7 +841,7 @@ class HttpServer(object):
 			if not (rt := cast(JSON, req.get('rt'))):
 				rt = {}
 			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
-			req['rt'] = rt
+			req['rt'] = rt		# Replace the (existing) rt with the updated one
 			del _args['rt']
 		
 		# Maxage
