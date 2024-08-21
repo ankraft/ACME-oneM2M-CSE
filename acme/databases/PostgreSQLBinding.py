@@ -534,7 +534,7 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def insertResource(self, resource:JSON, ri:str) -> None:
-		L.isDebug and L.logDebug(f'Inserting resource {ri} into database: {resource}')
+		# L.isDebug and L.logDebug(f'Inserting resource {ri} into database: {resource}')
 		self._executePrepared('insertResource (%s, %s)', (ri, PsyJson(resource)))
 
 
@@ -554,7 +554,7 @@ class PostgreSQLBinding(DBBinding):
 	
 
 	def deleteResource(self, ri:str) -> None:
-		L.isDebug and L.logDebug(f'Deleting resource {ri} from database')
+		# L.isDebug and L.logDebug(f'Deleting resource {ri} from database')
 		self._executePrepared('deleteResourceByRI (%s)',(ri,))
 	
 
@@ -564,7 +564,7 @@ class PostgreSQLBinding(DBBinding):
 							  pi:Optional[str] = None, 
 							  ty:Optional[int] = None, 
 							  aei:Optional[str] = None) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Searching for resources: ri={ri}, csi={csi}, srn={srn}, pi={pi}, ty={ty}, aei={aei}')
+		# L.isDebug and L.logDebug(f'Searching for resources: ri={ri}, csi={csi}, srn={srn}, pi={pi}, ty={ty}, aei={aei}')
 		if not srn:
 			if ri:
 				return self._executePrepared('getResourceByRI (%s)', (ri,), 
@@ -594,7 +594,7 @@ class PostgreSQLBinding(DBBinding):
 	
 
 	def discoverResourcesByFilter(self, func:Callable[[JSON], bool]) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Discovering resources by filter')
+		# L.isDebug and L.logDebug(f'Discovering resources by filter')
 		return self._executePrepared('getResources', (), 
 									 lambda c: [ r[0] for r in c if func(r[0]) ])
 			
@@ -602,7 +602,7 @@ class PostgreSQLBinding(DBBinding):
 	def hasResource(self, ri:Optional[str] = None, 
 						  srn:Optional[str] = None,
 						  ty:Optional[int] = None) -> bool:
-		L.isDebug and L.logDebug(f'hasResource: ri={ri}, srn={srn}, ty={ty}')
+		# L.isDebug and L.logDebug(f'hasResource: ri={ri}, srn={srn}, ty={ty}')
 		if srn:
 			# find the ri first and then try again recursively
 			if len((identifiers := self.searchIdentifiers(srn = srn))) == 1:
@@ -620,14 +620,14 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def countResources(self) -> int:
-		L.isDebug and L.logDebug('Counting resources')
+		# L.isDebug and L.logDebug('Counting resources')
 		# This returns the number (int) of rows found
 		return self._executePrepared('countResources', (), 
 									 lambda c: self._fetchNumber(c))
 
 
 	def searchByFragment(self, dct:dict) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Searching by fragment: {dct}')
+		# L.isDebug and L.logDebug(f'Searching by fragment: {dct}')
 		where:list[str] = []
 		args:Tuple[str, ...] = ()
 		for k, v in dct.items():
@@ -647,18 +647,18 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def upsertIdentifier(self, identifierMapping:JSON, structuredPathMapping:JSON, ri:str, srn:str) -> None:
-		L.isDebug and L.logDebug(f'Upserting identifier {identifierMapping} and structured path {structuredPathMapping} for resource {ri}')
+		# L.isDebug and L.logDebug(f'Upserting identifier {identifierMapping} and structured path {structuredPathMapping} for resource {ri}')
 		self._executePrepared('insertIdentifier (%s, %s, %s, %s)', (ri, identifierMapping['rn'], srn, identifierMapping['ty']))
 
 
 	def deleteIdentifier(self, ri:str, srn:str) -> None:
-		L.isDebug and L.logDebug(f'Deleting identifier for resource {ri} and structured path {srn}')
+		# L.isDebug and L.logDebug(f'Deleting identifier for resource {ri} and structured path {srn}')
 		self._executePrepared('deleteIdentifier (%s)', (ri,))
 
 
 	def searchIdentifiers(self, ri:Optional[str] = None, 
 								srn:Optional[str] = None) -> list[JSON]:
-		L.isDebug and L.logDebug(f'searchIdentifiers: ri={ri}, srn={srn}')
+		# L.isDebug and L.logDebug(f'searchIdentifiers: ri={ri}, srn={srn}')
   
 		def _cl(cursor:PsyCursor) -> list[JSON]:
 			if cursor.rowcount > 0:
@@ -677,19 +677,19 @@ class PostgreSQLBinding(DBBinding):
 		
 
 	def upsertChildResource(self, childResource:JSON, ri:str) -> None:
-		L.isDebug and L.logDebug(f'Upserting child resource {childResource} for resource {ri}')
+		# L.isDebug and L.logDebug(f'Upserting child resource {childResource} for resource {ri}')
   		# Add a record to the childResources table for this resource
 		self._executePrepared('insertChildResource (%s, %s, %s)', (childResource['pi'], childResource['ri'], childResource['ty']))
 
 			
 	def removeChildResource(self, ri:str, pi:str) -> None:
-		L.isDebug and L.logDebug(f'Removing child resource {ri} from parent resource {pi}')
+		# L.isDebug and L.logDebug(f'Removing child resource {ri} from parent resource {pi}')
 		# Remove the record from the childResources table
 		self._executePrepared('deleteChildResource (%s, %s)', (pi, ri))
 
 
 	def searchChildResourceIDsByParentRIAndType(self, pi:str, ty:Optional[ResourceTypes|list[ResourceTypes]] = None) -> list[str]:
-		L.isDebug and L.logDebug(f'Searching child resources for parent resource {pi} and type {ty}')
+		# L.isDebug and L.logDebug(f'Searching child resources for parent resource {pi} and type {ty}')
 
 		if isinstance(ty, int):
 			ty = [ty]
@@ -710,7 +710,7 @@ class PostgreSQLBinding(DBBinding):
 
 	def searchSubscriptionReprs(self, ri:Optional[str] = None, 
 								  pi:Optional[str] = None) -> Optional[list[JSON]]:
-		L.isDebug and L.logDebug(f'Searching for subscription representations: ri={ri}, pi={pi}')
+		# L.isDebug and L.logDebug(f'Searching for subscription representations: ri={ri}, pi={pi}')
 		if ri:
 			return self._executePrepared('getSubscriptionByRI (%s)', (ri,),
 										 lambda c: self._fetchAllRows(c))
@@ -721,13 +721,13 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def upsertSubscriptionRepr(self, subscription:JSON, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Upserting subscription representation {subscription} for resource {ri}')
+		# L.isDebug and L.logDebug(f'Upserting subscription representation {subscription} for resource {ri}')
 		_subscription = PsyJson(subscription)
 		return self._executePrepared('upsertSubscription (%s, %s, %s)', (ri, _subscription, _subscription))
 		
 
 	def removeSubscriptionRepr(self, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Removing subscription representation for resource {ri}')
+		# L.isDebug and L.logDebug(f'Removing subscription representation for resource {ri}')
 		return self._executePrepared('deleteSubscription (%s)', (ri,))
 
 	#
@@ -735,24 +735,24 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def addBatchNotification(self, batchRecord:JSON) -> bool:
-		L.isDebug and L.logDebug(f'Adding batch notification: {batchRecord}')
+		# L.isDebug and L.logDebug(f'Adding batch notification: {batchRecord}')
 		return self._executePrepared('insertBatchNotification (%s)', (PsyJson(batchRecord),))
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
-		L.isDebug and L.logDebug(f'Counting batch notifications for resource {ri} and notification URI {nu}')
+		# L.isDebug and L.logDebug(f'Counting batch notifications for resource {ri} and notification URI {nu}')
 		return self._executePrepared('countBatchNotifications (%s, %s)', (ri, nu), 
 									 lambda c: self._fetchNumber(c))
 
 
 	def getBatchNotifications(self, ri:str, nu:str) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Getting batch notifications for resource {ri} and notification URI {nu}')
+		# L.isDebug and L.logDebug(f'Getting batch notifications for resource {ri} and notification URI {nu}')
 		return self._executePrepared('getBatchNotifications (%s, %s)', (ri, nu), 
 									 lambda c: self._fetchAllRows(c))
 
 
 	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
-		L.isDebug and L.logDebug(f'Removing batch notifications for resource {ri} and notification URI {nu}')
+		# L.isDebug and L.logDebug(f'Removing batch notifications for resource {ri} and notification URI {nu}')
 		return self._executePrepared('deleteBatchNotification (%s, %s)', (ri, nu))
 
 	#
@@ -760,7 +760,7 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def searchStatistics(self) -> JSON:
-		L.isDebug and L.logDebug('Searching for statistics')
+		# L.isDebug and L.logDebug('Searching for statistics')
 
 		def _cl(cursor:PsyCursor) -> JSON:
 			if not (_s := self._fetchSingleRow(cursor, False)):
@@ -772,7 +772,7 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def upsertStatistics(self, stats:JSON) -> bool:
-		L.isDebug and L.logDebug(f'Upserting statistics into database: {stats}')
+		# L.isDebug and L.logDebug(f'Upserting statistics into database: {stats}')
 		_stats = PsyJson(stats)
 		return self._executePrepared('upsertStatistics (%s, %s)', (_stats, _stats))
 
@@ -786,36 +786,36 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def getAllActionReprs(self) -> list[JSON]:
-		L.isDebug and L.logDebug('Getting all action representations from database')
+		# L.isDebug and L.logDebug('Getting all action representations from database')
 		return self._executePrepared('getActions', (), 
 									 lambda c: self._fetchAllRows(c))
 		
 
 	def getActionRep(self, ri:str) -> Optional[JSON]:
-		L.isDebug and L.logDebug(f'Getting action representation {ri} from database')
+		# L.isDebug and L.logDebug(f'Getting action representation {ri} from database')
 		return self._executePrepared('getActionByRI (%s)', (ri,),
 									 lambda c: self._fetchSingleRow(c, False))
 							   	
 
 	def searchActionsReprsForSubject(self, subjectRi:str) -> Sequence[JSON]:
-		L.isDebug and L.logDebug(f'Searching for action representations for subject {subjectRi}')
+		# L.isDebug and L.logDebug(f'Searching for action representations for subject {subjectRi}')
 		return self._executePrepared('getActionBySubject (%s)', (subjectRi,),
 									 lambda c: self._fetchAllRows(c))
 
 
 	def upsertActionRepr(self, actionRepr:JSON, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Upserting action representation {ri} into database: {actionRepr}')
+		# L.isDebug and L.logDebug(f'Upserting action representation {ri} into database: {actionRepr}')
 		_actionRepr = PsyJson(actionRepr)
 		return self._executePrepared('upsertAction (%s, %s, %s)', (ri, _actionRepr, _actionRepr))
 
 
 	def updateActionRepr(self, actionRepr:JSON) -> bool:
-		L.isDebug and L.logDebug(f'Updating action representation in database: {actionRepr}')
+		# L.isDebug and L.logDebug(f'Updating action representation in database: {actionRepr}')
 		return self._executePrepared('updateAction (%s, %s)', (PsyJson(actionRepr), actionRepr['ri']))
 
 
 	def removeActionRepr(self, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Removing action representation {ri} from database')
+		# L.isDebug and L.logDebug(f'Removing action representation {ri} from database')
 		return self._executePrepared('deleteAction (%s)', (ri,))
 
 	#
@@ -823,12 +823,12 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def insertRequest(self, req:JSON, ts:float) -> bool:
-		L.isDebug and L.logDebug(f'Inserting request/response for ts: {ts}')
+		# L.isDebug and L.logDebug(f'Inserting request/response for ts: {ts}')
 		return self._executePrepared('insertRequest (%s, %s)', (ts, PsyJson(req)))
 
 	
 	def removeOldRequests(self, maxRequests:int) -> None:
-		L.isDebug and L.logDebug(f'Removing old requests from the database')
+		# L.isDebug and L.logDebug(f'Removing old requests from the database')
 		def _cl(cursor:PsyCursor) -> None:
 			if cursor.rowcount > 0:
 				_ts = cursor.fetchone()[0]
@@ -839,7 +839,7 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def getRequests(self, ri:Optional[str] = None) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Getting requests for resource {ri}')
+		# L.isDebug and L.logDebug(f'Getting requests for resource {ri}')
 		if ri:
 			return self._executePrepared('getRequestsByRI (%s)', (ri,),
 										 lambda c: self._fetchAllRows(c))
@@ -849,7 +849,7 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def deleteRequests(self, ri:Optional[str] = None) -> None:
-		L.isDebug and L.logDebug(f'Deleting requests for resource {ri}')
+		# L.isDebug and L.logDebug(f'Deleting requests for resource {ri}')
 		if ri:
 			self._executePrepared('deleteRequestsByRI (%s)', (ri,))
 		else:
@@ -860,31 +860,31 @@ class PostgreSQLBinding(DBBinding):
 	#
 
 	def getSchedules(self) -> list[JSON]:
-		L.isDebug and L.logDebug('Getting all schedules from database')
+		# L.isDebug and L.logDebug('Getting all schedules from database')
 		return self._executePrepared('getSchedules', (),
 									 lambda c: self._fetchAllRows(c))
 
 
 	def getSchedule(self, ri:str) -> Optional[JSON]:
-		L.isDebug and L.logDebug(f'Getting schedule {ri} from database')
+		# L.isDebug and L.logDebug(f'Getting schedule {ri} from database')
 		return self._executePrepared('getScheduleByRI (%s)', (ri,),
 									 lambda c: self._fetchSingleRow(c, False))
 	
 
 	def searchSchedulesForParent(self, pi:str) -> list[JSON]:
-		L.isDebug and L.logDebug(f'Searching for schedules for parent resource {pi}')
+		# L.isDebug and L.logDebug(f'Searching for schedules for parent resource {pi}')
 		return self._executePrepared('getSchedulesForParent (%s)', (pi,),
 									 lambda c: self._fetchAllRows(c))
 	
 
 	def upsertSchedule(self, schedule:JSON, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Upserting schedule {ri} into database: {schedule}')
+		# L.isDebug and L.logDebug(f'Upserting schedule {ri} into database: {schedule}')
 		_schedule = PsyJson(schedule)
 		return self._executePrepared('upsertSchedule (%s, %s, %s)', (ri, _schedule, _schedule))
 
 
 	def removeSchedule(self, ri:str) -> bool:
-		L.isDebug and L.logDebug(f'Removing schedule {ri} from database')
+		# L.isDebug and L.logDebug(f'Removing schedule {ri} from database')
 		return self._executePrepared('deleteSchedule (%s)', (ri,))
 
 
