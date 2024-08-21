@@ -161,7 +161,7 @@ class Constants(object):
 	#
 	#	Supported URL schemes
 	#
-	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts', 'ws', 'wss', 'acme']
+	supportedSchemes = ['coap', 'coaps', 'http', 'https', 'mqtt', 'mqtts', 'ws', 'wss', 'acme']
 	""" The URL schemes supported by the CSE. """
 
 	defaultWebSocketSchema = 'ws://default'
