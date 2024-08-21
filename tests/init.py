@@ -29,14 +29,6 @@ from websockets.exceptions import ConnectionClosed
 if '..' not in sys.path:
 	sys.path.append('..')
 
-# Hack to import defines from acme.helpers.coapthon instead of coapthon
-if importlib.util.find_spec('defines', 'acme.helpers.coapthon') is None:
-	__import__('acme.helpers.coapthon.defines')
-	sys.modules['coapthon.defines'] = sys.modules.pop('acme.helpers.coapthon.defines')
-	__import__('acme.helpers.coapthon.client.helperclient')
-	sys.modules['coapthon.client.helperclient'] = sys.modules.pop('acme.helpers.coapthon.client.helperclient')
-
-
 # CoAP Libraries
 from coapthon import defines	# actually this is the import from ACME
 from coapthon.client.helperclient import HelperClient as CoAPClient
@@ -48,6 +40,7 @@ from coapthon.messages.response import Response as	CoAPResponse
 from acme.etc import RequestUtils, DateUtils
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.helpers.OAuth as OAuth
+from acme.helpers import CoAPthonTools
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
 from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
@@ -220,6 +213,8 @@ mqttHandler:MQTTClientHandler = None
 
 # CoAP Client
 coapClient:CoAPClient = None
+CoAPthonTools.registerOneM2MOptions()		# register extra options
+CoAPthonTools.registerOneM2MContentTypes()	# register extra content types
 
 
 # HTTP Session
@@ -445,9 +440,8 @@ def sendRequest(operation:Operation,
 			case Operation.NOTIFY:
 				return sendCoapRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 
-	else:
-		print('ERROR')
-		return None, 5103
+	print('ERROR')
+	return None, 5103
 
 
 def _packRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, headers:Parameters=None) -> Tuple[JSON, str, ParseResult]:
@@ -945,6 +939,9 @@ def sendCoapRequest(operation:Operation,
 			return payload, rsc
 	else:
 		return response.payload, rsc
+
+	print('Error')
+	return None, 5103
 
 
 _lastRequstID = None

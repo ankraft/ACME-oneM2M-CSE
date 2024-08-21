@@ -83,7 +83,7 @@ def openFileWithDefaultApplication(filename:str) -> None:
 
 def renameThread(prefix:Optional[str] = None,
 				 name:Optional[str] = None,
-				 thread:Optional[threading.Thread] = None) -> None:
+				 thread:Optional[threading.Thread] = None) -> bool:
 	"""	Rename a thread.
 
 		If *name* is provided then the thread is renamed to that name.
@@ -94,6 +94,9 @@ def renameThread(prefix:Optional[str] = None,
 			name: New name for a thread. 
 			thread: The Thread to rename. If none is provided then the current thread is renamed.
 			prefix: Used for "prefix + ID" procedure explained above.
+
+		Returns:
+			Always True.
 		"""
 	thread = threading.current_thread() if not thread else thread
 	if name is not None:
@@ -102,6 +105,7 @@ def renameThread(prefix:Optional[str] = None,
 		thread.name = f'{prefix}_{str(thread.native_id)[-5:]}'
 	else:
 		thread.name = str(thread.native_id)
+	return True
 
 
 ##############################################################################

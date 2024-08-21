@@ -306,7 +306,7 @@ class ACMEContainerTree(Container):
 				self._app.showNotification(v, t, 'information')
 
 		# When clicking on the resource view
-		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceView):
+		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is self.resourceView:
 			pyperclip.copy(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
 			self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
 
