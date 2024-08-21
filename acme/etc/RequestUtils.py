@@ -103,6 +103,22 @@ def fromHttpURL(path:str) -> str:
 			return path
 	
 
+def toCoAPPath(path:str) -> str:
+	"""	Make the *path* a valid CoAP URL path (escape / and //) and return it.
+
+		Args:
+			path: The path to convert.
+
+		Return:
+			A valid CoAP URL path with escaped special characters for oneM2M IDs
+	"""
+	if path.startswith('//'):
+		return f'_{path[1:]}'	# //xxx -> _/xxx
+	if path.startswith('/'):
+		return f'~{path}'		# /xxx -> ~/xxx
+	return path
+
+
 def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> Optional[ContentSerializationType]:
 	"""	Determine the type of serialization for a notification from either the *url*'s *ct* query parameter,
 		or the given list of *csz* (contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
@@ -154,6 +170,12 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 	
 	# Just use default serialization.
 	return defaultSerialization
+
+
+def contentAsString(content:bytes|str|Any, ct:ContentSerializationType) -> str:
+	if not content:	return ''
+	if isinstance(content, str): return content
+	return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
 def requestFromResult(inResult:Result, 

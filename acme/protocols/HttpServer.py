@@ -33,7 +33,7 @@ from ..etc.Utils import renameThread, isURL, normalizeURL
 from ..helpers.TextTools import findXPath
 from ..helpers.NetworkTools import isValidateHostname, isValidPort, isValidateIpAddress
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult, fromHttpURL
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult, fromHttpURL, contentAsString
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
@@ -458,17 +458,13 @@ class HttpServer(object):
 		Operation.NOTIFY 	: requests.post
 	}
 
-	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
-		if not content:	return ''
-		if isinstance(content, str): return content
-		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
-
 
 	def sendHttpRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
 		"""
+
 		# Request timeout
 		timeout:float = None
 
@@ -560,9 +556,9 @@ class HttpServer(object):
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n=>\n{str(data) if data else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{contentAsString(data, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
-				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(data, ct)}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{contentAsString(data, ct)}\n')
 			
 			# Actual sending the request
 			r = method(url, 
@@ -593,7 +589,7 @@ class HttpServer(object):
 				raise BAD_REQUEST(L.logWarn(f'Received wrong or missing request identifier: {resp.rqi}'))
 			resp.rqi = rqi
 
-			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
+			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{contentAsString(r.content, resp.ct)}\n')
 		except ResponseException as e:
 			raise e
 		except requests.Timeout as e:
@@ -974,7 +970,6 @@ def validateConfiguration(config:Configuration, initial:Optional[bool] = False) 
 	if Configuration._args_runAsHttpWsgi is not None:
 		Configuration.http_wsgi_enable = Configuration._args_runAsHttpWsgi
 
-
 	config.http_address = normalizeURL(config.http_address)
 	config.http_root = normalizeURL(config.http_root)
 
@@ -995,6 +990,8 @@ def validateConfiguration(config:Configuration, initial:Optional[bool] = False) 
 		raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {config.http_port}')
 	if not (isValidateHostname(config.http_listenIF) or isValidateIpAddress(config.http_listenIF)):
 		raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
+	if config.http_timeout < 0.0:
+		raise ConfigurationError(fr'Configuration Error: Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
 	
 	# HTTP TLS & certificates
 	if not config.http_security_useTLS:	# clear certificates configuration if not in use
