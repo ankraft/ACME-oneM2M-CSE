@@ -700,7 +700,7 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response>[^-]+Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
 			#r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
-			r"(?P<number>\n(?:Headers|Options|Body): )",
+			r"(?P<number>\n(?:Headers|Options|Body|Operation|Payload): )",
 			r"(?P<number> \- (?:Operation|Headers|Body|Payload|Source): )",
 			# r"(?P<number>\nBody: )",
 			# r"(?P<number> \- Body: )",
