@@ -401,12 +401,10 @@ class AnnouncementManager(object):
 				csi: The CSE-ID of the CSE where the announced resource is hosted.
 				remoteRI: The resource ID of the remote announced resource.
 		"""
-		print(resource)
 		dct = resource.createAnnouncedResourceDict(isCreate = False)
 		# Create the announed resource on the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
-		print(dct)
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
 													   to = csrID, 
 													   originator = CSE.cseCsi, 

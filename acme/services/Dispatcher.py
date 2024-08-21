@@ -313,7 +313,6 @@ class Dispatcher(object):
 			case ResultContentType.permissions:
 				# TODO
 				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
-				print(resource)
 				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case _:

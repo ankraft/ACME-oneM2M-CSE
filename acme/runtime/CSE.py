@@ -261,7 +261,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	isHeadless				 = Configuration.console_headless
 
 	# Set the CSE's point-of-access
-	print(Configuration.print())
 	csePOA = [ Configuration.http_address ]
 	if Configuration.mqtt_enable:
 		csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
