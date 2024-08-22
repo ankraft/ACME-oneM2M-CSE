@@ -338,6 +338,14 @@ enable=false
 ; The listening port for the CoAP server.
 ; Default: 5683
 port=5683
+; The default timeout for sending CoAP requests in seconds.
+; Default: 10.0
+timeout=10.0
+; The maximum number of client connections that can be cached.
+; When the limit is reached, the oldest connection is closed.
+; A value of 0 means no caching.
+; Default: 100
+clientConnectionCacheSize=100
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
 ; Default:
 listenIF=${basic.config:networkInterface}

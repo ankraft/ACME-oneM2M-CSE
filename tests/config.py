@@ -9,7 +9,7 @@
 
 from typing import Optional
 
-BINDING						= 'http'	# possible values: http, https, mqtt, ws
+BINDING						= 'http'	# possible values: http, https, mqtt, ws, coap
 
 match BINDING:
 	case 'mqtt':

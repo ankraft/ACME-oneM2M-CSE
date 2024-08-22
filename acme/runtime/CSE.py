@@ -47,7 +47,7 @@ from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..protocols.HttpServer import HttpServer
-# from ..protocols.CoAPServer import CoAPServer
+from ..protocols.CoAPServer import CoAPServer
 from ..protocols.MQTTClient import MQTTClient
 from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
@@ -65,8 +65,8 @@ action:ActionManager = None
 announce:AnnouncementManager = None
 """	Runtime instance of the `AnnouncementManager`. """
 
-# coapServer:CoAPServer = None
-# """	Runtime instance of the `CoAPServer`. """
+coapServer:CoAPServer = None
+"""	Runtime instance of the `CoAPServer`. """
 
 console:Console = None
 """ Runtime instance of the `Console`. """
@@ -266,6 +266,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
 	if Configuration.websocket_enable:
 		csePOA.append(Configuration.websocket_address)
+	if Configuration.coap_enable:
+		csePOA.append(Configuration.coap_address)
 
 	#
 	# init Logging
@@ -275,7 +277,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {cseType.name}')
 	for l in Configuration.print().split('\n'):
-		L.log(l)
+		L.logDebug(l)
 	
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber
@@ -297,7 +299,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
 		httpServer = HttpServer()				# Initialize the HTTP server
-		# coapServer = CoAPServer()				# Initialize the CoAP server
+		coapServer = CoAPServer()				# Initialize the CoAP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
 		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
 		notification = NotificationManager()	# Initialize the notification manager
@@ -336,11 +338,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			cseStatus = CSEStatus.STOPPED
 			return False 					
 
-		# # Start the CoAP server
-		# if not coapServer.run():					# This does return
-		# 	L.logErr('Terminating', showStackTrace = False)
-		# 	cseStatus = CSEStatus.STOPPED
-		# 	return False
+		# Start the CoAP server
+		if not coapServer.run():					# This does return
+			L.logErr('Terminating', showStackTrace = False)
+			cseStatus = CSEStatus.STOPPED
+			return False
 
 		# Start the MQTT client
 		if not mqttClient.run():				# This does return
@@ -428,14 +430,15 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
+	coapServer and coapServer.shutdown()
 	webSocketServer and webSocketServer.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
-	groupResource  and groupResource.shutdown()
-	notification  and notification.shutdown()
+	groupResource and groupResource.shutdown()
+	notification and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()
 	security and security.shutdown()
@@ -468,6 +471,7 @@ def resetCSE() -> None:
 		httpServer.pause()
 		mqttClient.pause()
 		webSocketServer.shutdown()	# WS Server needs to be shutdown to close connections
+		coapServer.pause()
 
 		storage.purge()
 
@@ -480,6 +484,7 @@ def resetCSE() -> None:
 			sys.exit()	# what else can we do?
 		remote.restart()
 
+		coapServer.unpause()
 		webSocketServer.run()	# WS Server restart
 		mqttClient.unpause()
 		httpServer.unpause()

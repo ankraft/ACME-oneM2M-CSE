@@ -85,9 +85,11 @@ class Configuration(object):
 	coap_listenIF:str
 	coap_port:int
 	coap_address:str
+	coap_timeout:float
+	coap_client_connection_cache_size:int
 
-	coap_security_certificateFile:str
-	coap_security_privateKeyFile:str
+	coap_security_caCertificateFile:str
+	coap_security_caPrivateKeyFile:str
 	coap_security_dtlsVersion:str
 	coap_security_useDTLS:bool
 	coap_security_verifyCertificate:bool

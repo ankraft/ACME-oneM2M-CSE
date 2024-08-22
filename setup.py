@@ -31,6 +31,8 @@ setup(
 	},
 	include_package_data=True,
 	install_requires=[
+		'cachetools'
+		'CoAPTthon3-ACME-CSE',
 		'cbor2',
 		'flask',
 		'flask-cors',
@@ -40,7 +42,7 @@ setup(
 		'plotext',
 		'psycopg2-binary',
 		'pyperclip',
-		'python3-dtls',
+		#'python3-dtls',
 		'rdflib',
 		'requests', 
 		'rich', 

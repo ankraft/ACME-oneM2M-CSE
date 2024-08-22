@@ -778,6 +778,24 @@ class SecurityManager(object):
 								Configuration.http_security_caPrivateKeyFile)	# type: ignore
 
 
+	def getSSLContextCoAP(self) -> ssl.SSLContext:
+		"""	Depending on the configuration whether to use DTLS, this method creates a new *SSLContext*
+			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
+
+			This method is used for CoAP connections.
+
+			Return:
+				SSL / TLD context.
+		"""
+		L.isDebug and L.logDebug(f'Setup CoAP SSL context.')
+		return self._getContext(Configuration.coap_security_useDTLS, 
+						  		Configuration.coap_security_verifyCertificate, 
+								Configuration.coap_security_dtlsVersion, 
+								Configuration.coap_security_caCertificateFile,
+								Configuration.coap_security_caPrivateKeyFile)	# type: ignore
+
+
+
 	def getSSLContextWs(self) -> ssl.SSLContext:
 		"""	Depending on the configuration whether to use TLS, this method creates a new *SSLContext*
 			from the configured certificates and returns it. If TLS is disabled then *None* is returned.
