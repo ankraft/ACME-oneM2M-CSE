@@ -19,7 +19,7 @@ from websockets.protocol import State
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from ..etc.Constants import Constants
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
@@ -72,6 +72,10 @@ class WebSocketServer(object):
 
 		self.connectionUsedCounter:dict[uuid.UUID, ThreadSafeCounter] = {}	# websocket.id -> counter
 		"""	A counter for each opened WS connection opened by the CSE. """
+
+		self.actor:Optional[BackgroundWorker] = None
+		"""	The actor for running the WebSocket server. """
+
 
 		self.operationEvents = {
 			Operation.CREATE:		[CSE.event.wsCreate, 'WS_C'],		# type: ignore [attr-defined]
