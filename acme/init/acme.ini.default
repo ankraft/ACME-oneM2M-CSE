@@ -353,7 +353,6 @@ listenIF=${basic.config:networkInterface}
 ; Default: coap://127.0.0.1:5683
 address=coap://${basic.config:cseHost}:${port}
 
-
 ;
 ;	CoAP security settings
 ;
@@ -371,9 +370,9 @@ dtlsVersion=auto
 ; Default: False
 verifyCertificate=False
 ; Path and filename of the certificate file. Default: ${basic.config:baseDirectory}/certs/coap_cert.pem
-certificateFile=${basic.config:baseDirectory}/certs/coap_cert.pem
+caCertificateFile=${basic.config:baseDirectory}/certs/coap_cert.pem
 ; Path and filename of the private key file. Default: None
-privateKeyFile=${basic.config:baseDirectory}/certs/coap_key.pem
+caPrivateKeyFile=${basic.config:baseDirectory}/certs/coap_key.pem
 
 ;
 ;	Database settings
