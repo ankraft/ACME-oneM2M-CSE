@@ -31,8 +31,8 @@ setup(
 	},
 	include_package_data=True,
 	install_requires=[
-		'cachetools'
-		'CoAPTthon3-ACME-CSE',
+		'cachetools',
+		'coapthon3-acme-cse',
 		'cbor2',
 		'flask',
 		'flask-cors',
