@@ -19,7 +19,7 @@ class ACMEContainerAbout(VerticalScroll):
 	"""	About view for the ACME text UI.
 	"""
 
-	BINDINGS = 	[ Binding('a', 'goto_homepage', 'Open ACME Homepage') ]
+	BINDINGS = 	[ Binding('a', 'goto_homepage', 'Open Homepage') ]
 	"""	The key bindings for the *About* view. """
 
 	text = \
@@ -89,6 +89,7 @@ Available under the BSD 3-Clause License"""
 		"""
 		with Vertical(id = 'about-view'):
 			with (_c := Center()):
+				yield Button('hidden', id = 'about-button')
 				_c.styles.padding = (4, 0, 0, 0)
 				yield (_l := Label(self.text))
 				_l.styles.text_align = 'center'
@@ -102,7 +103,6 @@ Available under the BSD 3-Clause License"""
 				_c.styles.padding = (3, 0, 0, 0)
 				_c.styles.color = '#808080'
 				yield Label(self.qrcode)
-				yield Button('hidden', id = 'about-button')
 
 
 	def action_goto_homepage(self) -> None:
