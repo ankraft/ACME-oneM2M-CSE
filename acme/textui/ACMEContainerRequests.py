@@ -146,17 +146,18 @@ class ACMEViewRequests(Vertical):
 				event: The Click event.
 		"""
 
-		match self.screen.get_widget_at(event.screen_x, event.screen_y)[0]:
-			case self.requestListRequest:
-				v = json.dumps(self.currentRequest, indent = 2)
-				t = 'Request Copied'
-			case self.requestListResponse:
-				v = json.dumps(self.currentResponse, indent = 2)
-				t = 'Response Copied'
-			case _:
-				return
-		pyperclip.copy(v)
-		self._app.showNotification(limitLines(v, 5), t, 'information')
+		if self.currentRequest:
+			match self.screen.get_widget_at(event.screen_x, event.screen_y)[0]:
+				case self.requestListRequest:
+					v = json.dumps(self.currentRequest, indent = 2)
+					t = 'Request Copied'
+				case self.requestListResponse:
+					v = json.dumps(self.currentResponse, indent = 2)
+					t = 'Response Copied'
+				case _:
+					return
+			pyperclip.copy(v)
+			self._app.showNotification(limitLines(v, 5), t, 'information')
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
@@ -177,6 +178,10 @@ class ACMEViewRequests(Vertical):
 		"""
 		type = 'json'
 
+		if not len(self._currentRequests):
+			self.currentRequest = None
+			return
+		
 		# Get the request's json
 		self.currentRequest = self._currentRequests[cast(ACMEListItem, item)._data]['req']
 		jsns = commentJson(	self.currentRequest, 

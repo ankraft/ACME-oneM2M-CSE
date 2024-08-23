@@ -485,6 +485,9 @@ class ACMEContainerTree(Container):
 			self.requestView.currentRI = ri if ri else self.resourceTree.cursor_node.data
 			self.requestView.updateRequests()
 			self.requestView.requestList.focus()
+			# select the first request
+			if len(self.requestView.requestList) > 0:	
+				self.requestView.requestList.index = 0
 	
 
 	def setResourceHeader(self, header:str) -> None:
