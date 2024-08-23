@@ -90,6 +90,8 @@ class ResourceTypes(ACMEIntEnum):
 	""" FlexContainerInstance resource type. """
 	TSB				= 60
 	"""	TimeSyncBeacon resource type. """
+	PRP 			= 62
+	""" Primitive Profile type. """
 	PRMR 			= 63
 	""" ProcessManagement resource type. """
 	STTE 			= 64
@@ -188,6 +190,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
+	PRPAnnc			= 10062
+	"""	Announced Primitive Profile type. """
 	PRMRAnnc		= 10063
 	"""	Announced ProcessManagement resource type. """
 	STTEAnnc		= 10064
@@ -504,6 +508,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
 	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
 	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
+	ResourceTypes.PRP			: ResourceDescription(typeName = 'm2m:prp', announcedType = ResourceTypes.PRPAnnc, fullName='PrimitiveProfile'),
+	ResourceTypes.PRPAnnc		: ResourceDescription(typeName = 'm2m:prpA', isAnnouncedResource = True, fullName='PrimitiveProfile Announced'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
 	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
 	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),

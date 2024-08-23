@@ -43,6 +43,8 @@ class CSR(AnnounceableResource):
 									ResourceTypes.PCH,
 								    ResourceTypes.PRMR,
 								    ResourceTypes.PRMRAnnc,
+									ResourceTypes.PRP,
+									# ResourceTypes.PRPAnnc,	# TODO
 									ResourceTypes.SMDAnnc,
 									ResourceTypes.SUB,
 									ResourceTypes.TS,

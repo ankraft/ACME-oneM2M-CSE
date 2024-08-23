@@ -72,7 +72,7 @@ class TS(ContainerResource):
 		'mdc': None,
 		'mdt': None,
 		'cnf': None,
-		'or': None
+		'or': None,
 	}
 
 

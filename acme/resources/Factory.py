@@ -57,6 +57,8 @@ from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.PRMR import PRMR
 # TODO from ..resources.PRMRAnnc import PRMRAnnc
+from ..resources.PRP import PRP
+#from ..resources.PRPAnnc import PRPAnnc
 from ..resources.REQ import REQ
 from ..resources.SUB import SUB
 from ..resources.SCH import SCH
@@ -144,6 +146,8 @@ addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, tpe, pi, crea
 addResourceFactoryCallback(ResourceTypes.PCH_PCU,		PCH_PCU,		lambda dct, tpe, pi, create : PCH_PCU(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PRMR,			PRMR,			lambda dct, tpe, pi, create : PRMR(dct, pi = pi, create = create))
 # TODO addResourceFactoryCallback(ResourceTypes.PRMRAnnc,	PRMRAnnc,		lambda dct, tpe, pi, create : PRMRAnnc(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.PRP,			PRP,			lambda dct, tpe, pi, create : PRP(dct, pi = pi, create = create))
+# TODO addResourceFactoryCallback(ResourceTypes.PRPAnnc,	PRPAnnc,		lambda dct, tpe, pi, create : PRPAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.REQ,			REQ,			lambda dct, tpe, pi, create : REQ(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SCH,			SCH,			lambda dct, tpe, pi, create : SCH(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.SCHAnnc,		SCHAnnc,		lambda dct, tpe, pi, create : SCHAnnc(dct, pi = pi, create = create))
