@@ -627,7 +627,7 @@ class ACMECoAPServer(CoAP):
 		"""	The request layer to handle requests instead of resources. """
 
 		# Install a LRU cache for outgoing client connections
-		self.clientCache:ACMELRUCache = ACMELRUCache(maxsize = Configuration.coap_client_connection_cache_size, 
+		self.clientCache:ACMELRUCache = ACMELRUCache(maxsize = Configuration.coap_clientConnectionCacheSize, 
 											   		 evict = lambda _, val: val.close() if val else None)
 		"""	A cache for outgoing client connections. """
 
@@ -677,7 +677,7 @@ class ACMECoAPServer(CoAP):
 		def _closeClient() -> None:
 			"""	Close the client connection.
 			"""
-			if client and Configuration.coap_client_connection_cache_size == 0:
+			if client and Configuration.coap_clientConnectionCacheSize == 0:
 				client.close()
 
 		# Check if the CoAP server is running, otherwise return an errors
@@ -695,7 +695,7 @@ class ACMECoAPServer(CoAP):
 
 		# Re-use or create a CoAP client
 		destination = (urlParsed.hostname, urlParsed.port)
-		if (client := self.clientCache.get(destination)) is None or Configuration.coap_client_connection_cache_size == 0:
+		if (client := self.clientCache.get(destination)) is None or Configuration.coap_clientConnectionCacheSize == 0:
 			# Create DTLS socket if security is required
 			sock:socket.socket = None
 			if urlParsed.scheme == 'coaps':
@@ -717,7 +717,7 @@ class ACMECoAPServer(CoAP):
 
 			# Create a new client
 			client = HelperClient(server=(urlParsed.hostname, urlParsed.port), sock = sock)
-			if Configuration.coap_client_connection_cache_size > 0:
+			if Configuration.coap_clientConnectionCacheSize > 0:
 				self.clientCache[destination] = client
 			L.isDebug and L.logDebug('Creating new CoAP client')
 		else:
@@ -1102,7 +1102,7 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 	config.coap_port = parser.getint('coap', 'port', fallback = None) 	# Default will be determined later (s.b.)
 	config.coap_address = parser.get('coap', 'address', fallback = 'coap://127.0.0.1:5683') 	# Default will be determined later (s.b.)
 	config.coap_timeout = parser.getfloat('coap', 'timeout', fallback = 10.0)
-	config.coap_client_connection_cache_size = parser.getint('coap', 'clientConnectionCacheSize', fallback = 100)
+	config.coap_clientConnectionCacheSize = parser.getint('coap', 'clientConnectionCacheSize', fallback = 100)
 
 	#	CoAP Client Security
 
@@ -1136,8 +1136,8 @@ def validateConfiguration(config:Configuration, initial:Optional[bool] = False) 
 		raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[coap]:listenIF[/i]: {config.coap_listenIF}')
 	if config.coap_timeout < 0.0:
 		raise ConfigurationError(fr'Configuration Error: Invalid timeout value for [i]\[coap]:timeout[/i]: {config.coap_timeout}')
-	if config.coap_client_connection_cache_size < 0:
-		raise ConfigurationError(fr'Configuration Error: Invalid value for [i]\[coap]:clientConnectionCacheSize[/i]: {config.coap_client_connection_cache_size}')
+	if config.coap_clientConnectionCacheSize < 0:
+		raise ConfigurationError(fr'Configuration Error: Invalid value for [i]\[coap]:clientConnectionCacheSize[/i]: {config.coap_clientConnectionCacheSize}')
 
 	# COAP TLS & certificates
 	if not config.coap_security_useDTLS:	# clear certificates configuration if not in use

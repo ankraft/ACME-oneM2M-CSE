@@ -86,7 +86,7 @@ class Configuration(object):
 	coap_port:int
 	coap_address:str
 	coap_timeout:float
-	coap_client_connection_cache_size:int
+	coap_clientConnectionCacheSize:int
 
 	coap_security_caCertificateFile:str
 	coap_security_caPrivateKeyFile:str
