@@ -91,3 +91,11 @@ class MultiDict(defaultdict):
 		"""
 		return str( { k: v if len(v)>1 else v[0] for k,v in self.items() } )
 
+
+	def __repr__(self) -> str:
+		""" Return a string representation of the MultiDict. 
+		
+			Returns:
+				A string representation of the MultiDict.
+		"""
+		return self.__str__()
