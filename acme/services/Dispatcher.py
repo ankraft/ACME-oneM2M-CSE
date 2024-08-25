@@ -769,6 +769,7 @@ class Dispatcher(object):
 				return Result(rsc = ResponseStatusCode.CREATED)
 			
 			case _:
+				# TODO Handle this error earlier
 				raise BAD_REQUEST('wrong rcn for CREATE')
 
 		# TODO C.rcnDiscoveryResultReferences 

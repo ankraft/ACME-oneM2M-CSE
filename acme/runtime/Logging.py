@@ -553,14 +553,15 @@ class Logging:
 
 	
 	@staticmethod
-	def inspect(obj:Any) -> None:
+	def inspect(obj:Any, immediate:bool = False) -> None:
 		"""	Output a very comprehensive description of an object.
 		
 			Args:
 				obj: The object to inspect.
+				immediate: Immediately log the message, don't put it into the log queue.
 		"""
 		if Logging.logLevel != LogLevel.OFF:
-			Logging._log(Logging.logLevel, obj, immediate = False)
+			Logging._log(Logging.logLevel, obj, immediate = immediate)
 	
 
 	@staticmethod
