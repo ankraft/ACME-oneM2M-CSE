@@ -15,11 +15,15 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode, 
 from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
 from .Types import Result, ResourceTypes, Operation, CSERequest
+from ..etc.ResponseStatusCodes import BAD_REQUEST, UNSUPPORTED_MEDIA_TYPE
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 from ..helpers import TextTools
+from ..helpers.MultiDict import MultiDict
 from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.Types import ReqResp
+from ..etc.Constants import RuntimeConstants as RC
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
@@ -405,7 +409,7 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 		req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
 	req.request.ot			= getResourceDate()
 	req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-	req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+	req.request.ct			= req.request.ct if req.request.ct else RC.defaultSerialization 	# get the serialization
 
 	return req, url, u
 
@@ -425,6 +429,106 @@ def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 			 
 
 
+def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str] = None) -> CSERequest:
+
+	from ..etc.ACMEUtils import removeNoneValuesFromDict
+
+	# The Filter Criteria and attribute lists
+	filterCriteria:ReqResp = {}
+	attributeList:list[str] = []
+
+	for arg in list(arguments.keys()):
+		match arg:
+			# Actually, the following attributes are filterCriteria attributes, but are
+			# stored in the CSERequest object as request attributes
+			case 'rcn' | 'rp' | 'drt' | 'sqi':
+				dct[arg] = arguments.getOne(arg, greedy = True)
+
+			case 'rt':
+				if not (rt := cast(JSON, arguments.get('rt'))):	# if not yet in the req
+					rt = {}
+				rt['rtv'] = arguments.getOne(arg, greedy = True)	# type: ignore [assignment]
+				dct['rt'] = rt
+
+			case 'atrl':
+				# the attribute list could appear multiple times in the query, or have multiple values separated by '+'
+				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+					attributeList.extend(_a.split(sep))
+				# If there is only one attribute, add it to the to field instead of the atrl in the CONTENT
+				if len(attributeList) == 1:
+					dct['to'] = f'{dct["to"]}#{attributeList[0]}'
+					attributeList = []
+
+			# Maxage
+			# TODO make this a propper request attribute later when accepted for the spec. Also for http
+			case 'ma':
+				cseRequest.ma = arguments.getOne(arg, greedy = True)
+
+			# Some filter criteria attributes are stored as lists, and can appear multiple times
+			# in the query. A single entry could also have multiple values separated by "+"
+			# The goal is to store them as a single list in the filterCriteria
+			case 'ty' | 'lbl' | 'cty':
+				filterCriteria[arg] = []
+				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+					filterCriteria[arg].extend(_a.split(sep))	# type: ignore [union-attr]
+				
+			# Extract further request arguments from the coaprequest
+			# add all the args to the filterCriteria
+			# Some args are lists, so keep them as lists from the multi-dict
+			case _:
+				filterCriteria[arg] = arguments.get(arg, flatten = True, greedy = True)
+
+	# Add the filterCriteria to the request
+	if len(filterCriteria) > 0:
+		dct['fc'] = filterCriteria
+
+	if attributeList:
+		dct['pc'] = { 'm2m:atrl': attributeList }
+		cseRequest.ct = RC.defaultSerialization
+	else:
+		# De-Serialize the content
+		pc = deserializeContent(cseRequest.originalData, cseRequest.ct) # may throw an exception
+		
+		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
+		dct = removeNoneValuesFromDict(dct)
+
+		# Add the primitive content and 
+		dct['pc'] = pc		# The actual content
+
+	cseRequest.originalRequest	= dct	# finally store the oneM2M request object in the cseRequest
+
+	return cseRequest
+
+
+def deserializeContent(data:bytes, contentType:ContentSerializationType) -> JSON:
+	"""	Deserialize a data structure.
+		Supported media serialization types are JSON and cbor.
+
+		Args:
+			data: The data to deserialize.
+			contentType: The content type of the data.
+		
+		Return:
+			The deserialized data structure.
+
+		Raises:
+			*UNSUPPORTED_MEDIA_TYPE* if the content type is not supported.
+			*BAD_REQUEST* if the data is malformed.
+	"""
+	dct = None
+	# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
+	if data:
+		try:
+			if (dct := deserializeData(data, contentType)) is None:
+				raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = None)
+		except UNSUPPORTED_MEDIA_TYPE as e:
+			raise
+		except Exception as e:
+			raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
+	
+	return dct
+
+
 def curlFromRequest(request:JSON) -> str:
 	"""	Create a cURL command from a request.
 	
@@ -434,8 +538,6 @@ def curlFromRequest(request:JSON) -> str:
 		Return:
 			A cURL command.
 	"""
-	from ..runtime import CSE
-
 	if not request:
 		return 'No request available'
 

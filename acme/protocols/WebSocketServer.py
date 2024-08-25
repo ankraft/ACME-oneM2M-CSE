@@ -31,6 +31,7 @@ from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
+from ..etc.Constants import RuntimeConstants as RC
 
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
@@ -575,7 +576,7 @@ class WebSocketServer(object):
 
 		try: 
 			# Get the serialization format
-			ct = request.ct if request.ct is not None else CSE.defaultSerialization
+			ct = request.ct if request.ct is not None else RC.defaultSerialization
 			targetOriginator = csiFromSPRelative(request.to)
 			if targetOriginator is None:
 				targetOriginator = request.to

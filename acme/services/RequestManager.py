@@ -23,12 +23,13 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
 from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
-from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
+from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
 from ..etc.ACMEUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
 from ..etc.ACMEUtils import compareIDs, localResourceID, getIDFromPath, getIdFromOriginator
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
 from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
@@ -1070,7 +1071,7 @@ class RequestManager(object):
 					continue
 
 			ct = request.ct
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, RC.defaultSerialization)):
 				L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
 				continue		
 			_request.ct = ct
@@ -1118,34 +1119,6 @@ class RequestManager(object):
 	#
 	#	Various support methods
 	#
-
-	def deserializeContent(self, data:bytes, contentType:ContentSerializationType) -> JSON:
-		"""	Deserialize a data structure.
-			Supported media serialization types are JSON and cbor.
-
-			Args:
-				data: The data to deserialize.
-				contentType: The content type of the data.
-			
-			Return:
-				The deserialized data structure.
-
-			Raises:
-				*UNSUPPORTED_MEDIA_TYPE* if the content type is not supported.
-				*BAD_REQUEST* if the data is malformed.
-		"""
-		dct = None
-		# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
-		if data:
-			try:
-				if (dct := deserializeData(data, contentType)) is None:
-					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = None)
-			except UNSUPPORTED_MEDIA_TYPE as e:
-				raise
-			except Exception as e:
-				raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
-		
-		return dct
 
 
 	def fillAndValidateCSERequest(self, cseRequest:Union[CSERequest, JSON], 
@@ -1501,7 +1474,7 @@ class RequestManager(object):
 
 		# De-Serialize the content
 		try:
-			cseRequest.originalRequest = self.deserializeContent(cseRequest.originalData, cseRequest.ct)
+			cseRequest.originalRequest = deserializeContent(cseRequest.originalData, cseRequest.ct)
 		except ResponseException as e:
 			# re-use the exception and raise it again
 			e.data = cseRequest

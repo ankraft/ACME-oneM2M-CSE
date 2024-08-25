@@ -20,6 +20,7 @@ from threading import Lock
 from configparser import ConfigParser
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.Constants import RuntimeConstants as RC
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType, LogLevel
@@ -28,6 +29,7 @@ from ..etc.ACMEUtils import isValidCSI	# cannot import at the top because of cir
 from ..services.ActionManager import ActionManager
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.Console import Console
+
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
 from ..services.EventManager import EventManager
@@ -179,8 +181,6 @@ slashCseOriginator:str = None
 csePOA:list[str] = []
 """ The CSE's point-of-access's. """
 
-defaultSerialization:ContentSerializationType = None
-""" The default / preferred content serialization type. """
 
 releaseVersion:str = None
 """ The default / preferred release version. """
@@ -215,7 +215,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
 	global timeSeries, validator, webSocketServer
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
+	global supportedReleaseVersions, cseType, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
 	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
 	global cseOriginator, slashCseOriginator
 	global isHeadless, cseStatus
@@ -256,7 +256,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	cseSPRelative			 = f'{cseCsi}/{cseRn}'
 	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'
 
-	defaultSerialization	 = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
+	RC.defaultSerialization	 = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
 	releaseVersion 			 = Configuration.cse_releaseVersion
 	isHeadless				 = Configuration.console_headless
 

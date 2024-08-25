@@ -6,6 +6,12 @@
 #
 """ Various CSE and oneM2M constants """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from ..etc.Types import ContentSerializationType
+
 
 class Constants(object):
 	""" Various CSE and oneM2M constants """
@@ -181,3 +187,10 @@ class Constants(object):
 	#
 	networkCoordinationSupported = False
 	""" Network coordination supported by the CSE. """
+
+
+class RuntimeConstants(object):
+	""" Various runtime constants, determined during startup of the CSE """
+
+	defaultSerialization:ContentSerializationType = None
+	""" The default / preferred content serialization type. """

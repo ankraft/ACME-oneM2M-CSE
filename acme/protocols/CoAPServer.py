@@ -21,8 +21,8 @@ from ..etc.Utils import renameThread
 from ..etc.DateUtils import getResourceDate
 from ..etc.ACMEUtils import removeNoneValuesFromDict, uniqueRI
 from ..etc.DateUtils import timeUntilAbsRelTimestamp
-from ..etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI
-from ..etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData
+from ..etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI, fillRequestWithArguments
+from ..etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData, deserializeContent
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..helpers.TextTools import toHex
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
@@ -34,6 +34,7 @@ from ..helpers.ACMELRUCache import ACMELRUCache
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
+from ..etc.Constants import RuntimeConstants as RC
 
 from coapthon import defines
 from coapthon.client.helperclient import HelperClient
@@ -169,7 +170,7 @@ class ACMECoAPHandler(object):
 		return response
 
 
-	def _handleRequest(self, request:CoaptthonRequest, response:CoapthonResponse, operation:Operation, options:Optional[MultiDict] = None) -> None:
+	def _handleRequest(self, request:CoaptthonRequest, response:CoapthonResponse, operation:Operation, options:Optional[MultiDict] = None) -> CoapthonResponse:
 		"""	Handle a CoAP request.
 
 			Args:
@@ -177,6 +178,9 @@ class ACMECoAPHandler(object):
 				response: The CoAP response.
 				operation: The operation of the request.
 				options: The options of the request.
+
+			Returns:
+				The CoAP response.
 		"""
 		L.isDebug and L.logDebug(f'==> COAP Request: {request.uri_path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
@@ -187,14 +191,6 @@ class ACMECoAPHandler(object):
 
 		# TODO log request
 
-		# Send and error message when the CSE is shutting down, or the coap server is stopped
-		if CSE.coapServer.isPaused:
-			# Return an error if the server is stopped
-			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-												request = dissectResult.request, 
-												dbg = 'CoAP server not running'),
-										 response)
-
 		# Dissect the request
 		try:
 			dissectResult = self._dissectRequest(request, operation, options)
@@ -204,6 +200,14 @@ class ACMECoAPHandler(object):
 										 dbg = e.dbg), 
 										response)
 		
+		# Send and error message when the CSE is shutting down, or the coap server is stopped
+		if CSE.coapServer.isPaused:
+			# Return an error if the server is stopped
+			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+												request = dissectResult.request, 
+												dbg = 'CoAP server not running'),
+										 response)
+
 		# Handle the request. Returns a Result object. 
 		responseResult = CSE.request.handleRequest(dissectResult.request)
 
@@ -238,19 +242,6 @@ class ACMECoAPHandler(object):
 		if options is None:
 			options = dissectOptions(request.options)
 		
-		# Extract the query arguments. Multiple arguments or values separated by '+'
-		# are stored in a list
-		args = MultiDict()
-		for q in options.get(defines.OptionRegistry.URI_QUERY.number, []):
-			_p = q.split('=')
-			if len(_p) == 2:
-				# It could be that the value is a list of values separated by '+'.
-				# In this case we need to split it and add it as a list.
-				# If there is no '+' in the value, it is a single value but after the split still 
-				# contained in a list.
-				qs = urllib.parse.unquote(_p[1])
-				args[_p[0]] = qs
-
 		#
 		#	Process options
 		#
@@ -269,7 +260,7 @@ class ACMECoAPHandler(object):
 				case defines.OptionRegistry.CONTENT_TYPE.number:
 					cseRequest.ct = ContentSerializationType.fromCoAP(options.getOne(option))
 					if cseRequest.ct == ContentSerializationType.UNKNOWN:
-						cseRequest.ct = CSE.defaultSerialization
+						cseRequest.ct = RC.defaultSerialization
 
 				# media type of the response. The default is the content type of the request
 				case defines.OptionRegistry.ACCEPT.number:
@@ -330,89 +321,24 @@ class ACMECoAPHandler(object):
 		if cseRequest.coapAccept is None or cseRequest.coapAccept == ContentSerializationType.UNKNOWN:
 			cseRequest.coapAccept = cseRequest.ct
 
-		#
-		#	process query arguments
-		#
-
-		# Handle some parameters differently.
-		# They are not filter criteria, but request attributes
-		# TODOSame code as in HTTP. Move to function
-		attributeList:list[str] = []
-
-		# The Filter Criteria
-		filterCriteria:ReqResp = {}
-
-		for arg in list(args.keys()):
-			match arg:
-				# Actually, the following attributes are filterCriteria attributes, but are
-				# stored in the CSERequest object as request attributes
-				case 'rcn' | 'rp' | 'drt' | 'sqi':
-					req[arg] = args.getOne(arg, greedy = True)
-
-				case 'rt':
-					if not (rt := cast(JSON, req.get('rt'))):	# if not yet in the req
-						rt = {}
-					rt['rtv'] = args.getOne(arg, greedy = True)	# type: ignore [assignment]
-					req['rt'] = rt
-
-				case 'atrl':
-					attributeList = []
-					# the attribute list could appear multiple times in the query, or have multiple values separated by '+'
-					while (_a := args.getOne(arg, greedy = True)) is not None:
-						attributeList.extend(_a.split('+'))
-					# If there is only one attribute, add it to the to field instead of the atrl in the CONTENT
-					if len(attributeList) == 1:
-						req['to'] = f'{req["to"]}#{attributeList[0]}'
-						attributeList = []
-
-				# Maxage
-				# TODO make this a propper request attribute later when accepted for the spec. Also for http
-				case 'ma':
-					cseRequest.ma = args.getOne(arg, greedy = True)
-
-				# Some filter criteria attributes are stored as lists, and can appear multiple times
-				# in the query. A single entry could also have multiple values separated by "+"
-				# The goal is to store them as a single list in the filterCriteria
-				case 'ty' | 'lbl' | 'cty':
-					filterCriteria[arg] = []
-					while (_a := args.getOne(arg, greedy = True)) is not None:
-						filterCriteria[arg].extend(_a.split('+'))	# type: ignore [union-attr]
-					
-				# Extract further request arguments from the coaprequest
-				# add all the args to the filterCriteria
-				# Some args are lists, so keep them as lists from the multi-dict
-				case _:
-					filterCriteria[arg] = args.get(arg, flatten = True, greedy = True)
-		
-
-		# Add the filterCriteria to the request
-		if len(filterCriteria) > 0:
-			req['fc'] = filterCriteria
-
-		# Store the built request
-		cseRequest.originalRequest = req 	
-
-		# Handle the primitive content
+		# Copy the payload to the originalData
 		cseRequest.originalData = request.payload
 
-		# Is there a list of attributes, then assign it to the primitive content
-		if attributeList:
-			req['pc'] = { 'm2m:atrl': attributeList }
-			cseRequest.ct = CSE.defaultSerialization
-		else:
-			# Otherwise try to de-serialize the content
+		# Extract the query arguments. Multiple arguments or values separated by '+'
+		# are stored in a list
+		args = MultiDict()
+		for q in options.get(defines.OptionRegistry.URI_QUERY.number, []):
+			_p = q.split('=')
+			if len(_p) == 2:
+				# It could be that the value is a list of values separated by '+'.
+				# In this case we need to split it and add it as a list.
+				# If there is no '+' in the value, it is a single value but after the split still 
+				# contained in a list.
+				qs = urllib.parse.unquote(_p[1])
+				args[_p[0]] = qs
 
-			# De-Serialize the content
-			pc = CSE.request.deserializeContent(cseRequest.originalData, cseRequest.ct) # may throw an exception
-			
-			# Remove 'None' fields from the req *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
-			req = removeNoneValuesFromDict(req)
-
-			# Add the primitive content and 
-			req['pc'] = pc		# The actual content
-
-		# finally store the oneM2M request object in the cseRequest
-		cseRequest.originalRequest	= req	
+		# Extract the request arguments and copy them into the request, including the PC
+		fillRequestWithArguments(args, req, cseRequest, sep = '+')
 
 		# do validation and copying of attributes of the whole request
 		try:
@@ -445,7 +371,7 @@ class ACMECoAPHandler(object):
 			result.request = CSERequest()
 		
 		#  Copy a couple of attributes from the originalRequest to the new request
-		result.request.ct = CSE.defaultSerialization	# default serialization
+		result.request.ct = RC.defaultSerialization	# default serialization
 		if originalRequest:
 
 			# Determine contentType for the response. Check the 'accept' header first, then take the
@@ -741,7 +667,7 @@ class ACMECoAPServer(CoAP):
 			# resource id target
 			coapRequest.uri_path = toCoAPPath(req.to)
 			# Content-type
-			ct = request.ct if request.ct else CSE.defaultSerialization
+			ct = request.ct if request.ct else RC.defaultSerialization
 			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, ct.toCoAPContentType()))
 			# Resource type
 			if request.ty:
@@ -847,7 +773,7 @@ class ACMECoAPServer(CoAP):
 						case defines.OptionRegistry.CONTENT_TYPE.number:
 							resp.ct = ContentSerializationType.fromCoAP(options.getOne(number))
 							if resp.ct == ContentSerializationType.UNKNOWN:
-								resp.ct = CSE.defaultSerialization
+								resp.ct = RC.defaultSerialization
 
 						# response status code
 						case defines.OptionRegistry.oneM2M_RSC.number:

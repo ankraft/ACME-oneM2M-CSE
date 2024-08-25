@@ -21,6 +21,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
+from ..etc.Constants import RuntimeConstants as RC
 
 
 
@@ -2037,10 +2038,9 @@ class Result:
 		"""
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
-		from ..runtime.CSE import defaultSerialization
 
 		# determine the default serialization type if none was given
-		ct = defaultSerialization if not ct else ct
+		ct = RC.defaultSerialization if not ct else ct
 
 		if isinstance(self.resource, Resource):
 			r = serializeData(self.resource.asDict(), ct)

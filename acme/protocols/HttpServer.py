@@ -18,7 +18,7 @@ from flask import Flask, Request, request
 
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
-from werkzeug.datastructures import MultiDict
+from werkzeug.datastructures import MultiDict as WerkzeugMultiDict
 from waitress import serve
 from flask_cors import CORS
 import requests
@@ -28,12 +28,14 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.ACMEUtils import uniqueRI, toSPRelative, removeNoneValuesFromDict
+from ..etc.ACMEUtils import uniqueRI, toSPRelative
 from ..etc.Utils import renameThread, isURL, normalizeURL
 from ..helpers.TextTools import findXPath
+from ..helpers.MultiDict import MultiDict
 from ..helpers.NetworkTools import isValidateHostname, isValidPort, isValidateIpAddress
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, createPositiveResponseResult, fromHttpURL, contentAsString
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ..etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
@@ -42,6 +44,7 @@ from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Interpreter import SType
 from ..runtime.Logging import Logging as L
+from ..etc.Constants import RuntimeConstants as RC
 
 
 #
@@ -482,7 +485,7 @@ class HttpServer(object):
 		url = toHttpUrl(url)
 
 		# get the serialization
-		ct = request.ct if request.ct else CSE.defaultSerialization
+		ct = request.ct if request.ct else RC.defaultSerialization
 
 		# Set basic headers
 		hty = f';ty={int(request.ty):d}' if request.ty else ''
@@ -659,7 +662,7 @@ class HttpServer(object):
 		#  Copy a couple of attributes from the originalRequest to the new request
 		#
 
-		result.request.ct = CSE.defaultSerialization	# default serialization
+		result.request.ct = RC.defaultSerialization	# default serialization
 		if originalRequest:
 
 			# Determine contentType for the response. Check the 'accept' header first, then take the
@@ -748,7 +751,7 @@ class HttpServer(object):
 		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
 		"""
 
-		def extractMultipleArgs(args:MultiDict, argName:str) -> None:
+		def extractMultipleArgs(args:WerkzeugMultiDict, argName:str) -> None:
 			"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.
 			"""
 			lst = [ t for sublist in args.getlist(argName) for t in sublist.split() ]
@@ -810,72 +813,21 @@ class HttpServer(object):
 						raise BAD_REQUEST(L.logWarn(f'resource type must be an integer: {t}'), data = cseRequest)
 
 		# Get the media type from the content-type header
-		cseRequest.ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
+		cseRequest.ct = ContentSerializationType.getType(contentType, default = RC.defaultSerialization)
 
 		# parse accept header. Ignore */* and variants thereof
 		cseRequest.httpAccept = []
 		for h in _headers.getlist('accept'):
 			cseRequest.httpAccept.extend([ a.strip() for a in h.split(',') if not a.startswith('*/*')])
 
-		# copy request arguments for greedy attributes checking
-		_args = request.args.copy() 	# type: ignore [no-untyped-call]
-		
-		# Do some special handling for those arguments that could occur multiple
-		# times in the args MultiDict. They are collected together in a single list
-		# and added again to args.
-		extractMultipleArgs(_args, 'ty')	# conversation to int happens later in fillAndValidateCSERequest()
-		extractMultipleArgs(_args, 'cty')
-		extractMultipleArgs(_args, 'lbl')
+		# Copy the request arguments into an own multi-dict
+		_args = MultiDict()	
+		for k,v in request.args.items(multi=True): # multi=True returns a list of values for each key
+			_args[k] = v
+			# splitting + arguments is in the value
 
-		# Handle some parameters differently.
-		# They are not filter criteria, but request attributes
-		for param in ['rcn', 'rp', 'drt', 'sqi']:
-			if p := _args.get(param):	# type: ignore [assignment]
-				req[param] = p
-				del _args[param]
-		if rtv := _args.get('rt'):
-			if not (rt := cast(JSON, req.get('rt'))):
-				rt = {}
-			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
-			req['rt'] = rt		# Replace the (existing) rt with the updated one
-			del _args['rt']
-		
-		# Maxage
-		if (ma := _args.get('ma')):
-			cseRequest.ma = ma
-
-		# Handle attributeList
-		attributeList:list[str] = []
-		extractMultipleArgs(_args, 'atrl')
-		if atrl := _args.get('atrl'):
-			if len(atrl) == 1:
-				req['to'] = f'{req["to"]}#{atrl[0]}'
-			else:
-				attributeList = [ a for a in atrl ]
-			del _args['atrl']
-		
-		# Extract further request arguments from the http request
-		# add all the args to the filterCriteria
-		filterCriteria:ReqResp = { k:v for k,v in _args.items() }
-		if len(filterCriteria) > 0:
-			req['fc'] = filterCriteria
-
-		if attributeList:
-			req['pc'] = { 'm2m:atrl': attributeList }
-			cseRequest.ct = CSE.defaultSerialization
-
-		else:
-
-			# De-Serialize the content
-			pc = CSE.request.deserializeContent(cseRequest.originalData, cseRequest.ct) # may throw an exception
-			
-			# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
-			req = removeNoneValuesFromDict(req)
-
-			# Add the primitive content and 
-			req['pc'] = pc		# The actual content
-
-		cseRequest.originalRequest	= req	# finally store the oneM2M request object in the cseRequest
+		# Extract the request arguments and copy them into the request, including the PC
+		cseRequest = fillRequestWithArguments(_args, req, cseRequest)
 		
 		# do validation and copying of attributes of the whole request
 		try:
