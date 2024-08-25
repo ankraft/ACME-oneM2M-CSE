@@ -26,9 +26,9 @@ from .ACMEContentDialog import ACMEContentDialog
 from .ACMEViewResponse import ACMEViewResponse
 from ..runtime import CSE
 from ..etc.Types import ResourceTypes, JSON, RequestOptionality, Operation, ResponseStatusCode, Result
-from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ACMEUtils import uniqueRI
 from ..etc.RequestUtils import curlFromRequest
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..resources.Resource import Resource
 from ..resources.Factory import resourceFromDict
@@ -101,7 +101,7 @@ class ACMEViewRequest(VerticalScroll):
 									 id = 'request-child-resources-select', 
 									 classes = 'request-child-resources-select'	)
 		self.inputOriginator = ACMEFieldOriginator(originator, 
-											 	   suggestions = [CSE.cseOriginator, originator])
+											 	   suggestions = [RC.cseOriginator, originator])
 		self.resourceTextArea = ACMETextArea('', 
 						 	 				 classes = 'request-resource-textarea', 
 											 language = 'json', 
@@ -221,9 +221,9 @@ class ACMEViewRequest(VerticalScroll):
 
 		# Update the request originator. Important for getting a default request originator
 		if requestOriginator:
-			self.updateOriginator(requestOriginator, [CSE.cseOriginator, requestOriginator])
+			self.updateOriginator(requestOriginator, [RC.cseOriginator, requestOriginator])
 		else: # No originator, use CSE originator
-			self.updateOriginator(CSE.cseOriginator, [CSE.cseOriginator])
+			self.updateOriginator(RC.cseOriginator, [RC.cseOriginator])
 
 		_resourceAttributes:JSON = {}
 		match self.operation:
@@ -305,7 +305,7 @@ class ACMEViewRequest(VerticalScroll):
 						'ty': self.childResourceType.value,
 						'to': targetResource.ri, 
 						'csz': 'application/json',
-						'rvi': CSE.releaseVersion,
+						'rvi': RC.releaseVersion,
 						'rqi': uniqueRI(), 
 						'pc': jsn,
 					}
@@ -320,7 +320,7 @@ class ACMEViewRequest(VerticalScroll):
 						'fr': self.originator,
 						'to': targetResource.ri, 
 						'csz': 'application/json',
-						'rvi': CSE.releaseVersion,
+						'rvi': RC.releaseVersion,
 						'rqi': uniqueRI(), 
 						'pc': jsn,
 					}
@@ -330,7 +330,7 @@ class ACMEViewRequest(VerticalScroll):
 						'op': self.operation,
 						'fr': self.originator,
 						'to': targetResource.ri, 
-						'rvi': CSE.releaseVersion,
+						'rvi': RC.releaseVersion,
 						'rqi': uniqueRI(), 
 					}
 		

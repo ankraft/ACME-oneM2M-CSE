@@ -556,7 +556,7 @@ class WebSocketServer(object):
 			try:
 				websocket = connect(url, 
 									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-									additional_headers = { 'X-m2m-Origin': CSE.cseCsi})
+									additional_headers = { 'X-m2m-Origin': RC.cseCsi})
 			except Exception as e:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
 			

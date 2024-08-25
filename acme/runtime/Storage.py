@@ -29,8 +29,8 @@ from configparser import ConfigParser
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
+from ..etc.Constants import RuntimeConstants as RC
 from .Configuration import Configuration, ConfigurationError
-from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
@@ -96,14 +96,14 @@ class Storage(object):
 				case 'tinydb':
 					# create tinyDB object and open DB for file handling
 					self.db = TinyDBBinding(Configuration.database_tinydb_path, 		
-											CSE.cseCsi[1:], # add CSE CSI as postfix
+											RC.cseCsi[1:], # add CSE CSI as postfix
 											Configuration.database_tinydb_cacheSize,
 											Configuration.database_tinydb_writeDelay
 										) 
 				case 'memory':
 					# create tinyDB object and open DB for in-memory handling
 					self.db = TinyDBBinding(None,
-											CSE.cseCsi[1:], # add CSE CSI as postfix
+											RC.cseCsi[1:], # add CSE CSI as postfix
 											Configuration.database_tinydb_cacheSize,
 											Configuration.database_tinydb_writeDelay
 										)
@@ -822,7 +822,7 @@ class Storage(object):
 				  'ts': _ts,
 				  'org': originator,
 				  'op': op,
-				  'rsc': response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN,
+				  'rsc': response.get('rsc', ResponseStatusCode.UNKNOWN),
 				  'out': outgoing,
 				  'ot': ot,
 				  'req': { k: v for k, v in request.items() if v is not None }, # Remove None values

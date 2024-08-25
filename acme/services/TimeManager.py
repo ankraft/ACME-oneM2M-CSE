@@ -17,6 +17,7 @@ from ..runtime import CSE
 from ..etc.Types import BeaconCriteria, CSERequest, ResourceTypes
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.DateUtils import isodateDelta, toDuration, getResourceDate
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 
@@ -34,6 +35,7 @@ class TimeManager(object):
 	__slots__ = (
 		'periodicTimeSyncBeacons',
 		'losTimeSyncBeacons',
+		'cseActiveSchedule'
 	)
 	""" Define slots for instance variables. """
 
@@ -57,6 +59,9 @@ class TimeManager(object):
 
 		self.losTimeSyncBeacons:dict[str, Tuple[float, str]] = {}	# dict bcnr -> (threshold, tsb.ri)
 		"""	Table for Loss-of-sync timeSyncBeacons."""
+
+		self.cseActiveSchedule:list[str] = []
+		""" List of active schedules when the CSE is active and will process requests. """
 
 		L.isInfo and L.log('TimeManager initialized')
 
@@ -153,7 +158,7 @@ class TimeManager(object):
 					'ctm' : self.getCSETimestamp()
 				}
 			}
-			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu, originator = CSE.cseCsi)
+			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu, originator = RC.cseCsi)
 			return True
 
 		

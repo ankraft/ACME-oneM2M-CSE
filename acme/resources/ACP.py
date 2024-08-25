@@ -13,7 +13,7 @@ from configparser import ConfigParser
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
@@ -124,7 +124,7 @@ class ACP(AnnounceableResource):
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
 		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
-			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
+			acr.append( { 'acor': [ RC.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
 

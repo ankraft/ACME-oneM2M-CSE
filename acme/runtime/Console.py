@@ -34,7 +34,7 @@ from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..helpers.OrderedSet import OrderedSet
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
 from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
@@ -211,12 +211,12 @@ class Console(object):
 		}
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
-		if not CSE.isHeadless:
+		if not RC.isHeadless:
 			L.console('Press "?" for help, or "#" for the Text UI.')
 		
 		loop(commands, 
 			 catchKeyboardInterrupt = True, 
-			 headless = CSE.isHeadless,
+			 headless = RC.isHeadless,
 			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
 			 nextKey = '#' if Configuration.textui_startWithTUI else None,
 			 postCommandHandler = self._postCommandHandler,
@@ -356,7 +356,7 @@ Available under the BSD 3-Clause License
 			Args:
 				key: Input key. Ignored.
 		"""
-		if not CSE.isHeadless:
+		if not RC.isHeadless:
 			if Configuration.console_confirmQuit:
 				L.off()
 				L.console('Press quit-key again to confirm -> ', plain=True, end='')
@@ -492,7 +492,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('CSE Registrations', isHeader = True)
-		# poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
+		# poas = '\n'.join([f'    - {poa}' for poa in RC.csePOA])
 		# L.console(f'- **Point of Access**\n{poas}\n{self.getRegistrationsRich()}')
 		L.console()
 		try:
@@ -586,7 +586,7 @@ Available under the BSD 3-Clause License
 			self.previosInspectChildrenRi = ri
 			try:
 				resource = CSE.dispatcher.retrieveResource(ri)
-				children = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
+				children = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
 				CSE.dispatcher.resourceTreeDict(children, resource)	# the function call add attributes to the target resource
 				L.console(resource.asDict())
 			except ResponseException as e:
@@ -681,7 +681,7 @@ Available under the BSD 3-Clause License
 		try:
 
 			if withChildResources:
-				resdis = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
+				resdis = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
 				# insert the parent resource at the beginning of the list
 				resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
 			else:
@@ -701,7 +701,7 @@ Available under the BSD 3-Clause License
 
 				# Write shell file header
 				f.write(f'''#!/bin/bash
-# Exported {ri} from {CSE.cseRi} at {getResourceDate()}
+# Exported {ri} from {RC.cseRi} at {getResourceDate()}
 
 cseURL={cseUrl}
 
@@ -718,7 +718,7 @@ function uniqueNumber() {{
 function createResource() {{
 	printf '\\nCreating child resource under %s\\n' $cseURL/$4
 	printf 'Result: '		  
-	curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {CSE.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
+	curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {RC.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
 	printf '\\n'
 }}
 			
@@ -865,7 +865,7 @@ function createResource() {{
 	# 	L.console('Export Resources', isHeader = True)
 	# 	L.off()
 	# 	try:
-	# 		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
+	# 		if not (resdis := CSE.dispatcher.discoverResources(RC.cseRi, originator = RC.cseOriginator)).status:
 	# 			L.console(resdis.dbg, isError=True)
 	# 		else:
 	# 			resources:list[Resource] = []
@@ -1195,7 +1195,7 @@ function createResource() {{
 		return result
 		# result = ''
 
-		# if CSE.cseType != CSEType.IN:
+		# if RC.cseType != CSEType.IN:
 		# 	result += f'- **Registrar CSE**\n'
 		# 	if CSE.remote.registrarAddress:
 		# 		registrarCSE = CSE.remote.registrarCSE
@@ -1204,7 +1204,7 @@ function createResource() {{
 		# 	else:
 		# 		result += '   - None'
 
-		# if CSE.cseType != CSEType.ASN:
+		# if RC.cseType != CSEType.ASN:
 		# 	result += f'- **Registree CSEs**\n'
 		# 	if len(CSE.remote.descendantCSR) > 0:
 		# 		for desc in CSE.remote.descendantCSR.keys():
@@ -1249,16 +1249,16 @@ function createResource() {{
 			#
 
 			miscLeft  = Text(style = textStyle)
-			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
+			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
 				miscLeft += f'IP-Address        : {getIPAddress()}\n'
 			except Exception as e:
 				print(e)
-			miscLeft += f'PoA               : {CSE.csePOA[0]}\n'
-			if len(CSE.csePOA) > 1:
-				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+			miscLeft += f'PoA               : {RC.csePOA[0]}\n'
+			if len(RC.csePOA) > 1:
+				miscLeft += ''.join([f'                    {poa}\n' for poa in RC.csePOA[1:] ])
 
 			miscLeft += '\n'
 			miscLeft += f'CWD               : {os.getcwd()}\n'
@@ -1792,7 +1792,7 @@ skinparam BoxPadding 60
 				ri = f'"{ri}"'
 
 			org = r['org']
-			if org == CSE.cseCsi:
+			if org == RC.cseCsi:
 				participants.add(orig := f'"{org[1:]}"')	# CSI without the leading /
 			else:
 				participants.add(orig := f'"{origPrefix}{org}"')
@@ -1822,7 +1822,7 @@ skinparam BoxPadding 60
 		
 
 		uml += '\n'.join([f'participant {p}' for p in participants]) + '\n'
-		uml += f'box "CSE {CSE.cseCsi}" #f8f8f8\n'
+		uml += f'box "CSE {RC.cseCsi}" #f8f8f8\n'
 		uml += '\n'.join([f'participant {p}' for p in targets]) + '\n'
 		uml += 'end box\n'
 		uml += seqs

@@ -26,6 +26,7 @@ from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOU
 from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
 from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
 from ..etc.Utils import isAcmeUrl
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath, findXPath
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
@@ -664,7 +665,7 @@ class NotificationManager(object):
 			}
 			self.sendNotificationWithDict(dct, 
 										  crs.nu, 
-										  originator = CSE.cseCsi,
+										  originator = RC.cseCsi,
 										  background = True,
 										  preFunc = lambda target: self.countSentReceivedNotification(crs, target),
 										  postFunc = lambda target: self.countSentReceivedNotification(crs, target, isResponse = True)
@@ -1084,7 +1085,7 @@ class NotificationManager(object):
 			try:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 															   to = uri, 
-															   originator = CSE.cseCsi,
+															   originator = RC.cseCsi,
 															   pc = verificationRequest)
 												   )[0].result	# there should be at least one result
 			except ResponseException as e:
@@ -1121,7 +1122,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = uri, 
-														 originator = CSE.cseCsi,
+														 originator = RC.cseCsi,
 											  			 pc = deletionNotification))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {e.dbg}')
@@ -1149,7 +1150,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = uri, 
-											  			 originator = CSE.cseCsi,
+											  			 originator = RC.cseCsi,
 											  			 pc = notificationRequest))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
@@ -1225,7 +1226,7 @@ class NotificationManager(object):
 					return _sendNotification(uri, subscription, notificationRequest)
 
 				# if not CSE.request.sendNotifyRequest(uri, 
-				# 									 originator = CSE.cseCsi,
+				# 									 originator = RC.cseCsi,
 				# 									 content = notificationRequest).status:
 				# 	L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 				# 	return False
@@ -1293,7 +1294,7 @@ class NotificationManager(object):
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
 		if sub := CSE.storage.getSubscription(ri):
-			ln = sub['ln'] if 'ln' in sub else False
+			ln = sub.get('ln', False)
 			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
 				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln, sub)	# Send all remaining notifications
@@ -1314,7 +1315,7 @@ class NotificationManager(object):
 		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
-		ln = sub['ln'] if 'ln' in sub else False
+		ln = sub.get('ln', False)
 		if (num := findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
@@ -1391,7 +1392,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = nu, 
-														 originator = CSE.cseCsi,
+														 originator = RC.cseCsi,
 														 pc = notificationRequest,
 														 ec = ec))
 			except ResponseException as e:

@@ -22,7 +22,7 @@ from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, Result
 from ..etc.Types import Operation 
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR, OPERATION_NOT_ALLOWED, CONFLICT
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.CSEBase import getCSE
@@ -135,7 +135,7 @@ class AnnouncementManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for at in resource.at:
-			if (at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash)) and not Configuration.cse_announcements_allowAnnouncementsToHostingCSE:
+			if (at == RC.cseCsi or at.startswith(RC.cseCsiSlash)) and not Configuration.cse_announcements_allowAnnouncementsToHostingCSE:
 				L.isWarn and L.logWarn('Targeting own CSE for announcement. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
@@ -172,7 +172,7 @@ class AnnouncementManager(object):
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if isSPRelative(t[1]) else f'{csi}/{t[1]}'
 				try:
-					_r = CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi)
+					_r = CSE.dispatcher.retrieveResource(remoteRi, RC.cseCsi)
 				except ResponseException as e:	# basically anything that isn't "OK"
 					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
@@ -196,7 +196,7 @@ class AnnouncementManager(object):
 
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 															   to = to,
-															   originator = CSE.cseCsi,
+															   originator = RC.cseCsi,
 															   rcn = ResultContentType.childResourceReferences,
 															   drt = DesiredIdentifierResultType.unstructured,
 															   fc = FilterCriteria(ty = [ ResourceTypes.CSEBaseAnnc.value ],
@@ -276,7 +276,7 @@ class AnnouncementManager(object):
 		try:
 			res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
 						  								   to = to, 
-														   originator = CSE.cseCsi, 
+														   originator = RC.cseCsi, 
 														   ty = tyAnnc, 
 														   pc = dct)
 											   )[0].result	# there should be at least one result
@@ -347,7 +347,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
 													   to = csrID, 
-													   originator = CSE.cseCsi))[0].result	# there should be at least one result
+													   originator = RC.cseCsi))[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
 			L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
@@ -375,7 +375,7 @@ class AnnouncementManager(object):
 		CSIsFromAnnounceTo = []
 		for announcedResourceID in resource.at:
 			if len(sp := announcedResourceID.split('/')) >= 2:
-				if (csi := f'/{sp[1]}') == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):	# Ignore own CSE as target
+				if (csi := f'/{sp[1]}') == RC.cseCsi or csi.startswith(f'{RC.cseCsi}/'):	# Ignore own CSE as target
 					continue
 				CSIsFromAnnounceTo.append(csi)
 
@@ -407,7 +407,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
 													   to = csrID, 
-													   originator = CSE.cseCsi, 
+													   originator = RC.cseCsi, 
 													   pc = dct))[0].result		# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')

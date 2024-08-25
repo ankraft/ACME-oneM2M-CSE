@@ -86,7 +86,7 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.flaskApp			= Flask(CSE.cseCsi)
+		self.flaskApp = Flask(RC.cseCsi)
 
 		# Get the configuration settings
 		self._assignConfig()
@@ -94,11 +94,11 @@ class HttpServer(object):
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
-		self.isStopped					 = False
+		self.isStopped = False
 		self.backgroundActor:BackgroundWorker = None
 
-		self.serverID			= f'ACME {Constants.version}' 	# The server's ID for http response headers
-		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
+		self.serverID = f'ACME {Constants.version}' 	# The server's ID for http response headers
+		self._responseHeaders = {'Server' : self.serverID}	# Additional headers for other requests
 
 		L.isInfo and L.log(f'Registering http server root at: {Configuration.http_root}')
 		if Configuration.http_security_useTLS:
@@ -121,8 +121,8 @@ class HttpServer(object):
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
-						   defaultRI = CSE.cseRi, 
-						   defaultOriginator = CSE.cseOriginator, 
+						   defaultRI = RC.cseRi, 
+						   defaultOriginator = RC.cseOriginator, 
 						   root = Configuration.webui_root,
 						   webuiDirectory = self.webuiDirectory,
 						   version = Constants.version)
@@ -259,7 +259,7 @@ class HttpServer(object):
 									  debug = False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
-				if CSE.isHeadless:
+				if RC.isHeadless:
 					L.console(str(e), isError=True)
 				if type(e) == PermissionError:
 					m  = f'{e}.'
@@ -500,7 +500,7 @@ class HttpServer(object):
 		hds[Constants.hfRI]		= request.rqi
 		# hds[Constants.hfRI]		= request.rqi if request.rqi else uniqueRI()
 		if request.rvi != '1':
-			hds[Constants.hfRVI]= request.rvi if request.rvi is not None else CSE.releaseVersion
+			hds[Constants.hfRVI]= request.rvi if request.rvi is not None else RC.releaseVersion
 		hds[Constants.hfOT]		= request.ot if request.ot else getResourceDate()
 		if request.ec:				# Event Category
 			hds[Constants.hfEC] = str(request.ec.value)
@@ -577,8 +577,8 @@ class HttpServer(object):
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType = RequestType.RESPONSE)
-			resp.ct = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
-			resp.rsc = ResponseStatusCode(int(r.headers[Constants.hfRSC])) if Constants().hfRSC in r.headers else ResponseStatusCode.INTERNAL_SERVER_ERROR
+			resp.ct = ContentSerializationType.getType(r.headers.get('Content-Type', ct))
+			resp.rsc = ResponseStatusCode(int(r.headers.get(Constants.hfRSC, ResponseStatusCode.INTERNAL_SERVER_ERROR)))
 			resp.pc = deserializeData(r.content, resp.ct)
 			resp.originator = r.headers.get(Constants.hfOrigin)
 			try:

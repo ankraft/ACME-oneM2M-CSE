@@ -18,6 +18,7 @@ from copy import deepcopy
 
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
+from ..etc.Constants import RuntimeConstants as RC
 from .Configuration import Configuration
 from ..runtime import CSE
 from ..helpers.TextTools import removeCommentsFromJSON
@@ -173,17 +174,17 @@ class Importer(object):
 		# But we still need the CSI etc of the CSE, and also check presence of CSE
 		if cse := getCSE():
 			# Set some values in the configuration and the CSE instance
-			if CSE.cseCsi != cse.csi:
-				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {cse.csi}')
-				CSE.cseCsi = cse.csi
+			if RC.cseCsi != cse.csi:
+				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {RC.cseCsi} -> {cse.csi}')
+				RC.cseCsi = cse.csi
 				Configuration.update('cse.cseID', cse.csi)
-			if CSE.cseRi != cse.ri:
-				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {cse.ri}')
-				CSE.cseRi = cse.ri
+			if RC.cseRi != cse.ri:
+				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {RC.cseRi} -> {cse.ri}')
+				RC.cseRi = cse.ri
 				Configuration.update('cse.resourceID',cse.ri)
-			if CSE.cseRn != cse.rn:
-				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {cse.rn}')
-				CSE.cseRn  = cse.rn
+			if RC.cseRn != cse.rn:
+				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {RC.cseRn} -> {cse.rn}')
+				RC.cseRn  = cse.rn
 				Configuration.update('cse.resourceName', cse.rn)
 		else:
 			# We don't have a CSE!

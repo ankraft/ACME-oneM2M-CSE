@@ -399,7 +399,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't update the CSEBase
-		if request.id == CSE.cseRi:
+		if request.id == RC.cseRi:
 			raise OPERATION_NOT_ALLOWED('operation not allowed for CSEBase')
 
 		# Check contentType and resourceType
@@ -427,7 +427,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't delete the CSEBase
-		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
+		if request.id in [ RC.cseRi, RC.cseRn ]:
 			raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 		match request.rt:
@@ -545,7 +545,7 @@ class RequestManager(object):
 		# The result contains the request resource  (the one from the actual operation).
 		# So we can just copy the individual attributes
 		# originator = result.resource['ors/fr']
-		# originator = CSE.cseCsi
+		# originator = RC.cseCsi
 		to = req['ors/to']
 		responseNotification = {
 			'm2m:rsp' : {
@@ -571,7 +571,7 @@ class RequestManager(object):
 			nus = [ to ]
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = CSE.cseCsi)
+		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = RC.cseCsi)
 
 		return True
 
@@ -633,7 +633,7 @@ class RequestManager(object):
 			'rsc' : rsc,				# set response status code
 			'rqi' : reqres.rid,			# request ID
 			'to' : request.originator,	# request originator
-			'fr' : CSE.cseCsi,			# from: hosting CSE
+			'fr' : RC.cseCsi,			# from: hosting CSE
 			'ot' : reqres['mi/ot'],		# timestamp
 			'rset' : reqres.et,			# expiration timestamp
 		}
@@ -894,7 +894,7 @@ class RequestManager(object):
 				 				 ty = ty, 
 				 				 ot = getResourceDate(),
 				 				 rqi = uniqueRI(),
-				 				 rvi = rvi if rvi is not None else CSE.releaseVersion,
+				 				 rvi = rvi if rvi is not None else RC.releaseVersion,
 				 				 pc = content,
 								 # Copy additional parameter attributes
 								 ec = ec)
@@ -1219,10 +1219,10 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):
-				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'), 
+				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {RC.supportedReleaseVersions}.'), 
 													data = cseRequest)
 			else:
-				if rvi in CSE.supportedReleaseVersions:
+				if rvi in RC.supportedReleaseVersions:
 					cseRequest.rvi = rvi	
 				else:
 					raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release version unsupported: {rvi}'), data = cseRequest)
@@ -1293,12 +1293,12 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
-				if rvi not in CSE.supportedReleaseVersions:
+				if rvi not in RC.supportedReleaseVersions:
 					raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release version unsupported: {rvi}'), data = cseRequest)
 				else:
 					cseRequest.rvi = rvi	
 			else:
-				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But release version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'))
+				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But release version \'1\' is not supported. Use RVI with one of {RC.supportedReleaseVersions}.'))
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
@@ -1562,7 +1562,7 @@ class RequestManager(object):
 		def getTargetReleaseVersion(srv:list) -> str:
 			if (srv := targetResource.srv):
 				return sorted(srv)[-1]	# return highest srv
-			return CSE.releaseVersion
+			return RC.releaseVersion
 				
 		originator = request.originator
 		uri = request.to
@@ -1573,7 +1573,7 @@ class RequestManager(object):
 			L.isDebug and L.logDebug(f'Direct URL: {uri}')
 			return [ (uri, 
 					  None, 
-					  CSE.releaseVersion, 
+					  RC.releaseVersion, 
 					  None, 
 					  originator, 
 					  uri, 
@@ -1616,8 +1616,8 @@ class RequestManager(object):
 		
 		# Checking permissions
 		permission = request.op.permission()
-		if not uri.startswith(CSE.cseCsiSlash):	# TODO make a utility out of this
-			if originator == CSE.cseCsi:
+		if not uri.startswith(RC.cseCsiSlash):	# TODO make a utility out of this
+			if originator == RC.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
 			# TODO DELETEME elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
 			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission, request = request, resultResource = targetResource):
@@ -1657,7 +1657,7 @@ class RequestManager(object):
 							   targetResource.csz, 
 							   getTargetReleaseVersion(targetResource.srv), 
 							   None,
-							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != CSE.cseCsi else originator,
+							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != RC.cseCsi else originator,
 							   uri,
 							   targetResourceType,
 							   False))

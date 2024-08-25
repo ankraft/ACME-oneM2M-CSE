@@ -34,6 +34,7 @@ from ..etc.ACMEUtils import srnFromHybrid, uniqueRI, noNamespace, riFromStructur
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Factory import resourceFromDict
@@ -52,7 +53,7 @@ class Dispatcher(object):
 	"""
 
 	__slots__ = (
-		'csiSlashLen',
+		'K',
 		'sortDiscoveryResources',
 
 		'_eventRetrieveResource',
@@ -66,8 +67,6 @@ class Dispatcher(object):
 	def __init__(self) -> None:
 		""" Initialize the Dispatcher. """
 
-		self.csiSlashLen = len(CSE.cseCsiSlash)
-		""" Length of the CSI with a slash. """
 		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
 
@@ -336,8 +335,8 @@ class Dispatcher(object):
 				Result instance.
 		"""
 		if id:
-			if id.startswith(CSE.cseCsiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
-				id = id[self.csiSlashLen:]
+			if id.startswith(RC.cseCsiSlash) and len(id) > RC.cseCsiSlashLen:		# TODO for all operations?
+				id = id[RC.cseCsiSlashLen:]
 			else:
 				# Retrieve from remote
 				if isSPRelative(id):
@@ -816,7 +815,7 @@ class Dispatcher(object):
 			createdResource = self.createLocalResource(resource, parentResource, originator = originator)
 
 			resRi = createdResource.ri
-			resCsi = CSE.cseCsi
+			resCsi = RC.cseCsi
 		
 		# Create remotely
 		else:
@@ -1287,7 +1286,7 @@ class Dispatcher(object):
 			# Retrieve the resource
 			resource = self.retrieveLocalResource(rID, originator = originator)
 			
-			if id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
+			if id in [ RC.cseRi, RC.cseRn ]:
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 			# Check Permission
@@ -1415,7 +1414,7 @@ class Dispatcher(object):
 												   originator = originator,
 												   ot = getResourceDate(),
 												   rqi = uniqueRI(),
-												   rvi = CSE.releaseVersion,
+												   rvi = RC.releaseVersion,
 												   pc = content),
 										   originator)
 			return Result(rsc = ResponseStatusCode.OK)
@@ -1683,8 +1682,10 @@ class Dispatcher(object):
 			Raises:
 				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
 		"""
-		if CSE.cseActiveSchedule:
-			for s in CSE.cseActiveSchedule:
+		if CSE.time.cseActiveSchedule:
+			# Only check if the CSE has at least one schedule
+			# Otherwise the CSE is always active
+			for s in CSE.time.cseActiveSchedule:
 				if cronMatchesTimestamp(s):
 					return
 			# TODO not sure if this is the right error code
@@ -1700,17 +1701,17 @@ class Dispatcher(object):
 	def _resourcesToURIList(self, resources:list[Resource], drt:int) -> JSON:
 		"""	Create a m2m:uril structure from a list of resources.
 		"""
-		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
+		# cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
-			lst.append(r.structuredPath() if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
+			lst.append(r.structuredPath() if drt == DesiredIdentifierResultType.structured else RC.cseCsiSlash + r.ri)
 		return { 'm2m:uril' : lst }
 
 
 	def resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
 		"""	Recursively walk the results and build a sub-resource tree for each resource type.
 		"""
-		rri = targetResource['ri'] if 'ri' in targetResource else None
+		rri = targetResource.get('ri')
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None

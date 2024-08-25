@@ -24,6 +24,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.ACMEUtils import uniqueRI, uniqueID, pureResource
 from ..etc.Utils import runsInIPython, isURL
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
@@ -199,7 +200,7 @@ class ACMEPContext(PContext):
 				pcontext: Script context. Not used.
 				msg: log message.
 		"""
-		if CSE.isHeadless:
+		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
@@ -214,7 +215,7 @@ class ACMEPContext(PContext):
 				msg: The log message.
 				exception: Optional exception to log.
 		"""
-		if CSE.isHeadless:
+		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
@@ -228,7 +229,7 @@ class ACMEPContext(PContext):
 				pcontext: Script context. Not used.
 				msg: The log message.
 		"""
-		if CSE.isHeadless:
+		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
 			if CSE.textUI.tuiApp:
@@ -290,7 +291,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result.
 		"""
 		pcontext.assertSymbol(symbol, 1)
-		if not CSE.isHeadless:
+		if not RC.isHeadless:
 			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
 		return pcontext.setResult(SSymbol())
@@ -414,7 +415,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result, ie. the CSE status as a string.
 		"""
 		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(string = CSE.cseStatus.name))
+		return pcontext.setResult(SSymbol(string = RC.cseStatus.name))
 
 
 	def doDeleteResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -890,7 +891,7 @@ class ACMEPContext(PContext):
 		"""
 		pcontext.assertSymbol(symbol, 2)
 
-		if CSE.isHeadless:
+		if RC.isHeadless:
 			return pcontext
 		
 		# json
@@ -1502,7 +1503,7 @@ class ACMEPContext(PContext):
 		req = { 'op': operation,
 				'fr': originator,
 				'to': target, 
-				'rvi': CSE.releaseVersion,
+				'rvi': RC.releaseVersion,
 				'rqi': uniqueRI(), 
 				'ot': getResourceDate(),
 			}

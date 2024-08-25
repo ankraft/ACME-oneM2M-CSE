@@ -13,7 +13,7 @@ from textual.widgets._header import HeaderClock, HeaderClockSpace, HeaderTitle
 from textual.containers import Horizontal, Middle
 
 from ..runtime import CSE
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.DateUtils import utcDatetime
 
@@ -34,7 +34,7 @@ class ACMEHeaderTitle(HeaderTitle):
 	"""	Display the title / subtitle in the header."""
 
 	def render(self) -> Text:
-		return Text.from_markup(f'{CSE.cseType.name}-CSE : {CSE.cseCsi}', overflow = 'ellipsis')
+		return Text.from_markup(f'{RC.cseType.name}-CSE : {RC.cseCsi}', overflow = 'ellipsis')
 
 
 class ACMEHeader(Header):

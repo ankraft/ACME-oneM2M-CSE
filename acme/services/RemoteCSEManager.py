@@ -20,7 +20,7 @@ from ..etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, J
 from ..etc.Types import ContentSerializationType
 from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import pureResource, csiFromRelativeAbsoluteUnstructured, isValidCSI	# cannot import at the top because of circel import
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR
@@ -127,7 +127,7 @@ class RemoteCSEManager(object):
 		# Set other manager attributes
 		self.registrarCSEURL = f'{Configuration.cse_registrar_address}{Configuration.cse_registrar_root}/'
 		self.registrarCSEURI = f'{Configuration.cse_registrar_cseID}/{Configuration.cse_registrar_resourceName}'
-		self.csrOnRegistrarURI = f'{self.registrarCSEURI}{CSE.cseCsi}'
+		self.csrOnRegistrarURI = f'{self.registrarCSEURI}{RC.cseCsi}'
 
 
 	def configUpdate(self, name:str, 
@@ -167,7 +167,7 @@ class RemoteCSEManager(object):
 		for eachCsr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 			if (csi := eachCsr.csi) != Configuration.cse_registrar_cseID:			# Skipping the own registrar csr
 				L.isDebug and L.logDebug(f'Addind remote CSE: {csi}')
-				self.descendantCSR[csi] = (eachCsr, CSE.cseCsi)		# Add the direct child CSR
+				self.descendantCSR[csi] = (eachCsr, RC.cseCsi)		# Add the direct child CSR
 				
 				# Add the descendant CSE's
 				if eachCsr.dcse:
@@ -192,7 +192,7 @@ class RemoteCSEManager(object):
 			self.connectionMonitor = None
 
 		# Remove <csr> resources
-		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
+		if RC.cseType in [ CSEType.ASN, CSEType.MN ]:
 			try:
 				self._deleteOwnCSRonRegistrarCSE()	# delete remote CSR. Ignore result
 			except:
@@ -213,13 +213,13 @@ class RemoteCSEManager(object):
 			Return:
 				Always *True* to keep the worker running.
 		"""
-		if CSE.cseStatus != CSEStatus.RUNNING:
+		if RC.cseStatus != CSEStatus.RUNNING:
 			return True
 
 		try:
 
 			# Check the current state of the connection to the registrar CSE
-			if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
+			if RC.cseType in [ CSEType.ASN, CSEType.MN ]:
 
 				# when checkLiveliness == False then only check when there is no connection to registrar CSEs
 				if not Configuration.cse_registration_checkLiveliness:
@@ -232,7 +232,7 @@ class RemoteCSEManager(object):
 
 			# Check the liveliness of registree CSR connections
 			# Only when we validate the registrations
-			if CSE.cseType in [ CSEType.MN, CSEType.IN ]:
+			if RC.cseType in [ CSEType.MN, CSEType.IN ]:
 				if Configuration.cse_registration_checkLiveliness:	
 					self._checkRegistreeLiveliness()
 
@@ -290,7 +290,7 @@ class RemoteCSEManager(object):
 			return
 
 		# Add to the descendant CSE : (remoteCSR, this CSE's csi )
-		self.descendantCSR[registreeCSRcsi] = (registreeCSR, CSE.cseCsi)
+		self.descendantCSR[registreeCSRcsi] = (registreeCSR, RC.cseCsi)
 
 		# Update the own dcse list with the dcse's from the remoteCSR
 		if registreeCSR.dcse:	
@@ -304,7 +304,7 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Registree CSE registered {registreeCSRcsi}')
 		
 		# Update the registrar CSE with the new values
-		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
+		if RC.cseType in [ CSEType.ASN, CSEType.MN ]:
 			try:
 				self._updateCSRonRegistrarCSE()
 			except NOT_FOUND as e:
@@ -334,7 +334,7 @@ class RemoteCSEManager(object):
 			if dcse[1] == registreeCSRcsi:	# registered to deregistering remote CSE?
 				del self.descendantCSR[eachDescendantCsi]
 		
-		if CSE.cseType in [ CSEType.ASN, CSEType.MN ] and registreeCSR.csi != Configuration.cse_registrar_cseID:	# No need to update the own CSR on the registrar when deregistering anyway
+		if RC.cseType in [ CSEType.ASN, CSEType.MN ] and registreeCSR.csi != Configuration.cse_registrar_cseID:	# No need to update the own CSR on the registrar when deregistering anyway
 			self._updateCSRonRegistrarCSE()
 
 
@@ -368,7 +368,7 @@ class RemoteCSEManager(object):
 					continue
 				self.descendantCSR[eachDcse] = (None, registreeCsi)	# don't have the CSR for further descendants available
 
-		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
+		if RC.cseType in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
 			self._updateCSRonRegistrarCSE()
 
 
@@ -480,7 +480,7 @@ class RemoteCSEManager(object):
 			try:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 															   to = to,
-															   originator = CSE.cseCsi)
+															   originator = RC.cseCsi)
 													)[0].result		# there should be at least one result
 				if res.rsc != ResponseStatusCode.OK:
 					L.isWarn and L.logWarn(f'Registree CSE unreachable. Removing CSR: {eachCsr.rn if eachCsr else ""}')
@@ -506,7 +506,7 @@ class RemoteCSEManager(object):
 				A list of found CSR resources.
 		"""
 		registreeCsrList = []
-		for eachCSR in CSE.dispatcher.retrieveDirectChildResources(pi = CSE.cseRi, ty = ResourceTypes.CSR):
+		for eachCSR in CSE.dispatcher.retrieveDirectChildResources(pi = RC.cseRi, ty = ResourceTypes.CSR):
 			if eachCSR.csi == Configuration.cse_registrar_cseID:		# type: ignore[name-defined]
 				if includeRegistrarCSR: 	
 					registreeCsrList.append(eachCSR)
@@ -566,7 +566,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 													   to = self.csrOnRegistrarURI,
 													   _directURL = self.csrOnRegistrarURI,	# Fallback, because there might be no registration yet
-													   originator = CSE.cseCsi,
+													   originator = RC.cseCsi,
 													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))	# own CSE.csi is the originator
 										   )[0].result	# there should be at least one result
 		if not res.rsc == ResponseStatusCode.OK:
@@ -591,7 +591,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
 													   to = self.registrarCSEURI,
 													   _directURL = self.registrarCSEURL, 	# We may not have the resource yet, so we need to use the configured URL
-													   originator = CSE.cseCsi,		# own CSE.csi is the originator
+													   originator = RC.cseCsi,		# own CSE.csi is the originator
 													   ty = ResourceTypes.CSR, 
 													   pc = csrResource.asDict(),
 													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
@@ -632,7 +632,7 @@ class RemoteCSEManager(object):
 		
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
 													   to = self.csrOnRegistrarURI, 
-													   originator = CSE.cseCsi,  	# own CSE.csi is the originator
+													   originator = RC.cseCsi,  	# own CSE.csi is the originator
 													   pc = csr.asDict(), 
 													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
 										   )[0].result	# there should be at least one result
@@ -655,7 +655,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
 													   to = self.csrOnRegistrarURI,
 													   _directURL = self.registrarCSEURL,	# Fallback, because there might be no registration yet
-													   originator = CSE.cseCsi, 			# own CSE.csi is the originator
+													   originator = RC.cseCsi, 			# own CSE.csi is the originator
 													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
 										   )[0].result	# there should be at least one result
 
@@ -687,7 +687,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 													   to = self.registrarCSEURI,
 													   _directURL = self.registrarCSEURL,	# Fallback, because there might be no registration yet
-													   originator = CSE.cseCsi,				# own CSE.csi is the originator
+													   originator = RC.cseCsi,				# own CSE.csi is the originator
 													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
 										   )[0].result	# there should be at least one result
 
@@ -741,7 +741,7 @@ class RemoteCSEManager(object):
 			
 		# Assign fallback originator
 		if not originator:
-			originator = CSE.cseCsi
+			originator = RC.cseCsi
 		
 		# Retrieve the remote resource via its SP-relative ID
 		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id}')
@@ -817,8 +817,8 @@ class RemoteCSEManager(object):
 			Return:
 				The SP-relative */csi/ri* resource ID of the remote CSE, or *None* if not found.
 		"""
-		if csi == CSE.cseCsi:
-			return f'{CSE.cseCsi}/{CSE.cseRi}'
+		if csi == RC.cseCsi:
+			return f'{RC.cseCsi}/{RC.cseRi}'
 		if (csr := CSE.remote.getCSRFromPath(csi))[0] is None:
 			return None
 		return csr[0].cb

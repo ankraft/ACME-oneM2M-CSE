@@ -14,7 +14,7 @@ from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..etc.ACMEUtils import toSPRelative
@@ -177,7 +177,7 @@ class AnnounceableResource(Resource):
 		if isCreate:
 			dct:JSON = { tpe : {  # with the announced variant of the tpe
 							'et'	: self.et,
-							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
+							'lnk'	: f'{RC.cseCsi}/{self.ri}',
 						}
 				}
 			# Add more  attributes
@@ -194,7 +194,7 @@ class AnnounceableResource(Resource):
 				# body[attr] = self[attr]
 
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
+				acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
 				body['acpi'] = acpi
 
 

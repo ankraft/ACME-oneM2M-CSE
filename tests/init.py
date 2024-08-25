@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
+from dataclasses import dataclass
 
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit, base64, urllib
@@ -37,7 +38,7 @@ from coapthon.messages.request import Request as CoAPRequest
 from coapthon.messages.response import Response as	CoAPResponse
 
 
-from acme.etc import RequestUtils, DateUtils
+from acme.etc import DateUtils, RequestUtils
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.helpers.OAuth as OAuth
 from acme.helpers import CoAPthonTools
@@ -99,7 +100,6 @@ testVerbosity				= 2
 
 
 
-from dataclasses import dataclass
 
 @dataclass
 class MQTTTopics:
@@ -621,7 +621,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	except Exception as e:
 		# print(f'Failed to send request: {str(e)}')
 		return f'Failed to send request: {str(e)}', 5103
-	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
+	rc = int(r.headers.get(C.hfRSC, r.status_code))
 
 	# save last header for later
 	setLastHeaders(r.headers)
@@ -698,7 +698,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			# 		hds[f] = resp[k]
 			setLastHeaders(fillLastHeaders(resp))
 
-			return resp['pc'] if 'pc' in resp else None, resp['rsc']
+			return resp.get('pc'), resp['rsc']
 
 
 websockets:dict[str, ClientConnection] = dict()
@@ -765,15 +765,15 @@ def sendWsRequest(operation:Operation,
 				resp = RequestUtils.deserializeData(bytes(response, 'utf-8') if isinstance(response, str) else response,
 										 			ContentSerializationType.JSON)
 				setLastHeaders(fillLastHeaders(resp))
-				return resp['pc'] if 'pc' in resp else None, resp['rsc']
+				return resp.get('pc'), resp['rsc']
 			else:
 				console.print(response)
 				console.print('.', end='')
-				return None
+				return None, 0
 	except TimeoutError:	# expected
 		console.print('timeout')
 		pass
-	return None
+	return None, 0
 
 
 

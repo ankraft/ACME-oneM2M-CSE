@@ -20,6 +20,7 @@ from threading import Lock
 
 from ..etc.Types import CSEType, ResourceTypes
 from ..etc.DateUtils import utcTime, toISO8601Date
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
@@ -461,7 +462,7 @@ skinparam rectangle {
 		result += 'rectangle << CSE >> {\n'
 		address = urlparse(Configuration.http_address)
 		(ip, _) = tuple(address.netloc.split(':'))
-		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
+		result += f'node CSE as "<color:green>{RC.cseCsi[1:]}</color> ({RC.cseType.name})\\n{ip}" #white\n'
 
 		# Own http interface
 		http = 'https' if Configuration.http_security_useTLS else 'http'
@@ -480,7 +481,7 @@ skinparam rectangle {
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if CSE.cseType != CSEType.IN and Configuration.cse_registrar_address:
+		if RC.cseType != CSEType.IN and Configuration.cse_registrar_address:
 			registrarCSE = CSE.remote.registrarCSE
 			bg = 'white' if registrarCSE else 'lightgrey'
 			color = 'green' if registrarCSE else 'black'
@@ -492,7 +493,7 @@ skinparam rectangle {
 
 		
 		# Has CSE descendants?
-		if CSE.cseType != CSEType.ASN:
+		if RC.cseType != CSEType.ASN:
 			cnt = 0
 			connections = {}
 			for desc in CSE.remote.descendantCSR.keys():
@@ -509,7 +510,7 @@ skinparam rectangle {
 				connection = connections[key]
 				nodeNr = connection[0]
 				atCsi = connection[1]
-				if atCsi == CSE.cseCsi:
+				if atCsi == RC.cseCsi:
 					result += f'd{nodeNr} -UP- CSE\n'
 				else:
 					if atCsi in connections:

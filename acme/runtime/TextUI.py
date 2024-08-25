@@ -20,6 +20,7 @@ from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..etc.Types import CSEStatus
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.Interpreter import PContext
 
 from ..textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
@@ -105,7 +106,7 @@ class TextUI(object):
 		# Disable console logging
 		previousScreenLogging = L.enableScreenLogging
 		L.enableScreenLogging = False
-		while True and CSE.cseStatus == CSEStatus.RUNNING:
+		while True and RC.cseStatus == CSEStatus.RUNNING:
 			self.tuiApp = ACMETuiApp()
 			try:
 				asyncio.run(self.tuiApp.run())

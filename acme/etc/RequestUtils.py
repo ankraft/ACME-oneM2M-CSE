@@ -213,14 +213,14 @@ def requestFromResult(inResult:Result,
 	# TO and FROM are optional in a response. So, don't put them in by default.
 	if not isResponse or (isResponse and CSE.request.sendToFromInResponses):
 		if originator:
-			req['fr'] = CSE.cseCsi if isResponse else originator
+			req['fr'] = RC.cseCsi if isResponse else originator
 			req['to'] = inResult.request.id if inResult.request.id else originator
 		elif inResult.request and inResult.request.originator:
-			req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
+			req['fr'] = RC.cseCsi if isResponse else inResult.request.originator
 			req['to'] = inResult.request.originator if isResponse else inResult.request.id
 		else:
-			req['fr'] = CSE.cseCsi
-			req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
+			req['fr'] = RC.cseCsi
+			req['to'] = inResult.request.id if inResult.request.id else RC.cseCsi
 
 
 	# Originating Timestamp
@@ -367,9 +367,9 @@ def createRawRequest(**kwargs:Any) -> JSON:
 	from ..runtime import CSE 
 	from .ACMEUtils import uniqueRI	# Leave it here to avoid circular init
 
-	r = {	'fr': CSE.cseCsi,
+	r = {	'fr': RC.cseCsi,
 			'rqi': uniqueRI(),
-			'rvi': CSE.releaseVersion,
+			'rvi': RC.releaseVersion,
 		}
 	r.update(kwargs)
 	return r
@@ -406,7 +406,7 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 	req.resource			= req.request.pc
 	req.request.rqi			= uniqueRI()
 	if req.request.rvi != '1':
-		req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		req.request.rvi		= req.request.rvi if req.request.rvi is not None else RC.releaseVersion
 	req.request.ot			= getResourceDate()
 	req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 	req.request.ct			= req.request.ct if req.request.ct else RC.defaultSerialization 	# get the serialization
@@ -445,7 +445,7 @@ def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSEReques
 				dct[arg] = arguments.getOne(arg, greedy = True)
 
 			case 'rt':
-				if not (rt := cast(JSON, arguments.get('rt'))):	# if not yet in the req
+				if not (rt := cast(JSON, dct.get('rt'))):	# if not yet in the req
 					rt = {}
 				rt['rtv'] = arguments.getOne(arg, greedy = True)	# type: ignore [assignment]
 				dct['rt'] = rt

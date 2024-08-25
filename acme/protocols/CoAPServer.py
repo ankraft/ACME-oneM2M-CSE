@@ -680,7 +680,7 @@ class ACMECoAPServer(CoAP):
 			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, request.rqi))
 			# Release version
 			if request.rvi != '1':
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, request.rvi if request.rvi is not None else CSE.releaseVersion))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, request.rvi if request.rvi is not None else RC.releaseVersion))
 			# Originating Timestamp
 			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OT.number, request.ot if request.ot else getResourceDate()))
 			# Event Category

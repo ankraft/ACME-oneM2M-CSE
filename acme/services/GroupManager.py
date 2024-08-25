@@ -20,6 +20,7 @@ from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARG
 from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
 from ..etc.ACMEUtils import isSPRelative, csiFromSPRelative, structuredPathFromRI
 from ..etc.DateUtils import utcTime
+from ..etc.Constants import RuntimeConstants as RC
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
@@ -115,7 +116,7 @@ class GroupManager(object):
 			isLocalResource = True
 			#Check whether it is a local resource or not
 			if isSPRelative(mid):
-				if csiFromSPRelative(mid) != CSE.cseCsi:
+				if csiFromSPRelative(mid) != RC.cseCsi:
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
 					# if not (url := CSE.request._getForwardURL(mid)):
@@ -123,7 +124,7 @@ class GroupManager(object):
 					L.isDebug and L.logDebug(f'Retrieve request to: {mid}')
 					remoteResult = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 																			to = mid, 
-																			originator = CSE.cseCsi)
+																			originator = RC.cseCsi)
 																)[0].result	# there should be at least one result
 
 			# get the resource and check it

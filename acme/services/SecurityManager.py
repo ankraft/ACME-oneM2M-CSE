@@ -20,6 +20,7 @@ from ..etc.Types import ResourceTypes, Permission, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
 from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration, ConfigurationError
@@ -163,21 +164,21 @@ class SecurityManager(object):
 		#
 		# grant full access to the CSE originator
 		#
-		if originator is None or originator == CSE.cseOriginator or originator.endswith(CSE.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
+		if originator is None or originator == RC.cseOriginator or originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
 
 		#
 		# Always allow the CSE to NOTIFY
 		#
-		if requestedPermission == Permission.NOTIFY and originator == CSE.cseCsi:
+		if requestedPermission == Permission.NOTIFY and originator == RC.cseCsi:
 			L.isDebug and L.logDebug(f'NOTIFY permission granted for CSE: {originator}')
 			return True
 
 		#
 		# Preparation: Remove CSE-ID if this is the same CSE
 		#
-		if isSPRelative(originator) and originator.startswith(CSE.cseCsiSlash):
+		if isSPRelative(originator) and originator.startswith(RC.cseCsiSlash):
 			L.isDebug and L.logDebug(f'Originator: {originator} is registered to same CSE. Converting it to CSE-Relative format.')
 			originator = toCSERelative(originator)
 			L.isDebug and L.logDebug(f'Converted originator: {originator}')
@@ -710,7 +711,7 @@ class SecurityManager(object):
 		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
 		
 		# Always allow for the hosting CSE
-		if originator in [CSE.cseCsi, CSE.cseSPRelative] :
+		if originator in [RC.cseCsi, RC.cseSPRelative] :
 			return True
 
 		for ao in allowedOriginators:

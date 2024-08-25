@@ -16,9 +16,9 @@ from .ACMEViewResponse import ACMEViewResponse
 from .ACMEViewRequest import ACMEViewRequest
 
 from ..etc.Types import Operation
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.ResourceSemaphore import CriticalSection, inCriticalSection
 from ..resources.Resource import Resource
-from ..runtime import CSE
 
 class ACMEContainerUpdate(Container):
 
@@ -34,7 +34,7 @@ class ACMEContainerUpdate(Container):
 
 		super().__init__(id = id)
 
-		self.requestOriginator = CSE.cseOriginator
+		self.requestOriginator = RC.cseOriginator
 		"""	The request originator. """
 
 		self.resource:Resource = None
@@ -84,9 +84,9 @@ class ACMEContainerUpdate(Container):
 		# Update the request originator. Important for getting a default request originator
 		self.requestOriginator = self.resource.getOriginator()
 		if self.requestOriginator:	
-			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+			self.requestView.updateOriginator(self.requestOriginator, [RC.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
-			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator])
+			self.requestView.updateOriginator(self.requestOriginator, [RC.cseOriginator])
 
 		# Update the request view
 		self.requestView.updateResourceView(self.resource, 

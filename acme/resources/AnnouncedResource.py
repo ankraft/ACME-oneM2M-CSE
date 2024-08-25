@@ -10,6 +10,7 @@
 from typing import Optional
 from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON, CSERequest, Operation
 from ..etc.ResponseStatusCodes import ResponseException
+from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
@@ -43,7 +44,7 @@ class AnnouncedResource(Resource):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
 														 to = self.lnk, 
-														 originator = CSE.cseCsi, 
+														 originator = RC.cseCsi, 
 														 pc = content))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Cannot update original resource on remote CSE: {self.lnk} : {e.dbg}')

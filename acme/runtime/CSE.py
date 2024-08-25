@@ -20,7 +20,7 @@ from threading import Lock
 from configparser import ConfigParser
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..etc.Constants import RuntimeConstants as RC
+from ..etc.Constants import Constants as C, RuntimeConstants as RC
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, CSEType, ContentSerializationType, LogLevel
@@ -55,8 +55,7 @@ from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
-
-
+##############################################################################
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
@@ -137,68 +136,11 @@ webSocketServer:WebSocketServer	= None
 """	Runtime instance of the `WebSocketServer`. """
 
 
+
 # Global variables to hold various (configuation) values.
-
-supportedReleaseVersions:list[str] = None
-"""	List of the supported release versions. """
-
-cseType:CSEType = None
-""" The kind of CSE: IN, MN, or ASN. """
-
-cseCsi:str = None
-""" The CSE-ID. """
-
-cseCsiSlash:str = None
-""" The CSE-ID with an additional trailing /. """
-
-cseCsiSlashLess:str = None
-""" The CSE-ID without the leading /. """
-
-cseSpid:str = None
-""" The Service Provider ID. """
-
-cseSPRelative:str = None
-"""	The SP-Relative CSE-ID. """
-
-cseAbsolute:str = None
-""" The CSE's Absolute prefix (SP-ID/CSE-ID). """
-
-cseAbsoluteSlash:str = None
-""" The CSE's Absolute prefix with an additional trailing /. """
-
-cseRi:str = None
-""" The CSE's Resource ID. """
-
-cseRn:str = None
-""" The CSE's Resource Name. """
-
-cseOriginator:str = None
-"""	The CSE's admin originator, e.g. "CAdmin". """
-
-slashCseOriginator:str = None
-"""	The CSE's admin originator with a leading /. """
-
-csePOA:list[str] = []
-""" The CSE's point-of-access's. """
-
-
-releaseVersion:str = None
-""" The default / preferred release version. """
-
-isHeadless = False
-""" Indicator whether the CSE is running in headless mode. """
-
-cseStatus:CSEStatus = CSEStatus.STOPPED
-""" The CSE's internal runtime status. """
-
-cseActiveSchedule:list[str] = []
-""" List of active schedules when the CSE is active and will process requests. """
 
 _cseResetLock = Lock()
 """ Internal CSE's lock when resetting. """
-
-_cseStartupDelay:float = 2.0
-""" Internal CSE's startup delay. """
 
 ##############################################################################
 
@@ -215,13 +157,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
 	global timeSeries, validator, webSocketServer
-	global supportedReleaseVersions, cseType, cseCsi, cseCsiSlash, cseCsiSlashLess, cseAbsoluteSlash
-	global cseSpid, cseSPRelative, cseAbsolute, cseRi, cseRn, releaseVersion, csePOA
-	global cseOriginator, slashCseOriginator
-	global isHeadless, cseStatus
 
 	# Set status
-	cseStatus = CSEStatus.STARTING
+	RC.cseStatus = CSEStatus.STARTING
 
 	# Handle command line arguments and load the configuration
 	if not args:
@@ -236,38 +174,39 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	event = EventManager()					# Initialize the event manager before anything else
 
 	if not Configuration.init(args):
-		cseStatus = CSEStatus.STOPPED
+		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
 	# Initialize configurable constants
 	# cseType					 = Configuration.cse_type
-	supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
-	cseType					 = cast(CSEType, Configuration.cse_type)
-	cseCsi					 = Configuration.cse_cseID
-	cseCsiSlash				 = f'{cseCsi}/'
-	cseCsiSlashLess			 = cseCsi[1:]
-	cseSpid					 = Configuration.cse_serviceProviderID
-	cseAbsoluteSlash		 = f'{cseAbsolute}/'
-	cseRi					 = Configuration.cse_resourceID
-	cseRn					 = Configuration.cse_resourceName
-	cseOriginator			 = Configuration.cse_originator
-	slashCseOriginator		= f'/{cseOriginator}'
+	RC.supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
+	RC.cseType = cast(CSEType, Configuration.cse_type)
+	RC.cseCsi = Configuration.cse_cseID
+	RC.cseRn = Configuration.cse_resourceName
+	RC.cseRi = Configuration.cse_resourceID
+	RC.cseCsiSlash = f'{RC.cseCsi}/'
+	RC.cseCsiSlashLen = len(RC.cseCsiSlash)
+	RC.cseCsiSlashLess = RC.cseCsi[1:]
+	RC.cseSpid = Configuration.cse_serviceProviderID
+	RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
+	RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
+	RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
+	RC.cseOriginator = Configuration.cse_originator
+	RC.slashCseOriginator = f'/{RC.cseOriginator}'
 
-	cseSPRelative			 = f'{cseCsi}/{cseRn}'
-	cseAbsolute				 = f'//{cseSpid}{cseSPRelative}'
 
-	RC.defaultSerialization	 = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
-	releaseVersion 			 = Configuration.cse_releaseVersion
-	isHeadless				 = Configuration.console_headless
+	RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
+	RC.releaseVersion = Configuration.cse_releaseVersion
+	RC.isHeadless = Configuration.console_headless
 
 	# Set the CSE's point-of-access
-	csePOA = [ Configuration.http_address ]
+	RC.csePOA = [ Configuration.http_address ]
 	if Configuration.mqtt_enable:
-		csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
+		RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
 	if Configuration.websocket_enable:
-		csePOA.append(Configuration.websocket_address)
+		RC.csePOA.append(Configuration.websocket_address)
 	if Configuration.coap_enable:
-		csePOA.append(Configuration.coap_address)
+		RC.csePOA.append(Configuration.coap_address)
 
 	#
 	# init Logging
@@ -275,7 +214,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.init()
 	L.queueOff()				# No queuing of log messages during startup
 	L.log('Starting CSE')
-	L.log(f'CSE-Type: {cseType.name}')
+	L.log(f'CSE-Type: {RC.cseType.name}')
 	for l in Configuration.print().split('\n'):
 		L.logDebug(l)
 	
@@ -329,40 +268,40 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		# When this fails, we cannot continue with the CSE startup
 		importer = Importer()
 		if not importer.doImport():
-			cseStatus = CSEStatus.STOPPED
+			RC.cseStatus = CSEStatus.STOPPED
 			return False
 		
 		# Start the HTTP server
 		if not httpServer.run(): 						# This does return (!)
 			L.logErr('Terminating', showStackTrace = False)
-			cseStatus = CSEStatus.STOPPED
+			RC.cseStatus = CSEStatus.STOPPED
 			return False 					
 
 		# Start the CoAP server
 		if not coapServer.run():					# This does return
 			L.logErr('Terminating', showStackTrace = False)
-			cseStatus = CSEStatus.STOPPED
+			RC.cseStatus = CSEStatus.STOPPED
 			return False
 
 		# Start the MQTT client
 		if not mqttClient.run():				# This does return
 			L.logErr('Terminating', showStackTrace = False)
-			cseStatus = CSEStatus.STOPPED
+			RC.cseStatus = CSEStatus.STOPPED
 			return False 
 
 		# Start the WebSocket server
 		if not webSocketServer.run():			# This does return
 			L.logErr('Terminating', showStackTrace = False)
-			cseStatus = CSEStatus.STOPPED
+			RC.cseStatus = CSEStatus.STOPPED
 			return False
 	
 	except ResponseException as e:
 		L.logErr(f'Error during startup: {e.dbg}')
-		cseStatus = CSEStatus.STOPPED
+		RC.cseStatus = CSEStatus.STOPPED
 		return False
 	except Exception as e:
 		L.logErr(f'Error during startup: {e}', exc = e)
-		cseStatus = CSEStatus.STOPPED
+		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
 	# Enable log queuing
@@ -374,15 +313,14 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	def _startUpFinished() -> None:
 		"""	Internal function to print the CSE startup message after a delay
 		"""
-		global cseStatus
-		cseStatus = CSEStatus.RUNNING
+		RC.cseStatus = CSEStatus.RUNNING
 		# Send an event that the CSE startup finished
 		event.cseStartup()	# type: ignore
 
 		L.console('CSE started')
 		L.log('CSE started')
 
-	BackgroundWorkerPool.newActor(_startUpFinished, delay = _cseStartupDelay if isHeadless else _cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
+	BackgroundWorkerPool.newActor(_startUpFinished, delay = C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
 	
 	return True
 
@@ -393,14 +331,12 @@ def shutdown() -> None:
 
 		The actual shutdown happens in the _shutdown() method.
 	"""
-	global cseStatus
-	
-	if cseStatus in [ CSEStatus.STOPPING, CSEStatus.STOPPED ]:
+	if RC.cseStatus in [ CSEStatus.STOPPING, CSEStatus.STOPPED ]:
 		return
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	cseStatus = CSEStatus.STOPPING
+	RC.cseStatus = CSEStatus.STOPPING
 	if console:
 		console.stop()				# This will end the main run loop.
 	
@@ -412,12 +348,10 @@ def shutdown() -> None:
 def _shutdown() -> None:
 	"""	Shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
-	global cseStatus
-
-	if cseStatus != CSEStatus.RUNNING:
+	if RC.cseStatus != CSEStatus.RUNNING:
 		return
 		
-	cseStatus = CSEStatus.STOPPING
+	RC.cseStatus = CSEStatus.STOPPING
 	L.queueOff()
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
@@ -452,16 +386,14 @@ def _shutdown() -> None:
 	L.console('CSE shut down', nlb = True)
 
 	L.finit()
-	cseStatus = CSEStatus.STOPPED
+	RC.cseStatus = CSEStatus.STOPPED
 
 
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
-	global cseStatus
-
 	with _cseResetLock:
-		cseStatus = CSEStatus.RESETTING
+		RC.cseStatus = CSEStatus.RESETTING
 		L.isWarn and L.logWarn('Resetting CSE started')
 		L.enableScreenLogging = Configuration.logging_enableScreenLogging	# Set screen logging to the originally configured values
 
@@ -495,17 +427,17 @@ def resetCSE() -> None:
 		# Send restart event
 		event.cseRestarted()	# type: ignore [attr-defined]   
 
-		cseStatus = CSEStatus.RUNNING
+		RC.cseStatus = CSEStatus.RUNNING
 		L.isWarn and L.logWarn('Resetting CSE finished')
 
 
 def run() -> None:
 	"""	Run the CSE.
 	"""
-	if waitFor(_cseStartupDelay * 3, lambda: cseStatus == CSEStatus.RUNNING):
+	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus == CSEStatus.RUNNING):
 		console.run()
 	else:
-		raise TimeoutError(L.logErr(f'CSE did not start within {_cseStartupDelay * 3} seconds'))
+		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))
 
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
@@ -567,7 +499,7 @@ def validateConfiguration(config:Configuration, initial:Optional[bool] = False) 
 			case 'in':
 				config.cse_type = CSEType.IN
 			case _:
-				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:type: {cseType}')
+				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:type: {RC.cseType}')
 
 	# CSE Serialization
 	if isinstance(config.cse_defaultSerialization, str):

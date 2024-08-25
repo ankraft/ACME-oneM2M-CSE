@@ -202,8 +202,8 @@ class MQTTClientHandler(MQTTHandler):
 								'json', 
 								theme='monokai',
 								line_numbers=False))
-				to 	= jsn['to'] if 'to' in jsn else _to
-				frm = jsn['fr'] if 'fr' in jsn else _frm
+				to 	= jsn.get('to', _to)
+				frm = jsn.get('fr', _frm)
 				responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.JSON))
 				console.print(responseData)
 			# Print CBOR
@@ -215,8 +215,8 @@ class MQTTClientHandler(MQTTHandler):
 								'json', 
 								theme='monokai',
 								line_numbers=False))		
-				to 	= jsn['to'] if 'to' in jsn else to
-				frm = jsn['fr'] if 'fr' in jsn else frm
+				to 	= jsn.get('to', to)
+				frm = jsn.get('fr', frm)
 				responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.CBOR))
 			# Print other binary content
 			case _:

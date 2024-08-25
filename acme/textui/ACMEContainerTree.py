@@ -24,6 +24,7 @@ from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import commentJson, limitLines
 from .ACMEContainerCreate import ACMEContainerCreate
 from .ACMEContainerDelete import ACMEContainerDelete
@@ -52,7 +53,7 @@ class ACMEResourceTree(TextualTree):
 		self.auto_expand = False
 		self.select_node(None)
 		prevType = ''
-		for resource in self._retrieve_resource_children(CSE.cseRi):
+		for resource in self._retrieve_resource_children(RC.cseRi):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
 				self.root.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
@@ -234,7 +235,7 @@ class ACMEContainerTree(Container):
 
 	def compose(self) -> ComposeResult:
 		with Container():
-			yield ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view', parentContainer = self)
+			yield ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
 			with TabbedContent(id = 'tree-tabs'):
 				with TabPane('Resource', id = 'tree-tab-resource'):
 					with Container(id = 'resource-view-container'):

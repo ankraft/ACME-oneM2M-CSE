@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.rule import Rule
 from rich.style import Style
 
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 
 from ..helpers import NetworkTools
 
@@ -82,8 +82,7 @@ def _print(msg:str|Rule = '\n') -> None:
 		Args:
 			msg: The message to print.
 	"""
-	from ..runtime import CSE
-	if not CSE.isHeadless:
+	if not RC.isHeadless:
 		if isinstance(msg, Rule):
 			Console().print('\n')
 		Console().print(msg, highlight = False)	# Print error message to console

@@ -18,6 +18,7 @@ from ..etc.Constants import Constants
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
+from ..etc.Constants import RuntimeConstants as RC
 
 # TODO notificationCongestionPolicy
 
@@ -83,11 +84,11 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('csi', '/cse', overwrite = False)
 
 		self.setAttribute('rr', False, overwrite = False)
-		self.setAttribute('poa', CSE.csePOA, overwrite = False)	
-		self.setAttribute('cst', CSE.cseType, overwrite = False)
+		self.setAttribute('poa', RC.csePOA, overwrite = False)	
+		self.setAttribute('cst', RC.cseType, overwrite = False)
 		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
 		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations())
-		self.setAttribute('srv', CSE.supportedReleaseVersions)			# This must be a list
+		self.setAttribute('srv', RC.supportedReleaseVersions)			# This must be a list
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
 		self.delAttribute('et', setNone = False)	
@@ -147,4 +148,4 @@ def getCSE() -> CSEBase:	# Actual: CSEBase Resource
 		Return:
 			<CSEBase> resource.
 	"""
-	return resourceFromCSI(CSE.cseCsi)
+	return resourceFromCSI(RC.cseCsi)

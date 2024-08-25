@@ -16,9 +16,9 @@ from .ACMEViewResponse import ACMEViewResponse
 from .ACMEViewRequest import ACMEViewRequest
 
 from ..etc.Types import Operation, ResourceTypes
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.ResourceSemaphore import CriticalSection, inCriticalSection
 from ..resources.Resource import Resource
-from ..runtime import CSE
 
 
 class ACMEContainerCreate(Container):
@@ -35,7 +35,7 @@ class ACMEContainerCreate(Container):
 
 		super().__init__(id = id)
 
-		self.requestOriginator = CSE.cseOriginator
+		self.requestOriginator = RC.cseOriginator
 		"""	The request originator. """
 
 		self.resource:Resource = None

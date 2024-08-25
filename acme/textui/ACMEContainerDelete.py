@@ -15,9 +15,10 @@ from textual.containers import Container
 from .ACMEViewRequest import ACMEViewRequest
 from .ACMEViewResponse import ACMEViewResponse
 from ..etc.Types import Operation
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..resources.Resource import Resource
-from ..runtime import CSE
+
 
 
 class ACMEContainerDelete(Container):
@@ -32,7 +33,7 @@ class ACMEContainerDelete(Container):
 		"""
 		super().__init__(id = id)
 
-		self.requestOriginator = CSE.cseOriginator
+		self.requestOriginator = RC.cseOriginator
 		"""	The request originator. """
 
 		self.resource:Resource = None
@@ -77,9 +78,9 @@ class ACMEContainerDelete(Container):
 		# Update the request originator. Important for getting a default request originator
 		self.requestOriginator = self.resource.getOriginator()
 		if self.requestOriginator:	
-			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator, self.requestOriginator])
+			self.requestView.updateOriginator(self.requestOriginator, [RC.cseOriginator, self.requestOriginator])
 		else: # No originator, use CSE originator
-			self.requestView.updateOriginator(self.requestOriginator, [CSE.cseOriginator])
+			self.requestView.updateOriginator(self.requestOriginator, [RC.cseOriginator])
 		self.responseView.clear()
 	
 

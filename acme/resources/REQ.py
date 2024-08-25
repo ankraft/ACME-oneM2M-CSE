@@ -17,6 +17,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERe
 from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
@@ -126,7 +127,7 @@ class REQ(Resource):
 						'fo': request.fc.fo,
 					},
 					'drt': request.drt,
-					'rvi': request.rvi if request.rvi else CSE.releaseVersion,
+					'rvi': request.rvi if request.rvi else RC.releaseVersion,
 					'vsi': request.vsi,
 					'sqi': request.sqi,
 				},
@@ -149,7 +150,7 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		return Factory.resourceFromDict(dct, pi = CSE.cseRi, ty = ResourceTypes.REQ)
+		return Factory.resourceFromDict(dct, pi = RC.cseRi, ty = ResourceTypes.REQ)
 
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:

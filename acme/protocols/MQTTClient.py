@@ -19,6 +19,7 @@ from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromU
 from ..etc.DateUtils import waitFor
 from ..etc.ACMEUtils import csiFromSPRelative
 from ..etc.Utils import renameThread
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..runtime.Configuration import Configuration, ConfigurationError
@@ -61,9 +62,9 @@ class MQTTClientHandler(MQTTHandler):
 		"""
 		super().onConnect(connection)
 		L.isDebug and L.logDebug('Connected to MQTT broker')
-		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/req/+/{idToMQTT(CSE.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
-		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
-		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/reg_req/+/{idToMQTT(CSE.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/req/+/{idToMQTT(RC.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/resp/{idToMQTT(RC.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/reg_req/+/{idToMQTT(RC.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
 		return True
 
 
@@ -412,7 +413,7 @@ class MQTTClient(object):
 												port				= port,
 												keepalive			= Configuration.mqtt_keepalive,
 												interface			= Configuration.mqtt_listenIF,
-												clientID			= idToMQTTClientID(CSE.cseCsi),
+												clientID			= idToMQTTClientID(RC.cseCsi),
 												useTLS				= useTLS,
 												caFile				= Configuration.mqtt_security_caCertificateFile,
 												verifyCertificate	= Configuration.mqtt_security_verifyCertificate,
@@ -475,7 +476,7 @@ class MQTTClient(object):
 		# req.resource			= req.request.pc
 		# req.request.rqi			= uniqueRI()
 		# if req.request.rvi != '1':
-		# 	req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		# 	req.request.rvi		= req.request.rvi if req.request.rvi is not None else RC.releaseVersion
 		# req.request.ot			= getResourceDate()
 		# req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		# req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
@@ -490,14 +491,14 @@ class MQTTClient(object):
 		# Build the topic
 		if not len(topic):
 			# Miguel's proposal
-			# topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
-			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
+			#topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 			
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:

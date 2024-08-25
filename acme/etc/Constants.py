@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from ..etc.Types import ContentSerializationType
+	from ..etc.Types import ContentSerializationType, CSEType, CSEStatus
 
 
 class Constants(object):
@@ -175,6 +175,14 @@ class Constants(object):
 
 
 	#
+	#	Internal CSE's startup delay
+	#
+
+	cseStartupDelay:float = 2.0
+	""" Internal CSE's startup delay. """
+
+
+	#
 	#	Magic strings and numbers
 	#
 
@@ -192,5 +200,59 @@ class Constants(object):
 class RuntimeConstants(object):
 	""" Various runtime constants, determined during startup of the CSE """
 
+	cseAbsolute:str = None
+	""" The CSE's Absolute prefix (SP-ID/CSE-ID). """
+
+	cseAbsoluteSlash:str = None
+	""" The CSE's Absolute prefix with an additional trailing /. """
+
+	cseCsi:str = None
+	""" The CSE-ID. """
+
+	cseCsiSlash:str = None
+	""" The CSE-ID with an additional trailing /. """
+
+	cseCsiSlashLen:int = 0
+	""" Length of the CSI with a slash. """
+
+	cseCsiSlashLess:str = None
+	""" The CSE-ID without the leading /. """
+
+	cseOriginator:str = None
+	"""	The CSE's admin originator, e.g. "CAdmin". """
+
+	csePOA:list[str] = []
+	""" The CSE's point-of-access's. """
+
+	cseRi:str = None
+	""" The CSE's Resource ID. """
+
+	cseRn:str = None
+	""" The CSE's Resource Name. """
+
+	slashCseOriginator:str = None
+	"""	The CSE's admin originator with a leading /. """
+
+	cseSpid:str = None
+	""" The Service Provider ID. """
+
+	cseSPRelative:str = None
+	"""	The SP-Relative CSE-ID. """
+
+	cseStatus:CSEStatus = None
+	""" The CSE's internal runtime status. """
+
+	cseType:CSEType = None
+	""" The kind of CSE: IN, MN, or ASN. """
+
 	defaultSerialization:ContentSerializationType = None
 	""" The default / preferred content serialization type. """
+
+	isHeadless = False
+	""" Indicator whether the CSE is running in headless mode. """
+
+	releaseVersion:str = None
+	""" The default / preferred release version. """
+
+	supportedReleaseVersions:list[str] = None
+	"""	List of the supported release versions. """

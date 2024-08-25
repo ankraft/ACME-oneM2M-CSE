@@ -18,7 +18,9 @@ import random, string, sys, re
 from .Constants import Constants
 from .Types import ResourceTypes
 from .Types import JSON
-from ..runtime import CSE as CSE
+from ..runtime import CSE
+from ..etc.Constants import RuntimeConstants as RC
+
 
 # Optimize access (fewer look-up)
 _maxIDLength = Constants.maxIDLength
@@ -160,7 +162,7 @@ def isStructured(uri:str) -> bool: # type: ignore[return]
 	"""
 	match uri:
 		case x if isCSERelative(uri):
-			return '/' in uri or uri == CSE.cseRn
+			return '/' in uri or uri == RC.cseRn
 		case x if isSPRelative(uri):
 			return uri.count('/') > 2
 		case x if isAbsolute(uri):
@@ -202,23 +204,23 @@ def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 				The resource ID with the special case handled.
 		"""
 		if ri.startswith('-/'):
-			return f'{CSE.cseRn}{ri[1:]}'
+			return f'{RC.cseRn}{ri[1:]}'
 		if ri == '-':
-			return CSE.cseRn
+			return RC.cseRn
 		return ri
 
 
-	if ri == CSE.cseCsi:
-		return CSE.cseRn
+	if ri == RC.cseCsi:
+		return RC.cseRn
 	
 	match ri:
 		case x if isAbsolute(x):
-			if ri.startswith(CSE.cseAbsoluteSlash):
-				return _checkDash(ri[len(CSE.cseAbsoluteSlash):])
+			if ri.startswith(RC.cseAbsoluteSlash):
+				return _checkDash(ri[len(RC.cseAbsoluteSlash):])
 			return None
 		case x if isSPRelative(x):
-			if ri.startswith(CSE.cseCsiSlash):
-				return _checkDash(ri[len(CSE.cseCsiSlash):])
+			if ri.startswith(RC.cseCsiSlash):
+				return _checkDash(ri[len(RC.cseCsiSlash):])
 			return None
 		case _:
 			return ri
@@ -415,13 +417,13 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 
 		# CSE-Relative (first element is not /)
 		case 0:
-			if idsLen == 1 and ((ids[0] != CSE.cseRn and ids[0] != '-') or ids[0] == CSE.cseCsiSlashLess):	# unstructured
+			if idsLen == 1 and ((ids[0] != RC.cseRn and ids[0] != '-') or ids[0] == RC.cseCsiSlashLess):	# unstructured
 				ri = ids[0]
 			else:							# structured
 				if ids[0] == '-':			# replace placeholder "-". Always convert in CSE-relative
-					ids[0] = CSE.cseRn
+					ids[0] = RC.cseRn
 				srn = '/'.join(ids)
-			csi = CSE.cseCsi
+			csi = RC.cseCsi
 
 		# SP-Relative (first element is /)
 		case 1:
@@ -429,14 +431,14 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 			if idsLen < 2:
 				return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
 			csi = ids[0]					# extract the csi
-			if csi != CSE.cseCsiSlashLess:	# Not for this CSE? retargeting
+			if csi != RC.cseCsiSlashLess:	# Not for this CSE? retargeting
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, None	# Early return. ri is the (un)structured path
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
-			if ids[1] == '-' and ids[0] == CSE.cseCsiSlashLess:	
-				ids[1] = CSE.cseRn
-			if ids[1] == CSE.cseRn:			# structured
+			if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
+				ids[1] = RC.cseRn
+			if ids[1] == RC.cseRn:			# structured
 				srn = '/'.join(ids[1:])		# remove the csi part
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
@@ -451,17 +453,17 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 				return None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
 			spi = ids[0]
 			csi = ids[1]
-			if spi != CSE.cseSpid:			# Check for SP-ID
-				return None, None, None, f'SP-ID: {CSE.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
-			if csi != CSE.cseCsiSlashLess:	# Check for CSE-ID
+			if spi != RC.cseSpid:			# Check for SP-ID
+				return None, None, None, f'SP-ID: {RC.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
+			if csi != RC.cseCsiSlashLess:	# Check for CSE-ID
 				if vrPresent:				# append virtual last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, None	# Not for this CSE? retargeting
 
 			# replace placeholder "-", convert in absolute when the target is this CSE
-			if ids[2] == '-' and ids[1] == CSE.cseCsiSlashLess:	
-				ids[2] = CSE.cseRn
-			if ids[2] == CSE.cseRn:			# structured
+			if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
+				ids[2] = RC.cseRn
+			if ids[2] == RC.cseRn:			# structured
 				srn = '/'.join(ids[2:])
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
@@ -520,7 +522,7 @@ def toSPRelative(id:str) -> str:
 			A string in the format */<csi>/<id>*.
 	"""
 	if not isSPRelative(id):
-		return  f'{CSE.cseCsi}/{id}'
+		return  f'{RC.cseCsi}/{id}'
 	return id
 
 

@@ -111,8 +111,8 @@ class SCH(AnnounceableResource):
 
 		# Set the active schedule in the CSE when updated
 		if parentResource.ty == ResourceTypes.CSEBase:
-			CSE.cseActiveSchedule = self.getFinalResourceAttribute('se/sce', dct)
-			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.cseActiveSchedule}')
+			CSE.time.cseActiveSchedule = self.getFinalResourceAttribute('se/sce', dct)
+			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.time.cseActiveSchedule}')
 
 
 	def deactivate(self, originator: str) -> None:
