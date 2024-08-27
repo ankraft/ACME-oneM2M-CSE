@@ -120,12 +120,15 @@ class HttpServer(object):
 
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
+		print(f'WebUI root: {Configuration.webui_root}')
 		self.webui = WebUI(self.flaskApp, 
 						   defaultRI = RC.cseRi, 
 						   defaultOriginator = RC.cseOriginator, 
 						   root = Configuration.webui_root,
 						   webuiDirectory = self.webuiDirectory,
-						   version = Constants.version)
+						   redirectURL= f'{Configuration.http_address}{Configuration.http_root}' if Configuration.http_root else None,
+						   version = Constants.version,
+						   httpRoot = Configuration.http_root)
 
 		# Enable the config endpoint
 		if Configuration.http_enableStructureEndpoint:

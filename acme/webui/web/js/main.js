@@ -13,6 +13,15 @@ function getChildren(node, errorCallback) {
   // get children
   //var ri = resource['ri'] + "?fu=1&lvl=1&rcn=6" // TODO move this to the getchildren request
   var ri = resource['ri'] + "?lvl=1&rcn=6" // TODO move this to the getchildren request
+
+  httpRoot = document.getElementById("httproot").value;
+  if (httpRoot.length > 0) {
+	ri = httpRoot + '/' + ri
+	while (ri.includes("//")) {	// remove double slashes
+		ri = ri.replace("//", "/")
+	}	
+  }
+
   var client = new HttpClient();
   // addr = cseid + "/" + ri
   client.getChildren(ri, node, function(response) { // TODo
@@ -98,6 +107,14 @@ function getChildren(node, errorCallback) {
 
 
 function getResource(ri, node, callback) {
+  httpRoot = document.getElementById("httproot").value;
+  if (httpRoot.length > 0) {
+	ri = httpRoot + '/' + ri
+	while (ri.includes("//")) {	// remove double slashes
+		ri = ri.replace("//", "/~/")
+	}	
+  }	
+
   _getResource(ri, node, function(node) { 
     document.getElementById("connectButton").className = "button success"
     document.getElementById("connectButton").text = "Connected"
@@ -254,9 +271,17 @@ function setup() {
   var riField = document.getElementById("baseri");
   cseid = getUrlParameterByName("ri")
   riField.value = cseid
+  
   var orField = document.getElementById("originator");
   originator = getUrlParameterByName("or")
   orField.value = originator
+
+  var hrField = document.getElementById("httproot");
+  httpRoot = getUrlParameterByName("hr")
+  if (httpRoot.startsWith("/")) {
+	httpRoot = httpRoot.slice(1)
+  }
+  hrField.value = httpRoot
   
   // open the UI immediately if the parameter is present
   openOnStart = getUrlParameterByName("open")
@@ -264,7 +289,7 @@ function setup() {
   document.title = "ACME CSE - " + cseid
 
 
-  getTextFromServer("/__version__", function(version) {
+  getTextFromServer("__version__", function(version) {
     var f = document.getElementById("version");
     f.innerHTML = version;
   })
