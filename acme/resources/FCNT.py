@@ -165,7 +165,7 @@ class FCNT(ContainerResource):
 		
 		# Validate containerDefinition
 		if dct is None:	# create
-			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe))[0]:
+			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe)):
 				if t[0] != self.cnd:
 					raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}'))
 

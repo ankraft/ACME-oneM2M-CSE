@@ -33,6 +33,7 @@ from .ACMEContainerDiagram import ACMEContainerDiagram
 from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
 
+
 class ACMEResourceTree(TextualTree):
 
 
@@ -133,7 +134,7 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'{resource.rn} ({ResourceTypes.fullname(resource.ty)})' if resource else '')
+		self.parentContainer.setResourceHeader(f'{resource.rn} ({_getResourceTypeAsString(resource)})' if resource else '')
 		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri})' if resource else '')
 
 		# Set the visibility of the tabs
@@ -298,10 +299,11 @@ class ACMEContainerTree(Container):
 			# When clicking on the top border: Copy the resource name or type
 			elif event.y == 0:
 				v = self.currentResource.rn
-				ri = ResourceTypes.fullname(self.currentResource.ty)
+				rt = ResourceTypes.fullname(self.currentResource.ty)
+				rt = _getResourceTypeAsString(self.currentResource)
 				t = 'Resource Name Copied'
-				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
-					v = ri
+				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(rt):
+					v = rt
 					t = 'Resource Type Copied'
 				pyperclip.copy(v)
 				self._app.showNotification(v, t, 'information')
@@ -336,10 +338,6 @@ class ACMEContainerTree(Container):
 
 		# Add attribute explanations
 		if resource:
-			jsns = commentJson(self.currentResource.asDict(sort = True), 
-							explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-							getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None))	# type: ignore [attr-defined]
-			
 			# Update the requests view
 			self._update_requests(self.currentResource.ri)
 
@@ -444,7 +442,9 @@ class ACMEContainerTree(Container):
 			
 		# Add syntax highlighting and add to the view
 		# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
-		self.updateResourceView(jsns)
+		self.updateResourceView(commentJson(self.currentResource.asDict(sort = True), 
+								explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
+								getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
 
 
 	def updateResourceView(self, value:Optional[str|Resource] = None, error:Optional[str] = None) -> None:
@@ -584,3 +584,24 @@ class ACMEDialog(ModalScreen):
 			self.dismiss(True)
 		else:
 			self.dismiss(False)
+
+#
+# Helper functions
+#
+
+def _getResourceTypeAsString(resource:Resource) -> str:
+	"""	Return the resource type as a string.
+		If the resource is a flex container, the specialization is added.
+
+		Args:
+			resource: The resource to get the type for.
+
+		Returns:
+			The resource type as a string.
+	"""
+	if resource.ty == ResourceTypes.FCNT:
+		# Put the specialization in the header if it is a flex container
+		return f'{ResourceTypes.fullname(resource.ty)} - {resource.tpe.split(":")[0]}:{CSE.validator.getFlexContainerSpecialization(resource.tpe)[1]}'
+	else:
+		return ResourceTypes.fullname(resource.ty)
+

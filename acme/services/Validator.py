@@ -531,18 +531,19 @@ class Validator(object):
 		flexContainerAttributes.clear()
 
 
-	def addFlexContainerSpecialization(self, tpe:str, cnd:str) -> bool:
+	def addFlexContainerSpecialization(self, tpe:str, cnd:str, lname:str) -> bool:
 		"""	Add flexContainer specialization information to the internal dictionary.
 		
 			Args:
 				tpe: String, domain and short name of the flexContainer specialization.
 				cnd: String, the containerDefinition of the flexContainer specialization.
+				lname: String, the long name of the flexContainer specialization.
 			Return:
 				Boolean, indicating whether a specialization was added successfully. 
 
 		"""
 		if not tpe in flexContainerSpecializations:
-			flexContainerSpecializations[tpe] = cnd
+			flexContainerSpecializations[tpe] = (cnd, lname)
 			return True
 		return False
 
@@ -553,9 +554,9 @@ class Validator(object):
 			Args:
 				tpe: String, domain and short name of the flexContainer specialization.
 			Return:
-				Tuple with the flexContainer specialization data (or None if none exists).
+				Tuple with the flexContainer specialization data (or None if none exists). The tuple contains the containerDefinition and the long name.
 		"""
-		return ( flexContainerSpecializations.get(tpe), )
+		return flexContainerSpecializations.get(tpe)
 
 	
 	def hasFlexContainerContainerDefinition(self, cnd:str) -> bool:
@@ -567,7 +568,7 @@ class Validator(object):
 				Boolean, indicating existens.
 
 		"""
-		return any(( each for each in flexContainerSpecializations.values() if each == cnd ))
+		return any(( each for each in flexContainerSpecializations.values() if each[0] == cnd ))
 	
 
 	def clearFlexContainerSpecializations(self) -> None:

@@ -23,9 +23,11 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Changed
 - [CSE] Internal refactoring of the configuration handling. The main configuration handling is still done in the old module, but the assignments and validations are now done in the using modules. Configuration settings are now stored in attributes, not a central dictionary anymore.
+- [CSE] Internal refactoring the runtime constants, e.g. CSE ID, CSE Name, etc. These are now handled by a runtime constante class.
 
 ### Fixed
 - [CSE] Fixed crash when the environment variables contain "$" characters.
+- [WEB] Fixed the web UI when the CSE's http server is not running directly under the root path.
 
 ### Removed
 

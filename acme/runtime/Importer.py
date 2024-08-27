@@ -338,6 +338,8 @@ class Importer(object):
 						return False
 					if (cnd := findXPath(eachDefinition, 'cnd')) is None:
 						L.logDebug(f'Missing containerDefinition (cnd) for type: {tpe} in file: {fn}')
+					if (lname := findXPath(eachDefinition, 'lname')) is None:
+						L.logDebug(f'Missing long name (lname) for type: {tpe} in file: {fn}')
 					
 					# Attributes are optional. However, add a dummy entry
 					if not (attrs := findXPath(eachDefinition, 'attributes')):
@@ -371,7 +373,7 @@ class Importer(object):
 							L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 							return False
 
-						if not CSE.validator.addFlexContainerSpecialization(tpe, cnd):
+						if not CSE.validator.addFlexContainerSpecialization(tpe, cnd, lname):
 							L.logErr(f'Cannot add flexContainer specialization for type: {tpe}')
 							return False
 
