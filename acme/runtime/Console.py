@@ -587,7 +587,7 @@ Available under the BSD 3-Clause License
 			try:
 				resource = CSE.dispatcher.retrieveResource(ri)
 				children = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
-				CSE.dispatcher.resourceTreeDict(children, resource)	# the function call add attributes to the target resource
+				CSE.dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)

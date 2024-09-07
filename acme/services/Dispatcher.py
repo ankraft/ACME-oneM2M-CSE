@@ -290,7 +290,7 @@ class Dispatcher(object):
 
 		match rcn:
 			case ResultContentType.attributesAndChildResources:
-				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
 				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case ResultContentType.attributesAndChildResourceReferences:
@@ -311,7 +311,7 @@ class Dispatcher(object):
 		
 			case ResultContentType.permissions:
 				# TODO
-				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
 				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case _:
@@ -1708,7 +1708,7 @@ class Dispatcher(object):
 		return { 'm2m:uril' : lst }
 
 
-	def resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
+	def resourceTreeDict(self, resources:list[Resource], targetResource:JSON) -> list[Resource]:
 		"""	Recursively walk the results and build a sub-resource tree for each resource type.
 		"""
 		rri = targetResource.get('ri')
@@ -1732,7 +1732,7 @@ class Dispatcher(object):
 				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
 					result.append(r)					# append the found resource 
 					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
-					resources = self.resourceTreeDict(resources, r)	# check recursively whether this resource has children
+					resources = self.resourceTreeDict(resources, r.dict)	# check recursively whether this resource has children
 				else:
 					idx += 1							# next resource
 
