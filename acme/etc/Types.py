@@ -1371,7 +1371,7 @@ class ContentSerializationType(ACMEIntEnum):
 			return cls.UNKNOWN if not default else default
 		if isinstance(t, cls):
 			return t
-		match t.lower():
+		match cast(str, t).lower():
 			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
 				return cls.JSON
 			case 'cbor' | 'application/cbor' | 'application/vnd.onem2m-res+cbor':
@@ -2656,7 +2656,7 @@ ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], st
 FlexContainerAttributes:TypeAlias = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
 
-FlexContainerSpecializations:TypeAlias = Dict[str, str]
+FlexContainerSpecializations:TypeAlias = Dict[str, Tuple[str, str]]
 """ Type definition for a dictionary of specializations for a flexContainer. """
 
 
