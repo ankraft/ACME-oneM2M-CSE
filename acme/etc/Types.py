@@ -1356,11 +1356,11 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
-	def getType(cls, t:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
+	def getType(cls, t:str|ContentSerializationType, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
 		"""	Return the enum from a content-type header definition.
 
 			Args:
-				t: String to convert.
+				t: String to convert. If it is already an enum, it is returned as is.
 				default: Default value to return if the string is not a valid content-type.
 
 			Return:
@@ -1369,6 +1369,8 @@ class ContentSerializationType(ACMEIntEnum):
 		# TODO add more of the defined oneM2M content types
 		if not t:
 			return cls.UNKNOWN if not default else default
+		if isinstance(t, cls):
+			return t
 		match t.lower():
 			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
 				return cls.JSON
