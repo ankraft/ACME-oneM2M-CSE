@@ -292,8 +292,8 @@ def requestFromResult(inResult:Result,
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
+	
 	if pc:
-
 		# If the request has selected attributes, then the pc content must be filtered
 		if originalRequest and originalRequest.selectedAttributes:
 			_tpe = list(pc.keys())[0]
@@ -324,7 +324,8 @@ def requestFromResult(inResult:Result,
 
 
 def prepareResultForSending(inResult:Result, 
-					   		isResponse:Optional[bool] = False,) -> Tuple[Result, bytes]:
+					   		isResponse:Optional[bool] = False,
+							originalRequest:Optional[CSERequest] = None) -> Tuple[Result, bytes]:
 	"""	Prepare a new request for MQTT or WebSocket sending. 
 	
 		Attention:
@@ -334,11 +335,12 @@ def prepareResultForSending(inResult:Result,
 		Args:
 			inResult: A `Result` object, that contains a request in its *request* attribute.
 			isResponse: Indicator whether the `Result` object is actually a response or a request.
+			originalRequest: The original request that was received.
 
 		Return:
 			A tuple with an updated `Result` object and the serialized content.
 	"""
-	result = requestFromResult(inResult, isResponse = isResponse)
+	result = requestFromResult(inResult, isResponse = isResponse, originalRequest = originalRequest)
 	return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 
 
