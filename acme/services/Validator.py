@@ -548,7 +548,7 @@ class Validator(object):
 		return False
 
 
-	def getFlexContainerSpecialization(self, tpe:str) -> Tuple[str]:
+	def getFlexContainerSpecialization(self, tpe:str) -> Tuple[str, str]:
 		"""	Return the availale data for a flexContainer specialization.
 		
 			Args:
