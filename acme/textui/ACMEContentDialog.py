@@ -53,7 +53,7 @@ class ACMEContentDialog(ModalScreen):
 		if event.button.id == 'dialog-copy':
 			pyperclip.copy(self.content)
 			self.app.pop_screen()
-			self.app.notify('Content copied to clipboard.')
+			self.app.notify('Copied to clipboard.')
 
 	
 	def on_click(self, event:Click) -> None:
