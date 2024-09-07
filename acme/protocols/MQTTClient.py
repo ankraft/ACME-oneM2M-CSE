@@ -264,7 +264,7 @@ class MQTTClientHandler(MQTTHandler):
 		# send events for the MQTT operations
 		_t = self.operationEvents[request.op]
 		_t[0]()	# Send event
-		renameThread(_t[1]) # rename threads
+		L.enableScreenLogging and renameThread(_t[1]) # rename threads
 
 		try:
 			responseResult = CSE.request.handleRequest(request)

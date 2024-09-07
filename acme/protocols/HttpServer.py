@@ -329,7 +329,7 @@ class HttpServer(object):
 	def handleGET(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HT_R')
+		L.enableScreenLogging and renameThread('HT_R')
 		self._eventHttpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE)
 
@@ -338,11 +338,11 @@ class HttpServer(object):
 		if not self.handleAuthentication():
 			return Response(status = 401)
 		if self._hasContentType():
-			renameThread('HT_C')
+			L.enableScreenLogging and renameThread('HT_C')
 			self._eventHttpCreate()
 			return self._handleRequest(path, Operation.CREATE)
 		else:
-			renameThread('HT_N')
+			L.enableScreenLogging and renameThread('HT_N')
 			self._eventHttpNotify()
 			return self._handleRequest(path, Operation.NOTIFY)
 
@@ -350,7 +350,7 @@ class HttpServer(object):
 	def handlePUT(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HT_U')
+		L.enableScreenLogging and renameThread('HT_U')
 		self._eventHttpUpdate()
 		return self._handleRequest(path, Operation.UPDATE)
 
@@ -358,7 +358,7 @@ class HttpServer(object):
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
-		renameThread('HT_D')
+		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -370,7 +370,7 @@ class HttpServer(object):
 			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
-		renameThread('HT_D')
+		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -428,7 +428,7 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
 			return resp
 
-		renameThread('UT')
+		L.enableScreenLogging and renameThread('UT')
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		if request.data:
@@ -602,6 +602,8 @@ class HttpServer(object):
 			raise REQUEST_TIMEOUT(L.logWarn(f'http request timeout after {timeout}s'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
+			import traceback
+			traceback.print_exc()
 			raise TARGET_NOT_REACHABLE('target not reachable')
 		
 		res = Result(rsc = resp.rsc, data = resp.pc, request = resp)

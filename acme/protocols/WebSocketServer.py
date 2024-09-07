@@ -376,7 +376,7 @@ class WebSocketServer(object):
 		wsOriginator = None	# This is valid until the first message is received. Then the originator is determined from the message
 
 		# Rename thread
-		renameThread(prefix = 'ws')
+		L.enableScreenLogging and renameThread(prefix = 'ws')
 
 		if not self._checkIsServerRunning(websocket):
 			return
@@ -480,7 +480,7 @@ class WebSocketServer(object):
 			# Send the operation event and rename the thread
 			_t = self.operationEvents[request.op]
 			_t[0]()	# Send event
-			renameThread(_t[1]) # rename threads
+			L.enableScreenLogging and renameThread(_t[1]) # rename threads
 
 			L.isDebug and L.logDebug(f'Operation: {request.op}')
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
