@@ -15,14 +15,13 @@ import isodate
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR
 
-from ..etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType, ReqResp
+from ..etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType
 from ..etc.Types import ResponseType, ResultContentType, DesiredIdentifierResultType, RequestType
 from ..etc.Utils import renameThread
-from ..etc.DateUtils import getResourceDate
-from ..etc.ACMEUtils import removeNoneValuesFromDict, uniqueRI
-from ..etc.DateUtils import timeUntilAbsRelTimestamp
+from ..etc.DateUtils import getResourceDate, timeUntilAbsRelTimestamp
+from ..etc.ACMEUtils import uniqueRI
 from ..etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI, fillRequestWithArguments
-from ..etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData, deserializeContent
+from ..etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..helpers.TextTools import toHex
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker

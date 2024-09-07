@@ -504,7 +504,7 @@ class WebSocketServer(object):
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)
 
-		_r, _data = prepareResultForSending(responseResult, isResponse = True)	
+		_r, _data = prepareResultForSending(responseResult, isResponse = True, originalRequest = request)	
 		L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
 
 		L.logRequest(_r, _data) # type:ignore [arg-type]

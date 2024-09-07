@@ -161,10 +161,14 @@ class MQTTClientHandler(MQTTHandler):
 			registration is done later anyway.
 		"""
 
-		def _sendResponse(result:Result) -> None:
+		def _sendResponse(result:Result, originalRequest:Optional[CSERequest] = None) -> None:
 			"""	Send a response for a request.
+
+				Args:
+					result: The result to send.
+					originalRequest: The original request.
 			"""
-			(_r, _data) = prepareResultForSending(result, isResponse = True)	# may throw an exception
+			(_r, _data) = prepareResultForSending(result, isResponse = True, originalRequest = originalRequest)	# may throw an exception
 			topic = f'{Configuration.mqtt_topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 			logRequest(_r, _data, topic, isResponse=True, isIncoming=False)
 			connection.publish(topic, _data)
@@ -277,7 +281,7 @@ class MQTTClientHandler(MQTTHandler):
 		responseResult.prepareResultFromRequest(request)	
 
 		#	Transform request to oneM2M request
-		_sendResponse(responseResult)
+		_sendResponse(responseResult, request)
 	
 
 ##############################################################################
