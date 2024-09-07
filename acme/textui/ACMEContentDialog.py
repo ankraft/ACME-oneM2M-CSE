@@ -52,6 +52,9 @@ class ACMEContentDialog(ModalScreen):
 	def on_button_pressed(self, event: Button.Pressed) -> None:
 		if event.button.id == 'dialog-copy':
 			pyperclip.copy(self.content)
+			self.app.pop_screen()
+			self.app.notify('Content copied to clipboard.')
+
 	
 	def on_click(self, event:Click) -> None:
 		""" Dismiss the screen when clicking outside the dialog.
