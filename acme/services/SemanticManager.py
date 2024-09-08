@@ -195,7 +195,7 @@ class SemanticManager(object):
 		# Validate descriptorRepresentation
 		# In TS-0004 this comes after the descriptor validation, but should come before it
 		if smd.dcrp == SemanticFormat.IRI:
-			raise BAD_REQUEST(L.logDebug('dcrp format must not be IRI'))
+			raise BAD_REQUEST(L.logDebug('IRI presentation format is currently not supported (only RDF/XML, JSON-LD, Turtle)'))
 		try:
 			# Also store the decoded B64 string in the resource
 			smd.setDecodedDSP(_desc := base64.b64decode(smd.dsp, validate = True).decode('UTF-8').strip())
@@ -549,7 +549,7 @@ class RdfLibHandler(SemanticHandler):
 
 		# Query the graph
 		try:
-			qres = aggregatedGraph.query(query)
+			qres = aggregatedGraph.query(query) # type: ignore
 
 			# Pretty print the result to the log
 			# ET.indent is only available in Python 3.9+
