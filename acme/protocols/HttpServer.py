@@ -120,7 +120,6 @@ class HttpServer(object):
 
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
-		print(f'WebUI root: {Configuration.webui_root}')
 		self.webui = WebUI(self.flaskApp, 
 						   defaultRI = RC.cseRi, 
 						   defaultOriginator = RC.cseOriginator, 

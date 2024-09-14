@@ -13,7 +13,8 @@ from typing import Tuple, cast, Dict, Optional, Any
 from urllib.parse import unquote
 from configparser import ConfigParser
 
-from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
+from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
+from ..etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
 from ..etc.DateUtils import waitFor
@@ -274,6 +275,11 @@ class MQTTClientHandler(MQTTHandler):
 			responseResult = CSE.request.handleRequest(request)
 		except Exception as e:
 			responseResult = Result.exceptionToResult(e)
+		
+		# Don't send a response for "no response" requests
+		if request.rt == ResponseType.noResponse:
+			return
+
 		# Send response
 
 		# add, copy and update some fields from the original request
