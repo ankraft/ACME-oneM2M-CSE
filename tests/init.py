@@ -39,7 +39,7 @@ from coapthon.messages.response import Response as	CoAPResponse
 
 
 from acme.etc import DateUtils, RequestUtils
-from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
+from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode, ResponseType
 import acme.helpers.OAuth as OAuth
 from acme.helpers import CoAPthonTools
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
@@ -673,6 +673,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	# send the data
 	mqttHandler.publish(reqTopic, cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))  # TODO support cbor
 
+	# Wait for response? 
+	if (_rt := req.get('rt')):
+		if _rt.get('rtv') == ResponseType.noResponse.value:
+			return '', ResponseStatusCode.NO_CONTENT
+
 	# Wait for response
 	while True: 	# Timeout?
 		try:
@@ -726,7 +731,7 @@ def sendWsRequest(operation:Operation,
 			return True
 		return True
 
-	
+
 	# Verbose output
 	if verboseRequests:
 		console.print('\n[b u]Request')
@@ -762,6 +767,13 @@ def sendWsRequest(operation:Operation,
 
 	websocket.send(cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))
 	# TODO Decouple WS receiving to support notifications via 
+
+	# Wait for response? 
+	if (_rt := req.get('rt')):
+		if _rt.get('rtv') == ResponseType.noResponse.value:
+			return '', ResponseStatusCode.NO_CONTENT
+
+	# Waiting for response
 	try:
 		while True:
 			if (response := websocket.recv(timeout = timeout)):
@@ -1453,7 +1465,10 @@ def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[s
 	"""
 	def _addTest(case:str) -> None:
 		if case and case not in excludedTestNames:
-			suite.addTest(cls(case))
+			try:
+				suite.addTest(cls(case))
+			except ValueError as e:
+				console.print(f'[red]Test case "{case}" not found - skipping[/red]')
 
 	if testCaseNames is None:
 		for case in cases:

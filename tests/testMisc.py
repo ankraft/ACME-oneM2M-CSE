@@ -427,6 +427,12 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.NO_CONTENT, r)
 		self.assertEqual(len(r), 0, r)
 
+		testSleep(requestCheckDelay)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_noResponseUpdate(self) -> None:
@@ -444,6 +450,8 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.NO_CONTENT, r)
 		self.assertEqual(len(r), 0, r)
 
+		testSleep(requestCheckDelay)
+
 		# delete the CNT again
 		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.DELETED, r)
@@ -457,6 +465,8 @@ class TestMisc(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
+
+		testSleep(requestCheckDelay)
 
 		# delete the CNT again
 		r, rsc = DELETE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR)
