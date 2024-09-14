@@ -319,9 +319,17 @@ class HttpServer(object):
 			return self._prepareResponse(dissectResult)
 
 		try:
-			responseResult = CSE.request.handleRequest(dissectResult.request)
+			responseResult = CSE.request.handleRequest(dissectResult.request)	# type: ignore[arg-type]
 		except Exception as e:
 			responseResult = Result.exceptionToResult(e)
+		
+		# Return without a response if the request is a noResponse request
+		# This means return a simple "status = 204" response
+		if dissectResult.request.rt == ResponseType.noResponse:
+			L.isDebug and L.logDebug('No response requested')
+			return Response(status = 204)	# No Content
+
+		# Return a proper response
 		# L.inspect(responseResult)
 		return self._prepareResponse(responseResult, dissectResult.request)
 
