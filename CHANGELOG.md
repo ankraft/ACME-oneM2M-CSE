@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added support for the CoAP protocol binding.
 - [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
 - [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 - [TUI] Added copy of CSV data to the clipboard for instance resources.
@@ -20,6 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Experimental
 - [CSE] Added statistics event for local resource retrieval. If this impacts performance too much, it may be removed again.
+- [CSE] Added support for new "no response" Response Type behavior for blocking requests. This is experimental and may be removed again.
 
 ### Changed
 - [CSE] Internal refactoring of the configuration handling. The main configuration handling is still done in the old module, but the assignments and validations are now done in the using modules. Configuration settings are now stored in attributes, not a central dictionary anymore.
