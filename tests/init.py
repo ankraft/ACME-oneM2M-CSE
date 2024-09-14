@@ -62,8 +62,9 @@ oauthToken = None								# current OAuth Token
 verboseRequests = False							# Print requests and responses
 testCaseNames:Optional[list[str]] = None		# List of test cases to run
 excludedTestNames:Optional[list[str]] = []		# List of test cases to exclude
-enableTearDown:bool = True  					# Run or don't run TearDownClass test case methods
-initialRequestTimeout = 10.0					# Timeout in s for the initial connectivity test.
+enableTearDown = True  							# Run or don't run TearDownClass test case methods
+initialRequestTimeout  = 10.0					# Timeout in s for the initial connectivity test.
+localNotificationServer = False					# Use a local notification server address
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -609,7 +610,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 
 	setLastRequestID(rid)
 	try:
-		sendData:str = None
+		sendData:Optional[str] = None
 		if data is not None:
 			if isinstance(data, dict):	# actually JSON, but isinstance() cannot be used with generics
 				sendData = json.dumps(data)
@@ -622,6 +623,8 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		# print(f'Failed to send request: {str(e)}')
 		return f'Failed to send request: {str(e)}', 5103
 	rc = int(r.headers.get(C.hfRSC, r.status_code))
+	if rc == 204:
+		rc = ResponseStatusCode.NO_CONTENT
 
 	# save last header for later
 	setLastHeaders(r.headers)
@@ -897,14 +900,17 @@ def sendCoapRequest(operation:Operation,
 	# Add query parameters 
 	request.uri_query = urlComponents.query
 
+	# check for response type == no response
+	awaitNoResponse = parse_qs(request.uri_query).get('rt') == ['5'] # no response
+
 	# Send the CoAP request
 	try:
-		response = coapClient.send_request(request, timeout = timeout)
+		response = coapClient.send_request(request, timeout = timeout, no_response = awaitNoResponse)
 	except Exception as e:
 		return 'Failed to send CoAP request', 5103
 
 	if response is None:
-		return 'No response received', 5103
+		return '', 5103 if not awaitNoResponse else ResponseStatusCode.NO_CONTENT
 
 	content_type = response.content_type
 
@@ -1204,6 +1210,32 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 notificationServerIsRunning = False
+# Save the original notification server URL
+_NOTIFICATIONSERVER = NOTIFICATIONSERVER
+_NOTIFICATIONSERVERW = NOTIFICATIONSERVERW
+
+#
+#	This function sets the notification server URL. Depending on the configuration, and
+#	the localNotificationServer flag, the URL is set to the local IP address or the
+#	original URL.
+#	This function is called twice. Once at loading time, and once after the state of the
+#	localNotificationServer flag is known.
+#
+
+def setNotificationServerURL() -> None:
+	global NOTIFICATIONSERVER, NOTIFICATIONSERVERW, TESTHOSTIP
+	
+	# Set the TESTHOSTIP to the local IP address if it is not set
+	if TESTHOSTIP is None:	# type: ignore[used-before-def]
+		TESTHOSTIP = getIPAddress()
+		if not TESTHOSTIP:
+			TESTHOSTIP = '127.0.0.1'	# fallback
+	if localNotificationServer:
+		TESTHOSTIP = '127.0.0.1'
+
+	NOTIFICATIONSERVER = _NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
+	NOTIFICATIONSERVERW = _NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
+
 
 def runNotificationServer() -> None:
 	global notificationServerIsRunning
@@ -1231,7 +1263,7 @@ def stopNotificationServer() -> None:
 	if notificationServerIsRunning:
 		notificationServerIsRunning = False
 		try:
-			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
+			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate, timeout=1)	# send empty/termination request
 		except Exception:
 			pass
 		waitMessage('Stopping notification server', 2.0)
@@ -1524,11 +1556,8 @@ match PROTOCOL:
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 
-# Set the TESTHOSTIP to the local IP address if it is not set
-if TESTHOSTIP is None:	# type: ignore[used-before-def]
-	TESTHOSTIP = getIPAddress()
-NOTIFICATIONSERVER = NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
-NOTIFICATIONSERVERW = NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
+# Set the notification server URL
+setNotificationServerURL()
 
 if UPPERTESTERENABLED:
 	try:

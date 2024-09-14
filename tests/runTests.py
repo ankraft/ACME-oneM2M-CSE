@@ -77,6 +77,7 @@ if __name__ == '__main__':
 	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
+	parser.add_argument('--local-notification-server', '-lns', action='store_true', dest='localNotificationServer', default=False, help='use a local notification server address')
 
 	
 	groupList = parser.add_mutually_exclusive_group()
@@ -140,6 +141,10 @@ if __name__ == '__main__':
 	init.testCaseNames	  	= args.testCaseName
 	init.excludedTestNames	= args.excludeTests
 	init.enableTearDown		= not args.disableTearDown
+	init.localNotificationServer = args.localNotificationServer
+
+	# Correct the notification server URL depending on the localNotificationServer flag
+	init.setNotificationServerURL()
 
 	# Run the tearDown functions of the test cases and then exit
 	if args.runTearDown:
