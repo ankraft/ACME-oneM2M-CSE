@@ -25,7 +25,7 @@ from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateH
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
 from ..etc.ACMEUtils import uniqueID, csiFromSPRelative
 from ..etc.Utils import renameThread, normalizeURL
-from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, LogLevel
+from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, LogLevel, ResponseType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime import CSE
@@ -499,8 +499,15 @@ class WebSocketServer(object):
 			responseResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
 
 		except Exception as e:
-				responseResult = Result.exceptionToResult(e)
+			responseResult = Result.exceptionToResult(e)
 
+		# Don't send a response for "no response" response type
+		# We have t use the dissectResult here, because the request object might not 
+		# be fully initialized because of an exception
+		if dissectResult.request.rt == ResponseType.noResponse:
+			L.isDebug and L.logDebug('No response required')
+			return
+		
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)
 
