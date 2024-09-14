@@ -127,10 +127,10 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn} Originator: {originator}')
 
 		# handle transit requests first
-		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:  # type: ignore[reportArgumentType]
 			return CSE.request.handleTransitRetrieveRequest(request)
 
-		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		srn, id = self._checkHybridID(request, id) 	# type: ignore[reportArgumentType] # overwrite id if another is given
 
 
 		# Check attributeList in Content
@@ -640,7 +640,7 @@ class Dispatcher(object):
 	#
 
 	def processCreateRequest(self, request:CSERequest, 
-								   originator:str, 
+								   originator:Optional[str] = None, 
 								   id:Optional[str] = None) -> Result:
 		"""	Process a CREATE request. Create and register resource(s).
 

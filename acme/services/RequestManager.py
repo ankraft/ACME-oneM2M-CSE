@@ -351,13 +351,13 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
+					return CSE.dispatcher.processRetrieveRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -377,7 +377,7 @@ class RequestManager(object):
 			raise BAD_REQUEST('missing or wrong resourceType in request')
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processCreateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -404,7 +404,7 @@ class RequestManager(object):
 
 		# Check contentType and resourceType
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processUpdateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -431,7 +431,7 @@ class RequestManager(object):
 			raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
 				return CSE.dispatcher.processDeleteRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -454,7 +454,7 @@ class RequestManager(object):
 
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -1702,12 +1702,17 @@ class RequestManager(object):
 			rid = 'unknown'
 		
 		# Map the response
-		response =  { 'rsc': result.rsc,
-			   		  'rqi': request.rqi,
-					  'pc': pc,
-					  'dbg': result.dbg,
-					  'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
-					}
+		match request.rt:
+			case ResponseType.noResponse:
+				response = {}
+			case _:
+				# Blocking request, so we have a response
+				response =  { 'rsc': result.rsc,
+							'rqi': request.rqi,
+							'pc': pc,
+							'dbg': result.dbg,
+							'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
+							}
 		if request.rset:
 			response['rset'] = request.rset
 

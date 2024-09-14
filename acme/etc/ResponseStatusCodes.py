@@ -104,7 +104,10 @@ class ResponseStatusCode(ACMEIntEnum):
 	"""	INSUFFICIENT_ARGUMENTS """
 
 	UNKNOWN										= -1
-	"""	UNKNOWN """
+	"""	Internal Status Code: UNKNOWN """
+
+	NO_CONTENT									= -2
+	""" Internal Status Code: No content"""
 
 
 	def httpStatusCode(self) -> int:
@@ -401,6 +404,19 @@ class MAX_NUMBER_OF_MEMBER_EXCEEDED(ResponseException):
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
 		super().__init__(ResponseStatusCode.MAX_NUMBER_OF_MEMBER_EXCEEDED, dbg, data)
+
+
+class NO_CONTENT(ResponseException):
+	"""	NO CONTENT internal Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.NO_CONTENT, dbg, data)
 
 
 class NOT_ACCEPTABLE(ResponseException):
