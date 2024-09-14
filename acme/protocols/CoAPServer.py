@@ -13,9 +13,9 @@ from configparser import ConfigParser
 import isodate
 
 from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR
+from ..etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR, NO_CONTENT
 
-from ..etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType
+from ..etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType, ResponseType
 from ..etc.Types import ResponseType, ResultContentType, DesiredIdentifierResultType, RequestType
 from ..etc.Utils import renameThread
 from ..etc.DateUtils import getResourceDate, timeUntilAbsRelTimestamp
@@ -98,7 +98,6 @@ class ACMECoAPHandler(object):
 		L.isDebug and L.logDebug('CoAP GET request received')
 		self._eventCoAPRetrieve()
 		self._handleRequest(request, response, Operation.RETRIEVE, options = options)
-		return response
 
 
 	def handleFETCH(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
@@ -114,7 +113,6 @@ class ACMECoAPHandler(object):
 		# TODO handle FETCH requests differently. For R5
 		self._eventCoAPRetrieve()
 		self._handleRequest(request, response, Operation.RETRIEVE)
-		return response
 
 
 	def handlePOST(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
@@ -136,7 +134,6 @@ class ACMECoAPHandler(object):
 			L.isDebug and L.logDebug('CoAP POST/NOTIFY request received')
 			self._eventCoAPCreate()
 			self._handleRequest(request, response, Operation.NOTIFY, options)
-		return response
 
 
 	def handlePUT(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
@@ -151,7 +148,6 @@ class ACMECoAPHandler(object):
 		L.isDebug and L.logDebug('CoAP PUT request received')
 		self._eventCoAPUpdate()
 		self._handleRequest(request, response, Operation.UPDATE, options = options)
-		return response
 
 
 	def handleDELETE(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
@@ -166,7 +162,6 @@ class ACMECoAPHandler(object):
 		L.isDebug and L.logDebug('CoAP DELETE request received')
 		self._eventCoAPDelete()
 		self._handleRequest(request, response, Operation.DELETE, options = options)
-		return response
 
 
 	def _handleRequest(self, request:CoaptthonRequest, response:CoapthonResponse, operation:Operation, options:Optional[MultiDict] = None) -> CoapthonResponse:
@@ -209,6 +204,9 @@ class ACMECoAPHandler(object):
 
 		# Handle the request. Returns a Result object. 
 		responseResult = CSE.request.handleRequest(dissectResult.request)
+
+		if dissectResult.request.rt == ResponseType.noResponse:
+			raise NO_CONTENT()
 
 		# Prepare the response and return it
 		try:
@@ -498,7 +496,11 @@ class ACMECoAPRequestLayer(CoapthonRequestLayer):
 
 		# handle the request
 		if (_handler := self._handlers.get(transaction.request.code)):
-			transaction.response = _handler(transaction.request, transaction.response, options)
+			try:
+				# transaction.response = _handler(transaction.request, transaction.response, options)
+				_handler(transaction.request, transaction.response, options)
+			except NO_CONTENT:
+				transaction.response = None
 		else:
 			transaction.response.code = defines.Codes.METHOD_NOT_ALLOWED.number
 
