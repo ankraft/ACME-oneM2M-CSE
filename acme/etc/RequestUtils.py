@@ -296,8 +296,8 @@ def requestFromResult(inResult:Result,
 	if pc:
 		# If the request has selected attributes, then the pc content must be filtered
 		if originalRequest and originalRequest.selectedAttributes:
-			_tpe = list(pc.keys())[0]
-			pc = { _tpe : filterAttributes(pc[_tpe], originalRequest.selectedAttributes) }
+			_typeShortname = list(pc.keys())[0]
+			pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
 
 
 		# if the request/result is actually an incoming request targeted to the receiver, then the

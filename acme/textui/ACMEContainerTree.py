@@ -601,7 +601,7 @@ def _getResourceTypeAsString(resource:Resource) -> str:
 	"""
 	if resource.ty == ResourceTypes.FCNT:
 		# Put the specialization in the header if it is a flex container
-		return f'{ResourceTypes.fullname(resource.ty)} - {resource.tpe.split(":")[0]}:{CSE.validator.getFlexContainerSpecialization(resource.tpe)[1]}'
+		return f'{ResourceTypes.fullname(resource.ty)} - {resource.typeShortname.split(":")[0]}:{CSE.validator.getFlexContainerSpecialization(resource.typeShortname)[1]}'
 	else:
 		return ResourceTypes.fullname(resource.ty)
 

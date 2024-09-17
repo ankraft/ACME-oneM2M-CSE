@@ -1518,7 +1518,7 @@ class ACMEPContext(PContext):
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			# Add type when CREATE
 			if operation == Operation.CREATE:
-				if (ty := ResourceTypes.fromTPE( list(content.keys())[0] )) is None: # first is tpe
+				if (ty := ResourceTypes.fromTypeShortname( list(content.keys())[0] )) is None: # first is typeShortname
 					raise PInvalidArgumentError(pcontext.setError(PError.invalid, 'Cannot determine resource type'))
 				req['ty'] = ty.value
 

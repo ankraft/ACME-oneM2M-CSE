@@ -21,6 +21,6 @@ class MgmtObj(AnnounceableResource):
 								   ResourceTypes.SUB ]
 
 	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.MGMTOBJ, dct, pi, tpe = mgd.tpe(), create=create)
+		super().__init__(ResourceTypes.MGMTOBJ, dct, pi, typeShortname = mgd.typeShortname(), create=create)
 		self.setAttribute('mgd', int(mgd), overwrite=True)
 

@@ -43,13 +43,13 @@ attributePolicies:ResourceAttributePolicyDict = {}
 flexContainerAttributes:FlexContainerAttributes = { }
 """	FlexContainer specialization attributes. 
 
-	{ tpe : { sn : AttributePolicy } }
+	{ typeShortname : { sn : AttributePolicy } }
 """
 
 flexContainerSpecializations:FlexContainerSpecializations = {}
 """	FlexContainer specialization aspects.
 
-	{ tpe : cnd }
+	{ typeShortname : cnd }
 """
 
 complexTypeAttributes:dict[str, list[str]] = {}
@@ -108,12 +108,12 @@ class Validator(object):
 			Return:
 				None
 		"""
-		if resource.tpe not in dct and resource.ty != ResourceTypes.FCNTAnnc:	# Don't check announced versions of announced FCNT
-			raise CONTENTS_UNACCEPTABLE(L.logWarn(f"Update type doesn't match target (expected: {resource.tpe}, is: {list(dct.keys())[0]})"))
+		if resource.typeShortname not in dct and resource.ty != ResourceTypes.FCNTAnnc:	# Don't check announced versions of announced FCNT
+			raise CONTENTS_UNACCEPTABLE(L.logWarn(f"Update type doesn't match target (expected: {resource.typeShortname}, is: {list(dct.keys())[0]})"))
 		# validate the attributes
 		if doValidateAttributes:
 			self.validateAttributes(dct, 
-									resource.tpe, 
+									resource.typeShortname, 
 									resource.ty, 
 									resource._attributes, 
 									create = False, 
@@ -122,7 +122,7 @@ class Validator(object):
 
 
 	def	validateAttributes(self, resource:JSON, 
-								 tpe:str, 
+								 typeShortname:str, 
 								 ty:Optional[ResourceTypes] = ResourceTypes.UNKNOWN, 
 								 attributes:Optional[AttributePolicyDict] = None, 
 								 create:Optional[bool] = True , 
@@ -133,7 +133,7 @@ class Validator(object):
 
 			Args:
 				resource: dictionary to check
-				tpe: The resource's resource type name
+				typeShortname: The resource's resource type name
 				ty: The resource type
 				attributes: The attribute policy dictionary for the resource type. If this is None then validate automatically
 				create: Boolean indicating whether this a CREATE request
@@ -159,24 +159,24 @@ class Validator(object):
 		if isAnnounced:
 			optionalIndex = 5	# index to announced
 
-		# Get the pure resource and the resource's tpe
-		pureResDict, _tpe, _ = pureResource(resource)
+		# Get the pure resource and the resource's typeShortname
+		pureResDict, _typeShortname, _ = pureResource(resource)
 
-		tpe = _tpe if _tpe and _tpe != tpe else tpe 				# determine the real tpe
+		typeShortname = _typeShortname if _typeShortname and _typeShortname != typeShortname else typeShortname 				# determine the real typeShortname
 
-		# if tpe is not None and not tpe.startswith("m2m:"):
+		# if typeShortname is not None and not typeShortname.startswith("m2m:"):
 		# 	pureResDict = dct
 
 		attributePolicies = attributes
 		# If this is a flexContainer then add the additional attributePolicies.
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
-		if ty in ( ResourceTypes.FCNT, ResourceTypes.FCI ) and tpe:
-			if (fca := flexContainerAttributes.get(tpe)) is not None:
+		if ty in ( ResourceTypes.FCNT, ResourceTypes.FCI ) and typeShortname:
+			if (fca := flexContainerAttributes.get(typeShortname)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
 			else:
-				raise BAD_REQUEST(L.logWarn(f'unknown resource type: {tpe}'))
+				raise BAD_REQUEST(L.logWarn(f'unknown resource type: {typeShortname}'))
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
@@ -184,7 +184,7 @@ class Validator(object):
 		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
-				raise BAD_REQUEST(L.logWarn(f'unknown attribute: {attributeName} in resource: {tpe}'))
+				raise BAD_REQUEST(L.logWarn(f'unknown attribute: {attributeName} in resource: {typeShortname}'))
 
 		for attributeName, policy in attributePolicies.items():
 			if not policy:
@@ -279,25 +279,25 @@ class Validator(object):
 	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
 		# Response
 		'rsp' :	{
-			'rsc' : AttributePolicy(type = BasicType.integer,          cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rsp', lname = 'responseStatusCode', namespace = 'm2m', tpe = 'm2m:rsc'),
-			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', tpe = 'm2m:rqi'),
-			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', tpe = 'm2m:pc'),
-			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', tpe = 'm2m:to'),
-			'fr' : AttributePolicy(type = BasicType.ID,			       cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', tpe = 'm2m:fr'),
-			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', tpe = 'm2m:or'),
-			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', tpe = 'm2m:rset'),
-			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', tpe = 'm2m:ec'),
-			'cnst' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnst', lname = 'contentStatus', namespace = 'm2m', tpe = 'm2m:cnst'),
-			'cnot' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnot', lname = 'contentOffset', namespace = 'm2m', tpe = 'm2m:cnot'),
-			'ati' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ati', lname = 'assignedTokenIdentifiers', namespace = 'm2m', tpe = 'm2m:ati'),
-			'tqf' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'tqf', lname = 'tokenRequestInformation', namespace = 'm2m', tpe = 'm2m:tqf'),
-			'asri' : AttributePolicy(type = BasicType.boolean,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'asri', lname = 'authorSignReqInfo', namespace = 'm2m', tpe = 'm2m:asri'),
-			'rvi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rvi', lname = 'releaseVersionIndicator', namespace = 'm2m', tpe = 'm2m:rvi'),
-			'vsi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'vsi', lname = 'vendorInformation', namespace = 'm2m', tpe = 'm2m:vsi'),
+			'rsc' : AttributePolicy(type = BasicType.integer,          cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rsp', lname = 'responseStatusCode', namespace = 'm2m', typeShortname = 'm2m:rsc'),
+			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', typeShortname = 'm2m:rqi'),
+			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', typeShortname = 'm2m:pc'),
+			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', typeShortname = 'm2m:to'),
+			'fr' : AttributePolicy(type = BasicType.ID,			       cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', typeShortname = 'm2m:fr'),
+			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', typeShortname = 'm2m:or'),
+			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', typeShortname = 'm2m:rset'),
+			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', typeShortname = 'm2m:ec'),
+			'cnst' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnst', lname = 'contentStatus', namespace = 'm2m', typeShortname = 'm2m:cnst'),
+			'cnot' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnot', lname = 'contentOffset', namespace = 'm2m', typeShortname = 'm2m:cnot'),
+			'ati' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ati', lname = 'assignedTokenIdentifiers', namespace = 'm2m', typeShortname = 'm2m:ati'),
+			'tqf' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'tqf', lname = 'tokenRequestInformation', namespace = 'm2m', typeShortname = 'm2m:tqf'),
+			'asri' : AttributePolicy(type = BasicType.boolean,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'asri', lname = 'authorSignReqInfo', namespace = 'm2m', typeShortname = 'm2m:asri'),
+			'rvi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rvi', lname = 'releaseVersionIndicator', namespace = 'm2m', typeShortname = 'm2m:rvi'),
+			'vsi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'vsi', lname = 'vendorInformation', namespace = 'm2m', typeShortname = 'm2m:vsi'),
 		},
 		# 'm2m:sgn' : {
-		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
-		# 	'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
+		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', typeShortname='m2m:fr'),
+		# 	'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', typeShortname='m2m:to'),
 		# }
 
 	}
@@ -315,7 +315,7 @@ class Validator(object):
 		
 		name,obj = list(pc.items())[0]
 		if ap := self.complexAttributePolicies.get(name):
-			self.validateAttributes(obj, tpe = name, attributes=ap)
+			self.validateAttributes(obj, typeShortname = name, attributes=ap)
 		
 
 	#
@@ -506,23 +506,23 @@ class Validator(object):
 			Return:
 				Boolean, indicating whether a policy was added successfully.
 		"""
-		if not (policiesForTPE := flexContainerAttributes.get(policy.tpe)):
-			defsForTPE = { policy.tpe : { policy.sname : policy } }					# No policy for TPE yes, so create it
+		if not (policiesForTypeShortname := flexContainerAttributes.get(policy.typeShortname)):
+			defsForTypeShortname = { policy.typeShortname : { policy.sname : policy } }					# No policy for TPtypeShortnameE yes, so create it
 		else:
-			policiesForTPE[policy.sname] = policy									# Add/replace the policy for sname
-			defsForTPE = { policy.tpe : policiesForTPE }				
-		return self.updateFlexContainerAttributes(defsForTPE)
+			policiesForTypeShortname[policy.sname] = policy									# Add/replace the policy for sname
+			defsForTypeShortname = { policy.typeShortname : policiesForTypeShortname }				
+		return self.updateFlexContainerAttributes(defsForTypeShortname)
 
 
-	def getFlexContainerAttributesFor(self, tpe:str) -> AttributePolicyDict:
+	def getFlexContainerAttributesFor(self, typeShortname:str) -> AttributePolicyDict:
 		""" Return the attribute policies for a flexContainer specialization.
 		
 			Args:
-				tpe: String, domain and short name of the flexContainer specialization.
+				typeShortname: String, domain and short name of the flexContainer specialization.
 			Return:
 				Dictictionary of additional attributes for a flexCOntainer type or None.
 		 """
-		return flexContainerAttributes.get(tpe)
+		return flexContainerAttributes.get(typeShortname)
 	
 
 	def clearFlexContainerAttributes(self) -> None:
@@ -531,32 +531,32 @@ class Validator(object):
 		flexContainerAttributes.clear()
 
 
-	def addFlexContainerSpecialization(self, tpe:str, cnd:str, lname:str) -> bool:
+	def addFlexContainerSpecialization(self, typeShortname:str, cnd:str, lname:str) -> bool:
 		"""	Add flexContainer specialization information to the internal dictionary.
 		
 			Args:
-				tpe: String, domain and short name of the flexContainer specialization.
+				typeShortname: String, domain and short name of the flexContainer specialization.
 				cnd: String, the containerDefinition of the flexContainer specialization.
 				lname: String, the long name of the flexContainer specialization.
 			Return:
 				Boolean, indicating whether a specialization was added successfully. 
 
 		"""
-		if not tpe in flexContainerSpecializations:
-			flexContainerSpecializations[tpe] = (cnd, lname)
+		if not typeShortname in flexContainerSpecializations:
+			flexContainerSpecializations[typeShortname] = (cnd, lname)
 			return True
 		return False
 
 
-	def getFlexContainerSpecialization(self, tpe:str) -> Tuple[str, str]:
+	def getFlexContainerSpecialization(self, typeShortname:str) -> Tuple[str, str]:
 		"""	Return the availale data for a flexContainer specialization.
 		
 			Args:
-				tpe: String, domain and short name of the flexContainer specialization.
+				typeShortname: String, domain and short name of the flexContainer specialization.
 			Return:
 				Tuple with the flexContainer specialization data (or None if none exists). The tuple contains the containerDefinition and the long name.
 		"""
-		return flexContainerSpecializations.get(tpe)
+		return flexContainerSpecializations.get(typeShortname)
 
 	
 	def hasFlexContainerContainerDefinition(self, cnd:str) -> bool:

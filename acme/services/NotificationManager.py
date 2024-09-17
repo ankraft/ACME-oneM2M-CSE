@@ -1187,7 +1187,7 @@ class NotificationManager(object):
 				case NotificationContentType.ri:
 					data = { 'm2m:uri' : resource.ri }
 				case NotificationContentType.modifiedAttributes:
-					data = { resource.tpe : modifiedAttributes }
+					data = { resource.typeShortname : modifiedAttributes }
 				case NotificationContentType.timeSeriesNotification:
 					data = { 'm2m:tsn' : missingData.asDict() }
 				# TODO

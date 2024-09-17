@@ -438,7 +438,7 @@ class Statistics(object):
 				return result
 			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
-				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).tpe()} ></color>\n'
+				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).typeShortname()} ></color>\n'
 				result += getChildren(ch, level+1)
 			return result
 
@@ -500,9 +500,9 @@ skinparam rectangle {
 				csi = desc[1:]
 				(csr, atCsi) = CSE.remote.descendantCSR[desc]
 				poa = f'\\n{csr.poa}' if csr else ''
-				tpe = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
+				typeShortname = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
 				shape = 'node' if csr else 'rectangle'
-				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{poa}" #white\n'
+				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{typeShortname}{poa}" #white\n'
 				connections[desc] = (cnt, atCsi)
 				cnt += 1
 			

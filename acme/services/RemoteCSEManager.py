@@ -753,8 +753,8 @@ class RemoteCSEManager(object):
 			raise exceptionFromRSC(res.rsc)
 		
 		# assign the remote ID to the resource's dictionary
-		_, tpe, _ = pureResource(cast(JSON, res.data))
-		setXPath(cast(JSON, res.data), f'{tpe}/{Constants.attrRemoteID}', id)
+		_, typeShortname, _ = pureResource(cast(JSON, res.data))
+		setXPath(cast(JSON, res.data), f'{typeShortname}/{Constants.attrRemoteID}', id)
 
 		# Instantiate
 		return resourceFromDict(cast(JSON, res.data))

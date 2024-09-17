@@ -302,8 +302,8 @@ class Dispatcher(object):
 				return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
 
 			case ResultContentType.childResources:
-				childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
-				self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
+				childResources:JSON = { resource.typeShortname : {} } #  Root resource as a dict with no attribute
+				self.resourceTreeDict(allowedResources, childResources[resource.typeShortname]) # Adding just child resources
 				return Result(rsc = ResponseStatusCode.OK, resource = childResources)
 
 			case ResultContentType.discoveryResultReferences:
@@ -743,7 +743,7 @@ class Dispatcher(object):
 		#
 		# Handle RCN's
 		#
-		tpe = _resource.tpe
+		typeShortname = _resource.typeShortname
 
 		match request.rcn:
 			case None | ResultContentType.attributes:
@@ -751,9 +751,9 @@ class Dispatcher(object):
 				return Result(rsc = ResponseStatusCode.CREATED, resource = _resource)
 			
 			case ResultContentType.modifiedAttributes:
-				dictOrg = request.pc[tpe]
-				dictNew = _resource.asDict()[tpe]
-				return Result(resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, 
+				dictOrg = request.pc[typeShortname]
+				dictNew = _resource.asDict()[typeShortname]
+				return Result(resource = { typeShortname : resourceModifiedAttributes(dictOrg, dictNew, request.pc[typeShortname]) }, 
 							rsc = ResponseStatusCode.CREATED)
 
 			case ResultContentType.hierarchicalAddress:
@@ -761,7 +761,7 @@ class Dispatcher(object):
 							rsc = ResponseStatusCode.CREATED)
 		
 			case ResultContentType.hierarchicalAddressAttributes:
-				return Result(resource = { 'm2m:rce' : { noNamespace(tpe) : _resource.asDict()[tpe], 'uri' : _resource.structuredPath() }},
+				return Result(resource = { 'm2m:rce' : { noNamespace(typeShortname) : _resource.asDict()[typeShortname], 'uri' : _resource.structuredPath() }},
 					rsc = ResponseStatusCode.CREATED)
 		
 			case ResultContentType.nothing:
@@ -998,7 +998,7 @@ class Dispatcher(object):
 		# Handle RCN's
 		#
 
-		tpe = resource.tpe
+		typeShortname = resource.typeShortname
 
 		match request.rcn:
 			case None | ResultContentType.attributes:
@@ -1006,12 +1006,12 @@ class Dispatcher(object):
 
 			case ResultContentType.modifiedAttributes:
 				dictNew = deepcopy(resource.dict)
-				requestPC = request.pc[tpe]
+				requestPC = request.pc[typeShortname]
 				# return only the modified attributes. This does only include those attributes that are updated differently, or are
 				# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
 				#  are in the resource's __modified__ variable.
 				return Result(rsc = ResponseStatusCode.UPDATED,
-							  resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
+							  resource = { typeShortname : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
 	
 			case ResultContentType.nothing:
 				return Result(rsc = ResponseStatusCode.UPDATED)
@@ -1187,8 +1187,8 @@ class Dispatcher(object):
 			case ResultContentType.childResources:
 				# direct child resources, NOT the root resource
 				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-				childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
-				self.resourceTreeDict(children, childResources[resource.tpe])
+				childResources:JSON = { resource.typeShortname : {} }			# Root resource as a dict with no attributes
+				self.resourceTreeDict(children, childResources[resource.typeShortname])
 				resultContent = childResources
 
 			case ResultContentType.attributesAndChildResourceReferences:
@@ -1715,7 +1715,7 @@ class Dispatcher(object):
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None
-			handledTPE = None
+			handledTypeShortname = None
 			idx = 0
 			while idx < len(resources):
 				r = resources[idx]
@@ -1728,8 +1728,8 @@ class Dispatcher(object):
 					continue
 				if handledTy is None:					# ty is an int
 					handledTy = r.ty					# this round we check this type
-					handledTPE = r.tpe					# ... and this TPE (important to distinguish specializations in mgmtObj and fcnt )
-				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
+					handledTypeShortname = r.typeShortname					# ... and this typeShortname (important to distinguish specializations in mgmtObj and fcnt )
+				if r.ty == handledTy and r.typeShortname == handledTypeShortname:		# handle only resources of the currently handled type and typeShortname!
 					result.append(r)					# append the found resource 
 					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
 					resources = self.resourceTreeDict(resources, r.dict)	# check recursively whether this resource has children
@@ -1742,7 +1742,7 @@ class Dispatcher(object):
 				if self.sortDiscoveryResources:
 					# result.sort(key=lambda x:(x.ty, x.rn.lower()))
 					result.sort(key = lambda x: (x.ty, x.ct) if ResourceTypes.isInstanceResource(x.ty) else (x.ty, x.rn.lower()))
-				targetResource[result[0].tpe] = [r.asDict(embedded = False) for r in result]
+				targetResource[result[0].typeShortname] = [r.asDict(embedded = False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
 			else:
 				break # end of list, leave while loop
@@ -1927,8 +1927,8 @@ class Dispatcher(object):
 	# 				raise BAD_REQUEST(L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {resource.ty}'))
 			
 	# 		# Filter the attribute(s)
-	# 		tpe = resource.tpe
-	# 		return Result(resource = { tpe : filterAttributes(resource.asDict()[tpe], attributeList) }, 
+	# 		typeShortname = resource.typeShortname
+	# 		return Result(resource = { typeShortname : filterAttributes(resource.asDict()[typeShortname], attributeList) }, 
 	# 					  rsc = ResponseStatusCode.OK)
 	# 	return Result(resource = resource, 
 	# 				  rsc = ResponseStatusCode.OK)

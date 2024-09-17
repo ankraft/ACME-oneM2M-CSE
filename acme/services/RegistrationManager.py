@@ -329,7 +329,7 @@ class RegistrationManager(object):
 				raise CONFLICT(L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
-		cbA.setResourceName(uniqueRN(f'{cbA.tpe}_{getIdFromOriginator(originator)}'))
+		cbA.setResourceName(uniqueRN(f'{cbA.typeShortname}_{getIdFromOriginator(originator)}'))
 
 
 	#########################################################################

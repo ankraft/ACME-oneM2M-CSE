@@ -78,7 +78,7 @@ class FCNT(ContainerResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCNT, dct, pi, tpe = fcntType, create = create)
+		super().__init__(ResourceTypes.FCNT, dct, pi, typeShortname = fcntType, create = create)
 
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
@@ -165,9 +165,9 @@ class FCNT(ContainerResource):
 		
 		# Validate containerDefinition
 		if dct is None:	# create
-			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe)):
+			if (t := CSE.validator.getFlexContainerSpecialization(self.typeShortname)):
 				if t[0] != self.cnd:
-					raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}'))
+					raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.typeShortname}. Must be: {t[0]}'))
 
 		# Validate the child resources
 		self._validateChildren(originator, dct = dct)
@@ -200,7 +200,7 @@ class FCNT(ContainerResource):
 			#   - the Constants.attrHasFCI attriubte is NOT set (which means we are in progress to add FCI), or
 			#   - the update dct is empty, or
 			#   - there is any of the custom attributes OR lbl attribute present
-			_updateCustomAttributes = dct is not None and any([each not in self.ignoreAttributes or each in [ 'lbl' ] for each in dct[self.tpe].keys()])
+			_updateCustomAttributes = dct is not None and any([each not in self.ignoreAttributes or each in [ 'lbl' ] for each in dct[self.typeShortname].keys()])
 			if not deletingFCI and (_updateCustomAttributes or dct is None or not self[Constants.attrHasFCI]):
 				self.addFlexContainerInstance(originator)
 			
@@ -288,7 +288,7 @@ class FCNT(ContainerResource):
 			if attr == 'at':
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		fciRes = Factory.resourceFromDict(resDict = { self.tpe : dct }, pi = self.ri, ty = ResourceTypes.FCI)
+		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, pi = self.ri, ty = ResourceTypes.FCI)
 		CSE.dispatcher.createLocalResource(fciRes, self, originator = originator)
 		fciRes.setAttribute('cs', self.cs)
 		fciRes.setAttribute('org', originator)

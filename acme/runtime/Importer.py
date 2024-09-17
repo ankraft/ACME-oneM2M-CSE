@@ -333,13 +333,13 @@ class Importer(object):
 				if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					return False
 				for eachDefinition in definitions:
-					if not (tpe := findXPath(eachDefinition, 'type')):
+					if not (typeShortname := findXPath(eachDefinition, 'type')):
 						L.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
 					if (cnd := findXPath(eachDefinition, 'cnd')) is None:
-						L.logDebug(f'Missing containerDefinition (cnd) for type: {tpe} in file: {fn}')
+						L.logDebug(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}')
 					if (lname := findXPath(eachDefinition, 'lname')) is None:
-						L.logDebug(f'Missing long name (lname) for type: {tpe} in file: {fn}')
+						L.logDebug(f'Missing long name (lname) for type: {typeShortname} in file: {fn}')
 					
 					# Attributes are optional. However, add a dummy entry
 					if not (attrs := findXPath(eachDefinition, 'attributes')):
@@ -347,20 +347,20 @@ class Importer(object):
 						
 					definedAttrs:list[str] = []
 					for attr in attrs:
-						if not (attributePolicy := self._parseAttribute(attr, fn, tpe, checkListType = False)):		# TODO Handle list sub-types for flexContainers
+						if not (attributePolicy := self._parseAttribute(attr, fn, typeShortname, checkListType = False)):		# TODO Handle list sub-types for flexContainers
 							return False
 
 						# Test whether an attribute has been defined twice
 						# Prevent copy-paste errors
 						if attributePolicy.sname in definedAttrs:
-							L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {tpe}')
+							L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {typeShortname}')
 							return False
 						definedAttrs.append(attributePolicy.sname)
 
 						# Add the attribute to the additional policies structure
 						try:
 							if not CSE.validator.addFlexContainerAttributePolicy(attributePolicy):
-								L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {tpe}')
+								L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}')
 								return False
 							countFCP += 1
 						except Exception as e:
@@ -373,8 +373,8 @@ class Importer(object):
 							L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 							return False
 
-						if not CSE.validator.addFlexContainerSpecialization(tpe, cnd, lname):
-							L.logErr(f'Cannot add flexContainer specialization for type: {tpe}')
+						if not CSE.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
+							L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
 							return False
 
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
@@ -492,7 +492,7 @@ class Importer(object):
 
 	def _parseAttribute(self, attr:JSON, 
 							  fn:str, 
-							  tpe:Optional[str] = None, 
+							  typeShortname:Optional[str] = None, 
 							  sname:Optional[str] = None, 
 							  checkListType:Optional[bool] = True) -> Optional[AttributePolicy]:
 		"""	Parse a single attribute definitions for common as well as for flexContainer attributes.
@@ -500,7 +500,7 @@ class Importer(object):
 			Args:
 				attr: JSON dictionary with the attribute definition to parse.
 				fn: Filename that contains the attribute definition.
-				tpe: Domain and attribute name. Mandatory for a flexContainer specialization, optional otherwise.
+				typeShortname: Domain and attribute name. Mandatory for a flexContainer specialization, optional otherwise.
 				sname: Shortname of the attribute.
 			Return:
 				The parsed definition in an `AttributePolicy`.
@@ -509,59 +509,59 @@ class Importer(object):
 		#	Get the attribute short name
 		if not sname:
 			if not (sname := findXPath(attr, 'sname')) or not isinstance(sname, str) or len(sname) == 0:
-				L.logErr(f'Missing, empty, or wrong short name (sname) for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Missing, empty, or wrong short name (sname) for attribute: {typeShortname}:{sname} in file: {fn}', showStackTrace=False)
 				return None
 
-		#	Get the name space and determine the full tpe
+		#	Get the name space and determine the full typeShortname
 		if not (ns := findXPath(attr, 'ns')):
 			ns = 'm2m'	# default
 		if not isinstance(ns, str) or not ns:
 			L.logErr(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', showStackTrace=False)
 			return None
-		if not tpe:
-			tpe = f'{ns}:{sname}'
+		if not typeShortname:
+			typeShortname = f'{ns}:{sname}'
 		
 		#	Get the attribute long name
 		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
-			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Look for complex type first
 		if (ctype := findXPath(attr, 'ctype')) is not None:
 			if not isinstance(ctype, str) or len(ctype) == 0:
-				L.logErr(f'Wrong complex type name (ctype) for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Wrong complex type name (ctype) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
 
 		#	Determine the type name and assign the internal data type
 		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
-			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 		if not (typ := BasicType.to(typeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 			typ = BasicType.complex
 
 		#	Get the optional cardinality
 		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := Cardinality.to(tmp, insensitive=True)):	# default car01
-			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		# 	Get the create optionality
 		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Get the update optionality
 		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Get the delete optionality
 		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		#	Ge the announcement optionality
 		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := Announced.to(tmp, insensitive=True)):	# default OA
-			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 				
 		#	Check and determine the list type
@@ -572,10 +572,10 @@ class Importer(object):
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
 			if lTypeName := findXPath(attr, 'ltype'):
 				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
-					L.logErr(f'Empty list type name (ltype): {lTypeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+					L.logErr(f'Empty list type name (ltype): {lTypeName} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 					return None
 				if typ not in [ BasicType.list, BasicType.listNE ]:
-					L.logErr(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+					L.logErr(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 					return None
 				if not (ltype := BasicType.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BasicType.complex
@@ -585,11 +585,11 @@ class Importer(object):
 					else:
 						evalues = findXPath(attr, 'evalues')	# TODO?
 					if not evalues or not isinstance(evalues, dict):
-						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
+						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 						return None
-					# evalues = self._expandEnumValues(evalues, tpe, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
+					# evalues = self._expandEnumValues(evalues, typeShortname, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
-					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
+					L.isDebug and L.logDebug(f'Missing list type for attribute: {typeShortname} in file: {fn}')
 
 		#	Check and get enum definitions
 		evalues = None
@@ -599,13 +599,13 @@ class Importer(object):
 			else:
 				evalues = findXPath(attr, 'evalues')	# TODO?
 			if not evalues or not isinstance(evalues, dict):
-				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} etype: {etype} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} etype: {etype} in file: {fn}', showStackTrace=False)
 				return None
-			# evalues = self._expandEnumValues(evalues, tpe, fn)
+			# evalues = self._expandEnumValues(evalues, typeShortname, fn)
 
 		#	Check missing complex type definition
 		if typ == BasicType.dict or ltype == BasicType.dict:
-			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {tpe} in file: {fn}')
+			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {typeShortname} in file: {fn}')
 		# re-type an anonymous dict to a normal dict
 		if typ == BasicType.adict:
 			typ = BasicType.dict
@@ -614,7 +614,7 @@ class Importer(object):
 		#	CHeck whether the mandatory rtypes field is set
 		if (rtypes := findXPath(attr, 'rtypes')):
 			if not isinstance(rtypes, list):
-				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
 
 		#	Create an AttributePolicy instance and return it
@@ -628,7 +628,7 @@ class Importer(object):
 								namespace = ns,
 								lname = lname,
 								sname = sname,
-								tpe = tpe,
+								typeShortname = typeShortname,
 								rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
 								ctype = ctype,
 								fname = fn,
@@ -695,7 +695,7 @@ class Importer(object):
 		self.isImporting = False
 
 
-	def _expandEnumValues(self, evalues:list[int|str], tpe:str, fn:str) -> Optional[list[int]]:
+	def _expandEnumValues(self, evalues:list[int|str], typeShortname:str, fn:str) -> Optional[list[int]]:
 
 		#	Check and get enum definitions
 		_evalues:list[int] = []
@@ -706,20 +706,20 @@ class Importer(object):
 			if isinstance(each, str):
 				s, found, e = each.partition('..')
 				if not found:
-					L.logErr(f'Error in evalue range definition: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					L.logErr(f'Error in evalue range definition: {each} for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 					return None
 				try:
 					si = int(s)
 					ei = int(e)
 				except ValueError:
-					L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 					return None
 				if not si < ei:
-					L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+					L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 					return None
 				_evalues.extend(list(range(si, ei+1)))
 				continue
-			L.logErr(f'Unsupported value: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Unsupported value: {each} for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
 		return _evalues

@@ -79,7 +79,7 @@ class SMD(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SMD, dct, pi, tpe = fcntType, create = create)
+		super().__init__(ResourceTypes.SMD, dct, pi, typeShortname = fcntType, create = create)
 		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
 
 

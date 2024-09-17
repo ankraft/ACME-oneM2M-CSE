@@ -726,7 +726,7 @@ function createResource() {{
 
 				# Write createResource commands for all resources
 				for r in resdis:
-					tpe = r.tpe
+					typeShortname = r.typeShortname
 					attributes = {}
 					for attr in r.getAttributes():
 						policy = CSE.validator.getAttributePolicy(r.ty, attr)
@@ -737,7 +737,7 @@ function createResource() {{
 					if 'et' in attributes:
 						del attributes['et']
 
-					attributes = { tpe : attributes }
+					attributes = { typeShortname : attributes }
 					parentSrn = r.getSrn().rsplit('/', 1)[0]
 					# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
 					f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')

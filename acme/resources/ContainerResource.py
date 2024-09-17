@@ -27,9 +27,9 @@ class ContainerResource(AnnounceableResource):
 	def __init__(self, ty:ResourceTypes, 
 					   dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
-					   tpe:Optional[str] = None, 
+					   typeShortname:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ty, dct, pi, tpe = tpe, create = create)
+		super().__init__(ty, dct, pi, typeShortname = typeShortname, create = create)
 
 
 	def getOldestRI(self) -> str:

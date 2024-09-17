@@ -52,7 +52,7 @@ class Resource(object):
 	"""
 
 	__slots__ = (
-		'tpe',
+		'typeShortname',
 		'readOnly',
 		'inheritACP',
 		'dict',
@@ -68,7 +68,7 @@ class Resource(object):
 				 ty:ResourceTypes, 
 				 dct:JSON, 
 				 pi:Optional[str] = None, 
-				 tpe:Optional[str] = None,
+				 typeShortname:Optional[str] = None,
 				 create:Optional[bool] = False,
 				 inheritACP:Optional[bool] = False, 
 				 readOnly:Optional[bool] = False, 
@@ -79,14 +79,14 @@ class Resource(object):
 				ty: Mandatory resource type.
 				dct: Mandatory resource attributes.
 				pi: Optional parent resource identifier.
-				tpe: Optional domain and resource name.
+				typeShortname: Optional domain and resource type short name.
 				create: Optional indicator whether this resource is just created or an instance of an existing resource.
 				inheritACP: Optional indicator whether this resource inherits *acpi* attribute from its parent (if any).
 				readOnly: Optional indicator whether this resource is read-only.
 				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
 
-		self.tpe = tpe
+		self.typeShortname = typeShortname
 		"""	The resource's domain and type name. """
 		self.readOnly	= readOnly
 		"""	Flag set during creation of a resource instance whether a resource type allows only read-only access to a resource. """
@@ -99,13 +99,13 @@ class Resource(object):
 		self._originalDict = {}
 		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
-		# For some types the tpe/root is empty and will be set later in this method
+		# For some types the typeShortname/root is empty and will be set later in this method
 		if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
-			self.tpe = ty.tpe() if not tpe else tpe
+			self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
 
 		if dct is not None: 
 			self.isImported = dct.get(Constants.attrImported)	# might be None, or boolean
-			self.dict = deepcopy(dct.get(self.tpe))
+			self.dict = deepcopy(dct.get(self.typeShortname))
 			if not self.dict:
 				self.dict = deepcopy(dct)
 			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
@@ -114,10 +114,10 @@ class Resource(object):
 			self.setAttribute(Constants.attrIsInstantiated, True)
 
 		# if self.dict is not None:
-		if not self.tpe: 
-			self.tpe = self[Constants.attrRtype]
+		if not self.typeShortname: 
+			self.typeShortname = self[Constants.attrRtype]
 		if not self.hasAttribute('ri'):
-			self.setAttribute('ri', uniqueRI(self.tpe), overwrite = False)
+			self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
 		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
 			self.setAttribute('pi', pi)
 
@@ -127,13 +127,13 @@ class Resource(object):
 
 		# Create an RN if there is none (not given, none in the resource)
 		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
-			self.setResourceName(uniqueRN(self.tpe))
+			self.setResourceName(uniqueRN(self.typeShortname))
 
 		# Check uniqueness of ri. otherwise generate a new one. Only when creating
 		if create:
 			while not isUniqueRI(ri := self.ri):
 				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-				self['ri'] = uniqueRI(self.tpe)
+				self['ri'] = uniqueRI(self.typeShortname)
 
 		# Set some more attributes
 		if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
@@ -153,7 +153,7 @@ class Resource(object):
 		# But see also the comment in update() !!!
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
-		self.setAttribute(Constants.attrRtype, self.tpe)
+		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 
 	# Default encoding implementation. Overwrite in subclasses
@@ -179,7 +179,7 @@ class Resource(object):
 				}
 		if sort:
 			dct = dict(sorted(dct.items())) # sort the dictionary by key
-		return { self.tpe : dct } if embedded else dct
+		return { self.typeShortname : dct } if embedded else dct
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -205,7 +205,7 @@ class Resource(object):
 		# Also don't validate virtual resources
 		if not self[Constants.attrIsInstantiated] and not self.isVirtual() :
 			CSE.validator.validateAttributes(self._originalDict, 
-											 self.tpe, 
+											 self.typeShortname, 
 											 self.ty, 
 											 self._attributes, 
 											 isImported = self.isImported, 
@@ -227,7 +227,7 @@ class Resource(object):
 				raise BAD_REQUEST('acpi must not be an empty list')
 			self.setAttribute('acpi', self._checkAndFixACPIreferences(self.acpi))
 
-		self.setAttribute(Constants.attrRtype, self.tpe, overwrite = False) 
+		self.setAttribute(Constants.attrRtype, self.typeShortname, overwrite = False) 
 
 
 	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
@@ -308,14 +308,14 @@ class Resource(object):
 		updatedAttributes:dict[str, Any] = None
 		if dct:
 			CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
-			# if self.tpe not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
+			# if self.typeShortname not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 			# 	L.isWarn and L.logWarn("Update type doesn't match target")
 			# 	raise CONTENTS_UNACCEPTABLE('resource types mismatch')
 
 			# # validate the attributes
 			# if doValidateAttributes:
 			# 	CSE.validator.validateAttributes(dct, 
-			# 									 self.tpe, 
+			# 									 self.typeShortname, 
 			# 									 self.ty, 
 			# 									 self._attributes, 
 			# 									 create = False, 
@@ -324,7 +324,7 @@ class Resource(object):
 			# 									 isAnnounced = self.isAnnounced())
 
 			if self.ty not in [ResourceTypes.FCNTAnnc]:
-				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
+				updatedAttributes = dct[self.typeShortname] # get structure under the resource type specifier
 			else:
 				updatedAttributes = findXPath(dct, '{*}')
 
@@ -570,7 +570,7 @@ class Resource(object):
 				# Let's optimize and store the coordinates as a JSON object
 				crd = CSE.validator.validateGeoLocation(loc)
 				if dct is not None:
-					setXPath(dct, f'{self.tpe}/{Constants.attrLocCoordinate}', crd, overwrite = True)
+					setXPath(dct, f'{self.typeShortname}/{Constants.attrLocCoordinate}', crd, overwrite = True)
 				else:
 					self.setLocationCoordinates(crd)
 
@@ -798,7 +798,7 @@ class Resource(object):
 		"""
 		value = self.attribute(key)	# old value
 		if dct is not None:
-			newValue = findXPath(dct, f'{self.tpe}/{key}')
+			newValue = findXPath(dct, f'{self.typeShortname}/{key}')
 			value = newValue if newValue is not None else value
 		return value
 
@@ -1015,7 +1015,7 @@ class Resource(object):
 			Return:
 				String that identifies the resource.
 		"""
-		return f'{self.tpe}(ri={self.ri}, srn={self.getSrn()})'
+		return f'{self.typeShortname}(ri={self.ri}, srn={self.getSrn()})'
 
 
 	def __eq__(self, other:object) -> bool:

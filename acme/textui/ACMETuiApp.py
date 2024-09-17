@@ -72,7 +72,7 @@ class ACMETuiApp(App):
 
 		# Add the resource types to the attribute explanations
 		for n in ResourceTypes:
-			self.attributeExplanations[ResourceTypes(n).tpe()] = f'{ResourceTypes.fullname(n)} resource type'
+			self.attributeExplanations[ResourceTypes(n).typeShortname()] = f'{ResourceTypes.fullname(n)} resource type'
 
 		# This is used to keep track of the current tab.
 		# This is a bit different from the actual current tab from the self.tabs

@@ -233,7 +233,7 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MobileNetwork ManagementObject specialization. """
 
 
-	def tpe(self) -> str:
+	def typeShortname(self) -> str:
 		"""	Get the resource type name.
 		
 			Return:
@@ -313,15 +313,15 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def fromTPE(cls, tpe:str) -> ResourceTypes:
+	def fromTypeShortname(cls, typeShortname:str) -> ResourceTypes:
 		"""	Get a resource type by its resource name.
 
 			Args:
-				tpe: Type name.
+				typeShortname: Type name.
 			Return:
 				The resource type.
 		"""
-		return _ResourceNamesTypes.get(tpe)
+		return _ResourceNamesTypes.get(typeShortname)
 
 
 	@classmethod
@@ -2610,7 +2610,7 @@ class AttributePolicy:
 	""" Long name of the attribute. """
 	namespace:str				= None	# namespace
 	""" Namespace of the attribute. """
-	tpe:str   					= None	# namespace:type name
+	typeShortname:str   					= None	# namespace:type name
 	""" Type name of the attribute. """
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
 	""" List of resource types that this attribute is valid for. """

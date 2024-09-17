@@ -139,7 +139,7 @@ class SUB(Resource):
 		# (where this happens) is done only after a lot of other stuff hapened.
 		# So, the resource is validated twice in an update :()
 		CSE.validator.validateAttributes(dct, 
-										 self.tpe, 
+										 self.typeShortname, 
 										 self.ty, 
 										 self._attributes, 
 										 create = False, 

@@ -72,7 +72,7 @@ class ACP(AnnounceableResource):
 		# Inherited
 		super().validate(originator, dct, parentResource)
 		
-		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
+		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.typeShortname()}/pvs')):
 			if len(pvs) == 0:
 				raise BAD_REQUEST('pvs must not be empty')
 		if not self.pvs:
@@ -123,7 +123,7 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
-		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
+		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.typeShortname()}/pvs/acr'):
 			acr.append( { 'acor': [ RC.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 

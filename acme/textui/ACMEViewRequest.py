@@ -235,7 +235,7 @@ class ACMEViewRequest(VerticalScroll):
 			
 			case _:
 				# Copy the original an used attributes 
-				_resourceAttributes = cast(JSON, resource.asDict()[resource.tpe])
+				_resourceAttributes = cast(JSON, resource.asDict()[resource.typeShortname])
 
 
 		if resource is not None:
@@ -261,7 +261,7 @@ class ACMEViewRequest(VerticalScroll):
 					_possibleResourceAttributes.pop(attr)
 				
 			# dump and format the remaining attributes
-			_text = json.dumps({ resource.tpe: _resourceAttributes }, indent = 4)
+			_text = json.dumps({ resource.typeShortname: _resourceAttributes }, indent = 4)
 
 			# Replace all None values with an indication that the value is not yet present and must be added
 			_text = _text.replace('null', '... // mandatory attribute')
