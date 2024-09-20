@@ -1166,7 +1166,7 @@ class NotificationManager(object):
 			notificationRequest:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
-						'net' : NotificationEventType.resourceUpdate
+						'net' : NotificationEventType.resourceUpdate.value
 					},
 					'sur' : toSPRelative(sub['ri'])
 				}
@@ -1198,7 +1198,7 @@ class NotificationManager(object):
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some attributes to the notification
-			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
+			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType.value)
 			data is not None and setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
 			operationMonitor is not None and setXPath(notificationRequest, 'm2m:sgn/nev/om', operationMonitor)
 			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
