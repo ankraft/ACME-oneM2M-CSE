@@ -18,7 +18,7 @@ from ..etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
 from ..etc.DateUtils import waitFor
-from ..etc.ACMEUtils import csiFromSPRelative
+from ..etc.ACMEUtils import csiFromSPRelative, getIdFromOriginator
 from ..etc.Utils import renameThread
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
@@ -503,8 +503,9 @@ class MQTTClient(object):
 			# Miguel's proposal
 			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
 			
-			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(getIdFromOriginator(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
