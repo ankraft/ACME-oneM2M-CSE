@@ -443,10 +443,10 @@ class TestMisc(unittest.TestCase):
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
-		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+		dct2 = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
 					'lbl': [ 'test' ],
 				}}
-		r, rsc = UPDATE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR, dct)
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR, dct2)
 		self.assertEqual(rsc, RC.NO_CONTENT, r)
 		self.assertEqual(len(r), 0, r)
 
