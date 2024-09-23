@@ -799,7 +799,7 @@ def sendCoapRequest(operation:Operation,
 					data:JSON|str = None, 
 					ct:str=None, 
 					timeout:float=None, 
-					headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+					headers:Parameters=None) -> Tuple[str|JSON, int]:	# type: ignore # TODO Constants
 	
 	if timeout is None:
 		timeout = coapTimeout	# not an argument default, because a calling function might set it to None
@@ -870,36 +870,36 @@ def sendCoapRequest(operation:Operation,
 	else:
 		# OneM2M Options
 		if ty is not None:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_TY.number, int(ty))
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_TY.number, int(ty))				# type:ignore[attr-defined]
 
 		if originator is not None:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_FR.number, originator)
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_FR.number, originator)			# type:ignore[attr-defined]
 
-		_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQI.number, rid := uniqueID())
+		_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQI.number, rid := uniqueID())		# type:ignore[attr-defined]
 		setLastRequestID(rid)
 
 		if C.hfRVI in headers:	# overwrite RVI option
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, headers[C.hfRVI])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, headers[C.hfRVI])		# type:ignore[attr-defined]
 			del headers[C.hfRVI]
 		else:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, RELEASEVERSION)
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, RELEASEVERSION)		# type:ignore[attr-defined]
 		if C.hfVSI in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_VSI.number, headers[C.hfVSI])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_VSI.number, headers[C.hfVSI])		# type:ignore[attr-defined]
 			del headers[C.hfVSI]
 		if C.hfRET in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQET.number, headers[C.hfRET])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQET.number, headers[C.hfRET])	# type:ignore[attr-defined]
 			del headers[C.hfRET]
 		if C.hfOET in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OET.number, headers[C.hfOET])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OET.number, headers[C.hfOET])		# type:ignore[attr-defined]
 			del headers[C.hfOET]
 		if C.hfRST in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RSET.number, headers[C.hfRST])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RSET.number, headers[C.hfRST])	# type:ignore[attr-defined]
 			del headers[C.hfRST]
 		if C.hfRTU in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RTURI.number, headers[C.hfRTU])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RTURI.number, headers[C.hfRTU])	# type:ignore[attr-defined]
 			del headers[C.hfRTU]
 		if C.hfOT in headers:
-			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OT.number, headers[C.hfOT])
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OT.number, headers[C.hfOT])		# type:ignore[attr-defined]
 			del headers[C.hfOT]
 
 	if len(headers):
@@ -907,7 +907,7 @@ def sendCoapRequest(operation:Operation,
 
 	# Set CoAP payload
 	if data is not None and isinstance(data, dict):
-		request.payload = json.dumps(data)
+		request.payload = bytes(json.dumps(data), 'utf-8')
 	
 	# Add query parameters 
 	request.uri_query = urlComponents.query
@@ -932,31 +932,31 @@ def sendCoapRequest(operation:Operation,
 	resp:JSON = {}
 	for option in options:
 		match option.number:
-			case defines.OptionRegistry.oneM2M_RSC.number:
-				rsc = option.value
+			case defines.OptionRegistry.oneM2M_RSC.number:		# type:ignore[attr-defined]
+				rsc = cast(int, option.value)
 				resp['rsc'] = rsc
-			case defines.OptionRegistry.oneM2M_RVI.number:
-				rvi = option.value
+			case defines.OptionRegistry.oneM2M_RVI.number:		# type:ignore[attr-defined]
+				rvi = cast(str, option.value)
 				resp['rvi'] = rvi
-			case defines.OptionRegistry.oneM2M_VSI.number:
-				resp['vsi'] = option.value
-			case defines.OptionRegistry.oneM2M_OT.number:
-				resp['ot'] = option.value
-			case defines.OptionRegistry.oneM2M_RSET.number:
-				resp['rset'] = option.value
+			case defines.OptionRegistry.oneM2M_VSI.number:		# type:ignore[attr-defined]
+				resp['vsi'] = cast(str, option.value)
+			case defines.OptionRegistry.oneM2M_OT.number:		# type:ignore[attr-defined]
+				resp['ot'] = cast(str, option.value)
+			case defines.OptionRegistry.oneM2M_RSET.number:		# type:ignore[attr-defined]
+				resp['rset'] = cast(str, option.value)
 	
 	# Set the last response header for the test cases to check later
 	setLastHeaders(fillLastHeaders(resp))
 
 	if response.payload:
-		payload = json.loads(response.payload)
+		payload = cast(JSON, json.loads(response.payload))
 		if rvi == '5':
 			if 'pc' in payload:
 				return payload['pc'], rsc
 		else:
 			return payload, rsc
 	else:
-		return response.payload, rsc
+		return cast(str, response.payload), rsc
 
 	print('Error')
 	return None, 5103

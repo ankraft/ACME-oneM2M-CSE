@@ -124,7 +124,7 @@ class ACMECoAPHandler(object):
 				options: The options of the request.
 		"""
 		# We need to distinguish between CREATE and NOTIFY requests already here
-		if defines.OptionRegistry.oneM2M_TY.number in options:
+		if defines.OptionRegistry.oneM2M_TY.number in options:	# type:ignore[attr-defined]
 			L.enableScreenLogging and renameThread('CO_C')
 			L.isDebug and L.logDebug('CoAP POST request received')
 			self._eventCoAPCreate()
@@ -181,7 +181,7 @@ class ACMECoAPHandler(object):
 		L.isDebug and L.logDebug(f'Source: {request.source}')
 		L.isDebug and L.logDebug(f'Options: {optionsToDict(request.options)}')
 		if request.payload:
-			L.isDebug and L.logDebug(f'Payload: {request.payload}')	# TODO print hex payload
+			L.isDebug and L.logDebug(f'Payload: {request.payload!r}')	# TODO print hex payload
 
 		# TODO log request
 
@@ -264,7 +264,7 @@ class ACMECoAPHandler(object):
 					cseRequest.coapAccept = ContentSerializationType.fromCoAP(options.getOne(option))	
 
 				# From / Originator
-				case defines.OptionRegistry.oneM2M_FR.number:
+				case defines.OptionRegistry.oneM2M_FR.number:	# type:ignore[attr-defined]
 					req['fr'] = options.getOne(option)
 				
 				# Ignore uri_path
@@ -272,39 +272,39 @@ class ACMECoAPHandler(object):
 					pass
 			
 				# type
-				case defines.OptionRegistry.oneM2M_TY.number:
+				case defines.OptionRegistry.oneM2M_TY.number:	# type:ignore[attr-defined]
 					req['ty'] = options.getOne(option)
 
 				# rqi
-				case defines.OptionRegistry.oneM2M_RQI.number:
+				case defines.OptionRegistry.oneM2M_RQI.number:	# type:ignore[attr-defined]
 					req['rqi'] = options.getOne(option)
 
 				# rvi
-				case defines.OptionRegistry.oneM2M_RVI.number:
+				case defines.OptionRegistry.oneM2M_RVI.number:	# type:ignore[attr-defined]
 					req['rvi'] = options.getOne(option)
 		
 				# rqet
-				case defines.OptionRegistry.oneM2M_RQET.number:
+				case defines.OptionRegistry.oneM2M_RQET.number:	# type:ignore[attr-defined]
 					req['rqet'] = options.getOne(option)
 		
 				# rset
-				case defines.OptionRegistry.oneM2M_RSET.number:
+				case defines.OptionRegistry.oneM2M_RSET.number:	# type:ignore[attr-defined]
 					req['rset'] = options.getOne(option)
 
 				# oet
-				case defines.OptionRegistry.oneM2M_OET.number:
+				case defines.OptionRegistry.oneM2M_OET.number:	# type:ignore[attr-defined]
 					req['oet'] = options.getOne(option)
 
 				# vsi
-				case defines.OptionRegistry.oneM2M_VSI.number:
+				case defines.OptionRegistry.oneM2M_VSI.number:	# type:ignore[attr-defined]
 					req['vsi'] = options.getOne(option)
 
 				# ot
-				case defines.OptionRegistry.oneM2M_OT.number:
+				case defines.OptionRegistry.oneM2M_OT.number:	# type:ignore[attr-defined]
 					req['ot'] = options.getOne(option)
 
 				# rtu / RTURI
-				case defines.OptionRegistry.oneM2M_RTURI.number:
+				case defines.OptionRegistry.oneM2M_RTURI.number:	# type:ignore[attr-defined]
 					rtu = options.getOne(option)
 					rt = dict()
 					rt['nu'] = rtu.split('&')		
@@ -395,18 +395,18 @@ class ACMECoAPHandler(object):
 
 		# Build the options
 		if result.rsc:
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSC.number, f'{int(result.rsc)}'))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSC.number, f'{int(result.rsc)}'))	# type:ignore[attr-defined]
 		if rqi := findXPath(cast(JSON, outResult.data), 'rqi'):
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, rqi))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, rqi))					# type:ignore[attr-defined]
 		else:
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, result.request.rqi))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, result.request.rqi))	# type:ignore[attr-defined]
 		if rvi := findXPath(cast(JSON, outResult.data), 'rvi'):
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, rvi))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, rvi))					# type:ignore[attr-defined]
 		if vsi := findXPath(cast(JSON, outResult.data), 'vsi'):
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_VSI.number, vsi))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_VSI.number, vsi))					# type:ignore[attr-defined]
 		if rset := findXPath(cast(JSON, outResult.data), 'rset'):
-			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSET.number, rset))
-		response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OT.number, getResourceDate()))
+			response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSET.number, rset))					# type:ignore[attr-defined]
+		response.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OT.number, getResourceDate()))			# type:ignore[attr-defined]
 
 		# CoAP status code
 		response.code = result.rsc.coapStatusCode().number
@@ -417,7 +417,16 @@ class ACMECoAPHandler(object):
 		# From hereon, data is a string or byte string
 		origData:JSON = cast(JSON, outResult.data)
 		# outResult.data = serializeData(cast(JSON, outResult.data)['pc'], result.request.ct) if 'pc' in cast(JSON, outResult.data) else ''
-		outResult.data = response.payload = serializeData(origData['pc'], result.request.ct) if 'pc' in origData else ''
+		match result.request.ct:
+			case ContentSerializationType.JSON:
+				outResult.data = response.payload = bytes(cast(str, serializeData(origData['pc'], ContentSerializationType.JSON)) if 'pc' in origData else '', 'utf-8')
+			case ContentSerializationType.CBOR:
+				outResult.data = response.payload = cast(bytes, serializeData(origData['pc'], ContentSerializationType.CBOR) if 'pc' in origData else b'')
+			case ContentSerializationType.XML:
+				L.logErr('XML serialization not supported')
+				raise INTERNAL_SERVER_ERROR('XML serialization not supported')
+			case ContentSerializationType.PLAIN:
+				outResult.data = response.payload = cast(bytes, origData['pc'] if 'pc' in origData else b'')
 		
 		#
 		#	Add Location-Path header, if this is a response to a CREATE operation, and uri is present
@@ -431,8 +440,9 @@ class ACMECoAPHandler(object):
 			raise INTERNAL_SERVER_ERROR(f'Error while processing the response: {L.logErr(str(e))}')
 
 		# Log the response
-		if isinstance(outResult.data, (bytes)):
-			L.isDebug and L.logDebug(f'<== CoAP Response ({result.rsc}):\nOptions: {optionsToDict(response.options)}\nBody: \n{toHex(outResult.data)}\n=>\n{str(result.toData())}')
+		# if isinstance(outResult.data, (bytes)):
+		if result.request.ct == ContentSerializationType.CBOR:
+			L.isDebug and L.logDebug(f'<== CoAP Response ({result.rsc}):\nOptions: {optionsToDict(response.options)}\nBody: \n{toHex(cast(bytes, outResult.data))}\n=>\n{str(result.toData())}')
 		elif 'pc' in origData:
 			L.isDebug and L.logDebug(f'<== CoAP Response ({result.rsc}):\nOptions: {optionsToDict(response.options)}\nBody: {origData["pc"]}')	# might be different serialization
 		else:
@@ -672,38 +682,38 @@ class ACMECoAPServer(CoAP):
 			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, ct.toCoAPContentType()))
 			# Resource type
 			if request.ty:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_TY.number, request.ty.value))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_TY.number, request.ty.value))	# type:ignore[attr-defined]
 			# Originator
-			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_FR.number, request.originator))
+			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_FR.number, request.originator))		# type:ignore[attr-defined]
 			# Request Identifier
 			if not request.rqi:
 				request.rqi = uniqueRI()
-			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, request.rqi))
+			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQI.number, request.rqi))			# type:ignore[attr-defined]
 			# Release version
 			if request.rvi != '1':
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, request.rvi if request.rvi is not None else RC.releaseVersion))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RVI.number, request.rvi if request.rvi is not None else RC.releaseVersion))		# type:ignore[attr-defined]
 			# Originating Timestamp
-			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OT.number, request.ot if request.ot else getResourceDate()))
+			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OT.number, request.ot if request.ot else getResourceDate()))			# type:ignore[attr-defined]
 			# Event Category
 			if request.ec:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_EC.number, request.ec.value))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_EC.number, request.ec.value))	# type:ignore[attr-defined]
 			# Request Expiration Timestamp. Also sets the timeout
 			if request.rqet:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQET.number, request.rqet))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RQET.number, request.rqet))		# type:ignore[attr-defined]
 				timeout = timeUntilAbsRelTimestamp(request.rqet)
 			# Result Expiration Timestamp
 			if request.rset:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSET.number, request.rset))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RSET.number, request.rset))		# type:ignore[attr-defined]
 			# Operation Execution Time
 			if request.oet:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OET.number, request.oet))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_OET.number, request.oet))		# type:ignore[attr-defined]
 			# Blocking Request URI
 			if request.rt and request.rt != ResponseType.blockingRequest:
 				if (nu := request.originalRequest.get('nu')):
-					coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RTURI.number, '&'.join(nu)))
+					coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_RTURI.number, '&'.join(nu)))	# type:ignore[attr-defined]
 			# VSI
 			if request.vsi:
-				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_VSI.number, request.vsi))
+				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_VSI.number, request.vsi))		# type:ignore[attr-defined]
 
 			queryArguments = []
 			# result content type
@@ -738,10 +748,10 @@ class ACMECoAPServer(CoAP):
 			content = request.pc if request.pc else None
 
 			# serialize data (only if dictionary, pass on non-dict data)
-			data = None
+			data:Optional[bytes] = None
 			# TODO support FETCH requests for R5
 			if request.op in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
-				data = serializeData(content, ct)
+				data = cast(bytes, serializeData(content, ct))
 			# elif content and not raw:
 			elif content:
 				raise INTERNAL_SERVER_ERROR(L.logErr(f'Operation: {request.op.name} doesn\'t allow content'))
@@ -777,23 +787,23 @@ class ACMECoAPServer(CoAP):
 								resp.ct = RC.defaultSerialization
 
 						# response status code
-						case defines.OptionRegistry.oneM2M_RSC.number:
+						case defines.OptionRegistry.oneM2M_RSC.number:		# type:ignore[attr-defined]
 							rsc = options.getOne(number)
 							resp.rsc = ResponseStatusCode(int(options.getOne(number)))
 
 						# originator
-						case defines.OptionRegistry.oneM2M_FR.number:
+						case defines.OptionRegistry.oneM2M_FR.number:		# type:ignore[attr-defined]
 							resp.originator = options.getOne(number)
 						
 						# request identifier
-						case defines.OptionRegistry.oneM2M_RQI.number:
+						case defines.OptionRegistry.oneM2M_RQI.number:		# type:ignore[attr-defined]
 							rqi = options.getOne(number)
 							if rqi != request.rqi:
 								raise BAD_REQUEST(L.logWarn(f'Received wrong or missing request identifier: {rqi}'))
 							resp.rqi = rqi
 
 						# originator timestamp
-						case defines.OptionRegistry.oneM2M_OT.number:
+						case defines.OptionRegistry.oneM2M_OT.number:		# type:ignore[attr-defined]
 							ot = options.getOne(number)
 							try:
 								isodate.parse_date(ot) # Check if valid ISO 8601 date, may raise exception
@@ -982,7 +992,7 @@ class CoAPServer(object):
 #	Helper functions
 #
 
-def optionsToDict(options:CoapthonOption) -> MultiDict:
+def optionsToDict(options:list[CoapthonOption]) -> MultiDict:
 	"""	Convert CoAP options to a dictionary.
 
 		Args:
@@ -997,7 +1007,7 @@ def optionsToDict(options:CoapthonOption) -> MultiDict:
 	return result
 
 
-def dissectOptions(options:CoapthonOption) -> MultiDict:
+def dissectOptions(options:list[CoapthonOption]) -> MultiDict:
 	"""	Dissect the options of a CoAP request in a dictionary.
 
 		Args:
