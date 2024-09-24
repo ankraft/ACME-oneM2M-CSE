@@ -181,7 +181,8 @@ class MQTTClientHandler(MQTTHandler):
 		def _logRequest(result:Result) -> None:
 			"""	Log request.
 			"""
-			L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
+			if result.request.originalRequest:
+				L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
 			if contentType == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
@@ -504,7 +505,7 @@ class MQTTClient(object):
 			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
-			
+
 			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(getIdFromOriginator(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well

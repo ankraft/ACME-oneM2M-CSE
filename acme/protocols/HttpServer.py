@@ -609,8 +609,6 @@ class HttpServer(object):
 			raise REQUEST_TIMEOUT(L.logWarn(f'http request timeout after {timeout}s'))
 		except Exception as e:
 			L.logWarn(f'Failed to send request: {str(e)}')
-			import traceback
-			traceback.print_exc()
 			raise TARGET_NOT_REACHABLE('target not reachable')
 		
 		res = Result(rsc = resp.rsc, data = resp.pc, request = resp)
