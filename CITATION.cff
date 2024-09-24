@@ -5,6 +5,6 @@ authors:
   given-names: "Andreas"
   orcid: "https://orcid.org/0009-0007-5592-7195"
 title: "ACME oneM2M CSE"
-version: 2024.10
+version: "2024.10"
 date-released: 2024-09-24
 url: "https://acmecse.net"
