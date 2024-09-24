@@ -12,6 +12,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added support for the CoAP protocol binding.
+- [CSE] Added support to read command line arguments from a file.
 - [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
 - [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
 - [TUI] Added copy of CSV data to the clipboard for instance resources.

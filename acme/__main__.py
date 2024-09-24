@@ -9,6 +9,7 @@
 
 """	This module contains the ACME CSE implementation. It is the main module of the ACME CSE.
 """
+from typing import Generator
 
 import os, re, sys
 if sys.version_info < (3, 8):
@@ -65,7 +66,20 @@ def parseArgs() -> argparse.Namespace:
 		Returns:
 			The parsed arguments.
 	"""
-	parser = argparse.ArgumentParser(prog='acme')
+
+	def convertArgLineToArgs(arg_line: str) -> list[str]:
+		"""	Convert single lines to arguments. Deliver one at a time.
+			Skip empty lines.
+		"""
+		return [arg for arg in arg_line.split() if arg.strip()]
+	
+	parser = argparse.ArgumentParser(prog='acme', fromfile_prefix_chars='@', description='Use "@<filename>" to read additional arguments from a file')
+
+	# convert single lines to arguments. Skip empty lines and lines starting with '#'
+	parser.convert_arg_line_to_args = lambda arg_line: [arg					# type: ignore[method-assign]
+													 	for arg in (arg_line.split() if not arg_line.strip().startswith('#') else [])
+														if arg.strip()] 
+
 	parser.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
 	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
 
