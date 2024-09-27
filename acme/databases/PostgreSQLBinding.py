@@ -22,6 +22,7 @@ from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 from configparser import ConfigParser
 
 from .DBBinding import DBBinding
+from ..etc.Constants import Constants as C
 from ..etc.Types import JSON, ResourceTypes
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from ..helpers.NetworkTools import isValidPort
@@ -546,11 +547,27 @@ class PostgreSQLBinding(DBBinding):
 
 	def updateResource(self, resource:JSON, ri:str) -> JSON:
 		# L.isDebug and L.logDebug(f'Updating resource {ri} in database: {resource}')
+
+		# First save complex attributes that may contain attributes with NULL values themselves 
+		# that must be preserved.
+		# The prepared statement calls jsonb_strip_nulls to remove NULL values from the resource
+		# and this removes NULL values in complex attributes as well, which is not what we want.
+		_savedAttributes = { a: resource[a] for a in (C.attrModified,) if a in resource }
+		L.isDebug and L.logDebug(f'Saving attributes: {_savedAttributes}')
+
 		# Update first
 		self._executePrepared('updateResource (%s, %s)', (PsyJson(resource), ri))
+	
 		# Get the updated resource
-		return self._executePrepared('getResourceByRI (%s)', (ri,), 
-									 lambda c: self._fetchSingleRow(c, False))
+		result = self._executePrepared('getResourceByRI (%s)', (ri,), 
+									   lambda c: self._fetchSingleRow(c, False))
+		
+		# Restore the saved attributes
+		for k, v in _savedAttributes.items():
+			result[k] = v
+
+		# Finally return the updated resource
+		return result
 	
 
 	def deleteResource(self, ri:str) -> None:

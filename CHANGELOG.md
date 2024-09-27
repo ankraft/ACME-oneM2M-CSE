@@ -30,6 +30,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed crash when the environment variables contain "$" characters.
+- [DATABASE] Fixed wrong removal of null-attributes in complex attributes for the PostgreSQL database binding.
 - [WEB] Fixed the web UI when the CSE's http server is not running directly under the root path.
 
 ### Removed
@@ -89,7 +90,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed wrong examples and onboarding defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
-- [database] Improved the reconnect handling for the PostgreSQL database in case of a lost connection.
+- [DATABASE] Improved the reconnect handling for the PostgreSQL database in case of a lost connection.
 
 
 

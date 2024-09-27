@@ -21,7 +21,7 @@ from ..helpers.TextTools import findXPath
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
 from ..etc.Types import Operation 
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
-from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR, OPERATION_NOT_ALLOWED, CONFLICT
+from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
