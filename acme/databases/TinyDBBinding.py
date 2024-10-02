@@ -764,6 +764,12 @@ class TinyDBBinding(DBBinding):
 		
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	"""	Read the TinyDB configuration from the configuration file.
+
+		Args:
+			parser: The configuration parser.
+			config: The configuration object.
+	"""
 	config.database_tinydb_path = parser.get('database.tinydb', 'path', fallback = './data')
 	config.database_tinydb_cacheSize = parser.getint('database.tinydb', 'cacheSize', fallback = 0)		# Default: no caching
 	config.database_tinydb_writeDelay = parser.getint('database.tinydb', 'writeDelay', fallback = 1)		# Default: 1 second
@@ -771,6 +777,12 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 
 
 def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	"""	Validate the TinyDB configuration.
+
+		Args:
+			config: The configuration object.
+			initial: Flag indicating if this is the initial validation.
+	"""
 	
 	# override configuration with command line arguments
 	if Configuration._args_DBDataDirectory is not None:

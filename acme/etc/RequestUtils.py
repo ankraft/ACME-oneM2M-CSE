@@ -177,6 +177,18 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 
 
 def contentAsString(content:bytes|str|Any, ct:ContentSerializationType) -> str:
+	"""	Convert a content to a string. 
+		If the content is a string, it is returned as is.
+		If the content is a byte array, it is decoded to a string.
+		If the content is neither a string nor a byte array, it is converted to a hex string.
+
+		Args:
+			content: The content to convert.
+			ct: The content serialization type.
+		
+		Return:
+			The content as a string.
+	"""
 	if not content:	return ''
 	if isinstance(content, str): return content
 	return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
@@ -432,6 +444,17 @@ def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 
 
 def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str] = None) -> CSERequest:
+	"""	Fill a request with arguments from a `MultiDict`. The `MultiDict` contains the arguments from a request.
+
+		Args:
+			arguments: The `MultiDict` with the arguments.
+			dct: The dictionary to fill.
+			cseRequest: The `CSERequest` object to fill.
+			sep: The separator for the attribute list.
+
+		Return:
+			The filled `CSERequest` object.
+	"""
 
 	from ..etc.ACMEUtils import removeNoneValuesFromDict
 

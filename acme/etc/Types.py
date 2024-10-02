@@ -1045,6 +1045,7 @@ AccessControlOperations:TypeAlias = int
 """	Access Control Operations. This is a bitfield of Operation values, therefore difficult to implement as an enum. """
 
 OperationMonitor:TypeAlias = Dict[str, Tuple[AccessControlOperations, str]]
+"""	Operation Monitor. """
 	
 
 ##############################################################################
@@ -2666,11 +2667,24 @@ FlexContainerSpecializations:TypeAlias = Dict[str, Tuple[str, str]]
 #
 
 class LogLevel(ACMEIntEnum):
+	"""	Log levels.
+
+		These are the standard log levels, plus an additional *OFF* level.
+	"""
 	INFO 	= logging.INFO
+	"""	Info level. """
+
 	DEBUG 	= logging.DEBUG
+	"""	Debug level. """
+
 	ERROR 	= logging.ERROR
+	"""	Error level. """
+
 	WARNING = logging.WARNING
+	"""	Warning level. """
+
 	OFF		= sys.maxsize
+	"""	Off level. """
 	
 
 	def next(self) -> LogLevel:
@@ -2687,6 +2701,14 @@ class LogLevel(ACMEIntEnum):
 
 	@classmethod
 	def toLogLevel(cls, logLevel:str) -> Optional[LogLevel]:
+		"""	Convert a string to a log level.
+
+			Args:
+				logLevel: String representation of a log level.
+
+			Return:
+				Log level or *None*.
+		"""
 
 		logLevel = logLevel.lower()
 		# logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config

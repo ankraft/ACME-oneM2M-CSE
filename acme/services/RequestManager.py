@@ -1619,7 +1619,6 @@ class RequestManager(object):
 		if not uri.startswith(RC.cseCsiSlash):	# TODO make a utility out of this
 			if originator == RC.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-			# TODO DELETEME elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
 			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission, request = request, resultResource = targetResource):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 				return []

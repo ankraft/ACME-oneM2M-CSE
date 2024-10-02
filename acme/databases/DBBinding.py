@@ -6,6 +6,8 @@
 #
 #	Abstract class for database bindings.
 #
+""" A module that provides an abstract base class for the database bindings.
+"""
 
 from __future__ import annotations
 from typing import Optional, Callable, Sequence
@@ -195,7 +197,6 @@ class DBBinding(ABC):
 			Args:
 				identifierMapping: The identifier mapping to insert.
 				structuredPathMapping: The structured path mapping to insert.
-				resource: The resource to insert.
 				ri: The resource ID of the resource.
 				srn: The structured resource name of the resource.
 		"""
@@ -235,7 +236,7 @@ class DBBinding(ABC):
 		"""	Add a child resource to the childResources DB.
 
 			Args:
-				resource: The resource to add as a child.
+				childResource: The resource to add as a child.
 				ri: The resource ID of the resource.
 		"""
 		...
@@ -453,7 +454,7 @@ class DBBinding(ABC):
 		"""	Update or insert an action representation.
 		
 			Args:
-				action: The action representation to update or insert.
+				actionRepr: The action representation to update or insert.
 				ri: The resource ID of the action representation.
 			
 			Return:

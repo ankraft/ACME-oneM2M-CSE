@@ -6,6 +6,8 @@
 #
 #	Base class for all container resources
 #
+"""	This module implements the *ContainerResource* class. *ContainerResource* is the base class for all container resources.
+"""
 
 from __future__ import annotations
 from typing import Optional
@@ -23,6 +25,8 @@ addToInternalAttributes(Constants.attrLaRi)
 addToInternalAttributes(Constants.attrOlRi)
 
 class ContainerResource(AnnounceableResource):
+	"""	The *ContainerResource* class is the base class for all container resources.
+	"""
 
 	def __init__(self, ty:ResourceTypes, 
 					   dct:Optional[JSON] = None, 
@@ -84,6 +88,11 @@ class ContainerResource(AnnounceableResource):
 
 	
 	def instanceAdded(self, instance:Resource) -> None:
+		"""	An instance was added to the container. Update the *cni* and *cbs* attributes.
+		
+			Args:
+				instance: The instance that was added.
+		"""
 		try:
 			self.setAttribute('cni', self.cni + 1)	# Increment cni because an instance is added
 			self.setAttribute('cbs', self.cbs + instance.cs) # Add to sum of cbs
@@ -93,6 +102,11 @@ class ContainerResource(AnnounceableResource):
 
 
 	def instanceRemoved(self, instance:Resource) -> None:
+		"""	An instance was removed from the container. Update the *cni* and *cbs* attributes.
+		
+			Args:
+				instance: The instance that was removed.
+		"""
 		try:
 			self.setAttribute('cni', self.cni - 1)	# Decrement cni because an instance is added
 			self.setAttribute('cbs', self.cbs - instance.cs) # Substract from sum of cbs

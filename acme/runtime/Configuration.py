@@ -82,197 +82,512 @@ class Configuration(object):
 	"""
 
 	coap_enable:bool
+	"""	Enable or disable the CoAP server. """
+
 	coap_listenIF:str
+	"""	The network interface to listen on for CoAP. """
+
 	coap_port:int
+	"""	The port to listen on for CoAP. """
+
 	coap_address:str
+	"""	The address to listen on for CoAP. """
+
 	coap_timeout:float
+	"""	The timeout for CoAP requests. """
+
 	coap_clientConnectionCacheSize:int
+	"""	The size of the client connection cache. """
+
 
 	coap_security_caCertificateFile:str
+	"""	The CA certificate file for CoAP. """
+
 	coap_security_caPrivateKeyFile:str
+	"""	The CA private key file for CoAP. """
+
 	coap_security_dtlsVersion:str
+	"""	The DTLS version for CoAP. """
+
 	coap_security_useDTLS:bool
+	"""	Enable or disable DTLS for CoAP. """
+
 	coap_security_verifyCertificate:bool
+	"""	Enable or disable certificate verification for CoAP. """
+
 
 	console_confirmQuit:bool
+	"""	Confirm quitting the console. """
+
 	console_headless:bool
+	"""	Run the CSE in headless mode. """
+
 	console_hideResources:list[str]
+	"""	Resources to hide in the console. """
+
 	console_refreshInterval:float
+	"""	The refresh interval for the console. """
+
 	console_theme:str
+	"""	The theme for the console. """
+
 	console_treeIncludeVirtualResource:bool
+	"""	Include virtual resources in the console tree. """
+
 	console_treeMode:str|TreeMode
+	"""	The tree mode for the console. """
+
 
 	cse_asyncSubscriptionNotifications:bool
+	"""	Enable or disable asynchronous subscription notifications. """
+
 	cse_checkExpirationsInterval:int
+	"""	The interval to check for resource expirations. """
+
 	cse_cseID:str
+	"""	The CSE-ID of the CSE. """
+
 	cse_defaultSerialization:str|ContentSerializationType
+	"""	The default serialization for the CSE. """
+
 	cse_enableRemoteCSE:bool
+	"""	Enable or disable remote CSEs. """
+
 	cse_enableResourceExpiration:bool
+	"""	Enable or disable resource expiration. """
+
 	cse_enableSubscriptionVerificationRequests:bool
+	"""	Enable or disable subscription verification requests. """
+
 	cse_flexBlockingPreference:str
+	"""	The flex blocking preference for the CSE. """
+
 	cse_maxExpirationDelta:int
+	"""	The maximum expiration delta for resources. """
+
 	cse_originator:str
+	"""	The originator for the CSE. """
+
 	cse_poa:list[str]
+	"""	The Points of Access for the CSE. """
+
 	cse_releaseVersion:str
+	"""	The release version of the CSE. """
+
 	cse_requestExpirationDelta:float
+	"""	The request expiration delta for the CSE. """
+
 	cse_resourcesPath:str
+	"""	The path to the resources. """
+
 	cse_resourceID:str
+	"""	The resource ID of the CSE. """
+
 	cse_resourceName:str
+	"""	The resource name of the CSE. """
+
 	cse_sendToFromInResponses:bool
+	"""	Send the To and From in responses. """
+
 	cse_sortDiscoveredResources:bool
+	"""	Sort discovered resources. """
+
 	cse_supportedReleaseVersions:list[str]
+	"""	The supported release versions of the CSE. """
+
 	cse_serviceProviderID:str
+	"""	The service provider ID of the CSE. """
+
 	cse_type:str|CSEType
+	"""	The type of the CSE. """
 
 	cse_announcements_allowAnnouncementsToHostingCSE:bool
+	"""	Allow announcements to the hosting CSE. """
+
 	cse_announcements_checkInterval:int
+	"""	The interval to check for announcements. """
+
 	cse_announcements_delayAfterRegistration:float
+	"""	The delay after registration for announcements. """
+
 
 	cse_operation_jobs_balanceLatency:int
+	"""	The latency for balancing jobs. """
+
 	cse_operation_jobs_balanceReduceFactor:float
+	"""	The reduce factor for balancing jobs. """
+
 	cse_operation_jobs_balanceTarget:float
+	"""	The target for balancing jobs. """
+
 
 	cse_operation_requests_enable:bool
+	"""	Enable or disable operation requests. """
+
 	cse_operation_requests_size:int
+	"""	The size of the operation requests. """
+
 
 	cse_registrar_address:str
+	"""	The address of the registrar. """
+
 	cse_registrar_checkInterval:int
+	"""	The interval to check the registrar. """
+
 	cse_registrar_cseID:str
+	"""	The CSE-ID of the registrar. """
+
 	cse_registrar_excludeCSRAttributes:list[str]
+	"""	Attributes to exclude from CSR. """
+
 	cse_registrar_resourceName:str
+	"""	The resource name of the registrar. """
+
 	cse_registrar_root:str
+	"""	The root of the registrar. """
+
 	cse_registrar_serialization:str|ContentSerializationType
+	"""	The serialization for the registrar. """
+
 
 	cse_registration_allowedAEOriginators:list[str]
+	"""	Allowed AE originators for registration. """
+
 	cse_registration_allowedCSROriginators:list[str]
+	"""	Allowed CSR originators for registration. """
+
 	cse_registration_checkLiveliness:bool
+	"""	Check liveliness for registration. """
+
 
 	cse_security_enableACPChecks:bool
+	"""	Enable or disable ACP checks. """
+
 	cse_security_fullAccessAdmin:bool
+	"""	Full access for admin. """
+
 
 	database_type:str
+	"""	The type of the database. """
+
 	database_resetOnStartup:bool
+	"""	Reset the database on startup. """
+
 	database_backupPath:str
+	"""	The path for the database backup. """
+
 
 	database_tinydb_path:str
+	"""	The path to the TinyDB database. """
+
 	database_tinydb_cacheSize:int
+	"""	The cache size for the TinyDB database. """
+
 	database_tinydb_writeDelay:int
+	"""	The write delay for the TinyDB database. """
+
 
 	database_postgresql_host:str
+	"""	The host of the PostgreSQL database. """
+
 	database_postgresql_port:int
+	"""	The port of the PostgreSQL database. """
+
 	database_postgresql_role:str
+	"""	The role of the PostgreSQL database. """
+
 	database_postgresql_password:str
+	"""	The password of the PostgreSQL database. """
+
 	database_postgresql_database:str
+	"""	The database of the PostgreSQL database. """
+
 	database_postgresql_schema:str
+	"""	The schema of the PostgreSQL database. """
+
 
 	http_address:str
+	"""	The address to listen on for HTTP the http server. """
+
 	http_allowPatchForDelete:bool
+	"""	Allow PATCH for DELETE operations. """
+
 	http_enableStructureEndpoint:bool
+	"""	Enable the structure endpoint. """
+
 	http_enableUpperTesterEndpoint:bool
+	"""	Enable the upper tester endpoint. """
+
 	http_listenIF:str
+	"""	The network interface to listen on for HTTP. """
+
 	http_port:int
+	"""	The port to listen on for HTTP. """
+
 	http_root:str
+	"""	The root of the HTTP path. """
+
 	http_timeout:float
+	"""	The timeout for HTTP requests. """
+
 
 	http_cors_enable:bool
+	"""	Enable or disable CORS. """
+
 	http_cors_resources:list[str]
+	"""	The resources for CORS. """
+
 
 	http_security_caCertificateFile:str
+	"""	The CA certificate file for HTTP. """
+
 	http_security_caPrivateKeyFile:str
+	"""	The CA private key file for HTTP. """
+
 	http_security_tlsVersion:str
+	"""	The TLS version for HTTP. """
+
 	http_security_useTLS:bool
+	"""	Enable or disable TLS for HTTP. """
+
 	http_security_verifyCertificate:bool
+	"""	Enable or disable certificate verification for HTTP. """
+
 	http_security_enableBasicAuth:bool
+	"""	Enable or disable basic authentication for HTTP. """
+
 	http_security_enableTokenAuth:bool
+	"""	Enable or disable token authentication for HTTP. """
+
 	http_security_basicAuthFile:str
+	"""	The file for basic authentication for HTTP. """
+
 	http_security_tokenAuthFile:str
+	"""	The file for token authentication for HTTP. """
+
 
 	http_wsgi_enable:bool
+	"""	Enable or disable the WSGI server. """
+
 	http_wsgi_connectionLimit:int
+	"""	The connection limit for the WSGI server. """
+
 	http_wsgi_threadPoolSize:int
+	"""	The thread pool size for the WSGI server. """
+
 
 	logging_count:int
+	"""	The number of log entries. """
+
 	logging_enableBindingsLogging:bool
+	"""	Enable or disable bindings logging. """
+
 	logging_enableFileLogging:bool
+	"""	Enable or disable file logging. """
+
 	logging_enableScreenLogging:bool
+	"""	Enable or disable screen logging. """
+
 	logging_filter:list
+	"""	The filter for logging. """
+
 	logging_level:str|LogLevel
+	"""	The log level. """
+
 	logging_maxLogMessageLength:int
+	"""	The maximum log message length. """
+
 	logging_path:str
+	"""	The path for logging. """
+
 	logging_queueSize:int
+	"""	The queue size for logging. """
+
 	logging_size:int
+	"""	The size of the log. """
+
 	logging_stackTraceOnError:bool
+	"""	Enable or disable stack trace on error. """
+
 	logging_enableUTCTimezone:bool
+	"""	Enable or disable UTC timezone. """
+
 
 	mqtt_address:str
+	"""	The address to listen on for the MQTT server. """
+
 	mqtt_enable:bool
+	"""	Enable or disable the MQTT server. """
+
 	mqtt_keepalive:int
+	"""	The keepalive for MQTT. """
+
 	mqtt_listenIF:str
+	"""	The network interface to listen on for MQTT. """
+
 	mqtt_port:int
+	"""	The port to listen on for MQTT. """
+
 	mqtt_timeout:float
+	"""	The timeout for MQTT requests. """
+
 	mqtt_topicPrefix:str
+	"""	The topic prefix for MQTT. """
+
 
 	mqtt_security_allowedCredentialIDs:list[str]
+	"""	The allowed credential IDs for MQTT. """
+
 	mqtt_security_caCertificateFile:str
+	"""	The CA certificate file for MQTT. """
+
 	mqtt_security_password:str
+	"""	The password for MQTT. """
+
 	mqtt_security_username:str
+	"""	The username for MQTT. """
+
 	mqtt_security_useTLS:bool
+	"""	Enable or disable TLS for MQTT. """
+
 	mqtt_security_verifyCertificate:bool
+	"""	Enable or disable certificate verification for MQTT. """
+
 
 	resource_acp_selfPermission:int
+	"""	The self permission for ACP. """
+
 
 	resource_actr_ecpContinuous:int
+	"""	The continuous for ACTR. """
+
 	resource_actr_ecpPeriodic:int
+	"""	The periodic for ACTR. """
+
 
 	resource_cnt_enableLimits:bool
+	"""	Enable or disable limits for CNT. """
+
 	resource_cnt_mni:int
+	"""	The MNI for CNT. """
+
 	resource_cnt_mbs:int
+	"""	The MBS for CNT. """
+
 
 	resource_grp_resultExpirationTime:int
+	"""	The result expiration time for GRP. """
 
 	resource_lcp_mni:int
+	"""	The MNI for LCP. """
+
 	resource_lcp_mbs:int
+	"""	The MBS for LCP. """
+
 
 	resource_req_et:int
+	"""	The expiration time for REQ. """
+
 
 	resource_sub_batchNotifyDuration:int
+	"""	The batch notify duration for SUB. """
+
 
 	resource_ts_enableLimits:bool
+	"""	Enable or disable limits for TS. """
+
 	resource_ts_mbs:int
+	"""	The MBS for TS. """
+
 	resource_ts_mdn:int
+	"""	The MDN for TS. """
+
 	resource_ts_mni:int
+	"""	The MNI for TS. """
+
 
 	resource_tsb_bcni:str
+	"""	The BCNI for TSB. """
+
 	resource_tsb_bcnt:float
+	"""	The BCNT for TSB. """
+
 
 	scripting_fileMonitoringInterval:float
+	"""	The file monitoring interval for scripting. """
+
 	scripting_maxRuntime:float
+	"""	The maximum runtime for scripting. """
+
 	scripting_scriptDirectories:list[str]
+	"""	The script directories for scripting. """
+
 	scripting_verbose:bool
+	"""	Enable or disable verbose mode for scripting. """
+
 
 	cse_statistics_enable:bool
+	"""	Enable or disable statistics. """
+
 	cse_statistics_writeInterval:int
+	"""	The write interval for statistics. """
+
 
 	textui_refreshInterval:float
+	"""	The refresh interval for the text UI. """
+
 	textui_startWithTUI:bool
+	"""	Start with the text UI. """
+
 	textui_theme:str
+	"""	The theme for the text UI. """
+
 	textui_maxRequestSize:int
+	"""	The maximum request size for the text UI. """
+
 	textui_notificationTimeout:float
+	"""	The notification timeout for the text UI. """
+
 
 	webui_root:str
+	"""	The root path for the web UI. """
+
 
 	websocket_enable:bool
+	"""	Enable or disable the WebSocket server. """
+
+
 	websocket_address:str
+	"""	The address to listen on for the WebSocket server. """
+
 	websocket_listenIF:str
+	"""	The network interface to listen on for WebSocket. """
+
 	websocket_loglevel:int|str
+	"""	The log level for WebSocket. """
+
 	websocket_port:int
+	"""	The port to listen on for WebSocket. """
+
 	websocket_timeout:float
+	"""	The timeout for WebSocket requests. """
+
 
 	websocket_security_caCertificateFile:str
+	"""	The CA certificate file for WebSocket. """
+
 	websocket_security_caPrivateKeyFile:str
+	"""	The CA private key file for WebSocket. """
+
 	websocket_security_tlsVersion:str
+	"""	The TLS version for WebSocket. """
+
 	websocket_security_useTLS:bool
+	"""	Enable or disable TLS for WebSocket. """
+
 	websocket_security_verifyCertificate:bool
+	"""	Enable or disable certificate verification for WebSocket. """
+	
 
 	moduleDirectory:pathlib.Path = None
 	""" The base directory of the ACME module. """
@@ -477,6 +792,7 @@ class Configuration(object):
 		try:
 
 			# Call the configuration handlerfor each module
+			importlib.import_module('blabla.kkk')
 			for m in _configModules:
 				importlib.import_module(m).readConfiguration(config, Configuration)
 		

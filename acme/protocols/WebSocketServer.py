@@ -636,6 +636,12 @@ class WebSocketServer(object):
 
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	"""	Read the configuration from the configuration file.
+
+		Args:
+			parser: The configuration parser.
+			config: The configuration object.
+	"""
 
 	# Basic configs
 	config.websocket_enable = parser.getboolean('websocket', 'enable', fallback = False)
@@ -654,6 +660,12 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 
 
 def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	"""	Validate the configuration.
+
+		Args:
+			config: The configuration object.
+			initial: Flag whether this is the initial validation.
+	"""
 	config.websocket_address = normalizeURL(config.websocket_address)
 
 	# override configuration with command line arguments

@@ -735,7 +735,7 @@ class Storage(object):
 		
 			Args:
 				action: The action to update or insert.
-				period: The period for the action.
+				periodTS: The period for the action.
 				count: The run count for the action.
 
 			Return:

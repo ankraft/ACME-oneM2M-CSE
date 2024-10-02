@@ -37,14 +37,31 @@ class PostgreSQLBinding(DBBinding):
 	"""
 	
 	tableActions = 'actions'
+	"""	The name of the table for actions. """
+
 	tableBatchNotifications = 'batchNotifications'
+	"""	The name of the table for batch notifications. """
+
 	tableChildResources = 'childResources'
+	"""	The name of the table for child resource mappings. """
+
 	tableIdentidiers = 'identifiers'
+	"""	The name of the table for identifier mappings. """
+
 	tableRequests = 'requests'
+	"""	The name of the table to store requests and responses. """
+
 	tableResources = 'resources'
+	"""	The name of the table for resources. """
+
 	tableSchedules = 'schedules'
+	"""	The name of the table for schedules. """
+
 	tableStatistics = 'statistics'
+	"""	The name of the table for statistic information. """
+
 	tableSubscriptions = 'subscriptions'
+	"""	The name of the table for subscription mappings. """
 
 
 	def __init__(self,	dbHost:str, 
@@ -906,6 +923,12 @@ class PostgreSQLBinding(DBBinding):
 
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	"""	Read the configuration settings for the PostgreSQL database binding from the configuration file.
+
+		Args:
+			parser: The configuration parser object.
+			config: The configuration object to store the settings.
+	"""
 
 	#	Database PostgreSQL
 
@@ -918,6 +941,12 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 
 
 def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	"""	Validate the configuration settings.
+
+		Args:
+			config: The configuration object to validate.
+			initial: Whether this is the initial validation or not.
+	"""
 
 	# PostgreSQL
 

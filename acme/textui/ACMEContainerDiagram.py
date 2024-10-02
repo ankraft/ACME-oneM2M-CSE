@@ -53,7 +53,6 @@ class ACMEContainerDiagram(Container):
 
 			Args:
 				refreshCallback: The callback to refresh the diagram.
-				tuiApp: The TUI application.
 				id: The ID of the view.
 		"""
 		super().__init__(id = id)

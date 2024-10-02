@@ -84,7 +84,7 @@ class ACMEViewRequest(VerticalScroll):
 				buttonVariant: The button variant.
 				callback: The callback for the button action
 				enableEditor: Enable the editor.
-				opertaion: The operation for the request.
+				operation: The operation for the request.
 				selectCallback: The callback for the select change.
 				responseView: The response view.
 		"""
@@ -286,7 +286,7 @@ class ACMEViewRequest(VerticalScroll):
 		"""	Prepare the request for an operation.
 
 			Args:
-				resource: The resource to target.
+				targetResource: The resource to target.
 
 			Returns:
 				The request structure.

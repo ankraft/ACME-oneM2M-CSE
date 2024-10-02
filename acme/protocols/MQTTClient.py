@@ -30,11 +30,6 @@ from ..runtime.Logging import Logging as L
 
 class MQTTClientHandler(MQTTHandler):
 	"""	Handler registering oneM2M topics and handling resceived requests.
-
-		Attributes:
-			mqttClient: The using MQTTClient instance for this handler.
-			topicPrefix: The used topic prefix to recognize requests for this handler.
-			topicPrefixCont: Count of elements in the prefix.
 	"""
 
 	__slots__ = (
@@ -42,11 +37,21 @@ class MQTTClientHandler(MQTTHandler):
 		'topicPrefixCount',
 		'operationEvents',
 	)
+	"""	Slots for the MQTTClientHandler. """
 
 	def __init__(self, mqttClient:MQTTClient) -> None:
+		"""	Initialize the MQTTClientHandler.
+
+			Args:
+				mqttClient: The MQTTClient instance using this handler.
+		"""
 		super().__init__()
-		self.mqttClient  = mqttClient
+
+		self.mqttClient = mqttClient
+		""" The MQTTClient instance using this handler. """
+
 		self.topicPrefixCount = len(Configuration.mqtt_topicPrefix.split('/'))	# Count the elements for the prefix
+		""" Number of elements in the prefix. """
 
 		self.operationEvents = {
 			Operation.CREATE:		[CSE.event.mqttCreate, 'MQ_C'],		# type: ignore [attr-defined]
@@ -56,6 +61,7 @@ class MQTTClientHandler(MQTTHandler):
 			Operation.NOTIFY:		[CSE.event.mqttNotify, 'MQ_N'],		# type: ignore [attr-defined]
 			Operation.DISCOVERY:	[CSE.event.mqttRetrieve, 'MQ_F'],	# type: ignore [attr-defined]
 		}
+		""" Operation events. """
 
 
 	def onConnect(self, connection:MQTTConnection) -> bool:
@@ -302,28 +308,34 @@ class MQTTClient(object):
 	__slots__ = (
 		'mqttConnection',
 		'isStopped',
-		'topicsCount',
 		'mqttConnections',
 		'receivedResponses',
 		'receivedResponsesLock',
 	)
+	""" Slots for the MQTTClient. """
 
 	# TODO move config handling to event handler
 
 	def __init__(self) -> None:
+		"""	Initialize the MQTT client.
+		"""
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
-		self.isStopped												= False
-		self.topicsCount											= 0
+		self.isStopped = False
+		""" Flag to indicate whether the MQTT client is stopped. """
+
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
+		""" Dictionary of MQTT connections. """
 
 		self.mqttConnection = self.connectToMqttBroker(address	= Configuration.mqtt_address,
 													   port		= Configuration.mqtt_port,
 													   useTLS	= Configuration.mqtt_security_useTLS,
 													   username = Configuration.mqtt_security_username,
 													   password	= Configuration.mqtt_security_password)
+		""" The MQTT connection. """
+
 		L.isInfo and L.log('MQTT Client initialized')
 	
 
@@ -595,6 +607,12 @@ def logRequest(reqResult:Result,
 
 
 def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
+	"""	Read the MQTT configuration from the configuration file.
+
+		Args:
+			parser: The configuration parser.
+			config: The configuration.
+	"""
 	
 	#	MQTT Client
 	config.mqtt_address = parser.get('mqtt', 'address', fallback = '127.0.0.1')
@@ -615,6 +633,12 @@ def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
 
 
 def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
+	"""	Validate the configuration.
+
+		Args:
+			config: The configuration.
+			initial: Whether this is the initial validation.
+	"""
 
 	# override configuration with command line arguments
 	if Configuration._args_mqttEnabled is not None:
