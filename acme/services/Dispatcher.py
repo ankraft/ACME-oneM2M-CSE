@@ -905,10 +905,10 @@ class Dispatcher(object):
 		if parentResource:
 			try:
 				parentResource = parentResource.dbReload()		# Read the resource again in case it was updated in the DB
+				parentResource.childAdded(resource, originator)			# notify the parent resource
 			except:
 				self.deleteLocalResource(resource)
 				raise
-			parentResource.childAdded(resource, originator)			# notify the parent resource
 
 			# Send event for parent resource
 			self._eventCreateChildResource(parentResource)
