@@ -43,17 +43,22 @@ class ACMEInputField(Container):
 		self._value = value
 		self._placeholder = placeholder
 		self._validators = validators
-
-
-	def compose(self) -> ComposeResult:
-		yield Label(f'[b]{self._labelText}[/b] ', id = 'field-label')
-		with Vertical(id = 'field-input-view'):
-			yield Input(value = self._value, 
+		
+		self._fieldLabel = Label(f'[b]{self._labelText}[/b] ', id = 'field-label')
+		self._fieldInput = Input(value = self._value, 
 						placeholder = self._placeholder,
 						suggester = SuggestFromList(self._suggestions),
 						validators = self._validators,
 						id = 'field-input')
-			yield Label('', id = 'field-message')
+		self._fieldMessage = Label('', id = 'field-message')
+
+
+
+	def compose(self) -> ComposeResult:
+		yield self._fieldLabel
+		with Vertical(id = 'field-input-view'):
+			yield self._fieldInput
+			yield self._fieldMessage
 
 
 	@on(Input.Changed)
@@ -77,19 +82,21 @@ class ACMEInputField(Container):
 			Args:
 				label: The label to set.
 		"""
-		cast(Label, self.query_one('#field-label')).update(f'[b]{label}[/b] ')
+		# cast(Label, self.query_one('#field-label')).update(f'[b]{label}[/b] ')
+		cast(Label, self._fieldLabel).update(f'[b]{label}[/b] ')
 	
 
 	@property
 	def value(self) -> str:
-		return cast(Input, self.query_one('#field-input')).value
+		# return cast(Input, self.query_one('#field-input')).value
+		return self._fieldInput.value
 
 
 	@value.setter
 	def value(self, value:str) -> None:
 		self._value = value
 		try:
-			self.inputField.value = value
+			self._fieldInput.value = value
 		except:
 			pass
 	
@@ -101,7 +108,8 @@ class ACMEInputField(Container):
 	
 	@property
 	def inputField(self) -> Input:
-		return cast(Input, self.query_one('#field-input'))
+		return self._fieldInput
+		# return cast(Input, self.query_one('#field-input'))
 	
 	
 	def setSuggestions(self, suggestions:list[str]) -> None:

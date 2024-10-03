@@ -83,9 +83,12 @@ class ACMEContainerCreate(Container):
 		self.requestOriginator = self.resource.getOriginator()
 
 		# Set the child resource types
-		self.requestView.childResources.set_options([ (ResourceTypes.fullname(t), t)
-													for t in self.resource._allowedChildResourceTypes
-													if ResourceTypes.isRequestCreatable(t) and not ResourceTypes.isAnnounced(t)])
+		try:
+			self.requestView.childResources.set_options([ (ResourceTypes.fullname(t), t)
+														for t in self.resource._allowedChildResourceTypes
+														if ResourceTypes.isRequestCreatable(t) and not ResourceTypes.isAnnounced(t)])
+		except:
+			pass
 
 		# Update the request view
 		self.requestView.updateResourceView(self.resource, 

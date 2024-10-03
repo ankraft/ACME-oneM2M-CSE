@@ -39,6 +39,12 @@ class ACMEContainerResourceServices(Container):
 		self._app = cast(ACMETuiApp, self.app)
 		"""	The application. """
 
+		# Some resources upfront
+		self._servicesExportResource = Vertical(id = 'services-export-resource')
+		self._servicesExportInstances = Vertical(id = 'services-export-instances')
+
+		self._servicesExportResourceResult = Static('', id = 'services-export-resource-result', classes = 'result')
+		self._servicesExportInstancesResult = Static('', id = 'services-export-instances-result', classes = 'result')
 
 	def compose(self) -> ComposeResult:
 		""" Compose the view.
@@ -48,36 +54,36 @@ class ACMEContainerResourceServices(Container):
 		"""
 		with VerticalScroll():
 			# Export resource
-			with (v := Vertical(id = 'services-export-resource')):
-				v.border_title = 'Export Resource'
+			with self._servicesExportResource:
+				self._servicesExportResource.border_title = 'Export Resource'
 				yield Label('Export the resource to a file in the [i]./tmp[/i] directory as a [i]curl[/i] command.', classes='label')
 				with Container(classes='service-command-area'):
 					with Horizontal(classes = 'services-export-controls'):
 						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
 						yield Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
 					yield LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
-					yield Static('', id = 'services-export-resource-result', classes = 'result')
+					yield self._servicesExportResourceResult
 			
 			# Export Instances
-			with (v := Vertical(id = 'services-export-instances')):
-				v.border_title = 'Export Instances'
+			with self._servicesExportInstances:
+				self._servicesExportInstances.border_title = 'Export Instances'
 				yield Label('Export the instances of the container resource to a [i]CSV[/i] file in the [i]./tmp[/i] directory or to the clipboard.', classes='label')
 				with Container(classes='service-command-area'):
 					with Horizontal():
 						yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
 						yield Button('Copy CSV', variant = 'primary', id = 'services-copy-instances-button', classes = 'button')
 					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
-					yield Static('', id = 'services-export-instances-result', classes = 'result')
+					yield self._servicesExportInstancesResult
 
 
 	@property
 	def exportResourceResult(self) -> Static:
-		return cast(Static, self.query_one('#services-export-resource-result'))
+		return self._servicesExportResourceResult
 	
 
 	@property
 	def exportInstancesResult(self) -> Static:
-		return cast(Static, self.query_one('#services-export-instances-result'))
+		return self._servicesExportInstancesResult
 	
 
 	@property
@@ -92,7 +98,7 @@ class ACMEContainerResourceServices(Container):
 
 	@property
 	def exportInstancesView(self) -> Vertical:
-		return cast(Vertical, self.query_one('#services-export-instances'))
+		return self._servicesExportInstances
 
 
 	@property

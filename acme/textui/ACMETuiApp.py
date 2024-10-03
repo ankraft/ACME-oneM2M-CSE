@@ -203,13 +203,13 @@ class ACMETuiApp(App):
 
 	#########################################################################
 
-	def action_open_file(self, filename:str) -> None:
-		"""	Open a file with the default application.
+	# def action_open_file(self, filename:str) -> None:
+	# 	"""	Open a file with the default application.
 		
-			Args:
-				filename: Name of the file to open.
-		"""
-		openFileWithDefaultApplication(filename)
+	# 		Args:
+	# 			filename: Name of the file to open.
+	# 	"""
+	# 	openFileWithDefaultApplication(filename)
 
 
 	#########################################################################

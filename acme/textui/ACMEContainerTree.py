@@ -138,7 +138,10 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri})' if resource else '')
 
 		# Set the visibility of the tabs
-		self.parentContainer.tabs.show_tab('tree-tab-requests')
+		try:
+			self.parentContainer.tabs.show_tab('tree-tab-requests')
+		except:
+			pass
 
 
 	def _update_type_section(self, label:str) -> None:
@@ -233,29 +236,37 @@ class ACMEContainerTree(Container):
 		
 		self.currentResource:Resource = None
 
+		# Create some views and widgets beforehand
+		self._treeTabResourceServices = ACMEContainerResourceServices(id = 'tree-tab-resource-services')
+		self._treeTabResourceCreate = ACMEContainerCreate(id = 'tree-tab-resource-create')
+		self._treeTabResourceUpdate = ACMEContainerUpdate(id = 'tree-tab-resource-update')
+		self._treeTabResourceDelete = ACMEContainerDelete(id = 'tree-tab-resource-delete')
+		self._resourceViewContainer = Container(id = 'resource-view-container')
+		self._resourceView = Static(id = 'resource-view', expand = True)
+
 
 	def compose(self) -> ComposeResult:
 		with Container():
 			yield ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
 			with TabbedContent(id = 'tree-tabs'):
 				with TabPane('Resource', id = 'tree-tab-resource'):
-					with Container(id = 'resource-view-container'):
-						yield (Static(id = 'resource-view', expand = True))
+					with self._resourceViewContainer:
+						yield self._resourceView
 
 				with TabPane('Requests', id = 'tree-tab-requests'):
 					yield ACMEViewRequests(id = 'tree-tab-requests-view')
 
 				with TabPane('Services', id = 'tree-tab-services'):
-					yield ACMEContainerResourceServices(id = 'tree-tab-resource-services')
+					yield self._treeTabResourceServices
 
 				with TabPane('CREATE', id = 'tree-tab-create'):
-					yield ACMEContainerCreate(id = 'tree-tab-resource-create')
+					yield self._treeTabResourceCreate
 
 				with TabPane('UPDATE', id = 'tree-tab-update'):
-					yield ACMEContainerUpdate(id = 'tree-tab-resource-update')
+					yield self._treeTabResourceUpdate
 
 				with TabPane('DELETE', id = 'tree-tab-delete'):
-					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
+					yield self._treeTabResourceDelete
 				
 				with TabPane('Diagram', id = 'tree-tab-diagram'):
 					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
@@ -264,11 +275,7 @@ class ACMEContainerTree(Container):
 				
 	@property
 	def resourceContainer(self) -> Container:
-		return cast(Container, self.query_one('#resource-view-container'))
-
-
-	def on_mount(self) -> None:
-		self.update()
+		return self._resourceViewContainer
 
 
 	def on_show(self) -> None:
@@ -355,7 +362,11 @@ class ACMEContainerTree(Container):
 
 			# Update the services view
 			self.servicesView.updateResource(self.currentResource)
-			self.tabs.show_tab('tree-tab-services')
+
+			try:
+				self.tabs.show_tab('tree-tab-services')
+			except:
+				pass
 
 			# Update Diagram view
 			try:
@@ -422,10 +433,13 @@ class ACMEContainerTree(Container):
 						self.tabs.show_tab('tree-tab-update')
 						self.tabs.show_tab('tree-tab-delete')
 			except:
-				self.tabs.hide_tab('tree-tab-diagram')
-				self.tabs.show_tab('tree-tab-update')
-				self.tabs.show_tab('tree-tab-delete')
-				self.tabs.show_tab('tree-tab-create')
+				try:
+					self.tabs.hide_tab('tree-tab-diagram')
+					self.tabs.show_tab('tree-tab-update')
+					self.tabs.show_tab('tree-tab-delete')
+					self.tabs.show_tab('tree-tab-create')
+				except:
+					pass
 
 		else:
 			jsns = ''
@@ -521,21 +535,21 @@ class ACMEContainerTree(Container):
 
 	@property
 	def createView(self) -> ACMEContainerCreate:
-		return cast(ACMEContainerCreate, self.query_one('#tree-tab-resource-create'))
+		return self._treeTabResourceCreate
 
 
 	@property
 	def deleteView(self) -> ACMEContainerDelete:
-		return cast(ACMEContainerDelete, self.query_one('#tree-tab-resource-delete'))
+		return self._treeTabResourceDelete
 
 
 	@property
 	def updateView(self) -> ACMEContainerUpdate:
-		return cast(ACMEContainerUpdate, self.query_one('#tree-tab-resource-update'))
+		return self._treeTabResourceUpdate
 
 	@property
 	def servicesView(self) -> ACMEContainerResourceServices:
-		return cast(ACMEContainerResourceServices, self.query_one('#tree-tab-resource-services'))
+		return self._treeTabResourceServices
 
 
 	@property
@@ -545,7 +559,7 @@ class ACMEContainerTree(Container):
 
 	@property
 	def resourceView(self) -> Static:
-		return cast(Static, self.query_one('#resource-view'))
+		return self._resourceView
 
 
 	@property
