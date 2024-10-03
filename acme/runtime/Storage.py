@@ -913,21 +913,3 @@ class Storage(object):
 		"""
 		return self.db.removeSchedule(schedule.ri)
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-	config.database_type = parser.get('database', 'type', fallback = 'tinydb')
-	config.database_resetOnStartup = parser.getboolean('database', 'resetOnStartup', fallback = False)
-	config.database_backupPath = parser.get('database', 'backupPath', fallback = './data/backup')
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-
-	# override configuration with command line arguments
-	if Configuration._args_DBReset is True:
-		Configuration.database_resetOnStartup = True
-	if Configuration._args_DBStorageMode is not None:
-		Configuration.database_type = Configuration._args_DBStorageMode
-
-	if config.database_type not in ['tinydb', 'postgresql', 'memory']:
-		raise ConfigurationError(fr'Configuration Error: [i]\[database]:type[/i] must be "tinydb", "postgresql", or "memory"')
-

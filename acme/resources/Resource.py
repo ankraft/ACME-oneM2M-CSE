@@ -16,8 +16,9 @@ from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
-from ..etc.ACMEUtils import isValidID, uniqueRI, uniqueRN, isUniqueRI, removeNoneValuesFromDict
-from ..etc.ACMEUtils import resourceDiff
+from ..etc.RequestUtils import removeNoneValuesFromDict
+from ..etc.IDUtils import isValidID, uniqueRI, uniqueRN
+from ..etc.ACMEUtils import resourceDiff, isUniqueRI
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate

@@ -21,11 +21,11 @@ from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result,
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
-from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
-from ..etc.ACMEUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
-from ..etc.ACMEUtils import compareIDs, localResourceID, getIDFromPath, getIdFromOriginator
+from ..etc.IDUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative, localResourceID, getIdFromOriginator
+from ..etc.ACMEUtils import compareIDs, getIDFromPath
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
 from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL

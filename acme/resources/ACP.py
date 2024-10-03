@@ -8,14 +8,12 @@
 
 from __future__ import annotations
 from typing import List, Optional
-from configparser import ConfigParser
 
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -179,13 +177,3 @@ class ACP(AnnounceableResource):
 		"""
 		return self[Constants.attrRiTyMapping].get(ri)
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Defaults for Access Control Policies
-
-	config.resource_acp_selfPermission = parser.getint('resource.acp', 'selfPermission', fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	pass

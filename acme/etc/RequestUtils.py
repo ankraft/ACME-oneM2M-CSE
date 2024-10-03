@@ -24,6 +24,7 @@ from ..helpers.MultiDict import MultiDict
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.Types import ReqResp
 from ..etc.Constants import RuntimeConstants as RC
+from .IDUtils import uniqueRI
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
@@ -378,8 +379,6 @@ def createRawRequest(**kwargs:Any) -> JSON:
 		Return:
 			JSON dictionary with the request.
 	"""
-	from ..runtime import CSE 
-	from .ACMEUtils import uniqueRI	# Leave it here to avoid circular init
 
 	r = {	'fr': RC.cseCsi,
 			'rqi': uniqueRI(),
@@ -410,9 +409,6 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 			A tuple with the `Result` object, the URL and the parsed URL.
 	"""
 
-	from ..runtime import CSE
-	from .ACMEUtils import uniqueRI
-
 	url = unquote(url)
 	u = urlparse(url)
 	req 					= Result(request = request)
@@ -442,6 +438,20 @@ def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 			 if k in attributesToInclude }
 			 
 
+def removeNoneValuesFromDict(jsn:JSON, allowedNull:Optional[list[str]] = []) -> JSON:
+	"""	Remove Null/None-values from a dictionary, but ignore the ones specified in *allowedNull*.
+
+		Args:
+			jsn: JSON dictionary.
+			allowedNull: Optional list of attribute names to ignore.
+		Return:
+			Return a new dictionary with None-value attributes removed.
+	"""
+	if not isinstance(jsn, dict):
+		return jsn
+	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in jsn.items()) if value is not None or key in allowedNull }
+
+
 
 def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str] = None) -> CSERequest:
 	"""	Fill a request with arguments from a `MultiDict`. The `MultiDict` contains the arguments from a request.
@@ -455,8 +465,6 @@ def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSEReques
 		Return:
 			The filled `CSERequest` object.
 	"""
-
-	from ..etc.ACMEUtils import removeNoneValuesFromDict
 
 	# The Filter Criteria and attribute lists
 	filterCriteria:ReqResp = {}

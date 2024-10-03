@@ -11,18 +11,14 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
 
-from configparser import ConfigParser
-
 from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
-from ..resources.CSEBase import getCSE
 from ..resources import Factory	# attn: circular import
-from ..runtime import CSE
 
 
 class REQ(Resource):
@@ -152,15 +148,3 @@ class REQ(Resource):
 
 		return Factory.resourceFromDict(dct, pi = RC.cseRi, ty = ResourceTypes.REQ)
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Defaults for Request Resources
-
-	config.resource_req_et = parser.getint('resource.req', 'expirationTime', fallback = 60)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-
-	if config.resource_req_et <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.req]:expirationTime[/i] must be > 0')

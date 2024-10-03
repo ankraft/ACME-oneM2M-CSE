@@ -11,7 +11,6 @@
 """
 from __future__ import annotations
 from typing import Dict, Union, Optional
-from configparser import ConfigParser
 
 import datetime
 from urllib.parse import urlparse
@@ -22,7 +21,7 @@ from ..etc.Types import CSEType, ResourceTypes
 from ..etc.DateUtils import utcTime, toISO8601Date
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -521,16 +520,3 @@ skinparam rectangle {
 		result += '@enduml'
 		return result
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Statistics
-
-	config.cse_statistics_enable = parser.getboolean('cse.statistics', 'enable', fallback = True)
-	config.cse_statistics_writeInterval = parser.getint('cse.statistics', 'writeInterval', fallback = 60)		# Seconds
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	if config.cse_statistics_writeInterval <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[cse.statistics]:writeInterval[/i] must be > 0')
-	

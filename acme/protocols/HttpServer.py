@@ -10,8 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re, os
-from configparser import ConfigParser
+import logging, sys, urllib3, re
 
 import flask
 from flask import Flask, Request, request
@@ -28,16 +27,15 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.ACMEUtils import uniqueRI, toSPRelative
-from ..etc.Utils import renameThread, isURL, normalizeURL
+from ..etc.IDUtils import uniqueRI, toSPRelative
+from ..etc.Utils import renameThread, isURL
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
-from ..helpers.NetworkTools import isValidateHostname, isValidPort, isValidateIpAddress
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
 from ..etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
 from ..helpers.NetworkTools import isTCPPortAvailable
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
@@ -876,134 +874,3 @@ class ACMERequestHandler(WSGIRequestHandler):
 	def log_message(self, format, *args): 	# type: ignore
 		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: {format % args}')
 	
-
-##########################################################################
-#
-#	Configuration handling
-#
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-	"""	Read the configuration from the configuration file.
-
-		Args:
-			parser: The configuration parser.
-			config: The configuration object.
-	"""
-
-	#	HTTP Server
-	config.http_address = parser.get('http', 'address', fallback = 'http://127.0.0.1:8080')
-	config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback = False)
-	config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback = False)
-	config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback = False)
-	config.http_listenIF = parser.get('http', 'listenIF', fallback = '0.0.0.0')
-	config.http_port = parser.getint('http', 'port', fallback = 8080)
-	config.http_root = parser.get('http', 'root', fallback = '')
-	config.http_timeout = parser.getfloat('http', 'timeout', fallback = 10.0)
-
-	#	HTTP Server CORS
-	config.http_cors_enable = parser.getboolean('http.cors', 'enable', fallback = False)
-	config.http_cors_resources = parser.getlist('http.cors', 'resources', fallback = [ r'/*' ])	# type: ignore[attr-defined]
-
-	#	HTTP Server Security
-	config.http_security_caCertificateFile = parser.get('http.security', 'caCertificateFile', fallback = None)
-	config.http_security_caPrivateKeyFile = parser.get('http.security', 'caPrivateKeyFile', fallback = None)
-	config.http_security_tlsVersion = parser.get('http.security', 'tlsVersion', fallback = 'auto')
-	config.http_security_useTLS = parser.getboolean('http.security', 'useTLS', fallback = False)
-	config.http_security_verifyCertificate = parser.getboolean('http.security', 'verifyCertificate', fallback = False)
-	config.http_security_enableBasicAuth = parser.getboolean('http.security', 'enableBasicAuth', fallback = False)
-	config.http_security_enableTokenAuth = parser.getboolean('http.security', 'enableTokenAuth', fallback = False)
-	config.http_security_basicAuthFile = parser.get('http.security', 'basicAuthFile', fallback = './certs/http_basic_auth.txt')
-	config.http_security_tokenAuthFile = parser	.get('http.security', 'tokenAuthFile', fallback = './certs/http_token_auth.txt')
-
-	#	HTTP Server WSGI
-	config.http_wsgi_enable = parser.getboolean('http.wsgi', 'enable', fallback = False)
-	config.http_wsgi_connectionLimit = parser.getint('http.wsgi', 'connectionLimit', fallback = 100)
-	config.http_wsgi_threadPoolSize = parser.getint('http.wsgi', 'threadPoolSize', fallback = 100)
-
-	#	Web UI
-	config.webui_root = parser.get('webui', 'root', fallback = '/webui')
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	"""	Validate the configuration.
-
-		Args:
-			config: The configuration object.
-			initial: If True, the configuration is validated for the first time.
-	"""
-
-	# override configuration with command line arguments
-	if Configuration._args_httpAddress is not None:
-		Configuration.http_address = Configuration._args_httpAddress
-	if Configuration._args_httpPort is not None:
-		Configuration.http_port = Configuration._args_httpPort
-	if Configuration._args_listenIF is not None:
-		Configuration.http_listenIF = Configuration._args_listenIF
-	if Configuration._args_runAsHttps is not None:
-		Configuration.http_security_useTLS = Configuration._args_runAsHttps
-	if Configuration._args_runAsHttpWsgi is not None:
-		Configuration.http_wsgi_enable = Configuration._args_runAsHttpWsgi
-
-	config.http_address = normalizeURL(config.http_address)
-	config.http_root = normalizeURL(config.http_root)
-
-	# Just in case: check the URL's (http, ws)
-	if config.http_security_useTLS:
-		if config.http_address.startswith('http:'):
-			Configuration._print(r'[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
-			config.http_address = config.http_address.replace('http:', 'https:')
-		# registrar might still be accessible via another protocol
-	else: 
-		if config.http_address.startswith('https:'):
-			Configuration._print(r'[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
-			config.http_address = config.http_address.replace('https:', 'http:')
-		# registrar might still be accessible via another protocol
-
-	# HTTP server
-	if not isValidPort(config.http_port):
-		raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {config.http_port}')
-	if not (isValidateHostname(config.http_listenIF) or isValidateIpAddress(config.http_listenIF)):
-		raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
-	if config.http_timeout < 0.0:
-		raise ConfigurationError(fr'Configuration Error: Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
-	
-	# HTTP TLS & certificates
-	if not config.http_security_useTLS:	# clear certificates configuration if not in use
-		config.http_security_verifyCertificate = False
-		config.http_security_tlsVersion = 'auto'
-		config.http_security_caCertificateFile = ''
-		config.http_security_caPrivateKeyFile = ''
-	else:
-		if not (val := config.http_security_tlsVersion).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-			raise ConfigurationError(fr'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}')
-		if not (val := config.http_security_caCertificateFile):
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled')
-		if not os.path.exists(val):
-			raise ConfigurationError(fr'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
-		if not (val := config.http_security_caPrivateKeyFile):
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
-		if not os.path.exists(val):
-			raise ConfigurationError(fr'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
-
-	# HTTP Security
-	Configuration.http_security_tlsVersion = Configuration.http_security_tlsVersion.lower()
-
-	# HTTP CORS
-	if initial and config.http_cors_enable and not config.http_security_useTLS:
-		Configuration._print(r'[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
-
-	# HTTP authentication
-	if config.http_security_enableBasicAuth and not config.http_security_basicAuthFile:
-		raise ConfigurationError(r'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
-	if config.http_security_enableTokenAuth and not config.http_security_tokenAuthFile:
-		raise ConfigurationError(r'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
-
-	# HTTP WSGI
-	if config.http_wsgi_enable and config.http_security_useTLS:
-		# WSGI and TLS cannot both be enabled
-		raise ConfigurationError(r'Configuration Error: [i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).')
-	if config.http_wsgi_threadPoolSize < 1:
-		raise ConfigurationError(r'Configuration Error: [i]\[http.wsgi]:threadPoolSize[/i] must be > 0')
-	if config.http_wsgi_connectionLimit < 1:
-		raise ConfigurationError(r'Configuration Error: [i]\[http.wsgi]:connectionLimit[/i] must be > 0')
-

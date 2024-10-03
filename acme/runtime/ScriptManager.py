@@ -14,7 +14,6 @@ from pathlib import Path
 import json, os, fnmatch, traceback
 import requests, webbrowser
 from decimal import Decimal
-from configparser import ConfigParser
 from rich.text import Text
 
 
@@ -22,10 +21,11 @@ from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
-from ..etc.ACMEUtils import uniqueRI, uniqueID, pureResource
+from ..etc.IDUtils import uniqueRI, uniqueID
+from ..etc.ACMEUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
 from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -2250,28 +2250,3 @@ class ScriptManager(object):
 					self.runScript(each, arguments = getPrompt(), background = background, environment = environment)
 			else:
 				self.runScript(each, arguments = getPrompt(), background = background, environment = environment)
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-	config.scripting_fileMonitoringInterval = parser.getfloat('scripting', 'fileMonitoringInterval', fallback = 2.0)
-	config.scripting_scriptDirectories = parser.getlist('scripting', 'scriptDirectories', fallback = []) # type: ignore[attr-defined]
-	config.scripting_verbose = parser.getboolean('scripting', 'verbose', fallback = False)
-	config.scripting_maxRuntime = parser.getfloat('scripting', 'maxRuntime', fallback = 60.0)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-
-	# Script settings
-	if config.scripting_fileMonitoringInterval < 0.0:
-		raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0')
-	if config.scripting_maxRuntime < 0.0:
-		raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0')
-	if (scriptDirs := config.scripting_scriptDirectories):
-		lst = []
-		for each in scriptDirs:
-			if not each:
-				continue
-			if not os.path.isdir(each):
-				raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible')
-			lst.append(each)
-		config.scripting_scriptDirectories = lst

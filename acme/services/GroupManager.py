@@ -10,15 +10,14 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List, Optional
-
-from configparser import ConfigParser
+from typing import cast, List
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ..etc.Types import CSERequest, JSON, ResponseType
 from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
 from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
-from ..etc.ACMEUtils import isSPRelative, csiFromSPRelative, structuredPathFromRI
+from ..etc.ACMEUtils import structuredPathFromRI
+from ..etc.IDUtils import isSPRelative, csiFromSPRelative
 from ..etc.DateUtils import utcTime
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.FCNT import FCNT
@@ -28,7 +27,7 @@ from ..resources.GRP_FOPT import GRP_FOPT
 from ..resources.Factory import resourceFromDict
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 
 
 class GroupManager(object):
@@ -318,16 +317,3 @@ class GroupManager(object):
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1
 			group.dbUpdate(True)
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Defaults for Group Resources
-
-	config.resource_grp_resultExpirationTime = parser.getint('resource.grp', 'resultExpirationTime', fallback = 0)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	# Check group resource defaults
-	if config.resource_grp_resultExpirationTime < 0:
-		raise ConfigurationError(fr'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')

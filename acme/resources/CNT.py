@@ -12,15 +12,13 @@
 from __future__ import annotations
 from typing import Optional, cast
 
-from configparser import ConfigParser
-
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, JSONLIST
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..resources import Factory	# attn: circular import
@@ -286,19 +284,3 @@ class CNT(ContainerResource):
 			latest.dbUpdate()
 
 		self.dbUpdate()
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	# 	Defaults for Container Resources
-
-	config.resource_cnt_enableLimits = parser.getboolean('resource.cnt', 'enableLimits', fallback = False)
-	config.resource_cnt_mni = parser.getint('resource.cnt', 'mni', fallback = 10)
-	config.resource_cnt_mbs = parser.getint('resource.cnt', 'mbs', fallback = 10000)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	if config.resource_cnt_mni <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mni[/i] must be > 0')
-	if config.resource_cnt_mbs <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mbs[/i] must be > 0')

@@ -144,19 +144,3 @@ class TSB(AnnounceableResource):
 		"""
 		return self[Constants.attrBCNI]
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Defaults for TimeSyncBeacon Resources
-
-	config.resource_tsb_bcni = parser.get('resource.tsb', 'bcni', fallback = 'PT1H')	# duration
-	config.resource_tsb_bcnt = parser.getfloat('resource.tsb', 'bcnt', fallback = 60.0)	# seconds
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	
-	# TimeSyncBeacon defaults
-	try:
-		isodate.parse_duration(Configuration.resource_tsb_bcni)
-	except Exception as e:
-		raise ConfigurationError(fr'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration')

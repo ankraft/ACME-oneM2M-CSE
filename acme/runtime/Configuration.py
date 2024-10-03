@@ -13,7 +13,7 @@
 from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional, cast, Set
 
-import configparser, argparse, os, os.path, pathlib, importlib
+import configparser, argparse, os, os.path, pathlib
 from inspect import getmembers
 from rich.console import Console
 
@@ -21,8 +21,9 @@ from rich.console import Console
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode
 from ..helpers.NetworkTools import getIPAddress
-from ..helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ..runtime import Onboarding
+
+
 
 
 # TODO: proper use of the baseDirectory configuration for other values
@@ -34,38 +35,6 @@ from ..runtime import Onboarding
 # Add deprecated sections here. Format: set of (oldSection, newSection)
 _deprecatedSections:Set[Tuple[str, str]] = None
 """	Deprecated sections. Mapping from old section name to new section name."""
-
-# The following modules have their own configuration sections and are
-# responsible for reading and validating their own configuration
-_configModules = ( 
-	'acme.databases.PostgreSQLBinding',
-	'acme.databases.TinyDBBinding',
-	'acme.protocols.CoAPServer',
-	'acme.protocols.HttpServer',
-	'acme.protocols.MQTTClient',
-	'acme.protocols.WebSocketServer',
-	'acme.resources.ACP',
-	'acme.resources.ACTR',
-	'acme.resources.CNT',
-	'acme.resources.LCP',
-	'acme.resources.REQ',
-	'acme.resources.SUB',
-	'acme.resources.TS',
-	'acme.resources.TSB',
-	'acme.runtime.CSE',
-	'acme.runtime.TextUI',	# must get its config before the Console !
-	'acme.runtime.Console',
-	'acme.runtime.Logging',	# Must get its config after the Console !
-	'acme.runtime.ScriptManager',
-	'acme.runtime.Statistics',
-	'acme.runtime.Storage',
-	'acme.services.AnnouncementManager',
-	'acme.services.GroupManager',
-	'acme.services.RemoteCSEManager',
-	'acme.services.RegistrationManager',
-	'acme.services.SecurityManager',
-)
-
 
 class Configuration(object):
 	"""	The static class Configuration holds all the configuration values of the CSE. It is initialized only once by calling the static
@@ -792,9 +761,8 @@ class Configuration(object):
 		try:
 
 			# Call the configuration handlerfor each module
-			importlib.import_module('blabla.kkk')
-			for m in _configModules:
-				importlib.import_module(m).readConfiguration(config, Configuration)
+			for m in _moduleConfigs:
+				m.readConfiguration(config, Configuration)	# type:ignore [arg-type]
 		
 		except configparser.InterpolationMissingOptionError as e:
 			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')
@@ -806,9 +774,9 @@ class Configuration(object):
 			return False
 
 		# Validate the configuration for each module
-		for m in _configModules:
+		for m in _moduleConfigs:
 			try:
-				importlib.import_module(m).validateConfiguration(Configuration, True)
+				m.validateConfiguration(Configuration, True)	# type:ignore [arg-type]
 			except ConfigurationError as e:
 				Configuration._print(f'[red]{str(e)}')
 				return False
@@ -939,3 +907,86 @@ class Configuration(object):
 
 class ConfigurationError(Exception):
     pass
+
+
+#############################################################################
+#
+#	Instantiating Configuration modules
+#
+#	These modules are responsible for reading and validating their own configuration
+#
+#	This happens at the end of the module, because the Configuration class must be
+#	initialized before the modules can be initialized.
+
+# Import all configuration modules
+
+from ..runtime.configurations.ACPResourceConfiguration import ACPResourceConfiguration
+from ..runtime.configurations.ACTRResourceConfiguration import ACTRResourceConfiguration
+from ..runtime.configurations.AnnouncementServiceConfiguration import AnnouncementServiceConfiguration
+from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfiguration
+from ..runtime.configurations.CoAPServerConfiguration import CoAPServerConfiguration
+from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
+from ..runtime.configurations.CSEConfiguration import CSEConfiguration
+from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfiguration
+from ..runtime.configurations.HTTPServerConfiguration import HTTPServerConfiguration
+from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
+from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
+from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
+from ..runtime.configurations.MQTTConfiguration import MQTTConfiguration
+from ..runtime.configurations.PostgreSQLBindingConfiguration import PostgreSQLBindingConfiguration
+from ..runtime.configurations.RegistrationServiceConfiguration import RegistrationServiceConfiguration
+from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServiceConfiguration
+from ..runtime.configurations.REQResourceConfiguration import REQResourceConfiguration
+from ..runtime.configurations.ScriptingConfiguration import ScriptingConfiguration
+from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
+from ..runtime.configurations.StatisticsConfiguration import StatisticsConfiguration
+from ..runtime.configurations.StorageConfiguration import StorageConfiguration
+from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
+from ..runtime.configurations.TextUIConfiguration import TextUIConfiguration
+from ..runtime.configurations.TinyDBBindingConfiguration import TinyDBBindingConfiguration
+from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
+from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
+from ..runtime.configurations.WebSocketConfiguration import WebSocketConfiguration
+
+
+# Instantiate all configuration modules here
+
+_moduleConfigs:list[ModuleConfiguration] = [
+
+	# Runtime configurations
+	CSEConfiguration(),
+	TextUIConfiguration(), # must get its config before the Console !
+	ConsoleConfiguration(),
+	LoggingConfiguration(), # must get its config after the Console !
+	ScriptingConfiguration(),
+	StatisticsConfiguration(),
+
+	# Service configurations
+	AnnouncementServiceConfiguration(),
+	GroupServiceConfiguration(),
+	RegistrationServiceConfiguration(),
+	RemoteCSEServiceConfiguration(),
+	SecurityServiceConfiguration(),
+
+	# Storage configurations
+	StorageConfiguration(),
+	PostgreSQLBindingConfiguration(),
+	TinyDBBindingConfiguration(),
+
+	# Binding configurations
+	CoAPServerConfiguration(),
+	HTTPServerConfiguration(),
+	MQTTConfiguration(),
+	WebSocketConfiguration(),
+
+	# Resource configurations
+	ACPResourceConfiguration(),
+	ACTRResourceConfiguration(),
+	CNTResourceConfiguration(),
+	LCPResourceConfiguration(),
+	REQResourceConfiguration(),
+	SUBResourceConfiguration(),
+	TSResourceConfiguration(),
+	TSBResourceConfiguration(),
+
+]

@@ -19,15 +19,11 @@ from psycopg2 import connect, Error
 from psycopg2.extras import Json as PsyJson
 from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 
-from configparser import ConfigParser
-
 from .DBBinding import DBBinding
 from ..etc.Constants import Constants as C
 from ..etc.Types import JSON, ResourceTypes
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
-from ..helpers.NetworkTools import isValidPort
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
 
 
 # TODO Add error handling ansd exceptions to fetch methods?
@@ -920,36 +916,3 @@ class PostgreSQLBinding(DBBinding):
 	def removeSchedule(self, ri:str) -> bool:
 		# L.isDebug and L.logDebug(f'Removing schedule {ri} from database')
 		return self._executePrepared('deleteSchedule (%s)', (ri,))
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-	"""	Read the configuration settings for the PostgreSQL database binding from the configuration file.
-
-		Args:
-			parser: The configuration parser object.
-			config: The configuration object to store the settings.
-	"""
-
-	#	Database PostgreSQL
-
-	config.database_postgresql_host = parser.get('database.postgresql', 'host', fallback = 'localhost')
-	config.database_postgresql_port = parser.getint('database.postgresql', 'port', fallback = 5432)
-	config.database_postgresql_role = parser.get('database.postgresql', 'role', fallback = None)	# CSE-ID
-	config.database_postgresql_password = parser.get('database.postgresql', 'password', fallback = None)
-	config.database_postgresql_database = parser.get('database.postgresql', 'database', fallback = 'acmecse')
-	config.database_postgresql_schema = parser.get('database.postgresql', 'schema', fallback = 'acmecse')
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	"""	Validate the configuration settings.
-
-		Args:
-			config: The configuration object to validate.
-			initial: Whether this is the initial validation or not.
-	"""
-
-	# PostgreSQL
-
-	if not isValidPort(config.database_postgresql_port):
-		raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[database.postgresql]:port[/i]: {config.database_postgresql_port}')
-

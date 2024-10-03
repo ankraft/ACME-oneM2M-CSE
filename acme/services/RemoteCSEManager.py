@@ -14,20 +14,18 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
-from configparser import ConfigParser
-
 from ..etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
 from ..etc.Types import ContentSerializationType
 from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import pureResource, csiFromRelativeAbsoluteUnstructured, isValidCSI	# cannot import at the top because of circel import
+from ..etc.ACMEUtils import pureResource
+from ..etc.IDUtils import csiFromRelativeAbsoluteUnstructured	# cannot import at the top because of circel import
 from ..etc.Constants import Constants, RuntimeConstants as RC
-from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR
 from ..resources.CSEBase import CSEBase, getCSE
 from ..resources.Resource import Resource
 from ..resources.Factory import resourceFromDict
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
@@ -860,35 +858,4 @@ class RemoteCSEManager(object):
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
-
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Registrar CSE
-	config.cse_registrar_address = parser.get('cse.registrar', 'address', fallback = None)
-	config.cse_registrar_checkInterval = parser.getint('cse.registrar', 'checkInterval', fallback = 30)		# Seconds
-	config.cse_registrar_cseID = parser.get('cse.registrar', 'cseID', fallback = None)
-	config.cse_registrar_excludeCSRAttributes = parser.getlist('cse.registrar', 'excludeCSRAttributes', fallback = [])		# type: ignore [attr-defined]
-	config.cse_registrar_resourceName = parser.get('cse.registrar', 'resourceName', fallback = None)
-	config.cse_registrar_root = parser.get('cse.registrar', 'root', fallback = '')
-	config.cse_registrar_serialization = parser.get('cse.registrar', 'serialization', fallback = 'json')
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-
-	config.cse_registrar_address = normalizeURL(config.cse_registrar_address)
-	config.cse_registrar_root = normalizeURL(config.cse_registrar_root)
-
-	# Registrar Serialization
-	if isinstance(ct := config.cse_registrar_serialization, str):
-		config.cse_registrar_serialization = ContentSerializationType.getType(ct)
-		if config.cse_registrar_serialization == ContentSerializationType.UNKNOWN:
-			raise ConfigurationError(fr'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
-
-	if config.cse_registrar_address and config.cse_registrar_cseID:
-		if not isValidCSI(val := config.cse_registrar_cseID):
-			raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}')
-		if len(config.cse_registrar_cseID) > 0 and len(config.cse_registrar_resourceName) == 0:
-			raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]')
 

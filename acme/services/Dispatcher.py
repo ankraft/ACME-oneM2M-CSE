@@ -29,8 +29,8 @@ from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BA
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, riFromID
-from ..etc.ACMEUtils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
+from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI
+from ..etc.IDUtils import localResourceID, isSPRelative, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp

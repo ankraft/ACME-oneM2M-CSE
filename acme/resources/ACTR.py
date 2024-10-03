@@ -268,19 +268,3 @@ class ACTR(AnnounceableResource):
 				The operation.
 		"""
 		return Operation(findXPath(self.apv, 'op'))
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	# 	Defaults for Actions
-
-	config.resource_actr_ecpContinuous = parser.getint('resource.actr', 'ecpContinuous', fallback = 1000)
-	config.resource_actr_ecpPeriodic = parser.getint('resource.actr', 'ecpPeriodic', fallback = 10000)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	if config.resource_actr_ecpContinuous <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.actr]:ecpContinuous[/i] must be > 0')
-	if config.resource_actr_ecpPeriodic <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.actr]:ecpPeriodic[/i] must be > 0')
-

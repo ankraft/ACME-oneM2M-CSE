@@ -26,7 +26,7 @@ from .ACMEContentDialog import ACMEContentDialog
 from .ACMEViewResponse import ACMEViewResponse
 from ..runtime import CSE
 from ..etc.Types import ResourceTypes, JSON, RequestOptionality, Operation, ResponseStatusCode, Result
-from ..etc.ACMEUtils import uniqueRI
+from ..etc.IDUtils import uniqueRI
 from ..etc.RequestUtils import curlFromRequest
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError

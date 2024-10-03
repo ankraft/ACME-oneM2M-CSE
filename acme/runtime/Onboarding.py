@@ -103,7 +103,7 @@ def _containsVariable(value:str) -> bool:
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
-	from ..etc.ACMEUtils import isValidID
+	from ..etc.IDUtils import isValidID
 
 	cseType = 'IN'
 	cseID:str = None

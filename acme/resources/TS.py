@@ -436,21 +436,3 @@ class TS(ContainerResource):
 		self.dbUpdate(True)													# Update in DB
 
 
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Defaults for timeSeries Resources
-
-	config.resource_ts_enableLimits = parser.getboolean('resource.ts', 'enableLimits', fallback = False)
-	config.resource_ts_mbs = parser.getint('resource.ts', 'mbs', fallback = 10000)
-	config.resource_ts_mdn = parser.getint('resource.ts', 'mdn', fallback = 10)
-	config.resource_ts_mni = parser.getint('resource.ts', 'mni', fallback = 10)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	if config.resource_ts_mbs <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mbs[/i] must be > 0')
-	if config.resource_ts_mdn < 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mdn[/i] must be >= 0')
-	if config.resource_ts_mni <= 0:
-		raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mni[/i] must be > 0')

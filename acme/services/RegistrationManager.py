@@ -10,12 +10,10 @@
 from __future__ import annotations
 from typing import Any, Optional
 
-from configparser import ConfigParser
-
 from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
-from ..etc.ACMEUtils import uniqueAEI, getIdFromOriginator, uniqueRN
+from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
@@ -454,17 +452,3 @@ class RegistrationManager(object):
 	# 	# only delete the ACP when it was created in the course of AE registration internally
 	# 	if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
 	# 		CSE.dispatcher.deleteLocalResource(acpResourse)
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	Registrations
-
-	config.cse_registration_allowedAEOriginators = parser.getlist('cse.registration', 'allowedAEOriginators', fallback = ['C*','S*'])		# type: ignore [attr-defined]
-	config.cse_registration_allowedCSROriginators = parser.getlist('cse.registration', 'allowedCSROriginators', fallback = [])				# type: ignore [attr-defined]
-	config.cse_registration_checkLiveliness = parser.getboolean('cse.registration', 'checkLiveliness', fallback = True)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	pass
-

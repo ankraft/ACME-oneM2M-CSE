@@ -10,20 +10,19 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple
+from typing import List, cast, Optional, Any
 
 import ssl
 from dataclasses import dataclass
-from configparser import ConfigParser
 
 from ..etc.Types import ResourceTypes, Permission, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.ACMEUtils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
@@ -885,15 +884,3 @@ class SecurityManager(object):
 						self.httpTokenAuthData.append(line.strip())
 			except Exception as e:
 				L.logErr(f'Error reading token authentication file: {e}')
-
-
-def readConfiguration(parser:ConfigParser, config:Configuration) -> None:
-
-	#	CSE Security
-
-	config.cse_security_enableACPChecks = parser.getboolean('cse.security', 'enableACPChecks', fallback = True)
-	config.cse_security_fullAccessAdmin = parser.getboolean('cse.security', 'fullAccessAdmin', fallback = True)
-
-
-def validateConfiguration(config:Configuration, initial:Optional[bool] = False) -> None:
-	pass
