@@ -30,7 +30,6 @@ class ACMEContainerUpdate(Container):
 			Args:
 				id:	The view ID.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		super().__init__(id = id)
 
@@ -39,9 +38,6 @@ class ACMEContainerUpdate(Container):
 
 		self.resource:Resource = None
 		"""	The resource to update. """
-
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
 
 		self.responseView:ACMEViewResponse = ACMEViewResponse(id = 'request-update-response')
 		"""	The response view. """
@@ -57,16 +53,18 @@ class ACMEContainerUpdate(Container):
 														   )
 		"""	The request view. """
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Update* view.
 		"""
 		yield self.requestView
 		yield self.responseView
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
+
 
 
 	def updateResource(self, resource:Resource) -> None:

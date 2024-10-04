@@ -38,18 +38,22 @@ class ACMEResourceTree(TextualTree):
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
 
 	
-	def on_mount(self) -> None:
-		self.root.expand()
+	# def on_mount(self) -> None:
+	# 	self.root.expand()
 
-		
+	def on_show(self) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
+
 	def _update_tree(self) -> None:
+		if not self.visible:
+			return
 		self.clear()
 		self.auto_expand = False
 		self.select_node(None)
@@ -103,6 +107,8 @@ class ACMEResourceTree(TextualTree):
 
 
 	def refreshNode(self, node:TreeNode) -> None:
+		if not self.visible:
+			return
 		self._buildNodeChildren(node)
 
 
@@ -163,6 +169,7 @@ class ACMEResourceTree(TextualTree):
 
 	def _buildNodeChildren(self, node:TreeNode) -> None:
 		node.remove_children()
+		#self._app.notify(str([ x.id for x in node.children]))
 		# node._children = []	# no available method?
 		prevType = ''
 		for resource in self._retrieve_resource_children(node.data):
@@ -230,47 +237,57 @@ class ACMEContainerTree(Container):
 		"""
 		super().__init__(id = id)
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
 		
 		self.currentResource:Resource = None
 
 		# Create some views and widgets beforehand
+		self._treeView = ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
+		self._treeTabs = TabbedContent(id = 'tree-tabs')
+
+		self._treeTabRequests = TabPane('Requests', id = 'tree-tab-requests')
+		self._treeTabServices = TabPane('Services', id = 'tree-tab-services')
+		self._treeTabCreate = TabPane('CREATE', id = 'tree-tab-create')
+		self._treeTabUpdate = TabPane('UPDATE', id = 'tree-tab-update')
+		self._treeTabDelete = TabPane('DELETE', id = 'tree-tab-delete')
+		self._treeTabDiagram = TabPane('Diagram', id = 'tree-tab-diagram')
+		self._treeTabDiagramView = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
+														id = 'tree-tab-diagram-view')
+
 		self._treeTabResourceServices = ACMEContainerResourceServices(id = 'tree-tab-resource-services')
 		self._treeTabResourceCreate = ACMEContainerCreate(id = 'tree-tab-resource-create')
 		self._treeTabResourceUpdate = ACMEContainerUpdate(id = 'tree-tab-resource-update')
 		self._treeTabResourceDelete = ACMEContainerDelete(id = 'tree-tab-resource-delete')
+		self._treeTabRequestsView = ACMEViewRequests(id = 'tree-tab-requests-view')
 		self._resourceViewContainer = Container(id = 'resource-view-container')
 		self._resourceView = Static(id = 'resource-view', expand = True)
 
 
+
 	def compose(self) -> ComposeResult:
 		with Container():
-			yield ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
-			with TabbedContent(id = 'tree-tabs'):
+			yield self._treeView
+			with self._treeTabs:
 				with TabPane('Resource', id = 'tree-tab-resource'):
 					with self._resourceViewContainer:
 						yield self._resourceView
 
-				with TabPane('Requests', id = 'tree-tab-requests'):
-					yield ACMEViewRequests(id = 'tree-tab-requests-view')
+				with self._treeTabRequests:
+					yield self._treeTabRequestsView
 
-				with TabPane('Services', id = 'tree-tab-services'):
+				with self._treeTabServices:
 					yield self._treeTabResourceServices
 
-				with TabPane('CREATE', id = 'tree-tab-create'):
+				with self._treeTabCreate:
 					yield self._treeTabResourceCreate
 
-				with TabPane('UPDATE', id = 'tree-tab-update'):
+				with self._treeTabUpdate:
 					yield self._treeTabResourceUpdate
 
-				with TabPane('DELETE', id = 'tree-tab-delete'):
+				with self._treeTabDelete:
 					yield self._treeTabResourceDelete
 				
-				with TabPane('Diagram', id = 'tree-tab-diagram'):
-					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
-											   id = 'tree-tab-diagram-view')
+				with self._treeTabDiagram:
+					yield self._treeTabDiagramView
 
 				
 	@property
@@ -279,6 +296,12 @@ class ACMEContainerTree(Container):
 
 
 	def on_show(self) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
+		self.resourceTree.root.expand()
+		self.update()
 		self.resourceTree.focus()
 
 
@@ -340,8 +363,11 @@ class ACMEContainerTree(Container):
 
 	def updateResource(self, resource:Optional[Resource] = None) -> None:
 		# Store the resource for later
+
+
 		if resource:
 			self.currentResource = resource
+
 
 		# Add attribute explanations
 		if resource:
@@ -363,17 +389,11 @@ class ACMEContainerTree(Container):
 			# Update the services view
 			self.servicesView.updateResource(self.currentResource)
 
-			try:
-				self.tabs.show_tab('tree-tab-services')
-			except:
-				pass
-
 			# Update Diagram view
 			try:
 
 				# Show some default tabs
 				self.tabs.show_tab('tree-tab-services')
-
 
 				match self.currentResource.ty:
 					case ResourceTypes.CSEBase:
@@ -442,7 +462,6 @@ class ACMEContainerTree(Container):
 					pass
 
 		else:
-			jsns = ''
 
 			# Disable the views
 			self.tabs.hide_tab('tree-tab-diagram') 
@@ -525,12 +544,12 @@ class ACMEContainerTree(Container):
 
 	@property
 	def tabs(self) -> TabbedContent:
-		return cast(TabbedContent, self.query_one('#tree-tabs'))
+		return self._treeTabs
 
 
 	@property
 	def resourceTree(self) -> ACMEResourceTree:
-		return cast(ACMEResourceTree, self.query_one('#tree-view'))
+		return self._treeView
 
 
 	@property
@@ -554,7 +573,7 @@ class ACMEContainerTree(Container):
 
 	@property
 	def requestView(self) -> ACMEViewRequests:
-		return cast(ACMEViewRequests, self.query_one('#tree-tab-requests-view'))
+		return self._treeTabRequestsView
 
 
 	@property
@@ -564,7 +583,7 @@ class ACMEContainerTree(Container):
 
 	@property
 	def diagram(self) -> ACMEContainerDiagram:
-		return cast(ACMEContainerDiagram, self.query_one('#tree-tab-diagram-view'))
+		return self._treeTabDiagramView
 
 	
 # TODO move the following to a more generic dialog module

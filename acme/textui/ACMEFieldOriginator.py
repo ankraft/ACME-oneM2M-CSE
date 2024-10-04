@@ -82,13 +82,11 @@ class ACMEInputField(Container):
 			Args:
 				label: The label to set.
 		"""
-		# cast(Label, self.query_one('#field-label')).update(f'[b]{label}[/b] ')
 		cast(Label, self._fieldLabel).update(f'[b]{label}[/b] ')
 	
 
 	@property
 	def value(self) -> str:
-		# return cast(Input, self.query_one('#field-input')).value
 		return self._fieldInput.value
 
 
@@ -103,13 +101,12 @@ class ACMEInputField(Container):
 	
 	@property
 	def msgField(self) -> Label:
-		return cast(Label, self.query_one('#field-message'))
+		return self._fieldMessage
 	
 	
 	@property
 	def inputField(self) -> Input:
 		return self._fieldInput
-		# return cast(Input, self.query_one('#field-input'))
 	
 	
 	def setSuggestions(self, suggestions:list[str]) -> None:

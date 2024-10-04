@@ -40,11 +40,9 @@ class ACMEConfigurationTree(TextualTree):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
 		
 
 	def on_mount(self) -> None:
@@ -52,6 +50,10 @@ class ACMEConfigurationTree(TextualTree):
 		"""
 		# Expand the root element
 		self.root.expand()
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
 
 	
 	def on_show(self) -> None:
@@ -143,19 +145,28 @@ class ACMEContainerConfigurations(VerticalScroll):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
+
+		# self._configsTreeView = ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
+		self._configsTreeView = ACMEConfigurationTree(f'Configurations', 
+							 				 		id = 'configs-tree-view',
+													parentContainer = self)
+		self._configsDocumentation = Markdown('', id = 'configs-documentation')
 		
 	
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""
-		yield ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
-							  		id = 'configs-tree-view',
-									parentContainer = self)
-		yield Markdown('', id = 'configs-documentation')
+		yield self._configsTreeView
+		yield self._configsDocumentation
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
+		# Change the root label colour
+		self._configsTreeView.root.label = f'[{self._app.objectColor}]Configurations[/]'
+
 
 
 	@property
@@ -165,7 +176,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 			Returns:
 				The tree view.
 		"""
-		return cast(ACMEConfigurationTree, self.query_one('#configs-tree-view'))
+		return self._configsTreeView
 
 
 	@property
@@ -175,7 +186,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 			Returns:
 				The documentation view.
 		"""
-		return cast(Markdown, self.query_one('#configs-documentation'))
+		return self._configsDocumentation
 
 
 	def on_show(self) -> None:

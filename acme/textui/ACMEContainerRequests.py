@@ -29,8 +29,13 @@ from ..helpers.TextTools import commentJson, limitLines
 
 class ACMEContainerRequests(Vertical):
 
+	def __init__(self, id:str) -> None:
+		super().__init__(id = id)
+
+		self._requestsView = ACMEViewRequests(id = 'requests-view')
+
 	def compose(self) -> ComposeResult:
-		yield ACMEViewRequests(id = 'requests-view')
+		yield self._requestsView
 
 
 	def on_show(self) -> None:
@@ -40,7 +45,7 @@ class ACMEContainerRequests(Vertical):
 
 	@property
 	def requestsView(self) -> ACMEViewRequests:
-		return cast(ACMEViewRequests, self.query_one('#requests-view'))	
+		return self._requestsView
 
 
 class ACMEListItem(ListItem):
@@ -78,9 +83,10 @@ class ACMEViewRequests(Vertical):
 		self.commentsOneLine = True
 		"""Show comments in requests and responses in one line."""
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
+		# Some resources upfront
+		self._requestListList = ListView(id = 'request-list-list')
+		self._requestListRequest = Static(id = 'request-list-request')
+		self._requestListResponse = Static(id = 'request-list-response')
 
 	
 	@property
@@ -99,17 +105,17 @@ class ACMEViewRequests(Vertical):
 
 	@property
 	def requestList(self) -> ListView:
-		return cast(ListView, self.query_one('#request-list-list'))
+		return self._requestListList
 
 
 	@property
 	def requestListRequest(self) -> Static:
-		return cast(Static, self.query_one('#request-list-request'))
+		return self._requestListRequest
 
 
 	@property
 	def requestListResponse(self) -> Static:
-		return cast(Static, self.query_one('#request-list-response'))
+		return self._requestListResponse
 
 			
 	def compose(self) -> ComposeResult:
@@ -119,16 +125,21 @@ class ACMEViewRequests(Vertical):
 			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]     ')
 
 		# Request List
-		yield ListView(id = 'request-list-list')
+		yield self._requestListList
 
 		# Details
 		with Horizontal(id = 'request-list-details'):
 			with (_c := VerticalScroll(classes = 'request-response')):
 				_c.border_title = 'Request'
-				yield Static(id = 'request-list-request')
+				yield self._requestListRequest
 			with (_c := VerticalScroll(classes = 'request-response')):
 				_c.border_title = 'Response'
-				yield Static(id = 'request-list-response')
+				yield self._requestListResponse
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 	
 
 	def onShow(self) -> None:

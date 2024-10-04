@@ -55,16 +55,17 @@ class ACMEContainerDelete(Container):
 													)
 		"""	The request view. """
 		
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Delete* view.
 		"""		
 		yield self.requestView
 		yield self.responseView
+		
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 
 
 	def updateResource(self, resource:Resource) -> None:

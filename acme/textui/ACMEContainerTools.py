@@ -214,23 +214,33 @@ class ACMEContainerTools(Horizontal):
 		super().__init__(*args, **kwargs)
 		self._app = cast(ACMETuiApp, self.app)
 
-	def compose(self) -> ComposeResult:
-
-		# Prepare some widgets in advance
+		# Initialize the compontents in advance
 		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
 								 		id = 'tools-tree-view',
 										parentContainer = self)
+		
+		# some widgets in advance
+		self._toolsArgument = ACMEInputField(label = 'Argument', id = 'tools-argument')
+		self._toolsExecuteButton = Button('Execute', id = 'tool-execute-button', variant = 'primary')
+		self._toolsTopView = Center(id = 'tools-top-view')
+		self._toolsHeader = Markdown('', id = 'tools-header')
+		self._toolsLogView = RichLog(id = 'tools-log-view', markup=True)
+
+	def compose(self) -> ComposeResult:
+
+		# Prepare some widgets in advance
+		
 
 		yield self._toolsTree
 		with Vertical():
-			with Center(id = 'tools-top-view'):
-				yield Markdown('', id = 'tools-header')
+			with self._toolsTopView:
+				yield self._toolsHeader
 				with Container(id = 'tools-arguments-view'):
 					with Center():
-						yield ACMEInputField(label = 'Argument', id = 'tools-argument')
+						yield self._toolsArgument
 					with Center():
-						yield Button('Execute', id = 'tool-execute-button', variant = 'primary')
-			yield RichLog(id = 'tools-log-view', markup=True)
+						yield self._toolsExecuteButton
+			yield self._toolsLogView
 	
 
 	def on_mount(self) -> None:
@@ -246,24 +256,24 @@ class ACMEContainerTools(Horizontal):
 				title: The title text.
 				description: The description text.
 		"""
-		t = cast(Center, self.query_one('#tools-top-view'))
+		t = cast(Center, self._toolsTopView)
 		t.border_title = title
-		d = cast(Markdown, self.query_one('#tools-header'))
+		d = cast(Markdown, self._toolsHeader)
 		d.update(description)
 
 	@property
 	def toolsInput(self) -> ACMEInputField:
-		return cast(ACMEInputField, self.query_one('#tools-argument'))
+		return self._toolsArgument
 
 
 	@property
 	def toolsExecButton(self) -> Button:
-		return cast(Button, self.query_one('#tool-execute-button'))
+		return self._toolsExecuteButton
 
 
 	@property
 	def toolsLog(self) -> RichLog:
-		return cast(RichLog, self.query_one('#tools-log-view'))
+		return cast(RichLog, self._toolsLogView)
 	
 
 	@property

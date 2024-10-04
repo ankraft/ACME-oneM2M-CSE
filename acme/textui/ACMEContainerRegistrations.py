@@ -22,16 +22,18 @@ class ACMEContainerRegistrations(VerticalScroll):
 
 	def __init__(self, id:str) -> None:
 		super().__init__(id = id)
-		self._colors = self.app.get_css_variables()
+		
+		# Some resources upfront
+		self._registrationView = Static(expand = True, id = 'registrations-view')
 
 
 	def compose(self) -> ComposeResult:
-		yield Static(expand = True, id = 'registrations-view')
+		yield self._registrationView
 
 
 	@property
 	def registrationView(self) -> Static:
-		return cast(Static, self.query_one('#registrations-view'))
+		return self._registrationView
 
 
 	def on_show(self) -> None:
@@ -39,6 +41,6 @@ class ACMEContainerRegistrations(VerticalScroll):
 
 
 	def registrationsUpdate(self) -> None:
-		self.registrationView.update(CSE.console.getRegistrationsRich(style = Style(color = self._colors['primary']),
+		self.registrationView.update(CSE.console.getRegistrationsRich(style = Style(color = self.app.get_css_variables()['primary']),
 													   		   		  textStyle = Style(color = fontDark if self.app.dark else fontLight)))
 

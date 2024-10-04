@@ -25,22 +25,23 @@ class ACMEContainerInfo(VerticalScroll):
 	def __init__(self, id:str) -> None:
 		super().__init__(id = id)
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
 		self._updateTimer:Timer = None
 		"""	The timer to update the statistics. """
 
-		self._colors = self._app.get_css_variables()
-	
+		self._statsView = Static(expand = True, id = 'stats-view')
+
 
 	def compose(self) -> ComposeResult:
-		yield Static(expand = True, id = 'stats-view')
+		yield self._statsView
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	@property
 	def statsView(self) -> Static:
-		return cast(Static, self.query_one('#stats-view'))
+		return self._statsView
 
 
 	def tab_changed(self, id:str) -> None:
@@ -62,6 +63,6 @@ class ACMEContainerInfo(VerticalScroll):
 
 	def _statsUpdate(self, force:bool = False) -> None:
 		if force or self._app.tabs.active == ACMETuiApp.tabInfo:
-			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self._colors['primary']), 
+			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self.app.get_css_variables()['primary']), 
 																	textStyle = Style(color = fontDark if self._app.dark else fontLight)))
 

@@ -117,10 +117,6 @@ class ACMEViewRequest(VerticalScroll):
 		self.selectCallback = selectCallback
 		self.responseView = responseView
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 
 	def compose(self) -> ComposeResult:
 		with Horizontal(classes = 'request-header'):
@@ -136,6 +132,11 @@ class ACMEViewRequest(VerticalScroll):
 			yield self.inputOriginator
 		if self.enableEditor:
 			yield self.resourceTextArea
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 
 
 	@property

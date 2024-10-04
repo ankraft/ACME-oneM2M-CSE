@@ -70,6 +70,13 @@ Available under the BSD 3-Clause License"""
 	"""	The QR code for the ACME CSE. """
 
 
+	def __init__(self) -> None:
+		"""	Initialize the view.
+		"""
+		super().__init__()
+		self._aboutButton = Button('hidden', id = 'about-button')
+
+
 	
 	def on_show(self) -> None:
 		"""	Show the view. Callback from *textualize*.
@@ -78,7 +85,7 @@ Available under the BSD 3-Clause License"""
 		# Otherwise, without an interactive element, the focus would not be on this page at all,
 		# and the Bindings would not be shown.
 		# The button is hidden using the CSS
-		self.query_one('#about-button').focus()
+		self._aboutButton.focus()
 
 
 	def compose(self) -> ComposeResult:
@@ -89,7 +96,7 @@ Available under the BSD 3-Clause License"""
 		"""
 		with Vertical(id = 'about-view'):
 			with (_c := Center()):
-				yield Button('hidden', id = 'about-button')
+				yield self._aboutButton
 				_c.styles.padding = (4, 0, 0, 0)
 				yield (_l := Label(self.text))
 				_l.styles.text_align = 'center'

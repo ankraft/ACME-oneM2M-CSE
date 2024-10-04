@@ -57,10 +57,6 @@ class ACMEContainerDiagram(Container):
 		"""
 		super().__init__(id = id)
 		
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 		self.color = (0, 120, 212)
 		"""	The color of the diagram."""
 

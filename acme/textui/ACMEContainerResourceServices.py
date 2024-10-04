@@ -26,7 +26,6 @@ class ACMEContainerResourceServices(Container):
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		super().__init__(id = id)
 		
@@ -36,15 +35,17 @@ class ACMEContainerResourceServices(Container):
 		self.exportIncludingChildResources:bool = True
 		"""	Flag to indicate if child resources should be included in the export. """
 
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 		# Some resources upfront
 		self._servicesExportResource = Vertical(id = 'services-export-resource')
 		self._servicesExportInstances = Vertical(id = 'services-export-instances')
 
 		self._servicesExportResourceResult = Static('', id = 'services-export-resource-result', classes = 'result')
 		self._servicesExportInstancesResult = Static('', id = 'services-export-instances-result', classes = 'result')
+
+		self._servicesExportResourceLoadingIndicator = LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+		self._servicesExportInstancesLoadingIndicator = LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+		self._servicesExportResourceCheckbox = Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
+
 
 	def compose(self) -> ComposeResult:
 		""" Compose the view.
@@ -60,8 +61,8 @@ class ACMEContainerResourceServices(Container):
 				with Container(classes='service-command-area'):
 					with Horizontal(classes = 'services-export-controls'):
 						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
-						yield Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
-					yield LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+						yield self._servicesExportResourceCheckbox
+					yield self._servicesExportResourceLoadingIndicator
 					yield self._servicesExportResourceResult
 			
 			# Export Instances
@@ -72,7 +73,7 @@ class ACMEContainerResourceServices(Container):
 					with Horizontal():
 						yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
 						yield Button('Copy CSV', variant = 'primary', id = 'services-copy-instances-button', classes = 'button')
-					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+					yield self._servicesExportInstancesLoadingIndicator
 					yield self._servicesExportInstancesResult
 
 
@@ -88,12 +89,12 @@ class ACMEContainerResourceServices(Container):
 
 	@property
 	def exportResourceLoadingIndicator(self) -> LoadingIndicator:
-		return cast(LoadingIndicator, self.query_one('#services-export-resource-loading-indicator'))
+		return self._servicesExportResourceLoadingIndicator
 	
 
 	@property
 	def exportInstancesLoadingIndicator(self) -> LoadingIndicator:
-		return cast(LoadingIndicator, self.query_one('#services-export-instances-loading-indicator'))
+		return self._servicesExportInstancesLoadingIndicator
 	
 
 	@property
@@ -103,7 +104,7 @@ class ACMEContainerResourceServices(Container):
 
 	@property
 	def exportChildResourcesCheckbox(self) -> Checkbox:
-		return cast(Checkbox, self.query_one('#services-export-resource-checkbox'))
+		return self._servicesExportResourceCheckbox
 	
 
 	def updateResource(self, resource:Resource) -> None:
@@ -126,6 +127,10 @@ class ACMEContainerResourceServices(Container):
 		# Hide the loading indicators
 		self.exportResourceLoadingIndicator.display = False
 		self.exportInstancesLoadingIndicator.display = False
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
 
 
 	#

@@ -84,32 +84,41 @@ class ACMETuiApp(App):
 		# This is set in the on_load() function.
 		self.event_loop:asyncio.AbstractEventLoop = None
 
+		self._tabs = TabbedContent(id = 'tabs')
+		self._containerTree = ACMEContainerTree(id = 'container-tree')
+		self._containerRegistrations = ACMEContainerRegistrations(id = 'container-registrations')
+		self._containerConfigurations = ACMEContainerConfigurations(id = 'container-configurations')
+		self._containerInfo = ACMEContainerInfo(id = 'container-info')
+		self._containerRequests = ACMEContainerRequests(id = 'container-requests')
+
+		self._debugConsole = Static('', id = 'debug-console')
+
 
 	def compose(self) -> ComposeResult:
 		"""Build the Main UI."""
 		yield ACMEHeader(show_clock = True)
 		if self.debugging:
-			yield Static('', id = 'debug-console')
+			yield self._debugConsole
 
-		with TabbedContent(id = 'tabs'):
+		with self._tabs:
 			with TabPane('Resources', id = tabResources):
-				yield ACMEContainerTree(id = 'container-tree')
+				yield self._containerTree
 
 			with TabPane('Requests', id = tabRequests):
-				yield ACMEContainerRequests(id = 'container-requests')
+				yield self._containerRequests
 
 			with TabPane('Registrations', id = tabRegistrations):
-				yield ACMEContainerRegistrations(id = 'container-registrations')
+				yield self._containerRegistrations
 
 			with TabPane('Tools', id = tabTools):
 				self._toolsView =  ACMEContainerTools(id = 'container-tools')
 				yield self._toolsView
 
 			with TabPane('Infos', id = tabInfo):
-				yield ACMEContainerInfo(id = 'container-info')
+				yield self._containerInfo
 
 			with TabPane('Configurations', id = tabConfigurations):
-				yield ACMEContainerConfigurations(id = 'container-configurations')
+				yield self._containerConfigurations
 
 			with TabPane('About', id = tabAbout):
 				yield ACMEContainerAbout()
@@ -119,27 +128,27 @@ class ACMETuiApp(App):
 
 	@property
 	def tabs(self) -> TabbedContent:
-		return cast(TabbedContent, self.query_one('#tabs'))
+		return self._tabs
 
 
 	@property
 	def containerTree(self) -> ACMEContainerTree:
-		return cast(ACMEContainerTree, self.query_one('#container-tree'))
+		return self._containerTree
 
 
 	@property
 	def containerRegistrations(self) -> ACMEContainerRegistrations:
-		return cast(ACMEContainerRegistrations, self.query_one('#container-registrations'))
+		return self._containerRegistrations
 
 
 	@property
 	def containerConfigs(self) -> ACMEContainerConfigurations:
-		return cast(ACMEContainerConfigurations, self.query_one('#container-configurations'))
+		return self._containerConfigurations
 
 
 	@property
 	def containerInfo(self) -> ACMEContainerInfo:
-		return cast(ACMEContainerInfo, self.query_one('#container-info'))
+		return self._containerInfo
 	
 
 	@property
@@ -151,12 +160,12 @@ class ACMETuiApp(App):
 
 	@property
 	def containerRequests(self) -> ACMEContainerRequests:
-		return cast(ACMEContainerRequests, self.query_one('#container-requests'))
+		return self._containerRequests
 
 
 	@property
 	def debugConsole(self) -> Static:
-		return cast(Static, self.query_one('#debug-console'))
+		return self._debugConsole
 	
 
 	def on_load(self) -> None:

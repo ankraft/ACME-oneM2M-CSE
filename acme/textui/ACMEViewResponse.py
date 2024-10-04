@@ -31,15 +31,16 @@ class ACMEViewResponse(VerticalScroll):
 		super().__init__(id = id, classes = 'response-view-normal')
 		self.response = Static('', id = f'{id}-content', classes = 'response-view-content')
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
-
 		self.clear()
 
 
 	def compose(self) -> ComposeResult:
 		yield self.response
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 
 
 	def clear(self) -> None:
