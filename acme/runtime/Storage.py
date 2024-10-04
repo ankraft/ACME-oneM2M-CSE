@@ -373,10 +373,13 @@ class Storage(object):
 			Return:
 				Updated Resource object.
 		"""
-		ri = resource.ri
+		# ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
 		# L.logDebug(str(resource.dict))
-		resource.dict = self.db.updateResource(resource.dict, ri)
+		try:
+			resource.dict = self.db.updateResource(resource.dict, resource.ri)
+		except KeyError:
+			raise NOT_FOUND(L.logDebug(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 		# L.logDebug(str(resource.dict))
 		return resource
 
