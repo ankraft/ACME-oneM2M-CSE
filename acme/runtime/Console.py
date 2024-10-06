@@ -1273,7 +1273,8 @@ function createResource() {{
 			else:
 				miscLeft += '\n'
 			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+			miscLeft += f'Python Version    : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			miscLeft += f'ACME CSE Version  : {Constants.version}'
 
 			miscHeight = len(miscLeft.split('\n'))
 
@@ -1440,7 +1441,9 @@ function createResource() {{
 			r, p = BackgroundWorkerPool.countJobs()
 			tableThreads.add_row('Running', str(r), style = textStyle)
 			tableThreads.add_row('Paused', str(p), style = textStyle)
-			for _ in range(len(tableWorkers.rows)-2):	# Fill up lines
+			import threading
+			tableThreads.add_row('Native', str(threading.active_count()), style = textStyle)
+			for _ in range(len(tableWorkers.rows)-3):	# Fill up lines
 				tableThreads.add_row('', '')
 			
 			panelThreads = Panel(tableThreads, 
@@ -1508,34 +1511,33 @@ function createResource() {{
 			#
 
 			resourceTypes = Text(style = textStyle)
-			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
-			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
-			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
-			resourceTypes += f'CB      : {CSE.dispatcher.countResources(ResourceTypes.CSEBase)}\n'
-			resourceTypes += f'CIN     : {CSE.dispatcher.countResources(ResourceTypes.CIN)}\n'
-			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(ResourceTypes.CNT)}\n'
-			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(ResourceTypes.CRS)}\n'
-			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(ResourceTypes.CSR)}\n'
-			resourceTypes += f'DEPR    : {CSE.dispatcher.countResources(ResourceTypes.DEPR)}\n'
-			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(ResourceTypes.FCNT)}\n'
-			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(ResourceTypes.FCI)}\n'
-			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(ResourceTypes.GRP)}\n'
-			resourceTypes += f'LCP     : {CSE.dispatcher.countResources(ResourceTypes.LCP)}\n'
-			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ)}\n'
-			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(ResourceTypes.NOD)}\n'
-			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(ResourceTypes.PCH)}\n'
-			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(ResourceTypes.REQ)}\n'
-			resourceTypes += f'SCH     : {CSE.dispatcher.countResources(ResourceTypes.SCH)}\n'
-			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(ResourceTypes.SMD)}\n'
-			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(ResourceTypes.SUB)}\n'
-			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
-			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
-			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
-			resourceTypes += f'{miscHeight}\n'
+			resourceTypes += f'AE      : {(_cAE   := CSE.dispatcher.countResources(ResourceTypes.AE))}\n'
+			resourceTypes += f'ACP     : {(_cACP  := CSE.dispatcher.countResources(ResourceTypes.ACP))}\n'
+			resourceTypes += f'ACTR    : {(_cACTR := CSE.dispatcher.countResources(ResourceTypes.ACTR))}\n'
+			resourceTypes += f'CB      : {(_cCB   := CSE.dispatcher.countResources(ResourceTypes.CSEBase))}\n'
+			resourceTypes += f'CIN     : {(_cCIN  := CSE.dispatcher.countResources(ResourceTypes.CIN))}\n'
+			resourceTypes += f'CNT     : {(_cCNT  := CSE.dispatcher.countResources(ResourceTypes.CNT))}\n'
+			resourceTypes += f'CRS     : {(_cCRS  := CSE.dispatcher.countResources(ResourceTypes.CRS))}\n'
+			resourceTypes += f'CSR     : {(_cCSR  := CSE.dispatcher.countResources(ResourceTypes.CSR))}\n'
+			resourceTypes += f'DEPR    : {(_cDEPR := CSE.dispatcher.countResources(ResourceTypes.DEPR))}\n'
+			resourceTypes += f'FCNT    : {(_cFCNT := CSE.dispatcher.countResources(ResourceTypes.FCNT))}\n'
+			resourceTypes += f'FCI     : {(_cFCI  := CSE.dispatcher.countResources(ResourceTypes.FCI))}\n'
+			resourceTypes += f'GRP     : {(_cGRP  := CSE.dispatcher.countResources(ResourceTypes.GRP))}\n'
+			resourceTypes += f'LCP     : {(_cLCP  := CSE.dispatcher.countResources(ResourceTypes.LCP))}\n'
+			resourceTypes += f'MgmtObj : {(_cMOBJ := CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ))}\n'
+			resourceTypes += f'NOD     : {(_cNOD  := CSE.dispatcher.countResources(ResourceTypes.NOD))}\n'
+			resourceTypes += f'PCH     : {(_cPCH  := CSE.dispatcher.countResources(ResourceTypes.PCH))}\n'
+			resourceTypes += f'REQ     : {(_cREQ  := CSE.dispatcher.countResources(ResourceTypes.REQ))}\n'
+			resourceTypes += f'SCH     : {(_cSCH  := CSE.dispatcher.countResources(ResourceTypes.SCH))}\n'
+			resourceTypes += f'SMD     : {(_cSMD  := CSE.dispatcher.countResources(ResourceTypes.SMD))}\n'
+			resourceTypes += f'SUB     : {(_cSUB  := CSE.dispatcher.countResources(ResourceTypes.SUB))}\n'
+			resourceTypes += f'TS      : {(_cTS   := CSE.dispatcher.countResources(ResourceTypes.TS))}\n'
+			resourceTypes += f'TSB     : {(_cTSB  := CSE.dispatcher.countResources(ResourceTypes.TSB))}\n'
+			resourceTypes += f'TSI     : {(_cTSI  := CSE.dispatcher.countResources(ResourceTypes.TSI))}\n'
 			resourceTypes += '\n'
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
+			# resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cAE + _cACP + _cACTR + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMOBJ + _cNOD + _cPCH + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI }')	# substract the virtual resources
 
-			# ATTN: The padding is calculated dynamically.
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
 			_padding = 16 + (miscHeight - 15) * 2
