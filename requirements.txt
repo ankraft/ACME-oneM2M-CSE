@@ -85,7 +85,7 @@ shapely==2.0.6
     # via acmecse (setup.py)
 six==1.16.0
     # via isodate
-textual==0.82.0
+textual[syntax]==0.82.0
     # via
     #   acmecse (setup.py)
     #   textual-plotext
@@ -93,6 +93,12 @@ textual-plotext==0.2.1
     # via acmecse (setup.py)
 tinydb==4.8.0
     # via acmecse (setup.py)
+tree-sitter==0.20.4
+    # via
+    #   textual
+    #   tree-sitter-languages
+tree-sitter-languages==1.10.2
+    # via textual
 typing-extensions==4.12.2
     # via textual
 uc-micro-py==1.0.3
