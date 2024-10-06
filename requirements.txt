@@ -24,7 +24,7 @@ flask==3.0.3
     #   flask-cors
 flask-cors==5.0.0
     # via acmecse (setup.py)
-idna==3.9
+idna==3.10
     # via requests
 inquirerpy==0.3.4
     # via acmecse (setup.py)
@@ -51,19 +51,19 @@ mdit-py-plugins==0.4.2
     # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
-numpy==2.1.1
+numpy==2.1.2
     # via shapely
 paho-mqtt==2.1.0
     # via acmecse (setup.py)
 pfzy==0.3.4
     # via inquirerpy
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via textual
-plotext==5.2.8
+plotext==5.3.2
     # via
     #   acmecse (setup.py)
     #   textual-plotext
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
     # via inquirerpy
 psycopg2-binary==2.9.9
     # via acmecse (setup.py)
@@ -77,7 +77,7 @@ rdflib==7.0.0
     # via acmecse (setup.py)
 requests==2.32.3
     # via acmecse (setup.py)
-rich==13.8.1
+rich==13.9.2
     # via
     #   acmecse (setup.py)
     #   textual
@@ -85,7 +85,7 @@ shapely==2.0.6
     # via acmecse (setup.py)
 six==1.16.0
     # via isodate
-textual[syntax]==0.79.1
+textual==0.82.0
     # via
     #   acmecse (setup.py)
     #   textual-plotext
@@ -93,12 +93,6 @@ textual-plotext==0.2.1
     # via acmecse (setup.py)
 tinydb==4.8.0
     # via acmecse (setup.py)
-tree-sitter==0.20.4
-    # via
-    #   textual
-    #   tree-sitter-languages
-tree-sitter-languages==1.10.2
-    # via textual
 typing-extensions==4.12.2
     # via textual
 uc-micro-py==1.0.3
@@ -109,7 +103,7 @@ waitress==3.0.0
     # via acmecse (setup.py)
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==13.0.1
+websockets==13.1
     # via acmecse (setup.py)
 werkzeug==3.0.4
     # via flask

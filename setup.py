@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-import pathlib, os
+import pathlib, os, time
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -13,8 +13,11 @@ directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
 print(directories)
 
 setup(
+	# name='acmecse-dev',
+	# version=f'2024.dev.{time.strftime("%Y%m%d%H%M%S")}',
+
 	name='acmecse',
-	version='2024.06.01',
+	version='2024.10',
 
 
 	author='Andreas Kraft',
@@ -48,7 +51,7 @@ setup(
 		'rich', 
 		'shapely',
 		'textual',
-		'textual[syntax]',
+		#'textual[syntax]',
 		'textual-plotext',
 		'tinydb',
 		'waitress',

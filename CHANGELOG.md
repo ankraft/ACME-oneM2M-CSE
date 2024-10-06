@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased 2024.DEV] - xxxx-xx-xx
+## [2024.10] - 2024-10-07
 
 ### Added
 - [CSE] Added support for the CoAP protocol binding.
@@ -32,9 +32,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed crash when the environment variables contain "$" characters.
 - [DATABASE] Fixed wrong removal of null-attributes in complex attributes for the PostgreSQL database binding.
 - [WEB] Fixed the web UI when the CSE's http server is not running directly under the root path.
-
-### Removed
-
 
 
 ## [2024.06.01] - 2024-06-28
