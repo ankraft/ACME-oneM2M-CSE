@@ -57,6 +57,10 @@ class ACMETuiApp(App):
 	BINDINGS = 	[ Binding('#', 'quit_tui', 'Console'),
 				  Binding('Q', 'quit_acme', 'Quit ACME', key_display = 'SHIFT-Q'),
 				]
+	
+	# TODO Implement command palette
+	ENABLE_COMMAND_PALETTE = False
+
 
 	def __init__(self) -> None:
 		super().__init__()
