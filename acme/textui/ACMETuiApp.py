@@ -173,11 +173,13 @@ class ACMETuiApp(App):
 		return self._debugConsole
 	
 
-	def copyToClipboard(self, text: str) -> None:
+	def copyToClipboard(self, text: str) -> bool:
 		try:
 			pyperclip.copy(text)
+			return True
 		except pyperclip.PyperclipException as e:
 			self.showNotification(f'Error copying to clipboard: {e}', 'Clipboard Error', 'error')
+			return False
 
 
 	def pasteFromClipboard(self) -> str:
@@ -185,7 +187,7 @@ class ACMETuiApp(App):
 			return pyperclip.paste()
 		except pyperclip.PyperclipException as e:
 			self.showNotification(f'Error pasting from clipboard: {e}', 'Clipboard Error', 'error')
-			return ''
+			return None
 
 	def on_load(self) -> None:
 		self.dark = Configuration.textui_theme == 'dark'
@@ -279,7 +281,7 @@ class ACMETuiApp(App):
 			self.notify(message = message, title = title, severity = severity, timeout = timeout)
 		
 		if timeout is None:
-			timeout = Configuration.textui_notificationTimeout
+			timeout = (Configuration.textui_notificationTimeout * 5) if severity == 'error' else Configuration.textui_notificationTimeout
 		
 		if severity is None:
 			severity = 'information'

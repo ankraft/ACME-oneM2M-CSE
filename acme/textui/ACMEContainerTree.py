@@ -326,8 +326,8 @@ class ACMEContainerTree(Container):
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
 					v = ri
 					t = 'Resource Identifier Copied'
-				self._app.copyToClipboard(v)
-				self._app.showNotification(v, t, 'information')
+				if self._app.copyToClipboard(v):
+					self._app.showNotification(v, t, 'information')
 
 			# When clicking on the top border: Copy the resource name or type
 			elif event.y == 0:
@@ -338,13 +338,13 @@ class ACMEContainerTree(Container):
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(rt):
 					v = rt
 					t = 'Resource Type Copied'
-				self._app.copyToClipboard(v)
-				self._app.showNotification(v, t, 'information')
+				if self._app.copyToClipboard(v):
+					self._app.showNotification(v, t, 'information')
 
 		# When clicking on the resource view
 		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is self.resourceView:
-			self._app.copyToClipboard(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
-			self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
+			if self._app.copyToClipboard(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2)):
+				self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
 
 
 	def action_refresh_resources(self) -> None:
