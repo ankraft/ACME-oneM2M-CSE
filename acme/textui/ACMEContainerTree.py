@@ -168,7 +168,10 @@ class ACMEResourceTree(TextualTree):
 
 
 	def _buildNodeChildren(self, node:TreeNode) -> None:
-		node.remove_children()
+		try:
+			node.remove_children()
+		except KeyError:
+			pass # Catch key error that might occur hear. Not much that we can do here
 		#self._app.notify(str([ x.id for x in node.children]))
 		# node._children = []	# no available method?
 		prevType = ''
