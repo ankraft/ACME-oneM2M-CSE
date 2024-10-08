@@ -195,9 +195,9 @@ class ACMEContainerResourceServices(Container):
 			count, data = CSE.console.doExportInstances(self.resource.ri, asString = True)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self._app.copyToClipboard(data)
-			self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
-			self._app.showNotification(n, 'Data Points Copy', 'information')
+			if self._app.copyToClipboard(data):
+				self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
+				self._app.showNotification(n, 'Data Points Copy', 'information')
 
 
 		# Show the loading indicator instead of the result

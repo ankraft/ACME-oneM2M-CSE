@@ -50,9 +50,11 @@ class ACMEContentDialog(ModalScreen):
 
 	def on_button_pressed(self, event: Button.Pressed) -> None:
 		if event.button.id == 'dialog-copy':
-			self._app.copyToClipboard(self.content)
-			self.app.pop_screen()
-			self.app.notify('Copied to clipboard.')
+			if self._app.copyToClipboard(self.content):
+				self.app.pop_screen()
+				self.app.notify('Copied to clipboard.')
+			else:
+				self.app.pop_screen()
 
 	
 	def on_click(self, event:Click) -> None:
