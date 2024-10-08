@@ -19,8 +19,8 @@ from ..resources.Resource import Resource
 class Unknown(Resource):
 
 	def __init__(self, dct:Optional[JSON], 
-					   tpe:Optional[str], 
+					   typeShortname:Optional[str], 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.UNKNOWN, dct, pi, tpe = tpe, create = create)
+		super().__init__(ResourceTypes.UNKNOWN, dct, pi, typeShortname = typeShortname, create = create)
 

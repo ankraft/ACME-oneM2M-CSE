@@ -6,6 +6,7 @@
 #
 #	ResourceType: mgmtObj:DeviceCapability
 #
+""" [DVC] (DeviceCapability) management object specialization. """
 
 from __future__ import annotations
 from typing import Optional
@@ -19,6 +20,7 @@ from ..resources.Resource import Resource
 
 
 class DVC(MgmtObj):
+	""" [DeviceCapability] (DVC) management object specialization """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -55,11 +57,19 @@ class DVC(MgmtObj):
 			'dis': None,
 			'cus': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
+		""" Initialize the DVC object. 
+
+			Args:
+				dct: The dictionary to initialize the DVC object.
+				pi: The parent's resource ID.
+				create: Indicates creation of the resource. Defaults to False.
+		"""
 		super().__init__(dct, pi, mgd = ResourceTypes.DVC, create = create)
 
 		self.setAttribute('can', 'unknown', overwrite = False)

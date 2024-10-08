@@ -10,14 +10,16 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List, Optional, Any
+from typing import cast, List
 
 from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ..etc.Types import CSERequest, JSON, ResponseType
 from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
 from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
-from ..etc.ACMEUtils import isSPRelative, csiFromSPRelative, structuredPathFromRI
+from ..etc.ACMEUtils import structuredPathFromRI
+from ..etc.IDUtils import isSPRelative, csiFromSPRelative
 from ..etc.DateUtils import utcTime
+from ..etc.Constants import RuntimeConstants as RC
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
@@ -38,14 +40,8 @@ class GroupManager(object):
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
 
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
-		# Assign configuration values
-		self._assignConfig()
 
 		L.isInfo and L.log('GroupManager initialized')
 
@@ -60,26 +56,9 @@ class GroupManager(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		"""	Assign the configuration values.
-		"""
-		self.resultExpirationTime = Configuration.get('resource.grp.resultExpirationTime')
-
-
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
-		"""	Handle configuration updates.
-		"""
-		if key not in ( 'resource.grp.resultExpirationTime' ):
-			return
-		self._assignConfig()
-
-
 	def restart(self, name:str) -> None:
 		"""	Restart the registration services.
 		"""
-		self._assignConfig()
 		L.isDebug and L.logDebug('GroupManager restarted')
 
 
@@ -136,7 +115,7 @@ class GroupManager(object):
 			isLocalResource = True
 			#Check whether it is a local resource or not
 			if isSPRelative(mid):
-				if csiFromSPRelative(mid) != CSE.cseCsi:
+				if csiFromSPRelative(mid) != RC.cseCsi:
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
 					# if not (url := CSE.request._getForwardURL(mid)):
@@ -144,7 +123,7 @@ class GroupManager(object):
 					L.isDebug and L.logDebug(f'Retrieve request to: {mid}')
 					remoteResult = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
 																			to = mid, 
-																			originator = CSE.cseCsi)
+																			originator = RC.cseCsi)
 																)[0].result	# there should be at least one result
 
 			# get the resource and check it
@@ -264,8 +243,8 @@ class GroupManager(object):
 		# Else use the default configuration, if set to a value > 0
 		if request.rset is not None:
 			_timeoutTS = request._rsetUTCts
-		elif self.resultExpirationTime > 0:
-			_timeoutTS = utcTime() + self.resultExpirationTime
+		elif Configuration.resource_grp_resultExpirationTime > 0:
+			_timeoutTS = utcTime() + Configuration.resource_grp_resultExpirationTime
 		else:
 			_timeoutTS = 0
 
@@ -338,4 +317,3 @@ class GroupManager(object):
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1
 			group.dbUpdate(True)
-

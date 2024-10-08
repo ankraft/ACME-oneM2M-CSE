@@ -14,7 +14,8 @@ from typing import Optional
 
 from copy import deepcopy
 
-from ..etc.ACMEUtils import pureResource, toSPRelative, csiFromSPRelative, compareIDs
+from ..etc.ACMEUtils import pureResource, toSPRelative, compareIDs
+from ..etc.IDUtils import csiFromSPRelative
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, TimeWindowType, EventEvaluationMode, CSERequest
@@ -130,7 +131,7 @@ class CRS(Resource):
 		
 		# We are validating the attributes already here because the actual update of the resource
 		# (where this happens) is done only after other procedures hapened.
-		CSE.validator.validateAttributes(dct, self.tpe, 
+		CSE.validator.validateAttributes(dct, self.typeShortname, 
 				   							  self.ty, 
 											  self._attributes, 
 											  create = False, 

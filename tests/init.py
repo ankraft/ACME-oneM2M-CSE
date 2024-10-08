@@ -9,13 +9,15 @@
 
 from __future__ import annotations
 from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
+from dataclasses import dataclass
 
 from urllib.parse import ParseResult, urlparse, parse_qs
-import sys, io, atexit, base64
+import sys, io, atexit, base64, urllib
 import unittest
 
+from rich import inspect
 from rich.console import Console
-import requests, sys, json, time, ssl, urllib3, random, re, random
+import requests, sys, json, time, ssl, urllib3, random, re, random, importlib
 from datetime import datetime, timezone
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -27,9 +29,19 @@ from websockets.exceptions import ConnectionClosed
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc import RequestUtils, DateUtils
-from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
+
+# CoAP Libraries
+from coapthon import defines	# actually this is the import from ACME
+from coapthon.client.helperclient import HelperClient as CoAPClient
+from coapthon.messages.option import Option as CoAPOption
+from coapthon.messages.request import Request as CoAPRequest
+from coapthon.messages.response import Response as	CoAPResponse
+
+
+from acme.etc import DateUtils, RequestUtils
+from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode, ResponseType
 import acme.helpers.OAuth as OAuth
+from acme.helpers import CoAPthonTools
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
 from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
@@ -50,8 +62,9 @@ oauthToken = None								# current OAuth Token
 verboseRequests = False							# Print requests and responses
 testCaseNames:Optional[list[str]] = None		# List of test cases to run
 excludedTestNames:Optional[list[str]] = []		# List of test cases to exclude
-enableTearDown:bool = True  					# Run or don't run TearDownClass test case methods
-initialRequestTimeout = 10.0					# Timeout in s for the initial connectivity test.
+enableTearDown = True  							# Run or don't run TearDownClass test case methods
+initialRequestTimeout  = 10.0					# Timeout in s for the initial connectivity test.
+localNotificationServer = False					# Use a local notification server address
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -88,7 +101,6 @@ testVerbosity				= 2
 
 
 
-from dataclasses import dataclass
 
 @dataclass
 class MQTTTopics:
@@ -200,6 +212,12 @@ mqttClient:MQTTConnection = None
 mqttHandler:MQTTClientHandler = None
 
 
+# CoAP Client
+coapClient:CoAPClient = None
+CoAPthonTools.registerOneM2MOptions()		# register extra options
+CoAPthonTools.registerOneM2MContentTypes()	# register extra content types
+
+
 # HTTP Session
 httpSession:requests.Session = None
 
@@ -241,6 +259,7 @@ lcpRN	= 'testLCP'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
 prmrRN	= 'testPRMR'
+prpRN	= 'testPRP'
 reqRN	= 'testREQ'
 schRN 	= 'testSCH'
 smdRN	= 'testSMD'
@@ -273,6 +292,7 @@ tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{cntURL}/{actrRN}'
 deprURL = f'{actrURL}/{deprRN}'
 prmrURL = f'{aeURL}/{prmrRN}'
+prpURL 	= f'{cseURL}/{prpRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
@@ -289,10 +309,13 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 def shutdown() -> None:
 	"""	Shutdown the system. 
 	"""
-	global mqttClient
+	global mqttClient, coapClient
 	if mqttClient:
 		mqttClient.shutdown()
 		mqttClient = None
+	if coapClient:
+		coapClient.close()
+		coapClient = None
 	
 	for _, websocket in websockets.items():
 		websocket.close()
@@ -305,42 +328,49 @@ def shutdown() -> None:
 
 requestCount:int = 0
 
-def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str|JSON, int]:
+def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.RETRIEVE, url, originator, timeout=timeout, headers=headers)
 
-def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str, int]:
+def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[str, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return cast(JSON, x), rsc
 
-def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = sendRequest(Operation.CREATE, url, originator, ty, data, headers=headers)
 	return cast(JSON, x), rsc
 
-def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters={}) -> Tuple[JSON, int]:
 	x,rsc = sendRequest(Operation.NOTIFY, url, originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
-def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
+def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters={}) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.UPDATE, url, originator, data=data, headers=headers)
 
-def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters=None) -> Tuple[str, int]:
+def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters={}) -> Tuple[str, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
 	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def UPDATE(url:str, originator:str, data:JSON, headers:Parameters=None) -> Tuple[JSON, int]:
+def UPDATE(url:str, originator:str, data:JSON, headers:Parameters={}) -> Tuple[JSON, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
-def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]:
+def DELETE(url:str, originator:str, headers:Parameters={}) -> Tuple[JSON, int]:
 	x, rsc = sendRequest(Operation.DELETE, url, originator, headers=headers)
 	return cast(JSON, x), rsc
 
 
-def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendRequest(operation:Operation, 
+				url:str, 
+				originator:str, 
+				ty:ResourceTypes=None, 
+				data:JSON|str=None, 
+				ct:str='application/json', 
+				timeout:float=None, 
+				headers:Parameters = {}) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	"""	Send a request. Call the appropriate framework, depending on the protocol.
 	"""
 	global requestCount, httpSession
@@ -398,9 +428,21 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 			case Operation.NOTIFY:
 				return sendWsRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 
-	else:
-		print('ERROR')
-		return None, 5103
+	elif url.startswith(('coap', 'coaps')):
+		match operation:
+			case Operation.CREATE:
+				return sendCoapRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.RETRIEVE:
+				return sendCoapRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.UPDATE:
+				return sendCoapRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.DELETE:
+				return sendCoapRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+			case Operation.NOTIFY:
+				return sendCoapRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+
+	print('ERROR')
+	return None, 5103
 
 
 def _packRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, headers:Parameters=None) -> Tuple[JSON, str, ParseResult]:
@@ -568,7 +610,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 
 	setLastRequestID(rid)
 	try:
-		sendData:str = None
+		sendData:Optional[str] = None
 		if data is not None:
 			if isinstance(data, dict):	# actually JSON, but isinstance() cannot be used with generics
 				sendData = json.dumps(data)
@@ -580,7 +622,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	except Exception as e:
 		# print(f'Failed to send request: {str(e)}')
 		return f'Failed to send request: {str(e)}', 5103
-	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
+	rc = int(r.headers.get(C.hfRSC, r.status_code))
+	if rc == 204:
+		rc = ResponseStatusCode.NO_CONTENT
 
 	# save last header for later
 	setLastHeaders(r.headers)
@@ -629,6 +673,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	# send the data
 	mqttHandler.publish(reqTopic, cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))  # TODO support cbor
 
+	# Wait for response? 
+	if (_rt := req.get('rt')):
+		if _rt.get('rtv') == ResponseType.noResponse.value:
+			return '', ResponseStatusCode.NO_CONTENT
+
 	# Wait for response
 	while True: 	# Timeout?
 		try:
@@ -657,13 +706,20 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			# 		hds[f] = resp[k]
 			setLastHeaders(fillLastHeaders(resp))
 
-			return resp['pc'] if 'pc' in resp else None, resp['rsc']
+			return resp.get('pc'), resp['rsc']
 
 
 websockets:dict[str, ClientConnection] = dict()
 wsin:int = 0
 
-def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=10.0, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendWsRequest(operation:Operation, 
+				  url:str, 
+				  originator:str, 
+				  ty:int=None, 
+				  data:JSON|str=None, 
+				  ct:str=None, 
+				  timeout:float=10.0, 
+				  headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	req, rqi, urlComponents = _packRequest(operation, url, originator, ty, data, ct, headers)
 
 	def isWSOpen(websocket:WSConnection) -> bool:
@@ -675,7 +731,7 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 			return True
 		return True
 
-	
+
 	# Verbose output
 	if verboseRequests:
 		console.print('\n[b u]Request')
@@ -711,21 +767,199 @@ def sendWsRequest(operation:Operation, url:str, originator:str, ty:int=None, dat
 
 	websocket.send(cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))
 	# TODO Decouple WS receiving to support notifications via 
+
+	# Wait for response? 
+	if (_rt := req.get('rt')):
+		if _rt.get('rtv') == ResponseType.noResponse.value:
+			return '', ResponseStatusCode.NO_CONTENT
+
+	# Waiting for response
 	try:
 		while True:
 			if (response := websocket.recv(timeout = timeout)):
 				resp = RequestUtils.deserializeData(bytes(response, 'utf-8') if isinstance(response, str) else response,
 										 			ContentSerializationType.JSON)
 				setLastHeaders(fillLastHeaders(resp))
-				return resp['pc'] if 'pc' in resp else None, resp['rsc']
+				return resp.get('pc'), resp['rsc']
 			else:
 				console.print(response)
 				console.print('.', end='')
-				return None
+				return None, 0
 	except TimeoutError:	# expected
 		console.print('timeout')
 		pass
-	return None
+	return None, 0
+
+
+
+def sendCoapRequest(operation:Operation, 
+					url:str, 
+					originator:str, 
+					ty:ResourceTypes=None, 
+					data:JSON|str = None, 
+					ct:str=None, 
+					timeout:float=None, 
+					headers:Parameters=None) -> Tuple[str|JSON, int]:	# type: ignore # TODO Constants
+	
+	if timeout is None:
+		timeout = coapTimeout	# not an argument default, because a calling function might set it to None
+
+	def _addCoAPOption(request:CoAPRequest, number:int, value:Any) -> None:
+		option = CoAPOption()
+		option.number = number
+		option.value = value
+		request.add_option(option)
+	
+
+	urlComponents:ParseResult = urlparse(RequestUtils.toHttpUrl(url))
+
+	# TODO DTLS socket
+	# TODO add verboserequest output
+	global coapClient
+	if not coapClient:
+		coapClient = CoAPClient(server=(urlComponents.hostname, urlComponents.port))
+
+	request = CoAPRequest()
+
+	# Set the appropriate CoAP code
+	match operation:
+		case Operation.CREATE:
+			request.code = defines.Codes.POST.number
+		case Operation.RETRIEVE if RELEASEVERSION == '5':
+			request.code = defines.Codes.FETCH.number
+		case Operation.RETRIEVE:
+			request.code = defines.Codes.GET.number
+		case Operation.UPDATE:
+			request.code = defines.Codes.PUT.number
+		case Operation.DELETE:
+			request.code = defines.Codes.DELETE.number
+		case Operation.NOTIFY:
+			request.code = defines.Codes.POST.number
+
+	request.type = defines.Types['CON']
+	request.destination = urlComponents.hostname, urlComponents.port
+	request.uri_path = urlComponents.path[1:]
+
+
+	# CoAP Options
+	_addCoAPOption(request, defines.OptionRegistry.CONTENT_TYPE.number, defines.Content_types[ct])
+
+	if RELEASEVERSION == '5':
+		console.print('[red]Warning: CoAP binding for Release 5 is not yet supported')
+		quit()
+		# if data is None:
+		# 	data = dict()
+		# else:
+		# 	data_pc = data
+		# 	data = dict()
+		# 	data['pc'] = data_pc
+
+		# if ty is not None:
+		# 	data['ty'] = int(ty)
+
+		# if originator is not None:
+		# 	data['fr'] = originator
+
+		# data['rqi'] = uniqueID()
+		# if C.hfRVI in headers:	# overwrite RVI option
+		# 	data['rvi'] = headers[C.hfRVI]
+		# 	del headers[C.hfRVI]
+		# else:
+		# 	data['rvi'] = RELEASEVERSION
+
+	else:
+		# OneM2M Options
+		if ty is not None:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_TY.number, int(ty))				# type:ignore[attr-defined]
+
+		if originator is not None:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_FR.number, originator)			# type:ignore[attr-defined]
+
+		_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQI.number, rid := uniqueID())		# type:ignore[attr-defined]
+		setLastRequestID(rid)
+
+		if C.hfRVI in headers:	# overwrite RVI option
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, headers[C.hfRVI])		# type:ignore[attr-defined]
+			del headers[C.hfRVI]
+		else:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RVI.number, RELEASEVERSION)		# type:ignore[attr-defined]
+		if C.hfVSI in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_VSI.number, headers[C.hfVSI])		# type:ignore[attr-defined]
+			del headers[C.hfVSI]
+		if C.hfRET in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RQET.number, headers[C.hfRET])	# type:ignore[attr-defined]
+			del headers[C.hfRET]
+		if C.hfOET in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OET.number, headers[C.hfOET])		# type:ignore[attr-defined]
+			del headers[C.hfOET]
+		if C.hfRST in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RSET.number, headers[C.hfRST])	# type:ignore[attr-defined]
+			del headers[C.hfRST]
+		if C.hfRTU in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_RTURI.number, headers[C.hfRTU])	# type:ignore[attr-defined]
+			del headers[C.hfRTU]
+		if C.hfOT in headers:
+			_addCoAPOption(request, defines.OptionRegistry.oneM2M_OT.number, headers[C.hfOT])		# type:ignore[attr-defined]
+			del headers[C.hfOT]
+
+	if len(headers):
+		console.print(f'[red]Warning: {headers} not used in CoAP request')
+
+	# Set CoAP payload
+	if data is not None and isinstance(data, dict):
+		request.payload = bytes(json.dumps(data), 'utf-8')
+	
+	# Add query parameters 
+	request.uri_query = urlComponents.query
+
+	# check for response type == no response
+	awaitNoResponse = parse_qs(request.uri_query).get('rt') == ['5'] # no response
+
+	# Send the CoAP request
+	try:
+		response = coapClient.send_request(request, timeout = timeout, no_response = awaitNoResponse)
+	except Exception as e:
+		return 'Failed to send CoAP request', 5103
+
+	if response is None:
+		return '', 5103 if not awaitNoResponse else ResponseStatusCode.NO_CONTENT
+
+	content_type = response.content_type
+
+	options = response.options
+	rsc = None
+	rvi = None
+	resp:JSON = {}
+	for option in options:
+		match option.number:
+			case defines.OptionRegistry.oneM2M_RSC.number:		# type:ignore[attr-defined]
+				rsc = cast(int, option.value)
+				resp['rsc'] = rsc
+			case defines.OptionRegistry.oneM2M_RVI.number:		# type:ignore[attr-defined]
+				rvi = cast(str, option.value)
+				resp['rvi'] = rvi
+			case defines.OptionRegistry.oneM2M_VSI.number:		# type:ignore[attr-defined]
+				resp['vsi'] = cast(str, option.value)
+			case defines.OptionRegistry.oneM2M_OT.number:		# type:ignore[attr-defined]
+				resp['ot'] = cast(str, option.value)
+			case defines.OptionRegistry.oneM2M_RSET.number:		# type:ignore[attr-defined]
+				resp['rset'] = cast(str, option.value)
+	
+	# Set the last response header for the test cases to check later
+	setLastHeaders(fillLastHeaders(resp))
+
+	if response.payload:
+		payload = cast(JSON, json.loads(response.payload))
+		if rvi == '5':
+			if 'pc' in payload:
+				return payload['pc'], rsc
+		else:
+			return payload, rsc
+	else:
+		return cast(str, response.payload), rsc
+
+	print('Error')
+	return None, 5103
 
 
 _lastRequstID = None
@@ -762,6 +996,7 @@ def connectionPossible(url:str) -> bool:
 	except Exception as e:
 		print(e)
 		return False
+		
 
 _lastHeaders:Parameters = None
 
@@ -987,6 +1222,32 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 notificationServerIsRunning = False
+# Save the original notification server URL
+_NOTIFICATIONSERVER = NOTIFICATIONSERVER
+_NOTIFICATIONSERVERW = NOTIFICATIONSERVERW
+
+#
+#	This function sets the notification server URL. Depending on the configuration, and
+#	the localNotificationServer flag, the URL is set to the local IP address or the
+#	original URL.
+#	This function is called twice. Once at loading time, and once after the state of the
+#	localNotificationServer flag is known.
+#
+
+def setNotificationServerURL() -> None:
+	global NOTIFICATIONSERVER, NOTIFICATIONSERVERW, TESTHOSTIP
+	
+	# Set the TESTHOSTIP to the local IP address if it is not set
+	if TESTHOSTIP is None:	# type: ignore[used-before-def]
+		TESTHOSTIP = getIPAddress()
+		if not TESTHOSTIP:
+			TESTHOSTIP = '127.0.0.1'	# fallback
+	if localNotificationServer:
+		TESTHOSTIP = '127.0.0.1'
+
+	NOTIFICATIONSERVER = _NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
+	NOTIFICATIONSERVERW = _NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
+
 
 def runNotificationServer() -> None:
 	global notificationServerIsRunning
@@ -1014,7 +1275,7 @@ def stopNotificationServer() -> None:
 	if notificationServerIsRunning:
 		notificationServerIsRunning = False
 		try:
-			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
+			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate, timeout=1)	# send empty/termination request
 		except Exception:
 			pass
 		waitMessage('Stopping notification server', 2.0)
@@ -1203,8 +1464,11 @@ def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[s
 			cases: The list of test case names
 	"""
 	def _addTest(case:str) -> None:
-		if case not in excludedTestNames:
-			suite.addTest(cls(case))
+		if case and case not in excludedTestNames:
+			try:
+				suite.addTest(cls(case))
+			except ValueError as e:
+				console.print(f'[red]Test case "{case}" not found - skipping[/red]')
 
 	if testCaseNames is None:
 		for case in cases:
@@ -1307,11 +1571,8 @@ match PROTOCOL:
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 
-# Set the TESTHOSTIP to the local IP address if it is not set
-if TESTHOSTIP is None:	# type: ignore[used-before-def]
-	TESTHOSTIP = getIPAddress()
-NOTIFICATIONSERVER = NOTIFICATIONSERVER.replace('${TESTHOSTIP}', TESTHOSTIP)
-NOTIFICATIONSERVERW = NOTIFICATIONSERVERW.replace('${TESTHOSTIP}', TESTHOSTIP)
+# Set the notification server URL
+setNotificationServerURL()
 
 if UPPERTESTERENABLED:
 	try:
@@ -1333,4 +1594,3 @@ if UPPERTESTERENABLED:
 		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
 		shutdown()
 		quit(-1)
-

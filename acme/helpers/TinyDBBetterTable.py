@@ -4,7 +4,7 @@
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""	This module provides an optimizde Table class for TinyDB that optimizes the document index handling.
+"""	This module provides an optimized Table class for TinyDB that optimizes the document index handling.
 """
 
 from typing import Dict, Callable, Mapping

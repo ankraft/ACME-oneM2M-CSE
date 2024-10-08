@@ -10,6 +10,8 @@
 from __future__ import annotations
 from typing import cast
 
+import pyperclip
+
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll, Vertical
@@ -24,7 +26,6 @@ class ACMEContainerResourceServices(Container):
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		super().__init__(id = id)
 		
@@ -34,8 +35,16 @@ class ACMEContainerResourceServices(Container):
 		self.exportIncludingChildResources:bool = True
 		"""	Flag to indicate if child resources should be included in the export. """
 
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
+		# Some resources upfront
+		self._servicesExportResource = Vertical(id = 'services-export-resource')
+		self._servicesExportInstances = Vertical(id = 'services-export-instances')
+
+		self._servicesExportResourceResult = Static('', id = 'services-export-resource-result', classes = 'result')
+		self._servicesExportInstancesResult = Static('', id = 'services-export-instances-result', classes = 'result')
+
+		self._servicesExportResourceLoadingIndicator = LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+		self._servicesExportInstancesLoadingIndicator = LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+		self._servicesExportResourceCheckbox = Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
 
 
 	def compose(self) -> ComposeResult:
@@ -46,54 +55,56 @@ class ACMEContainerResourceServices(Container):
 		"""
 		with VerticalScroll():
 			# Export resource
-			with (v := Vertical(id = 'services-export-resource')):
-				v.border_title = 'Export Resource'
-				yield Label('Export the resource to a file in the *./tmp* directory as a *curl* command.', classes='label')
+			with self._servicesExportResource:
+				self._servicesExportResource.border_title = 'Export Resource'
+				yield Label('Export the resource to a file in the [i]./tmp[/i] directory as a [i]curl[/i] command.', classes='label')
 				with Container(classes='service-command-area'):
 					with Horizontal(classes = 'services-export-controls'):
 						yield Button('Export', variant = 'primary', id = 'services-export-resource-button', classes = 'button')
-						yield Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
-					yield LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
-					yield Static('', id = 'services-export-resource-result', classes = 'result')
+						yield self._servicesExportResourceCheckbox
+					yield self._servicesExportResourceLoadingIndicator
+					yield self._servicesExportResourceResult
 			
 			# Export Instances
-			with (v := Vertical(id = 'services-export-instances')):
-				v.border_title = 'Export Instances'
-				yield Label('Export the instances of the container resource to a CSV file in the *./tmp* directory.', classes='label')
+			with self._servicesExportInstances:
+				self._servicesExportInstances.border_title = 'Export Instances'
+				yield Label('Export the instances of the container resource to a [i]CSV[/i] file in the [i]./tmp[/i] directory or to the clipboard.', classes='label')
 				with Container(classes='service-command-area'):
-					yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
-					yield LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
-					yield Static('', id = 'services-export-instances-result', classes = 'result')
+					with Horizontal():
+						yield Button('Export CSV', variant = 'primary', id = 'services-export-instances-button', classes = 'button')
+						yield Button('Copy CSV', variant = 'primary', id = 'services-copy-instances-button', classes = 'button')
+					yield self._servicesExportInstancesLoadingIndicator
+					yield self._servicesExportInstancesResult
 
 
 	@property
 	def exportResourceResult(self) -> Static:
-		return cast(Static, self.query_one('#services-export-resource-result'))
+		return self._servicesExportResourceResult
 	
 
 	@property
 	def exportInstancesResult(self) -> Static:
-		return cast(Static, self.query_one('#services-export-instances-result'))
+		return self._servicesExportInstancesResult
 	
 
 	@property
 	def exportResourceLoadingIndicator(self) -> LoadingIndicator:
-		return cast(LoadingIndicator, self.query_one('#services-export-resource-loading-indicator'))
+		return self._servicesExportResourceLoadingIndicator
 	
 
 	@property
 	def exportInstancesLoadingIndicator(self) -> LoadingIndicator:
-		return cast(LoadingIndicator, self.query_one('#services-export-instances-loading-indicator'))
+		return self._servicesExportInstancesLoadingIndicator
 	
 
 	@property
 	def exportInstancesView(self) -> Vertical:
-		return cast(Vertical, self.query_one('#services-export-instances'))
+		return self._servicesExportInstances
 
 
 	@property
 	def exportChildResourcesCheckbox(self) -> Checkbox:
-		return cast(Checkbox, self.query_one('#services-export-resource-checkbox'))
+		return self._servicesExportResourceCheckbox
 	
 
 	def updateResource(self, resource:Resource) -> None:
@@ -117,6 +128,10 @@ class ACMEContainerResourceServices(Container):
 		self.exportResourceLoadingIndicator.display = False
 		self.exportInstancesLoadingIndicator.display = False
 
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
+
 
 	#
 	# Export resource
@@ -137,8 +152,9 @@ class ACMEContainerResourceServices(Container):
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
-			self.exportResourceResult.update(f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
-	
+			self.exportResourceResult.update(n := f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
+			self._app.showNotification(n, 'Resource Export', 'information')
+
 
 		# Show the loading indicator instead of the result
 		self.exportResourceLoadingIndicator.display = True
@@ -154,15 +170,15 @@ class ACMEContainerResourceServices(Container):
 		
 	@on(Button.Pressed, '#services-export-instances-button')
 	def exportInstances(self) -> None:
-		"""	Callback to export the current resource's instances
+		"""	Callback to export the current resource's instances as CSV.
 		"""
 
 		def _exportInstances() -> None:
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self.exportInstancesResult.update(f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
-	
+			self.exportInstancesResult.update(n := f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
+			self._app.showNotification(n, 'Data Points Export', 'information')
 
 		# Show the loading indicator instead of the result
 		self.exportInstancesLoadingIndicator.display = True
@@ -171,3 +187,25 @@ class ACMEContainerResourceServices(Container):
 		# Execute in the background to not block the UI
 		BackgroundWorkerPool.runJob(_exportInstances)
 	
+
+	@on(Button.Pressed, '#services-copy-instances-button')
+	def copyInstances(self) -> None:
+		"""	Callback to copy the current resource's instances to the clipboard as CSV.
+		"""
+
+		def _copyInstances() -> None:
+			count, data = CSE.console.doExportInstances(self.resource.ri, asString = True)
+			self.exportInstancesLoadingIndicator.display = False
+			self.exportInstancesResult.display = True
+			pyperclip.copy(data)
+			self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
+			self._app.showNotification(n, 'Data Points Copy', 'information')
+
+
+		# Show the loading indicator instead of the result
+		self.exportInstancesLoadingIndicator.display = True
+		self.exportInstancesResult.display = False
+
+		# Execute in the background to not block the UI
+		BackgroundWorkerPool.runJob(_copyInstances)
+		

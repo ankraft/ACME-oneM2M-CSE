@@ -19,6 +19,7 @@ from threading import Lock
 
 from ..etc.Types import CSEType, ResourceTypes
 from ..etc.DateUtils import utcTime, toISO8601Date
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
@@ -27,6 +28,28 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 
 
+coRetrieves			= 'coqRet'
+""" Attribute name for number of CoAP RETRIEVE requests. """
+coCreates			= 'coCre'
+""" Attribute name for number of CoAP CREATE requests. """
+coUpdates			= 'coUpd'
+""" Attribute name for number of CoAP UPDATE requests. """
+coDeletes			= 'coDel'
+""" Attribute name for number of CoAP DELETE requests. """
+coNotifies			= 'coNot'
+""" Attribute name for number of CoAP NOTIFY requests. """
+coSendRetrieves		= 'coSRt'
+""" Attribute name for number of CoAP SEND RETRIEVE requests. """
+coSendCreates		= 'coSCr'
+""" Attribute name for number of CoAP SEND CREATE requests. """
+coSendUpdates		= 'coSUp'
+""" Attribute name for number of CoAP SEND UPDATE requests. """
+coSendDeletes		= 'coSDl'
+""" Attribute name for number of CoAP SEND DELETE requests. """
+coSendNotifies		= 'coSNo'
+""" Attribute name for number of CoAP SEND NOTIFY requests. """
+retrievedResources	= 'rRes'
+""" Attribute name for number of retrieved resources in the storage. """
 deletedResources	= 'rmRes'
 """ Attribute name for number of deleted resources in the storage. """
 createdResources	= 'crRes'
@@ -117,13 +140,11 @@ class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 
 		Attributes:
-			statisticsEnabled:		Flag whether statistics are enabled.
 			statLock:				Internal lock for statistic handling.
 			stats:					Statistics records
 	"""
 
 	__slots__ = (
-		'statisticsEnabled',
 		'statLock',
 		'stats',
 	)
@@ -131,7 +152,6 @@ class Statistics(object):
 
 
 	def __init__(self) -> None:
-		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
 		# create lock
 		self.statLock = Lock()
@@ -139,55 +159,66 @@ class Statistics(object):
 		# retrieve or create statistics record, even when statistics are disabled
 		self.stats = self.setupStats()
 
-		if self.statisticsEnabled:
+		if Configuration.cse_statistics_enable:
 
 			# Start background worker to handle writing to DB
 			L.isInfo and L.log('Starting statistics DB thread')
-			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
+			BackgroundWorkerPool.newWorker(Configuration.cse_statistics_writeInterval, self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			CSE.event.addHandler(CSE.event.createResource, lambda n, _: self._handleStatsEvent(createdResources)) 	# type: ignore
-			CSE.event.addHandler(CSE.event.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpRetrieve, lambda n: self._handleStatsEvent(httpRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpDelete, lambda n: self._handleStatsEvent(httpDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))				# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda n: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendCreate, lambda n: self._handleStatsEvent(httpSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda n: self._handleStatsEvent(httpSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendDelete, lambda n: self._handleStatsEvent(httpSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda n: self._handleStatsEvent(mqttRetrieves))			# type: ignore
-			CSE.event.addHandler(CSE.event.mqttCreate, lambda n: self._handleStatsEvent(mqttCreates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttUpdate, lambda n: self._handleStatsEvent(mqttUpdates))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttDelete, lambda n: self._handleStatsEvent(mqttDeletes))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))				# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda n: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda n: self._handleStatsEvent(mqttSendCreates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda n: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda n: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
-			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))		# type: ignore
-			CSE.event.addHandler(CSE.event.wsRetrieve, lambda n: self._handleStatsEvent(wsRetrieves))				# type: ignore
-			CSE.event.addHandler(CSE.event.wsCreate, lambda n: self._handleStatsEvent(wsCreates))					# type: ignore
-			CSE.event.addHandler(CSE.event.wsUpdate, lambda n: self._handleStatsEvent(wsUpdates))					# type: ignore
-			CSE.event.addHandler(CSE.event.wsDelete, lambda n: self._handleStatsEvent(wsDeletes))					# type: ignore
-			CSE.event.addHandler(CSE.event.wsNotify, lambda n: self._handleStatsEvent(wsNotifies))					# type: ignore
-			CSE.event.addHandler(CSE.event.wsSendRetrieve, lambda n: self._handleStatsEvent(wsSendRetrieves))		# type: ignore
-			CSE.event.addHandler(CSE.event.wsSendCreate, lambda n: self._handleStatsEvent(wsSendCreates))			# type: ignore
-			CSE.event.addHandler(CSE.event.wsSendUpdate, lambda n: self._handleStatsEvent(wsSendUpdates))			# type: ignore
-			CSE.event.addHandler(CSE.event.wsSendDelete, lambda n: self._handleStatsEvent(wsSendDeletes))			# type: ignore
-			CSE.event.addHandler(CSE.event.wsSendNotify, lambda n: self._handleStatsEvent(wsSendNotifies))			# type: ignore
-			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))			# type: ignore
-			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)										# type: ignore
-			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))					# type: ignore
-			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))				# type: ignore
+			CSE.event.addHandler(CSE.event.retrieveResource, lambda n, _: self._handleStatsEvent(retrievedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.createResource, lambda n, _: self._handleStatsEvent(createdResources)) 		# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))		# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))		# type: ignore
+			CSE.event.addHandler(CSE.event.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))		# type: ignore
+			CSE.event.addHandler(CSE.event.coapRetrieve, lambda n: self._handleStatsEvent(coRetrieves))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapCreate, lambda n: self._handleStatsEvent(coCreates))						# type: ignore
+			CSE.event.addHandler(CSE.event.coapUpdate, lambda n: self._handleStatsEvent(coUpdates))						# type: ignore
+			CSE.event.addHandler(CSE.event.coapDelete, lambda n: self._handleStatsEvent(coDeletes))						# type: ignore
+			CSE.event.addHandler(CSE.event.coapNotify, lambda n: self._handleStatsEvent(coNotifies))					# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendRetrieve, lambda n: self._handleStatsEvent(coSendRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendCreate, lambda n: self._handleStatsEvent(coSendCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendUpdate, lambda n: self._handleStatsEvent(coSendUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendDelete, lambda n: self._handleStatsEvent(coSendDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.coapSendNotify, lambda n: self._handleStatsEvent(coSendNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, lambda n: self._handleStatsEvent(httpRetrieves))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, lambda n: self._handleStatsEvent(httpCreates))					# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, lambda n: self._handleStatsEvent(httpUpdates))					# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, lambda n: self._handleStatsEvent(httpDeletes))					# type: ignore
+			CSE.event.addHandler(CSE.event.httpNotify, lambda n: self._handleStatsEvent(httpNotifies))					# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda n: self._handleStatsEvent(httpSendRetrieves))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendCreate, lambda n: self._handleStatsEvent(httpSendCreates))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda n: self._handleStatsEvent(httpSendUpdates))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendDelete, lambda n: self._handleStatsEvent(httpSendDeletes))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendNotify, lambda n: self._handleStatsEvent(httpSendNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda n: self._handleStatsEvent(mqttRetrieves))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttCreate, lambda n: self._handleStatsEvent(mqttCreates))					# type: ignore
+			CSE.event.addHandler(CSE.event.mqttUpdate, lambda n: self._handleStatsEvent(mqttUpdates))					# type: ignore
+			CSE.event.addHandler(CSE.event.mqttDelete, lambda n: self._handleStatsEvent(mqttDeletes))					# type: ignore
+			CSE.event.addHandler(CSE.event.mqttNotify, lambda n: self._handleStatsEvent(mqttNotifies))					# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda n: self._handleStatsEvent(mqttSendRetrieves))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda n: self._handleStatsEvent(mqttSendCreates))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda n: self._handleStatsEvent(mqttSendUpdates))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda n: self._handleStatsEvent(mqttSendDeletes))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda n: self._handleStatsEvent(mqttSendNotifies))			# type: ignore
+			CSE.event.addHandler(CSE.event.wsRetrieve, lambda n: self._handleStatsEvent(wsRetrieves))					# type: ignore
+			CSE.event.addHandler(CSE.event.wsCreate, lambda n: self._handleStatsEvent(wsCreates))						# type: ignore
+			CSE.event.addHandler(CSE.event.wsUpdate, lambda n: self._handleStatsEvent(wsUpdates))						# type: ignore
+			CSE.event.addHandler(CSE.event.wsDelete, lambda n: self._handleStatsEvent(wsDeletes))						# type: ignore
+			CSE.event.addHandler(CSE.event.wsNotify, lambda n: self._handleStatsEvent(wsNotifies))						# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendRetrieve, lambda n: self._handleStatsEvent(wsSendRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendCreate, lambda n: self._handleStatsEvent(wsSendCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendUpdate, lambda n: self._handleStatsEvent(wsSendUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendDelete, lambda n: self._handleStatsEvent(wsSendDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.wsSendNotify, lambda n: self._handleStatsEvent(wsSendNotifies))				# type: ignore
+			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))				# type: ignore
+			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)											# type: ignore
+			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))						# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))					# type: ignore
 
 			# Also do some internal handling
-			CSE.event.addHandler(CSE.event.cseReset, self.restart)													# type: ignore
+			CSE.event.addHandler(CSE.event.cseReset, self.restart)														# type: ignore
 
 		L.isInfo and L.log('Statistics initialized')
 
@@ -198,7 +229,7 @@ class Statistics(object):
 			Return:
 				True if shutdown was successful, False otherwise.
 		"""
-		if self.statisticsEnabled:
+		if Configuration.cse_statistics_enable:
 			# Stop the worker
 			L.isInfo and L.log('Stopping statistics DB thread')
 			BackgroundWorkerPool.stopWorkers('statsDBWorker')
@@ -236,6 +267,16 @@ class Statistics(object):
 			updatedResources	: 0,
 			expiredResources 	: 0,
 			notifications		: 0,
+			coRetrieves			: 0,
+			coCreates			: 0,
+			coUpdates 			: 0,
+			coDeletes 			: 0,
+			coNotifies 			: 0,
+			coSendRetrieves		: 0,
+			coSendCreates		: 0,
+			coSendUpdates 		: 0,
+			coSendDeletes 		: 0,
+			coSendNotifies 		: 0,
 			httpRetrieves		: 0,
 			httpCreates			: 0,
 			httpUpdates 		: 0,
@@ -396,7 +437,7 @@ class Statistics(object):
 				return result
 			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
-				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).tpe()} ></color>\n'
+				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).typeShortname()} ></color>\n'
 				result += getChildren(ch, level+1)
 			return result
 
@@ -418,13 +459,13 @@ skinparam rectangle {
 
 		# Own CSE node & http interface
 		result += 'rectangle << CSE >> {\n'
-		address = urlparse(CSE.httpServer.serverAddress)
+		address = urlparse(Configuration.http_address)
 		(ip, _) = tuple(address.netloc.split(':'))
-		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
+		result += f'node CSE as "<color:green>{RC.cseCsi[1:]}</color> ({RC.cseType.name})\\n{ip}" #white\n'
 
 		# Own http interface
-		http = 'https' if CSE.security.useTLSHttp else 'http'
-		result += f'interface "{http}\\n{CSE.httpServer.port}" as http_own #white\n'
+		http = 'https' if Configuration.http_security_useTLS else 'http'
+		result += f'interface "{http}\\n{Configuration.http_port}" as http_own #white\n'
 
 		# Build Resource Tree
 		result += 'note right of CSE\n'
@@ -439,28 +480,28 @@ skinparam rectangle {
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if CSE.cseType != CSEType.IN and CSE.remote.registrarAddress:
+		if RC.cseType != CSEType.IN and Configuration.cse_registrar_address:
 			registrarCSE = CSE.remote.registrarCSE
 			bg = 'white' if registrarCSE else 'lightgrey'
 			color = 'green' if registrarCSE else 'black'
-			address = urlparse(CSE.remote.registrarAddress)
+			address = urlparse(Configuration.cse_registrar_address)
 			(ip, port) = tuple(address.netloc.split(':'))
 			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.registrarAddress}" #{bg}\n'
+			result += f'cloud PARENT as "<color:{color}>{Configuration.cse_registrar_cseID[1:]}</color> ({registrarType})\\n{Configuration.cse_registrar_address}" #{bg}\n'
 			result += 'CSE -UP- PARENT\n'
 
 		
 		# Has CSE descendants?
-		if CSE.cseType != CSEType.ASN:
+		if RC.cseType != CSEType.ASN:
 			cnt = 0
 			connections = {}
 			for desc in CSE.remote.descendantCSR.keys():
 				csi = desc[1:]
 				(csr, atCsi) = CSE.remote.descendantCSR[desc]
-				address = f'\\n{csr.poa}' if csr else ''
-				tpe = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
+				poa = f'\\n{csr.poa}' if csr else ''
+				typeShortname = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
 				shape = 'node' if csr else 'rectangle'
-				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{address}" #white\n'
+				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{typeShortname}{poa}" #white\n'
 				connections[desc] = (cnt, atCsi)
 				cnt += 1
 			
@@ -468,7 +509,7 @@ skinparam rectangle {
 				connection = connections[key]
 				nodeNr = connection[0]
 				atCsi = connection[1]
-				if atCsi == CSE.cseCsi:
+				if atCsi == RC.cseCsi:
 					result += f'd{nodeNr} -UP- CSE\n'
 				else:
 					if atCsi in connections:
@@ -478,3 +519,4 @@ skinparam rectangle {
 		# end
 		result += '@enduml'
 		return result
+

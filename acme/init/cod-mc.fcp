@@ -1477,7 +1477,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: powerState
-            { "sname" : "powSe", "lname" : "powerState", "type" : "boolean", "car" : "1" }
+            { "sname" : "state", "lname" : "state", "type" : "boolean", "car" : "1" }
         ],
 		"children"  : [
             "cod:togge",
@@ -1510,7 +1510,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: powerState
-            { "sname" : "powSe", "lname" : "powerState", "type" : "boolean", "car" : "1" }
+            { "sname" : "state", "lname" : "state", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "cod:togge",
@@ -1540,7 +1540,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: powerState
-            { "sname" : "powSe", "lname" : "powerState", "type" : "boolean", "car" : "1" }
+            { "sname" : "state", "lname" : "state", "type" : "boolean", "car" : "1" }
         ]
     }, 
     // Action Instance: toggleInst

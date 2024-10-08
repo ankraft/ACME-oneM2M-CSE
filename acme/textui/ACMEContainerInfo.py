@@ -13,37 +13,56 @@ from typing import cast
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static
+from textual.timer import Timer
 from rich.style import Style
 from ..runtime import CSE
-from ..textui import ACMETuiApp
 from ..runtime.Logging import fontDark, fontLight
-
-tabInfo = 'tab-info'
+from ..runtime.Configuration import Configuration
+from ..textui import ACMETuiApp
 
 class ACMEContainerInfo(VerticalScroll):
 
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, id:str) -> None:
 		super().__init__(id = id)
-		self.tuiApp = tuiApp
-		self._colors = self.app.get_css_variables()
+
+		self._updateTimer:Timer = None
+		"""	The timer to update the statistics. """
+
+		self._statsView = Static(expand = True, id = 'stats-view')
 
 
 	def compose(self) -> ComposeResult:
-		yield Static(expand = True, id = 'stats-view')
+		yield self._statsView
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	@property
 	def statsView(self) -> Static:
-		return cast(Static, self.query_one('#stats-view'))
+		return self._statsView
 
 
-	def on_show(self) -> None:
-		self.set_interval(self.tuiApp.textUI.refreshInterval, self._statsUpdate)
-		self._statsUpdate(True)	# Update once at the beginning
-	
+	def tab_changed(self, id:str) -> None:
+		"""	Called when the tab is changed.
+
+			Args:
+				id:	The ID of the tab.
+		"""
+		if id == ACMETuiApp.tabInfo:
+			if not self._updateTimer:
+				self._updateTimer = self.set_interval(Configuration.textui_refreshInterval, self._statsUpdate)
+			self._updateTimer.resume() # resume timer when tab becomes active again
+			self._statsUpdate(True)
+		else:
+			# Switch of the update when the tab is not active
+			if self._updateTimer:
+				self._updateTimer.pause()
+
 
 	def _statsUpdate(self, force:bool = False) -> None:
-		if force or self.tuiApp.tabs.active == tabInfo:
-			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self._colors['primary']), 
-													   		    textStyle = Style(color = fontDark if self.app.dark else fontLight)))
+		if force or self._app.tabs.active == ACMETuiApp.tabInfo:
+			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self.app.get_css_variables()['primary']), 
+																	textStyle = Style(color = fontDark if self._app.dark else fontLight)))
 

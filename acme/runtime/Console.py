@@ -12,8 +12,8 @@
 from __future__ import annotations
 from typing import List, cast, Optional, Any, Tuple
 
-import csv, datetime, json, os, sys, webbrowser, socket, platform
-from enum import IntEnum, auto
+import csv, datetime, json, os, sys, webbrowser, socket, platform, io
+
 from rich.live import Live
 from rich.panel import Panel
 from rich.pretty import Pretty
@@ -32,15 +32,16 @@ from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers.Interpreter import PContext, PError
 from ..helpers.OrderedSet import OrderedSet
-from ..etc.Constants import Constants
-from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality
+from ..etc.Constants import Constants, RuntimeConstants as RC
+from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
 from ..etc.ResponseStatusCodes import ResponseException
 from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..runtime import Statistics
-from .Configuration import Configuration, documentationLinks
+from ..runtime.Configuration import Configuration
+from .Configuration import Configuration
 from .Logging import Logging as L
 
 # Used in many "rich" functions
@@ -50,66 +51,6 @@ _markup = Text.from_markup
 # TODO move some of the functions to a more general place because they are used here and in the TUI
 
 
-
-class TreeMode(IntEnum):
-	""" Available modes do display the resource tree
-	"""
-
-	NORMAL				= auto()
-	"""	Mode - Normal """
-
-	CONTENT				= auto()
-	""" Mode - Show content """
-
-	COMPACT				= auto()
-	""" Mode - Compact """
-
-	CONTENTONLY			= auto()
-	"""	Mode - Content only """
-
-
-	def __str__(self) -> str:
-		"""	String representation of the TreeMode.
-
-			Return:
-				String representation.
-		"""
-		return self.name
-
-
-	def succ(self) -> TreeMode:
-		"""	Return the next enum value, and cycle to the beginning when reaching the end.
-
-			Return:
-				TreeMode value.
-		"""
-		members:list[TreeMode] = list(self.__class__)
-		index = members.index(self) + 1
-		return members[index] if index < len(members) else members[0]
-	
-
-	@classmethod
-	def to(cls, t:str) -> TreeMode:
-		"""	Return the enum from a string.
-
-			Args:
-				t: String representation of an enum value.
-
-			Return:
-				Enum value or *None*.
-		"""
-		return dict(cls.__members__.items()).get(t.upper())
-
-
-	@classmethod
-	def names(cls) -> list[str]:
-		"""	Return all the enum names.
-
-			Return:
-				List of enum value.
-		"""
-		return list(cls.__members__.keys())
-
 ##############################################################################
 
 
@@ -117,12 +58,6 @@ class Console(object):
 	"""	Console Manager class.
 	
 		Attributes:
-			refreshInterval: Configuration setting. Refresh interval for various continuous display functions.
-			hideResources: Configuration setting. List of resources to hide from tree view.
-			treeMode: Configuration setting. Default tree mode.
-			treeIncludeVirtualResources: Configuration setting. Indicates whether the tree view will include or exclude virtual resources.
-			confirmQuit: Configuration setting. Terminating and quitting the CSE must be confirmed.
-
 			interruptContinous: Indication whether any continuous display function should terminate.
 			previousTreeRi: Resource ID of the previous sub-tree display.
 			previousInspectRi: Resource ID of the previous resource inspection.
@@ -148,12 +83,7 @@ class Console(object):
 		'previousInstanceExportRi',
 		'tuiApp',
 		
-		'refreshInterval',
-		'hideResources',
 		'treeMode',
-		'treeIncludeVirtualResources',
-		'confirmQuit',
-		'theme',
 
 		'_eventKeyboard',
 		'_exitFromTUI',
@@ -211,12 +141,7 @@ class Console(object):
 	def _assignConfig(self) -> None:
 		"""	Assign configuration settings.
 		"""
-		self.refreshInterval:float = Configuration.get('console.refreshInterval')
-		self.hideResources:list[str] = Configuration.get('console.hideResources')
-		self.treeMode:TreeMode = Configuration.get('console.treeMode')
-		self.treeIncludeVirtualResources:bool = Configuration.get('console.treeIncludeVirtualResources')
-		self.confirmQuit:bool = Configuration.get('console.confirmQuit')
-		self.theme:str = Configuration.get('console.theme')
+		self.treeMode:TreeMode = cast(TreeMode, Configuration.console_treeMode)	# Assigned because it is changed during runtime
 
 
 	def configUpdate(self, name:str,
@@ -284,14 +209,14 @@ class Console(object):
 		}
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
-		if not CSE.isHeadless:
+		if not RC.isHeadless:
 			L.console('Press "?" for help, or "#" for the Text UI.')
 		
 		loop(commands, 
 			 catchKeyboardInterrupt = True, 
-			 headless = CSE.isHeadless,
+			 headless = RC.isHeadless,
 			 catchAll = lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
-			 nextKey = '#' if CSE.textUI.startWithTUI else None,
+			 nextKey = '#' if Configuration.textui_startWithTUI else None,
 			 postCommandHandler = self._postCommandHandler,
 			 ignoreException = False,
 			 exceptionHandler = lambda ch: L.setEnableScreenLogging(True))
@@ -429,8 +354,8 @@ Available under the BSD 3-Clause License
 			Args:
 				key: Input key. Ignored.
 		"""
-		if not CSE.isHeadless:
-			if self.confirmQuit:
+		if not RC.isHeadless:
+			if Configuration.console_confirmQuit:
 				L.off()
 				L.console('Press quit-key again to confirm -> ', plain=True, end='')
 				if waitForKeypress(5) not in ['Q', '\x03']:
@@ -543,7 +468,7 @@ Available under the BSD 3-Clause License
 			# Register events for which the tree is refreshed
 			CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateTree)		# type:ignore[attr-defined]
 
-			while (ch := waitForKeypress(self.refreshInterval)) in [None, '\x14']:
+			while (ch := waitForKeypress(Configuration.console_refreshInterval)) in [None, '\x14']:
 				if ch == '\x14':	# Toggle through tree modes
 					self.treeMode = self.treeMode.succ()
 					_updateTree()
@@ -565,7 +490,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('CSE Registrations', isHeader = True)
-		# poas = '\n'.join([f'    - {poa}' for poa in CSE.csePOA])
+		# poas = '\n'.join([f'    - {poa}' for poa in RC.csePOA])
 		# L.console(f'- **Point of Access**\n{poas}\n{self.getRegistrationsRich()}')
 		L.console()
 		try:
@@ -596,7 +521,7 @@ Available under the BSD 3-Clause License
 		self.clearScreen(key)
 		self._about('Statistics')
 		with Live(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), auto_refresh = False) as live:
-			while not waitForKeypress(self.refreshInterval):
+			while not waitForKeypress(Configuration.console_refreshInterval):
 				live.update(self.getStatisticsRich(style = L.terminalStyle, withProgress = False), refresh=True)
 				if self.interruptContinous:
 					break
@@ -659,8 +584,8 @@ Available under the BSD 3-Clause License
 			self.previosInspectChildrenRi = ri
 			try:
 				resource = CSE.dispatcher.retrieveResource(ri)
-				children = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
-				CSE.dispatcher.resourceTreeDict(children, resource)	# the function call add attributes to the target resource
+				children = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
+				CSE.dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -703,7 +628,7 @@ Available under the BSD 3-Clause License
 					# Register events for which the resource is refreshed
 					CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateResource)		# type:ignore[attr-defined]
 
-					while waitForKeypress(self.refreshInterval) in [None, '\x09']:
+					while waitForKeypress(Configuration.console_refreshInterval) in [None, '\x09']:
 						if self.interruptContinous:
 							break
 
@@ -754,7 +679,7 @@ Available under the BSD 3-Clause License
 		try:
 
 			if withChildResources:
-				resdis = CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)
+				resdis = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
 				# insert the parent resource at the beginning of the list
 				resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
 			else:
@@ -764,17 +689,17 @@ Available under the BSD 3-Clause License
 			count = 0
 
 			# Create a temporary directory for the export
-			outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
+			outdir = f'{CSE.Configuration.baseDirectory}/tmp'
 			os.makedirs(outdir, exist_ok = True)
 
 			filename = f'export-{getResourceDate().rsplit(",", 1)[0]}.sh'
 			path = f'{outdir}/{filename}'
-			cseUrl = CSE.httpServer.serverAddress
+			cseUrl = Configuration.http_address
 			with open(path, 'w') as f:
 
 				# Write shell file header
 				f.write(f'''#!/bin/bash
-# Exported {ri} from {CSE.cseRi} at {getResourceDate()}
+# Exported {ri} from {RC.cseRi} at {getResourceDate()}
 
 cseURL={cseUrl}
 
@@ -791,7 +716,7 @@ function uniqueNumber() {{
 function createResource() {{
 	printf '\\nCreating child resource under %s\\n' $cseURL/$4
 	printf 'Result: '		  
-	curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {CSE.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
+	curl -X POST -H "X-M2M-Origin: $1" -H "X-M2M-RVI: {RC.releaseVersion}" -H "X-M2M-RI: $(uniqueNumber)" -H "Content-Type: application/json;ty=$2" -d "$3" $cseURL/$4
 	printf '\\n'
 }}
 			
@@ -799,7 +724,7 @@ function createResource() {{
 
 				# Write createResource commands for all resources
 				for r in resdis:
-					tpe = r.tpe
+					typeShortname = r.typeShortname
 					attributes = {}
 					for attr in r.getAttributes():
 						policy = CSE.validator.getAttributePolicy(r.ty, attr)
@@ -810,7 +735,7 @@ function createResource() {{
 					if 'et' in attributes:
 						del attributes['et']
 
-					attributes = { tpe : attributes }
+					attributes = { typeShortname : attributes }
 					parentSrn = r.getSrn().rsplit('/', 1)[0]
 					# f.write(f'createResource {r.getOriginator()} {r.ty} \'{json.dumps(attributes).replace("\'", "\\\'")}\' \'{parentSrn}\'\n')
 					f.write('createResource ' + r.getOriginator() + ' ' + str(r.ty) +' \'' + json.dumps(attributes).replace("\'", "\\\'") + '\' \'' + parentSrn + '\'\n')
@@ -840,11 +765,16 @@ function createResource() {{
 
 
 
-	def doExportInstances(self, ri:str) -> Tuple[int, str]:
-		"""	Export instances of a container resource to a CSV file in the tmp directory.
+	def doExportInstances(self, ri:str, asString:bool = False) -> Tuple[int, str]:
+		"""	Export instances of a container resource to a CSV file in the tmp directory, or return as a string.
 
 			Args:
 				ri: Resource ID of the container resource.
+				asString: Return the CSV string instead of writing to a file.
+
+			Return:
+				Tuple with the number of instances exported, and the filename of the exported file or the CSV string.
+
 		"""
 		_instanceMapping = {
 			ResourceTypes.CNT: ResourceTypes.CIN,
@@ -853,6 +783,19 @@ function createResource() {{
 			ResourceTypes.TS: ResourceTypes.TSI,
 			ResourceTypes.TSAnnc: ResourceTypes.TSIAnnc
 		}
+
+		count:int = 0
+
+		def _writeTo(f:io.TextIOWrapper, instances:List[Resource]) -> None:
+			nonlocal count
+
+			writer = csv.writer(f)
+			# Write CIN and TSI instances
+			writer.writerow(['ri', 'st', 'ct', 'con', 'cnf', 'structured_resource_identifier'])
+			for instance in instances:
+				writer.writerow([instance.ri, instance.st, instance.ct, instance.con, instance.cnf, instance.getSrn()])
+				count += 1
+
 
 		try:
 			L.console('Export Instance Resources', isHeader = True)
@@ -863,26 +806,29 @@ function createResource() {{
 
 			if not ResourceTypes.isContainerResource(container.ty):
 				return 0, L.console(f'{ri} is not a container resource', isError = True)
-			count = 0
 			if not (instances := CSE.dispatcher.retrieveDirectChildResources(ri, _instanceMapping[container.ty])):
 				L.console(f'No instances found under {ri}', isError = True)
+				return 0, f'No instances found under {ri}'
+
 			else:
-				# Create a temporary directory for the export
-				outdir = f'{CSE.Configuration.get("baseDirectory")}/tmp'
-				os.makedirs(outdir, exist_ok = True)
+				if not asString:
+					# Create a temporary directory for the export
+					outdir = f'{CSE.Configuration.baseDirectory}/tmp'
+					os.makedirs(outdir, exist_ok = True)
 
-				# get the filename and open the file for writing
-				filename = f'instances-{getResourceDate().rsplit(",", 1)[0]}.csv'
-				path = f'{outdir}/{filename}'
-				with open(path, 'w') as f:
-					writer = csv.writer(f)
-					# Write CIN and TSI instances
-					writer.writerow(['ri', 'st', 'ct', 'con', 'cnf', 'structured_resource_identifier'])
-					for instance in instances:
-						writer.writerow([instance.ri, instance.st, instance.ct, instance.con, instance.cnf, instance.getSrn()])
-						count += 1
-
-				L.console(f'Exported {count} instances to {filename}')
+					# get the filename and open the file for writing
+					filename = f'instances-{getResourceDate().rsplit(",", 1)[0]}.csv'
+					path = f'{outdir}/{filename}'
+					with open(path, 'w') as f:
+						_writeTo(f, instances)
+					L.console(f'Exported {count} instances to {filename}')
+					return count, f'tmp/{filename}'
+				
+				# return the CSV string
+				else:
+					with io.StringIO() as csvString:
+						_writeTo(csvString, instances)
+						return count, csvString.getvalue()
 		except Exception as e:
 			if hasattr(e, 'dbg'):
 				L.console(e.dbg, isError = True)
@@ -890,7 +836,6 @@ function createResource() {{
 			else:
 				L.console(str(e), isError = True)
 				return 0, str(e)
-		return count, f'tmp/{filename}'
 		
 
 	def exportInstances(self, key:str) -> None:
@@ -918,7 +863,7 @@ function createResource() {{
 	# 	L.console('Export Resources', isHeader = True)
 	# 	L.off()
 	# 	try:
-	# 		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
+	# 		if not (resdis := CSE.dispatcher.discoverResources(RC.cseRi, originator = RC.cseOriginator)).status:
 	# 			L.console(resdis.dbg, isError=True)
 	# 		else:
 	# 			resources:list[Resource] = []
@@ -987,7 +932,7 @@ function createResource() {{
 			Args:
 				key: Input key. Ignored.
 		"""
-		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
+		webbrowser.open(f'{Configuration.http_address}?open')
 
 
 	def _plotGraph(self, resource:Resource) -> None:
@@ -1086,7 +1031,7 @@ function createResource() {{
 
 				# Wait for any keypress
 				self.interruptContinous = False
-				while waitForKeypress(self.refreshInterval) is None:
+				while waitForKeypress(Configuration.console_refreshInterval) is None:
 					if self.interruptContinous:
 						break
 
@@ -1248,16 +1193,16 @@ function createResource() {{
 		return result
 		# result = ''
 
-		# if CSE.cseType != CSEType.IN:
+		# if RC.cseType != CSEType.IN:
 		# 	result += f'- **Registrar CSE**\n'
 		# 	if CSE.remote.registrarAddress:
 		# 		registrarCSE = CSE.remote.registrarCSE
 		# 		registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-		# 		result += f'    - {CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
+		# 		result += f'    - {Configuration.cse_registrar_cseID[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
 		# 	else:
 		# 		result += '   - None'
 
-		# if CSE.cseType != CSEType.ASN:
+		# if RC.cseType != CSEType.ASN:
 		# 	result += f'- **Registree CSEs**\n'
 		# 	if len(CSE.remote.descendantCSR) > 0:
 		# 		for desc in CSE.remote.descendantCSR.keys():
@@ -1302,21 +1247,21 @@ function createResource() {{
 			#
 
 			miscLeft  = Text(style = textStyle)
-			miscLeft += f'CSE-ID | CSE-Name : {CSE.cseCsi}  |  {CSE.cseRn}\n'
+			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
 				miscLeft += f'IP-Address        : {getIPAddress()}\n'
 			except Exception as e:
 				print(e)
-			miscLeft += f'PoA               : {CSE.csePOA[0]}\n'
-			if len(CSE.csePOA) > 1:
-				miscLeft += ''.join([f'                    {poa}\n' for poa in CSE.csePOA[1:] ])
+			miscLeft += f'PoA               : {RC.csePOA[0]}\n'
+			if len(RC.csePOA) > 1:
+				miscLeft += ''.join([f'                    {poa}\n' for poa in RC.csePOA[1:] ])
 
 			miscLeft += '\n'
 			miscLeft += f'CWD               : {os.getcwd()}\n'
-			miscLeft += f'Runtime Directory : {Configuration.get("baseDirectory")}\n'
-			miscLeft += f'Config File       : {Configuration.get("configfile")}\n'
+			miscLeft += f'Runtime Directory : {Configuration.baseDirectory}\n'
+			miscLeft += f'Config File       : {Configuration.configfile}\n'
 			miscLeft += '\n'
 			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
@@ -1328,7 +1273,8 @@ function createResource() {{
 			else:
 				miscLeft += '\n'
 			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python            : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+			miscLeft += f'Python Version    : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+			miscLeft += f'ACME CSE Version  : {Constants.version}'
 
 			miscHeight = len(miscLeft.split('\n'))
 
@@ -1344,16 +1290,33 @@ function createResource() {{
 			#	Request stats
 			#
 
-			if CSE.statistics.statisticsEnabled:
+			if Configuration.cse_statistics_enable:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
 				resourceOps += 	'\n'
-				resourceOps +=  f'Create: {stats.get(Statistics.createdResources, 0)}\n'
-				resourceOps +=  f'Update: {stats.get(Statistics.updatedResources, 0)}\n'
-				resourceOps +=  f'Delete: {stats.get(Statistics.deletedResources, 0)}\n'
-				resourceOps +=  f'Notify: {stats.get(Statistics.notifications, 0)}\n'
-				resourceOps += 	'\n'
-				resourceOps +=  f'Expire: {stats.get(Statistics.expiredResources, 0)}\n'
+				resourceOps +=  f'Create:   {stats.get(Statistics.createdResources, 0)}\n'
+				resourceOps +=  f'Retrieve: {stats.get(Statistics.retrievedResources, 0)}\n'
+				resourceOps +=  f'Update:   {stats.get(Statistics.updatedResources, 0)}\n'
+				resourceOps +=  f'Delete:   {stats.get(Statistics.deletedResources, 0)}\n'
+				resourceOps +=  f'Notify:   {stats.get(Statistics.notifications, 0)}\n'
+				resourceOps +=  f'Expire:   {stats.get(Statistics.expiredResources, 0)}\n'
 				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
+
+				coapReceived  = _markup('[underline]CoAP:R[/underline]\n', style = textStyle)
+				coapReceived += '\n'
+				coapReceived += f'C: {stats.get(Statistics.coCreates, 0)}\n'
+				coapReceived += f'R: {stats.get(Statistics.coRetrieves, 0)}\n'
+				coapReceived += f'U: {stats.get(Statistics.coUpdates, 0)}\n'
+				coapReceived += f'D: {stats.get(Statistics.coDeletes, 0)}\n'
+				coapReceived += f'N: {stats.get(Statistics.coNotifies, 0)}\n'
+
+				coapSent  = 	_markup('[underline]CoAP:S[/underline]\n', style = textStyle)
+				coapSent += 	'\n'
+				coapSent += 	f'C: {stats.get(Statistics.coSendCreates, 0)}\n'
+				coapSent += 	f'R: {stats.get(Statistics.coSendRetrieves, 0)}\n'
+				coapSent += 	f'U: {stats.get(Statistics.coSendUpdates, 0)}\n'
+				coapSent += 	f'D: {stats.get(Statistics.coSendDeletes, 0)}\n'
+				coapSent += 	f'N: {stats.get(Statistics.coSendNotifies, 0)}\n'
+
 
 				httpReceived  = _markup('[underline]HTTP:R[/underline]\n', style = textStyle)
 				httpReceived += '\n'
@@ -1426,15 +1389,15 @@ function createResource() {{
 				#
 
 				miscDB  = Text(style = textStyle)
-				miscDB += f'Type     : {str(_dbType := Configuration.get("database.type"))}\n'
-				match _dbType:
+				miscDB += f'Type     : {Configuration.database_type}\n'
+				match Configuration.database_type:
 					case 'postgresql':
-						miscDB += f'Host     : {Configuration.get("database.postgresql.host")}:{Configuration.get("database.postgresql.port")}\n'
-						miscDB += f'Role     : {Configuration.get("database.postgresql.role")}\n'
-						miscDB += f'Database : {Configuration.get("database.postgresql.database")}\n'
-						miscDB += f'Schema   : {Configuration.get("database.postgresql.schema")}\n'
+						miscDB += f'Host     : {Configuration.database_postgresql_host}:{Configuration.database_postgresql_port}\n'
+						miscDB += f'Role     : {Configuration.database_postgresql_role}\n'
+						miscDB += f'Database : {Configuration.database_postgresql_database}\n'
+						miscDB += f'Schema   : {Configuration.database_postgresql_schema}\n'
 					case 'tinydb':
-						miscDB += f'Path     : ./{os.path.relpath(Configuration.get("database.tinydb.path"), Configuration.get("basedirectory"))}\n'
+						miscDB += f'Path     : ./{os.path.relpath(Configuration.database_tinydb_path, Configuration.baseDirectory)}\n'
 						miscDB += '\n\n\n'
 					case 'memory':
 						miscDB += '\n\n\n\n'
@@ -1478,7 +1441,9 @@ function createResource() {{
 			r, p = BackgroundWorkerPool.countJobs()
 			tableThreads.add_row('Running', str(r), style = textStyle)
 			tableThreads.add_row('Paused', str(p), style = textStyle)
-			for _ in range(len(tableWorkers.rows)-2):	# Fill up lines
+			import threading
+			tableThreads.add_row('Native', str(threading.active_count()), style = textStyle)
+			for _ in range(len(tableWorkers.rows)-3):	# Fill up lines
 				tableThreads.add_row('', '')
 			
 			panelThreads = Panel(tableThreads, 
@@ -1498,7 +1463,9 @@ function createResource() {{
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_column(ratio = 12)
 			requestsGrid.add_column(ratio = 12)
-			requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_column(ratio = 12)
+			requestsGrid.add_row(resourceOps, coapReceived, coapSent, httpReceived, httpSent, mqttReceived, mqttSent, wsReceived, wsSent)
 
 			panelRequests = Panel(requestsGrid, 
 								  box = box.ROUNDED, 
@@ -1544,34 +1511,33 @@ function createResource() {{
 			#
 
 			resourceTypes = Text(style = textStyle)
-			resourceTypes += f'AE      : {CSE.dispatcher.countResources(ResourceTypes.AE)}\n'
-			resourceTypes += f'ACP     : {CSE.dispatcher.countResources(ResourceTypes.ACP)}\n'
-			resourceTypes += f'ACTR    : {CSE.dispatcher.countResources(ResourceTypes.ACTR)}\n'
-			resourceTypes += f'CB      : {CSE.dispatcher.countResources(ResourceTypes.CSEBase)}\n'
-			resourceTypes += f'CIN     : {CSE.dispatcher.countResources(ResourceTypes.CIN)}\n'
-			resourceTypes += f'CNT     : {CSE.dispatcher.countResources(ResourceTypes.CNT)}\n'
-			resourceTypes += f'CRS     : {CSE.dispatcher.countResources(ResourceTypes.CRS)}\n'
-			resourceTypes += f'CSR     : {CSE.dispatcher.countResources(ResourceTypes.CSR)}\n'
-			resourceTypes += f'DEPR    : {CSE.dispatcher.countResources(ResourceTypes.DEPR)}\n'
-			resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(ResourceTypes.FCNT)}\n'
-			resourceTypes += f'FCI     : {CSE.dispatcher.countResources(ResourceTypes.FCI)}\n'
-			resourceTypes += f'GRP     : {CSE.dispatcher.countResources(ResourceTypes.GRP)}\n'
-			resourceTypes += f'LCP     : {CSE.dispatcher.countResources(ResourceTypes.LCP)}\n'
-			resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ)}\n'
-			resourceTypes += f'NOD     : {CSE.dispatcher.countResources(ResourceTypes.NOD)}\n'
-			resourceTypes += f'PCH     : {CSE.dispatcher.countResources(ResourceTypes.PCH)}\n'
-			resourceTypes += f'REQ     : {CSE.dispatcher.countResources(ResourceTypes.REQ)}\n'
-			resourceTypes += f'SCH     : {CSE.dispatcher.countResources(ResourceTypes.SCH)}\n'
-			resourceTypes += f'SMD     : {CSE.dispatcher.countResources(ResourceTypes.SMD)}\n'
-			resourceTypes += f'SUB     : {CSE.dispatcher.countResources(ResourceTypes.SUB)}\n'
-			resourceTypes += f'TS      : {CSE.dispatcher.countResources(ResourceTypes.TS)}\n'
-			resourceTypes += f'TSB     : {CSE.dispatcher.countResources(ResourceTypes.TSB)}\n'
-			resourceTypes += f'TSI     : {CSE.dispatcher.countResources(ResourceTypes.TSI)}\n'
-			resourceTypes += f'{miscHeight}\n'
+			resourceTypes += f'AE      : {(_cAE   := CSE.dispatcher.countResources(ResourceTypes.AE))}\n'
+			resourceTypes += f'ACP     : {(_cACP  := CSE.dispatcher.countResources(ResourceTypes.ACP))}\n'
+			resourceTypes += f'ACTR    : {(_cACTR := CSE.dispatcher.countResources(ResourceTypes.ACTR))}\n'
+			resourceTypes += f'CB      : {(_cCB   := CSE.dispatcher.countResources(ResourceTypes.CSEBase))}\n'
+			resourceTypes += f'CIN     : {(_cCIN  := CSE.dispatcher.countResources(ResourceTypes.CIN))}\n'
+			resourceTypes += f'CNT     : {(_cCNT  := CSE.dispatcher.countResources(ResourceTypes.CNT))}\n'
+			resourceTypes += f'CRS     : {(_cCRS  := CSE.dispatcher.countResources(ResourceTypes.CRS))}\n'
+			resourceTypes += f'CSR     : {(_cCSR  := CSE.dispatcher.countResources(ResourceTypes.CSR))}\n'
+			resourceTypes += f'DEPR    : {(_cDEPR := CSE.dispatcher.countResources(ResourceTypes.DEPR))}\n'
+			resourceTypes += f'FCNT    : {(_cFCNT := CSE.dispatcher.countResources(ResourceTypes.FCNT))}\n'
+			resourceTypes += f'FCI     : {(_cFCI  := CSE.dispatcher.countResources(ResourceTypes.FCI))}\n'
+			resourceTypes += f'GRP     : {(_cGRP  := CSE.dispatcher.countResources(ResourceTypes.GRP))}\n'
+			resourceTypes += f'LCP     : {(_cLCP  := CSE.dispatcher.countResources(ResourceTypes.LCP))}\n'
+			resourceTypes += f'MgmtObj : {(_cMOBJ := CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ))}\n'
+			resourceTypes += f'NOD     : {(_cNOD  := CSE.dispatcher.countResources(ResourceTypes.NOD))}\n'
+			resourceTypes += f'PCH     : {(_cPCH  := CSE.dispatcher.countResources(ResourceTypes.PCH))}\n'
+			resourceTypes += f'REQ     : {(_cREQ  := CSE.dispatcher.countResources(ResourceTypes.REQ))}\n'
+			resourceTypes += f'SCH     : {(_cSCH  := CSE.dispatcher.countResources(ResourceTypes.SCH))}\n'
+			resourceTypes += f'SMD     : {(_cSMD  := CSE.dispatcher.countResources(ResourceTypes.SMD))}\n'
+			resourceTypes += f'SUB     : {(_cSUB  := CSE.dispatcher.countResources(ResourceTypes.SUB))}\n'
+			resourceTypes += f'TS      : {(_cTS   := CSE.dispatcher.countResources(ResourceTypes.TS))}\n'
+			resourceTypes += f'TSB     : {(_cTSB  := CSE.dispatcher.countResources(ResourceTypes.TSB))}\n'
+			resourceTypes += f'TSI     : {(_cTSI  := CSE.dispatcher.countResources(ResourceTypes.TSI))}\n'
 			resourceTypes += '\n'
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
+			# resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cAE + _cACP + _cACTR + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMOBJ + _cNOD + _cPCH + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI }')	# substract the virtual resources
 
-			# ATTN: The padding is calculated dynamically.
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
 			_padding = 16 + (miscHeight - 15) * 2
@@ -1620,7 +1586,7 @@ function createResource() {{
 			if table:
 				grid = Table.grid(expand = True)
 				grid.add_column()
-				grid.add_row(_markup(f'[u b]{previousTop}[/u b]  ') + Text('(info)\n\n', style = f'link {documentationLinks.get(previousTop)}'))
+				grid.add_row(_markup(f'[u b]{previousTop}[/u b]'))
 				grid.add_row(table)
 
 				result.add_row(Panel(grid, style = style))
@@ -1733,11 +1699,11 @@ function createResource() {{
 				return
 			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
 			for ch in chs:
-				if ch.isVirtual() and not self.treeIncludeVirtualResources:	# Ignore virual resources
+				if ch.isVirtual() and not Configuration.console_treeIncludeVirtualResource:	# Ignore virual resources
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri
-				if len([ p for p in self.hideResources if simpleMatch(p, ri) ]) > 0:
+				if len([ p for p in Configuration.console_hideResources if simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
@@ -1826,7 +1792,7 @@ skinparam BoxPadding 60
 				ri = f'"{ri}"'
 
 			org = r['org']
-			if org == CSE.cseCsi:
+			if org == RC.cseCsi:
 				participants.add(orig := f'"{org[1:]}"')	# CSI without the leading /
 			else:
 				participants.add(orig := f'"{origPrefix}{org}"')
@@ -1856,7 +1822,7 @@ skinparam BoxPadding 60
 		
 
 		uml += '\n'.join([f'participant {p}' for p in participants]) + '\n'
-		uml += f'box "CSE {CSE.cseCsi}" #f8f8f8\n'
+		uml += f'box "CSE {RC.cseCsi}" #f8f8f8\n'
 		uml += '\n'.join([f'participant {p}' for p in targets]) + '\n'
 		uml += 'end box\n'
 		uml += seqs

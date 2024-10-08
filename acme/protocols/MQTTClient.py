@@ -8,16 +8,18 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, cast, Dict, Optional, Any, Union
+from typing import Tuple, cast, Dict, Optional, Any
 
 from urllib.parse import unquote
 
-from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, ResponseStatusCode, ResourceTypes
+from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
+from ..etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
 from ..etc.DateUtils import waitFor
-from ..etc.ACMEUtils import csiFromSPRelative
+from ..etc.IDUtils import getIdFromOriginator
 from ..etc.Utils import renameThread
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
 from ..runtime.Configuration import Configuration
@@ -27,25 +29,28 @@ from ..runtime.Logging import Logging as L
 
 class MQTTClientHandler(MQTTHandler):
 	"""	Handler registering oneM2M topics and handling resceived requests.
-
-		Attributes:
-			mqttClient: The using MQTTClient instance for this handler.
-			topicPrefix: The used topic prefix to recognize requests for this handler.
-			topicPrefixCont: Count of elements in the prefix.
 	"""
 
 	__slots__ = (
 		'mqttClient',
-		'topicPrefix',
 		'topicPrefixCount',
 		'operationEvents',
 	)
+	"""	Slots for the MQTTClientHandler. """
 
 	def __init__(self, mqttClient:MQTTClient) -> None:
+		"""	Initialize the MQTTClientHandler.
+
+			Args:
+				mqttClient: The MQTTClient instance using this handler.
+		"""
 		super().__init__()
-		self.mqttClient  = mqttClient
-		self.topicPrefix = mqttClient.topicPrefix
-		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
+
+		self.mqttClient = mqttClient
+		""" The MQTTClient instance using this handler. """
+
+		self.topicPrefixCount = len(Configuration.mqtt_topicPrefix.split('/'))	# Count the elements for the prefix
+		""" Number of elements in the prefix. """
 
 		self.operationEvents = {
 			Operation.CREATE:		[CSE.event.mqttCreate, 'MQ_C'],		# type: ignore [attr-defined]
@@ -55,6 +60,7 @@ class MQTTClientHandler(MQTTHandler):
 			Operation.NOTIFY:		[CSE.event.mqttNotify, 'MQ_N'],		# type: ignore [attr-defined]
 			Operation.DISCOVERY:	[CSE.event.mqttRetrieve, 'MQ_F'],	# type: ignore [attr-defined]
 		}
+		""" Operation events. """
 
 
 	def onConnect(self, connection:MQTTConnection) -> bool:
@@ -62,9 +68,9 @@ class MQTTClientHandler(MQTTHandler):
 		"""
 		super().onConnect(connection)
 		L.isDebug and L.logDebug('Connected to MQTT broker')
-		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{idToMQTT(CSE.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
-		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
-		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{idToMQTT(CSE.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/req/+/{idToMQTT(RC.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/resp/{idToMQTT(RC.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
+		connection.subscribeTopic(f'{Configuration.mqtt_topicPrefix}/oneM2M/reg_req/+/{idToMQTT(RC.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
 		return True
 
 
@@ -161,11 +167,15 @@ class MQTTClientHandler(MQTTHandler):
 			registration is done later anyway.
 		"""
 
-		def _sendResponse(result:Result) -> None:
+		def _sendResponse(result:Result, originalRequest:Optional[CSERequest] = None) -> None:
 			"""	Send a response for a request.
+
+				Args:
+					result: The result to send.
+					originalRequest: The original request.
 			"""
-			(_r, _data) = prepareResultForSending(result, isResponse = True)	# may throw an exception
-			topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
+			(_r, _data) = prepareResultForSending(result, isResponse = True, originalRequest = originalRequest)	# may throw an exception
+			topic = f'{Configuration.mqtt_topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 			logRequest(_r, _data, topic, isResponse=True, isIncoming=False)
 			connection.publish(topic, _data)
 			# if isinstance(data, bytes):
@@ -176,7 +186,8 @@ class MQTTClientHandler(MQTTHandler):
 		def _logRequest(result:Result) -> None:
 			"""	Log request.
 			"""
-			L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
+			if result.request.originalRequest:
+				L.isDebug and L.logDebug(f'Operation: {result.request.originalRequest.get("op")}')
 			if contentType == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
@@ -218,10 +229,10 @@ class MQTTClientHandler(MQTTHandler):
 
 		if isRegistration:
 			# Check access in case of a registration
-			if CSE.security.allowedCredentialIDsMqtt:
-				#L.logWarn(CSE.security.allowedCredentialIDsMqtt)
+			if Configuration.mqtt_security_allowedCredentialIDs:
+				#L.logWarn(Configuration.mqtt_security_allowedCredentialIDs)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
-				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
+				if not CSE.security.isAllowedOriginator(requestOriginator, Configuration.mqtt_security_allowedCredentialIDs):
 					CSE.request.recordRequest(dissectResult.request, dissectResult)
 					_logRequest(dissectResult)
 					_sendResponse(Result(rsc = ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
@@ -264,12 +275,17 @@ class MQTTClientHandler(MQTTHandler):
 		# send events for the MQTT operations
 		_t = self.operationEvents[request.op]
 		_t[0]()	# Send event
-		renameThread(_t[1]) # rename threads
+		L.enableScreenLogging and renameThread(_t[1]) # rename threads
 
 		try:
 			responseResult = CSE.request.handleRequest(request)
 		except Exception as e:
 			responseResult = Result.exceptionToResult(e)
+		
+		# Don't send a response for "no response" requests
+		if request.rt == ResponseType.noResponse:
+			return
+
 		# Send response
 
 		# add, copy and update some fields from the original request
@@ -277,7 +293,7 @@ class MQTTClientHandler(MQTTHandler):
 		responseResult.prepareResultFromRequest(request)	
 
 		#	Transform request to oneM2M request
-		_sendResponse(responseResult)
+		_sendResponse(responseResult, request)
 	
 
 ##############################################################################
@@ -291,42 +307,41 @@ class MQTTClient(object):
 	__slots__ = (
 		'mqttConnection',
 		'isStopped',
-		'topicsCount',
 		'mqttConnections',
 		'receivedResponses',
 		'receivedResponsesLock',
-
-		'enable',
-		'topicPrefix',
-		'requestTimeout',
 	)
+	""" Slots for the MQTTClient. """
 
 	# TODO move config handling to event handler
 
 	def __init__(self) -> None:
-
-		# Get the configuration settings
-		self._assignConfig()
+		"""	Initialize the MQTT client.
+		"""
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
-		self.isStopped												= False
-		self.topicsCount											= 0
-		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
+		self.isStopped = False
+		""" Flag to indicate whether the MQTT client is stopped. """
 
-		self.mqttConnection = self.connectToMqttBroker(address	= Configuration.get('mqtt.address'),
-													   port		= Configuration.get('mqtt.port'),
-													   useTLS	= CSE.security.useTlsMqtt,
-													   username = CSE.security.usernameMqtt,
-													   password	= CSE.security.passwordMqtt)
+		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
+		""" Dictionary of MQTT connections. """
+
+		self.mqttConnection = self.connectToMqttBroker(address	= Configuration.mqtt_address,
+													   port		= Configuration.mqtt_port,
+													   useTLS	= Configuration.mqtt_security_useTLS,
+													   username = Configuration.mqtt_security_username,
+													   password	= Configuration.mqtt_security_password)
+		""" The MQTT connection. """
+
 		L.isInfo and L.log('MQTT Client initialized')
 	
 
 	def run(self) -> bool:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
-		if not self.enable or not self.mqttConnection:
+		if not Configuration.mqtt_enable or not self.mqttConnection:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return True
 		L.isInfo and L.log('Start MQTT client')
@@ -347,14 +362,6 @@ class MQTTClient(object):
 		return True
 	
 
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.enable = Configuration.get('mqtt.enable')
-		self.topicPrefix = Configuration.get('mqtt.topicPrefix')
-		self.requestTimeout = Configuration.get('mqtt.timeout')
-
-
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
@@ -368,11 +375,18 @@ class MQTTClient(object):
 		if key not in [ 'mqtt.enable', 
 						'mqtt.topicPrefix',
 						'mqtt.timeout', 
+						'mqtt.address',
+						'mqtt.port',
+						'mqtt.keepalive',
+						'mqtt.listenIF',
+						'mqtt.security.useTLS',
+						'mqtt.security.verifyCertificate',
+						'mqtt.security.caCertificateFile',
+						'mqtt.security.username',
+						'mqtt.security.password',
+						'mqtt.security.allowedCredentialIDs' 
 					  ]:
 			return
-
-		# assign new values
-		self._assignConfig()
 
 		# possibly restart MQTT client
 		self.shutdown()
@@ -400,14 +414,14 @@ class MQTTClient(object):
 	def isFullySubscribed(self) -> bool:
 		"""	Check whether this mqttConnection is fully subscribed.
 		"""
-		return waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected and self.mqttConnection.subscribedCount == 3)	# currently 3 topics
+		return waitFor(Configuration.mqtt_timeout, lambda:self.mqttConnection.isConnected and self.mqttConnection.subscribedCount == 3)	# currently 3 topics
 
 
 	def isConnected(self) -> bool:
 		"""	Check whether the MQTT client is connected to a broker. Wait for a moment
 			to take startup connection into account.
 		"""
-		return waitFor(self.requestTimeout, lambda:self.mqttConnection.isConnected)
+		return waitFor(Configuration.mqtt_timeout, lambda:self.mqttConnection.isConnected)
 
 
 	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:Optional[str], password:Optional[str]) -> Optional[MQTTConnection]:
@@ -415,16 +429,16 @@ class MQTTClient(object):
 			broker is a tupple (*address*, *port*). A new MQTTClientHandler() object be used for handling
 			requests.
 		"""
-		if self.enable:
+		if Configuration.mqtt_enable:
 			if not (mqttConnect := self.mqttConnections.get( (address, port) )):
 				mqttConnection = MQTTConnection(address				= address,
 												port				= port,
-												keepalive			= Configuration.get('mqtt.keepalive'),
-												interface			= Configuration.get('mqtt.listenIF'),
-												clientID			= idToMQTTClientID(CSE.cseCsi),
+												keepalive			= Configuration.mqtt_keepalive,
+												interface			= Configuration.mqtt_listenIF,
+												clientID			= idToMQTTClientID(RC.cseCsi),
 												useTLS				= useTLS,
-												caFile				= CSE.security.caCertificateFileMqtt,
-												verifyCertificate	= CSE.security.verifyCertificateMqtt,
+												caFile				= Configuration.mqtt_security_caCertificateFile,
+												verifyCertificate	= Configuration.mqtt_security_verifyCertificate,
 												username 			= username,
 												password			= password,
 												lowLevelLogging 	= L.enableBindingsLogging,
@@ -484,7 +498,7 @@ class MQTTClient(object):
 		# req.resource			= req.request.pc
 		# req.request.rqi			= uniqueRI()
 		# if req.request.rvi != '1':
-		# 	req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		# 	req.request.rvi		= req.request.rvi if req.request.rvi is not None else RC.releaseVersion
 		# req.request.ot			= getResourceDate()
 		# req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		# req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
@@ -499,14 +513,15 @@ class MQTTClient(object):
 		# Build the topic
 		if not len(topic):
 			# Miguel's proposal
-			# topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
-			#topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
-			
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
+			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
+			#topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
+			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
+
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(getIdFromOriginator(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(topicSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
+			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[2])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
@@ -526,7 +541,7 @@ class MQTTClient(object):
 													  password = mqttPassword)
 
 			# Wait a moment until we are connected.
-			waitFor(self.requestTimeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
+			waitFor(Configuration.mqtt_timeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
 
 		# We are not connected, so -> fail
 		if not mqttConnection or not mqttConnection.isConnected:
@@ -545,7 +560,7 @@ class MQTTClient(object):
 			return Result(rsc = ResponseStatusCode.OK)
 		
 		# Wait for the response
-		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, self.requestTimeout) # type: ignore
+		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, Configuration.mqtt_timeout) # type: ignore
 		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response
 

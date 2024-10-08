@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import traceback
+import traceback, logging, sys
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
@@ -19,6 +19,10 @@ from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.DateUtils import utcTime, getResourceDate
+from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
+from coapthon.defines import Content_types as CoAPContentTypes
+from ..etc.Constants import RuntimeConstants as RC
+
 
 
 #
@@ -87,6 +91,8 @@ class ResourceTypes(ACMEIntEnum):
 	""" FlexContainerInstance resource type. """
 	TSB				= 60
 	"""	TimeSyncBeacon resource type. """
+	PRP 			= 62
+	""" Primitive Profile type. """
 	PRMR 			= 63
 	""" ProcessManagement resource type. """
 	STTE 			= 64
@@ -185,6 +191,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeriesInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
+	PRPAnnc			= 10062
+	"""	Announced Primitive Profile type. """
 	PRMRAnnc		= 10063
 	"""	Announced ProcessManagement resource type. """
 	STTEAnnc		= 10064
@@ -225,7 +233,7 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MobileNetwork ManagementObject specialization. """
 
 
-	def tpe(self) -> str:
+	def typeShortname(self) -> str:
 		"""	Get the resource type name.
 		
 			Return:
@@ -305,15 +313,15 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def fromTPE(cls, tpe:str) -> ResourceTypes:
+	def fromTypeShortname(cls, typeShortname:str) -> ResourceTypes:
 		"""	Get a resource type by its resource name.
 
 			Args:
-				tpe: Type name.
+				typeShortname: Type name.
 			Return:
 				The resource type.
 		"""
-		return _ResourceNamesTypes.get(tpe)
+		return _ResourceNamesTypes.get(typeShortname)
 
 
 	@classmethod
@@ -474,9 +482,9 @@ _ResourceTypeDetails = {
 	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
 	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
 	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
-	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
-	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
-	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='Cross Resource Subscription'),
+	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
+	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
+	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='CrossResourceSubscription'),
 	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True, fullName='CSEBase'),
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True, fullName='CSEBase Announced'),
 	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True, fullName='RemoteCSE'),
@@ -486,11 +494,11 @@ _ResourceTypeDetails = {
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
-	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),	# not an official type name
-	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),	# not an official type name
+	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),	# not an official type name
+	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),	# not an official type name
 	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
 	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
-	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', fullName='Fanout Point'),	# not an official type name
+	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', isRequestCreatable = False, fullName='Fanout Point'),	# not an official type name
 	ResourceTypes.LCP			: ResourceDescription(typeName = 'm2m:lcp', announcedType = ResourceTypes.LCPAnnc, fullName='LocationPolicy'),
 	ResourceTypes.LCPAnnc		: ResourceDescription(typeName = 'm2m:lcpA', isAnnouncedResource = True, fullName='LocationPolicy Announced'),
 	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
@@ -498,9 +506,11 @@ _ResourceTypeDetails = {
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
-	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', fullName='PollingChannel URI'),
+	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
 	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
 	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
+	ResourceTypes.PRP			: ResourceDescription(typeName = 'm2m:prp', announcedType = ResourceTypes.PRPAnnc, fullName='PrimitiveProfile'),
+	ResourceTypes.PRPAnnc		: ResourceDescription(typeName = 'm2m:prpA', isAnnouncedResource = True, fullName='PrimitiveProfile Announced'),
 	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
 	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
 	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),
@@ -511,8 +521,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
 	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, isContainer = True, fullName='TimeSeries'),
 	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, isContainer = True, fullName='TimeSeries Announced'),
-	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', fullName='Latest'),
-	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', fullName='Oldest'),
+	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
+	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
 	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
 	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True, fullName='TimeSeriesInstance Announced'),
 	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
@@ -1035,6 +1045,7 @@ AccessControlOperations:TypeAlias = int
 """	Access Control Operations. This is a bitfield of Operation values, therefore difficult to implement as an enum. """
 
 OperationMonitor:TypeAlias = Dict[str, Tuple[AccessControlOperations, str]]
+"""	Operation Monitor. """
 	
 
 ##############################################################################
@@ -1308,6 +1319,26 @@ class ContentSerializationType(ACMEIntEnum):
 				return None
 	
 
+	def toCoAPContentType(self) -> int:
+		"""	Return the CoAP content header for an enum value.
+
+			Return:
+				The number for the CoAP content type.
+		"""
+		# TODO hard code values for performance reasons
+		match self.value:
+			case self.JSON:	
+				return CoAPContentTypes['application/json']
+			case self.CBOR:	
+				return CoAPContentTypes['application/cbor']
+			case self.XML:	
+				return CoAPContentTypes['application/xml']
+			case _:
+				return None
+
+		return self.toHttpContentType()
+	
+
 	def toSimple(self) -> str:
 		"""	Return the simple string for an enum value.
 
@@ -1326,19 +1357,22 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
-	def getType(cls, t:str, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
+	def getType(cls, t:str|ContentSerializationType, default:Optional[ContentSerializationType] = None) -> ContentSerializationType:
 		"""	Return the enum from a content-type header definition.
 
 			Args:
-				t: String to convert.
+				t: String to convert. If it is already an enum, it is returned as is.
 				default: Default value to return if the string is not a valid content-type.
 
 			Return:
 				The enum value.
 		"""
+		# TODO add more of the defined oneM2M content types
 		if not t:
 			return cls.UNKNOWN if not default else default
-		match t.lower():
+		if isinstance(t, cls):
+			return t
+		match cast(str, t).lower():
 			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
 				return cls.JSON
 			case 'cbor' | 'application/cbor' | 'application/vnd.onem2m-res+cbor':
@@ -1393,6 +1427,27 @@ class ContentSerializationType(ACMEIntEnum):
 			case _:
 				return cls.UNKNOWN
 
+
+	@classmethod
+	def fromCoAP(cls, t:int) -> ContentSerializationType:
+		"""	Return the enum from a string for a content serialization.
+
+			Args:
+				t: content type number to convert
+
+			Return:
+				The enum value.
+		"""
+		match t:
+			case 41 | 10014 | 10002 | 10006 | 10008 | 10014 | 10016:
+				return cls.XML
+			case 50 | 10001 | 10003 | 10007 | 10009 | 10015:
+				return cls.JSON
+			case 60 | 10010 | 10011 | 10012 | 10013:
+				return cls.CBOR
+			case _:
+				return cls.UNKNOWN
+			
 
 	@classmethod
 	def supportedContentSerializationsSimple(cls) -> list[str]:
@@ -1986,10 +2041,9 @@ class Result:
 		"""
 		from ..resources.Resource import Resource
 		from ..etc.RequestUtils import serializeData
-		from ..runtime.CSE import defaultSerialization
 
 		# determine the default serialization type if none was given
-		ct = defaultSerialization if not ct else ct
+		ct = RC.defaultSerialization if not ct else ct
 
 		if isinstance(self.resource, Resource):
 			r = serializeData(self.resource.asDict(), ct)
@@ -2426,6 +2480,14 @@ class CSERequest:
 	"""	http Accept header media type. """
 
 	#
+	#	CoAP specifics
+	#
+
+	coapAccept:Optional[ContentSerializationType] = None
+	""" CoAP Accept Option media type. """
+
+
+	#
 	#	Helpers
 	#
 
@@ -2549,7 +2611,7 @@ class AttributePolicy:
 	""" Long name of the attribute. """
 	namespace:str				= None	# namespace
 	""" Namespace of the attribute. """
-	tpe:str   					= None	# namespace:type name
+	typeShortname:str   					= None	# namespace:type name
 	""" Type name of the attribute. """
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
 	""" List of resource types that this attribute is valid for. """
@@ -2595,7 +2657,7 @@ ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], st
 FlexContainerAttributes:TypeAlias = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
 
-FlexContainerSpecializations:TypeAlias = Dict[str, str]
+FlexContainerSpecializations:TypeAlias = Dict[str, Tuple[str, str]]
 """ Type definition for a dictionary of specializations for a flexContainer. """
 
 
@@ -2604,6 +2666,127 @@ FlexContainerSpecializations:TypeAlias = Dict[str, str]
 #	Generic Types
 #
 
+class LogLevel(ACMEIntEnum):
+	"""	Log levels.
+
+		These are the standard log levels, plus an additional *OFF* level.
+	"""
+	INFO 	= logging.INFO
+	"""	Info level. """
+
+	DEBUG 	= logging.DEBUG
+	"""	Debug level. """
+
+	ERROR 	= logging.ERROR
+	"""	Error level. """
+
+	WARNING = logging.WARNING
+	"""	Warning level. """
+
+	OFF		= sys.maxsize
+	"""	Off level. """
+	
+
+	def next(self) -> LogLevel:
+		"""	Return next log level. This cycles through the levels.
+		"""
+		return {
+			LogLevel.DEBUG:		LogLevel.INFO,
+			LogLevel.INFO:		LogLevel.WARNING,
+			LogLevel.WARNING:	LogLevel.ERROR,
+			LogLevel.ERROR:		LogLevel.OFF,
+			LogLevel.OFF:		LogLevel.DEBUG,
+		}[self]
+
+
+	@classmethod
+	def toLogLevel(cls, logLevel:str) -> Optional[LogLevel]:
+		"""	Convert a string to a log level.
+
+			Args:
+				logLevel: String representation of a log level.
+
+			Return:
+				Log level or *None*.
+		"""
+
+		logLevel = logLevel.lower()
+		# logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
+		match logLevel:
+			case 'off':
+				return LogLevel.OFF
+			case 'info':
+				return LogLevel.INFO
+			case 'warn' | 'warning':
+				return LogLevel.WARNING
+			case 'error':
+				return LogLevel.ERROR
+			case 'debug':
+				return LogLevel.DEBUG
+			case _:
+				return None
+
+
+
+class TreeMode(ACMEIntEnum):
+	""" Available modes do display the resource tree in the console.
+	"""
+
+	NORMAL				= auto()
+	"""	Mode - Normal """
+
+	CONTENT				= auto()
+	""" Mode - Show content """
+
+	COMPACT				= auto()
+	""" Mode - Compact """
+
+	CONTENTONLY			= auto()
+	"""	Mode - Content only """
+
+
+	def __str__(self) -> str:
+		"""	String representation of the TreeMode.
+
+			Return:
+				String representation.
+		"""
+		return self.name
+
+
+	def succ(self) -> TreeMode:
+		"""	Return the next enum value, and cycle to the beginning when reaching the end.
+
+			Return:
+				TreeMode value.
+		"""
+		members:list[TreeMode] = list(self.__class__)
+		index = members.index(self) + 1
+		return members[index] if index < len(members) else members[0]
+	
+
+	# @classmethod
+	# def to(cls, t:str) -> TreeMode:
+	# 	"""	Return the enum from a string.
+
+	# 		Args:
+	# 			t: String representation of an enum value.
+
+	# 		Return:
+	# 			Enum value or *None*.
+	# 	"""
+	# 	return dict(cls.__members__.items()).get(t.upper())
+
+
+	@classmethod
+	def names(cls) -> list[str]:
+		"""	Return all the enum names.
+
+			Return:
+				List of enum value.
+		"""
+		return list(cls.__members__.keys())
+	
 
 Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
@@ -2614,7 +2797,7 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest httpEvent mqttEvent wsEvent')
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest coapEvent httpEvent mqttEvent wsEvent')
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
@@ -2626,3 +2809,5 @@ RequestResponseList:TypeAlias = List[RequestResponse]
 
 FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """
+
+

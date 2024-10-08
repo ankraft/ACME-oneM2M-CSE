@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.rule import Rule
 from rich.style import Style
 
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 
 from ..helpers import NetworkTools
 
@@ -82,8 +82,7 @@ def _print(msg:str|Rule = '\n') -> None:
 		Args:
 			msg: The message to print.
 	"""
-	from ..runtime import CSE
-	if not CSE.isHeadless:
+	if not RC.isHeadless:
 		if isinstance(msg, Rule):
 			Console().print('\n')
 		Console().print(msg, highlight = False)	# Print error message to console
@@ -104,7 +103,7 @@ def _containsVariable(value:str) -> bool:
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
-	from ..etc.ACMEUtils import isValidID
+	from ..etc.IDUtils import isValidID
 
 	cseType = 'IN'
 	cseID:str = None
@@ -120,7 +119,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 		runtimeDirectory = inquirer.text(
 							message = 'Runtime data directory:',
-							default = str(Configuration.Configuration._baseDirectory),
+							default = str(Configuration.Configuration.baseDirectory),
 							long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
 							amark = '✓', 
 						).execute()

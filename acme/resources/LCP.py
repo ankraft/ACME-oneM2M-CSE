@@ -85,8 +85,8 @@ class LCP(AnnounceableResource):
 		# Creating extra <container> resource
 		# Set the li attribute to the LCP's ri afterwards
 		_cnt:JSON = {
-			'mni': Configuration.get('resource.lcp.mni'),
-			'mbs': Configuration.get('resource.lcp.mbs'),
+			'mni': Configuration.resource_lcp_mni,
+			'mbs': Configuration.resource_lcp_mbs,
 		}
 		if self.lon is not None:	# add container's resourcename if provided
 			_cnt['rn'] = self.lon

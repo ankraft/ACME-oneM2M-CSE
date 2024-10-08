@@ -14,7 +14,7 @@ from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..etc.ACMEUtils import toSPRelative
@@ -29,12 +29,12 @@ class AnnounceableResource(Resource):
 	def __init__(self, ty:ResourceTypes, 
 					   dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
-					   tpe:Optional[str] = None, 
+					   typeShortname:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   inheritACP:Optional[bool] = False, 
 					   readOnly:Optional[bool] = False, 
 					   rn:Optional[str] = None) -> None:
-		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
+		super().__init__(ty, dct, pi, typeShortname = typeShortname, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
 		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)
@@ -110,7 +110,7 @@ class AnnounceableResource(Resource):
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
-		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.tpe)):
+		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
 			return self._createAnnouncedDict(attributes, isCreate = isCreate)
@@ -169,19 +169,19 @@ class AnnounceableResource(Resource):
 
 
 		# Stub
-		tpe = ResourceTypes(self.ty).announced(self.mgd).tpe()	# Hack, bc management objects do it a bit differently
+		typeShortname = ResourceTypes(self.ty).announced(self.mgd).typeShortname()	# Hack, bc management objects do it a bit differently
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)
 
 		if isCreate:
-			dct:JSON = { tpe : {  # with the announced variant of the tpe
+			dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
 							'et'	: self.et,
-							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
+							'lnk'	: f'{RC.cseCsi}/{self.ri}',
 						}
 				}
 			# Add more  attributes
-			body = dct[tpe]
+			body = dct[typeShortname]
 
 			# Conditional announced
 			if lbl := self.lbl:
@@ -194,7 +194,7 @@ class AnnounceableResource(Resource):
 				# body[attr] = self[attr]
 
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
+				acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
 				body['acpi'] = acpi
 
 
@@ -202,9 +202,8 @@ class AnnounceableResource(Resource):
 
 			if not (modifiedAttributes := self[Constants.attrModified]):
 				return None
-
-			dct = { tpe : { } } # with the announced variant of the tpe
-			body = dct[tpe]
+			dct = { typeShortname : { } } # with the announced variant of the typeShortname
+			body = dct[typeShortname]
 
 
 			# copy only the updated attributes

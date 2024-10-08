@@ -35,7 +35,8 @@ class WebUI(object):
 					   root:Optional[str] = '/webui', 
 					   webuiDirectory:Optional[str] = '.', 
 					   redirectURL:Optional[str] = None, 
-					   version:Optional[str] ='') -> None:
+					   version:Optional[str] ='',
+					   httpRoot:Optional[str] = '') -> None:
 		"""	Initialize the web user interface.
 
 			Args:
@@ -46,6 +47,7 @@ class WebUI(object):
 				webuiDirectory: The directory for the web UI.
 				redirectURL: The URL to redirect to.
 				version: The version of the web UI.
+				httpRoot: The root for the HTTP server.
 		"""
 
 		# Register the endpoint for the web UI
@@ -69,6 +71,9 @@ class WebUI(object):
 
 		self.version 			= version
 		""" The version of the web UI. """
+
+		self.httpRoot 			= httpRoot
+		""" The root for the HTTP server. """
 		
 		self.oauthToken:Token	= None
 		""" The oauth token. """
@@ -78,12 +83,12 @@ class WebUI(object):
 			self.redirectURL += '/'
 
 		self.addEndpoint(self.webuiRoot, handler = self.handleWebUIGET, methods = ['GET'])
-		self.addEndpoint(self.webuiRoot + '/<path:path>', handler = self.handleWebUIGET, methods = ['GET'])
-		self.addEndpoint('/', handler = self.redirectRoot, methods = ['GET'])
-		
-		self.addEndpoint('/__version__', handler = self.getVersion, methods = ['GET'])
+		self.addEndpoint(f'{self.webuiRoot}/<path:path>', handler = self.handleWebUIGET, methods = ['GET'])
+		self.addEndpoint(f'{httpRoot}/', handler = self.redirectRoot, methods = ['GET'])
+		self.addEndpoint(f'{self.webuiRoot}/__version__', handler = self.getVersion, methods = ['GET'])
 
-		if self.redirectURL is not None:
+		if self.redirectURL:
+			print("will redirect" + self.redirectURL)
 			self.addEndpoint('/<path:path>', handler = self.proxy, methods = ['GET', 'POST', 'PUT', 'DELETE'])
 		
 		logging.getLogger("requests").setLevel(logging.WARNING)
@@ -116,6 +121,7 @@ class WebUI(object):
 			Returns:
 				The response.
 		"""
+		print(f'Forwarding {request.method.upper()} request {request.url}')
 		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code = 302)
 
 
@@ -150,7 +156,7 @@ class WebUI(object):
 		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
 		if not path:
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
+			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&hr=" + self.httpRoot}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
 		try:
@@ -171,14 +177,16 @@ class WebUI(object):
 			Returns:
 				The response.
 		"""
+		print(request.host_url)
+		print(self.redirectURL)
 		url = request.url.replace(request.host_url, self.redirectURL)
-		if doLogging:
+		if doLogging and console:
 			console.log('[dim]--------------------------------------------------')
 			console.log(f'Forwarding {request.method.upper()} request to {url}')
 		
 		# Remove some headers.
 		requestHeaders = { key: value for (key, value) in request.headers if key not in [ 'Host', 'If-None-Match', 'If-Match' ] }
-		if doLogging:
+		if doLogging and console:
 			console.log(f'[dark_orange]Request')
 			console.log(requestHeaders)		# Don't include a possible authorization header in log
 		
@@ -199,7 +207,7 @@ class WebUI(object):
 			cookies=request.cookies,
 			allow_redirects=False)
 
-		if doLogging:
+		if doLogging and console:
 			console.log('[dark_orange]Response')
 			console.log(dict(resp.headers))
 			if (cl := resp.headers['Content-Length']) is not None and int(cl) > 0:
@@ -223,6 +231,8 @@ console:Console = None
 """ The ACME console for logging. """
 doLogging:bool = True
 """ Whether to do logging. """
+doOauth:bool = False
+""" Whether to use OAuth2. """
 
 
 def runServer(flaskApp:Flask, 

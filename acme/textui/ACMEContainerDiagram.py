@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 from textual import on
 from textual.app import ComposeResult
@@ -19,6 +19,7 @@ from textual.timer import Timer
 from textual_plotext import PlotextPlot
 
 from ..etc.DateUtils import fromISO8601Date
+from ..runtime.Configuration import Configuration
 
 
 class DiagramTypes(IntEnum):
@@ -47,19 +48,15 @@ class ACMEContainerDiagram(Container):
 
 	from ..textui import ACMETuiApp
 
-	def __init__(self, refreshCallback:Callable, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, refreshCallback:Callable, id:str) -> None:
 		"""	Initialize the Diagram view.
 
 			Args:
 				refreshCallback: The callback to refresh the diagram.
-				tuiApp: The TUI application.
 				id: The ID of the view.
 		"""
 		super().__init__(id = id)
 		
-		self.tuiApp = tuiApp
-		"""	Backlink to the TUI application."""
-
 		self.color = (0, 120, 212)
 		"""	The color of the diagram."""
 
@@ -83,9 +80,6 @@ class ACMEContainerDiagram(Container):
 
 		self.autoRefresh = False
 		"""	Whether the diagram should be refreshed automatically."""
-
-		self.autoRefreshInterval = self.tuiApp.textUI.refreshInterval
-		"""	The interval for the automatic refresh."""
 
 		self.refreshTimer:Timer = None
 		"""	The timer for the automatic refresh."""
@@ -126,7 +120,7 @@ class ACMEContainerDiagram(Container):
 	def on_mount(self) -> None:
 		"""	Callback when the view is mounted.
 		"""
-		self.refreshTimer = self.set_interval(self.autoRefreshInterval, 
+		self.refreshTimer = self.set_interval(Configuration.textui_refreshInterval, 
 											  self._refreshChart, 
 											  pause = True)
 

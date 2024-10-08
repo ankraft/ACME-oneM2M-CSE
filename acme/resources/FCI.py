@@ -43,7 +43,7 @@ class FCI(Resource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCI, dct, pi, tpe = fcntType, create = create, inheritACP = True, readOnly = True)
+		super().__init__(ResourceTypes.FCI, dct, pi, typeShortname = fcntType, create = create, inheritACP = True, readOnly = True)
 
 
 	# Forbidd updating

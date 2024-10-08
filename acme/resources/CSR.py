@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
-from ..etc.ACMEUtils import getIdFromOriginator
+from ..etc.IDUtils import getIdFromOriginator
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
@@ -43,6 +43,8 @@ class CSR(AnnounceableResource):
 									ResourceTypes.PCH,
 								    ResourceTypes.PRMR,
 								    ResourceTypes.PRMRAnnc,
+									ResourceTypes.PRP,
+									# ResourceTypes.PRPAnnc,	# TODO
 									ResourceTypes.SMDAnnc,
 									ResourceTypes.SUB,
 									ResourceTypes.TS,

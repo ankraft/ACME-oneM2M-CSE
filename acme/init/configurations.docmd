@@ -571,6 +571,114 @@ The default value is `60 seconds`.
 
 
 
+# coap
+
+This section contains settings that control the CSE's CoAP server and client behavior.
+
+Settings in this section are listed under the `[coap]` section.
+
+
+
+# coap.address
+
+This setting specifies the CSE's CoAP server URL: Scheme (coap, coapss), address and port. This is the URL under which the CSE is reachable.
+
+The default value is `coap://${basic.config:cseHost}:5683`.
+
+
+
+# coap.clientConnectionCacheSize
+
+This setting specifies the number of CoAP client connections to be cached. When the limit is reached, the oldest connection is closed.
+
+A value of `0` means no caching.
+
+The default value is `100`.
+
+
+
+# coap.enable
+
+This setting enables or disables the CSE's CoAP binding.
+
+The default value is `False`.
+
+
+
+# coap.listenIF
+
+This setting specifies the network interface on which the CSE's CoAP server is listening.
+
+The default value is `0.0.0.0`.
+
+
+
+# coap.port
+
+This setting specifies the port on which the CSE's CoAP server is listening.
+
+The default value is `5683`.
+
+
+
+# coap.timeout
+
+This setting specifies the timeout, in seconds, after which an outgoing request from the CSE via CoAP is canceled.
+
+The default value is `10.0 seconds`.
+
+
+
+# coap.security
+
+This section contains settings that control the CSE's CoAP server's security.
+
+
+
+# coap.security.caCertificateFile
+
+This setting specifies the path to the CSE's CoAP server's CA certificate file.
+
+The default value is `${basic.config:baseDirectory}/certs/coap_cert.pem`.
+
+
+
+# coap.security.caPrivateKeyFile
+
+This setting specifies the path to the CSE's CoAP server's CA private key file.
+
+The default value is `${basic.config:baseDirectory}/certs/coap_key.pem`.
+
+
+
+# coap.security.dtlsVersion
+
+This setting specifies the CSE's CoAP server's DTLS version.
+
+**Allowed values**: `DTLS1.0`, `DTLS1.2`, or `auto` (to allow client-server certificate version negotiation).
+
+The default value is `auto`.
+
+
+
+# coap.security.useDTLS
+
+This setting enables or disables the CSE's CoAP server's DTLS support.
+
+The default value is `False`.
+
+
+
+# coap.security.verifyCertificate
+
+This setting enables or disables the CSE's CoAP server's client certificate verification.
+
+Set to `False` when using self-signed certificates.
+
+The default value is `False`.
+
+
+
 #  console
 
 This section contains settings that control the CSE's console.
@@ -601,6 +709,15 @@ The default value is `False`.
 This setting specifies a comma-separated list of resource identifiers that should be hidden in the CSE's console, for example the resource tree command.
 
 The default value is an empty list.
+
+
+
+# console.treeIncludeVirtualResource
+
+Show virtual resources in the console's and structure endpoint's tree view.
+
+The default value is `False`.
+
 
 
 
@@ -786,7 +903,7 @@ Settings in this section are listed under the `[http]` section.
 
 This setting specifies the CSE's HTTP server URL: Scheme (http, https), address and port. This is the URL under which the CSE is reachable
 
-The default value is `http://127.0.0.1:8080`.
+The default value is `http://${basic.config:cseHost}:8080`.
 
 
 
@@ -903,9 +1020,9 @@ Settings in this section are listed under the `[http.security]` section.
 
 This setting specifies the path to the CSE's HTTP server's CA certificate file.
 
-The default value is an empty string.
+The default value is `${basic.config:baseDirectory}/certs/acme_cert.pem`.
 
-It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
+It is recommended to store the CSE's CA certificate in the file `${basic.config:baseDirectory}/certs/acme_cert.pem`.
 
 
 
@@ -913,9 +1030,9 @@ It is recommended to store the CSE's CA certificate in the file `{basic.config:b
 
 This setting specifies the path to the CSE's HTTP server's CA private key file.
 
-The default value is an empty string.
+The default value is `${basic.config:baseDirectory}/certs/acme_key.pem`.
 
-It is recommended to store the CSE's CA private key in the file `{basic.config:baseDirectory}/certs/acme_key.pem`.
+It is recommended to store the CSE's CA private key in the file `${basic.config:baseDirectory}/certs/acme_key.pem`.
 
 
 
@@ -1084,7 +1201,7 @@ The default value is `False`.
 
 This setting specifies a comma-separated list of non-CSE component names to exclude from logging.
 
-The default value is `werkzeug,markdown_it`.
+The default value is `werkzeug,markdown_it,asyncio`.
 
 
 
@@ -1229,9 +1346,9 @@ The default value is an empty list.
 
 This setting specifies the path to the CSE's MQTT client's CA certificate file.
 
-The default value is an empty string.
+The default value is `${basic.config:baseDirectory}/certs/m2mqtt_ca.crt`.
 
-It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
+It is recommended to store the CSE's CA certificate in the file ${basic.config:baseDirectory}/certs/m2mqtt_ca.crt.
 
 
 
@@ -1547,6 +1664,22 @@ This section contains settings that control the CSE's terminal user interface.
 Settings in this section are listed under the `[textui]` section.
 
 
+# textui.maxRequestSize
+
+Max size of a request or response in bytes to display. 
+Requests or responses larger than this threshold will not be displayed.
+
+The default value is `10000`
+
+
+
+# textui.notificationTimeout
+
+This setting specifies the timeout, in seconds, for displaying notifications in the CSE's terminal user interface.
+
+The default value is `2.0 seconds`.
+
+
 
 # textui.refreshInterval
 
@@ -1574,13 +1707,6 @@ This setting specifies the CSE's terminal user interface's theme.
 The default value is the same value as the `console.theme` setting.
 
 
-# textui.maxRequestSize
-
-Max size of a request or response in bytes to display. 
-Requests or responses larger than this threshold will not be displayed.
-
-The default value is `10000`
-
 
 
 # websocket
@@ -1588,6 +1714,14 @@ The default value is `10000`
 This section contains settings that control the CSE's WebSocket server.
 
 Settings in this section are listed under the `[websocket]` section.
+
+
+
+# websocket.address
+
+This setting specifies the CSE's WebSocket server URL: Scheme (ws, wss), address and port. This is the URL under which the CSE is reachable
+
+The default value is `ws://${basic.config:cseHost}:8180`.
 
 
 
@@ -1626,6 +1760,14 @@ The default value is `8180`.
 
 
 
+# websocket.timeout
+
+This setting specifies the timeout, in seconds, after which an outgoing request from the CSE via WebSocket is canceled.
+
+The default value is the same as the *cse.requestExpirationDelta* setting.
+
+
+
 # websocket.security
 
 This section contains settings that control the CSE's WebSocket server's security.
@@ -1638,9 +1780,9 @@ Settings in this section are listed under the `[websocket.security]` section.
 
 This setting specifies the path to the CSE's WebSocket server's CA certificate file.
 
-The default value is an empty string.
+The default value is `${basic.config:baseDirectory}/certs/acme_cert.pem`.
 
-It is recommended to store the CSE's CA certificate in the file `{basic.config:baseDirectory}/certs/acme_cert.pem`.
+It is recommended to store the CSE's CA certificate in the file `${basic.config:baseDirectory}/certs/acme_cert.pem`.
 
 
 
@@ -1648,10 +1790,9 @@ It is recommended to store the CSE's CA certificate in the file `{basic.config:b
 
 This setting specifies the path to the CSE's WebSocket server's CA private key file.
 
-The default value is an empty string.
+The default value is `${basic.config:baseDirectory}/certs/acme_cert.pem`.
 
-It is recommended to store the CSE's CA private key in the file `{basic.config:baseDirectory}/certs/acme_key.pem`.
-
+It is recommended to store the CSE's CA private key in the file `${basic.config:baseDirectory}/certs/acme_key.pem`.
 
 
 

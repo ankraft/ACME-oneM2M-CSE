@@ -6,12 +6,18 @@
 #
 """ Various CSE and oneM2M constants """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from ..etc.Types import ContentSerializationType, CSEType, CSEStatus
+
 
 class Constants(object):
 	""" Various CSE and oneM2M constants """
 
 	
-	version	= '2024.06.01'
+	version	= '2024.10'
 	"""	ACME's release version """
 
 	logoColor = '#b42025'
@@ -161,11 +167,19 @@ class Constants(object):
 	#
 	#	Supported URL schemes
 	#
-	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts', 'ws', 'wss', 'acme']
+	supportedSchemes = ['coap', 'coaps', 'http', 'https', 'mqtt', 'mqtts', 'ws', 'wss', 'acme']
 	""" The URL schemes supported by the CSE. """
 
 	defaultWebSocketSchema = 'ws://default'
 	""" The URL scheme used when a WebSocket connection cannot be established because the remote entity doesn't host a WebSocket server. """
+
+
+	#
+	#	Internal CSE's startup delay
+	#
+
+	cseStartupDelay:float = 2.0
+	""" Internal CSE's startup delay. """
 
 
 	#
@@ -181,3 +195,64 @@ class Constants(object):
 	#
 	networkCoordinationSupported = False
 	""" Network coordination supported by the CSE. """
+
+
+class RuntimeConstants(object):
+	""" Various runtime constants, determined during startup of the CSE """
+
+	cseAbsolute:str = None
+	""" The CSE's Absolute prefix (SP-ID/CSE-ID). """
+
+	cseAbsoluteSlash:str = None
+	""" The CSE's Absolute prefix with an additional trailing /. """
+
+	cseCsi:str = None
+	""" The CSE-ID. """
+
+	cseCsiSlash:str = None
+	""" The CSE-ID with an additional trailing /. """
+
+	cseCsiSlashLen:int = 0
+	""" Length of the CSI with a slash. """
+
+	cseCsiSlashLess:str = None
+	""" The CSE-ID without the leading /. """
+
+	cseOriginator:str = None
+	"""	The CSE's admin originator, e.g. "CAdmin". """
+
+	csePOA:list[str] = []
+	""" The CSE's point-of-access's. """
+
+	cseRi:str = None
+	""" The CSE's Resource ID. """
+
+	cseRn:str = None
+	""" The CSE's Resource Name. """
+
+	slashCseOriginator:str = None
+	"""	The CSE's admin originator with a leading /. """
+
+	cseSpid:str = None
+	""" The Service Provider ID. """
+
+	cseSPRelative:str = None
+	"""	The SP-Relative CSE-ID. """
+
+	cseStatus:CSEStatus = None
+	""" The CSE's internal runtime status. """
+
+	cseType:CSEType = None
+	""" The kind of CSE: IN, MN, or ASN. """
+
+	defaultSerialization:ContentSerializationType = None
+	""" The default / preferred content serialization type. """
+
+	isHeadless = False
+	""" Indicator whether the CSE is running in headless mode. """
+
+	releaseVersion:str = None
+	""" The default / preferred release version. """
+
+	supportedReleaseVersions:list[str] = None
+	"""	List of the supported release versions. """

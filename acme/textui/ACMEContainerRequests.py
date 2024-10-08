@@ -8,7 +8,10 @@
 """
 
 from __future__ import annotations
+import pyperclip, json
+
 from typing import Optional, List, cast, Any
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal, Center, VerticalScroll
 from textual.binding import Binding
@@ -22,12 +25,17 @@ from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..helpers.TextTools import commentJson
+from ..helpers.TextTools import commentJson, limitLines
 
 class ACMEContainerRequests(Vertical):
 
+	def __init__(self, id:str) -> None:
+		super().__init__(id = id)
+
+		self._requestsView = ACMEViewRequests(id = 'requests-view')
+
 	def compose(self) -> ComposeResult:
-		yield ACMEViewRequests(id = 'requests-view')
+		yield self._requestsView
 
 
 	def on_show(self) -> None:
@@ -37,7 +45,7 @@ class ACMEContainerRequests(Vertical):
 
 	@property
 	def requestsView(self) -> ACMEViewRequests:
-		return cast(ACMEViewRequests, self.query_one('#requests-view'))	
+		return self._requestsView
 
 
 class ACMEListItem(ListItem):
@@ -62,14 +70,24 @@ class ACMEViewRequests(Vertical):
 
 		self._currentRequests:List[JSON] = None
 		self._currentRI:str = None
-		self.maxRequestSize = Configuration.get('textui.maxRequestSize')
+
+		self.currentRequest:JSON = None
+		"""	The current request. """
+
+		self.currentResponse:JSON = None
+		"""	The current response. """
 
 		self.listDetails = False
 		"""Show list details."""
 
 		self.commentsOneLine = True
 		"""Show comments in requests and responses in one line."""
-		
+
+		# Some resources upfront
+		self._requestListList = ListView(id = 'request-list-list')
+		self._requestListRequest = Static(id = 'request-list-request')
+		self._requestListResponse = Static(id = 'request-list-response')
+
 	
 	@property
 	def currentRI(self) -> Optional[str]:
@@ -87,41 +105,70 @@ class ACMEViewRequests(Vertical):
 
 	@property
 	def requestList(self) -> ListView:
-		return cast(ListView, self.query_one('#request-list-list'))
+		return self._requestListList
 
 
 	@property
 	def requestListRequest(self) -> Static:
-		return cast(Static, self.query_one('#request-list-request'))
+		return self._requestListRequest
 
 
 	@property
 	def requestListResponse(self) -> Static:
-		return cast(Static, self.query_one('#request-list-response'))
+		return self._requestListResponse
 
 			
 	def compose(self) -> ComposeResult:
 
 		# Requests List Header
 		with Horizontal(id = 'request-list-header'):
-			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]')
+			yield Label(f'    [u b]#[/u b]  -  [u b]Timestamp UTC[/u b]     [u b]Operation[/u b]    [u b]Originator[/u b]                       [u b]Target[/u b]                           [u b]Response Status[/u b]     ')
 
 		# Request List
-		yield ListView(id = 'request-list-list')
+		yield self._requestListList
 
 		# Details
 		with Horizontal(id = 'request-list-details'):
 			with (_c := VerticalScroll(classes = 'request-response')):
 				_c.border_title = 'Request'
-				yield Static(id = 'request-list-request')
+				yield self._requestListRequest
 			with (_c := VerticalScroll(classes = 'request-response')):
 				_c.border_title = 'Response'
-				yield Static(id = 'request-list-response')
+				yield self._requestListResponse
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 	
 
 	def onShow(self) -> None:
 		self.updateRequests()
-		self.requestList.focus()
+	# 	self.requestList.focus()
+		self.requestList.index = 0
+	# 	self.requestList.action_select_cursor()
+
+
+
+	def on_click(self, event:events.Click) -> None:
+		"""Handle Click events. Copy the request or response to the clipboard.
+
+			Args:
+				event: The Click event.
+		"""
+
+		if self.currentRequest:
+			match self.screen.get_widget_at(event.screen_x, event.screen_y)[0]:
+				case self.requestListRequest:
+					v = json.dumps(self.currentRequest, indent = 2)
+					t = 'Request Copied'
+				case self.requestListResponse:
+					v = json.dumps(self.currentResponse, indent = 2)
+					t = 'Response Copied'
+				case _:
+					return
+			pyperclip.copy(v)
+			self._app.showNotification(limitLines(v, 5), t, 'information')
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
@@ -142,12 +189,17 @@ class ACMEViewRequests(Vertical):
 		"""
 		type = 'json'
 
+		if not len(self._currentRequests):
+			self.currentRequest = None
+			return
+		
 		# Get the request's json
-		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['req'], 
-						explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-						getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
-						width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
-		if len(jsns) > self.maxRequestSize:
+		self.currentRequest = self._currentRequests[cast(ACMEListItem, item)._data]['req']
+		jsns = commentJson(	self.currentRequest, 
+							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+							getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Request is too large to display'
 			type = 'text'
 		_l1 = jsns.count('\n')
@@ -156,11 +208,12 @@ class ACMEViewRequests(Vertical):
 		self.requestListRequest.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
-		jsns = commentJson(self._currentRequests[cast(ACMEListItem, item)._data]['rsp'], 
-					explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-					getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
-					width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
-		if len(jsns) > self.maxRequestSize:
+		self.currentResponse = self._currentRequests[cast(ACMEListItem, item)._data]['rsp']
+		jsns = commentJson(	self.currentResponse, 
+							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
+							getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
+							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
+		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Response is too large to display'
 			type = 'text'
 		_l2 = jsns.count('\n')
@@ -215,9 +268,8 @@ class ACMEViewRequests(Vertical):
 
 		def rscFmt(rsc:int) -> str:
 			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
-			# _c = 'green1' if isSuccessRSC(_rsc) else 'red'
 			_c = 'green3' if isSuccessRSC(_rsc) else 'red'
-			return f'[{_c}]{_rsc.name}[/{_c}]'
+			return f'[{_c}]{_rsc.name:30.30}[/{_c}]'
 
 		self.requestList.clear()
 		self.requestListRequest.update()

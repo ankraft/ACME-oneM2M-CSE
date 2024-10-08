@@ -80,8 +80,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNTWrongTPE(self) -> None:
-		""" Create <FCNT> [wrong] with wrong TPE -> Fail"""
+	def test_createFCNTWrongTypeShortname(self) -> None:
+		""" Create <FCNT> [wrong] with wrong typeShortname -> Fail"""
 		self.assertIsNotNone(TestFCNT.ae)
 		dct = 	{ 'wrong' : { 
 					'rn'	: fcntRN,
@@ -352,7 +352,7 @@ def run(testFailFast:bool) -> TestResult:
 	addTests(suite, TestFCNT, [
 
 		'test_createFCNTWrongCND',
-		'test_createFCNTWrongTPE',
+		'test_createFCNTWrongTypeShortname',
 		'test_createFCNT',
 		'test_retrieveFCNT',
 		'test_retrieveFCNTWithWrongOriginator',

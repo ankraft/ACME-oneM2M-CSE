@@ -13,8 +13,9 @@ from typing import Any, Optional
 from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
-from ..etc.ACMEUtils import uniqueAEI, getIdFromOriginator, uniqueRN
+from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN
 from ..etc.DateUtils import getResourceDate
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -27,12 +28,6 @@ class RegistrationManager(object):
 	__slots__ = (
 		'expWorker',
 
-		'allowedCSROriginators',
-		'allowedAEOriginators',
-		'checkExpirationsInterval',
-		'enableResourceExpiration',
-		'acpPvsAcop',
-
 		'_eventRegistreeCSEHasRegistered',
 		'_eventRegistreeCSEHasDeregistered',
 		'_eventAEHasRegistered',
@@ -42,9 +37,6 @@ class RegistrationManager(object):
 	)
 
 	def __init__(self) -> None:
-
-		# Get the configuration settings
-		self._assignConfig()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -73,32 +65,21 @@ class RegistrationManager(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
-		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
-		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
-		self.enableResourceExpiration 	= Configuration.get('cse.enableResourceExpiration')
-		self.acpPvsAcop					= Configuration.get('resource.acp.selfPermission')
-
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
 		if key not in ( 'cse.checkExpirationsInterval', 
-						'cse.registration.allowedCSROriginators',
-						'cse.registration.allowedAEOriginators',
-						'cse.enableResourceExpiration',
-						'resource.acp.selfPermission'):
+						'cse.enableResourceExpiration'
+						):
 			return
-		self._assignConfig()
 		self.restartExpirationMonitor()
 
 
 	def restart(self, name:str) -> None:
 		"""	Restart the registration services.
 		"""
-		self._assignConfig()
 		self.restartExpirationMonitor()
 		L.isDebug and L.logDebug('RegistrationManager restarted')
 
@@ -118,7 +99,7 @@ class RegistrationManager(object):
 			case ResourceTypes.AE:
 				originator = self.handleAERegistration(resource, originator, parentResource)
 			case ResourceTypes.CSR:
-				if CSE.cseType == CSEType.ASN:
+				if RC.cseType == CSEType.ASN:
 						raise OPERATION_NOT_ALLOWED('cannot register to ASN CSE')
 				try:
 					self.handleCSRRegistration(resource, originator)
@@ -221,7 +202,7 @@ class RegistrationManager(object):
 
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
-		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
+		if not CSE.security.isAllowedOriginator(originator, Configuration.cse_registration_allowedAEOriginators):
 			raise APP_RULE_VALIDATION_FAILED(L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
@@ -286,7 +267,7 @@ class RegistrationManager(object):
 
 		# Check whether an AE with the same originator has already registered
 
-		if originator != CSE.cseOriginator and self.hasRegisteredAE(originator):
+		if originator != RC.cseOriginator and self.hasRegisteredAE(originator):
 			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Originator has already registered an AE: {originator}'))
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
@@ -346,7 +327,7 @@ class RegistrationManager(object):
 				raise CONFLICT(L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
-		cbA.setResourceName(uniqueRN(f'{cbA.tpe}_{getIdFromOriginator(originator)}'))
+		cbA.setResourceName(uniqueRN(f'{cbA.typeShortname}_{getIdFromOriginator(originator)}'))
 
 
 	#########################################################################
@@ -378,13 +359,13 @@ class RegistrationManager(object):
 
 	def startExpirationMonitor(self) -> None:
 		# Start background monitor to handle expired resources
-		if not self.enableResourceExpiration:
+		if not Configuration.cse_enableResourceExpiration:
 			L.isDebug and L.logDebug('Expiration disabled. NOT starting expiration monitor')
 			return
 
 		L.isDebug and L.logDebug('Starting expiration monitor')
-		if self.checkExpirationsInterval > 0:
-			self.expWorker = BackgroundWorkerPool.newWorker(self.checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
+		if Configuration.cse_checkExpirationsInterval > 0:
+			self.expWorker = BackgroundWorkerPool.newWorker(Configuration.cse_checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
 
 
 	def stopExpirationMonitor(self) -> None:
@@ -398,7 +379,7 @@ class RegistrationManager(object):
 		# Stop the expiration monitor
 		L.isDebug and L.logDebug('Restart expiration monitor')
 		if self.expWorker:
-			self.expWorker.restart(self.checkExpirationsInterval)
+			self.expWorker.restart(Configuration.cse_checkExpirationsInterval)
 
 
 	def expirationDBMonitor(self) -> bool:
@@ -435,7 +416,7 @@ class RegistrationManager(object):
 
 	# 	# Remove existing ACP with that name first
 	# 	try:
-	# 		acpSrn = f'{CSE.cseRn}/{rn}'
+	# 		acpSrn = f'{RC.cseRn}/{rn}'
 	# 		acpResourse = CSE.dispatcher.retrieveResource(id = acpSrn)	# May throw an exception if no resource exists
 	# 		CSE.dispatcher.deleteLocalResource(acpResourse)	# ignore errors
 	# 	except:
@@ -445,9 +426,9 @@ class RegistrationManager(object):
 	# 	selfPermission = selfPermission if selfPermission is not None else Permission(self.acpPvsAcop)
 
 	# 	origs = deepcopy(originators)
-	# 	origs.append(CSE.cseOriginator)	# always append cse originator
+	# 	origs.append(RC.cseOriginator)	# always append cse originator
 
-	# 	selfOrigs = [ CSE.cseOriginator ]
+	# 	selfOrigs = [ RC.cseOriginator ]
 	# 	if selfOriginators:
 	# 		selfOrigs.extend(selfOriginators)
 
@@ -456,8 +437,8 @@ class RegistrationManager(object):
 	# 	acpResourse.addPermission(origs, permission)
 	# 	acpResourse.addSelfPermission(selfOrigs, selfPermission)
 
-	# 	self.checkResourceCreation(acpResourse, CSE.cseOriginator, parentResource)
-	# 	return CSE.dispatcher.createLocalResource(acpResourse, parentResource, originator = CSE.cseOriginator)
+	# 	self.checkResourceCreation(acpResourse, RC.cseOriginator, parentResource)
+	# 	return CSE.dispatcher.createLocalResource(acpResourse, parentResource, originator = RC.cseOriginator)
 
 
 	# def _removeACP(self, srn:str, resource:Resource) -> None:
@@ -471,4 +452,3 @@ class RegistrationManager(object):
 	# 	# only delete the ACP when it was created in the course of AE registration internally
 	# 	if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
 	# 		CSE.dispatcher.deleteLocalResource(acpResourse)
-

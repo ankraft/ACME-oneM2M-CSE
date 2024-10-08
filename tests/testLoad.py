@@ -283,18 +283,100 @@ class TestLoad(unittest.TestCase):
 		self.assertEqual(len(cnts), 1)
 		cntri = cnts[0][0]
 		cntrn = cnts[0][1]
+		targetUri = f'{cseURL}/{aern}/{cntrn}'
 
 		TestLoad.startTimer()
-		for i in range(self.count):
+		for _ in range(self.count):
 			dct = 	{ 'm2m:cin' : {
 					'con': image
 				}}
-			r, rsc = CREATE(f'{cseURL}/{aern}/{cntrn}',  aeri, T.CIN, dct)
+			r, rsc = CREATE(targetUri,  aeri, T.CIN, dct)
 			self.assertEqual(rsc, RC.CREATED, r)
 
 		self._deleteAEs(1, aes)
 		print(f'{TestLoad.stopTimer(1)} ... ', end='', flush=True)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_storeImagesNoResponse(self) -> None:
+		"""	Store images in CIN with "no response" Response Type. """
+		aes = self._createAEs(1)
+		self.assertEqual(len(aes), 1)
+		aeri = aes[0][0]
+		aern = aes[0][1]
+
+		# create CNT
+		cnts = self._createCNTs(aern, aeri, 1, mni = int(self.count / 10))
+		self.assertEqual(len(cnts), 1)
+		cntri = cnts[0][0]
+		cntrn = cnts[0][1]
+		targetUri = f'{cseURL}/{aern}/{cntrn}?rt={ResponseType.noResponse.value}'
+
+
+		TestLoad.startTimer()
+		for _ in range(self.count):
+			dct = 	{ 'm2m:cin' : {
+					'con': image
+				}}
+			r, rsc = CREATE(targetUri,  aeri, T.CIN, dct)
+			self.assertEqual(rsc, RC.NO_CONTENT, r)
+
+		self._deleteAEs(1, aes)
+		print(f'{TestLoad.stopTimer(1)} ... ', end='', flush=True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_storeSimpleCIN(self) -> None:
+		"""	Store simple CON. """
+		aes = self._createAEs(1)
+		self.assertEqual(len(aes), 1)
+		aeri = aes[0][0]
+		aern = aes[0][1]
+
+		# create CNT
+		cnts = self._createCNTs(aern, aeri, 1, mni = int(self.count / 10))
+		self.assertEqual(len(cnts), 1)
+		cntri = cnts[0][0]
+		cntrn = cnts[0][1]
+		targetUri = f'{cseURL}/{aern}/{cntrn}'
+
+		TestLoad.startTimer()
+		for _ in range(self.count):
+			dct = 	{ 'm2m:cin' : {
+					'con': '23.5'
+				}}
+			r, rsc = CREATE(targetUri,  aeri, T.CIN, dct)
+			self.assertEqual(rsc, RC.CREATED, r)
+
+		self._deleteAEs(1, aes)
+		print(f'{TestLoad.stopTimer(1)} ... ', end='', flush=True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_storeSimpleCINNoResponse(self) -> None:
+		"""	Store simple CON with "no response" Response Type. """
+		aes = self._createAEs(1)
+		self.assertEqual(len(aes), 1)
+		aeri = aes[0][0]
+		aern = aes[0][1]
+
+		# create CNT
+		cnts = self._createCNTs(aern, aeri, 1, mni = int(self.count / 10))
+		self.assertEqual(len(cnts), 1)
+		cntri = cnts[0][0]
+		cntrn = cnts[0][1]
+		targetUri = f'{cseURL}/{aern}/{cntrn}?rt={ResponseType.noResponse.value}'
+
+		TestLoad.startTimer()
+		for _ in range(self.count):
+			dct = 	{ 'm2m:cin' : {
+					'con': '23.5'
+				}}
+			r, rsc = CREATE(targetUri,  aeri, T.CIN, dct)
+			self.assertEqual(rsc, RC.NO_CONTENT, r)
+
+		self._deleteAEs(1, aes)
+		print(f'{TestLoad.stopTimer(1)} ... ', end='', flush=True)
 
 
 # TODO: RETRIEVE CNT+CIN+la n times
@@ -361,7 +443,18 @@ def run(testFailFast:bool) -> TestResult:
 
 	# Test blob data
 	addTest(suite, TestLoad('test_storeImages', 100))
+	addTest(suite, TestLoad('test_storeImages', 100))
 	addTest(suite, TestLoad('test_storeImages', 1000))
+	addTest(suite, TestLoad('test_storeImagesNoResponse', 10))
+	addTest(suite, TestLoad('test_storeImagesNoResponse', 100))
+	addTest(suite, TestLoad('test_storeImagesNoResponse', 1000))
+	
+	# Test noResponse
+	addTest(suite, TestLoad('test_storeSimpleCIN', 100))
+	addTest(suite, TestLoad('test_storeSimpleCIN', 1000))
+	addTest(suite, TestLoad('test_storeSimpleCINNoResponse', 100))
+	addTest(suite, TestLoad('test_storeSimpleCINNoResponse', 1000))
+
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

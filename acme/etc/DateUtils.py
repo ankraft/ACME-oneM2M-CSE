@@ -20,7 +20,7 @@ import isodate
 #	Time, Date, Timestamp related
 #
 
-def getResourceDate(offset:Optional[int] = 0) -> str:
+def getResourceDate(offset:Optional[float] = 0.0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
 		Args:

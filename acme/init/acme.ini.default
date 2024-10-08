@@ -140,7 +140,7 @@ port=${basic.config:httpPort}
 listenIF=${basic.config:networkInterface}
 ; Own address. Should be a local/public reachable address.
 ; Default: http://127.0.0.1:8080
-address=http://${basic.config:cseHost}:${basic.config:httpPort}
+address=http://${basic.config:cseHost}:${basic.config:httpPort}${http:root}
 ; CSE Server root. Always provide a trailing /. Default: /
 root=/
 ; Enable an endpoint for get and set certain configuration values via a 
@@ -335,11 +335,23 @@ caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
 ; Enable the CoAP binding.
 ; Default: false
 enable=false
-serverPort=5683
+; The listening port for the CoAP server.
+; Default: 5683
+port=5683
+; The default timeout for sending CoAP requests in seconds.
+; Default: 10.0
+timeout=10.0
+; The maximum number of client connections that can be cached.
+; When the limit is reached, the oldest connection is closed.
+; A value of 0 means no caching.
+; Default: 100
+clientConnectionCacheSize=100
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
 ; Default:
 listenIF=${basic.config:networkInterface}
-
+; Own address. Should be a local/public reachable address.
+; Default: coap://127.0.0.1:5683
+address=coap://${basic.config:cseHost}:${port}
 
 ;
 ;	CoAP security settings
@@ -358,9 +370,9 @@ dtlsVersion=auto
 ; Default: False
 verifyCertificate=False
 ; Path and filename of the certificate file. Default: ${basic.config:baseDirectory}/certs/coap_cert.pem
-certificateFile=${basic.config:baseDirectory}/certs/coap_cert.pem
+caCertificateFile=${basic.config:baseDirectory}/certs/coap_cert.pem
 ; Path and filename of the private key file. Default: None
-privateKeyFile=${basic.config:baseDirectory}/certs/coap_key.pem
+caPrivateKeyFile=${basic.config:baseDirectory}/certs/coap_key.pem
 
 ;
 ;	Database settings
@@ -687,6 +699,9 @@ refreshInterval=2.0
 ; Requests or responses larger than this threshold will not be displayed.
 ; Default: 10000
 maxRequestSize=10000
+; How long to display a notification in seconds.
+; Default: 2.0
+notificationTimeout=2.0
 
 ;
 ;	Scripting settings

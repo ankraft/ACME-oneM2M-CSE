@@ -15,11 +15,10 @@ from typing import Optional, Any, Literal
 import asyncio
 
 from ..runtime import CSE
-from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..etc.Types import CSEStatus
-from ..helpers.Interpreter import PContext
+from ..etc.Constants import RuntimeConstants as RC
 
 from ..textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
@@ -35,24 +34,15 @@ _textUI:TextUI = None
 class TextUI(object):
 
 	__slots__ = (
-		'startWithTUI',
-		'theme',
-		'refreshInterval',
 		'tuiApp'
 	)
 	
 	def __init__(self) -> None:
 		global _textUI
-		self.startWithTUI:bool = None
-		self.theme:str = None
-		self.refreshInterval:float = None
 		self.tuiApp:ACMETuiApp = None
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
-
-		# Get configs
-		self._assignConfig()
 
 		# Add handlers for registrations here. This is not done in the textUI classes because it it
 		# is not always clear when they are removed and re-created
@@ -80,17 +70,8 @@ class TextUI(object):
 	def restart(self) -> None:
 		"""	Restart the TextUI service.
 		"""
-		self._assignConfig()
 		L.logDebug('TextUI restarted')
 
-
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.startWithTUI = Configuration.get('textui.startWithTUI')
-		self.theme = Configuration.get('textui.theme')
-		self.refreshInterval = Configuration.get('textui.refreshInterval')
-	
 
 	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
 		if self.tuiApp and self.tuiApp.containerRegistrations:
@@ -107,11 +88,11 @@ class TextUI(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'textui.startWithTUI', 'textui.theme', 'textui.refreshInterval']:
+		if key not in [ 'textui.startWithTUI', 
+				 		'textui.theme', 
+						'textui.refreshInterval', 
+						'textui.maxRequestSize' ]:
 			return
-		
-		# Configuration values
-		self._assignConfig()
 
 		# Restart TUI
 		self.tuiApp.restart()
@@ -122,8 +103,8 @@ class TextUI(object):
 		# Disable console logging
 		previousScreenLogging = L.enableScreenLogging
 		L.enableScreenLogging = False
-		while True and CSE.cseStatus == CSEStatus.RUNNING:
-			self.tuiApp = ACMETuiApp(self)
+		while True and RC.cseStatus == CSEStatus.RUNNING:
+			self.tuiApp = ACMETuiApp()
 			try:
 				asyncio.run(self.tuiApp.run())
 			except ValueError:	# This may have something to do with running in a non-async context. Ignore for now.

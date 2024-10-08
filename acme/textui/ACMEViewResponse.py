@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from rich.console import RenderableType
 from textual.app import ComposeResult
@@ -30,11 +30,17 @@ class ACMEViewResponse(VerticalScroll):
 		"""
 		super().__init__(id = id, classes = 'response-view-normal')
 		self.response = Static('', id = f'{id}-content', classes = 'response-view-content')
+
 		self.clear()
 
 
 	def compose(self) -> ComposeResult:
 		yield self.response
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 
 
 	def clear(self) -> None:
@@ -60,7 +66,7 @@ class ACMEViewResponse(VerticalScroll):
 			self.border_title = self._title
 
 	
-	def error(self, renderable:RenderableType, rsc:Optional[ResponseStatusCode] = None) -> None:
+	def error(self, renderable:RenderableType, rsc:Optional[ResponseStatusCode] = None, title:Optional[str] = 'ERROR') -> None:
 		"""	Display an error response.
 
 			Args:
@@ -72,8 +78,11 @@ class ACMEViewResponse(VerticalScroll):
 			self.response.update(f'[red]{renderable}[/red]')
 			if rsc is not None:
 				self.border_title = f'{self._title} [r] {rsc.value} {rsc.nname()} [/r]'
+				# popup error notification
+				self._app.showNotification(f'\n{rsc.nname()}\n\n{renderable}', title, 'error')
 			else:
 				self.border_title = self._title
+
 		else:
 			self.response.update(renderable)
 		self.classes = 'response-view-error'

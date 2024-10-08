@@ -9,6 +9,7 @@
 from __future__ import annotations
 from typing import Optional, Any, Type
 from http import HTTPStatus
+from coapthon.defines import Codes as CoAPCodes, CodeItem as CoAPCodeItem
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 
 ##############################################################################
@@ -103,12 +104,20 @@ class ResponseStatusCode(ACMEIntEnum):
 	"""	INSUFFICIENT_ARGUMENTS """
 
 	UNKNOWN										= -1
-	"""	UNKNOWN """
+	"""	Internal Status Code: UNKNOWN """
+
+	NO_CONTENT									= -2
+	""" Internal Status Code: No content"""
 
 
 	def httpStatusCode(self) -> int:
 		""" Map the oneM2M RSC to an http status code. """
-		return _ResponseStatusCodeHttpStatusCodes[self]
+		return _ResponseStatusCodeHttpStatusCodes[self][0]
+
+
+	def coapStatusCode(self) -> CoAPCodeItem:
+		""" Map the oneM2M RSC to a CoAP status code. """
+		return _ResponseStatusCodeHttpStatusCodes[self][1]
 
 
 	def nname(self) -> str:
@@ -125,48 +134,48 @@ class ResponseStatusCode(ACMEIntEnum):
 #
 
 _ResponseStatusCodeHttpStatusCodes = {
-	ResponseStatusCode.OK 											: HTTPStatus.OK,						# OK
-	ResponseStatusCode.DELETED 										: HTTPStatus.OK,						# DELETED
-	ResponseStatusCode.UPDATED 										: HTTPStatus.OK,						# UPDATED
-	ResponseStatusCode.CREATED										: HTTPStatus.CREATED,					# CREATED
-	ResponseStatusCode.ACCEPTED 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
-	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_SYNC 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_ASYNC 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-	ResponseStatusCode.BAD_REQUEST									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
-	ResponseStatusCode.CONTENTS_UNACCEPTABLE						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-	ResponseStatusCode.INSUFFICIENT_ARGUMENTS 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
-	ResponseStatusCode.INVALID_ARGUMENTS							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-	ResponseStatusCode.MAX_NUMBER_OF_MEMBER_EXCEEDED				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
-	ResponseStatusCode.GROUP_MEMBER_TYPE_INCONSISTENT				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
-	ResponseStatusCode.INVALID_SPARQL_QUERY							: HTTPStatus.BAD_REQUEST,				# INVALID SPARQL QUERY
-	ResponseStatusCode.SERVICE_SUBSCRIPTION_NOT_ESTABLISHED			: HTTPStatus.FORBIDDEN,					# SERVICE SUBSCRIPTION NOT ESTABLISHED
-	ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
-	ResponseStatusCode.INVALID_CHILD_RESOURCE_TYPE					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-	ResponseStatusCode.ALREADY_EXISTS								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-	ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
-	ResponseStatusCode.RECEIVER_HAS_NO_PRIVILEGES					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
-	ResponseStatusCode.SECURITY_ASSOCIATION_REQUIRED				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-	ResponseStatusCode.SUBSCRIPTION_CREATER_HAS_NO_PRIVILEGE		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-	ResponseStatusCode.SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-	ResponseStatusCode.ORIGINATOR_HAS_ALREADY_REGISTERED			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
-	ResponseStatusCode.APP_RULE_VALIDATION_FAILED					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-	ResponseStatusCode.OPERATION_DENIED_BY_REMOTE_ENTITY			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
-	ResponseStatusCode.REQUEST_TIMEOUT								: HTTPStatus.GATEWAY_TIMEOUT,			# REQUEST TIMEOUT
-	ResponseStatusCode.NOT_FOUND									: HTTPStatus.NOT_FOUND,					# NOT FOUND
-	ResponseStatusCode.TARGET_NOT_REACHABLE							: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
-	ResponseStatusCode.REMOTE_ENTITY_NOT_REACHABLE					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
-	ResponseStatusCode.OPERATION_NOT_ALLOWED						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-	ResponseStatusCode.NOT_ACCEPTABLE 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
-	ResponseStatusCode.UNABLE_TO_RECALL_REQUEST 					: HTTPStatus.CONFLICT,					# UNABLE TO RECALL REQUEST
-	ResponseStatusCode.CROSS_RESOURCE_OPERATION_FAILURE				: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
-	ResponseStatusCode.CONFLICT										: HTTPStatus.CONFLICT,					# CONFLICT
-	ResponseStatusCode.UNSUPPORTED_MEDIA_TYPE						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
-	ResponseStatusCode.INTERNAL_SERVER_ERROR 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
-	ResponseStatusCode.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-	ResponseStatusCode.RELEASE_VERSION_NOT_SUPPORTED				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-	ResponseStatusCode.NOT_IMPLEMENTED								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+	ResponseStatusCode.OK 											: (HTTPStatus.OK, CoAPCodes.CONTENT),											# OK
+	ResponseStatusCode.DELETED 										: (HTTPStatus.OK, CoAPCodes.DELETED),											# DELETED
+	ResponseStatusCode.UPDATED 										: (HTTPStatus.OK, CoAPCodes.CHANGED),											# UPDATED
+	ResponseStatusCode.CREATED										: (HTTPStatus.CREATED, CoAPCodes.CREATED),										# CREATED
+	ResponseStatusCode.ACCEPTED 									: (HTTPStatus.ACCEPTED, CoAPCodes.VALID), 										# ACCEPTED
+	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_SYNC 			: (HTTPStatus.ACCEPTED, CoAPCodes.CREATED),										# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+	ResponseStatusCode.ACCEPTED_NON_BLOCKING_REQUEST_ASYNC 			: (HTTPStatus.ACCEPTED, CoAPCodes.CREATED),										# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+	ResponseStatusCode.BAD_REQUEST									: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# BAD REQUEST
+	ResponseStatusCode.CONTENTS_UNACCEPTABLE						: (HTTPStatus.BAD_REQUEST, CoAPCodes.NOT_ACCEPTABLE),							# NOT ACCEPTABLE
+	ResponseStatusCode.INSUFFICIENT_ARGUMENTS 						: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INSUFFICIENT ARGUMENTS
+	ResponseStatusCode.INVALID_ARGUMENTS							: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INVALID ARGUMENTS
+	ResponseStatusCode.MAX_NUMBER_OF_MEMBER_EXCEEDED				: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST), 								# MAX NUMBER OF MEMBER EXCEEDED
+	ResponseStatusCode.GROUP_MEMBER_TYPE_INCONSISTENT				: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# GROUP MEMBER TYPE INCONSISTENT
+	ResponseStatusCode.INVALID_SPARQL_QUERY							: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INVALID SPARQL QUERY
+	ResponseStatusCode.SERVICE_SUBSCRIPTION_NOT_ESTABLISHED			: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# SERVICE SUBSCRIPTION NOT ESTABLISHED
+	ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE					: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# ORIGINATOR HAS NO PRIVILEGE
+	ResponseStatusCode.INVALID_CHILD_RESOURCE_TYPE					: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# INVALID CHILD RESOURCE TYPE
+	ResponseStatusCode.ALREADY_EXISTS								: (HTTPStatus.CONFLICT, CoAPCodes.BAD_REQUEST),									# ALREAD EXISTS
+	ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE						: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# TARGET NOT SUBSCRIBABLE
+	ResponseStatusCode.RECEIVER_HAS_NO_PRIVILEGES					: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# RECEIVER HAS NO PRIVILEGE
+	ResponseStatusCode.SECURITY_ASSOCIATION_REQUIRED				: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# SECURITY ASSOCIATION REQUIRED
+	ResponseStatusCode.SUBSCRIPTION_CREATER_HAS_NO_PRIVILEGE		: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN ),									# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+	ResponseStatusCode.SUBSCRIPTION_HOST_HAS_NO_PRIVILEGE			: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# SUBSCRIPTION HOST HAS NO PRIVILEGE
+	ResponseStatusCode.ORIGINATOR_HAS_ALREADY_REGISTERED			: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# ORIGINATOR HAS ALREADY REGISTERED
+	ResponseStatusCode.APP_RULE_VALIDATION_FAILED					: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# APP RULE VALIDATION FAILED
+	ResponseStatusCode.OPERATION_DENIED_BY_REMOTE_ENTITY			: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# OPERATION_DENIED_BY_REMOTE_ENTITY
+	ResponseStatusCode.REQUEST_TIMEOUT								: (HTTPStatus.GATEWAY_TIMEOUT, CoAPCodes.GATEWAY_TIMEOUT),						# REQUEST TIMEOUT
+	ResponseStatusCode.NOT_FOUND									: (HTTPStatus.NOT_FOUND, CoAPCodes.NOT_FOUND),									# NOT FOUND
+	ResponseStatusCode.TARGET_NOT_REACHABLE							: (HTTPStatus.NOT_FOUND, CoAPCodes.NOT_FOUND),									# TARGET NOT REACHABLE
+	ResponseStatusCode.REMOTE_ENTITY_NOT_REACHABLE					: (HTTPStatus.NOT_FOUND, CoAPCodes.NOT_FOUND),									# REMOTE_ENTITY_NOT_REACHABLE
+	ResponseStatusCode.OPERATION_NOT_ALLOWED						: (HTTPStatus.METHOD_NOT_ALLOWED, CoAPCodes.METHOD_NOT_ALLOWED),				# OPERATION NOT ALLOWED
+	ResponseStatusCode.NOT_ACCEPTABLE 								: (HTTPStatus.NOT_ACCEPTABLE, CoAPCodes.NOT_ACCEPTABLE),						# NOT ACCEPTABLE
+	ResponseStatusCode.UNABLE_TO_RECALL_REQUEST 					: (HTTPStatus.CONFLICT, CoAPCodes.SERVICE_UNAVAILABLE),							# UNABLE TO RECALL REQUEST
+	ResponseStatusCode.CROSS_RESOURCE_OPERATION_FAILURE				: (HTTPStatus.INTERNAL_SERVER_ERROR, CoAPCodes.INTERNAL_SERVER_ERROR),			# CROSS RESOURCE OPERATION FAILURE
+	ResponseStatusCode.CONFLICT										: (HTTPStatus.CONFLICT, CoAPCodes.FORBIDDEN),									# CONFLICT
+	ResponseStatusCode.UNSUPPORTED_MEDIA_TYPE						: (HTTPStatus.UNSUPPORTED_MEDIA_TYPE, CoAPCodes.UNSUPPORTED_CONTENT_FORMAT),	# UNSUPPORTED_MEDIA_TYPE
+	ResponseStatusCode.INTERNAL_SERVER_ERROR 						: (HTTPStatus.INTERNAL_SERVER_ERROR, CoAPCodes.INTERNAL_SERVER_ERROR),			# INTERNAL SERVER ERROR
+	ResponseStatusCode.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED	: (HTTPStatus.INTERNAL_SERVER_ERROR, CoAPCodes.INTERNAL_SERVER_ERROR),			# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+	ResponseStatusCode.RELEASE_VERSION_NOT_SUPPORTED				: (HTTPStatus.NOT_IMPLEMENTED, CoAPCodes.NOT_IMPLEMENTED),						# RELEASE_VERSION_NOT_SUPPORTED
+	ResponseStatusCode.NOT_IMPLEMENTED								: (HTTPStatus.NOT_IMPLEMENTED, CoAPCodes.NOT_IMPLEMENTED),						# NOT IMPLEMENTED
 	
-	ResponseStatusCode.UNKNOWN										: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+	ResponseStatusCode.UNKNOWN										: (HTTPStatus.NOT_IMPLEMENTED, CoAPCodes.NOT_IMPLEMENTED),						# NOT IMPLEMENTED
 
 }
 """ Mapping of oneM2M return codes to http status codes. """
@@ -395,6 +404,19 @@ class MAX_NUMBER_OF_MEMBER_EXCEEDED(ResponseException):
 	"""
 	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
 		super().__init__(ResponseStatusCode.MAX_NUMBER_OF_MEMBER_EXCEEDED, dbg, data)
+
+
+class NO_CONTENT(ResponseException):
+	"""	NO CONTENT internal Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.NO_CONTENT, dbg, data)
 
 
 class NOT_ACCEPTABLE(ResponseException):

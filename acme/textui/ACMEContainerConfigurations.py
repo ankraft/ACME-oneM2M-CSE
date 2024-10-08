@@ -40,11 +40,9 @@ class ACMEConfigurationTree(TextualTree):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
 		
 
 	def on_mount(self) -> None:
@@ -52,6 +50,10 @@ class ACMEConfigurationTree(TextualTree):
 		"""
 		# Expand the root element
 		self.root.expand()
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
 
 	
 	def on_show(self) -> None:
@@ -78,12 +80,14 @@ class ACMEConfigurationTree(TextualTree):
 					break
 			else:	# not found
 				_n = node.add(f'[{self._app.objectColor}]{_s}[/]', f'{node.data}.{_s}' )
+				node.children
 				# Add new node to the tree. "data" contains the path to this node
 			if level == len(splits) - 1:
 				_n.allow_expand = False
 				_n.label = _s
 			else:
 				_addSetting(splits, level + 1, _n)
+			node._children.sort(key=lambda x: (len(x._children) == 0, str(x.label)))
 
 		# Add all keys as paths recursively to the tree
 		for k in CSE.Configuration.all().keys():
@@ -141,19 +145,28 @@ class ACMEContainerConfigurations(VerticalScroll):
 				args:	Variable length argument list.
 				kwargs:	Arbitrary keyword arguments.
 		"""
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
+
+		# self._configsTreeView = ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
+		self._configsTreeView = ACMEConfigurationTree(f'Configurations', 
+							 				 		id = 'configs-tree-view',
+													parentContainer = self)
+		self._configsDocumentation = Markdown('', id = 'configs-documentation')
 		
 	
 	def compose(self) -> ComposeResult:
 		"""	Build the *Configurations* view.
 		"""
-		yield ACMEConfigurationTree(f'[{self._app.objectColor}]Configurations[/]', 
-							  		id = 'configs-tree-view',
-									parentContainer = self)
-		yield Markdown('', id = 'configs-documentation')
+		yield self._configsTreeView
+		yield self._configsDocumentation
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
+		# Change the root label colour
+		self._configsTreeView.root.label = f'[{self._app.objectColor}]Configurations[/]'
+
 
 
 	@property
@@ -163,7 +176,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 			Returns:
 				The tree view.
 		"""
-		return cast(ACMEConfigurationTree, self.query_one('#configs-tree-view'))
+		return self._configsTreeView
 
 
 	@property
@@ -173,7 +186,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 			Returns:
 				The documentation view.
 		"""
-		return cast(Markdown, self.query_one('#configs-documentation'))
+		return self._configsDocumentation
 
 
 	def on_show(self) -> None:

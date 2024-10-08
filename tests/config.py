@@ -9,7 +9,7 @@
 
 from typing import Optional
 
-BINDING						= 'http'	# possible values: http, https, mqtt, ws
+BINDING						= 'http'	# possible values: http, https, mqtt, ws, coap
 
 match BINDING:
 	case 'mqtt':
@@ -37,9 +37,19 @@ match BINDING:
 		CONFIGPROTOCOL			= 'http'
 		NOTIFICATIONPROTOCOL	= 'http'
 		REMOTEPROTOCOL			= 'http'
+	case 'coap':
+		PROTOCOL				= 'coap'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
+	case 'coaps':
+		PROTOCOL				= 'coaps'
+		CONFIGPROTOCOL			= 'http'
+		NOTIFICATIONPROTOCOL	= 'http'
+		REMOTEPROTOCOL			= 'http'
 
 	case _:
-		assert False, 'Supported values for BINDING are "mqtt", "ws", "http", and "https"'
+		assert False, 'Supported values for BINDING are "coap", "coaps", "http", "https", "mqtt", "mqtts", "ws", and "wss"'
 
 # TODO ENCODING 			= 
 
@@ -68,10 +78,12 @@ TESTHOSTIP:Optional[str]		= None				# IP address of the host running the tests.
 
 CSEHOST					= 'localhost'		# CSE Server address.
 CSEPORT					= 8080				# CSE Server port.
-CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}/'	# CSE Server address.
+HTTPROOT				= '/'				# Root of the HTTP path. Needs a leading and trailing slash (or a single slash)
+CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}'	# CSE Server address.
 CSERN					= 'cse-in'			# CSEBase Resource Name
 CSERI					= 'id-in'			# CSEBase Resource ID
 CSEID					= '/id-in'			# CSE-ID
+
 
 ##############################################################################
 
@@ -100,6 +112,24 @@ MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 wsAddress			= 'localhost'
 wsPort				= 8180
 wsSubProtocols		= ('oneM2M.json',)
+
+
+##############################################################################
+
+#
+#	CoAP (if configured)
+#
+
+coapAddress			= '127.0.0.1'	# CoAP Server address. must be IP address, not hostname!
+coapPort			= 5683
+coapTimeout			= 10.0			# Timeout for CoAP requests
+
+if BINDING in ('coap', 'coaps'):
+	CSEURL			= f'{PROTOCOL}://{coapAddress}:{coapPort}/'	# CSE Server address.
+
+
+
+
 
 ##############################################################################
 
@@ -156,6 +186,6 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 #
 #	Upper Tester
 #
-UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}/__ut__'	# CSE's Upper Tester URL
+UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}__ut__'	# CSE's Upper Tester URL
 UTCMD	= 'X-M2M-UTCMD'
 UTRSP	= 'X-M2M-UTRSP'

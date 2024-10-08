@@ -9,9 +9,12 @@
 from __future__ import annotations
 from typing import List, Tuple, Optional, Any, cast
 
+import pyperclip, json
+
 from textual import events
 from textual.app import ComposeResult
-from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Markdown, Label, Button
+from textual.widgets import Tree as TextualTree, Static, TabbedContent, TabPane, Label, Button
+from textual.widgets.tree import TreeNode
 from textual.containers import Container, Vertical, Horizontal
 from textual.screen import ModalScreen
 from textual.binding import Binding
@@ -21,34 +24,41 @@ from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
-from ..helpers.TextTools import commentJson
+from ..etc.Constants import RuntimeConstants as RC
+from ..helpers.TextTools import commentJson, limitLines
+from .ACMEContainerCreate import ACMEContainerCreate
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerUpdate import ACMEContainerUpdate
 from .ACMEContainerDiagram import ACMEContainerDiagram
 from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
 
+
 class ACMEResourceTree(TextualTree):
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
-		from ..textui.ACMETuiApp import ACMETuiApp
 
 		self.parentContainer = kwargs.pop('parentContainer', None)
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
 
 	
-	def on_mount(self) -> None:
-		self.root.expand()
+	# def on_mount(self) -> None:
+	# 	self.root.expand()
 
-		
+	def on_show(self) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+
+
 	def _update_tree(self) -> None:
+		if not self.visible:
+			return
 		self.clear()
 		self.auto_expand = False
 		self.select_node(None)
 		prevType = ''
-		for resource in self._retrieve_resource_children(CSE.cseRi):
+		for resource in self._retrieve_resource_children(RC.cseRi):
 			ty = resource[0].ty
 			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
 				self.root.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
@@ -65,18 +75,21 @@ class ACMEResourceTree(TextualTree):
 				# No data means this is a type section
 				self._update_type_section(str(node.node.label))
 		except ResponseException as e:
-			self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
+			# self.parentContainer.resourceView.update(f'ERROR: {e.dbg}')
+			self.parentContainer.updateResourceView(error = f'ERROR: {e.dbg}')
+
 
 
 	def on_tree_node_expanded(self, node:TextualTree.NodeSelected) -> None:
-		node.node._children = []	# no available method?
-		prevType = ''
-		for resource in self._retrieve_resource_children(node.node.data):
-			ty = resource[0].ty
-			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
-				node.node.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
-				prevType = ty
-			node.node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
+		self._buildNodeChildren(node.node)
+		# node.node._children = []	# no available method?
+		# prevType = ''
+		# for resource in self._retrieve_resource_children(node.node.data):
+		# 	ty = resource[0].ty
+		# 	if ty != prevType and not ResourceTypes.isVirtualResource(ty):
+		# 		node.node.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+		# 		prevType = ty
+		# 	node.node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
 	
 
 	def on_tree_node_hover(self, event:events.MouseMove) -> None:
@@ -91,6 +104,22 @@ class ACMEResourceTree(TextualTree):
 		ResourceTypes.TS_OL: (ResourceTypes.TSI, True),
 		ResourceTypes.TS_LA: (ResourceTypes.TSI, False),
 	}
+
+
+	def refreshNode(self, node:TreeNode) -> None:
+		if not self.visible:
+			return
+		self._buildNodeChildren(node)
+
+
+	def refreshCurrentNode(self) -> None:
+		self.refreshNode(self.cursor_node)
+
+
+	def refreshCurrentParrentNode(self) -> None:
+		parentNode = self.cursor_node.parent
+		if parentNode:
+			self.refreshNode(parentNode)
 
 
 	def _update_content(self, ri:str) -> None:
@@ -111,10 +140,14 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'{resource.rn} ({ResourceTypes.fullname(resource.ty)})' if resource else '')
+		self.parentContainer.setResourceHeader(f'{resource.rn} ({_getResourceTypeAsString(resource)})' if resource else '')
+		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri})' if resource else '')
 
 		# Set the visibility of the tabs
-		self.parentContainer.tabs.show_tab('tree-tab-requests')
+		try:
+			self.parentContainer.tabs.show_tab('tree-tab-requests')
+		except:
+			pass
 
 
 	def _update_type_section(self, label:str) -> None:
@@ -124,12 +157,28 @@ class ACMEResourceTree(TextualTree):
 				label: The label of the type section.
 		"""
 		self.parentContainer.setResourceHeader(f'{label} Resources')
-		self.parentContainer.resourceView.update('')
+		# self.parentContainer.resourceView.update('')
+		self.parentContainer.updateResourceView()
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
 		self.parentContainer.tabs.hide_tab('tree-tab-requests')
 		self.parentContainer.tabs.hide_tab('tree-tab-services')	
 		self.parentContainer.tabs.hide_tab('tree-tab-delete')
 		self.parentContainer.tabs.hide_tab('tree-tab-update')
+		self.parentContainer.tabs.hide_tab('tree-tab-create')
+
+
+	def _buildNodeChildren(self, node:TreeNode) -> None:
+		node.remove_children()
+		#self._app.notify(str([ x.id for x in node.children]))
+		# node._children = []	# no available method?
+		prevType = ''
+		for resource in self._retrieve_resource_children(node.data):
+			ty = resource[0].ty
+			if ty != prevType and not ResourceTypes.isVirtualResource(ty):
+				node.add(f'[{self._app.objectColor} b]{ResourceTypes.fullname(ty)}[/]', allow_expand = False)
+				prevType = ty
+			node.add(resource[0].rn, data = resource[0].ri, allow_expand = resource[1])
+	
 
 
 	def _retrieve_resource_children(self, ri:str) -> List[Tuple[Resource, bool]]:
@@ -180,83 +229,148 @@ class ACMEContainerTree(Container):
 
 	from ..textui import ACMETuiApp
 
-	def __init__(self, tuiApp:ACMETuiApp.ACMETuiApp, id:str) -> None:
+	def __init__(self, id:str) -> None:
+		"""	Initialize the view.
+		
+			Args:
+				id:	The view ID.
+		"""
 		super().__init__(id = id)
-		self.tuiApp = tuiApp
+
+		
 		self.currentResource:Resource = None
+
+		# Create some views and widgets beforehand
+		self._treeView = ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
+		self._treeTabs = TabbedContent(id = 'tree-tabs')
+
+		self._treeTabRequests = TabPane('Requests', id = 'tree-tab-requests')
+		self._treeTabServices = TabPane('Services', id = 'tree-tab-services')
+		self._treeTabCreate = TabPane('CREATE', id = 'tree-tab-create')
+		self._treeTabUpdate = TabPane('UPDATE', id = 'tree-tab-update')
+		self._treeTabDelete = TabPane('DELETE', id = 'tree-tab-delete')
+		self._treeTabDiagram = TabPane('Diagram', id = 'tree-tab-diagram')
+		self._treeTabDiagramView = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
+														id = 'tree-tab-diagram-view')
+
+		self._treeTabResourceServices = ACMEContainerResourceServices(id = 'tree-tab-resource-services')
+		self._treeTabResourceCreate = ACMEContainerCreate(id = 'tree-tab-resource-create')
+		self._treeTabResourceUpdate = ACMEContainerUpdate(id = 'tree-tab-resource-update')
+		self._treeTabResourceDelete = ACMEContainerDelete(id = 'tree-tab-resource-delete')
+		self._treeTabRequestsView = ACMEViewRequests(id = 'tree-tab-requests-view')
+		self._resourceViewContainer = Container(id = 'resource-view-container')
+		self._resourceView = Static(id = 'resource-view', expand = True)
+
 
 
 	def compose(self) -> ComposeResult:
 		with Container():
-			yield ACMEResourceTree(CSE.cseRn, data = CSE.cseRi, id = 'tree-view', parentContainer = self)
-			with TabbedContent(id = 'tree-tabs'):
+			yield self._treeView
+			with self._treeTabs:
 				with TabPane('Resource', id = 'tree-tab-resource'):
-					with Container(id = 'resource-view-container'):
-						yield (Static(id = 'resource-view', expand = True))
+					with self._resourceViewContainer:
+						yield self._resourceView
 
+				with self._treeTabRequests:
+					yield self._treeTabRequestsView
 
-				with TabPane('Requests', id = 'tree-tab-requests'):
-					yield ACMEViewRequests(id = 'tree-tab-requests-view')
+				with self._treeTabServices:
+					yield self._treeTabResourceServices
 
-				with TabPane('Services', id = 'tree-tab-services'):
-					yield ACMEContainerResourceServices(id = 'tree-tab-resource-services')
+				with self._treeTabCreate:
+					yield self._treeTabResourceCreate
 
+				with self._treeTabUpdate:
+					yield self._treeTabResourceUpdate
 
-				# with TabPane('CREATE', id = 'tree-tab-create', disabled = True):
-				# 	yield Markdown('## Send CREATE Request')
-				# 	yield Label('TODO')
-				# with TabPane('RETRIEVE', id = 'tree-tab-retrieve', disabled = True):
-				# 	yield Markdown('## Send RETRIEVE Request')
-				# 	yield Label('TODO')
-				# with TabPane('UPDATE', id = 'tree-tab-update', disabled = True):
-				# 	yield Markdown('## Send UPDATE Request')
-				# 	yield Label('TODO')
+				with self._treeTabDelete:
+					yield self._treeTabResourceDelete
 				
-				with TabPane('UPDATE', id = 'tree-tab-update'):
-					yield ACMEContainerUpdate(id = 'tree-tab-resource-update')
-
-				with TabPane('DELETE', id = 'tree-tab-delete'):
-					yield ACMEContainerDelete(id = 'tree-tab-resource-delete')
-				
-				with TabPane('Diagram', id = 'tree-tab-diagram'):
-					yield ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(), 
-											   tuiApp = self.tuiApp,
-											   id = 'tree-tab-diagram-view')
+				with self._treeTabDiagram:
+					yield self._treeTabDiagramView
 
 				
 	@property
 	def resourceContainer(self) -> Container:
-		return cast(Container, self.query_one('#resource-view-container'))
-
-
-	def on_mount(self) -> None:
-		self.update()
+		return self._resourceViewContainer
 
 
 	def on_show(self) -> None:
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
+		self.resourceTree.root.expand()
+		self.update()
 		self.resourceTree.focus()
 
 
+	def on_click(self, event:events.Click) -> None:
+		"""Handle Click events.
+
+			Args:
+				event: The Click event.
+		"""
+
+		# When clicking on the container of the resource view
+		if self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceContainer):
+			
+			# When clicking on the bottom border: Copy the structured or unstructured resource identifier
+			if event.y == _cnt.outer_size.height-1:
+				v = self.currentResource.getSrn()
+				ri = self.currentResource.ri
+				t = 'Structured Resource Identifier Copied'
+				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
+					v = ri
+					t = 'Resource Identifier Copied'
+				pyperclip.copy(v)
+				self._app.showNotification(v, t, 'information')
+
+			# When clicking on the top border: Copy the resource name or type
+			elif event.y == 0:
+				v = self.currentResource.rn
+				rt = ResourceTypes.fullname(self.currentResource.ty)
+				rt = _getResourceTypeAsString(self.currentResource)
+				t = 'Resource Name Copied'
+				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(rt):
+					v = rt
+					t = 'Resource Type Copied'
+				pyperclip.copy(v)
+				self._app.showNotification(v, t, 'information')
+
+		# When clicking on the resource view
+		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is self.resourceView:
+			pyperclip.copy(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
+			self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
+
+
 	def action_refresh_resources(self) -> None:
-		self.tuiApp.showNotification('Refreshing resources', 'info', 'information', 2)
+		self._app.showNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			
 	def update(self) -> None:
 		self.resourceTree._update_tree()
+	
+
+	def refreshCurrentNode(self) -> None:
+		self.resourceTree.refreshCurrentNode()
+
+	
+	def refreshCurrentParrentNode(self) -> None:
+		self.resourceTree.refreshCurrentParrentNode()
 
 
 	def updateResource(self, resource:Optional[Resource] = None) -> None:
 		# Store the resource for later
+
+
 		if resource:
 			self.currentResource = resource
 
+
 		# Add attribute explanations
-		if self.currentResource:
-			jsns = commentJson(self.currentResource.asDict(sort = True), 
-							explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-							getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None))	# type: ignore [attr-defined]
-			
+		if resource:
 			# Update the requests view
 			self._update_requests(self.currentResource.ri)
 
@@ -268,12 +382,18 @@ class ACMEContainerTree(Container):
 			self.updateView.updateResource(self.currentResource)
 			self.updateView.disabled = False
 
+			# Update the CREATE view
+			self.createView.updateResource(self.currentResource)
+			self.createView.disabled = False
+
 			# Update the services view
 			self.servicesView.updateResource(self.currentResource)
-			self.tabs.show_tab('tree-tab-services')
 
 			# Update Diagram view
 			try:
+
+				# Show some default tabs
+				self.tabs.show_tab('tree-tab-services')
 
 				match self.currentResource.ty:
 					case ResourceTypes.CSEBase:
@@ -311,36 +431,66 @@ class ACMEContainerTree(Container):
 						self.diagram.setData(values, dates)
 						self.diagram.plotGraph()
 						self.tabs.show_tab('tree-tab-diagram')
+						self.tabs.show_tab('tree-tab-create')
 						self.tabs.show_tab('tree-tab-delete')
 						self.tabs.show_tab('tree-tab-update')
 
 					case ResourceTypes.CIN | ResourceTypes.TSI | ResourceTypes.FCI:
 						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.show_tab('tree-tab-create')
+						self.tabs.hide_tab('tree-tab-update')
+						self.tabs.show_tab('tree-tab-delete')
+					
+					case ResourceTypes.CNT_LA | ResourceTypes.CNT_OL | ResourceTypes.FCNT_LA | ResourceTypes.FCNT_OL | ResourceTypes.TS_OL | ResourceTypes.TS_LA:
+						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.show_tab('tree-tab-create')
 						self.tabs.hide_tab('tree-tab-update')
 						self.tabs.show_tab('tree-tab-delete')
 
 					case _:
 						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.show_tab('tree-tab-create')
 						self.tabs.show_tab('tree-tab-update')
 						self.tabs.show_tab('tree-tab-delete')
 			except:
-				self.tabs.hide_tab('tree-tab-diagram')
-				self.tabs.show_tab('tree-tab-update')
-				self.tabs.show_tab('tree-tab-delete')
+				try:
+					self.tabs.hide_tab('tree-tab-diagram')
+					self.tabs.show_tab('tree-tab-update')
+					self.tabs.show_tab('tree-tab-delete')
+					self.tabs.show_tab('tree-tab-create')
+				except:
+					pass
 
 		else:
-			jsns = ''
 
-			# Disable the delete view
-			self.deleteView.disabled = True
+			# Disable the views
+			self.tabs.hide_tab('tree-tab-diagram') 
+			self.tabs.hide_tab('tree-tab-create')
+			self.tabs.hide_tab('tree-tab-update')
+			self.tabs.hide_tab('tree-tab-delete')
+			self.tabs.hide_tab('tree-tab-services')
 
 			# Update the requests view with an empty string
 			self._update_requests('')
 			
 		# Add syntax highlighting and add to the view
-		self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+		# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+		self.updateResourceView(commentJson(self.currentResource.asDict(sort = True), 
+								explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
+								getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
 
-		# TODO update the create, retrieve, update, delete views
+
+	def updateResourceView(self, value:Optional[str|Resource] = None, error:Optional[str] = None) -> None:
+		if value:
+			if isinstance(value, Resource):
+				value = commentJson(value.asDict(sort = True), 
+									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
+									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
+			self.resourceView.update(Syntax(value, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+		elif error:
+			self.resourceView.update(error)
+		else:
+			self.resourceView.update('')
 
 	
 	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
@@ -369,6 +519,9 @@ class ACMEContainerTree(Container):
 			self.requestView.currentRI = ri if ri else self.resourceTree.cursor_node.data
 			self.requestView.updateRequests()
 			self.requestView.requestList.focus()
+			# select the first request
+			if len(self.requestView.requestList) > 0:	
+				self.requestView.requestList.index = 0
 	
 
 	def setResourceHeader(self, header:str) -> None:
@@ -378,44 +531,59 @@ class ACMEContainerTree(Container):
 				header: The header to set.
 		"""
 		self.resourceContainer.border_title = header
+
+	
+	def setResourceSubtitle(self, subtitle:str) -> None:
+		"""	Set the subtitle of the resource view.
+		
+			Args:
+				subtitle: The subtitle to set.
+		"""
+		self.resourceContainer.border_subtitle = subtitle
 	
 
 	@property
 	def tabs(self) -> TabbedContent:
-		return cast(TabbedContent, self.query_one('#tree-tabs'))
+		return self._treeTabs
 
 
 	@property
 	def resourceTree(self) -> ACMEResourceTree:
-		return cast(ACMEResourceTree, self.query_one('#tree-view'))
+		return self._treeView
+
+
+	@property
+	def createView(self) -> ACMEContainerCreate:
+		return self._treeTabResourceCreate
 
 
 	@property
 	def deleteView(self) -> ACMEContainerDelete:
-		return cast(ACMEContainerDelete, self.query_one('#tree-tab-resource-delete'))
+		return self._treeTabResourceDelete
+
 
 	@property
 	def updateView(self) -> ACMEContainerUpdate:
-		return cast(ACMEContainerUpdate, self.query_one('#tree-tab-resource-update'))
+		return self._treeTabResourceUpdate
 
 	@property
 	def servicesView(self) -> ACMEContainerResourceServices:
-		return cast(ACMEContainerResourceServices, self.query_one('#tree-tab-resource-services'))
+		return self._treeTabResourceServices
 
 
 	@property
 	def requestView(self) -> ACMEViewRequests:
-		return cast(ACMEViewRequests, self.query_one('#tree-tab-requests-view'))
+		return self._treeTabRequestsView
 
 
 	@property
 	def resourceView(self) -> Static:
-		return cast(Static, self.query_one('#resource-view'))
+		return self._resourceView
 
 
 	@property
 	def diagram(self) -> ACMEContainerDiagram:
-		return cast(ACMEContainerDiagram, self.query_one('#tree-tab-diagram-view'))
+		return self._treeTabDiagramView
 
 	
 # TODO move the following to a more generic dialog module
@@ -449,3 +617,24 @@ class ACMEDialog(ModalScreen):
 			self.dismiss(True)
 		else:
 			self.dismiss(False)
+
+#
+# Helper functions
+#
+
+def _getResourceTypeAsString(resource:Resource) -> str:
+	"""	Return the resource type as a string.
+		If the resource is a flex container, the specialization is added.
+
+		Args:
+			resource: The resource to get the type for.
+
+		Returns:
+			The resource type as a string.
+	"""
+	if resource.ty == ResourceTypes.FCNT:
+		# Put the specialization in the header if it is a flex container
+		return f'{ResourceTypes.fullname(resource.ty)} - {resource.typeShortname.split(":")[0]}:{CSE.validator.getFlexContainerSpecialization(resource.typeShortname)[1]}'
+	else:
+		return ResourceTypes.fullname(resource.ty)
+

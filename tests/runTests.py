@@ -77,6 +77,7 @@ if __name__ == '__main__':
 	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
+	parser.add_argument('--local-notification-server', '-lns', action='store_true', dest='localNotificationServer', default=False, help='use a local notification server address')
 
 	
 	groupList = parser.add_mutually_exclusive_group()
@@ -140,6 +141,10 @@ if __name__ == '__main__':
 	init.testCaseNames	  	= args.testCaseName
 	init.excludedTestNames	= args.excludeTests
 	init.enableTearDown		= not args.disableTearDown
+	init.localNotificationServer = args.localNotificationServer
+
+	# Correct the notification server URL depending on the localNotificationServer flag
+	init.setNotificationServerURL()
 
 	# Run the tearDown functions of the test cases and then exit
 	if args.runTearDown:
@@ -210,12 +215,12 @@ if __name__ == '__main__':
 	table.add_column('Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]', justify='right')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]', justify='right')
 	table.add_column('Errors', footer=f'[red]{totalErrors}[/red]' if totalErrors > 0 else '[spring_green3]0[spring_green3]', justify='right')
-	table.add_column('Times\nExec | Sleep | Proc', footer=f'{totalExecTime:8.4f} | {totalSleepTime:6.2f} | {totalProcessTime:8.4f}', justify='center')
+	table.add_column('Times\nExec | Sleep | Proc', footer=f'{totalExecTime:8.4f} | {totalSleepTime:6.2f} | {totalProcessTime:8.5f}', justify='center')
 	# table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
 	# table.add_column('Sleep Time', footer=f'{totalSleepTime:.2f}' if totalRunTests != 0 else '0.0', justify='right')
 	# table.add_column('Proc Time', footer=f'{totalProcessTime:.4f}', justify='right')
-	table.add_column('Exec Time per\nTest | Request', footer=f'{totalExecTime/totalRunTests:7.4f} | {totalExecTime/init.requestCount:7.4f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
-	table.add_column('Proc Time per\nTest | Request', footer=f'{totalProcessTime/totalRunTests:7.4f} | {totalProcessTime/init.requestCount:7.4f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
+	table.add_column('Exec Time per\nTest | Request', footer=f'{totalExecTime/totalRunTests:8.5f} | {totalExecTime/init.requestCount:8.5f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
+	table.add_column('Proc Time per\nTest | Request', footer=f'{totalProcessTime/totalRunTests:8.5f} | {totalProcessTime/init.requestCount:8.5f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
 	table.add_column('Requests', footer=f'{init.requestCount}', justify='right')
 	# Styles
 	styleDisabled = Style(dim=True)
@@ -233,11 +238,11 @@ if __name__ == '__main__':
 						str(v[0]), 
 						f'[yellow]{v[4]}[/yellow]' if v[4] > 0 and v[0] > 0 else str(v[4]),
 						f'[red]{v[1]}[/red]' if v[1] > 0 and v[0] > 0 else str(v[1]),
-						f'{v[2]:8.4f} | {v[6]:6.2f} | {v[3]:8.4f}' if v[0] > 0 else f'{0:8.4f} | {0:6.2f} | {0:8.4f}', 
+						f'{v[2]:8.4f} | {v[6]:6.2f} | {v[3]:8.4f}' if v[0] > 0 else f'{0:8.4f} | {0:6.2f} | {0:8.5f}', 
 						# f'{v[6]:.2f}',
 						# f'{v[3]:.4f}' if v[0] > 0 else '',
-						f'{(v[2]/v[0]):7.4f} | {(v[2]/v[5]):7.4f}' if v[0] > 0 else f'{0:7.4f} | {0:7.4f}',
-						f'{(v[3]/v[0]):7.4f} | {(v[3]/v[5]):7.4f}' if v[0] > 0 else f'{0:7.4f} | {0:7.4f}',
+						f'{(v[2]/v[0]):8.5f} | {(v[2]/v[5]):8.5f}' if v[0] > 0 else f'{0:8.5f} | {0:8.5f}',
+						f'{(v[3]/v[0]):8.5f} | {(v[3]/v[5]):8.5f}' if v[0] > 0 else f'{0:8.6f} | {0:8.5f}',
 						f'{v[5]}',
 						style=style)
 	console.print(table)

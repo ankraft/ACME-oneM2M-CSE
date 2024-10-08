@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional, cast
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, JSONLIST
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
@@ -93,9 +93,9 @@ class CNT(ContainerResource):
 
 		# Set the limits for this container if enabled
 		# TODO optimize this
-		if Configuration.get('resource.cnt.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('resource.cnt.mni'), overwrite = False)
-			self.setAttribute('mbs', Configuration.get('resource.cnt.mbs'), overwrite = False)
+		if Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite = False)
+			self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite = False)
 
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')

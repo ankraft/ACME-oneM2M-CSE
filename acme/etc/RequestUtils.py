@@ -15,10 +15,16 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode, 
 from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
 from .Types import Result, ResourceTypes, Operation, CSERequest
+from ..etc.ResponseStatusCodes import BAD_REQUEST, UNSUPPORTED_MEDIA_TYPE
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 from ..helpers import TextTools
+from ..helpers.MultiDict import MultiDict
 from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.Types import ReqResp
+from ..etc.Constants import RuntimeConstants as RC
+from .IDUtils import uniqueRI
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
@@ -53,6 +59,8 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> Optional[JSON]:
 		return {}
 	match ct:
 		case ContentSerializationType.JSON:
+			if isinstance(data, str):
+				return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data)))	# String doesn't need to be decoded
 			return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
 		case ContentSerializationType.CBOR:
 			return cast(JSON, cbor2.loads(data))
@@ -71,14 +79,49 @@ def toHttpUrl(url:str) -> str:
 	"""
 	u = list(urlparse(url))
 	match u[2]:
-		case x if x.startswith('///'):
-			u[2] = f'/_{u[2][2:]}'
+		case x if '///' in x:
+			u[2] = x.replace('///', '/_/')	# replace /// with /_/, also in the middle of the path
 			url = urlunparse(u)
-		case x if x.startswith('//'):
-			u[2] = f'/~{u[2][1:]}'
+		case x if '//' in x:
+			u[2] = x.replace('//', '/~/')	# replace // with /~/, also in the middle of the path
 			url = urlunparse(u)
-
 	return url
+
+
+def fromHttpURL(path:str) -> str:
+	"""	Make the *path* a valid oneM2M ID (unescape /~/ and /_/) and return it.
+		This is valid of CoAP URL paths as well.
+
+		Args:
+			path: The path to convert.
+		
+		Return:
+			A valid ID with unescaped special characters.
+	"""
+	# resolve http's /~ and /_ special prefixs
+	match path[0]:
+		case '~':
+			return path[1:]			# ~/xxx -> /xxx
+		case '_':
+			return f'/{path[1:]}'	# _/xxx -> //xxx
+		case _:
+			return path
+	
+
+def toCoAPPath(path:str) -> str:
+	"""	Make the *path* a valid CoAP URL path (escape / and //) and return it.
+
+		Args:
+			path: The path to convert.
+
+		Return:
+			A valid CoAP URL path with escaped special characters for oneM2M IDs
+	"""
+	if path.startswith('//'):
+		return f'_{path[1:]}'	# //xxx -> _/xxx
+	if path.startswith('/'):
+		return f'~{path}'		# /xxx -> ~/xxx
+	return path
 
 
 def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> Optional[ContentSerializationType]:
@@ -134,6 +177,24 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 	return defaultSerialization
 
 
+def contentAsString(content:bytes|str|Any, ct:ContentSerializationType) -> str:
+	"""	Convert a content to a string. 
+		If the content is a string, it is returned as is.
+		If the content is a byte array, it is decoded to a string.
+		If the content is neither a string nor a byte array, it is converted to a hex string.
+
+		Args:
+			content: The content to convert.
+			ct: The content serialization type.
+		
+		Return:
+			The content as a string.
+	"""
+	if not content:	return ''
+	if isinstance(content, str): return content
+	return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
+
+
 def requestFromResult(inResult:Result, 
 					  originator:Optional[str] = None, 
 					  ty:Optional[ResourceTypes] = None, 
@@ -165,14 +226,14 @@ def requestFromResult(inResult:Result,
 	# TO and FROM are optional in a response. So, don't put them in by default.
 	if not isResponse or (isResponse and CSE.request.sendToFromInResponses):
 		if originator:
-			req['fr'] = CSE.cseCsi if isResponse else originator
+			req['fr'] = RC.cseCsi if isResponse else originator
 			req['to'] = inResult.request.id if inResult.request.id else originator
 		elif inResult.request and inResult.request.originator:
-			req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
+			req['fr'] = RC.cseCsi if isResponse else inResult.request.originator
 			req['to'] = inResult.request.originator if isResponse else inResult.request.id
 		else:
-			req['fr'] = CSE.cseCsi
-			req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
+			req['fr'] = RC.cseCsi
+			req['to'] = inResult.request.id if inResult.request.id else RC.cseCsi
 
 
 	# Originating Timestamp
@@ -244,12 +305,12 @@ def requestFromResult(inResult:Result,
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
+	
 	if pc:
-
 		# If the request has selected attributes, then the pc content must be filtered
 		if originalRequest and originalRequest.selectedAttributes:
-			_tpe = list(pc.keys())[0]
-			pc = { _tpe : filterAttributes(pc[_tpe], originalRequest.selectedAttributes) }
+			_typeShortname = list(pc.keys())[0]
+			pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
 
 
 		# if the request/result is actually an incoming request targeted to the receiver, then the
@@ -276,7 +337,8 @@ def requestFromResult(inResult:Result,
 
 
 def prepareResultForSending(inResult:Result, 
-					   		isResponse:Optional[bool] = False,) -> Tuple[Result, bytes]:
+					   		isResponse:Optional[bool] = False,
+							originalRequest:Optional[CSERequest] = None) -> Tuple[Result, bytes]:
 	"""	Prepare a new request for MQTT or WebSocket sending. 
 	
 		Attention:
@@ -286,11 +348,12 @@ def prepareResultForSending(inResult:Result,
 		Args:
 			inResult: A `Result` object, that contains a request in its *request* attribute.
 			isResponse: Indicator whether the `Result` object is actually a response or a request.
+			originalRequest: The original request that was received.
 
 		Return:
 			A tuple with an updated `Result` object and the serialized content.
 	"""
-	result = requestFromResult(inResult, isResponse = isResponse)
+	result = requestFromResult(inResult, isResponse = isResponse, originalRequest = originalRequest)
 	return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 
 
@@ -316,12 +379,10 @@ def createRawRequest(**kwargs:Any) -> JSON:
 		Return:
 			JSON dictionary with the request.
 	"""
-	from ..runtime import CSE 
-	from .ACMEUtils import uniqueRI	# Leave it here to avoid circular init
 
-	r = {	'fr': CSE.cseCsi,
+	r = {	'fr': RC.cseCsi,
 			'rqi': uniqueRI(),
-			'rvi': CSE.releaseVersion,
+			'rvi': RC.releaseVersion,
 		}
 	r.update(kwargs)
 	return r
@@ -348,9 +409,6 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 			A tuple with the `Result` object, the URL and the parsed URL.
 	"""
 
-	from ..runtime import CSE
-	from .ACMEUtils import uniqueRI
-
 	url = unquote(url)
 	u = urlparse(url)
 	req 					= Result(request = request)
@@ -358,10 +416,10 @@ def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str
 	req.resource			= req.request.pc
 	req.request.rqi			= uniqueRI()
 	if req.request.rvi != '1':
-		req.request.rvi		= req.request.rvi if req.request.rvi is not None else CSE.releaseVersion
+		req.request.rvi		= req.request.rvi if req.request.rvi is not None else RC.releaseVersion
 	req.request.ot			= getResourceDate()
 	req.rsc					= ResponseStatusCode.UNKNOWN								# explicitly remove the provided OK because we don't want have any
-	req.request.ct			= req.request.ct if req.request.ct else CSE.defaultSerialization 	# get the serialization
+	req.request.ct			= req.request.ct if req.request.ct else RC.defaultSerialization 	# get the serialization
 
 	return req, url, u
 
@@ -379,3 +437,153 @@ def filterAttributes(dct:JSON, attributesToInclude:list[str]) -> JSON:
 			 for k, v in dct.items() 
 			 if k in attributesToInclude }
 			 
+
+def removeNoneValuesFromDict(jsn:JSON, allowedNull:Optional[list[str]] = []) -> JSON:
+	"""	Remove Null/None-values from a dictionary, but ignore the ones specified in *allowedNull*.
+
+		Args:
+			jsn: JSON dictionary.
+			allowedNull: Optional list of attribute names to ignore.
+		Return:
+			Return a new dictionary with None-value attributes removed.
+	"""
+	if not isinstance(jsn, dict):
+		return jsn
+	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in jsn.items()) if value is not None or key in allowedNull }
+
+
+
+def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str] = None) -> CSERequest:
+	"""	Fill a request with arguments from a `MultiDict`. The `MultiDict` contains the arguments from a request.
+
+		Args:
+			arguments: The `MultiDict` with the arguments.
+			dct: The dictionary to fill.
+			cseRequest: The `CSERequest` object to fill.
+			sep: The separator for the attribute list.
+
+		Return:
+			The filled `CSERequest` object.
+	"""
+
+	# The Filter Criteria and attribute lists
+	filterCriteria:ReqResp = {}
+	attributeList:list[str] = []
+
+	for arg in list(arguments.keys()):
+		match arg:
+			# Actually, the following attributes are filterCriteria attributes, but are
+			# stored in the CSERequest object as request attributes
+			case 'rcn' | 'rp' | 'drt' | 'sqi':
+				dct[arg] = arguments.getOne(arg, greedy = True)
+
+			case 'rt':
+				if not (rt := cast(JSON, dct.get('rt'))):	# if not yet in the req
+					rt = {}
+				rt['rtv'] = arguments.getOne(arg, greedy = True)	# type: ignore [assignment]
+				dct['rt'] = rt
+
+			case 'atrl':
+				# the attribute list could appear multiple times in the query, or have multiple values separated by '+'
+				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+					attributeList.extend(_a.split(sep))
+				# If there is only one attribute, add it to the to field instead of the atrl in the CONTENT
+				if len(attributeList) == 1:
+					dct['to'] = f'{dct["to"]}#{attributeList[0]}'
+					attributeList = []
+
+			# Maxage
+			# TODO make this a propper request attribute later when accepted for the spec. Also for http
+			case 'ma':
+				cseRequest.ma = arguments.getOne(arg, greedy = True)
+
+			# Some filter criteria attributes are stored as lists, and can appear multiple times
+			# in the query. A single entry could also have multiple values separated by "+"
+			# The goal is to store them as a single list in the filterCriteria
+			case 'ty' | 'lbl' | 'cty':
+				filterCriteria[arg] = []
+				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+					filterCriteria[arg].extend(_a.split(sep))	# type: ignore [union-attr]
+				
+			# Extract further request arguments from the coaprequest
+			# add all the args to the filterCriteria
+			# Some args are lists, so keep them as lists from the multi-dict
+			case _:
+				filterCriteria[arg] = arguments.get(arg, flatten = True, greedy = True)
+
+	# Add the filterCriteria to the request
+	if len(filterCriteria) > 0:
+		dct['fc'] = filterCriteria
+
+	if attributeList:
+		dct['pc'] = { 'm2m:atrl': attributeList }
+		cseRequest.ct = RC.defaultSerialization
+	else:
+		# De-Serialize the content
+		pc = deserializeContent(cseRequest.originalData, cseRequest.ct) # may throw an exception
+		
+		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
+		dct = removeNoneValuesFromDict(dct)
+
+		# Add the primitive content and 
+		dct['pc'] = pc		# The actual content
+
+	cseRequest.originalRequest	= dct	# finally store the oneM2M request object in the cseRequest
+
+	return cseRequest
+
+
+def deserializeContent(data:bytes, contentType:ContentSerializationType) -> JSON:
+	"""	Deserialize a data structure.
+		Supported media serialization types are JSON and cbor.
+
+		Args:
+			data: The data to deserialize.
+			contentType: The content type of the data.
+		
+		Return:
+			The deserialized data structure.
+
+		Raises:
+			*UNSUPPORTED_MEDIA_TYPE* if the content type is not supported.
+			*BAD_REQUEST* if the data is malformed.
+	"""
+	dct = None
+	# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
+	if data:
+		try:
+			if (dct := deserializeData(data, contentType)) is None:
+				raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = None)
+		except UNSUPPORTED_MEDIA_TYPE as e:
+			raise
+		except Exception as e:
+			raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
+	
+	return dct
+
+
+def curlFromRequest(request:JSON) -> str:
+	"""	Create a cURL command from a request.
+	
+		Args:
+			request: The request to create the cURL command from.
+		
+		Return:
+			A cURL command.
+	"""
+	if not request:
+		return 'No request available'
+
+	curl = f"""\
+curl -X {[None, 'POST', 'GET', 'PUT', 'DELETE', 'POST' ][request['op']]} '{Configuration.http_address}{Configuration.http_root}/{request['to']}' \\
+  -H 'X-M2M-Origin: {request['fr']}' \\
+  -H 'X-M2M-RVI: {request['rvi']}' \\
+  -H 'X-M2M-RI: {request['rqi']}'"""
+	
+	if (ot := request.get('ot')):
+		curl += f" \\\n  -H 'X-M2M-OT: {ot}'"
+	if (pc := request.get('pc')):
+		curl += f" \\\n  -H 'Content-Type: {request['csz']}{';ty=' + str(request['ty']) if 'ty' in request else ''}'"
+		curl += f" \\\n  -d '{json.dumps(pc)}'"
+	
+	return curl

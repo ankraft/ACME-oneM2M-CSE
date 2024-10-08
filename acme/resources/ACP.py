@@ -9,15 +9,15 @@
 from __future__ import annotations
 from typing import List, Optional
 
-from ..helpers.TextTools import simpleMatch
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
+
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrRiTyMapping)
@@ -70,7 +70,7 @@ class ACP(AnnounceableResource):
 		# Inherited
 		super().validate(originator, dct, parentResource)
 		
-		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs')):
+		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.typeShortname()}/pvs')):
 			if len(pvs) == 0:
 				raise BAD_REQUEST('pvs must not be empty')
 		if not self.pvs:
@@ -121,8 +121,8 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		# Inherited
-		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.tpe()}/pvs/acr'):
-			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
+		if acr := findXPath(dct, f'{ResourceTypes.ACPAnnc.typeShortname()}/pvs/acr'):
+			acr.append( { 'acor': [ RC.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
 
@@ -176,3 +176,4 @@ class ACP(AnnounceableResource):
 				The resource type if found, or *None* otherwise.
 		"""
 		return self[Constants.attrRiTyMapping].get(ri)
+

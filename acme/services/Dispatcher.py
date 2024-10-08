@@ -29,11 +29,12 @@ from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BA
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import localResourceID, isSPRelative, isStructured, resourceModifiedAttributes, riFromID
-from ..etc.ACMEUtils import srnFromHybrid, uniqueRI, noNamespace, riFromStructuredPath, csiFromSPRelative, toSPRelative, structuredPathFromRI
+from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI
+from ..etc.IDUtils import localResourceID, isSPRelative, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
+from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Factory import resourceFromDict
@@ -52,9 +53,10 @@ class Dispatcher(object):
 	"""
 
 	__slots__ = (
-		'csiSlashLen',
+		'K',
 		'sortDiscoveryResources',
 
+		'_eventRetrieveResource',
 		'_eventCreateResource',
 		'_eventCreateChildResource',
 		'_eventUpdateResource',
@@ -65,9 +67,7 @@ class Dispatcher(object):
 	def __init__(self) -> None:
 		""" Initialize the Dispatcher. """
 
-		self.csiSlashLen 				= len(CSE.cseCsiSlash)
-		""" Length of the CSI with a slash. """
-		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
+		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
 
 		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
@@ -78,6 +78,8 @@ class Dispatcher(object):
 		""" Event handler for resource update events. """
 		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
 		""" Event handler for resource deletion events. """
+		self._eventRetrieveResource = CSE.event.retrieveResource		# type: ignore [attr-defined]
+		""" Event handler for resource retrieval events. """
 
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -122,13 +124,13 @@ class Dispatcher(object):
 				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 				INTERNAL_SERVER_ERROR: If an internal error occurred.
 		"""
-		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn}')
+		L.isDebug and L.logDebug(f'Process RETRIEVE request for id: {request.id}|{request.srn} Originator: {originator}')
 
 		# handle transit requests first
-		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
+		if localResourceID(request.id) is None and localResourceID(request.srn) is None:  # type: ignore[reportArgumentType]
 			return CSE.request.handleTransitRetrieveRequest(request)
 
-		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		srn, id = self._checkHybridID(request, id) 	# type: ignore[reportArgumentType] # overwrite id if another is given
 
 
 		# Check attributeList in Content
@@ -212,7 +214,8 @@ class Dispatcher(object):
 					 ResultContentType.attributesAndChildResources |\
 					 ResultContentType.childResources |\
 					 ResultContentType.attributesAndChildResourceReferences|\
-					 ResultContentType.originalResource:
+					 ResultContentType.originalResource|\
+					 ResultContentType.permissions:
 
 					resource = self.retrieveResource(id, originator, request)
 
@@ -287,7 +290,7 @@ class Dispatcher(object):
 
 		match rcn:
 			case ResultContentType.attributesAndChildResources:
-				self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
 				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case ResultContentType.attributesAndChildResourceReferences:
@@ -299,12 +302,17 @@ class Dispatcher(object):
 				return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
 
 			case ResultContentType.childResources:
-				childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
-				self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
+				childResources:JSON = { resource.typeShortname : {} } #  Root resource as a dict with no attribute
+				self.resourceTreeDict(allowedResources, childResources[resource.typeShortname]) # Adding just child resources
 				return Result(rsc = ResponseStatusCode.OK, resource = childResources)
 
 			case ResultContentType.discoveryResultReferences:
 				return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
+		
+			case ResultContentType.permissions:
+				# TODO
+				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
+				return Result(rsc = ResponseStatusCode.OK, resource = resource)
 		
 			case _:
 				raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')
@@ -327,8 +335,8 @@ class Dispatcher(object):
 				Result instance.
 		"""
 		if id:
-			if id.startswith(CSE.cseCsiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
-				id = id[self.csiSlashLen:]
+			if id.startswith(RC.cseCsiSlash) and len(id) > RC.cseCsiSlashLen:		# TODO for all operations?
+				id = id[RC.cseCsiSlashLen:]
 			else:
 				# Retrieve from remote
 				if isSPRelative(id):
@@ -368,11 +376,17 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
-			return CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
+			resource = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
 		elif srn:
-			return CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			resource = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			raise NOT_FOUND(f'resource: {ri}|{srn} not found')
+
+		# send a retrieve event
+		self._eventRetrieveResource(resource)
+
+		return resource
+
 
 		# EXPERIMENTAL remove this
 		# if resource := cast(Resource, result.resource):	# Resource found
@@ -626,7 +640,7 @@ class Dispatcher(object):
 	#
 
 	def processCreateRequest(self, request:CSERequest, 
-								   originator:str, 
+								   originator:Optional[str] = None, 
 								   id:Optional[str] = None) -> Result:
 		"""	Process a CREATE request. Create and register resource(s).
 
@@ -729,7 +743,7 @@ class Dispatcher(object):
 		#
 		# Handle RCN's
 		#
-		tpe = _resource.tpe
+		typeShortname = _resource.typeShortname
 
 		match request.rcn:
 			case None | ResultContentType.attributes:
@@ -737,9 +751,9 @@ class Dispatcher(object):
 				return Result(rsc = ResponseStatusCode.CREATED, resource = _resource)
 			
 			case ResultContentType.modifiedAttributes:
-				dictOrg = request.pc[tpe]
-				dictNew = _resource.asDict()[tpe]
-				return Result(resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, 
+				dictOrg = request.pc[typeShortname]
+				dictNew = _resource.asDict()[typeShortname]
+				return Result(resource = { typeShortname : resourceModifiedAttributes(dictOrg, dictNew, request.pc[typeShortname]) }, 
 							rsc = ResponseStatusCode.CREATED)
 
 			case ResultContentType.hierarchicalAddress:
@@ -747,13 +761,14 @@ class Dispatcher(object):
 							rsc = ResponseStatusCode.CREATED)
 		
 			case ResultContentType.hierarchicalAddressAttributes:
-				return Result(resource = { 'm2m:rce' : { noNamespace(tpe) : _resource.asDict()[tpe], 'uri' : _resource.structuredPath() }},
+				return Result(resource = { 'm2m:rce' : { noNamespace(typeShortname) : _resource.asDict()[typeShortname], 'uri' : _resource.structuredPath() }},
 					rsc = ResponseStatusCode.CREATED)
 		
 			case ResultContentType.nothing:
 				return Result(rsc = ResponseStatusCode.CREATED)
 			
 			case _:
+				# TODO Handle this error earlier
 				raise BAD_REQUEST('wrong rcn for CREATE')
 
 		# TODO C.rcnDiscoveryResultReferences 
@@ -800,7 +815,7 @@ class Dispatcher(object):
 			createdResource = self.createLocalResource(resource, parentResource, originator = originator)
 
 			resRi = createdResource.ri
-			resCsi = CSE.cseCsi
+			resCsi = RC.cseCsi
 		
 		# Create remotely
 		else:
@@ -890,10 +905,10 @@ class Dispatcher(object):
 		if parentResource:
 			try:
 				parentResource = parentResource.dbReload()		# Read the resource again in case it was updated in the DB
+				parentResource.childAdded(resource, originator)			# notify the parent resource
 			except:
 				self.deleteLocalResource(resource)
 				raise
-			parentResource.childAdded(resource, originator)			# notify the parent resource
 
 			# Send event for parent resource
 			self._eventCreateChildResource(parentResource)
@@ -983,7 +998,7 @@ class Dispatcher(object):
 		# Handle RCN's
 		#
 
-		tpe = resource.tpe
+		typeShortname = resource.typeShortname
 
 		match request.rcn:
 			case None | ResultContentType.attributes:
@@ -991,12 +1006,12 @@ class Dispatcher(object):
 
 			case ResultContentType.modifiedAttributes:
 				dictNew = deepcopy(resource.dict)
-				requestPC = request.pc[tpe]
+				requestPC = request.pc[typeShortname]
 				# return only the modified attributes. This does only include those attributes that are updated differently, or are
 				# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
 				#  are in the resource's __modified__ variable.
 				return Result(rsc = ResponseStatusCode.UPDATED,
-							  resource = { tpe : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
+							  resource = { typeShortname : resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Constants.attrModified]) })
 	
 			case ResultContentType.nothing:
 				return Result(rsc = ResponseStatusCode.UPDATED)
@@ -1172,8 +1187,8 @@ class Dispatcher(object):
 			case ResultContentType.childResources:
 				# direct child resources, NOT the root resource
 				children = self.discoverChildren(id, resource, originator, request.fc, Permission.DELETE)
-				childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
-				self.resourceTreeDict(children, childResources[resource.tpe])
+				childResources:JSON = { resource.typeShortname : {} }			# Root resource as a dict with no attributes
+				self.resourceTreeDict(children, childResources[resource.typeShortname])
 				resultContent = childResources
 
 			case ResultContentType.attributesAndChildResourceReferences:
@@ -1271,7 +1286,7 @@ class Dispatcher(object):
 			# Retrieve the resource
 			resource = self.retrieveLocalResource(rID, originator = originator)
 			
-			if id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
+			if id in [ RC.cseRi, RC.cseRn ]:
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 			# Check Permission
@@ -1399,7 +1414,7 @@ class Dispatcher(object):
 												   originator = originator,
 												   ot = getResourceDate(),
 												   rqi = uniqueRI(),
-												   rvi = CSE.releaseVersion,
+												   rvi = RC.releaseVersion,
 												   pc = content),
 										   originator)
 			return Result(rsc = ResponseStatusCode.OK)
@@ -1667,8 +1682,10 @@ class Dispatcher(object):
 			Raises:
 				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
 		"""
-		if CSE.cseActiveSchedule:
-			for s in CSE.cseActiveSchedule:
+		if CSE.time.cseActiveSchedule:
+			# Only check if the CSE has at least one schedule
+			# Otherwise the CSE is always active
+			for s in CSE.time.cseActiveSchedule:
 				if cronMatchesTimestamp(s):
 					return
 			# TODO not sure if this is the right error code
@@ -1684,21 +1701,21 @@ class Dispatcher(object):
 	def _resourcesToURIList(self, resources:list[Resource], drt:int) -> JSON:
 		"""	Create a m2m:uril structure from a list of resources.
 		"""
-		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
+		# cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
-			lst.append(r.structuredPath() if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
+			lst.append(r.structuredPath() if drt == DesiredIdentifierResultType.structured else RC.cseCsiSlash + r.ri)
 		return { 'm2m:uril' : lst }
 
 
-	def resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
+	def resourceTreeDict(self, resources:list[Resource], targetResource:JSON) -> list[Resource]:
 		"""	Recursively walk the results and build a sub-resource tree for each resource type.
 		"""
-		rri = targetResource['ri'] if 'ri' in targetResource else None
+		rri = targetResource.get('ri')
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None
-			handledTPE = None
+			handledTypeShortname = None
 			idx = 0
 			while idx < len(resources):
 				r = resources[idx]
@@ -1711,11 +1728,11 @@ class Dispatcher(object):
 					continue
 				if handledTy is None:					# ty is an int
 					handledTy = r.ty					# this round we check this type
-					handledTPE = r.tpe					# ... and this TPE (important to distinguish specializations in mgmtObj and fcnt )
-				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
+					handledTypeShortname = r.typeShortname					# ... and this typeShortname (important to distinguish specializations in mgmtObj and fcnt )
+				if r.ty == handledTy and r.typeShortname == handledTypeShortname:		# handle only resources of the currently handled type and typeShortname!
 					result.append(r)					# append the found resource 
 					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
-					resources = self.resourceTreeDict(resources, r)	# check recursively whether this resource has children
+					resources = self.resourceTreeDict(resources, r.dict)	# check recursively whether this resource has children
 				else:
 					idx += 1							# next resource
 
@@ -1725,7 +1742,7 @@ class Dispatcher(object):
 				if self.sortDiscoveryResources:
 					# result.sort(key=lambda x:(x.ty, x.rn.lower()))
 					result.sort(key = lambda x: (x.ty, x.ct) if ResourceTypes.isInstanceResource(x.ty) else (x.ty, x.rn.lower()))
-				targetResource[result[0].tpe] = [r.asDict(embedded = False) for r in result]
+				targetResource[result[0].typeShortname] = [r.asDict(embedded = False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
 			else:
 				break # end of list, leave while loop
@@ -1910,8 +1927,8 @@ class Dispatcher(object):
 	# 				raise BAD_REQUEST(L.logWarn(f'Undefined attribute: {a} in partial retrieve for resource type: {resource.ty}'))
 			
 	# 		# Filter the attribute(s)
-	# 		tpe = resource.tpe
-	# 		return Result(resource = { tpe : filterAttributes(resource.asDict()[tpe], attributeList) }, 
+	# 		typeShortname = resource.typeShortname
+	# 		return Result(resource = { typeShortname : filterAttributes(resource.asDict()[typeShortname], attributeList) }, 
 	# 					  rsc = ResponseStatusCode.OK)
 	# 	return Result(resource = resource, 
 	# 				  rsc = ResponseStatusCode.OK)

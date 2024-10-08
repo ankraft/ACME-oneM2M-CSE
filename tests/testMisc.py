@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 import isodate
-from acme.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T
+from acme.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T, ResponseType
 from acme.etc.DateUtils import getResourceDate
 from init import *
 
@@ -133,6 +133,7 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING in [ 'coap', 'coaps' ], 'Not for CoAP binding tests')
 	def test_createAlphaResourceType(self) -> None:
 		""" Create a resource with alphanumerical type -> Fail """
 		dct = 	{ 'foo:bar' : { 
@@ -284,7 +285,7 @@ class TestMisc(unittest.TestCase):
 	def test_partialRetrieveCSEBaseSingle(self) -> None:
 		""" Partial RETRIEVE of CSEBase with single attribute in atrl argument"""
 		r, rsc = RETRIEVE(f'{cseURL}?atrl=rn', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN, r)
 		self.assertIsNone(findXPath(r, 'm2m:cb/ri'), r)
 		
@@ -391,6 +392,87 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	#
+	#	No Response
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_noResponseRetrieve(self) -> None:
+		"""	RETRIEVE with no response """
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, cnt)
+
+		# RETRIEVE with single optional attribute
+		r, rsc = RETRIEVE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.NO_CONTENT, r)
+		self.assertEqual(len(r), 0, r)
+
+		testSleep(requestCheckDelay)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_noResponseCreate(self) -> None:
+		"""	CREATE with no response """
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		r, rsc = CREATE(f'{cseURL}?rt={int(ResponseType.noResponse)}', ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.NO_CONTENT, r)
+		self.assertEqual(len(r), 0, r)
+
+		testSleep(requestCheckDelay)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_noResponseUpdate(self) -> None:
+		"""	UPDATE with no response """
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct2 = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'lbl': [ 'test' ],
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.NO_CONTENT, r)
+		self.assertEqual(len(r), 0, r)
+
+		testSleep(requestCheckDelay)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_noResponseDelete(self) -> None:
+		"""	DELETE with no response """
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		testSleep(requestCheckDelay)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}?rt={int(ResponseType.noResponse)}', ORIGINATOR)
+		self.assertEqual(rsc, RC.NO_CONTENT, r)
+		self.assertEqual(len(r), 0, r)
+
 
 
 # TODO test for creating a resource with missing type parameter
@@ -434,6 +516,13 @@ def run(testFailFast:bool) -> TestResult:
 
 		# send NOTIFY requests
 		'test_notifyAE',
+
+		# No Response
+		'test_noResponseRetrieve',
+		'test_noResponseCreate',
+		'test_noResponseUpdate',
+		'test_noResponseDelete',
+
 	])
 	
 	# Run the tests

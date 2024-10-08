@@ -19,12 +19,28 @@ class ReadWriteLock(object):
     only one "write lock." """
 
     def __init__(self, withPromotion:Optional[bool] = False) -> None:
+        """ Initialize the ReadWriteLock object.
+		
+			Args:
+				withPromotion: If True, then a reader thread can promote itself to a writer thread.
+		"""
         self._read_ready = threading.Condition(threading.RLock())
+        """ Condition object to synchronize the read and write locks."""
+        
         self._readers = 0
+        """ Number of readers."""
+        
         self._writers = 0
+        """ Number of writers."""
+        
         self._promote = withPromotion
+        """ If True, then a reader thread can promote itself to a writer thread."""
+        
         self._readerList:list[int] = []  # List of Reader thread IDs
+        """ List of Reader thread IDs."""
+        
         self._writerList:list[int] = []  # List of Writer thread IDs
+        """ List of Writer thread IDs."""
 
     def acquire_read(self) -> None:
         """ Acquire a read lock. Blocks only if a thread has
@@ -86,7 +102,10 @@ class ReadRWLock(object):
     """
 
     def __init__(self, rwLock:ReadWriteLock) -> None:
+        """ Initialize the ReadRWLock object."""
+        
         self.rwLock = rwLock
+        """ ReadWriteLock object."""
 
     def __enter__(self) -> ReadRWLock:
         """ Context Manager method to enter the block.
@@ -101,7 +120,7 @@ class ReadRWLock(object):
         return self         # Not mandatory, but returning to be safe
 
 
-    def __exit__(self, exc_type, exc_value, traceback) -> bool:
+    def __exit__(self, exc_type, exc_value, traceback) -> bool:	# type: ignore[no-untyped-def]
         """ Context Manager method to exit the block.
 		
 			This releases a read lock.
@@ -119,13 +138,24 @@ class WriteRWLock(object):
     # Context Manager class for ReadWriteLock
 
     def __init__(self, rwLock:ReadWriteLock) -> None:
+        """ Initialize the WriteRWLock object."""
+        
         self.rwLock = rwLock
+        """ ReadWriteLock object."""
 
     def __enter__(self) -> WriteRWLock:
+        """ Context Manager method to enter the block.
+		
+			This acquires a write lock. Blocks until there are no
+			acquired read or write locks.
+			
+			Returns:
+				A WriteRWLock context manager object.
+		"""
         self.rwLock.acquire_write()
         return self         # Not mandatory, but returning to be safe
 
-    def __exit__(self, exc_type, exc_value, traceback) -> bool:
+    def __exit__(self, exc_type, exc_value, traceback) -> bool:		# type:ignore[no-untyped-def, exit-return]
         self.rwLock.release_write()
         return False        # Surpress any exceptions
 

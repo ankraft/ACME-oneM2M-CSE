@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-import pathlib, os
+import pathlib, os, time
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -13,8 +13,11 @@ directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
 print(directories)
 
 setup(
+	# name='acmecse-dev',
+	# version=f'2024.dev.{time.strftime("%Y%m%d%H%M%S")}',
+
 	name='acmecse',
-	version='2024.06.01',
+	version='2024.10',
 
 
 	author='Andreas Kraft',
@@ -31,6 +34,8 @@ setup(
 	},
 	include_package_data=True,
 	install_requires=[
+		'cachetools',
+		'coapthon3-acme-cse',
 		'cbor2',
 		'flask',
 		'flask-cors',
@@ -39,12 +44,13 @@ setup(
 		'paho-mqtt>=2.0.0',
 		'plotext',
 		'psycopg2-binary',
-		'python3-dtls',
+		'pyperclip',
+		#'python3-dtls',
 		'rdflib',
 		'requests', 
 		'rich', 
 		'shapely',
-		'textual',
+		# 'textual',
 		'textual[syntax]',
 		'textual-plotext',
 		'tinydb',

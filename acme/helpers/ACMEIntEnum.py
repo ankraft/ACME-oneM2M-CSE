@@ -101,7 +101,6 @@ class ACMEIntEnum(IntEnum):
 		return self.value
 
 
-
 	def __repr__(self) -> str:
 		"""	Stringify an enum.
 

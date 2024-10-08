@@ -21,14 +21,15 @@ from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result,
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
-from ..etc.ResponseStatusCodes import UNSUPPORTED_MEDIA_TYPE, OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
-from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeData
-from ..etc.ACMEUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
-from ..etc.ACMEUtils import compareIDs, localResourceID, getIDFromPath, getIdFromOriginator
+from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
+from ..etc.IDUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative, localResourceID, getIdFromOriginator
+from ..etc.ACMEUtils import compareIDs, getIDFromPath
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
-from ..etc.Utils import isAcmeUrl, isHttpUrl, isMQTTUrl, isWSUrl
+from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
@@ -75,6 +76,11 @@ class RequestManager(object):
 
 		'_eventRequestReceived',
 		'_eventRequestReceived',
+		'_eventCoAPSendRetrieve',
+		'_eventCoAPSendCreate',
+		'_eventCoAPSendUpdate',
+		'_eventCoAPSendDelete',
+		'_eventCoAPSendNotify',
 		'_eventHttpSendRetrieve',
 		'_eventHttpSendCreate',
 		'_eventHttpSendUpdate',
@@ -116,6 +122,11 @@ class RequestManager(object):
 
 		# Optimized access to events
 		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
+		self._eventCoAPSendRetrieve = CSE.event.coapSendRetrieve 	# type: ignore [attr-defined]
+		self._eventCoAPSendCreate = CSE.event.coapSendCreate		# type: ignore [attr-defined]
+		self._eventCoAPSendUpdate = CSE.event.coapSendUpdate		# type: ignore [attr-defined]
+		self._eventCoAPSendDelete = CSE.event.coapSendDelete		# type: ignore [attr-defined]
+		self._eventCoAPSendNotify = CSE.event.coapSendNotify		# type: ignore [attr-defined]
 		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
 		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
 		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
@@ -139,6 +150,7 @@ class RequestManager(object):
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
+												  self._eventCoAPSendRetrieve,
 												  self._eventHttpSendRetrieve,
 												  self._eventMqttSendRetrieve,
 												  self._eventWsSendRetrieve),
@@ -146,6 +158,7 @@ class RequestManager(object):
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
+												  self._eventCoAPSendRetrieve,
 												  self._eventHttpSendRetrieve,
 												  self._eventMqttSendRetrieve,
 												  self._eventWsSendRetrieve),
@@ -153,6 +166,7 @@ class RequestManager(object):
 			Operation.CREATE	: RequestCallback(self.createRequest,
 												  CSE.dispatcher.processCreateRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendCreate,
 												  self._eventHttpSendCreate,
 												  self._eventMqttSendCreate,
 												  self._eventWsSendCreate),
@@ -160,6 +174,7 @@ class RequestManager(object):
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
 												  CSE.dispatcher.processUpdateRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendUpdate,
 												  self._eventHttpSendUpdate,
 												  self._eventMqttSendUpdate,
 												  self._eventWsSendUpdate),
@@ -167,6 +182,7 @@ class RequestManager(object):
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
 												  CSE.dispatcher.processDeleteRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendDelete,
 												  self._eventHttpSendDelete,
 												  self._eventMqttSendDelete,
 												  self._eventWsSendDelete),
@@ -174,6 +190,7 @@ class RequestManager(object):
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
 												  CSE.dispatcher.processNotifyRequest,
 												  self._sendRequest,
+												  self._eventCoAPSendNotify,
 												  self._eventHttpSendNotify,
 												  self._eventMqttSendNotify,
 												  self._eventWsSendNotify),
@@ -208,11 +225,11 @@ class RequestManager(object):
 	def _assignConfig(self) -> None:
 		"""	Store relevant configuration values in the manager.
 		"""
-		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
-		self.requestExpirationDelta	= Configuration.get('cse.requestExpirationDelta')
-		self.maxExpirationDelta		= Configuration.get('cse.maxExpirationDelta')
-		self.sendToFromInResponses	= Configuration.get('cse.sendToFromInResponses')
-		self.enableRequestRecording	= Configuration.get('cse.operation.requests.enable')
+		self.flexBlockingBlocking = Configuration.cse_flexBlockingPreference == 'blocking'
+		self.requestExpirationDelta = Configuration.cse_requestExpirationDelta
+		self.maxExpirationDelta = Configuration.cse_maxExpirationDelta
+		self.sendToFromInResponses = Configuration.cse_sendToFromInResponses
+		self.enableRequestRecording	= Configuration.cse_operation_requests_enable
 
 
 	def configUpdate(self, name:str, 
@@ -225,7 +242,10 @@ class RequestManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta', 'cse.maxExpirationDelta', 'cse.operation.requests.enable']:
+		if key not in ( 'cse.flexBlockingPreference', 
+				 		'cse.requestExpirationDelta', 
+						'cse.maxExpirationDelta', 
+						'cse.operation.requests.enable'):
 			return
 
 		# Configuration values
@@ -331,13 +351,13 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processRetrieveRequest(request, request	.originator)
+					return CSE.dispatcher.processRetrieveRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -357,7 +377,7 @@ class RequestManager(object):
 			raise BAD_REQUEST('missing or wrong resourceType in request')
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processCreateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -379,12 +399,12 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't update the CSEBase
-		if request.id == CSE.cseRi:
+		if request.id == RC.cseRi:
 			raise OPERATION_NOT_ALLOWED('operation not allowed for CSEBase')
 
 		# Check contentType and resourceType
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
 				return CSE.dispatcher.processUpdateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -407,11 +427,11 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't delete the CSEBase
-		if request.id in [ CSE.cseRi, CSE.cseRi, CSE.cseRn ]:
+		if request.id in [ RC.cseRi, RC.cseRn ]:
 			raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
 				return CSE.dispatcher.processDeleteRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -434,7 +454,7 @@ class RequestManager(object):
 
 
 		match request.rt:
-			case ResponseType.blockingRequest:
+			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
@@ -525,7 +545,7 @@ class RequestManager(object):
 		# The result contains the request resource  (the one from the actual operation).
 		# So we can just copy the individual attributes
 		# originator = result.resource['ors/fr']
-		# originator = CSE.cseCsi
+		# originator = RC.cseCsi
 		to = req['ors/to']
 		responseNotification = {
 			'm2m:rsp' : {
@@ -551,7 +571,7 @@ class RequestManager(object):
 			nus = [ to ]
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = CSE.cseCsi)
+		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = RC.cseCsi)
 
 		return True
 
@@ -613,7 +633,7 @@ class RequestManager(object):
 			'rsc' : rsc,				# set response status code
 			'rqi' : reqres.rid,			# request ID
 			'to' : request.originator,	# request originator
-			'fr' : CSE.cseCsi,			# from: hosting CSE
+			'fr' : RC.cseCsi,			# from: hosting CSE
 			'ot' : reqres['mi/ot'],		# timestamp
 			'rset' : reqres.et,			# expiration timestamp
 		}
@@ -874,7 +894,7 @@ class RequestManager(object):
 				 				 ty = ty, 
 				 				 ot = getResourceDate(),
 				 				 rqi = uniqueRI(),
-				 				 rvi = rvi if rvi is not None else CSE.releaseVersion,
+				 				 rvi = rvi if rvi is not None else RC.releaseVersion,
 				 				 pc = content,
 								 # Copy additional parameter attributes
 								 ec = ec)
@@ -904,7 +924,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.rqi}')
 
 		try: 
-			response = self.waitForPollingRequest(request.originator, request.rqi, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)
+			response = self.waitForPollingRequest(request.originator, request.rqi, timeout=self.requestExpirationDelta, reqType=RequestType.RESPONSE)
 		except ResponseException:
 			raise
 	
@@ -1051,36 +1071,42 @@ class RequestManager(object):
 					continue
 
 			ct = request.ct
-			if not ct and not (ct := determineSerialization(url, csz, CSE.defaultSerialization)):
+			if not ct and not (ct := determineSerialization(url, csz, RC.defaultSerialization)):
 				L.isWarn and L.logWarn(f'Cannot determine content serialization for url: {url}')
 				continue		
 			_request.ct = ct
 
 			# Otherwise send it via one of the bindings
-			if isHttpUrl(url):
-				self.requestHandlers[_request.op].httpEvent()	# send event
-				results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
-				continue
+			match url:
+				case _ if isHttpUrl(url):
+					self.requestHandlers[_request.op].httpEvent()	# send event
+					results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
+					continue
+			
+				case _ if isMQTTUrl(url):
+					self.requestHandlers[_request.op].mqttEvent()	# send event
+					results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+					continue
 
-			elif isMQTTUrl(url):
-				self.requestHandlers[_request.op].mqttEvent()	# send event
-				results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
-				continue
+				case _ if isCoAPUrl(url):
+					self.requestHandlers[_request.op].coapEvent()	# send event
+					results.append( RequestResponse(_request, CSE.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+					continue
 
-			elif isWSUrl(url):
-				self.requestHandlers[_request.op].wsEvent()	# send event
-				try:
-					results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
-				except TARGET_NOT_REACHABLE as e:
-					L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
-				continue
+				case _ if isWSUrl(url):
+					self.requestHandlers[_request.op].wsEvent()	# send event
+					try:
+						results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
+					except TARGET_NOT_REACHABLE as e:
+						L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
+					continue
 
-			# Special handling for ACME internal events.
-			# This might be more generalize when other opeations are supported as well
-			elif isAcmeUrl(url) and request.op == Operation.NOTIFY:
-				self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
-				results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
-				continue
+				# Special handling for ACME internal events.
+				# This might be more generalize when other opeations are supported as well
+				case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
+					self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+					results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+					continue
 
 			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
 		
@@ -1093,34 +1119,6 @@ class RequestManager(object):
 	#
 	#	Various support methods
 	#
-
-	def deserializeContent(self, data:bytes, contentType:ContentSerializationType) -> JSON:
-		"""	Deserialize a data structure.
-			Supported media serialization types are JSON and cbor.
-
-			Args:
-				data: The data to deserialize.
-				contentType: The content type of the data.
-			
-			Return:
-				The deserialized data structure.
-
-			Raises:
-				*UNSUPPORTED_MEDIA_TYPE* if the content type is not supported.
-				*BAD_REQUEST* if the data is malformed.
-		"""
-		dct = None
-		# ct = ContentSerializationType.getType(contentType, default = CSE.defaultSerialization)
-		if data:
-			try:
-				if (dct := deserializeData(data, contentType)) is None:
-					raise UNSUPPORTED_MEDIA_TYPE(f'Unsupported media type for content-type: {contentType.name}', data = None)
-			except UNSUPPORTED_MEDIA_TYPE as e:
-				raise
-			except Exception as e:
-				raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
-		
-		return dct
 
 
 	def fillAndValidateCSERequest(self, cseRequest:Union[CSERequest, JSON], 
@@ -1221,10 +1219,10 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):
-				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'), 
+				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {RC.supportedReleaseVersions}.'), 
 													data = cseRequest)
 			else:
-				if rvi in CSE.supportedReleaseVersions:
+				if rvi in RC.supportedReleaseVersions:
 					cseRequest.rvi = rvi	
 				else:
 					raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release version unsupported: {rvi}'), data = cseRequest)
@@ -1295,12 +1293,12 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
-				if rvi not in CSE.supportedReleaseVersions:
+				if rvi not in RC.supportedReleaseVersions:
 					raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'release version unsupported: {rvi}'), data = cseRequest)
 				else:
 					cseRequest.rvi = rvi	
 			else:
-				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But release version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'))
+				raise RELEASE_VERSION_NOT_SUPPORTED(L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But release version \'1\' is not supported. Use RVI with one of {RC.supportedReleaseVersions}.'))
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
@@ -1476,7 +1474,7 @@ class RequestManager(object):
 
 		# De-Serialize the content
 		try:
-			cseRequest.originalRequest = self.deserializeContent(cseRequest.originalData, cseRequest.ct)
+			cseRequest.originalRequest = deserializeContent(cseRequest.originalData, cseRequest.ct)
 		except ResponseException as e:
 			# re-use the exception and raise it again
 			e.data = cseRequest
@@ -1564,7 +1562,7 @@ class RequestManager(object):
 		def getTargetReleaseVersion(srv:list) -> str:
 			if (srv := targetResource.srv):
 				return sorted(srv)[-1]	# return highest srv
-			return CSE.releaseVersion
+			return RC.releaseVersion
 				
 		originator = request.originator
 		uri = request.to
@@ -1575,7 +1573,7 @@ class RequestManager(object):
 			L.isDebug and L.logDebug(f'Direct URL: {uri}')
 			return [ (uri, 
 					  None, 
-					  CSE.releaseVersion, 
+					  RC.releaseVersion, 
 					  None, 
 					  originator, 
 					  uri, 
@@ -1618,10 +1616,9 @@ class RequestManager(object):
 		
 		# Checking permissions
 		permission = request.op.permission()
-		if not uri.startswith(CSE.cseCsiSlash):	# TODO make a utility out of this
-			if originator == CSE.cseCsi:
+		if not uri.startswith(RC.cseCsiSlash):	# TODO make a utility out of this
+			if originator == RC.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-			# TODO DELETEME elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
 			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission, request = request, resultResource = targetResource):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 				return []
@@ -1659,7 +1656,7 @@ class RequestManager(object):
 							   targetResource.csz, 
 							   getTargetReleaseVersion(targetResource.srv), 
 							   None,
-							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != CSE.cseCsi else originator,
+							   toSPRelative(originator) if targetResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.CSR ] and targetResource.csi != RC.cseCsi else originator,
 							   uri,
 							   targetResourceType,
 							   False))
@@ -1704,12 +1701,17 @@ class RequestManager(object):
 			rid = 'unknown'
 		
 		# Map the response
-		response =  { 'rsc': result.rsc,
-			   		  'rqi': request.rqi,
-					  'pc': pc,
-					  'dbg': result.dbg,
-					  'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
-					}
+		match request.rt:
+			case ResponseType.noResponse:
+				response = {}
+			case _:
+				# Blocking request, so we have a response
+				response =  { 'rsc': result.rsc,
+							'rqi': request.rqi,
+							'pc': pc,
+							'dbg': result.dbg,
+							'ot': result.request.ot if result.request and result.request.ot else getResourceDate(),
+							}
 		if request.rset:
 			response['rset'] = request.rset
 

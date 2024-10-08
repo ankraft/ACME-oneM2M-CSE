@@ -20,6 +20,7 @@ from psycopg2.extras import Json as PsyJson
 from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 
 from .DBBinding import DBBinding
+from ..etc.Constants import Constants as C
 from ..etc.Types import JSON, ResourceTypes
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from ..runtime.Logging import Logging as L
@@ -32,14 +33,31 @@ class PostgreSQLBinding(DBBinding):
 	"""
 	
 	tableActions = 'actions'
+	"""	The name of the table for actions. """
+
 	tableBatchNotifications = 'batchNotifications'
+	"""	The name of the table for batch notifications. """
+
 	tableChildResources = 'childResources'
+	"""	The name of the table for child resource mappings. """
+
 	tableIdentidiers = 'identifiers'
+	"""	The name of the table for identifier mappings. """
+
 	tableRequests = 'requests'
+	"""	The name of the table to store requests and responses. """
+
 	tableResources = 'resources'
+	"""	The name of the table for resources. """
+
 	tableSchedules = 'schedules'
+	"""	The name of the table for schedules. """
+
 	tableStatistics = 'statistics'
+	"""	The name of the table for statistic information. """
+
 	tableSubscriptions = 'subscriptions'
+	"""	The name of the table for subscription mappings. """
 
 
 	def __init__(self,	dbHost:str, 
@@ -92,13 +110,13 @@ class PostgreSQLBinding(DBBinding):
 
 	def closeDB(self) -> None:
 		if self.dbConnection is not None:
-			L.isDebug and L.logDebug('Closing database connection')
+			# L.isDebug and L.logDebug('Closing database connection')
 			self.dbConnection.close()
 			self.dbConnection = None
 
 
 	def purgeDB(self) -> None:
-		L.isDebug and L.logDebug('Purging database')
+		# L.isDebug and L.logDebug('Purging database')
 		with self.dbConnection.cursor() as cursor:
 			cursor.execute(f'''
 				TRUNCATE TABLE {self.tableActions};
@@ -114,7 +132,7 @@ class PostgreSQLBinding(DBBinding):
 	
 
 	def backupDB(self, dir:str) -> bool:
-		L.isDebug and L.logDebug(f'Database backup is not supported for PostgreSQL. Skipping.')
+		# L.isDebug and L.logDebug(f'Database backup is not supported for PostgreSQL. Skipping.')
 		return True
 
 
@@ -125,7 +143,7 @@ class PostgreSQLBinding(DBBinding):
 		"""	Create the necessary schema and tables if they do not exist.
 		"""
 
-		L.isDebug and L.logDebug('Creating database tables')
+		# L.isDebug and L.logDebug('Creating database tables')
 		
 		with self.dbConnection.cursor() as cursor:
 
@@ -229,7 +247,7 @@ class PostgreSQLBinding(DBBinding):
 			Note that prepared statements are only usable within the same connection.
 			Therefore, this method should be called after the connection is established.
 		"""
-		L.isDebug and L.logDebug('Preparing SQL statements')
+		# L.isDebug and L.logDebug('Preparing SQL statements')
 		with self.dbConnection.cursor() as cur:
 
 			# Prepare resource operations
@@ -435,7 +453,7 @@ class PostgreSQLBinding(DBBinding):
 		"""
 		if not self.dbConnection or self.dbConnection.closed:
 			try:
-				L.isDebug and L.logDebug('Reconnecting to database')
+				# L.isDebug and L.logDebug('Reconnecting to database')
 				self.dbConnection = connect(
 					database = self.dbDatabase,
 					user = self.dbUser,
@@ -445,7 +463,7 @@ class PostgreSQLBinding(DBBinding):
 					options = f'-c search_path={self.dbSchema}'	# schema path
 				)
 				self.dbConnection.autocommit = True
-				L.isDebug and L.logDebug(f'Reconnected to database: {self.dbConnection}')
+				# L.isDebug and L.logDebug(f'Reconnected to database: {self.dbConnection}')
 			except Error:
 				L.logErr(f'Error reconnecting to postgreSQL database at {self.dbHost}:{self.dbPort} as "{self.dbUser}" with database "{self.dbDatabase}"')
 				raise
@@ -542,11 +560,27 @@ class PostgreSQLBinding(DBBinding):
 
 	def updateResource(self, resource:JSON, ri:str) -> JSON:
 		# L.isDebug and L.logDebug(f'Updating resource {ri} in database: {resource}')
+
+		# First save complex attributes that may contain attributes with NULL values themselves 
+		# that must be preserved.
+		# The prepared statement calls jsonb_strip_nulls to remove NULL values from the resource
+		# and this removes NULL values in complex attributes as well, which is not what we want.
+		_savedAttributes = { a: resource[a] for a in (C.attrModified,) if a in resource }
+		L.isDebug and L.logDebug(f'Saving attributes: {_savedAttributes}')
+
 		# Update first
 		self._executePrepared('updateResource (%s, %s)', (PsyJson(resource), ri))
+	
 		# Get the updated resource
-		return self._executePrepared('getResourceByRI (%s)', (ri,), 
-									 lambda c: self._fetchSingleRow(c, False))
+		result = self._executePrepared('getResourceByRI (%s)', (ri,), 
+									   lambda c: self._fetchSingleRow(c, False))
+		
+		# Restore the saved attributes
+		for k, v in _savedAttributes.items():
+			result[k] = v
+
+		# Finally return the updated resource
+		return result
 	
 
 	def deleteResource(self, ri:str) -> None:
@@ -774,7 +808,7 @@ class PostgreSQLBinding(DBBinding):
 
 
 	def purgeStatistics(self) -> None:
-		# L.isDebug and L.logDebug('Purging statistics')
+		L.isDebug and L.logDebug('Purging statistics')
 		self._executePrepared('deleteStatistics', ())
 
 	#

@@ -24,11 +24,13 @@ from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence
 
 import os
+from configparser import ConfigParser
+
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
-from .Configuration import Configuration
-from ..runtime import CSE
+from ..etc.Constants import RuntimeConstants as RC
+from .Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
@@ -72,7 +74,6 @@ class Storage(object):
 
 	__slots__ = (
 		'db',
-		'maxRequests',
 	)
 	""" Define slots for instance variables. """
 
@@ -83,9 +84,6 @@ class Storage(object):
 				RuntimeError: In case of an error during initialization.
 		"""
 
-		self.maxRequests = Configuration.get('cse.operation.requests.size') 
-		""" Maximum number of requests to store. """	
-
 		self.db:DBBinding = None
 		""" The database object. """
 	
@@ -94,31 +92,31 @@ class Storage(object):
 
 		# Create the database object and connect to the database
 		try:
-			match Configuration.get('database.type'):
+			match Configuration.database_type:
 				case 'tinydb':
 					# create tinyDB object and open DB for file handling
-					self.db = TinyDBBinding(Configuration.get('database.tinydb.path'), 
-											CSE.cseCsi[1:], # add CSE CSI as postfix
-											Configuration.get('database.tinydb.cacheSize'),
-											Configuration.get('database.tinydb.writeDelay')
+					self.db = TinyDBBinding(Configuration.database_tinydb_path, 		
+											RC.cseCsi[1:], # add CSE CSI as postfix
+											Configuration.database_tinydb_cacheSize,
+											Configuration.database_tinydb_writeDelay
 										) 
 				case 'memory':
 					# create tinyDB object and open DB for in-memory handling
 					self.db = TinyDBBinding(None,
-											CSE.cseCsi[1:], # add CSE CSI as postfix
-											Configuration.get('database.tinydb.cacheSize'),
-											Configuration.get('database.tinydb.writeDelay')
+											RC.cseCsi[1:], # add CSE CSI as postfix
+											Configuration.database_tinydb_cacheSize,
+											Configuration.database_tinydb_writeDelay
 										)
 				case 'postgresql':
 					# create PostgreSQL object and connect to the DB
 					if _disablePostgreSQL:
 						raise RuntimeError('Configuration conflict: Use of PostgreSQL is disabled in the environment, but enabled in the configuration.')
-					self.db = PostgreSQLBinding(Configuration.get('database.postgresql.host'),
-												Configuration.get('database.postgresql.port'),
-												Configuration.get('database.postgresql.role'),
-												Configuration.get('database.postgresql.password'),
-												Configuration.get('database.postgresql.database'),
-												Configuration.get('database.postgresql.schema')
+					self.db = PostgreSQLBinding(Configuration.database_postgresql_host,	
+												Configuration.database_postgresql_port,	
+												Configuration.database_postgresql_role,	
+												Configuration.database_postgresql_password,
+												Configuration.database_postgresql_database,
+												Configuration.database_postgresql_schema
 											)
 				case _:
 					L.logErr('Unknown database type')
@@ -126,7 +124,7 @@ class Storage(object):
 		except Exception as e:
 			raise INTERNAL_SERVER_ERROR(f'Database error: {e}')
 
-		dbReset = Configuration.get('database.resetOnStartup') # Indicator that the database should be reset or cleared during start-up. """
+		dbReset = Configuration.database_resetOnStartup # Indicator that the database should be reset or cleared during start-up. """
 		
 
 		# Reset dbs?
@@ -213,7 +211,7 @@ class Storage(object):
 			Return:
 				Boolean indicating the success of the backup operation.
 		"""
-		return self.db.backupDB(Configuration.get('database.backupPath'))
+		return self.db.backupDB(Configuration.database_backupPath)
 		
 
 	#########################################################################
@@ -375,9 +373,14 @@ class Storage(object):
 			Return:
 				Updated Resource object.
 		"""
-		ri = resource.ri
+		# ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
-		resource.dict = self.db.updateResource(resource.dict, ri)
+		# L.logDebug(str(resource.dict))
+		try:
+			resource.dict = self.db.updateResource(resource.dict, resource.ri)
+		except KeyError:
+			raise NOT_FOUND(L.logDebug(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
+		# L.logDebug(str(resource.dict))
 		return resource
 
 
@@ -735,7 +738,7 @@ class Storage(object):
 		
 			Args:
 				action: The action to update or insert.
-				period: The period for the action.
+				periodTS: The period for the action.
 				count: The run count for the action.
 
 			Return:
@@ -812,8 +815,8 @@ class Storage(object):
 			"""
 		# return self.db.insertRequest(op, ri, srn, originator, outgoing, ot, request, response)
 
-		# Remove old requests first
-		self.db.removeOldRequests(self.maxRequests)
+		# Remove old requests first up to the maximum number of requests
+		self.db.removeOldRequests(Configuration.cse_operation_requests_size)
 
 		# Store the request
 		_ts = utcTime()
@@ -822,7 +825,7 @@ class Storage(object):
 				  'ts': _ts,
 				  'org': originator,
 				  'op': op,
-				  'rsc': response['rsc'] if 'rsc' in response else ResponseStatusCode.UNKNOWN,
+				  'rsc': response.get('rsc', ResponseStatusCode.UNKNOWN),
 				  'out': outgoing,
 				  'ot': ot,
 				  'req': { k: v for k, v in request.items() if v is not None }, # Remove None values
@@ -912,11 +915,4 @@ class Storage(object):
 				Boolean value to indicate success or failure.
 		"""
 		return self.db.removeSchedule(schedule.ri)
-
-#########################################################################
-#
-#	DB class that implements the TinyDB binding
-#
-#	This class may be moved later to an own module.
-
 

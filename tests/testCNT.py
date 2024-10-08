@@ -277,8 +277,8 @@ class TestCNT(unittest.TestCase):
 		self.assertNotEqual(rsc, RC.CREATED)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTwithWrongTPE(self) -> None:
-		"""	Create <CNT> with wrong TPE -> Fail"""
+	def test_createCNTwithWrongTypeShortname(self) -> None:
+		"""	Create <CNT> with wrong typeShortname -> Fail"""
 		dct = 	{ 'wrong' : { 
 					'rn' : cntRN
 				}}
@@ -315,7 +315,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_deleteCNTUnderCSE',
 
 		'test_createCNTWithoutOriginator',
-		'test_createCNTwithWrongTPE',
+		'test_createCNTwithWrongTypeShortname',
 	
 	])
 

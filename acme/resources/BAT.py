@@ -63,5 +63,12 @@ class BAT(MgmtObj):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
+		""" Create a new Battery object. 
+
+			Args:
+				dct: The resource dictionary.
+				pi: The parent resource ID.
+				create: Indicates creation of the resource. Defaults to False.
+		"""
 		super().__init__(dct, pi, mgd = ResourceTypes.BAT, create = create)
 

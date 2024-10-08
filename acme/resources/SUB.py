@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from copy import deepcopy
+
 from ..etc.ACMEUtils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes, NotificationContentType
@@ -92,7 +93,7 @@ class SUB(Resource):
 
 		# set batchNotify default attributes
 		if self.bn:		
-			self.setAttribute('bn/dur', Configuration.get('resource.sub.batchNotifyDuration'), overwrite = False)
+			self.setAttribute('bn/dur', Configuration.resource_sub_batchNotifyDuration, overwrite = False)
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
@@ -137,7 +138,7 @@ class SUB(Resource):
 		# (where this happens) is done only after a lot of other stuff hapened.
 		# So, the resource is validated twice in an update :()
 		CSE.validator.validateAttributes(dct, 
-										 self.tpe, 
+										 self.typeShortname, 
 										 self.ty, 
 										 self._attributes, 
 										 create = False, 
@@ -355,3 +356,4 @@ class SUB(Resource):
 	
 			"""
 		return len(set(dct.keys()).difference(self._allowedENCAttributes)) > 0
+	

@@ -8,6 +8,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [2024.10] - 2024-10-07
+
+### Added
+- [CSE] Added support for the CoAP protocol binding.
+- [CSE] Added support to read command line arguments from a file.
+- [TUI] Added display of cURL commands for resource requests for UPDATE and DELETE operations.
+- [TUI] Added support for sending CREATE and UPDATE requests in the text UI.
+- [TUI] Added copy of CSV data to the clipboard for instance resources.
+- [TUI] Added copy of resource & resource names/IDs/types to the clipboard for the resource and request views.
+- [TUI] Added configuration to set the default timeout for notifications in the text UI.
+- [TESTS] Added support for an additional root path for the test cases when using HTTP requests.
+
+### Experimental
+- [CSE] Added statistics event for local resource retrieval. If this impacts performance too much, it may be removed again.
+- [CSE] Added support for new "no response" Response Type behavior for blocking requests. This is experimental and may be removed again.
+
+### Changed
+- [CSE] Internal refactoring of the configuration handling. The main configuration handling is still done in the old module, but the assignments and validations are now done in the using modules. Configuration settings are now stored in attributes, not a central dictionary anymore.
+- [CSE] Internal refactoring the runtime constants, e.g. CSE ID, CSE Name, etc. These are now handled by a runtime constante class.
+
+### Fixed
+- [CSE] Fixed crash when the environment variables contain "$" characters.
+- [DATABASE] Fixed wrong removal of null-attributes in complex attributes for the PostgreSQL database binding.
+- [WEB] Fixed the web UI when the CSE's http server is not running directly under the root path.
+
 
 ## [2024.06.01] - 2024-06-28
 
@@ -62,7 +87,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed wrong examples and onboarding defaults for the registration configuration *[cse.registration].allowedCSROriginators* .
-- [database] Improved the reconnect handling for the PostgreSQL database in case of a lost connection.
+- [DATABASE] Improved the reconnect handling for the PostgreSQL database in case of a lost connection.
 
 
 

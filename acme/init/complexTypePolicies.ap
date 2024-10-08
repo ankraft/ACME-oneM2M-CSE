@@ -34,7 +34,7 @@
 	"chty": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "accessControlObjectDetails",
+			"ctype": "m2m:accessControlObjectDetails",
 			"lname": "childResourceType",
 			"ns": "m2m",
 			"type": "list",
@@ -668,7 +668,7 @@
 	"ty": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "accessControlObjectDetails",
+			"ctype": "m2m:accessControlObjectDetails",
 			"lname": "resourceType",
 			"ns": "m2m",
 			"type": "enum", 
@@ -877,7 +877,7 @@
 	"spty": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "accessControlObjectDetails",
+			"ctype": "m2m:accessControlObjectDetails",
 			"lname": "specializationType",
 			"ns": "m2m",
 			"type": "m2m:specializationType", 
@@ -939,7 +939,7 @@
 			"lname": "accessControlObjectDetails",
 			"ns": "m2m",
 			"type": "list", 
-			"ltype": "accessControlObjectDetails",
+			"ltype": "m2m:accessControlObjectDetails",
 			"car": "01L"
 		}
 	],

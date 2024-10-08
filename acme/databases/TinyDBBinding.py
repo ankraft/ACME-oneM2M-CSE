@@ -759,3 +759,6 @@ class TinyDBBinding(DBBinding):
 	def removeSchedule(self, ri:str) -> bool:
 		with self.lockSchedules:
 			return len(self.tabSchedules.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
+		
+
+

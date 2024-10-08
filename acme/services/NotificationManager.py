@@ -26,6 +26,7 @@ from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOU
 from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
 from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
 from ..etc.Utils import isAcmeUrl
+from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath, findXPath
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
@@ -52,9 +53,6 @@ class NotificationManager(object):
 		'lockBatchNotification',
 		'lockNotificationEventStats',
 
-		'asyncSubscriptionNotifications',
-		'enableSubscriptionVerificationRequests',
-
 		'_eventNotification',
 	)
 
@@ -62,12 +60,6 @@ class NotificationManager(object):
 	def __init__(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
 		"""
-
-		# Get the configuration settings
-		self._assignConfig()
-
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
 		self.lockBatchNotification = Lock()					# Lock for batchNotifications
 		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
@@ -107,29 +99,6 @@ class NotificationManager(object):
 			worker.start(**worker.args)
 
 		L.isDebug and L.logDebug('NotificationManager restarted')
-
-
-	def _assignConfig(self) -> None:
-		"""	Assign configuration settings.
-		"""
-		self.asyncSubscriptionNotifications	= Configuration.get('cse.asyncSubscriptionNotifications')
-		self.enableSubscriptionVerificationRequests	= Configuration.get('cse.enableSubscriptionVerificationRequests')
-
-
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
-		"""	Handle configuration updates.
-
-			Args:
-				name: The name of the event.
-				key: The configuration key that has changed.
-				value: The new value of the configuration key.
-		"""
-		if key not in ( 'cse.asyncSubscriptionNotifications', 'cse.enableSubscriptionVerificationRequests' ):
-			return
-		self._assignConfig()
-
 
 	###########################################################################
 	#
@@ -354,7 +323,7 @@ class NotificationManager(object):
 														 reason, 
 														 resource = childResource, 
 														 modifiedAttributes = modifiedAttributes, 
-														 asynchronous = self.asyncSubscriptionNotifications,
+														 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 														 operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 			
@@ -369,7 +338,7 @@ class NotificationManager(object):
 															 reason, 
 															 resource = resource, 
 															 modifiedAttributes = modifiedAttributes,
-															 asynchronous = self.asyncSubscriptionNotifications,
+															 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 					else:
@@ -382,7 +351,7 @@ class NotificationManager(object):
 						self._handleSubscriptionNotification(sub, 
 															 NotificationEventType.reportOnGeneratedMissingDataPoints, 
 															 missingData = copy.deepcopy(md),
-															 asynchronous = self.asyncSubscriptionNotifications,
+															 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 															 operationMonitor = foundOperationMonitor)
 						self.countNotificationEvents(ri)
 						md.clearMissingDataList()
@@ -405,7 +374,7 @@ class NotificationManager(object):
 														reason, 
 														resource, 
 														modifiedAttributes = modifiedAttributes,
-														asynchronous = self.asyncSubscriptionNotifications,
+														asynchronous = Configuration.cse_asyncSubscriptionNotifications,
 														operationMonitor = foundOperationMonitor)
 					self.countNotificationEvents(ri)
 
@@ -696,7 +665,7 @@ class NotificationManager(object):
 			}
 			self.sendNotificationWithDict(dct, 
 										  crs.nu, 
-										  originator = CSE.cseCsi,
+										  originator = RC.cseCsi,
 										  background = True,
 										  preFunc = lambda target: self.countSentReceivedNotification(crs, target),
 										  postFunc = lambda target: self.countSentReceivedNotification(crs, target, isResponse = True)
@@ -1093,7 +1062,7 @@ class NotificationManager(object):
 		"""
 
 		# Skip verification requests if disabled
-		if not self.enableSubscriptionVerificationRequests:
+		if not Configuration.cse_enableSubscriptionVerificationRequests:
 			L.isDebug and L.logDebug('Skipping verification request (disabled)')
 			return True
 
@@ -1116,7 +1085,7 @@ class NotificationManager(object):
 			try:
 				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 															   to = uri, 
-															   originator = CSE.cseCsi,
+															   originator = RC.cseCsi,
 															   pc = verificationRequest)
 												   )[0].result	# there should be at least one result
 			except ResponseException as e:
@@ -1153,7 +1122,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = uri, 
-														 originator = CSE.cseCsi,
+														 originator = RC.cseCsi,
 											  			 pc = deletionNotification))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {e.dbg}')
@@ -1181,7 +1150,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = uri, 
-											  			 originator = CSE.cseCsi,
+											  			 originator = RC.cseCsi,
 											  			 pc = notificationRequest))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
@@ -1197,7 +1166,7 @@ class NotificationManager(object):
 			notificationRequest:JSON = {
 				'm2m:sgn' : {
 					'nev' : {
-						'net' : NotificationEventType.resourceUpdate
+						'net' : NotificationEventType.resourceUpdate.value
 					},
 					'sur' : toSPRelative(sub['ri'])
 				}
@@ -1218,7 +1187,7 @@ class NotificationManager(object):
 				case NotificationContentType.ri:
 					data = { 'm2m:uri' : resource.ri }
 				case NotificationContentType.modifiedAttributes:
-					data = { resource.tpe : modifiedAttributes }
+					data = { resource.typeShortname : modifiedAttributes }
 				case NotificationContentType.timeSeriesNotification:
 					data = { 'm2m:tsn' : missingData.asDict() }
 				# TODO
@@ -1229,7 +1198,7 @@ class NotificationManager(object):
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some attributes to the notification
-			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
+			notificationEventType is not None and setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType.value)
 			data is not None and setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
 			operationMonitor is not None and setXPath(notificationRequest, 'm2m:sgn/nev/om', operationMonitor)
 			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
@@ -1257,7 +1226,7 @@ class NotificationManager(object):
 					return _sendNotification(uri, subscription, notificationRequest)
 
 				# if not CSE.request.sendNotifyRequest(uri, 
-				# 									 originator = CSE.cseCsi,
+				# 									 originator = RC.cseCsi,
 				# 									 content = notificationRequest).status:
 				# 	L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 				# 	return False
@@ -1325,7 +1294,7 @@ class NotificationManager(object):
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
 		if sub := CSE.storage.getSubscription(ri):
-			ln = sub['ln'] if 'ln' in sub else False
+			ln = sub.get('ln', False)
 			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
 				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln, sub)	# Send all remaining notifications
@@ -1346,7 +1315,7 @@ class NotificationManager(object):
 		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
-		ln = sub['ln'] if 'ln' in sub else False
+		ln = sub.get('ln', False)
 		if (num := findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
@@ -1423,7 +1392,7 @@ class NotificationManager(object):
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = nu, 
-														 originator = CSE.cseCsi,
+														 originator = RC.cseCsi,
 														 pc = notificationRequest,
 														 ec = ec))
 			except ResponseException as e:

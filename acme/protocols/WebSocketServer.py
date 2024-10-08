@@ -1,4 +1,4 @@
- #
+#
 #	WebSocketServer.py
 #
 #	(c) 2023 by Andreas Kraft
@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Optional, Any, Tuple
-import logging, uuid
+import logging, uuid, os
 
 from websockets.sync.connection import Connection as WSConnection
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
@@ -18,28 +18,24 @@ from websockets.protocol import State
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from ..etc.Constants import Constants
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
-from ..etc.ACMEUtils import uniqueID, csiFromSPRelative
+from ..etc.IDUtils import uniqueID, csiFromSPRelative
 from ..etc.Utils import renameThread
-from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType
+from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
+from ..etc.Constants import RuntimeConstants as RC
 
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""
 
 	__slots__ = [ 
-		'enable', 
-		'interface',
-		'port', 
-		'logLevel',
-		'requestTimeout',
 		'isPaused', 
 		'websocketServer', 
 		'wsConnections', 
@@ -54,9 +50,6 @@ class WebSocketServer(object):
 	def __init__(self) -> None:
 		"""	Initialization of the WebSocket Server.
 		"""
-
-		# Get the configuration settings
-		self._assignConfig()
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
@@ -78,6 +71,10 @@ class WebSocketServer(object):
 
 		self.connectionUsedCounter:dict[uuid.UUID, ThreadSafeCounter] = {}	# websocket.id -> counter
 		"""	A counter for each opened WS connection opened by the CSE. """
+
+		self.actor:Optional[BackgroundWorker] = None
+		"""	The actor for running the WebSocket server. """
+
 
 		self.operationEvents = {
 			Operation.CREATE:		[CSE.event.wsCreate, 'WS_C'],		# type: ignore [attr-defined]
@@ -106,25 +103,6 @@ class WebSocketServer(object):
 		return True
 
 
-	def _assignConfig(self) -> None:
-		"""	Store relevant configuration values in the manager.
-		"""
-		self.enable = Configuration.get('websocket.enable')
-		"""	Flag whether the WebSocket server is enabled. """
-
-		self.port = Configuration.get('websocket.port')
-		"""	The port the WebSocket server is listening on."""
-
-		self.interface = Configuration.get('websocket.listenIF')
-		"""	The interface the WebSocket server is listening on."""
-
-		self.logLevel = Configuration.get('websocket.loglevel')
-		"""	The log level for the WebSocket server."""
-
-		self.requestTimeout = Configuration.get('websocket.timeout')
-		"""	The timeout for requests."""
-
-
 	def _configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
@@ -143,8 +121,7 @@ class WebSocketServer(object):
 					  ]:
 			return
 
-		# assign new values
-		self._assignConfig()
+		# Restart the server if the configuration has changed
 		self.shutdown()
 		self.run()		# Restart the server
 
@@ -179,7 +156,7 @@ class WebSocketServer(object):
 	def run(self) -> bool:
 		"""	Initialize and run the WebSocket server as a BackgroundWorker/Actor.
 		"""
-		if not self.enable:
+		if not Configuration.websocket_enable:	# type:ignore[attr-defined]
 			L.isInfo and L.log('WebSocket: server NOT enabled')
 			return True
 		# Actually start the actor to run the WebSocket Server as a thread
@@ -194,11 +171,11 @@ class WebSocketServer(object):
 		"""	WebSocket server main loop.
 		"""
 		self.websocketServer = serve(self.handleIncomingConnection, 
-							   		 self.interface, 
-									 self.port, 
+							   		 Configuration.websocket_listenIF,
+									 Configuration.websocket_port, 
 									 subprotocols = ContentSerializationType.supportedContentSerializationsWS(), # type:ignore[arg-type]
-									 ssl_context = CSE.security.getSSLContextWs()) # type:ignore[list-item]	
-		logging.getLogger('websockets.server').setLevel(self.logLevel)
+									 ssl_context = CSE.security.getSSLContextWs())		
+		logging.getLogger('websockets.server').setLevel(Configuration.websocket_loglevel)
 		with self.websocketServer as server:
 			server.serve_forever()	# Will block until the server is shutdown
 		L.isDebug and L.logDebug('WebSocket server shut down')
@@ -211,6 +188,9 @@ class WebSocketServer(object):
 			L.isDebug and L.logDebug('Stopping WebSocket server')
 			self.websocketServer.shutdown()
 			self.websocketServer = None
+		if self.actor is not None:
+			self.actor.stop()
+			self.actor = None
 
 
 	def pause(self) -> None:
@@ -394,7 +374,7 @@ class WebSocketServer(object):
 		wsOriginator = None	# This is valid until the first message is received. Then the originator is determined from the message
 
 		# Rename thread
-		renameThread(prefix = 'ws')
+		L.enableScreenLogging and renameThread(prefix = 'ws')
 
 		if not self._checkIsServerRunning(websocket):
 			return
@@ -498,7 +478,7 @@ class WebSocketServer(object):
 			# Send the operation event and rename the thread
 			_t = self.operationEvents[request.op]
 			_t[0]()	# Send event
-			renameThread(_t[1]) # rename threads
+			L.enableScreenLogging and renameThread(_t[1]) # rename threads
 
 			L.isDebug and L.logDebug(f'Operation: {request.op}')
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
@@ -517,12 +497,19 @@ class WebSocketServer(object):
 			responseResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
 
 		except Exception as e:
-				responseResult = Result.exceptionToResult(e)
+			responseResult = Result.exceptionToResult(e)
 
+		# Don't send a response for "no response" response type
+		# We have t use the dissectResult here, because the request object might not 
+		# be fully initialized because of an exception
+		if dissectResult.request.rt == ResponseType.noResponse:
+			L.isDebug and L.logDebug('No response required')
+			return
+		
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)
 
-		_r, _data = prepareResultForSending(responseResult, isResponse = True)	
+		_r, _data = prepareResultForSending(responseResult, isResponse = True, originalRequest = request)	
 		L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
 
 		L.logRequest(_r, _data) # type:ignore [arg-type]
@@ -574,7 +561,7 @@ class WebSocketServer(object):
 			try:
 				websocket = connect(url, 
 									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-									additional_headers = { 'X-m2m-Origin': CSE.cseCsi})
+									additional_headers = { 'X-m2m-Origin': RC.cseCsi})
 			except Exception as e:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
 			
@@ -594,7 +581,7 @@ class WebSocketServer(object):
 
 		try: 
 			# Get the serialization format
-			ct = request.ct if request.ct is not None else CSE.defaultSerialization
+			ct = request.ct if request.ct is not None else RC.defaultSerialization
 			targetOriginator = csiFromSPRelative(request.to)
 			if targetOriginator is None:
 				targetOriginator = request.to
@@ -634,7 +621,7 @@ class WebSocketServer(object):
 			return createPositiveResponseResult()
 
 		# Receiving the response
-		resResp, _ = CSE.request.waitForResponse(req.request.rqi, self.requestTimeout)
+		resResp, _ = CSE.request.waitForResponse(req.request.rqi, Configuration.websocket_timeout)
 
 		if resResp is None:
 			disconnectWS(targetOriginator, isSenderWS)
