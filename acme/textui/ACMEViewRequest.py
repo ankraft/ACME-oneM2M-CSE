@@ -11,7 +11,6 @@ from __future__ import annotations
 from typing import cast, Optional, Callable
 from copy import deepcopy
 import json
-import pyperclip
 
 from rich.syntax import Syntax
 from textual import on
@@ -44,14 +43,17 @@ class ACMETextArea(TextArea):
 		Binding('ctrl+v', 'paste_from_clipboard', 'paste', key_display = 'CTRL-v'),
 	]
 
+
 	def action_copy_to_clipboard(self) -> None:
-		pyperclip.copy(self.selected_text)
+		from ..textui.ACMETuiApp import ACMETuiApp
+		cast(ACMETuiApp, self.app).copyToClipboard(self.selected_text)
 
 	
 	def action_paste_from_clipboard(self) -> None:
 		self.begin_capture_print()
+		from ..textui.ACMETuiApp import ACMETuiApp
 		self.replace(
-			pyperclip.paste(),
+			cast(ACMETuiApp, self.app).pasteFromClipboard(),
 			self.selection.start,
 			self.selection.end,
 		)

@@ -16,7 +16,6 @@ from textual.widgets import Label, Button
 from textual.events import Click
 from textual.containers import Center, ScrollableContainer, Vertical
 from rich.syntax import Syntax
-import pyperclip
 
 class ACMEContentDialog(ModalScreen):
 	""" A modal dialog for displaying content in the ACME text UI.
@@ -51,7 +50,7 @@ class ACMEContentDialog(ModalScreen):
 
 	def on_button_pressed(self, event: Button.Pressed) -> None:
 		if event.button.id == 'dialog-copy':
-			pyperclip.copy(self.content)
+			self._app.copyToClipboard(self.content)
 			self.app.pop_screen()
 			self.app.notify('Copied to clipboard.')
 

@@ -13,6 +13,7 @@ from typing import Callable, cast, Optional
 from typing_extensions import Literal, get_args
 import asyncio
 from enum import IntEnum, auto
+import pyperclip
 from textual.app import App, ComposeResult
 from textual import on
 from textual.widgets import Footer, TabbedContent, TabPane, Static
@@ -171,6 +172,20 @@ class ACMETuiApp(App):
 	def debugConsole(self) -> Static:
 		return self._debugConsole
 	
+
+	def copyToClipboard(self, text: str) -> None:
+		try:
+			pyperclip.copy(text)
+		except pyperclip.PyperclipException as e:
+			self.showNotification(f'Error copying to clipboard: {e}', 'Clipboard Error', 'error')
+
+
+	def pasteFromClipboard(self) -> str:
+		try:
+			return pyperclip.paste()
+		except pyperclip.PyperclipException as e:
+			self.showNotification(f'Error pasting from clipboard: {e}', 'Clipboard Error', 'error')
+			return ''
 
 	def on_load(self) -> None:
 		self.dark = Configuration.textui_theme == 'dark'
