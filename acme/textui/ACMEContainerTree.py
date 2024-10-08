@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import List, Tuple, Optional, Any, cast
 
-import pyperclip, json
+import json
 
 from textual import events
 from textual.app import ComposeResult
@@ -323,7 +323,7 @@ class ACMEContainerTree(Container):
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
 					v = ri
 					t = 'Resource Identifier Copied'
-				pyperclip.copy(v)
+				self._app.copyToClipboard(v)
 				self._app.showNotification(v, t, 'information')
 
 			# When clicking on the top border: Copy the resource name or type
@@ -335,12 +335,12 @@ class ACMEContainerTree(Container):
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(rt):
 					v = rt
 					t = 'Resource Type Copied'
-				pyperclip.copy(v)
+				self._app.copyToClipboard(v)
 				self._app.showNotification(v, t, 'information')
 
 		# When clicking on the resource view
 		elif self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is self.resourceView:
-			pyperclip.copy(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
+			self._app.copyToClipboard(v := json.dumps(self.currentResource.asDict(sort = True), indent = 2))
 			self._app.showNotification(limitLines(v, 5), 'Resource Copied', 'information')
 
 

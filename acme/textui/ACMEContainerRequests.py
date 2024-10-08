@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-import pyperclip, json
+import json
 
 from typing import Optional, List, cast, Any
 from textual import events
@@ -167,7 +167,7 @@ class ACMEViewRequests(Vertical):
 					t = 'Response Copied'
 				case _:
 					return
-			pyperclip.copy(v)
+			self._app.copyToClipboard(v)
 			self._app.showNotification(limitLines(v, 5), t, 'information')
 
 
