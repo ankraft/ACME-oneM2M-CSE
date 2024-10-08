@@ -52,8 +52,10 @@ class ACMETextArea(TextArea):
 	def action_paste_from_clipboard(self) -> None:
 		self.begin_capture_print()
 		from ..textui.ACMETuiApp import ACMETuiApp
+		v = cast(ACMETuiApp, self.app).pasteFromClipboard()
+		v = v if v is not None else ''
 		self.replace(
-			cast(ACMETuiApp, self.app).pasteFromClipboard(),
+			v,
 			self.selection.start,
 			self.selection.end,
 		)

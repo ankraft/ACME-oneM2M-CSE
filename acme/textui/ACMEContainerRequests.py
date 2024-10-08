@@ -167,8 +167,8 @@ class ACMEViewRequests(Vertical):
 					t = 'Response Copied'
 				case _:
 					return
-			self._app.copyToClipboard(v)
-			self._app.showNotification(limitLines(v, 5), t, 'information')
+			if not self._app.copyToClipboard(v):
+				self._app.showNotification(limitLines(v, 5), t, 'information')
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
