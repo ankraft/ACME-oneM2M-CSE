@@ -348,6 +348,28 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveFCNT(self) -> None:
+		""" Partial RETRIEVE of a FCNT optional attribute"""
+		dct = 	{ 'cod:lock' : {			# type:ignore [var-annotated]
+					'rn': fcntRN,
+					'cnd': 'org.onem2m.common.moduleclass.lock',
+					'lock': False,
+				}}
+		fcnt, rsc = CREATE(cseURL, ORIGINATOR, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, fcnt)
+
+		# RETRIEVE with single optional attribute
+		r, rsc = RETRIEVE(f'{cseURL}/{fcntRN}?atrl=lock', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'cod:lock/ri'), r)
+		self.assertIsNotNone(findXPath(r, 'cod:lock/lock'), r)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{fcntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
 # TODO test partial RETRIEVE of <CIN> with missing optional attribute
 
 
@@ -513,6 +535,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_partialRetrieveCSEBaseWrongAttributeFail',
 		'test_partialRetrieveCSEBaseROAttribute',
 		'test_partialRetrieveCSingleOptionalAttribute',
+		'test_partialRetrieveFCNT',
 
 		# send NOTIFY requests
 		'test_notifyAE',
