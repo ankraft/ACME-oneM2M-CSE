@@ -17,6 +17,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [CSE] Fixed partial attribute retrieval for &lt;flexContainer> specializations. Thanks to Xufan Lin for reporting this issue.
+
 
 ### Removed
 

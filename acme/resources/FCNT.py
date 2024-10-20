@@ -173,6 +173,13 @@ class FCNT(ContainerResource):
 		self._validateChildren(originator, dct = dct)
 
 
+	def hasAttributeDefined(self, name:str) -> bool:
+		if super().hasAttributeDefined(name):
+			return True
+		# Check whether the attribute is defined in the containerDefinition
+		return name in CSE.validator.getFlexContainerAttributesFor(self.typeShortname).keys()
+		
+
 	def _validateChildren(self, originator:str, 
 								deletingFCI:Optional[bool] = False, 
 								dct:Optional[JSON] = None) -> None:
