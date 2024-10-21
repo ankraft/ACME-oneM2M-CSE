@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 
 ### Experimental
+- [CSE] Added check if the operation execution time (oet) is after rqet or rset.
 
 ### Changed
 

@@ -1291,6 +1291,14 @@ class RequestManager(object):
 				else:
 					cseRequest.oet = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
+				# EXPERIMENTAL: check if the operation execution time is after rqet or rset
+				# see: https://git.onem2m.org/issues/issues/-/issues/217
+				if cseRequest.rqet and _ts >= cseRequest._rqetUTCts:
+					raise BAD_REQUEST(L.logDebug(f'operation execution time is before request expiration time: oet {_ts} >= rqet {cseRequest._rqetUTCts}'), data = cseRequest)
+				if cseRequest.rset and _ts >= cseRequest._rsetUTCts:
+					raise BAD_REQUEST(L.logDebug(f'operation execution time is before result expiration time: oet {_ts} >= rset {cseRequest._rsetUTCts}'), data = cseRequest)
+
+
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
 				if rvi not in RC.supportedReleaseVersions:
