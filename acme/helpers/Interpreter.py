@@ -517,7 +517,7 @@ class SSymbol(object):
 
 		indentStr = '  ' * (max_depth - depth)
 		parentHierarchy = self.parent.printHierarchy(depth + 1, max_depth) if self.parent is not None else ''
-		return f'{parentHierarchy}{prefix}{indentStr}{self.toString()}\n'
+		return f'{parentHierarchy}{prefix}{indentStr}{self.toString(quoteStrings=True)}\n'
 
 
 	def append(self, arg:SSymbol) -> SSymbol:
