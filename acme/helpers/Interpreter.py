@@ -994,8 +994,6 @@ class PContext():
 		""" The max timestamp until the script may run (internal). """
 		self._callStack:list[PCall] = []
 		""" The internal call stack (internal). """
-		self._symbols:PSymbolDict = None		# builtins + provided commands
-		""" Dictionary with all build-in and provided functions (internal). """
 		# self._variables:Dict[str, SSymbol] = {}
 
 
@@ -1048,6 +1046,7 @@ class PContext():
 			
 			This method may also be implemented in a subclass, but that subclass must then call this method as well.
 		"""
+		self.symbols = deepcopy(self.startupSymbols)
 		self.error = PErrorState(PError.noError, 0, '', None)
 		self._callStack.clear()
 		self.pushCall(name = self.meta.get('name'))
@@ -1125,20 +1124,26 @@ class PContext():
 			self.logFunc(self, f'Executed symbol: {symbol}')
 
 
-	def pushCall(self, name:Optional[str] = None) -> None:
+	def pushCall(self, name:Optional[str] = None, args:dict[str, SSymbol] = {}) -> PCall:
 		"""	Save tinformation to the call stack. 
 			This creates a new PCall object.
 
 			Args:
 				name: Name of the function. 
+				args: Arguments for the function call.
+
+			Return:
+				The new `PCall` object.
 		"""
 		if len(self._callStack) == _maxRecursionDepth:
 			raise PRuntimeError(self.setError(PError.maxRecursionDepth, f'Max level of function calls exceeded'))
 		call = PCall()
 		call.name = name
+		call.arguments = args
 		if len(self._callStack):
 			call.variables = deepcopy(self._callStack[-1].variables)	# copy variables from the previous scope
 		self._callStack.append(call)
+		return call
 	
 
 	def popCall(self) -> None:
@@ -1504,13 +1509,13 @@ class PContext():
 		"""
 
 		if symbol.type != SType.tList:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong expression format:\n{symbol.printHierarchy()}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong expression format for symbol "{symbol[0]}":\n{symbol.printHierarchy()}'))
 		if length is not None and symbol.length != length:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments: {symbol.length - 1}. Must be {length - 1} for expression:\n{symbol.printHierarchy()} '))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong number of arguments for symbol "{symbol[0]}": {symbol.length - 1}. Must be {length - 1} for expression:\n{symbol.printHierarchy()} '))
 		if minLength is not None and symbol.length < minLength:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too few arguments:\n{symbol.printHierarchy()}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too few arguments for symbol "{symbol[0]}":\n{symbol.printHierarchy()}'))
 		if maxLength is not None and symbol.length > maxLength:
-			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too many arguments:\n{symbol.printHierarchy()}'))
+			raise PInvalidArgumentError(self.setError(PError.invalid, f'wrong length for expression - too many arguments for symbol "{symbol[0]}" ({symbol.length} > {maxLength}):\n{symbol.printHierarchy()}'))
 
 
 	def run(self,
@@ -1679,16 +1684,23 @@ class PContext():
 				# Execute function, if defined, or try to find the value in variables, environment, etc.
 				if (_fn := self.functions.get(_s)) is not None:
 					return self._executeFunction(symbol, _s, _fn)
-				elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
-					if self.monitorFunc:
-						self.monitorFunc(self, firstSymbol)
-					return _cb(self, symbol)
 				elif _s in self.call.arguments:
 					self.result = deepcopy(self.call.arguments[_s])
 					return self
 				elif _s in self.variables:
 					self.result = deepcopy(self.variables[_s])
 					return self
+				elif (_cb := self.symbols.get(_s)) is not None:	# type:ignore[arg-type]
+
+					if self.monitorFunc:
+						self.monitorFunc(self, firstSymbol)
+
+					# If the callback is actually a symbol and a lambda function, then execute it
+					if type(_cb) == SSymbol and _cb.type == SType.tLambda:
+						return self._executeSymbolWithArguments(_cb, symbol[1:])	
+
+					# Otherwise call the callback function			
+					return cast(Callable, _cb)(self, symbol)
 				elif _s in self.environment:
 					self.result = deepcopy(self.environment[_s])
 					return self
@@ -1784,8 +1796,7 @@ class PContext():
 				_args[_argNames[i-1]] = self._executeExpression(symbol[i]).result	# type:ignore [index]
 
 		# Assign arguments to new scope
-		self.pushCall(functionName)
-		self.call.arguments = _args
+		self.pushCall(functionName, _args)
 
 		# execute the code
 		self._executeExpression(_code)
@@ -1867,7 +1878,7 @@ PMatchCallable = Callable[[PContext, str, str], bool]
 	a boolean value that indicates the result of the match.
 """
 
-PSymbolDict = Dict[str, PSymbolCallable]
+PSymbolDict = Dict[str, Union[PSymbolCallable, SSymbol]]
 """	Dictionary of function callbacks for commands. 
 """
 
@@ -2652,6 +2663,66 @@ def _doFilter(pcontext:PContext, symbol:SSymbol) -> PContext:
 			case _:
 				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid return type for filter function: {pcontext.result.type} (must be boolean)\n{symbol.printHierarchy()}'))
 	return pcontext.setResult(symbol.newSymbol(lst = _result))
+
+
+def _doFset(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	This function defines an alias for a symbol.
+
+		An alias is a new symbol that points to an existing symbol.
+		Aliased symbols can be aliases themselves.
+
+		The symbols must be quoted.
+
+		If the second symbold is not provided, then the alias is removed.
+
+		Example:
+			::
+
+				(fset 'aSymbol 'anotherSymbol)
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object.
+
+		Raises:
+			`PInvalidArgumentError`: In case of an error.
+	"""
+	pcontext.assertSymbol(symbol, minLength = 2, maxLength = 3)
+
+	# get alias name
+	if symbol[1].type != SType.tSymbolQuote:
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'fset requires quoted symbol name for symbol 1, got type: {symbol[1].type}\n{symbol.printHierarchy()}'))
+	_name = symbol[1].value
+
+	# Remove alias if only two arguments are given
+	if symbol.length == 2:
+		if _name in pcontext.symbols:
+			del pcontext.symbols[_name]
+		return pcontext
+	
+	# get symbol
+	if symbol[2].type not in (SType.tSymbolQuote, SType.tLambda, SType.tList):
+		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'fset requires quoted symbol name for symbol 2, got type: {symbol[2].type}\n{symbol.printHierarchy()}'))
+
+	# pcontext, _symbol = pcontext.valueFromArgument(symbol, 2)
+	pcontext, _symbol = pcontext.resultFromArgument(symbol, 2)
+
+	match _symbol.type:
+		case SType.tLambda:
+			pcontext.symbols[_name] = _symbol
+		case _:
+			if _symbol.value in pcontext.functions:
+				# If the symbol is a function, then we need to copy it
+				pcontext.functions[_name] = deepcopy(pcontext.functions[cast(str, _symbol.value)])
+			else:
+				# pcontext.symbols[_name] = _symbol
+				pcontext.symbols[_name] = deepcopy(pcontext.symbols[cast(str, _symbol.value)])
+
+	return pcontext.setResult(_symbol)
+
 
 
 def _doGetJSONAttribute(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -4271,6 +4342,7 @@ _builtinCommands:PSymbolDict = {
 	'evaluate-inline':		_doEvaluateInline,
 	'false':				lambda p, a: _doBoolean(p, a, False),
 	'filter':				_doFilter,
+	'fset':					_doFset,
 	'get-json-attribute':	_doGetJSONAttribute,
 	'has-json-attribute':	_doHasJSONAttribute,
 	'if':					_doIf,
