@@ -897,7 +897,7 @@ class PContext():
 		'verbose',
 		'_maxRTimestamp',
 		'_callStack',
-		'_symbols',
+		'startupSymbols',
 		'_variables',
 	)
 	""" Slots of class attributes. """
@@ -942,7 +942,7 @@ class PContext():
 		# Extra parameters that can be provided
 		self.script = script
 		""" The script to run. """
-		self.symbols = _builtinCommands
+		self.symbols:PSymbolDict = deepcopy(_builtinCommands)
 		""" A dictionary of new symbols / functions to add to the interpreter. """
 		self.logFunc = logFunc
 		""" An optional function that receives non-error log messages. """
@@ -1004,7 +1004,11 @@ class PContext():
 
 		# Add new commands
 		if symbols:
-			self.symbols.update(symbols)
+			self.symbols.update(deepcopy(symbols))
+		
+		# Save the built-in commands. Will be restored later during reset.
+		self.startupSymbols = deepcopy(self.symbols)
+
 
 		# Extract meta data
 		# These are lines idn the format:
