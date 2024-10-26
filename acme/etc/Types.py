@@ -152,6 +152,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
 	"""	WifiClient ManagementObject specialization. """
+	CRDS			= 1029	# credentials	# EXPERIMENTAL
+	"""	Credentials ManagementObject specialization. """
 	SIM 			= 1030	# SIM
 	"""	SIM ManagementObject specialization. """
 	MNWK			= 1031	# mobileNetwork
@@ -227,6 +229,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
 	"""	Announced WifiClient ManagementObject specialization. """
+	CRDSAnnc		= -30029
+	"""	Announced Credentials ManagementObject specialization. """
 	SIMAnnc			= -30030
 	"""	Announced SIM ManagementObject specialization. """
 	MNWKAnnc		= -30031
@@ -555,6 +559,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Software Announced'),
 	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True, fullName='WiFi Client'),
 	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='WiFi Client Announced'),
+	ResourceTypes.CRDS			: ResourceDescription(typeName = 'dcfg:crds', announcedType = ResourceTypes.CRDSAnnc, isMgmtSpecialization = True, fullName='Credentials'),
+	ResourceTypes.CRDSAnnc		: ResourceDescription(typeName = 'dcfg:crdsA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Credentials Announced'),
 	ResourceTypes.SIM			: ResourceDescription(typeName = 'dcfg:sim', announcedType = ResourceTypes.SIMAnnc, isMgmtSpecialization = True, fullName='SIM'),
 	ResourceTypes.SIMAnnc		: ResourceDescription(typeName = 'dcfg:simA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='SIM Announced'),
 	ResourceTypes.MNWK			: ResourceDescription(typeName = 'dcfg:mnwk', announcedType = ResourceTypes.MNWKAnnc, isMgmtSpecialization = True, fullName='Mobile Network'),

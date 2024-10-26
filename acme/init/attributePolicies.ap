@@ -967,6 +967,45 @@
 			"annc": "NA"
 		}
 	],
+	"crid": [
+		{
+			"rtypes": [ "CRDS", "CRDSAnnc", "REQRESP" ],
+			"lname": "credentialID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"crse": [
+		{
+			"rtypes": [ "CRDS", "CRDSAnnc", "REQRESP" ],
+			"lname": "credentialSecret",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"crtk": [
+		{
+			"rtypes": [ "CRDS", "CRDSAnnc", "REQRESP" ],
+			"lname": "credentialToken",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"cs": [
 		{
 			"rtypes": [ "FCNT", "FCNTAnnc", "FCI", "FCNT_LA", "FCNT_OL",
@@ -2875,6 +2914,19 @@
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "string",	// m2m:protocolList
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"pur": [
+		{
+			"rtypes": [ "CRDS", "CRDSAnnc", "REQRESP" ],
+			"lname": "purpose",
+			"ns": "m2m",
+			"type": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

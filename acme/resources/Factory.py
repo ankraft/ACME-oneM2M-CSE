@@ -104,6 +104,8 @@ from ..resources.SWR import SWR
 from ..resources.SWRAnnc import SWRAnnc
 from ..resources.WIFIC import WIFIC
 from ..resources.WIFICAnnc import WIFICAnnc
+from ..resources.CRDS import CRDS
+from ..resources.CRDSAnnc import CRDSAnnc
 from ..resources.SIM import SIM
 from ..resources.SIMAnnc import SIMAnnc
 from ..resources.MNWK import MNWK
@@ -192,6 +194,8 @@ addResourceFactoryCallback(ResourceTypes.SWR,			SWR,			lambda dct, typeShortname
 addResourceFactoryCallback(ResourceTypes.SWRAnnc,		SWRAnnc,		lambda dct, typeShortname, pi, create : SWRAnnc(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.WIFIC,			WIFIC,			lambda dct, typeShortname, pi, create : WIFIC(dct, pi = pi, create = create)) 
 addResourceFactoryCallback(ResourceTypes.WIFICAnnc,		WIFICAnnc,		lambda dct, typeShortname, pi, create : WIFICAnnc(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.CRDS,			CRDS,			lambda dct, typeShortname, pi, create : CRDS(dct, pi = pi, create = create))
+addResourceFactoryCallback(ResourceTypes.CRDSAnnc,		CRDSAnnc,		lambda dct, typeShortname, pi, create : CRDSAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.SIM,			SIM,			lambda dct, typeShortname, pi, create : SIM(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.SIMAnnc,		SIMAnnc,		lambda dct, typeShortname, pi, create : SIMAnnc(dct, pi = pi, create = create))
 addResourceFactoryCallback(ResourceTypes.MNWK,			MNWK,			lambda dct, typeShortname, pi, create : MNWK(dct, pi = pi, create = create))
