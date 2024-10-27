@@ -167,7 +167,7 @@ class ACMEViewRequests(Vertical):
 					t = 'Response Copied'
 				case _:
 					return
-			if not self._app.copyToClipboard(v):
+			if self._app.copyToClipboard(v):
 				self._app.showNotification(limitLines(v, 5), t, 'information')
 
 
