@@ -11,10 +11,10 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [unreleased 2024.DEV] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added support for the [credential] ManagementObject specialization.
 
 ### Experimental
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
-- [CSE] Added exeperimental support for the [credential] ManagementObject specialization.
 
 ### Changed
 

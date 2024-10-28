@@ -152,7 +152,7 @@ class ResourceTypes(ACMEIntEnum):
 	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
 	"""	WifiClient ManagementObject specialization. """
-	CRDS			= 1029	# credentials	# EXPERIMENTAL
+	CRDS			= 1029	# credentials
 	"""	Credentials ManagementObject specialization. """
 	SIM 			= 1030	# SIM
 	"""	SIM ManagementObject specialization. """
