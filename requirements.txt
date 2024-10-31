@@ -111,5 +111,5 @@ wcwidth==0.2.13
     # via prompt-toolkit
 websockets==13.1
     # via acmecse (setup.py)
-werkzeug==3.0.4
+werkzeug==3.0.6
     # via flask
