@@ -60,46 +60,26 @@ class DEPR(AnnounceableResource):
 
 		super().activate(parentResource, originator)
 
-		# Check existence and accessibility of the references resource in rri.
+		# Check that the evalCriteria and target resources are correct and accessible
 		try:
-			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.rri, originator, Permission.RETRIEVE)
+			CSE.action.checkEvalCriteria(self.evc, self.rri, originator)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
-
-		# Check existence of referenced subject attribute in the referenced resource.
-		sbjt = self.evc['sbjt']
-		if not resRri.hasAttributeDefined(sbjt):
-			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
-		
-		# Check the value space of the threshold attribute.
-		dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'], resRri.ty)
-
-		# Check evalCriteria operator
-		CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
 
 
 	def update(self, dct: JSON = None, 
 					 originator: Optional[str] = None,
 					 doValidateAttributes: Optional[bool] = True) -> None:
 
-		# Check existence and accessibility of the references resource in rri.
+		# get new or old rri and evc
+		rri = self.getFinalResourceAttribute('rri', dct)
+		evc = self.getFinalResourceAttribute('evc', dct)
+
+		# Check that the evalCriteria and target resources are correct and accessible
+		# Check the evc only if the evc attribute is present in the update request
 		try:
-			resRri = CSE.dispatcher.retrieveResourceWithPermission(self.getFinalResourceAttribute('rri', dct), originator, Permission.RETRIEVE)
+			CSE.action.checkEvalCriteria(evc, rri, originator, 'evc' in dct)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
-
-		if (evc := findXPath(dct, 'm2m:depr/evc')) is not None:
-
-
-			# Check existence of referenced subject attribute in the referenced resource.
-			sbjt = evc['sbjt']
-			if not resRri.hasAttributeDefined(sbjt):
-				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {resRri.ri}'))
-
-			# Check the value space of the threshold attribute.
-			dataType = CSE.action.checkAttributeThreshold(sbjt, self.evc['thld'], resRri.ty)
-
-			# Check evalCriteria operator
-			CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
 
 		super().update(dct, originator, doValidateAttributes)

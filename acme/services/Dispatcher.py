@@ -333,6 +333,9 @@ class Dispatcher(object):
 			
 			Return:
 				Result instance.
+
+			Raises:
+				NOT_FOUND: If the resource cannot be found.
 		"""
 		if id:
 			if id.startswith(RC.cseCsiSlash) and len(id) > RC.cseCsiSlashLen:		# TODO for all operations?
