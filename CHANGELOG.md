@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
 
 ### Changed
+- [MISC] Improved Docker image generation.
 
 ### Fixed
 - [CSE] Fixed partial attribute retrieval for &lt;flexContainer> specializations. Thanks to Xufan Lin for reporting this issue.
