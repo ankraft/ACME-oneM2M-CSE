@@ -562,7 +562,7 @@ def loop(commands:Commands,
 			ch = '\x03'										# Assign ^C
 
 		# hande potential headless state: just sleep a moment, but only when not keyboad interrupt was received
-		if headless and not _stopLoop:
+		if (headless and not _stopLoop) or ch is None:
 			try:
 				time.sleep(0.2)
 				continue
