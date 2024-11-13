@@ -16,7 +16,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via flask
-coapthon3-acme-cse==1.1.3
+coapthon3-acme-cse==1.1.4
     # via acmecse (setup.py)
 flask==3.0.3
     # via

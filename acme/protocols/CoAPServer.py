@@ -547,7 +547,7 @@ class ACMECoAPServer(CoAP):
 				port: The port to bind the CoAP server to.
 		"""
 
-		CoAP.__init__(self, (host, port))
+		CoAP.__init__(self, (host, port), cb_ignore_listen_exception = self._handleListenException)
 
 		# Register the oneM2M options, codes etc first
 		registerOneM2MOptions()
@@ -593,6 +593,20 @@ class ACMECoAPServer(CoAP):
 			_, client = self.clientCache.popitem()
 			cast(HelperClient, client).close()
 		self.close()
+
+
+	def _handleListenException(self, e:Exception, coapServer:CoAP) -> bool:
+		"""	Handle a listen exception.
+
+			Args:
+				e: The exception.
+				coapServer: The CoAP server.
+
+			Returns:
+				*True* if the exception was handled, *False* otherwise.
+		"""
+		L.isWarn and L.logWarn(f'CoAP server listen exception: {str(e)}')
+		return True
 
 
 	def sendRequest(self, request:CSERequest, url:str, ignoreResponse:bool = False) -> Result:
