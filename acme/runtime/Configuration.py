@@ -444,6 +444,12 @@ class Configuration(object):
 	"""	The MBS for CNT. """
 
 
+	resource_fcnt_newVersion:bool
+	"""	The new version of FCNT handling. 
+
+		TODO: remove this after FCNT is implemented
+	"""
+
 	resource_grp_resultExpirationTime:int
 	"""	The result expiration time for GRP. """
 
@@ -516,6 +522,9 @@ class Configuration(object):
 
 	textui_notificationTimeout:float
 	"""	The notification timeout for the text UI. """
+
+	textui_enableTextEditorSyntaxHighlighting:bool
+	"""	Enable or disable text editor syntax highlighting for the text UI. """
 
 
 	webui_root:str
@@ -760,7 +769,7 @@ class Configuration(object):
 		#	Retrieve configuration values
 		try:
 
-			# Call the configuration handlerfor each module
+			# Call the configuration handler for each module
 			for m in _moduleConfigs:
 				m.readConfiguration(config, Configuration)	# type:ignore [arg-type]
 		
@@ -927,6 +936,7 @@ from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfigu
 from ..runtime.configurations.CoAPServerConfiguration import CoAPServerConfiguration
 from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
+from ..runtime.configurations.FCNTResourceConfiguration import FCNTResourceConfiguration
 from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfiguration
 from ..runtime.configurations.HTTPServerConfiguration import HTTPServerConfiguration
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
@@ -983,6 +993,7 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	ACPResourceConfiguration(),
 	ACTRResourceConfiguration(),
 	CNTResourceConfiguration(),
+	FCNTResourceConfiguration(),
 	LCPResourceConfiguration(),
 	REQResourceConfiguration(),
 	SUBResourceConfiguration(),

@@ -1664,6 +1664,18 @@ This section contains settings that control the CSE's terminal user interface.
 Settings in this section are listed under the `[textui]` section.
 
 
+# textui.enableTextEditorSyntaxHighlighting
+
+This setting specifies whether to enable or disable syntax highlighting in the resource text editor.
+
+The default value is `False`.
+
+> **Note**
+>
+> Syntax highlighting is only available when the package "textual[syntax]" is installed. This package is not installed by default and may not be available for all platforms.
+
+
+
 # textui.maxRequestSize
 
 Max size of a request or response in bytes to display. 

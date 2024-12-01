@@ -31,6 +31,7 @@ from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..resources.Resource import Resource
 from ..resources.Factory import resourceFromDict
+from ..runtime.Configuration import Configuration
 
 
 class ACMETextArea(TextArea):
@@ -108,7 +109,7 @@ class ACMEViewRequest(VerticalScroll):
 											 	   suggestions = [RC.cseOriginator, originator])
 		self.resourceTextArea = ACMETextArea('', 
 						 	 				 classes = 'request-resource-textarea', 
-											 language = 'json', 
+											 language = 'json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
 											 soft_wrap = False,
 											 tab_behavior = 'indent',
 				  							 show_line_numbers = True,
