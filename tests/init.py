@@ -996,6 +996,28 @@ def connectionPossible(url:str) -> bool:
 	except Exception as e:
 		print(e)
 		return False
+	
+def checkUpperTester() -> None:
+	if UPPERTESTERENABLED:
+		try:
+			headers = { UTCMD: f'Status'}
+			addHttpAuthorizationHeader(headers)
+			response = requests.post(UTURL, headers = headers)
+			match response.status_code:
+				case 200:
+					pass
+				case 401:
+					console.print('[red]CSE requires authorization')
+					console.print('Add authorization settings to the test suite configuration file')
+					quit(-1)
+				case _:
+					console.print('[red]Upper Tester Interface not enabeled in CSE')
+					console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+					quit(-1)
+		except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+			shutdown()
+			quit(-1)
 		
 
 _lastHeaders:Parameters = None
@@ -1158,6 +1180,13 @@ def testCaseEnd(name:str) -> None:
 		console.print('')
 		ln  = '=' * int((console.width - 9 - len(name)) / 2)
 		console.print(f'[dim]{ln}[ End {name} ]{ln}')
+
+
+def disableUpperTester() -> None:
+	"""	Disable the use of the upper tester interface.
+	"""
+	global UPPERTESTERENABLED
+	UPPERTESTERENABLED = False
 
 
 ###############################################################################
@@ -1574,23 +1603,3 @@ noRemote = not connectionPossible(REMOTEcseURL)
 # Set the notification server URL
 setNotificationServerURL()
 
-if UPPERTESTERENABLED:
-	try:
-		headers = { UTCMD: f'Status'}
-		addHttpAuthorizationHeader(headers)
-		response = requests.post(UTURL, headers = headers)
-		match response.status_code:
-			case 200:
-				pass
-			case 401:
-				console.print('[red]CSE requires authorization')
-				console.print('Add authorization settings to the test suite configuration file')
-				quit(-1)
-			case _:
-				console.print('[red]Upper Tester Interface not enabeled in CSE')
-				console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
-				quit(-1)
-	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
-		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
-		shutdown()
-		quit(-1)

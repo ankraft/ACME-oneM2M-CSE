@@ -12,6 +12,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added support for the [credential] ManagementObject specialization.
+- [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
 
 ### Experimental
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
