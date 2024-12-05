@@ -96,6 +96,7 @@ def getIPAddress(hostname:Optional[str] = None) -> str:
 	
 	try:
 		ip = socket.gethostbyname(hostname)
+		# ip = socket.gethostbyname_ex(hostname)[2][0]
 
 		#	Try to resolve a local address. For example, sometimes raspbian
 		#	need to add a 'local' ir 'lan' postfix, depending on the local 

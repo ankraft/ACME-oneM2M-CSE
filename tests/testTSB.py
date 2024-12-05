@@ -206,7 +206,7 @@ class TestTSB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:tsbn/ctm'), lastNotification)
 		try:
 			raised = False
-			isodate.parse_time(findXPath(lastNotification, 'm2m:tsbn/ctm'))
+			isodate.parse_datetime(findXPath(lastNotification, 'm2m:tsbn/ctm'))
 		except:
 			raised = True
 		finally:

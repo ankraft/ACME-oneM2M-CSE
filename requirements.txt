@@ -81,11 +81,11 @@ rich==13.9.4
     #   textual
 shapely==2.0.6
     # via acmecse-dev (setup.py)
-textual==0.86.3
+textual==0.89.0
     # via
     #   acmecse-dev (setup.py)
     #   textual-plotext
-textual-plotext==1.0.0
+textual-plotext==1.0.1
     # via acmecse-dev (setup.py)
 tinydb==4.8.2
     # via acmecse-dev (setup.py)

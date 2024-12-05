@@ -169,7 +169,7 @@ class TestMisc(unittest.TestCase):
 		self.assertIn(C.hfOT, lastHeaders())
 		try:
 			raised = False
-			isodate.parse_time(lastHeaders()[C.hfOT])
+			isodate.parse_datetime(lastHeaders()[C.hfOT])
 		except:
 			raised = True
 		finally:

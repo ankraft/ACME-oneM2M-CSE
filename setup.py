@@ -14,7 +14,7 @@ print(directories)
 
 setup(
 	name='acmecse-dev',
-	version=f'2024.dev.{time.strftime("%Y%m%d%H%M%S")}',
+	version=time.strftime("%Y%m%d%H%M%S"),
 
 	# name='acmecse',
 	# version='2024.10',

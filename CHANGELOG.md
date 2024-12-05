@@ -24,6 +24,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Fixed
 - [CSE] Fixed partial attribute retrieval for &lt;flexContainer> specializations. Thanks to Xufan Lin for reporting this issue.
 - [COAP] Improved stability of the CoAP protocol binding in case of listening errors.
+- [CSE] Fixed regression bug when using newer versions of the *isodate* package. 
 
 
 ### Removed

@@ -592,7 +592,7 @@ class HttpServer(object):
 			try:
 				# Add Originating Timestamp if present in request
 				if (ot := r.headers.get(Constants().hfOT)):
-					isodate.parse_date(ot) # Check if valid ISO 8601 date, may raise exception
+					isodate.parse_datetime(ot) # Check if valid ISO 8601 date, may raise exception
 					resp.ot = ot
 			except Exception as ee:
 				raise BAD_REQUEST(L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
