@@ -1232,7 +1232,7 @@ class Dispatcher(object):
 				originator: The originator of the request.
 				withDeregistration: If True, deregister the resource.
 				parentResource: The parent resource.
-				doDeleteCheck: If True, call childRemoved() on the parent resource.
+				doDeleteCheck: If True, call childRemoved() on the parent resource. Also, will call willbeDeactivated() on the resource.
 		"""
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 

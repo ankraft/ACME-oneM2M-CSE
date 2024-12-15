@@ -799,8 +799,11 @@ class Resource(object):
 		"""
 		value = self.attribute(key)	# old value
 		if dct is not None:
-			newValue = findXPath(dct, f'{self.typeShortname}/{key}')
-			value = newValue if newValue is not None else value
+			_dct = dct[self.typeShortname]
+			if key in _dct:
+				value = _dct[key]
+			# newValue = findXPath(dct, f'{self.typeShortname}/{key}')
+			# value = newValue if newValue is not None else value
 		return value
 
 
@@ -1088,6 +1091,18 @@ class Resource(object):
 		"""
 		return self[Constants.attrOriginator]
 	
+
+	def getCurrentOriginator(self) -> str:
+		"""	Retrieve the current originator. This could be different from
+			the originator / creator of the resource in case of the *custodian* attribute is set.
+
+			Return:
+				The current originator.
+		"""
+		if (cstn := self.custn) is not None:
+			return cstn
+		return self.getOriginator()
+
 
 	def setOriginator(self, originator:str, overwrite:Optional[bool] = True) -> None:
 		"""	Set a resource's originator.

@@ -75,8 +75,8 @@ class ContainerResource(AnnounceableResource):
 	def updateLaOlLatestTimestamp(self) -> None:
 		"""	Update the *lt* attribute of the *latest* and *oldest* virtual child-resources.
 		"""
-		# Update latest
 		lt = getResourceDate()
+		# Update latest
 		resource = CSE.dispatcher.retrieveLocalResource(self.getLatestRI())
 		resource.setAttribute('lt', lt)
 		resource.dbUpdate(True)

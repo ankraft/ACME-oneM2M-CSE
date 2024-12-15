@@ -1532,6 +1532,19 @@
 			"annc": "NA"
 		}
 	],
+	"fcied": [
+		{
+			"rtypes": [ "FCNT", "FCNTAnnc", "REQRESP" ],
+			"lname": "fcinEnabled",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"fwn": [
 		{
 			"rtypes": [ "ALL" ],
