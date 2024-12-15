@@ -361,22 +361,23 @@ def getAttributeSize(attribute:Any) -> int:
 
 	match attribute:
 		case str():
-			size = len(attribute)
+			return len(attribute)
 		case int():
-			size = 4
+			return 4
 		case float():
-			size = 8
+			return 8
 		case bool():
-			size = 1
+			return 1
 		case list():	# recurse a list
 			for e in attribute:
 				size += getAttributeSize(e)
+			return size
 		case dict():	# recurse a dictionary
 			for _,v in attribute.items():
 				size += getAttributeSize(v)
+			return size
+		case None:	# e.g. when attribute is not present
+			return 0
 		case _:		# fallback for not handled types
-			size = sys.getsizeof(attribute)
-
-	return size
-	
+			return sys.getsizeof(attribute)
 
