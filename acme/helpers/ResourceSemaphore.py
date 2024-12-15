@@ -89,7 +89,7 @@ def criticalResourceSection(id:str = '', state:str = '') -> Callable:
 	"""	Decorator to set and remove a state when a resource method is called.
 	
 		Args:
-			id: The resource ID to set the state for.
+			id: The resource ID to set the state for. This is only used if the resource ID cannot be determined from the first argument of the decorated function.
 			state: The state to set.
 		Return:
 			Wrapped decorator.
@@ -102,8 +102,12 @@ def criticalResourceSection(id:str = '', state:str = '') -> Callable:
 			except:
 				_id = id 
 			enterCriticalSection(_id, state)
-			r = func(*args, **kwargs)
-			leaveCriticalSection(_id, state)
+			try:
+				r = func(*args, **kwargs)	# Might raise an exception
+			except Exception as e:
+				raise e
+			finally:
+				leaveCriticalSection(_id, state)
 			return r
 		return wrapper
 	return decorate
