@@ -155,7 +155,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, RC.UPDATED)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'), r)
 		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
