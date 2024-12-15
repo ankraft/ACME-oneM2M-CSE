@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Experimental
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
+- [CSE] Added support for the revised FlexContainer and FlexContainerInstance resource types.
 
 ### Changed
 - [MISC] Improved Docker image generation.
