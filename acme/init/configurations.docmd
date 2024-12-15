@@ -1473,6 +1473,40 @@ This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attri
 The default value is `10000 bytes`.
 
 
+
+# resource.fcnt
+
+This section specifies the CSE's defaults for FCNT (FlexContainer) specializations.
+
+Settings in this section are listed under the `[resource.fcnt]` section.
+
+
+
+# resource.fcnt.enableLimits
+
+This setting enables or disables the CSE's default limits for some FCNT's resource attributes.
+
+The default value is `False`.
+
+
+
+# resource.fcnt.mni
+
+This setting specifies the CSE's default for the FCNT's *mni* (maxNrOfInstances) attribute.
+
+The default value is `10`.
+
+
+
+# resource.fcnt.mbs
+
+This setting specifies the CSE's default for the FCNT's *mbs* (maxByteSize) attribute.
+
+The default value is `10000 bytes`.
+
+
+
+
 # resource.grp
 
 This section specifies the CSE's defaults for GRP (Group) resources and the GroupManager service.

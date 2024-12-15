@@ -444,11 +444,15 @@ class Configuration(object):
 	"""	The MBS for CNT. """
 
 
-	resource_fcnt_newVersion:bool
-	"""	The new version of FCNT handling. 
+	resource_fcnt_enableLimits:bool
+	"""	Enable or disable limits for FCNT. """
 
-		TODO: remove this after FCNT is implemented
-	"""
+	resource_fcnt_mni:int
+	"""	The MNI for FCNT. """
+
+	resource_fcnt_mbs:int
+	"""	The MBS for FCNT. """
+
 
 	resource_grp_resultExpirationTime:int
 	"""	The result expiration time for GRP. """

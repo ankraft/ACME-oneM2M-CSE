@@ -576,6 +576,19 @@ mni=10
 mbs=10000
 
 
+;
+;	Resource defaults: FlexContainer
+;
+
+[resource.fcnt]
+; Enable/disable the default limits. Default: False
+enableLimits=False
+; Default for maxNrOfInstances. Default: 10
+mni=10
+; Default for maxByteSize. Default: 10.000 bytes
+mbs=10000
+
+
 [resource.grp]
 ; Set the time for aggregating the results of a group request before interrupting. 
 ; The format is the time in ms. A value of 0 ms means no timeout. 
