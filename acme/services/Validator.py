@@ -1031,6 +1031,9 @@ class Validator(object):
 			case BasicType.ipv6Address if isinstance(value, str):
 				# TODO check for valid IPv6 address
 				return (dataType, value)
+			
+			case BasicType.jsonLike if isinstance(value, (str, int, float, bool, dict, list)):
+				return (dataType, value)
 
 			case BasicType.any:
 				return (dataType, value)

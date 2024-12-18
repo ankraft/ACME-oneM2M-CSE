@@ -733,6 +733,8 @@ class BasicType(ACMEIntEnum):
 	"""	Base64 encoded data. """
 	schedule			= auto()	# scheduleEntry
 	"""	Schedule entry. """
+	jsonLike			= auto()	# JSON like structure or data types
+	""" JSON like structure, list, or allowed data types. """
 
 	# Special string types
 	ID					= auto()	# m2m:ID
