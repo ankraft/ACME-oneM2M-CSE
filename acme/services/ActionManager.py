@@ -297,6 +297,48 @@ class ActionManager(object):
 			action['dep'] = actr.dep
 			CSE.storage.updateActionRepr(action)
 
+
+	#######################################################################
+	#
+	#	Process Statue Management
+	#	See TS-0001 10.2.27
+	#
+
+	def enterActiveState(self, resource:Resource) -> None:
+		"""	Enter the active state for a resource.
+
+			Args:
+				resource: The resource to enter the active state.
+		"""
+		L.isDebug and L.logDebug(f'Entering active state for resource: {resource.ri}')
+		# TODO implement
+		pass
+
+	
+	def enterDisabledState(self, resource:Resource) -> None:
+		"""	Enter the disabled state for a resource.
+
+			Args:
+				resource: The resource to enter the disabled state.
+		"""
+		L.isDebug and L.logDebug(f'Entering disabled state for resource: {resource.ri}')
+		# TODO stop monitoring for endCondition
+		# TODO implement
+		pass
+
+
+	def enterPauseState(self, resource:Resource) -> None:
+		"""	Enter the pause state for a resource.
+
+			Args:
+				resource: The resource to enter the pause state.
+		"""
+		L.isDebug and L.logDebug(f'Entering pause state for resource: {resource.ri}')
+		# TODO implement
+		pass
+
+
+
 	#######################################################################
 	#
 	#	Helper 

@@ -549,8 +549,9 @@
 			"lname": "activateConditions",
 			"ns": "m2m",
 			"type": "listNE",
-			"ltype": "m2m:evalCriteria",
-			"car": "1",
+			// "ltype": "m2m:evalCriteria",
+			"ltype": "m2m:processConditions",	// EXPERIMENTAL
+			"car": "01L",
 			"oc": "NP",
 			"ou": "O",
 			"od": "O",
@@ -1431,8 +1432,9 @@
 			"lname": "endConditions",
 			"ns": "m2m",
 			"type": "listNE",
-			"ltype": "m2m:evalCriteria",
-			"car": "1",
+			// "ltype": "m2m:evalCriteria",
+			"ltype": "m2m:processConditions",	// EXPERIMENTAL
+			"car": "01L",
 			"oc": "NP",
 			"ou": "O",
 			"od": "O",

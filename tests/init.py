@@ -264,6 +264,7 @@ reqRN	= 'testREQ'
 schRN 	= 'testSCH'
 smdRN	= 'testSMD'
 subRN	= 'testSUB'
+stteRN	= 'testSTTE'
 tsRN	= 'testTS'
 tsbRN	= 'testTSB'
 tsiRN	= 'testTSI'
@@ -292,7 +293,9 @@ tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{cntURL}/{actrRN}'
 deprURL = f'{actrURL}/{deprRN}'
 prmrURL = f'{aeURL}/{prmrRN}'
+stteURL = f'{prmrURL}/{stteRN}'
 prpURL 	= f'{cseURL}/{prpRN}'
+
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
