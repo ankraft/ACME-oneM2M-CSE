@@ -109,8 +109,11 @@ class ACMETuiApp(App):
 			with TabPane('Resources', id = tabResources):
 				yield self._containerTree
 
-			with TabPane('Requests', id = tabRequests):
+			with (_tr := TabPane('Requests', id = tabRequests)):
 				yield self._containerRequests
+				# Disable the requests tab if the operation requests are disabled
+				if not Configuration.cse_operation_requests_enable:
+					_tr.disabled = True
 
 			with TabPane('Registrations', id = tabRegistrations):
 				yield self._containerRegistrations

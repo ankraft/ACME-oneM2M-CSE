@@ -81,7 +81,7 @@ rich==13.9.4
     #   textual
 shapely==2.0.6
     # via acmecse-dev (setup.py)
-textual==0.89.0
+textual==1.0.0
     # via
     #   acmecse-dev (setup.py)
     #   textual-plotext

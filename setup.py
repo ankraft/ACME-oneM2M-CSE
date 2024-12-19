@@ -50,7 +50,7 @@ setup(
 		'requests', 
 		'rich', 
 		'shapely',
-		'textual',
+		'textual>=1.0.0',
 		# 'textual[syntax]',
 		'textual-plotext',
 		'tinydb',

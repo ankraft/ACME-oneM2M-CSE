@@ -20,6 +20,7 @@ from textual.screen import ModalScreen
 from textual.binding import Binding
 from rich.syntax import Syntax
 from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
@@ -157,6 +158,9 @@ class ACMEResourceTree(TextualTree):
 				label: The label of the type section.
 		"""
 		self.parentContainer.setResourceHeader(f'{label} Resources')
+		self.parentContainer.setResourceSubtitle('')
+		self.parentContainer.currentResource = None
+
 		# self.parentContainer.resourceView.update('')
 		self.parentContainer.updateResourceView()
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
@@ -276,6 +280,9 @@ class ACMEContainerTree(Container):
 
 				with self._treeTabRequests:
 					yield self._treeTabRequestsView
+					# Disable the requests tab if the operation requests are disabled
+					if not Configuration.cse_operation_requests_enable:
+						self._treeTabRequests.disabled = True
 
 				with self._treeTabServices:
 					yield self._treeTabResourceServices
@@ -313,7 +320,12 @@ class ACMEContainerTree(Container):
 
 			Args:
 				event: The Click event.
+
 		"""
+
+		# Just return if there is no current resource
+		if not self.currentResource:
+			return
 
 		# When clicking on the container of the resource view
 		if self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceContainer):

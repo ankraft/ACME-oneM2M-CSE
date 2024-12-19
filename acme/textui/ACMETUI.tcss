@@ -128,11 +128,25 @@ ACMEResourceTree {
 }
 
 ACMEContainerTree {
+
+	#tree-tab-resource {
+		display: block;
+		overflow: auto;
+		width: 1fr;
+		height: 1fr;
+	}
+
+	#tree-tab-diagram-view {
+		display: block;
+		overflow: auto;
+		width: 1fr;
+		height: 1fr;
+	}
+
 	#resource-view {
 		width: auto;
 		height: auto;
 		width: 1fr;
-
 	}
 
 	#resource-view-container {
@@ -631,6 +645,7 @@ ACMEViewRequests {
 		width: 1fr;
 		min-height: 100%;
 		padding: 1 1;
+
 	}
 
 }

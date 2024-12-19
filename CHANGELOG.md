@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for other data types (int, float, bool, list, dict) for the &lt;ContentInstance>'s and &lt;timeSeriesInstance>'s *content* attribute.
 - [TUI] Added support for enablong/disabling syntax highlighting in the resource editor of the text UI. The syntax package is now not installed by default because it is not available on all platforms. It be installed afterward if needed.
 - [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
+- [SCRIPTS] Added *fset* build-in command to set an alias to functions and lambdas.
 
 ### Experimental
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
@@ -22,6 +23,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Changed
 - [MISC] Improved Docker image generation.
+- [TUI] Hiding the "Requests" tabs when request recording is disabled.
+- [TUI] Adapted to Textual release 1.0.0.
 
 ### Fixed
 - [CSE] Fixed partial attribute retrieval for &lt;flexContainer> specializations. Thanks to Xufan Lin for reporting this issue.
