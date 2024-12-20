@@ -114,6 +114,12 @@ class TS(ContainerResource):
 										    ty = ResourceTypes.TS_OL)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)	# Set the oldest resource ID
+
+		# Set mni, mbn and mia to the default values if not present
+		if Configuration.resource_ts_enableLimits:
+			self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
+			self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
+			self.setAttribute('mia', Configuration.resource_ts_mia, overwrite = False)
 		
 		self._validateDataDetect()
 
@@ -163,6 +169,15 @@ class TS(ContainerResource):
 			peid = updatedAttributes.get('peid', self.peid)		# old or new value, default: self.peid
 			if mdt is not None and peid is not None and mdt <= peid:
 				raise BAD_REQUEST(L.logDebug('mdt must be > peid'))
+
+		# Set mni, mbs and mia to the default values if not present
+		if self.getFinalResourceAttribute('mni', dct) is None and \
+			self.getFinalResourceAttribute('mbs', dct) is None and \
+			self.getFinalResourceAttribute('mia', dct) is None and \
+			Configuration.resource_fcnt_enableLimits:	# Only when limits are enabled
+				self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
+				self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
+				self.setAttribute('mia', Configuration.resource_ts_mia, overwrite = False)
 
 		# Check if mdn was changed and shorten mdlt accordingly, if exists
 		# shorten the mdlt if a limit is set in mdn

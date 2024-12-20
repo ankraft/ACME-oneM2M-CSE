@@ -443,6 +443,9 @@ class Configuration(object):
 	resource_cnt_mbs:int
 	"""	The MBS for CNT. """
 
+	resource_cnt_mia:int
+	"""	The MIA for CNT. """
+
 
 	resource_fcnt_enableLimits:bool
 	"""	Enable or disable limits for FCNT. """
@@ -452,6 +455,9 @@ class Configuration(object):
 
 	resource_fcnt_mbs:int
 	"""	The MBS for FCNT. """
+
+	resource_fcnt_mia:int
+	"""	The MIA for FCNT. """
 
 
 	resource_grp_resultExpirationTime:int
@@ -483,6 +489,9 @@ class Configuration(object):
 
 	resource_ts_mni:int
 	"""	The MNI for TS. """
+
+	resource_ts_mia:int
+	"""	The MIA for TS. """
 
 
 	resource_tsb_bcni:str

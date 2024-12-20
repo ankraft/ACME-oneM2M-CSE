@@ -120,10 +120,11 @@ class FCNT(ContainerResource):
 		if any(attr == 0 for attr in [self.mni, self.mbs, self.mia]):
 			raise BAD_REQUEST('mni, mbs, or mia must not be set to 0')
 
-		# Set mni and mbn to the default values if not present
+		# Set mni, mbn and mia to the default values if not present
 		if Configuration.resource_fcnt_enableLimits:
 			self.setAttribute('mni', Configuration.resource_fcnt_mni, overwrite = False)
 			self.setAttribute('mbs', Configuration.resource_fcnt_mbs, overwrite = False)
+			self.setAttribute('mia', Configuration.resource_fcnt_mia, overwrite = False)
 
 		# Check any of mni, mbs, or mia is present in the request with a value of 0
 		if any(attr == 0 for attr in [self.mni, self.mbs, self.mia]):
@@ -230,10 +231,14 @@ class FCNT(ContainerResource):
 		finMni = self.getFinalResourceAttribute('mni', dct)
 		finMbs = self.getFinalResourceAttribute('mbs', dct)
 
-		# Set mni and mbs to the default values if not present
-		if Configuration.resource_fcnt_enableLimits:
-			self.setAttribute('mni', Configuration.resource_fcnt_mni, overwrite = False)
-			self.setAttribute('mbs', Configuration.resource_fcnt_mbs, overwrite = False)
+		# Set mni, mbs and mia to the default values if not present
+		if self.getFinalResourceAttribute('mni', dct) is None and \
+			self.getFinalResourceAttribute('mbs', dct) is None and \
+			self.getFinalResourceAttribute('mia', dct) is None and \
+			Configuration.resource_fcnt_enableLimits:	# Only when limits are enabled
+				self.setAttribute('mni', Configuration.resource_fcnt_mni, overwrite = False)
+				self.setAttribute('mbs', Configuration.resource_fcnt_mbs, overwrite = False)
+				self.setAttribute('mia', Configuration.resource_fcnt_mia, overwrite = False)
 
 		# Update cbs and cni if any of the custom attributes or lbl is present in the request
 		needsFcin = False

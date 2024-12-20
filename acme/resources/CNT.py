@@ -96,6 +96,7 @@ class CNT(ContainerResource):
 		if Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite = False)
 			self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite = False)
+			self.setAttribute('mia', Configuration.resource_cnt_mia, overwrite = False)
 
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -129,6 +130,15 @@ class CNT(ContainerResource):
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
 		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
+
+		# add default values for cni, cbs and mia if not present
+		if self.getFinalResourceAttribute('cni', dct) is None and \
+			self.getFinalResourceAttribute('mni', dct) is None and \
+			self.getFinalResourceAttribute('mia', dct) is None and \
+			Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
+				self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite = False)
+				self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite = False)
+				self.setAttribute('mia', Configuration.resource_cnt_mia, overwrite = False)
 
 		# Update stateTag when modified
 		self.setAttribute('st', self.st + 1)

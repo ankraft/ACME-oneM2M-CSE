@@ -25,6 +25,7 @@ class CNTResourceConfiguration(ModuleConfiguration):
 		config.resource_cnt_enableLimits = parser.getboolean('resource.cnt', 'enableLimits', fallback = False)
 		config.resource_cnt_mni = parser.getint('resource.cnt', 'mni', fallback = 10)
 		config.resource_cnt_mbs = parser.getint('resource.cnt', 'mbs', fallback = 10000)
+		config.resource_cnt_mia = parser.getint('resource.cnt', 'mia', fallback = 60*60*24*365*5) # 5 years, in seconds
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -32,3 +33,5 @@ class CNTResourceConfiguration(ModuleConfiguration):
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mni[/i] must be > 0')
 		if config.resource_cnt_mbs <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mbs[/i] must be > 0')
+		if config.resource_cnt_mia <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mia[/i] must be > 0')

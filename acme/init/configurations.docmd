@@ -1458,19 +1458,27 @@ The default value is `False`.
 
 
 
-# resource.cnt.mni
-
-This setting specifies the CSE's default for the CNT's *mni* (maxNrOfInstances) attribute.
-
-The default value is `10`.
-
-
-
 # resource.cnt.mbs
 
 This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attribute.
 
 The default value is `10000 bytes`.
+
+
+
+# resource.cnt.mia
+
+This setting specifies the CSE's default for the CNT's *mia* (maxInstanceAge) attribute in seconds.
+
+The default value is the same as the *cse.requestExpirationDelta*s setting.
+
+
+
+# resource.cnt.mni
+
+This setting specifies the CSE's default for the CNT's *mni* (maxNrOfInstances) attribute.
+
+The default value is `10`.
 
 
 
@@ -1490,20 +1498,27 @@ The default value is `False`.
 
 
 
-# resource.fcnt.mni
-
-This setting specifies the CSE's default for the FCNT's *mni* (maxNrOfInstances) attribute.
-
-The default value is `10`.
-
-
-
 # resource.fcnt.mbs
 
 This setting specifies the CSE's default for the FCNT's *mbs* (maxByteSize) attribute.
 
 The default value is `10000 bytes`.
 
+
+
+# resource.fcnt.mia
+
+This setting specifies the CSE's default for the FCNT's *mia* (maxInstanceAge) attribute in seconds.
+
+The default value is the same as the *cse.requestExpirationDelta*s setting.
+
+
+
+# resource.fcnt.mni
+
+This setting specifies the CSE's default for the FCNT's *mni* (maxNrOfInstances) attribute.
+
+The default value is `10`.
 
 
 
@@ -1606,6 +1621,14 @@ The default value is `10000 bytes`.
 This setting specifies the CSE's default for the TS's *mdn* (missingDataMaxNr) attribute.
 
 The default value is `10`.
+
+
+
+# resource.ts.mia
+
+This setting specifies the CSE's default for the TS's *mia* (maxInstanceAge) attribute in seconds.
+
+The default value is the same as the *cse.requestExpirationDelta*s setting.
 
 
 

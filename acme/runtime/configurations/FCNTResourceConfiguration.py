@@ -24,6 +24,7 @@ class FCNTResourceConfiguration(ModuleConfiguration):
 		config.resource_fcnt_enableLimits = parser.getboolean('resource.fcnt', 'enableLimits', fallback = False)
 		config.resource_fcnt_mni = parser.getint('resource.fcnt', 'mni', fallback = 10)
 		config.resource_fcnt_mbs = parser.getint('resource.fcnt', 'mbs', fallback = 10000)
+		config.resource_fcnt_mia = parser.getint('resource.fcnt', 'mia', fallback = 60*60*24*365*5)	# 5 years, in seconds
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -31,3 +32,5 @@ class FCNTResourceConfiguration(ModuleConfiguration):
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mni[/i] must be > 0')
 		if config.resource_fcnt_mbs <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mbs[/i] must be > 0')
+		if config.resource_fcnt_mia <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mia[/i] must be > 0')
