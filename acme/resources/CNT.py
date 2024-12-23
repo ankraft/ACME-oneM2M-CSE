@@ -132,8 +132,8 @@ class CNT(ContainerResource):
 			CSE.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
 
 		# add default values for cni, cbs and mia if not present
-		if self.getFinalResourceAttribute('cni', dct) is None and \
-			self.getFinalResourceAttribute('mni', dct) is None and \
+		if self.getFinalResourceAttribute('mni', dct) is None and \
+			self.getFinalResourceAttribute('mbs', dct) is None and \
 			self.getFinalResourceAttribute('mia', dct) is None and \
 			Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
 				self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite = False)
