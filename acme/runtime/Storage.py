@@ -574,7 +574,8 @@ class Storage(object):
 			  'nec'  	: subscription.nec,
 			  'org'		: subscription.getOriginator(),
 			  'ma' 		: fromDuration(subscription.ma) if subscription.ma else None, # EXPERIMENTAL ma = maxAge
-			  'nse' 	: subscription.nse
+			  'nse' 	: subscription.nse,
+			  'eeno' 	: subscription.eeno,
 			 }, ri) is not None
 
 

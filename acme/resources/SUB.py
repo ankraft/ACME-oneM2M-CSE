@@ -68,6 +68,7 @@ class SUB(Resource):
 		'acrs': None,
 		'nse': None,
 		'nsi': None,
+		'eeno': None,
 		'ma': None,		# EXPERIMENTAL maxage blocking retrieve
 	}
 

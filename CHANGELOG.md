@@ -12,14 +12,15 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added support for the [credential] ManagementObject specialization.
-- [CSE] Added support for other data types (int, float, bool, list, dict) for the &lt;ContentInstance>'s and &lt;timeSeriesInstance>'s *content* attribute.
+- [CSE] Added support for other data types (int, float, bool, list, dict) for the &lt;ContentInstance>'s and &lt;TimeSeriesInstance>'s *content* attribute.
+- [CSE] Added configurable default settings for *mia* attribute in &lt;Container>, &lt;FlexContainer> and &lt;TimeSeries> resources.
 - [TUI] Added support for enablong/disabling syntax highlighting in the resource editor of the text UI. The syntax package is now not installed by default because it is not available on all platforms. It be installed afterward if needed.
 - [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
 - [SCRIPTS] Added *fset* build-in command to set an alias to functions and lambdas.
 
 ### Experimental
 - [CSE] Added check if the operation execution time (oet) is after rqet or rset.
-- [CSE] Added support for the revised FlexContainer and FlexContainerInstance resource types.
+- [CSE] Added support for the revised &lt;FlexContainer> and &lt;FlexContainerInstance> resource types.
 
 ### Changed
 - [MISC] Improved Docker image generation.

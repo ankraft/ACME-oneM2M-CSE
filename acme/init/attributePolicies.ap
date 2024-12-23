@@ -1386,7 +1386,20 @@
 			"annc": "NA"
 		}
 	],
-
+	
+	"eeno": [
+		{
+			"rtypes": [ "SUB", "REQRESP" ],
+			"lname": "enableEventNotificationOriginator",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"egid": [
 		{
 			"rtypes": [ "ALL" ],

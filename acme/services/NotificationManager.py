@@ -324,7 +324,8 @@ class NotificationManager(object):
 														 resource = childResource, 
 														 modifiedAttributes = modifiedAttributes, 
 														 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
-														 operationMonitor = foundOperationMonitor)
+														 operationMonitor = foundOperationMonitor,
+														 originator = originator)
 					self.countNotificationEvents(ri)
 			
 				# Check Update and enc/atr vs the modified attributes 
@@ -339,7 +340,8 @@ class NotificationManager(object):
 															 resource = resource, 
 															 modifiedAttributes = modifiedAttributes,
 															 asynchronous = Configuration.cse_asyncSubscriptionNotifications,
-															 operationMonitor = foundOperationMonitor)
+															 operationMonitor = foundOperationMonitor,
+															 originator = originator)
 						self.countNotificationEvents(ri)
 					else:
 						L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
@@ -362,7 +364,8 @@ class NotificationManager(object):
 														resource, 
 														modifiedAttributes = modifiedAttributes,
 														asynchronous = False,
-														operationMonitor = foundOperationMonitor)	# blocking NET always synchronous!
+														operationMonitor = foundOperationMonitor,
+														originator = originator)	# blocking NET always synchronous!
 					self.countNotificationEvents(ri)
 
 				# case NotificationEventType.notSet:	# ignore
@@ -375,7 +378,8 @@ class NotificationManager(object):
 														resource, 
 														modifiedAttributes = modifiedAttributes,
 														asynchronous = Configuration.cse_asyncSubscriptionNotifications,
-														operationMonitor = foundOperationMonitor)
+														operationMonitor = foundOperationMonitor,
+														originator = originator)
 					self.countNotificationEvents(ri)
 
 
@@ -1139,14 +1143,27 @@ class NotificationManager(object):
 											  modifiedAttributes:Optional[JSON] = None, 
 											  missingData:Optional[MissingData] = None,
 											  asynchronous:bool = False,
-											  operationMonitor:Optional[OperationMonitor] = None) ->  bool:
+											  operationMonitor:Optional[OperationMonitor] = None,
+											  originator:str = None) ->  bool:
 		"""	Send a subscription notification.
+
+			Args:
+				sub: The <sub> resource.
+				notificationEventType: The notification event type.
+				resource: The resource that triggered the notification.
+				modifiedAttributes: The modified attributes of the resource.
+				missingData: The missing data of the resource.
+				asynchronous: If True, send the notification in the background.
+				operationMonitor: The operationMonitor information.
+				originator: The originator on which behalf to send the notification.
+
+			Return:
+				True if the notification was sent successfully, False otherwise.
 		"""
-		# TODO doc
 		L.isDebug and L.logDebug(f'Handling notification for notificationEventType: {notificationEventType} for notificationContentType: {sub["nct"]}')
 
 
-		def _sendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
+		def _doSendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
 														 to = uri, 
@@ -1203,6 +1220,11 @@ class NotificationManager(object):
 			operationMonitor is not None and setXPath(notificationRequest, 'm2m:sgn/nev/om', operationMonitor)
 			creator is not None and setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
+			# Add the originator that caused the event to the notificaton
+			# See SDS-2023-0096 and SDS-2023-0143
+			if originator and sub.get('eeno'):
+				setXPath(notificationRequest, 'm2m:sgn/cr', originator)
+
 			# Check for batch notifications
 			if sub['bn']:
 				return self._storeBatchNotification(uri, sub, notificationRequest)
@@ -1219,21 +1241,11 @@ class NotificationManager(object):
 				
 				# Send the notification
 				if asynchronous:
-					BackgroundWorkerPool.runJob(lambda: _sendNotification(uri, subscription, notificationRequest), 
+					BackgroundWorkerPool.runJob(lambda: _doSendNotification(uri, subscription, notificationRequest), 
 																		  name = f'NOT_{sub["ri"]}')
 					return True
-				else:
-					return _sendNotification(uri, subscription, notificationRequest)
+				return _doSendNotification(uri, subscription, notificationRequest)
 
-				# if not CSE.request.sendNotifyRequest(uri, 
-				# 									 originator = RC.cseCsi,
-				# 									 content = notificationRequest).status:
-				# 	L.isDebug and L.logDebug(f'Notification failed for: {uri}')
-				# 	return False
-				
-				# self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
-
-				return True
 
 		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
 
