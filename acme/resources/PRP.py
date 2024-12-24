@@ -27,6 +27,12 @@ notAllowedAttributes = [ 'op', 'to', 'fr', 'rqi', 'rvi', 'rsc', 'fc', 'ot', 'gid
 
 class PRP(AnnounceableResource):
 
+	resourceType = ResourceTypes.PRP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	ResourceTypes.SUB
 								 ]
@@ -76,7 +82,7 @@ class PRP(AnnounceableResource):
 				pi: The parent resource ID.
 				create: Create a new resource instance. Default is *False*.
 		"""
-		super().__init__(ResourceTypes.PRP, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

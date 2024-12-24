@@ -17,6 +17,12 @@ from ..resources.Resource import Resource
 
 class CSRAnnc(AnnouncedResource):
 
+	resourceType = ResourceTypes.CSRAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	ResourceTypes.ACTR, 
 									ResourceTypes.ACTRAnnc,  
@@ -83,6 +89,6 @@ class CSRAnnc(AnnouncedResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CSRAnnc, dct, pi = pi, create = create)
+		super().__init__(dct, pi = pi, create = create)
 
 

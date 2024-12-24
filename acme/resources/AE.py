@@ -22,6 +22,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
+	resourceType = ResourceTypes.AE
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
 													   ResourceTypes.ACTR,
 													   ResourceTypes.CNT,
@@ -81,7 +87,7 @@ class AE(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.AE, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 		self.setAttribute('aei', uniqueAEI(), overwrite = False)
 		self.setAttribute('rr', False, overwrite = False)

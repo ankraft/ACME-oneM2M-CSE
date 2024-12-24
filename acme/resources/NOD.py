@@ -23,6 +23,12 @@ from ..resources.Resource import Resource
 
 class NOD(AnnounceableResource):
 
+	resourceType = ResourceTypes.NOD
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
 								   ResourceTypes.MGMTOBJ, 
@@ -66,7 +72,7 @@ class NOD(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.NOD, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 		self.setAttribute('ni', uniqueID(), overwrite = False)
 
 

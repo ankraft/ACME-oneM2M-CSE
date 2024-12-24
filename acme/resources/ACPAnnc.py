@@ -17,6 +17,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class ACPAnnc(AnnouncedResource):
 	""" AccessControlPolicy announced (ACPA) resource type """
 
+	resourceType = ResourceTypes.ACPAnnc
+	""" The resource type """
+
+	typeShortname = ResourceTypes.ACPAnnc.typeShortname()
+	"""	The resource's domain and type name. """
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
 
@@ -47,5 +53,5 @@ class ACPAnnc(AnnouncedResource):
 
 
 	def __init__(self, dct:JSON, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.ACPAnnc, dct, pi = pi, create = create)
+		super().__init__(dct, pi = pi, create = create)
 

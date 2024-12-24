@@ -34,6 +34,13 @@ addToInternalAttributes(Constants.attrGTA)
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
+	resourceType = ResourceTypes.LCP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
@@ -76,7 +83,7 @@ class LCP(AnnounceableResource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.LCP, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

@@ -16,6 +16,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class FCNTAnnc(AnnouncedResource):
 	""" FlexContainerAnnounced resource class """
 
+	resourceType = ResourceTypes.FCNTAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	ResourceTypes.ACTR, 
 									ResourceTypes.ACTRAnnc, 
@@ -63,5 +69,5 @@ class FCNTAnnc(AnnouncedResource):
 	def __init__(self, dct:JSON, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCNTAnnc, dct, pi = pi, create = create)
+		super().__init__(dct, pi = pi, create = create)
 

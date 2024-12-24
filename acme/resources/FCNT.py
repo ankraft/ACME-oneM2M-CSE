@@ -29,6 +29,12 @@ addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ig
 
 class FCNT(ContainerResource):
 
+	resourceType = ResourceTypes.FCNT
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.CNT, 
@@ -81,7 +87,7 @@ class FCNT(ContainerResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCNT, dct, pi, typeShortname = fcntType, create = create)
+		super().__init__(dct, pi, typeShortname = fcntType, create = create)
 
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)

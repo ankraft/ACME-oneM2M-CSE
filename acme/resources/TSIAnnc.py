@@ -15,6 +15,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 
 class TSIAnnc(AnnouncedResource):
 
+	resourceType = ResourceTypes.TSIAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -45,5 +51,5 @@ class TSIAnnc(AnnouncedResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TSIAnnc, dct, pi = pi, inheritACP = True, create = create)
+		super().__init__(dct, pi = pi, inheritACP = True, create = create)
 		 

@@ -34,6 +34,13 @@ class SMD(AnnounceableResource):
 		resource and potentially subresources.
 	"""
 
+	resourceType = ResourceTypes.SMD
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
@@ -79,7 +86,7 @@ class SMD(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SMD, dct, pi, typeShortname = fcntType, create = create)
+		super().__init__(dct, pi, typeShortname = fcntType, create = create)
 		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
 
 

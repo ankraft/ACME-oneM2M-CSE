@@ -26,6 +26,12 @@ from ..runtime.Logging import Logging as L
 
 class PRMR(AnnounceableResource):
 
+	resourceType = ResourceTypes.PRMR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.STTE,
 							   	   ResourceTypes.SUB
@@ -74,7 +80,7 @@ class PRMR(AnnounceableResource):
 				pi: The parent resource ID.
 				create: Create a new resource instance. Default is *False*.
 		"""
-		super().__init__(ResourceTypes.PRMR, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

@@ -18,6 +18,12 @@ from ..resources.MgmtObjAnnc import MgmtObjAnnc
 class BATAnnc(MgmtObjAnnc):
 	""" [BatteryAnnc] (BATA) management object specialization """
 
+	resourceType = ResourceTypes.MGMTOBJAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

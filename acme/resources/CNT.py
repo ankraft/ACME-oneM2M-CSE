@@ -27,6 +27,13 @@ from ..resources import Factory	# attn: circular import
 class CNT(ContainerResource):
 	""" Container resource type. """
 
+	resourceType = ResourceTypes.CNT
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
 									ResourceTypes.CNT, 
 									ResourceTypes.CIN,
@@ -79,7 +86,7 @@ class CNT(ContainerResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)

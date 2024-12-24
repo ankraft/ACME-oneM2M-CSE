@@ -21,6 +21,12 @@ from ..runtime import CSE
 
 class CSR(AnnounceableResource):
 
+	resourceType = ResourceTypes.CSR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	ResourceTypes.ACP, 
 									ResourceTypes.ACPAnnc, 
@@ -100,7 +106,7 @@ class CSR(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CSR, dct, pi, rn = rn, create = create)
+		super().__init__(dct, pi, rn = rn, create = create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:

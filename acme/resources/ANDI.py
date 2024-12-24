@@ -17,6 +17,12 @@ from ..resources.MgmtObj import MgmtObj
 class ANDI(MgmtObj):
 	""" [AreaNwkDeviceInfo] (ANDI) `MgmtObj` specialization. """
 
+	resourceType = ResourceTypes.MGMTOBJ
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		

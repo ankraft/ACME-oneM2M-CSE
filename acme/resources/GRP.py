@@ -20,6 +20,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class GRP(AnnounceableResource):
 
+	resourceType = ResourceTypes.GRP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.SMD, 
@@ -65,7 +71,7 @@ class GRP(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.GRP, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite = False)
 		self.setAttribute('ssi', False, overwrite = True)

@@ -12,6 +12,7 @@ from typing import Optional
 
 from ..etc.Types import ResourceTypes, JSON
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.Resource import Resource
 
 
 class MgmtObj(AnnounceableResource):
@@ -21,6 +22,10 @@ class MgmtObj(AnnounceableResource):
 								   ResourceTypes.SUB ]
 
 	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.MGMTOBJ, dct, pi, typeShortname = mgd.typeShortname(), create=create)
+		super().__init__(dct, pi, typeShortname = mgd.typeShortname(), create=create)
 		self.setAttribute('mgd', int(mgd), overwrite=True)
+	
+
+	def activate(self, parentResource:Resource, originator:str) -> None:
+		super().activate(parentResource, originator)
 

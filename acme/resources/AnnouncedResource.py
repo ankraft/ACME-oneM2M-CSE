@@ -18,13 +18,12 @@ from ..runtime.Logging import Logging as L
 
 class AnnouncedResource(Resource):
 
-	def __init__(self, ty:ResourceTypes, 
-					   dct:JSON, 
+	def __init__(self, dct:JSON, 
 					   pi:Optional[str] = None,
 					   typeShortname:Optional[str] = None, 
 					   inheritACP:Optional[bool] = False, 
 					   create:Optional[bool] = False,) -> None:
-		super().__init__(ty, dct, pi, typeShortname = typeShortname, inheritACP = inheritACP, create = create)
+		super().__init__(dct, pi, typeShortname = typeShortname, inheritACP = inheritACP, create = create)
 
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:

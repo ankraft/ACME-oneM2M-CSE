@@ -23,6 +23,12 @@ from ..resources.VirtualResource import VirtualResource
 
 class GRP_FOPT(VirtualResource):
 
+	resourceType = ResourceTypes.GRP_FOPT
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -35,7 +41,7 @@ class GRP_FOPT(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
+		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

@@ -19,6 +19,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class SCHAnnc(AnnouncedResource):
 	""" Schedule Announced (SCHA) resource type. """
 
+	resourceType = ResourceTypes.SCHAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	""" The allowed child-resource types. """
@@ -50,7 +56,7 @@ class SCHAnnc(AnnouncedResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SCHAnnc, dct, pi = pi, create = create)
+		super().__init__(dct, pi = pi, create = create)
 
 
 # TODO coninue

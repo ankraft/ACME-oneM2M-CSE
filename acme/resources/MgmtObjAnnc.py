@@ -23,6 +23,6 @@ class MgmtObjAnnc(AnnouncedResource):
 	# The "mgd" attribute is mandatory must be the unaanounced variant!
 	
 	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.MGMTOBJAnnc, dct, pi, typeShortname = mgd.announced().typeShortname(), create = create)
+		super().__init__(dct, pi, typeShortname = mgd.announced().typeShortname(), create = create)
 		self.setAttribute('mgd', int(mgd), overwrite = True)
 

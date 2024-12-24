@@ -33,6 +33,12 @@ class PCH(Resource):
 	"""	PollingChannel resource class.
 	"""
 
+	resourceType = ResourceTypes.PCH
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
@@ -68,7 +74,7 @@ class PCH(Resource):
 				create:		True if this resource should be created.
 		"""
 		# PCH inherits from its parent, the <AE>
-		super().__init__(ResourceTypes.PCH, dct, pi, create = create, inheritACP = True)
+		super().__init__(dct, pi, create = create, inheritACP = True)
 
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	

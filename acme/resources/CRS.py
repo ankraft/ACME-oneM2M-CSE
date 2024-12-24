@@ -36,6 +36,12 @@ addToInternalAttributes(Constants.attrSudRI)
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
+	resourceType = ResourceTypes.CRS
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
@@ -77,7 +83,7 @@ class CRS(Resource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CRS, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite = False)	
 
 

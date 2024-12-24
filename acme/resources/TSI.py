@@ -18,6 +18,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class TSI(AnnounceableResource):
 
+	resourceType = ResourceTypes.TSI
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -51,7 +57,7 @@ class TSI(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
+		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True)
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
 
 

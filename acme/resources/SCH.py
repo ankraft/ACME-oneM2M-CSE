@@ -24,6 +24,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
 
+	resourceType = ResourceTypes.SCH
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
 													 ]
@@ -56,8 +62,7 @@ class SCH(AnnounceableResource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SCH, dct, pi, create = create)
-
+		super().__init__(dct, pi, create = create)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

@@ -26,15 +26,14 @@ addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:ResourceTypes, 
-					   dct:Optional[JSON] = None, 
+	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   typeShortname:Optional[str] = None, 
 					   create:Optional[bool] = False, 
 					   inheritACP:Optional[bool] = False, 
 					   readOnly:Optional[bool] = False, 
 					   rn:Optional[str] = None) -> None:
-		super().__init__(ty, dct, pi, typeShortname = typeShortname, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
+		super().__init__(dct, pi, typeShortname = typeShortname, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
 		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)

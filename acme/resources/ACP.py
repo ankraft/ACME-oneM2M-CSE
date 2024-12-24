@@ -26,6 +26,13 @@ addToInternalAttributes(Constants.attrRiTyMapping)
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
 
+	resourceType = ResourceTypes.ACP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
 
@@ -58,7 +65,7 @@ class ACP(AnnounceableResource):
 					   pi:Optional[str] = None, 
 					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
+		super().__init__(dct, pi, create = create, inheritACP = True, rn = rn)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)

@@ -17,6 +17,12 @@ from ..resources.Resource import Resource
 
 class FCI(Resource):
 
+	resourceType = ResourceTypes.FCI
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -43,7 +49,7 @@ class FCI(Resource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCI, dct, pi, typeShortname = fcntType, create = create, inheritACP = True, readOnly = True)
+		super().__init__(dct, pi, typeShortname = fcntType, create = create, inheritACP = True, readOnly = True)
 
 
 	# Forbidd updating

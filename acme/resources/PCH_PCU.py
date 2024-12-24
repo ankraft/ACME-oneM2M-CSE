@@ -27,6 +27,12 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 
 class PCH_PCU(VirtualResource):
 
+	resourceType = ResourceTypes.PCH_PCU
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -39,8 +45,7 @@ class PCH_PCU(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.PCH_PCU, 
-						 dct, 
+		super().__init__(dct, 
 						 pi = pi, 
 						 create = create, 
 						 inheritACP = True, 

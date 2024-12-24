@@ -16,6 +16,12 @@ from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 class MEMAnnc(MgmtObjAnnc):
 
+	resourceType = ResourceTypes.MEMAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		

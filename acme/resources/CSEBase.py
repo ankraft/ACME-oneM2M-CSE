@@ -26,6 +26,12 @@ from ..etc.Constants import RuntimeConstants as RC
 class CSEBase(AnnounceableResource):
 	""" CSEBase (CSEBase) resource type. """
 
+	resourceType = ResourceTypes.CSEBase
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACP,
 								   ResourceTypes.ACTR, 
@@ -78,7 +84,7 @@ class CSEBase(AnnounceableResource):
 
 
 	def __init__(self, dct:JSON, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CSEBase, dct, '', create = create)
+		super().__init__(dct, '', create = create)
 
 		self.setAttribute('ri', 'cseid', overwrite = False)
 		self.setAttribute('rn', 'cse', overwrite = False)

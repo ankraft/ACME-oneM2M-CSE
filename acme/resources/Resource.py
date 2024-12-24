@@ -68,7 +68,6 @@ class Resource(object):
 
 
 	def __init__(self, 
-				 ty:ResourceTypes, 
 				 dct:JSON, 
 				 pi:Optional[str] = None, 
 				 typeShortname:Optional[str] = None,
@@ -79,7 +78,6 @@ class Resource(object):
 		"""	Initialization of a Resource instance.
 		
 			Args:
-				ty: Mandatory resource type.
 				dct: Mandatory resource attributes.
 				pi: Optional parent resource identifier.
 				typeShortname: Optional domain and resource type short name.
@@ -89,8 +87,6 @@ class Resource(object):
 				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
 
-		self.typeShortname = typeShortname
-		"""	The resource's domain and type name. """
 		self.readOnly	= readOnly
 		"""	Flag set during creation of a resource instance whether a resource type allows only read-only access to a resource. """
 		self.inheritACP	= inheritACP
@@ -103,12 +99,14 @@ class Resource(object):
 		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
 		# For some types the typeShortname/root is empty and will be set later in this method
-		if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
-			self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
+		
+		# TODO -> fcnt, fci
+		# if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
+		# 	self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
 
 		if dct is not None: 
 			self.isImported = dct.get(Constants.attrImported)	# might be None, or boolean
-			self.dict = deepcopy(dct.get(self.typeShortname))
+			self.dict = deepcopy(dct.get(self.typeShortname))	# type:ignore[has-type]
 			if not self.dict:
 				self.dict = deepcopy(dct)
 			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
@@ -117,10 +115,10 @@ class Resource(object):
 			self.setAttribute(Constants.attrIsInstantiated, True)
 
 		# if self.dict is not None:
-		if not self.typeShortname: 
+		if not self.typeShortname: 	# type:ignore[has-type]
 			self.typeShortname = self[Constants.attrRtype]
-		if not self.hasAttribute('ri'):
-			self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
+		# if not self.hasAttribute('ri'):
+		# 	self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
 		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
 			self.setAttribute('pi', pi)
 
@@ -133,20 +131,17 @@ class Resource(object):
 			self.setResourceName(uniqueRN(self.typeShortname))
 
 		# Check uniqueness of ri. otherwise generate a new one. Only when creating
-		if create:
-			while not isUniqueRI(ri := self.ri):
-				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-				self['ri'] = uniqueRI(self.typeShortname)
+		# if create:
+		# 	while not isUniqueRI(ri := self.ri):
+		# 		L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
+		# 		self['ri'] = uniqueRI(self.typeShortname)
 
-		# Set some more attributes
-		if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
-			ts = getResourceDate()
-			self.setAttribute('ct', ts, overwrite = False)
-			self.setAttribute('lt', ts, overwrite = False)
 
 		# Handle resource type
-		if ty is not None:
-			self.setAttribute('ty', int(ty))
+
+		# if ty is not None:
+		# 	self.setAttribute('ty', int(ty))
+		self.setAttribute('ty', int(self.resourceType))
 
 		#
 		## Note: ACPI is handled in activate() and update()
@@ -202,6 +197,12 @@ class Resource(object):
 		"""
 		# TODO check whether 				CR is set in RegistrationManager
 		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
+
+
+		# Set some more attributes
+		ts = getResourceDate()
+		self.setAttribute('ct', ts, overwrite = False)
+		self.setAttribute('lt', ts, overwrite = False)
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct

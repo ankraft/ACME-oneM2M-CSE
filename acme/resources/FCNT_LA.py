@@ -25,6 +25,13 @@ class FCNT_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <flexContainer> resources.
 	"""
 
+	resourceType = ResourceTypes.FCNT_LA
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
 
@@ -39,7 +46,7 @@ class FCNT_LA(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
+		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

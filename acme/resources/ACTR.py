@@ -28,6 +28,13 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
+	resourceType = ResourceTypes.ACTR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
 													   ResourceTypes.SUB
@@ -73,7 +80,7 @@ class ACTR(AnnounceableResource):
 		# the following two lines are needed bc mypy cannot determine the type otherwise
 		self.sri:str
 		self.orc:str
-		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
+		super().__init__(dct, pi, create = create)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

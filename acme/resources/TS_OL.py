@@ -25,6 +25,12 @@ class TS_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <timeSeries> resources.
 	"""
 
+	resourceType = ResourceTypes.TS_OL
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
 
@@ -39,7 +45,7 @@ class TS_OL(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TS_OL, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
+		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
 
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:

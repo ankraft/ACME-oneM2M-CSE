@@ -25,6 +25,13 @@ class CIN(AnnounceableResource):
 	""" ContentInstance resource type.
 	"""
 
+	resourceType = ResourceTypes.CIN
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SMD ]
 	""" The allowed child-resource types. """
@@ -68,7 +75,7 @@ class CIN(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CIN, dct, pi, create = create, inheritACP = True, readOnly = True)
+		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True)
 
 		self.setAttribute('con', '', overwrite = False)
 		self.setAttribute('cs', getAttributeSize(self.con))
