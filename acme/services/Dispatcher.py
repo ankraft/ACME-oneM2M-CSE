@@ -878,15 +878,13 @@ class Dispatcher(object):
 			# Assign the parent's originator if not provided
 			originator = originator if originator else parentResource.getOriginator()
 
+		#
+		#	The following procedurs prepare a new resource
+		#
+
 		# if not already set: determine and add the srn
-		if not resource.getSrn():
-			resource.setSrn(resource.structuredPath())
-		if not resource.ri:
-			# resource['ri'] = uniqueRI(resource.typeShortname)
-			resource['ri'] = uniqueRI('xx')
-			while not isUniqueRI(ri := resource.ri):
-				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-				resource['ri'] = uniqueRI(resource.typeShortname)
+		resource.setSrn(resource.structuredPath())
+		resource.setResourceID()
 
 		# add the resource to storage
 		resource.dbCreate(overwrite = False)

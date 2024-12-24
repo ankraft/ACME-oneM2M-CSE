@@ -59,7 +59,6 @@ class Resource(object):
 		'readOnly',
 		'inheritACP',
 		'dict',
-		'isImported',
 		'_originalDict',
 	)
 
@@ -93,8 +92,6 @@ class Resource(object):
 		"""	Flag set during creation of a resource instance whether a resource type inherits the `resources.ACP.ACP` from its parent resource. """
 		self.dict 		= {}
 		"""	Dictionary for public and internal resource attributes. """
-		self.isImported	= False
-		"""	Flag set during creation of a resource instance whether a resource is imported, which disables some validation checks. """
 		self._originalDict = {}
 		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
@@ -105,7 +102,6 @@ class Resource(object):
 		# 	self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
 
 		if dct is not None: 
-			self.isImported = dct.get(Constants.attrImported)	# might be None, or boolean
 			self.dict = deepcopy(dct.get(self.typeShortname))	# type:ignore[has-type]
 			if not self.dict:
 				self.dict = deepcopy(dct)
@@ -154,32 +150,6 @@ class Resource(object):
 		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 
-	# Default encoding implementation. Overwrite in subclasses
-	def asDict(self, embedded:Optional[bool] = True, 
-					 update:Optional[bool] = False, 
-					 noACP:Optional[bool] = False,
-					 sort:bool = False) -> JSON:
-		"""	Get the JSON resource representation.
-		
-			Args:
-				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
-				update: Optional indicator whether only the updated attributes shall be included in the result.
-				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
-			
-			Return:
-				A `JSON` object with the resource representation.
-		"""
-		# remove (from a copy) all internal attributes before printing
-		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
-					if k not in internalAttributes 				# if k is not in internal attributes (starting with __), AND
-					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
-					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
-				}
-		if sort:
-			dct = dict(sorted(dct.items())) # sort the dictionary by key
-		return { self.typeShortname : dct } if embedded else dct
-
-
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		"""	This method is called to activate a resource, usually in a CREATE request.
 
@@ -212,7 +182,7 @@ class Resource(object):
 											 self.typeShortname, 
 											 self.ty, 
 											 self._attributes, 
-											 isImported = self.isImported, 
+											 isImported = self[Constants.attrImported],
 											 createdInternally = self.isCreatedInternally(), 
 											 isAnnounced = self.isAnnounced())
 
@@ -581,6 +551,32 @@ class Resource(object):
 
 
 	#########################################################################
+
+	# Default encoding implementation. Overwrite in subclasses
+	def asDict(self, embedded:Optional[bool] = True, 
+					 update:Optional[bool] = False, 
+					 noACP:Optional[bool] = False,
+					 sort:bool = False) -> JSON:
+		"""	Get the JSON resource representation.
+		
+			Args:
+				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
+				update: Optional indicator whether only the updated attributes shall be included in the result.
+				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
+			
+			Return:
+				A `JSON` object with the resource representation.
+		"""
+		# remove (from a copy) all internal attributes before printing
+		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
+					if k not in internalAttributes 				# if k is not in internal attributes (starting with __), AND
+					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
+					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
+				}
+		if sort:
+			dct = dict(sorted(dct.items())) # sort the dictionary by key
+		return { self.typeShortname : dct } if embedded else dct
+
 
 	def isCreatedInternally(self) -> bool:
 		""" Test whether a resource has been created for another resource.
@@ -1139,6 +1135,16 @@ class Resource(object):
 		# It is *not* a remote resource when the __remoteID__ is set
 		if not self[Constants.attrRemoteID]:
 			self.setSrn(self.structuredPath())
+
+
+	def setResourceID(self) -> None:
+		"""	Set the resource ID for the resource if not already set.
+		"""
+		if not self.ri:
+			self.setAttribute('ri', uniqueRI(self.typeShortname))
+			while not isUniqueRI(self.ri):
+				L.isWarn and L.logWarn(f'RI: {self.ri} is already assigned. Generating new RI.')
+				self.setAttribute('ri', uniqueRI(self.typeShortname))
 
 
 	def getSrn(self) -> str:
