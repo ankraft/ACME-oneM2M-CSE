@@ -242,6 +242,10 @@ class NotificationManager(object):
 			return 
 		if childResource and childResource.isVirtual():
 			return
+		
+		# Check whether the resource has subscriptions at all
+		if resource.getSubscriptionCounter() == 0:
+			return
 			
 		ri = resource.ri if not ri else ri
 		L.isDebug and L.logDebug(f'Checking subscriptions ({reason.name}({reason.value})) ri: {ri}')

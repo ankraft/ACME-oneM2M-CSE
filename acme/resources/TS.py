@@ -124,8 +124,8 @@ class TS(ContainerResource):
 		self._validateDataDetect()
 
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 

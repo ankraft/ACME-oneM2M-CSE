@@ -49,12 +49,12 @@ class AnnounceableResource(Resource):
 			CSE.announce.announceResource(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 		# perform deannouncements
 		if self.at:
 			CSE.announce.deAnnounceResource(self)
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 
 	def update(self, dct:JSON = None, 

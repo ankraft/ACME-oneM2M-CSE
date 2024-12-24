@@ -96,8 +96,8 @@ class TSB(AnnounceableResource):
 		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
 	
 
-	def deactivate(self, originator: str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator: str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.time.removeTimeSyncBeacon(self)
 
 

@@ -160,6 +160,8 @@ class Constants(object):
 	attrSudRI = '__sudRI__'
 	""" Constant: Name of the `Resource` internal *__sudRI__* attribute.  when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty. """
 
+	attrSubscriptionCounter = '__subCtr__'
+	""" Constant: Name of the `Resource` internal *__subCtr__* attribute. This attribute holds the subscription counter for a resource. """
 
 
 

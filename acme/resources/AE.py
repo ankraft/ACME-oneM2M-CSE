@@ -158,9 +158,9 @@ class AE(AnnounceableResource):
 				raise BAD_REQUEST(L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Inherited
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove itself from the node link in a hosting <node>
 		if nl := self.nl:

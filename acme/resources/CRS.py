@@ -172,7 +172,7 @@ class CRS(Resource):
 	
 
 	@criticalResourceSection(state = 'deactivate')
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 
 		# Deactivate time windows
 		match self.twt:
@@ -187,7 +187,7 @@ class CRS(Resource):
 		# Handle removing the csr by the notification manager
 		CSE.notification.removeCrossResourceSubscription(self)
 
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator:Optional[str] = None, 

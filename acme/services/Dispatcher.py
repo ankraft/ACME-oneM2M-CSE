@@ -1246,7 +1246,7 @@ class Dispatcher(object):
 			resource.willBeDeactivated(originator, parentResource)	
 
 		# Deactivate the resource
-		resource.deactivate(originator)
+		resource.deactivate(originator, parentResource)
 
 		# Check resource deletion
 		if withDeregistration:

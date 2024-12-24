@@ -123,9 +123,9 @@ class SMD(AnnounceableResource):
 		#CSE.semantic.updateDescription(self)
 
 	
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		CSE.semantic.removeDescriptor(self)
-		return super().deactivate(originator)
+		return super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator:Optional[str] = None,

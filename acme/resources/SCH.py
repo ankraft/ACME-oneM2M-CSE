@@ -115,13 +115,13 @@ class SCH(AnnounceableResource):
 			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.time.cseActiveSchedule}')
 
 
-	def deactivate(self, originator: str) -> None:
+	def deactivate(self, originator: str, parentResource:Resource) -> None:
 
 		# TODO When <SoftwareCampaign> is supported
 		# a) The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code 
 		# if the target resource is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
 		
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove the schedule from the schedules DB
 		CSE.storage.removeSchedule(self)

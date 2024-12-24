@@ -124,10 +124,17 @@ class SUB(Resource):
 
 		CSE.notification.addSubscription(self, originator)
 
+		# Increment the parent's subscription counter
+		parentResource.incrementSubscriptionCounter()
+		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+
+
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.notification.removeSubscription(self, originator)
+		parentResource.decrementSubscriptionCounter()
+		# L.logWarn(f'Decremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
 
 	def update(self, dct:Optional[JSON] = None, 

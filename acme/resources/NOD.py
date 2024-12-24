@@ -14,6 +14,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.IDUtils import uniqueID
 from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.Resource import Resource
 
 
 # TODO Support cmdhPolicy
@@ -69,8 +70,8 @@ class NOD(AnnounceableResource):
 		self.setAttribute('ni', uniqueID(), overwrite = False)
 
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 
 		# Remove self from all hosted AE's (their node links)
 		if not (hael := self['hael']):

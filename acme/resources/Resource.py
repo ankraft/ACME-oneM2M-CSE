@@ -41,7 +41,9 @@ internalAttributes	= [ Constants.attrRtype,
 						Constants.attrOriginator, 
 						Constants.attrModified, 
 						Constants.attrRemoteID,
-						Constants.attrRvi ]
+						Constants.attrRvi,
+						Constants.attrSubscriptionCounter
+					 ]
 """	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 
@@ -256,7 +258,7 @@ class Resource(object):
 			r.willBeDeactivated(originator, self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentresource:Resource) -> None:
 		"""	Deactivate an active resource.
 
 			This usually happens when creating the resource via a request.
@@ -266,6 +268,7 @@ class Resource(object):
 
 			Args:
 				originator: The requests originator that let to the deletion of the resource.
+				parentResource: The resource's parent resource.
 		"""
 		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
@@ -725,6 +728,9 @@ class Resource(object):
 				value: Value to assign to the attribute.
 				overwrite: Overwrite the value if already set.
 		"""
+		if key in self.dict and overwrite:
+			self.dict[key] = value
+			return
 		setXPath(self.dict, key, value, overwrite)
 
 
@@ -738,7 +744,10 @@ class Resource(object):
 			Return:
 				The attribute's value, the *default* value, or None
 		"""
-		return findXPath(self.dict, key, default)
+		try:
+			return self.dict[key]
+		except KeyError:
+			return findXPath(self.dict, key, default)
 
 
 	def hasAttribute(self, key:str) -> bool:
@@ -1206,6 +1215,33 @@ class Resource(object):
 		# Set the selected attributes in the request. The actual filtering is done in the response processing.
 		request.selectedAttributes = attributeList
 		
+
+	def incrementSubscriptionCounter(self) -> None:
+		""" Increment the subscription counter for the resource.
+
+			This is used to determine whether a resource has active subscriptions.
+		"""
+		ctr = self.getSubscriptionCounter()
+		self.setAttribute(Constants.attrSubscriptionCounter, ctr + 1)
+		self.dbUpdate()
+	
+
+	def decrementSubscriptionCounter(self) -> None:
+		""" Decrement the subscription counter for the resource.
+
+			This is used to determine whether a resource has active subscriptions.
+		"""
+		self.setAttribute(Constants.attrSubscriptionCounter, self.getSubscriptionCounter() - 1)
+		self.dbUpdate()
+	
+
+	def getSubscriptionCounter(self) -> int:
+		""" Retrieve the subscription counter for the resource.
+
+			Return:
+				The current subscription counter value.
+		"""
+		return self.attribute(Constants.attrSubscriptionCounter, 0)
 
 
 #########################################################################

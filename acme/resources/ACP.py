@@ -105,9 +105,9 @@ class ACP(AnnounceableResource):
 
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Inherited
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')

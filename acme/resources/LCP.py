@@ -128,12 +128,12 @@ class LCP(AnnounceableResource):
 		CSE.location.updateLocationPolicy(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Delete the extra <container> resource
 		if self.loi is not None:
 			CSE.dispatcher.deleteResource(self.loi, originator)
 		CSE.location.removeLocationPolicy(self)
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator: str | None = None, dct: JSON | None = None, parentResource: Resource | None = None) -> None:

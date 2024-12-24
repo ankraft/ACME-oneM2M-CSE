@@ -207,10 +207,10 @@ class ACTR(AnnounceableResource):
 			CSE.action.updateAction(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Unschedule the action
 		CSE.action.unscheduleAction(self)
-		return super().deactivate(originator)
+		return super().deactivate(originator, parentResource)
 
 
 	###########################################################################
