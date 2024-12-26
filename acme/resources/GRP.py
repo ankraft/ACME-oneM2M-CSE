@@ -90,7 +90,10 @@ class GRP(AnnounceableResource):
 		# add fanOutPoint
 		ri = self.ri
 		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Factory.resourceFromDict(pi = ri, ty = ResourceTypes.GRP_FOPT)
+		fanOutPointResource = Factory.resourceFromDict(pi = ri, 
+												 	   ty = ResourceTypes.GRP_FOPT,
+													   create = True,
+													   originator = originator)
 		CSE.dispatcher.createLocalResource(fanOutPointResource, self, originator)
 
 

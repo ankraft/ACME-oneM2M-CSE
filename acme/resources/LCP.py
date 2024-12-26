@@ -40,7 +40,6 @@ class LCP(AnnounceableResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
-
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
@@ -100,7 +99,9 @@ class LCP(AnnounceableResource):
 
 		container = Factory.resourceFromDict(_cnt,
 											 pi = parentResource.ri, 
-											 ty = ResourceTypes.CNT)
+											 ty = ResourceTypes.CNT,
+											 create = True,
+											 originator = originator)
 		try:
 			container = CSE.dispatcher.createLocalResource(container, parentResource, originator)
 		except Exception as e:

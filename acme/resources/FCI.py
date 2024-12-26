@@ -23,6 +23,9 @@ class FCI(Resource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -49,7 +52,7 @@ class FCI(Resource):
 					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, typeShortname = fcntType, create = create, inheritACP = True, readOnly = True)
+		super().__init__(dct, pi, typeShortname = fcntType, create = create, readOnly = True)
 
 
 	# Forbidd updating

@@ -215,7 +215,8 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 					 ty:Optional[ResourceTypes] = None, 
 					 create:Optional[bool] = False, 
 					 isImported:Optional[bool] = False,
-					 template:Optional[bool] = False) -> Resource:
+					 template:Optional[bool] = False,
+					 originator:Optional[str] = None) -> Resource:
 	""" Create a resource from a dictionary structure.
 
 		This function will **not** call the resource's *activate()* method, therefore some attributes
@@ -276,8 +277,13 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 			factory = typ.resourceFactory()
 	
 	if factory:
-		return cast(Resource, factory(resDict, typeShortname, pi, create))
+		newResource = cast(Resource, factory(resDict, typeShortname, pi, create))
+	else:
+		newResource = Unknown(resDict, typeShortname, pi = pi, create = create)	# Capture-All resource
 
-	return  Unknown(resDict, typeShortname, pi = pi, create = create)	# Capture-All resource
+	if create:
+		newResource.willBeActivated(pi, originator)
+
+	return newResource
 
 

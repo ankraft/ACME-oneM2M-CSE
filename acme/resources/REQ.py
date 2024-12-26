@@ -152,5 +152,9 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		return Factory.resourceFromDict(dct, pi = RC.cseRi, ty = ResourceTypes.REQ)
+		return Factory.resourceFromDict(dct, 
+								  		pi = RC.cseRi, 
+										ty = ResourceTypes.REQ, 
+										create = True,
+										originator = RC.cseCsi)
 

@@ -708,7 +708,11 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
-		newResource = resourceFromDict(deepcopy(request.pc), pi = parentResource.ri, ty = ty)
+		newResource = resourceFromDict(deepcopy(request.pc), 
+								 	   pi = parentResource.ri, 
+									   ty = ty, 
+									   create = True,
+									   originator = originator)
 
 		# Check whether the parent allows the adding
 		parentResource.childWillBeAdded(newResource, originator)
@@ -808,7 +812,11 @@ class Dispatcher(object):
 			parentResource = self.retrieveLocalResource(ri = pID, originator = originator)
 
 			# Build a resource instance
-			resource = resourceFromDict(dct, ty = ty, pi = pID)
+			resource = resourceFromDict(dct, 
+							   			ty = ty, 
+										pi = pID,
+										create = True,
+										originator = originator)
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
@@ -867,6 +875,11 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
+		# Do some last preparations before creating the resource. This includes
+		# settings that must be done before the resource is written to the DB, but
+		# cannot be done in activate() because that is called after the resource is written to the DB.
+		# resource.willBeActivated(parentResource.ri, originator)
+
 		if parentResource:	# parentResource might be None if this is the root resource
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
@@ -881,10 +894,6 @@ class Dispatcher(object):
 		#
 		#	The following procedurs prepare a new resource
 		#
-
-		# if not already set: determine and add the srn
-		resource.setSrn(resource.structuredPath())
-		resource.setResourceID()
 
 		# add the resource to storage
 		resource.dbCreate(overwrite = False)

@@ -111,14 +111,18 @@ class CNT(ContainerResource):
 		# add latest
 		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_LA)		# rn is assigned by resource itself
+													ty = ResourceTypes.CNT_LA,
+													create = True,
+													originator = originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(latestResource, self)
 		self.setLatestRI(resource.ri)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_OL)		# rn is assigned by resource itself
+													ty = ResourceTypes.CNT_OL,
+													create = True,
+													originator = originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(oldestResource, self)
 		self.setOldestRI(resource.ri)
 

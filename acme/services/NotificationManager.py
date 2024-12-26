@@ -244,7 +244,7 @@ class NotificationManager(object):
 			return
 		
 		# Check whether the resource has subscriptions at all
-		if resource.getSubscriptionCounter() == 0:
+		if resource and resource.getSubscriptionCounter() == 0:
 			return
 			
 		ri = resource.ri if not ri else ri

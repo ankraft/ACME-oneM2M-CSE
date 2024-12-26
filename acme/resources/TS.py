@@ -110,14 +110,18 @@ class TS(ContainerResource):
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 										    pi = self.ri, 
-										    ty = ResourceTypes.TS_LA)	# rn is assigned by resource itself
+										    ty = ResourceTypes.TS_LA,
+											create = True,
+											originator = originator)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
 		self.setLatestRI(resource.ri)	# Set the latest resource ID
 
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 										    pi = self.ri, 
-										    ty = ResourceTypes.TS_OL)	# rn is assigned by resource itself
+										    ty = ResourceTypes.TS_OL,
+											create = True,
+											originator = originator)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)	# Set the oldest resource ID
 

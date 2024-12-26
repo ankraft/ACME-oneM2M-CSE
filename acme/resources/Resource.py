@@ -54,10 +54,13 @@ class Resource(object):
 
 	"""
 
+	inheritACP = False
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+
 	__slots__ = (
 		'typeShortname',
 		'readOnly',
-		'inheritACP',
 		'dict',
 		'_originalDict',
 	)
@@ -71,9 +74,7 @@ class Resource(object):
 				 pi:Optional[str] = None, 
 				 typeShortname:Optional[str] = None,
 				 create:Optional[bool] = False,
-				 inheritACP:Optional[bool] = False, 
-				 readOnly:Optional[bool] = False, 
-				 rn:Optional[str] = None) -> None:
+				 readOnly:Optional[bool] = False) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
@@ -81,15 +82,12 @@ class Resource(object):
 				pi: Optional parent resource identifier.
 				typeShortname: Optional domain and resource type short name.
 				create: Optional indicator whether this resource is just created or an instance of an existing resource.
-				inheritACP: Optional indicator whether this resource inherits *acpi* attribute from its parent (if any).
 				readOnly: Optional indicator whether this resource is read-only.
 				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
 
 		self.readOnly	= readOnly
 		"""	Flag set during creation of a resource instance whether a resource type allows only read-only access to a resource. """
-		self.inheritACP	= inheritACP
-		"""	Flag set during creation of a resource instance whether a resource type inherits the `resources.ACP.ACP` from its parent resource. """
 		self.dict 		= {}
 		"""	Dictionary for public and internal resource attributes. """
 		self._originalDict = {}
@@ -100,6 +98,7 @@ class Resource(object):
 		# TODO -> fcnt, fci
 		# if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
 		# 	self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
+		# TODO mgd
 
 		if dct is not None: 
 			self.dict = deepcopy(dct.get(self.typeShortname))	# type:ignore[has-type]
@@ -118,36 +117,33 @@ class Resource(object):
 		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
 			self.setAttribute('pi', pi)
 
-		# override rn if given
-		if rn:
-			self.setResourceName(rn)
-
-		# Create an RN if there is none (not given, none in the resource)
-		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
-			self.setResourceName(uniqueRN(self.typeShortname))
-
-		# Check uniqueness of ri. otherwise generate a new one. Only when creating
-		# if create:
-		# 	while not isUniqueRI(ri := self.ri):
-		# 		L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-		# 		self['ri'] = uniqueRI(self.typeShortname)
-
-
-		# Handle resource type
-
-		# if ty is not None:
-		# 	self.setAttribute('ty', int(ty))
-		self.setAttribute('ty', int(self.resourceType))
-
-		#
-		## Note: ACPI is handled in activate() and update()
-		#
-
 		# Remove empty / null attributes from dict
 		# But see also the comment in update() !!!
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 		self.setAttribute(Constants.attrRtype, self.typeShortname)
+
+
+	def willBeActivated(self, pi:str, originator:str) -> None:
+		""" This method is called before a new resource will be created and written to the database.
+
+			Args:
+				parentResource: The resource's parent resource.
+				originator: The request originator.
+		"""
+		# if not already set: determine and add the srn
+		self.setResourceID()
+
+		# Create an RN if there is none (not given, none in the resource)
+		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
+			self.setResourceName(uniqueRN(self.typeShortname))
+
+		# Set the internal structure resource name
+		self.setSrn(self.structuredPath())
+
+		# Handle resource type
+		self.setAttribute('ty', int(self.resourceType))
+
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -173,6 +169,8 @@ class Resource(object):
 		ts = getResourceDate()
 		self.setAttribute('ct', ts, overwrite = False)
 		self.setAttribute('lt', ts, overwrite = False)
+
+		# Set the internal
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -1129,6 +1127,7 @@ class Resource(object):
 			Args:
 				rn: The new resource name for the resource.
 		"""
+
 		self.setAttribute('rn', rn)
 
 		# determine and add the srn, only when this is a local resource, otherwise we don't need this information

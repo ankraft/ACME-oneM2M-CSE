@@ -18,6 +18,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED,
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
+from ..resources.Resource import Resource
 from ..resources.FCI import FCI
 
 
@@ -30,6 +31,13 @@ class FCNT_OL(VirtualResource):
 
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+	resourceName = 'ol'
+	""" Possibility for virtual sub-classes to provide a specific resource name. """
+
 
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
@@ -45,7 +53,7 @@ class FCNT_OL(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
+		super().__init__(dct, pi, create = create, readOnly = True)
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

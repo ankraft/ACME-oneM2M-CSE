@@ -388,7 +388,11 @@ class FCNT(ContainerResource):
 		dct['org'] = originator
 		dct['st'] = self.st
 		dct['cs'] = self.cs
-		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, pi = self.ri, ty = ResourceTypes.FCI)
+		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, 
+										  pi = self.ri, 
+										  ty = ResourceTypes.FCI,
+										  create = True,
+										  originator = originator)
 		fciRes.setAttribute(Constants.attrIsInstantiated, True)	# Mark as instantiated to avoid validation
 
 
@@ -410,7 +414,9 @@ class FCNT(ContainerResource):
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_LA)	# rn is assigned by resource itself
+											ty = ResourceTypes.FCNT_LA,
+											create = True,
+											originator = self.getOriginator())	# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(resource, self)
 		self.setLatestRI(resource.ri)
 
@@ -418,7 +424,9 @@ class FCNT(ContainerResource):
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_OL)	# rn is assigned by resource itself
+											ty = ResourceTypes.FCNT_OL,
+											create = True,
+											originator = self.getOriginator())	# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)
 		

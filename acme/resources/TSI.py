@@ -24,6 +24,9 @@ class TSI(AnnounceableResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -57,7 +60,7 @@ class TSI(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True)
+		super().__init__(dct, pi, create = create, readOnly = True)
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
 
 

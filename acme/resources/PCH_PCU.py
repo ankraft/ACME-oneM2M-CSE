@@ -15,6 +15,7 @@ from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
 from ..resources.Resource import addToInternalAttributes
+from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..etc.DateUtils import timeUntilTimestamp
@@ -33,6 +34,12 @@ class PCH_PCU(VirtualResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+	resourceName = 'pcu'
+	""" Possibility for virtual sub-classes to provide a specific resource name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -45,16 +52,11 @@ class PCH_PCU(VirtualResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None,
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, 
-						 pi = pi, 
-						 create = create, 
-						 inheritACP = True, 
-						 readOnly = True, 
-						 rn = 'pcu')
+		super().__init__(dct, pi = pi, create = create, readOnly = True)
 
 		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
 		
-
+	
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
 									id:Optional[str] = None, 
 									originator:Optional[str] = None) -> Result:

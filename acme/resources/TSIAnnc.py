@@ -21,6 +21,9 @@ class TSIAnnc(AnnouncedResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -51,5 +54,5 @@ class TSIAnnc(AnnouncedResource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi = pi, inheritACP = True, create = create)
+		super().__init__(dct, pi = pi, create = create)
 		 

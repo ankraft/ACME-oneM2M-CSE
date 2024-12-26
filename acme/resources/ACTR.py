@@ -34,7 +34,6 @@ class ACTR(AnnounceableResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
-
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
 													   ResourceTypes.SUB

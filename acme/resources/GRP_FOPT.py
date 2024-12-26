@@ -14,6 +14,7 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Operation, C
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..resources.VirtualResource import VirtualResource
+from ..resources.Resource import Resource
 
 # TODO - Handle Group Request Target Members parameter
 # TODO - Handle Group Request Identifier parameter
@@ -29,6 +30,13 @@ class GRP_FOPT(VirtualResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+	resourceName = 'fopt'
+	""" Possibility for virtual sub-classes to provide a specific resource name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -38,10 +46,8 @@ class GRP_FOPT(VirtualResource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
+	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
+		super().__init__(dct, pi, create = create, readOnly = True)
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

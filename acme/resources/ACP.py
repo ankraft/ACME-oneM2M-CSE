@@ -32,6 +32,9 @@ class ACP(AnnounceableResource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
@@ -63,9 +66,8 @@ class ACP(AnnounceableResource):
 
 	def __init__(self, dct:JSON, 
 					   pi:Optional[str] = None, 
-					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create, inheritACP = True, rn = rn)
+		super().__init__(dct, pi, create = create)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)

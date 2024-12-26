@@ -39,6 +39,9 @@ class PCH(Resource):
 	typeShortname = resourceType.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
@@ -74,7 +77,7 @@ class PCH(Resource):
 				create:		True if this resource should be created.
 		"""
 		# PCH inherits from its parent, the <AE>
-		super().__init__(dct, pi, create = create, inheritACP = True)
+		super().__init__(dct, pi, create = create)
 
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	
@@ -95,7 +98,11 @@ class PCH(Resource):
 				'rn' : 'pcu'
 			}
 		}
-		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU)	# rn is assigned by resource itself
+		pcu = Factory.resourceFromDict(dct, 
+								 	   pi = self.ri, 
+									   ty = ResourceTypes.PCH_PCU,
+									   create = True,
+									   originator = originator)	# rn is assigned by resource itself
 		
 		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
 		self.setAttribute(Constants.attrPCURI, resource.ri)	# store own PCU ri

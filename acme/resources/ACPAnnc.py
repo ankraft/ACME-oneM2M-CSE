@@ -23,6 +23,10 @@ class ACPAnnc(AnnouncedResource):
 	typeShortname = ResourceTypes.ACPAnnc.typeShortname()
 	"""	The resource's domain and type name. """
 
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
 

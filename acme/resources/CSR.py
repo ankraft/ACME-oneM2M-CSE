@@ -104,9 +104,8 @@ class CSR(AnnounceableResource):
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
-					   rn:Optional[str] = None, 
 					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, rn = rn, create = create)
+		super().__init__(dct, pi, create = create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
