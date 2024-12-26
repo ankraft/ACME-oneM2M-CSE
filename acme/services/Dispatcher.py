@@ -985,9 +985,6 @@ class Dispatcher(object):
 		# Get resource to update
 		resource = self.retrieveResource(id)
 
-		if resource.readOnly:
-			raise OPERATION_NOT_ALLOWED('resource is read-only')
-
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if ResourceTypes.isInstanceResource(resource.ty):
 			raise OPERATION_NOT_ALLOWED(f'UPDATE not allowed for type: {resource.ty}')

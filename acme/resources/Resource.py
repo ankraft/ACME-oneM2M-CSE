@@ -71,20 +71,15 @@ class Resource(object):
 	def __init__(self, 
 				 dct:JSON, 
 				 pi:Optional[str] = None, 
-				 typeShortname:Optional[str] = None,
-				 readOnly:Optional[bool] = False) -> None:
+				 typeShortname:Optional[str] = None) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
 				dct: Mandatory resource attributes.
 				pi: Optional parent resource identifier.
 				typeShortname: Optional domain and resource type short name.
-				readOnly: Optional indicator whether this resource is read-only.
-				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
 
-		self.readOnly	= readOnly
-		"""	Flag set during creation of a resource instance whether a resource type allows only read-only access to a resource. """
 		self.dict 		= {}
 		"""	Dictionary for public and internal resource attributes. """
 		self._originalDict = {}

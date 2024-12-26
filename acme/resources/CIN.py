@@ -76,7 +76,7 @@ class CIN(AnnounceableResource):
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, readOnly = True)
+		super().__init__(dct, pi)
 
 		self.setAttribute('con', '', overwrite = False)
 		self.setAttribute('cs', getAttributeSize(self.con))

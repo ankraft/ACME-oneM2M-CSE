@@ -47,11 +47,6 @@ class FCNT_LA(VirtualResource):
 	"""
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, readOnly = True)
-
-
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
 									id:Optional[str] = None, 
 									originator:Optional[str] = None) -> Result:

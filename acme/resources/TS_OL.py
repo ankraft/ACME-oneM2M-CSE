@@ -49,11 +49,6 @@ class TS_OL(VirtualResource):
 		The attribute policies are assigned during startup by the `Importer`.
 	"""
 
-
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, readOnly = True)
-
-	
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request.
 
