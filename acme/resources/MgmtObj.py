@@ -21,8 +21,8 @@ class MgmtObj(AnnounceableResource):
 	_allowedChildResourceTypes = [ ResourceTypes.SMD, 
 								   ResourceTypes.SUB ]
 
-	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes) -> None:
-		super().__init__(dct, pi, typeShortname = mgd.typeShortname())
+	def __init__(self, dct:JSON, mgd:ResourceTypes) -> None:
+		super().__init__(dct, typeShortname = mgd.typeShortname())
 		self.setAttribute('mgd', int(mgd), overwrite=True)
 	
 

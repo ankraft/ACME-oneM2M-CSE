@@ -55,8 +55,3 @@ class CINAnnc(AnnouncedResource):
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi = pi)
-

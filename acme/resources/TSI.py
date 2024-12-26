@@ -57,9 +57,8 @@ class TSI(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
 
 

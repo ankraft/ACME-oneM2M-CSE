@@ -82,9 +82,8 @@ class TS(ContainerResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)

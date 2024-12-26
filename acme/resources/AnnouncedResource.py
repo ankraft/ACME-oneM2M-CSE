@@ -19,9 +19,8 @@ from ..runtime.Logging import Logging as L
 class AnnouncedResource(Resource):
 
 	def __init__(self, dct:JSON, 
-					   pi:Optional[str] = None,
 					   typeShortname:Optional[str] = None) -> None:
-		super().__init__(dct, pi, typeShortname = typeShortname)
+		super().__init__(dct, typeShortname = typeShortname)
 
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:

@@ -64,9 +64,8 @@ class ACP(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:JSON) -> None:
+		super().__init__(dct)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)

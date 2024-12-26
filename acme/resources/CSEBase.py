@@ -84,7 +84,7 @@ class CSEBase(AnnounceableResource):
 
 
 	def __init__(self, dct:JSON) -> None:
-		super().__init__(dct, '')
+		super().__init__(dct)
 
 		self.setAttribute('ri', 'cseid', overwrite = False)
 		self.setAttribute('rn', 'cse', overwrite = False)

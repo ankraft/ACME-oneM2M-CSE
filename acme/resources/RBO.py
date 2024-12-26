@@ -60,9 +60,8 @@ class RBO(MgmtObj):
 	""" The allowed attributes and their policy for this resource type."""
 	
 	
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.RBO)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct, mgd = ResourceTypes.RBO)
 
 		self.setAttribute('rbo', False, overwrite = True)	# always False
 		self.setAttribute('far', False, overwrite = True)	# always False

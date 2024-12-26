@@ -102,9 +102,8 @@ class CSR(AnnounceableResource):
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:

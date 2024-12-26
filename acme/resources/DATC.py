@@ -62,9 +62,8 @@ class DATC(MgmtObj):
 		'cmlk': None,
 	}
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.DATC)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct, mgd = ResourceTypes.DATC)
 
 
 	def validate(self, originator:Optional[str] = None, 

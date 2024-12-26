@@ -25,7 +25,6 @@ class Unknown(Resource):
 	"""	The resource's domain and type name. """
 
 	def __init__(self, dct:Optional[JSON], 
-					   typeShortname:Optional[str], 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, typeShortname = typeShortname)
+					   typeShortname:Optional[str]) -> None:
+		super().__init__(dct, typeShortname = typeShortname)
 

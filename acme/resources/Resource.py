@@ -70,13 +70,11 @@ class Resource(object):
 
 	def __init__(self, 
 				 dct:JSON, 
-				 pi:Optional[str] = None, 
 				 typeShortname:Optional[str] = None) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
 				dct: Mandatory resource attributes.
-				pi: Optional parent resource identifier.
 				typeShortname: Optional domain and resource type short name.
 		"""
 
@@ -106,8 +104,7 @@ class Resource(object):
 			self.typeShortname = self[Constants.attrRtype]
 		# if not self.hasAttribute('ri'):
 		# 	self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
-		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
-			self.setAttribute('pi', pi)
+
 
 		# Remove empty / null attributes from dict
 		# But see also the comment in update() !!!
@@ -123,6 +120,12 @@ class Resource(object):
 				pi: The parent resource's ID.
 				originator: The request originator.
 		"""
+
+		# Set the parent resource ID
+		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
+			self.setAttribute('pi', pi)
+
+
 		# if not already set: determine and add the srn
 		self.setResourceID()
 

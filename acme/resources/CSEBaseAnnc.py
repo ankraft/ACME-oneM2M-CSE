@@ -64,7 +64,3 @@ class CSEBaseAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi = pi)
-

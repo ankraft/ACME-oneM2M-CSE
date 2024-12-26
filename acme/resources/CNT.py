@@ -83,9 +83,8 @@ class CNT(ContainerResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)

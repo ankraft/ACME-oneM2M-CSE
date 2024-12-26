@@ -58,10 +58,6 @@ class DEPR(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
-
-
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		super().activate(parentResource, originator)

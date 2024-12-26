@@ -49,9 +49,8 @@ class FCI(Resource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct, pi, typeShortname = fcntType)
+		super().__init__(dct, typeShortname = fcntType)
 
 
 	# Forbidd updating

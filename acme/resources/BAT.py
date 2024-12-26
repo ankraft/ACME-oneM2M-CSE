@@ -66,13 +66,11 @@ class BAT(MgmtObj):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
+	def __init__(self, dct:Optional[JSON] = None) -> None:
 		""" Create a new Battery object. 
 
 			Args:
 				dct: The resource dictionary.
-				pi: The parent resource ID.
 		"""
-		super().__init__(dct, pi, mgd = ResourceTypes.BAT)
+		super().__init__(dct, mgd = ResourceTypes.BAT)
 

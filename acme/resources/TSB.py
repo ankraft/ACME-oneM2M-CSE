@@ -77,9 +77,8 @@ class TSB(AnnounceableResource):
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
 

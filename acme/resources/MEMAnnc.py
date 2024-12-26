@@ -53,7 +53,6 @@ class MEMAnnc(MgmtObjAnnc):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.MEM)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct, mgd = ResourceTypes.MEM)
 

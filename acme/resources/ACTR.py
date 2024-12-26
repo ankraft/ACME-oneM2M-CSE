@@ -75,11 +75,11 @@ class ACTR(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None) -> None:
+	def __init__(self, dct:Optional[JSON] = None) -> None:
 		# the following two lines are needed bc mypy cannot determine the type otherwise
 		self.sri:str
 		self.orc:str
-		super().__init__(dct, pi)
+		super().__init__(dct)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

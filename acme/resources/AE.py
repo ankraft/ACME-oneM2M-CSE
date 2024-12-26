@@ -84,9 +84,8 @@ class AE(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct)
 
 		self.setAttribute('aei', uniqueAEI(), overwrite = False)
 		self.setAttribute('rr', False, overwrite = False)

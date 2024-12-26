@@ -66,15 +66,13 @@ class DVC(MgmtObj):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
+	def __init__(self, dct:Optional[JSON] = None) -> None:
 		""" Initialize the DVC object. 
 
 			Args:
 				dct: The dictionary to initialize the DVC object.
-				pi: The parent's resource ID.
 		"""
-		super().__init__(dct, pi, mgd = ResourceTypes.DVC)
+		super().__init__(dct, mgd = ResourceTypes.DVC)
 
 		self.setAttribute('can', 'unknown', overwrite = False)
 		self.setAttribute('att', False, overwrite = False)

@@ -84,9 +84,8 @@ class FCNT(ContainerResource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
 					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct, pi, typeShortname = fcntType)
+		super().__init__(dct, typeShortname = fcntType)
 
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)

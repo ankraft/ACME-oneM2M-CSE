@@ -62,7 +62,6 @@ class WIFICAnnc(MgmtObjAnnc):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.WIFIC)
+	def __init__(self, dct:Optional[JSON] = None) -> None:
+		super().__init__(dct, mgd = ResourceTypes.WIFIC)
 
