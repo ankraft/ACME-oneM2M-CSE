@@ -65,9 +65,8 @@ class ACP(AnnounceableResource):
 
 
 	def __init__(self, dct:JSON, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create)
+					   pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi)
 
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)

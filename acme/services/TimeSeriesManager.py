@@ -174,7 +174,7 @@ class TimeSeriesManager(object):
 			#	runningTimeserieses structure could have been created earlier (or not), eg. by adding a subscription earlier, but is not running yet
 			#	It still needs to be filled
 			if not rts:
-				L.logWarn(f'Adding new instance for {tsRi}')
+				# L.logWarn(f'Adding new instance for {tsRi}')
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
 			else:
 				L.isDebug and L.logDebug(f'Re-using existing LastTSInstance monitor')

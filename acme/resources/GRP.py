@@ -69,9 +69,8 @@ class GRP(AnnounceableResource):
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
-					   fcntType:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create)
+					   fcntType:Optional[str] = None) -> None:
+		super().__init__(dct, pi)
 
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite = False)
 		self.setAttribute('ssi', False, overwrite = True)

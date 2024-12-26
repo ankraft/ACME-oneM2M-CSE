@@ -59,7 +59,6 @@ class SIM(MgmtObj):
 	
 	
 	def __init__(self, dct:Optional[JSON] =None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.SIM, create = create)
+					   pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.SIM)
 

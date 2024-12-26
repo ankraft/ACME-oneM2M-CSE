@@ -67,17 +67,15 @@ class PCH(Resource):
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
+					   pi:Optional[str] = None) -> None:
 		"""	Initialize the PCH object.
 
 			Args:
 				dct:		The dictionary containing the resource data.
 				pi:			The parent resource ID.
-				create:		True if this resource should be created.
 		"""
 		# PCH inherits from its parent, the <AE>
-		super().__init__(dct, pi, create = create)
+		super().__init__(dct, pi)
 
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	

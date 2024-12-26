@@ -62,14 +62,12 @@ class DVCAnnc(MgmtObjAnnc):
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
+					   pi:Optional[str] = None) -> None:
 		""" Initialize the DVCAnnc instance.
 
 			Args:
 				dct: The JSON dictionary to create the DVCAnnc from.
 				pi: The parent's resource ID.
-				create: Indicates creation of the resource. Defaults to False.
 		"""
-		super().__init__(dct, pi, mgd = ResourceTypes.DVC, create = create)
+		super().__init__(dct, pi, mgd = ResourceTypes.DVC)
 

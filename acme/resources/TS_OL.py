@@ -50,8 +50,8 @@ class TS_OL(VirtualResource):
 	"""
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, create = create, readOnly = True)
+	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi, readOnly = True)
 
 	
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:

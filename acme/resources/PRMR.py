@@ -70,18 +70,6 @@ class PRMR(AnnounceableResource):
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		""" Initialize the PRMR resource instance.
-		
-			Args:
-				dct: The JSON dictionary with the resource attributes.
-				pi: The parent resource ID.
-				create: Create a new resource instance. Default is *False*.
-		"""
-		super().__init__(dct, pi, create = create)
-
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

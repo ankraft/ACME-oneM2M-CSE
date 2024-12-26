@@ -84,9 +84,8 @@ class SMD(AnnounceableResource):
 
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
-					   fcntType:Optional[str] = None,
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, typeShortname = fcntType, create = create)
+					   fcntType:Optional[str] = None) -> None:
+		super().__init__(dct, pi, typeShortname = fcntType)
 		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
 
 

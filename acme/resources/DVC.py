@@ -67,16 +67,14 @@ class DVC(MgmtObj):
 
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
+					   pi:Optional[str] = None) -> None:
 		""" Initialize the DVC object. 
 
 			Args:
 				dct: The dictionary to initialize the DVC object.
 				pi: The parent's resource ID.
-				create: Indicates creation of the resource. Defaults to False.
 		"""
-		super().__init__(dct, pi, mgd = ResourceTypes.DVC, create = create)
+		super().__init__(dct, pi, mgd = ResourceTypes.DVC)
 
 		self.setAttribute('can', 'unknown', overwrite = False)
 		self.setAttribute('att', False, overwrite = False)

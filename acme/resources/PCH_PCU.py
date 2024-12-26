@@ -50,9 +50,8 @@ class PCH_PCU(VirtualResource):
 	}
 
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None,
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi = pi, create = create, readOnly = True)
+					   pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi = pi, readOnly = True)
 
 		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
 		

@@ -59,8 +59,3 @@ class TSAnnc(AnnouncedResource):
 		'or': None
 	}
 
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi = pi, create = create)
-

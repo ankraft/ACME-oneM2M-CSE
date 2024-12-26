@@ -61,9 +61,8 @@ class RBO(MgmtObj):
 	
 	
 	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.RBO, create = create)
+					   pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi, mgd = ResourceTypes.RBO)
 
 		self.setAttribute('rbo', False, overwrite = True)	# always False
 		self.setAttribute('far', False, overwrite = True)	# always False

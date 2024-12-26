@@ -20,9 +20,8 @@ class AnnouncedResource(Resource):
 
 	def __init__(self, dct:JSON, 
 					   pi:Optional[str] = None,
-					   typeShortname:Optional[str] = None, 
-					   create:Optional[bool] = False,) -> None:
-		super().__init__(dct, pi, typeShortname = typeShortname, create = create)
+					   typeShortname:Optional[str] = None) -> None:
+		super().__init__(dct, pi, typeShortname = typeShortname)
 
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:

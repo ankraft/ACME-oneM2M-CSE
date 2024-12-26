@@ -60,7 +60,6 @@ class Resource(object):
 
 	__slots__ = (
 		'typeShortname',
-		'readOnly',
 		'dict',
 		'_originalDict',
 	)
@@ -73,7 +72,6 @@ class Resource(object):
 				 dct:JSON, 
 				 pi:Optional[str] = None, 
 				 typeShortname:Optional[str] = None,
-				 create:Optional[bool] = False,
 				 readOnly:Optional[bool] = False) -> None:
 		"""	Initialization of a Resource instance.
 		
@@ -81,7 +79,6 @@ class Resource(object):
 				dct: Mandatory resource attributes.
 				pi: Optional parent resource identifier.
 				typeShortname: Optional domain and resource type short name.
-				create: Optional indicator whether this resource is just created or an instance of an existing resource.
 				readOnly: Optional indicator whether this resource is read-only.
 				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
@@ -128,7 +125,7 @@ class Resource(object):
 		""" This method is called before a new resource will be created and written to the database.
 
 			Args:
-				parentResource: The resource's parent resource.
+				pi: The parent resource's ID.
 				originator: The request originator.
 		"""
 		# if not already set: determine and add the srn

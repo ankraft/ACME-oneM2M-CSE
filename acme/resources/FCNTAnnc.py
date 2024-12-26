@@ -66,8 +66,3 @@ class FCNTAnnc(AnnouncedResource):
 	"""	List of universal, common, and resource specific attributes """
 
 
-	def __init__(self, dct:JSON, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi = pi, create = create)
-

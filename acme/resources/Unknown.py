@@ -26,7 +26,6 @@ class Unknown(Resource):
 
 	def __init__(self, dct:Optional[JSON], 
 					   typeShortname:Optional[str], 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, typeShortname = typeShortname, create = create)
+					   pi:Optional[str] = None) -> None:
+		super().__init__(dct, pi, typeShortname = typeShortname)
 

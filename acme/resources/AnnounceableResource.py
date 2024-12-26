@@ -29,9 +29,8 @@ class AnnounceableResource(Resource):
 	def __init__(self, dct:Optional[JSON] = None, 
 					   pi:Optional[str] = None, 
 					   typeShortname:Optional[str] = None, 
-					   create:Optional[bool] = False, 
 					   readOnly:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, typeShortname = typeShortname, create = create, readOnly = readOnly)
+		super().__init__(dct, pi, typeShortname = typeShortname, readOnly = readOnly)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
 		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)
