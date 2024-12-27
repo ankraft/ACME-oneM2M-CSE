@@ -148,7 +148,7 @@ class TestCNT_CIN(unittest.TestCase):
 	def test_retrieveCNTLa(self) -> None:
 		"""	Retrieve <CNT>.LA """
 		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
