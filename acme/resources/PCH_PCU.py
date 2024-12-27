@@ -15,7 +15,6 @@ from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
 from ..resources.Resource import addToInternalAttributes
-from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..etc.DateUtils import timeUntilTimestamp
@@ -49,10 +48,10 @@ class PCH_PCU(VirtualResource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
 
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
+		super().initialize(pi, originator)
 		
 	
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

@@ -8,9 +8,8 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Status
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 
@@ -20,7 +19,10 @@ class FWR(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.FWR
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -59,10 +61,6 @@ class FWR(MgmtObj):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.FWR)
-
-
 	def activate(self, parentResource:Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
 		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
+		super().activate(parentResource, originator)

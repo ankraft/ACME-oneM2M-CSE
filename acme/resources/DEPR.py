@@ -8,12 +8,10 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Tuple, Any, cast
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, Permission, EvalCriteriaOperator
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
-from ..runtime.Logging import Logging as L
-from ..helpers.TextTools import findXPath
 from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource

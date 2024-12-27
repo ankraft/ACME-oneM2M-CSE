@@ -68,14 +68,11 @@ class Resource(object):
 	"""	Resource attributes that are excluded when updating the resource """
 
 
-	def __init__(self, 
-				 dct:JSON, 
-				 typeShortname:Optional[str] = None) -> None:
+	def __init__(self, dct:JSON) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
 				dct: Mandatory resource attributes.
-				typeShortname: Optional domain and resource type short name.
 		"""
 
 		self.dict 		= {}
@@ -99,9 +96,15 @@ class Resource(object):
 			# no Dict, so the resource is instantiated programmatically
 			self.setAttribute(Constants.attrIsInstantiated, True)
 
-		# if self.dict is not None:
+
+
 		if not self.typeShortname: 	# type:ignore[has-type]
 			self.typeShortname = self[Constants.attrRtype]
+
+
+
+
+
 		# if not self.hasAttribute('ri'):
 		# 	self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
 
@@ -113,8 +116,8 @@ class Resource(object):
 		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 
-	def willBeActivated(self, pi:str, originator:str) -> None:
-		""" This method is called before a new resource will be created and written to the database.
+	def initialize(self, pi:str, originator:str) -> None:
+		""" This method is called when a new resource is created and before written to the database.
 
 			Args:
 				pi: The parent resource's ID.
@@ -122,8 +125,7 @@ class Resource(object):
 		"""
 
 		# Set the parent resource ID
-		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
-			self.setAttribute('pi', pi)
+		self.setAttribute('pi', pi if pi is not None else '', overwrite = False) # test for None bc pi might be '' (for cse). pi is used subsequently here
 
 
 		# if not already set: determine and add the srn

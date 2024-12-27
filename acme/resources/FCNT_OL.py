@@ -13,12 +13,11 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
-from ..resources.Resource import Resource
 from ..resources.FCI import FCI
 
 

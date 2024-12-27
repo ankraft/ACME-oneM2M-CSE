@@ -9,9 +9,8 @@
 """ [credentials] (CRDS) `MgmtObj` specialization. """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObj import MgmtObj
 
 class CRDS(MgmtObj):
@@ -20,44 +19,44 @@ class CRDS(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.CRDS
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-			'daci': None,
-			
-			# MgmtObj attributes
-			'mgd': None,
-			'obis': None,
-			'obps': None,
-			'dc': None,
-			'mgs': None,
-			'cmlk': None,
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'cstn': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		
+		# MgmtObj attributes
+		'mgd': None,
+		'obis': None,
+		'obps': None,
+		'dc': None,
+		'mgs': None,
+		'cmlk': None,
 
-			# Resource attributes
-			'pur': None,
-			'crid': None,
-			'crse': None,
-			'crtk': None,
+		# Resource attributes
+		'pur': None,
+		'crid': None,
+		'crse': None,
+		'crtk': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.CRDS)

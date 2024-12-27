@@ -9,7 +9,7 @@
 """ Request (REQ) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST

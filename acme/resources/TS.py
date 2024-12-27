@@ -10,13 +10,11 @@
 from __future__ import annotations
 from typing import Optional
 
-from configparser import ConfigParser
-
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import getResourceDate, toISO8601Date
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -82,9 +80,7 @@ class TS(ContainerResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
@@ -95,6 +91,8 @@ class TS(ContainerResource):
 			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
+		
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

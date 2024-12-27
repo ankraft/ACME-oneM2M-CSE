@@ -520,7 +520,7 @@ class RemoteCSEManager(object):
 		# copy local CSE attributes into a new CSR
 		localCSE = getCSE()
 		csrResource = CSR()
-		csrResource.willBeActivated(localCSE.ri, RC.cseOriginator)	# remoteCSE.csi as name!
+		csrResource.initialize(localCSE.ri, RC.cseOriginator)	# remoteCSE.csi as name!
 		csrResource.setResourceName(remoteCSE.csi[1:])				# set the resource name to the csi of the remote CSE
 		self._copyCSE2CSR(csrResource, remoteCSE)
 		csrResource['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri

@@ -19,7 +19,10 @@ class SIMAnnc(MgmtObjAnnc):
 	resourceType = ResourceTypes.SIMAnnc
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.SIM
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -55,7 +58,4 @@ class SIMAnnc(MgmtObjAnnc):
 		'spn': None,
 	}
 
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.SIM)
 

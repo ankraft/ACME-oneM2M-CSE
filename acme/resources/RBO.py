@@ -13,7 +13,7 @@ from typing import Optional
 
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 
@@ -23,7 +23,10 @@ class RBO(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.RBO
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -60,11 +63,10 @@ class RBO(MgmtObj):
 	""" The allowed attributes and their policy for this resource type."""
 	
 	
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.RBO)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('rbo', False, overwrite = True)	# always False
 		self.setAttribute('far', False, overwrite = True)	# always False
+		super().initialize(pi, originator)
 
 
 	#

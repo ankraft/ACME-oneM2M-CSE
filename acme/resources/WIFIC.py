@@ -21,7 +21,10 @@ class WIFIC(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.WIFIC
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -64,11 +67,6 @@ class WIFIC(MgmtObj):
 		'trdst': None,
 		'rdst': None
 	}
-
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.WIFIC)
-
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

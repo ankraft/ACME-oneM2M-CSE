@@ -10,7 +10,6 @@
 """ Schedule (SCH) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON

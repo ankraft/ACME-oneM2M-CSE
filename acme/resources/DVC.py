@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 from ..resources.MgmtObj import MgmtObj
@@ -25,61 +25,58 @@ class DVC(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.DVC
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-			'daci': None,
-			
-			# MgmtObj attributes
-			'mgd': None,
-			'obis': None,
-			'obps': None,
-			'dc': None,
-			'mgs': None,
-			'cmlk': None,
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'cstn': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		
+		# MgmtObj attributes
+		'mgd': None,
+		'obis': None,
+		'obps': None,
+		'dc': None,
+		'mgs': None,
+		'cmlk': None,
 
-			# Resource attributes
-			'can': None,
-			'att': None,
-			'cas': None,
-			'ena': None,
-			'dis': None,
-			'cus': None
+		# Resource attributes
+		'can': None,
+		'att': None,
+		'cas': None,
+		'ena': None,
+		'dis': None,
+		'cus': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		""" Initialize the DVC object. 
-
-			Args:
-				dct: The dictionary to initialize the DVC object.
-		"""
-		super().__init__(dct, mgd = ResourceTypes.DVC)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('can', 'unknown', overwrite = False)
 		self.setAttribute('att', False, overwrite = False)
 		self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite = False)
 		self.setAttribute('cus', False, overwrite = False)
 		self.setAttribute('ena', True, overwrite = True)	# always True
 		self.setAttribute('dis', True, overwrite = True)	# always True
+		super().initialize(pi, originator)
 
 	#
 	#	Handling the special behaviour for ena and dis attributes in 

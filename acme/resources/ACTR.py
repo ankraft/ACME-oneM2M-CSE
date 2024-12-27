@@ -75,23 +75,16 @@ class ACTR(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		# the following two lines are needed bc mypy cannot determine the type otherwise
-		self.sri:str
-		self.orc:str
-		super().__init__(dct)
-
-
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
 		sriResource, orcResource = self._checkReferencedResources(originator, 
-																  self.sri, 
-																  self.orc, 
+																  self.sri, 	# type: ignore[has-type]
+																  self.orc, 	# type: ignore[has-type]
 																  self._getApvOperation())
-		self.sri = riFromID(self.sri)
-		self.orc = riFromID(self.orc)
+		self.sri = riFromID(self.sri)	# type: ignore[has-type]
+		self.orc = riFromID(self.orc)	# type: ignore[has-type]
 
 		#	Check that the from parameter of the actionPrimitive is the originator
 		self._checkApvFrom(originator)

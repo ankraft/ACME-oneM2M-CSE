@@ -9,8 +9,6 @@
 
 from __future__ import annotations
 from typing import Optional
-from configparser import ConfigParser
-import isodate
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
 from ..etc.Constants import Constants
@@ -20,7 +18,7 @@ from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 
 
 # Add to internal attributes 
@@ -80,7 +78,10 @@ class TSB(AnnounceableResource):
 	def __init__(self, dct:Optional[JSON] = None) -> None:
 		super().__init__(dct)
 
+	
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
+		super().initialize(pi, originator)
 
 
 # TODO activate: add to interval updater

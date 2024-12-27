@@ -10,9 +10,8 @@
 """ Schedule Announced(SCHA) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.AnnouncedResource import AnnouncedResource
 
 

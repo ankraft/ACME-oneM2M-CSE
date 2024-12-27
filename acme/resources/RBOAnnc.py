@@ -9,9 +9,8 @@
 """ MgmtObj:Reboot announced (RBOA) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
@@ -21,7 +20,10 @@ class RBOAnnc(MgmtObjAnnc):
 	resourceType = ResourceTypes.MGMTOBJAnnc
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.RBO
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -55,7 +57,4 @@ class RBOAnnc(MgmtObjAnnc):
 	}
 	""" The allowed attributes and their policy for this resource type."""
 
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.RBO)
 

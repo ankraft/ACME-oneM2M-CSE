@@ -10,9 +10,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import ResourceTypes, JSON
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -27,10 +25,6 @@ addToInternalAttributes(Constants.attrOlRi)
 class ContainerResource(AnnounceableResource):
 	"""	The *ContainerResource* class is the base class for all container resources.
 	"""
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   typeShortname:Optional[str] = None) -> None:
-		super().__init__(dct, typeShortname = typeShortname)
 
 
 	def getOldestRI(self) -> str:

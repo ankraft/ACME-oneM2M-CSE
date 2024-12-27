@@ -8,18 +8,20 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class MEMAnnc(MgmtObjAnnc):
 
-	resourceType = ResourceTypes.MEMAnnc
+	resourceType = ResourceTypes.MGMTOBJAnnc
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.MEM
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -51,8 +53,3 @@ class MEMAnnc(MgmtObjAnnc):
 		'mma': None,
 		'mmt': None
 	}
-
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct, mgd = ResourceTypes.MEM)
-

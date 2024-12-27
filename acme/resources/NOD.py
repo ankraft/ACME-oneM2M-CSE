@@ -8,9 +8,8 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..etc.IDUtils import uniqueID
 from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -69,16 +68,16 @@ class NOD(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('ni', uniqueID(), overwrite = False)
+		super().initialize(pi, originator)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		super().deactivate(originator, parentResource)
 
 		# Remove self from all hosted AE's (their node links)
-		if not (hael := self['hael']):
+		if not self['hael']:
 			return
 		ri = self['ri']
 		for ae in self['hael']:

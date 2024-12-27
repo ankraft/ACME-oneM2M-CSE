@@ -875,11 +875,6 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
-		# Do some last preparations before creating the resource. This includes
-		# settings that must be done before the resource is written to the DB, but
-		# cannot be done in activate() because that is called after the resource is written to the DB.
-		# resource.willBeActivated(parentResource.ri, originator)
-
 		if parentResource:	# parentResource might be None if this is the root resource
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):

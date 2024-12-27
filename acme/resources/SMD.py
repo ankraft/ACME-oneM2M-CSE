@@ -14,7 +14,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
@@ -80,12 +80,9 @@ class SMD(AnnounceableResource):
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
 
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct, typeShortname = fcntType)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

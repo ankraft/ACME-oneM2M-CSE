@@ -64,11 +64,13 @@ class ACP(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON) -> None:
-		super().__init__(dct)
+	def activate(self, parentResource:Resource, originator:str) -> None:
 
+		# Set default permissions
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
+
+		super().activate(parentResource, originator)
 
 
 	def validate(self, originator:Optional[str] = None, 

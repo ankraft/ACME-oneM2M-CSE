@@ -85,13 +85,14 @@ class CNT(ContainerResource):
 
 	def __init__(self, dct:Optional[JSON] = None) -> None:
 		super().__init__(dct)
+		self.__validating = False	# semaphore for validating
 
+
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
-
-		self.__validating = False	# semaphore for validating
-
+		super().initialize(pi, originator)
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)

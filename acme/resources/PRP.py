@@ -8,11 +8,10 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
 from ..resources.Resource import Resource
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, ProcessControl
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..runtime.Logging import Logging as L

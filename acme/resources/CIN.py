@@ -74,12 +74,12 @@ class CIN(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
-
+	def initialize(self, pi:str, originator:str) -> None:
+		# Initializations must happen just after the resource is created
+		# because the parent resource checks some of the attributes
 		self.setAttribute('con', '', overwrite = False)
 		self.setAttribute('cs', getAttributeSize(self.con))
-		self.setAttribute('st', 0, overwrite = False)
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

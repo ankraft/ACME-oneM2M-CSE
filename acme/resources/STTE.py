@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Any, Union
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, Permission
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource

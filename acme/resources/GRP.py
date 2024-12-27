@@ -67,16 +67,14 @@ class GRP(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite = False)
 		self.setAttribute('ssi', False, overwrite = True)
 		self.setAttribute('cnm', 0, overwrite = False)	# calculated later
 		self.setAttribute('mid', [], overwrite = False)			
 		self.setAttribute('mtv', False, overwrite = False)
 		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite = False)
+		super().initialize(pi, originator)
 
 		# These attributes are not provided by default: mnm (no default), macp (no default)
 		# optional set: spty, gn, nar

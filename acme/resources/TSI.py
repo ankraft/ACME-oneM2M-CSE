@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -57,9 +57,9 @@ class TSI(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
+		super().initialize(pi, originator)
 
 
 	# Forbid updating

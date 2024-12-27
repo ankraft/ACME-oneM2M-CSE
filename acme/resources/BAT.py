@@ -7,9 +7,8 @@
 #	ResourceType: mgmtObj:Battery
 #
 """ [Battery] (BAT) management object specialization """
-from typing import Optional
 from ..helpers.ACMEIntEnum import ACMEIntEnum
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObj import MgmtObj
 
 
@@ -29,7 +28,10 @@ class BAT(MgmtObj):
 	resourceType = ResourceTypes.MGMTOBJ
 	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
+	mgmtType = ResourceTypes.BAT
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
@@ -64,13 +66,4 @@ class BAT(MgmtObj):
 			'bts': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		""" Create a new Battery object. 
-
-			Args:
-				dct: The resource dictionary.
-		"""
-		super().__init__(dct, mgd = ResourceTypes.BAT)
 

@@ -80,9 +80,9 @@ class CRS(Resource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

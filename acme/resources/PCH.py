@@ -66,17 +66,10 @@ class PCH(Resource):
 	"""	Attributes and Attribute policies for this Resource Class. """
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		"""	Initialize the PCH object.
-
-			Args:
-				dct:		The dictionary containing the resource data.
-		"""
-		# PCH inherits from its parent, the <AE>
-		super().__init__(dct)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

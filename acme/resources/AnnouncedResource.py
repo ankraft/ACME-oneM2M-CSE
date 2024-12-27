@@ -18,10 +18,6 @@ from ..runtime.Logging import Logging as L
 
 class AnnouncedResource(Resource):
 
-	def __init__(self, dct:JSON, 
-					   typeShortname:Optional[str] = None) -> None:
-		super().__init__(dct, typeShortname = typeShortname)
-
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:
 		"""	Check whether we need to update the original resource.

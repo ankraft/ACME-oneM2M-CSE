@@ -283,7 +283,7 @@ def resourceFromDict(resDict:Optional[JSON] = {},
 		newResource = Unknown(resDict, typeShortname)	# Capture-All resource
 
 	if create:
-		newResource.willBeActivated(pi, originator)
+		newResource.initialize(pi, originator)
 
 	return newResource
 

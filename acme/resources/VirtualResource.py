@@ -25,12 +25,12 @@ class VirtualResource(Resource):
 	""" Possibility for virtual sub-classes to provide a fixed resource name. """
 
 
-	def willBeActivated(self, pi:str, originator:str) -> None:
+	def initialize(self, pi:str, originator:str) -> None:
 
 		# Virtual resources have a fixed resource name that is provided in the sub-class
 		self.setResourceName(self.resourceName)
 
-		super().willBeActivated(pi, originator)
+		super().initialize(pi, originator)
 
 
 	def retrieveLatestOldest(self, request:CSERequest, 

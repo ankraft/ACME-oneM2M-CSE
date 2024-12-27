@@ -82,15 +82,12 @@ class CSEBase(AnnounceableResource):
 	"""	Represent a dictionary of attribute policies used in validation. """
 
 
-
-	def __init__(self, dct:JSON) -> None:
-		super().__init__(dct)
+	def initialize(self, pi:str, originator:str) -> None:
 
 		self.setAttribute('ri', 'cseid', overwrite = False)
 		self.setAttribute('rn', 'cse', overwrite = False)
 		self.setAttribute('csi', '/cse', overwrite = False)
 
-		self.setAttribute('rr', False, overwrite = False)
 		self.setAttribute('poa', RC.csePOA, overwrite = False)	
 		self.setAttribute('cst', RC.cseType, overwrite = False)
 		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
@@ -99,6 +96,8 @@ class CSEBase(AnnounceableResource):
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
 		self.delAttribute('et', setNone = False)	
+
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
