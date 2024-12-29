@@ -1344,6 +1344,10 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Process NOTIFY request for id: {request.id}|{request.srn}')
 
+		# Check whether this is actually a NOTIFY request or a response
+		if 'm2m:sgn' not in request.pc and 'm2m:rsp' not in request.pc:
+			raise BAD_REQUEST(L.logDebug('Not a NOTIFY request or response'))
+		
 		# handle transit requests
 		if localResourceID(request.id) is None:
 			return CSE.request.handleTransitNotifyRequest(request)
@@ -1366,25 +1370,30 @@ class Dispatcher(object):
 		
 		# Check for <pollingChannelURI> resource
 		# This is also the only resource type supported that can receive notifications, yet
-		if targetResource.ty == ResourceTypes.PCH_PCU :
-			if not CSE.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
-			targetResource.handleNotifyRequest(request, originator)
-			return Result(rsc = ResponseStatusCode.OK)
 
-		if ResourceTypes.isNotificationEntity(targetResource.ty):
-			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
-			#  A Notification to one of these resources will always be a Received Notify Request
-			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
-		
-		if targetResource.ty == ResourceTypes.CRS:
-			try:
-				targetResource.handleNotification(request, originator)
+		match targetResource.ty:
+			case ResourceTypes.PCH_PCU:
+				if not CSE.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
+				targetResource.handleNotifyRequest(request, originator)
 				return Result(rsc = ResponseStatusCode.OK)
-			except ResponseException as e:
-				L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
-				raise
+			
+			case ResourceTypes.CRS:
+				try:
+					targetResource.handleNotification(request, originator)
+					return Result(rsc = ResponseStatusCode.OK)
+				except ResponseException as e:
+					L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
+					raise
+			
+			case _ if ResourceTypes.isNotificationEntity(targetResource.ty):
+				if id in [RC.cseRi, RC.cseRn]:
+					raise BAD_REQUEST('Cannot notify own CSEBase resource')
+				if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
+				#  A Notification to one of these resources will always be a Received Notify Request
+				return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
+		
 
 		# error
 		raise BAD_REQUEST(L.logDebug(f'Unsupported resource type: {targetResource.ty} for notifications.'))

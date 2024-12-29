@@ -14,6 +14,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for the [credential] ManagementObject specialization.
 - [CSE] Added support for other data types (int, float, bool, list, dict) for the &lt;ContentInstance>'s and &lt;TimeSeriesInstance>'s *content* attribute.
 - [CSE] Added configurable default settings for *mia* attribute in &lt;Container>, &lt;FlexContainer> and &lt;TimeSeries> resources.
+- [CSE] Added support for &lt;Subscription>'s *enableEventNotificationOriginator* attribute.
 - [TUI] Added support for enablong/disabling syntax highlighting in the resource editor of the text UI. The syntax package is now not installed by default because it is not available on all platforms. It be installed afterward if needed.
 - [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
 - [SCRIPTS] Added *fset* build-in command to set an alias to functions and lambdas.
@@ -31,6 +32,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed partial attribute retrieval for &lt;flexContainer> specializations. Thanks to Xufan Lin for reporting this issue.
 - [COAP] Improved stability of the CoAP protocol binding in case of listening errors.
 - [CSE] Fixed regression bug when using newer versions of the *isodate* package. 
+- [CSE] Prevent other content than 'm2m:sgn' and 'm2m:rsp' in notification requests.
+- [CSE] Prevent targeting CSE as target of a notification to prevent notification loops.
 
 
 ### Removed
