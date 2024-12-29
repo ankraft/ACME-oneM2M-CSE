@@ -83,8 +83,8 @@ class CNT(ContainerResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
+	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
+		super().__init__(dct, create = create)
 		self.__validating = False	# semaphore for validating
 
 

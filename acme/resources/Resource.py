@@ -36,7 +36,7 @@ internalAttributes	= [ Constants.attrRtype,
 						Constants.attrNode, 
 						Constants.attrCreatedInternallyRI, 
 						Constants.attrImported, 
-						Constants.attrIsInstantiated,
+						Constants.attrIsManuallyInstantiated,
 						Constants.attrLocCoordinate,
 						Constants.attrOriginator, 
 						Constants.attrModified, 
@@ -68,7 +68,7 @@ class Resource(object):
 	"""	Resource attributes that are excluded when updating the resource """
 
 
-	def __init__(self, dct:JSON) -> None:
+	def __init__(self, dct:JSON, create:Optional[bool] = False) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
@@ -77,43 +77,22 @@ class Resource(object):
 
 		self.dict 		= {}
 		"""	Dictionary for public and internal resource attributes. """
-		self._originalDict = {}
-		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
-
-		# For some types the typeShortname/root is empty and will be set later in this method
-		
-		# TODO -> fcnt, fci
-		# if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
-		# 	self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
-		# TODO mgd
+		# self._originalDict = {}
+		# """	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
 		if dct is not None: 
 			self.dict = deepcopy(dct.get(self.typeShortname))	# type:ignore[has-type]
 			if not self.dict:
 				self.dict = deepcopy(dct)
-			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
-			self.setAttribute(Constants.attrIsInstantiated, True)
+			self.setAttribute(Constants.attrIsManuallyInstantiated, True)
+		
+		# The original dictionary is only set when the resource is created. It is not
+		# required later
+		if create:
+			self._originalDict = deepcopy(self.dict)	# keep for validation in activate() later
 
-
-
-		if not self.typeShortname: 	# type:ignore[has-type]
-			self.typeShortname = self[Constants.attrRtype]
-
-
-
-
-
-		# if not self.hasAttribute('ri'):
-		# 	self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
-
-
-		# Remove empty / null attributes from dict
-		# But see also the comment in update() !!!
-		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
-
-		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 
 	def initialize(self, pi:str, originator:str) -> None:
@@ -123,10 +102,11 @@ class Resource(object):
 				pi: The parent resource's ID.
 				originator: The request originator.
 		"""
+		# Store the shortname of the resource type
+		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 		# Set the parent resource ID
 		self.setAttribute('pi', pi if pi is not None else '', overwrite = False) # test for None bc pi might be '' (for cse). pi is used subsequently here
-
 
 		# if not already set: determine and add the srn
 		self.setResourceID()
@@ -141,6 +121,9 @@ class Resource(object):
 		# Handle resource type
 		self.setAttribute('ty', int(self.resourceType))
 
+		# Remove empty / null attributes from dict
+		# But see also the comment in update() !!!
+		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -172,7 +155,7 @@ class Resource(object):
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
-		if not self[Constants.attrIsInstantiated] and not self.isVirtual() :
+		if not self[Constants.attrIsManuallyInstantiated] and not self.isVirtual() :
 			CSE.validator.validateAttributes(self._originalDict, 
 											 self.typeShortname, 
 											 self.ty, 

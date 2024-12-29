@@ -106,8 +106,8 @@ class Constants(object):
 	attrImported = '__imported__'
 	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
 
-	attrIsInstantiated = '__isInstantiated__'
-	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
+	attrIsManuallyInstantiated = '__isInstantiated__'
+	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is manually instantiated. """
 
 	attrLaRi = '__lari__'
 	""" Constant: Name of the `Resource` internal *__lari__* attribute. This attribute holds the resourceID's of the *latest* child-resource for some resource types. """

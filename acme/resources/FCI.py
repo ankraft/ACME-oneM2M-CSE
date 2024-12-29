@@ -48,9 +48,9 @@ class FCI(Resource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct, typeShortname = fcntType)
+	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:
+		self.typeShortname = typeShortname
+		super().__init__(dct, create = create)
 
 
 	# Forbidd updating

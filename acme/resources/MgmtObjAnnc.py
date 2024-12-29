@@ -20,7 +20,6 @@ class MgmtObjAnnc(AnnouncedResource):
 
 	
 	def initialize(self, pi:str, originator:str) -> None:
-		# TODO typeShortName super().__init__(dct, typeShortname = mgd.announced().typeShortname())
 		# The "mgd" attribute is mandatory must be the unaanounced variant!
 		self.setAttribute('mgd', int(self.mgmtType), overwrite = True)
 		super().initialize(pi, originator)

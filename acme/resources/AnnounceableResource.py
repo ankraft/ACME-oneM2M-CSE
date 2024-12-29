@@ -26,8 +26,8 @@ addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, dct:Optional[JSON] = None) -> None:
-		super().__init__(dct)
+	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
+		super().__init__(dct, create = create)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
 		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)

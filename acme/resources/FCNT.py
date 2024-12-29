@@ -83,10 +83,15 @@ class FCNT(ContainerResource):
 
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   fcntType:Optional[str] = None) -> None:
-		super().__init__(dct, typeShortname = fcntType)
+	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:
+		self.typeShortname = typeShortname
 
+		# TODO this could be optimized? copy to an internal attribute?
+		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		super().__init__(dct, create = create)
+
+
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
 
@@ -95,8 +100,7 @@ class FCNT(ContainerResource):
 		self._hasInstances 	= False		# not stored in DB
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
-		self.__validating = False
-		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -391,7 +395,7 @@ class FCNT(ContainerResource):
 										  ty = ResourceTypes.FCI,
 										  create = True,
 										  originator = originator)
-		fciRes.setAttribute(Constants.attrIsInstantiated, True)	# Mark as instantiated to avoid validation
+		fciRes.setAttribute(Constants.attrIsManuallyInstantiated, True)	# Mark as instantiated to avoid validation
 
 
 
