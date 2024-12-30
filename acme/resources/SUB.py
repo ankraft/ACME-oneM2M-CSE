@@ -29,6 +29,12 @@ from ..resources.Resource import Resource
 
 class SUB(Resource):
 
+	resourceType = ResourceTypes.SUB
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH
 						   							 ]
@@ -83,11 +89,6 @@ class SUB(Resource):
 		'atr', 'net'
 	}
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SUB, dct, pi, create = create)
-
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
@@ -124,10 +125,17 @@ class SUB(Resource):
 
 		CSE.notification.addSubscription(self, originator)
 
+		# Increment the parent's subscription counter
+		parentResource.incrementSubscriptionCounter()
+		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+
+
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.notification.removeSubscription(self, originator)
+		parentResource.decrementSubscriptionCounter()
+		# L.logWarn(f'Decremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
 
 	def update(self, dct:Optional[JSON] = None, 

@@ -29,6 +29,12 @@ addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ig
 
 class FCNT(ContainerResource):
 
+	resourceType = ResourceTypes.FCNT
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.CNT, 
@@ -77,12 +83,15 @@ class FCNT(ContainerResource):
 
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   fcntType:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.FCNT, dct, pi, typeShortname = fcntType, create = create)
+	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:
+		self.typeShortname = typeShortname
 
+		# TODO this could be optimized? copy to an internal attribute?
+		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		super().__init__(dct, create = create)
+
+
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
 
@@ -91,8 +100,7 @@ class FCNT(ContainerResource):
 		self._hasInstances 	= False		# not stored in DB
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
-		self.__validating = False
-		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -382,8 +390,12 @@ class FCNT(ContainerResource):
 		dct['org'] = originator
 		dct['st'] = self.st
 		dct['cs'] = self.cs
-		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, pi = self.ri, ty = ResourceTypes.FCI)
-		fciRes.setAttribute(Constants.attrIsInstantiated, True)	# Mark as instantiated to avoid validation
+		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, 
+										  pi = self.ri, 
+										  ty = ResourceTypes.FCI,
+										  create = True,
+										  originator = originator)
+		fciRes.setAttribute(Constants.attrIsManuallyInstantiated, True)	# Mark as instantiated to avoid validation
 
 
 
@@ -404,7 +416,9 @@ class FCNT(ContainerResource):
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_LA)	# rn is assigned by resource itself
+											ty = ResourceTypes.FCNT_LA,
+											create = True,
+											originator = self.getOriginator())	# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(resource, self)
 		self.setLatestRI(resource.ri)
 
@@ -412,7 +426,9 @@ class FCNT(ContainerResource):
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 											pi = self.ri, 
-											ty = ResourceTypes.FCNT_OL)	# rn is assigned by resource itself
+											ty = ResourceTypes.FCNT_OL,
+											create = True,
+											originator = self.getOriginator())	# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)
 		

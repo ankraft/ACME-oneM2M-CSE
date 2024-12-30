@@ -17,6 +17,15 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class CINAnnc(AnnouncedResource):
 	""" ContentInstance announced (CINA) resource type. """
 
+	resourceType = ResourceTypes.CINAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	""" The allowed child-resource types. """
@@ -45,10 +54,4 @@ class CINAnnc(AnnouncedResource):
 		'conr': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CINAnnc, dct, pi = pi, inheritACP = True, create = create)
 

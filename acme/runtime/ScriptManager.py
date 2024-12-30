@@ -709,7 +709,10 @@ class ACMEPContext(PContext):
 
 		# resource object
 		pcontext, _resource = pcontext.valueFromArgument(symbol, 2, SType.tJson)
-		_resource = resourceFromDict(cast(dict, _resource), create = True, isImported = True)
+		_resource = resourceFromDict(cast(dict, _resource),
+							   		 create = True, 
+									 isImported = True,
+									 originator = _originator)
 
 		# Get a potential parent resource
 		parentResource:Any = None

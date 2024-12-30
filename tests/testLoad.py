@@ -442,7 +442,7 @@ def run(testFailFast:bool) -> TestResult:
 	addTest(suite, TestLoad('test_deleteCNTCINs', 100))
 
 	# Test blob data
-	addTest(suite, TestLoad('test_storeImages', 100))
+	addTest(suite, TestLoad('test_storeImages', 10))
 	addTest(suite, TestLoad('test_storeImages', 100))
 	addTest(suite, TestLoad('test_storeImages', 1000))
 	addTest(suite, TestLoad('test_storeImagesNoResponse', 10))
@@ -457,6 +457,7 @@ def run(testFailFast:bool) -> TestResult:
 
 
 
+	disableUpperTester()
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

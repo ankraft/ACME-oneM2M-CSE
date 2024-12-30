@@ -9,8 +9,6 @@
 
 from __future__ import annotations
 from typing import Optional
-from configparser import ConfigParser
-import isodate
 
 from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
 from ..etc.Constants import Constants
@@ -20,7 +18,7 @@ from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 
 
 # Add to internal attributes 
@@ -33,6 +31,12 @@ addToInternalAttributes(Constants.attrBCNT)
 
 
 class TSB(AnnounceableResource):
+
+	resourceType = ResourceTypes.TSB
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
@@ -71,12 +75,9 @@ class TSB(AnnounceableResource):
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TSB, dct, pi, create = create)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
+		super().initialize(pi, originator)
 
 
 # TODO activate: add to interval updater
@@ -96,8 +97,8 @@ class TSB(AnnounceableResource):
 		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
 	
 
-	def deactivate(self, originator: str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator: str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.time.removeTimeSyncBeacon(self)
 
 

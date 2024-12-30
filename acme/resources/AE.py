@@ -22,6 +22,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
+	resourceType = ResourceTypes.AE
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
 													   ResourceTypes.ACTR,
 													   ResourceTypes.CNT,
@@ -78,13 +84,15 @@ class AE(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.AE, dct, pi, create = create)
+	def activate(self, parentResource:Resource, originator:str) -> None:
 
-		self.setAttribute('aei', uniqueAEI(), overwrite = False)
+		# Initialize default values
+		if not self.hasAttribute('aei'):
+			# small optimization: do not overwrite (and do calculations) the aei if it is already set
+			self.setAttribute('aei', uniqueAEI(), overwrite = False)
 		self.setAttribute('rr', False, overwrite = False)
+
+		super().activate(parentResource, originator)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
@@ -158,9 +166,9 @@ class AE(AnnounceableResource):
 				raise BAD_REQUEST(L.logWarn(f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")'))
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Inherited
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove itself from the node link in a hosting <node>
 		if nl := self.nl:

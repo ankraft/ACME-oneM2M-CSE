@@ -290,7 +290,9 @@ class LocationManager(object):
 			cnt = CSE.dispatcher.retrieveResource(info.locationContainerID)
 			cin = Factory.resourceFromDict({ 'con': f'{eventType.value}' },
 										   pi = info.locationContainerID, 
-										   ty = ResourceTypes.CIN)
+										   ty = ResourceTypes.CIN,
+										   create = True,
+										   originator = cnt.getOriginator())
 			CSE.dispatcher.createLocalResource(cin, cnt)
 
 		

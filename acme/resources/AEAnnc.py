@@ -15,6 +15,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class AEAnnc(AnnouncedResource):
 	""" Application Entity announced (AEA) resource type """
 
+	resourceType = ResourceTypes.AEAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
 													   ResourceTypes.ACPAnnc,
@@ -70,9 +76,4 @@ class AEAnnc(AnnouncedResource):
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.AEAnnc, dct, pi = pi, create = create)
 

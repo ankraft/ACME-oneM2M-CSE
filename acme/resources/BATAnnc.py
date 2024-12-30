@@ -9,14 +9,22 @@
 """ [BatteryAnnc] (BATA) management object specialization """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 
 class BATAnnc(MgmtObjAnnc):
 	""" [BatteryAnnc] (BATA) management object specialization """
+
+	resourceType = ResourceTypes.MGMTOBJAnnc
+	""" The resource type """
+
+	mgmtType = ResourceTypes.BAT
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	
 	# Attributes and Attribute policies for this Resource Class
@@ -44,14 +52,7 @@ class BATAnnc(MgmtObjAnnc):
 		'mgs': None,
 		'cmlk': None,
 
-			# Resource attributes
-			'btl': None,
-			'bts': None
+		# Resource attributes
+		'btl': None,
+		'bts': None
 	}
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None,
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.BAT, create = create)
-

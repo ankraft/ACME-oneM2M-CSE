@@ -15,6 +15,12 @@ from .AnnouncedResource import AnnouncedResource
 class DEPRAnnc(AnnouncedResource):
 	""" Action announced (DEPRA) resource type """
 
+	resourceType = ResourceTypes.DEPRAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB,
 													#    ResourceTypes.DEBAnnc 
@@ -42,10 +48,3 @@ class DEPRAnnc(AnnouncedResource):
 		'rri': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.DEPRAnnc, dct, pi = pi, create = create)
-

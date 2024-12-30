@@ -10,7 +10,6 @@
 """ Schedule (SCH) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
@@ -23,6 +22,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
+
+	resourceType = ResourceTypes.SCH
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
@@ -53,11 +58,6 @@ class SCH(AnnounceableResource):
 		'nco': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SCH, dct, pi, create = create)
-
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -115,13 +115,13 @@ class SCH(AnnounceableResource):
 			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.time.cseActiveSchedule}')
 
 
-	def deactivate(self, originator: str) -> None:
+	def deactivate(self, originator: str, parentResource:Resource) -> None:
 
 		# TODO When <SoftwareCampaign> is supported
 		# a) The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code 
 		# if the target resource is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
 		
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove the schedule from the schedules DB
 		CSE.storage.removeSchedule(self)

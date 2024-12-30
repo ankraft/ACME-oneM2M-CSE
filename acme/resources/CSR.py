@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
 from ..etc.IDUtils import getIdFromOriginator
 from ..resources.Resource import Resource
@@ -20,6 +20,12 @@ from ..runtime import CSE
 
 
 class CSR(AnnounceableResource):
+
+	resourceType = ResourceTypes.CSR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [	ResourceTypes.ACP, 
@@ -55,58 +61,54 @@ class CSR(AnnounceableResource):
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'daci': None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-			'cr': None,
-			'loc': None,
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'cstn': None,
+		'acpi':None,
+		'daci': None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'cr': None,
+		'loc': None,
 
-			# Resource attributes
-			'cst': None,
-			'poa': None,
-			'cb': None,
-			'csi': None,
-			'mei': None,
-			'tri': None,
-			'rr': None,
-			'nl': None,
-			'csz': None,
-			'esi': None,
-			'trn': None,
-			'dcse': None,
-			'mtcc': None,
-			'egid': None,
-			'tren': None,
-			'ape': None,
-			'srv': None
+		# Resource attributes
+		'cst': None,
+		'poa': None,
+		'cb': None,
+		'csi': None,
+		'mei': None,
+		'tri': None,
+		'rr': None,
+		'nl': None,
+		'csz': None,
+		'esi': None,
+		'trn': None,
+		'dcse': None,
+		'mtcc': None,
+		'egid': None,
+		'tren': None,
+		'ape': None,
+		'srv': None
 	}
 
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   rn:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CSR, dct, pi, rn = rn, create = create)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
 			# self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
 			self.setAttribute('ri', getIdFromOriginator(self.csi))	# overwrite ri (only after /'s')
-		self.setAttribute('rr', False, overwrite=False)
+		self.setAttribute('rr', False, overwrite = False)
+		super().initialize(pi, originator)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:

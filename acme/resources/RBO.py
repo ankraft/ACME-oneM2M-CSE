@@ -13,12 +13,21 @@ from typing import Optional
 
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 
 class RBO(MgmtObj):
 	""" MgmtObj:Reboot (RBO) resource type. """
+
+	resourceType = ResourceTypes.MGMTOBJ
+	""" The resource type """
+
+	mgmtType = ResourceTypes.RBO
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -54,13 +63,10 @@ class RBO(MgmtObj):
 	""" The allowed attributes and their policy for this resource type."""
 	
 	
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.RBO, create = create)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('rbo', False, overwrite = True)	# always False
 		self.setAttribute('far', False, overwrite = True)	# always False
+		super().initialize(pi, originator)
 
 
 	#

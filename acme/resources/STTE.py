@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Any, Union
+from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, Permission
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
@@ -22,6 +22,12 @@ from ..runtime import CSE
 # TODO add to statistics, also in console
 
 class STTE(AnnounceableResource):
+
+	resourceType = ResourceTypes.STTE
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
@@ -54,12 +60,7 @@ class STTE(AnnounceableResource):
 		'stac': None,
 		'sttrs': None,
 	}
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.STTE, dct, pi, create = create)
-
+	
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

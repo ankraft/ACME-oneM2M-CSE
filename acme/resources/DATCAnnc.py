@@ -8,13 +8,20 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
-
 class DATCAnnc(MgmtObjAnnc):
+
+	resourceType = ResourceTypes.MGMTOBJAnnc
+	""" The resource type """
+
+	mgmtType = ResourceTypes.DATC
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -50,9 +57,4 @@ class DATCAnnc(MgmtObjAnnc):
 		'cmlk': None,
 	}
 
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.DATC, create = create)
 

@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Any, Union
 
 from ..resources.Resource import Resource
 
@@ -25,6 +24,12 @@ from ..runtime.Logging import Logging as L
 
 
 class PRMR(AnnounceableResource):
+
+	resourceType = ResourceTypes.PRMR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.STTE,
@@ -63,18 +68,6 @@ class PRMR(AnnounceableResource):
 		'inst': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		""" Initialize the PRMR resource instance.
-		
-			Args:
-				dct: The JSON dictionary with the resource attributes.
-				pi: The parent resource ID.
-				create: Create a new resource instance. Default is *False*.
-		"""
-		super().__init__(ResourceTypes.PRMR, dct, pi, create = create)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

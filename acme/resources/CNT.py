@@ -27,6 +27,13 @@ from ..resources import Factory	# attn: circular import
 class CNT(ContainerResource):
 	""" Container resource type. """
 
+	resourceType = ResourceTypes.CNT
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
 									ResourceTypes.CNT, 
 									ResourceTypes.CIN,
@@ -76,17 +83,16 @@ class CNT(ContainerResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CNT, dct, pi, create = create)
+	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
+		super().__init__(dct, create = create)
+		self.__validating = False	# semaphore for validating
 
+
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
-
-		self.__validating = False	# semaphore for validating
-
+		super().initialize(pi, originator)
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
@@ -104,14 +110,18 @@ class CNT(ContainerResource):
 		# add latest
 		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_LA)		# rn is assigned by resource itself
+													ty = ResourceTypes.CNT_LA,
+													create = True,
+													originator = originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(latestResource, self)
 		self.setLatestRI(resource.ri)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
 													pi = self.ri, 
-													ty = ResourceTypes.CNT_OL)		# rn is assigned by resource itself
+													ty = ResourceTypes.CNT_OL,
+													create = True,
+													originator = originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(oldestResource, self)
 		self.setOldestRI(resource.ri)
 

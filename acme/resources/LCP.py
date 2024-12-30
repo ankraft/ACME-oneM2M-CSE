@@ -34,6 +34,12 @@ addToInternalAttributes(Constants.attrGTA)
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
+	resourceType = ResourceTypes.LCP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
 	""" The allowed child-resource types. """
@@ -75,10 +81,6 @@ class LCP(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.LCP, dct, pi, create = create)
-
-
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
@@ -93,7 +95,9 @@ class LCP(AnnounceableResource):
 
 		container = Factory.resourceFromDict(_cnt,
 											 pi = parentResource.ri, 
-											 ty = ResourceTypes.CNT)
+											 ty = ResourceTypes.CNT,
+											 create = True,
+											 originator = originator)
 		try:
 			container = CSE.dispatcher.createLocalResource(container, parentResource, originator)
 		except Exception as e:
@@ -128,12 +132,12 @@ class LCP(AnnounceableResource):
 		CSE.location.updateLocationPolicy(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Delete the extra <container> resource
 		if self.loi is not None:
 			CSE.dispatcher.deleteResource(self.loi, originator)
 		CSE.location.removeLocationPolicy(self)
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator: str | None = None, dct: JSON | None = None, parentResource: Resource | None = None) -> None:

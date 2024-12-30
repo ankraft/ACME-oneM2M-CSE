@@ -29,7 +29,7 @@ from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BA
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI
+from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
 from ..etc.IDUtils import localResourceID, isSPRelative, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
@@ -686,19 +686,16 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
 
-		if (ty := request.ty) is None:	# Check for type parameter in request, integer
-			raise BAD_REQUEST(L.logDebug('type parameter missing in CREATE request'))
-
 		# Some Resources are not allowed to be created in a request, return immediately
-		if not ResourceTypes.isRequestCreatable(ty):
-			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {ty}')
+		if not ResourceTypes.isRequestCreatable(request.ty):
+			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {request.ty}')
 
 		# Get parent resource and check permissions
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id)
 
-		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, request=request):
-			if ty == ResourceTypes.AE:
+		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = request.ty, parentResource = parentResource, request=request):
+			if request.ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
@@ -708,7 +705,12 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
-		newResource = resourceFromDict(deepcopy(request.pc), pi = parentResource.ri, ty = ty)
+		# newResource = resourceFromDict(deepcopy(request.pc), 
+		newResource = resourceFromDict(request.pc, 
+								 	   pi = parentResource.ri, 
+									   ty = request.ty, 
+									   create = True,
+									   originator = originator)
 
 		# Check whether the parent allows the adding
 		parentResource.childWillBeAdded(newResource, originator)
@@ -808,7 +810,11 @@ class Dispatcher(object):
 			parentResource = self.retrieveLocalResource(ri = pID, originator = originator)
 
 			# Build a resource instance
-			resource = resourceFromDict(dct, ty = ty, pi = pID)
+			resource = resourceFromDict(dct, 
+							   			ty = ty, 
+										pi = pID,
+										create = True,
+										originator = originator)
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
@@ -878,9 +884,9 @@ class Dispatcher(object):
 			# Assign the parent's originator if not provided
 			originator = originator if originator else parentResource.getOriginator()
 
-		# if not already set: determine and add the srn
-		if not resource.getSrn():
-			resource.setSrn(resource.structuredPath())
+		#
+		#	The following procedurs prepare a new resource
+		#
 
 		# add the resource to storage
 		resource.dbCreate(overwrite = False)
@@ -972,9 +978,6 @@ class Dispatcher(object):
 		# Get resource to update
 		resource = self.retrieveResource(id)
 
-		if resource.readOnly:
-			raise OPERATION_NOT_ALLOWED('resource is read-only')
-
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if ResourceTypes.isInstanceResource(resource.ty):
 			raise OPERATION_NOT_ALLOWED(f'UPDATE not allowed for type: {resource.ty}')
@@ -995,7 +998,8 @@ class Dispatcher(object):
 		resource = self.updateLocalResource(resource, deepcopy(request.pc), originator = originator)
 
 		# Check resource update with registration
-		CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		# CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		CSE.registration.checkResourceUpdate(resource, request.pc)
 
 		#
 		# Handle RCN's
@@ -1047,7 +1051,7 @@ class Dispatcher(object):
 		else:
 			L.isDebug and L.logDebug('No check, skipping resource update')
 
-		# Signal a successful update so that further actions can be taken
+		# Signal a successful update to the resource so that further actions can be taken
 		resource.updated(dct, originator)
 
 		# Update and send an update event
@@ -1246,7 +1250,7 @@ class Dispatcher(object):
 			resource.willBeDeactivated(originator, parentResource)	
 
 		# Deactivate the resource
-		resource.deactivate(originator)
+		resource.deactivate(originator, parentResource)
 
 		# Check resource deletion
 		if withDeregistration:
@@ -1339,6 +1343,10 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Process NOTIFY request for id: {request.id}|{request.srn}')
 
+		# Check whether this is actually a NOTIFY request or a response
+		if 'm2m:sgn' not in request.pc and 'm2m:rsp' not in request.pc:
+			raise BAD_REQUEST(L.logDebug('Not a NOTIFY request or response'))
+		
 		# handle transit requests
 		if localResourceID(request.id) is None:
 			return CSE.request.handleTransitNotifyRequest(request)
@@ -1361,25 +1369,30 @@ class Dispatcher(object):
 		
 		# Check for <pollingChannelURI> resource
 		# This is also the only resource type supported that can receive notifications, yet
-		if targetResource.ty == ResourceTypes.PCH_PCU :
-			if not CSE.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
-			targetResource.handleNotifyRequest(request, originator)
-			return Result(rsc = ResponseStatusCode.OK)
 
-		if ResourceTypes.isNotificationEntity(targetResource.ty):
-			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
-			#  A Notification to one of these resources will always be a Received Notify Request
-			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
-		
-		if targetResource.ty == ResourceTypes.CRS:
-			try:
-				targetResource.handleNotification(request, originator)
+		match targetResource.ty:
+			case ResourceTypes.PCH_PCU:
+				if not CSE.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
+				targetResource.handleNotifyRequest(request, originator)
 				return Result(rsc = ResponseStatusCode.OK)
-			except ResponseException as e:
-				L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
-				raise
+			
+			case ResourceTypes.CRS:
+				try:
+					targetResource.handleNotification(request, originator)
+					return Result(rsc = ResponseStatusCode.OK)
+				except ResponseException as e:
+					L.isWarn and L.logWarn(f'error handling notification: {e.dbg}')
+					raise
+			
+			case _ if ResourceTypes.isNotificationEntity(targetResource.ty):
+				if id in [RC.cseRi, RC.cseRn]:
+					raise BAD_REQUEST('Cannot notify own CSEBase resource')
+				if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
+				#  A Notification to one of these resources will always be a Received Notify Request
+				return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
+		
 
 		# error
 		raise BAD_REQUEST(L.logDebug(f'Unsupported resource type: {targetResource.ty} for notifications.'))

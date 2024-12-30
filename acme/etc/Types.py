@@ -483,7 +483,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True, fullName = 'ApplicationEntity'),
 	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'ApplicationEntity Announced'),
 	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='ContentInstance'),
-	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
+	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True,  isInstanceResource = True, fullName='ContentInstance Announced'),
 	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
 	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
 	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
@@ -528,7 +528,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
 	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
 	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
-	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True, fullName='TimeSeriesInstance Announced'),
+	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True,  isInstanceResource = True, fullName='TimeSeriesInstance Announced'),
 	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
 	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True, fullName='TimeSyncBeacon Announced'),
 
@@ -2815,7 +2815,7 @@ RequestResponse = namedtuple('RequestResponse', 'request result')
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """
 
-FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, str, bool], object ]
+FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """
 
 

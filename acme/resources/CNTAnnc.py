@@ -18,6 +18,12 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class CNTAnnc(AnnouncedResource):
 	""" Container announced (CNTA) resource type. """
 
+	resourceType = ResourceTypes.CNTAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.ACTRAnnc,
@@ -59,10 +65,4 @@ class CNTAnnc(AnnouncedResource):
 		'disr': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CNTAnnc, dct, pi = pi, create = create)
 

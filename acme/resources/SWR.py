@@ -8,14 +8,22 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Status
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 
 
 class SWR(MgmtObj):
+
+	resourceType = ResourceTypes.MGMTOBJ
+	""" The resource type """
+
+	mgmtType = ResourceTypes.SWR
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -57,21 +65,12 @@ class SWR(MgmtObj):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.SWR, create = create)
-
-
-
 	def activate(self, parentResource:Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
-		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
-
 		self.setAttribute('ins', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
 		self.setAttribute('acts', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
 		self.setAttribute('in', False, overwrite = False)
 		self.setAttribute('un', False, overwrite = False)
 		self.setAttribute('act', False, overwrite = False)
 		self.setAttribute('dea', False, overwrite = False)
+		super().activate(parentResource, originator)
 

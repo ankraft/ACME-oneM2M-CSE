@@ -107,12 +107,35 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createUnknownResourceType(self) -> None:
+	def test_createUnknownResourceTypeFail(self) -> None:
 		"""	Create an unknown resource type -> Fail """
 		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createNoResourceTypeFail(self) -> None:
+		"""	Create without resource type -> Fail """
+		dct = 	{ 'm2m:ae' : { 
+					'rn' : 'foo',
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, None, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_sendNotificationToOwnCSEFail(self) -> None:
+		"""	Send Notification to own CSE -> Fail """
+		dct = 	{ 'm2m:sgn' : { 
+					'nev' : {
+						'rep' : {},
+						'net' : NotificationEventType.resourceUpdate
+					}
+				}}
+		r, rsc = NOTIFY(cseURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
@@ -514,7 +537,9 @@ def run(testFailFast:bool) -> TestResult:
 		'test_checkHTTPRETWrong',
 		'test_checkHTTPRETRelativeWrong',
 		'test_checkHTTPRVIWrongInRequest',
-		'test_createUnknownResourceType',
+		'test_createUnknownResourceTypeFail',
+		'test_createNoResourceTypeFail',
+		'test_sendNotificationToOwnCSEFail',
 		'test_createEmpty',
 		'test_updateEmpty',
 		'test_createAlphaResourceType',

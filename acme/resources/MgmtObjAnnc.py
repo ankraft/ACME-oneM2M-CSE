@@ -8,9 +8,8 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import ResourceTypes, JSON
+from ..etc.Types import ResourceTypes
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
@@ -19,10 +18,9 @@ class MgmtObjAnnc(AnnouncedResource):
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
 
-
-	# The "mgd" attribute is mandatory must be the unaanounced variant!
 	
-	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.MGMTOBJAnnc, dct, pi, typeShortname = mgd.announced().typeShortname(), create = create)
-		self.setAttribute('mgd', int(mgd), overwrite = True)
+	def initialize(self, pi:str, originator:str) -> None:
+		# The "mgd" attribute is mandatory must be the unaanounced variant!
+		self.setAttribute('mgd', int(self.mgmtType), overwrite = True)
+		super().initialize(pi, originator)
 

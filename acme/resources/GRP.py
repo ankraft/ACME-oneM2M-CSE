@@ -20,6 +20,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class GRP(AnnounceableResource):
 
+	resourceType = ResourceTypes.GRP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
 								   ResourceTypes.SMD, 
@@ -61,18 +67,14 @@ class GRP(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   fcntType:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.GRP, dct, pi, create = create)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite = False)
 		self.setAttribute('ssi', False, overwrite = True)
 		self.setAttribute('cnm', 0, overwrite = False)	# calculated later
 		self.setAttribute('mid', [], overwrite = False)			
 		self.setAttribute('mtv', False, overwrite = False)
 		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite = False)
+		super().initialize(pi, originator)
 
 		# These attributes are not provided by default: mnm (no default), macp (no default)
 		# optional set: spty, gn, nar
@@ -84,7 +86,10 @@ class GRP(AnnounceableResource):
 		# add fanOutPoint
 		ri = self.ri
 		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Factory.resourceFromDict(pi = ri, ty = ResourceTypes.GRP_FOPT)
+		fanOutPointResource = Factory.resourceFromDict(pi = ri, 
+												 	   ty = ResourceTypes.GRP_FOPT,
+													   create = True,
+													   originator = originator)
 		CSE.dispatcher.createLocalResource(fanOutPointResource, self, originator)
 
 

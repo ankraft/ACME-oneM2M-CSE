@@ -1634,7 +1634,7 @@ class RequestManager(object):
 		# Check requestReachability
 		# If the target is NOT reachable then try to retrieve a pollingChannel
 		pollingChannelResources = []
-		if targetResource.rr == False:
+		if targetResource.rr == False and targetResource.ri != RC.cseRi:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
 			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')

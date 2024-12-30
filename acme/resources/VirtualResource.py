@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND
-from ..resources.Resource import Resource
 from ..runtime import CSE
+from ..resources.Resource import Resource
 
 # TODO DOCs
 
@@ -20,6 +20,18 @@ class VirtualResource(Resource):
 	""" Base class for all oneM2M virtual resource types. 
 		It adds methods for virtual resources.
 	"""
+
+	resourceName:str = None
+	""" Possibility for virtual sub-classes to provide a fixed resource name. """
+
+
+	def initialize(self, pi:str, originator:str) -> None:
+
+		# Virtual resources have a fixed resource name that is provided in the sub-class
+		self.setResourceName(self.resourceName)
+
+		super().initialize(pi, originator)
+
 
 	def retrieveLatestOldest(self, request:CSERequest, 
 								   originator:str, 

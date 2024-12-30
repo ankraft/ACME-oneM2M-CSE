@@ -106,8 +106,8 @@ class Constants(object):
 	attrImported = '__imported__'
 	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
 
-	attrIsInstantiated = '__isInstantiated__'
-	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is instantiated. """
+	attrIsManuallyInstantiated = '__isInstantiated__'
+	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is manually instantiated. """
 
 	attrLaRi = '__lari__'
 	""" Constant: Name of the `Resource` internal *__lari__* attribute. This attribute holds the resourceID's of the *latest* child-resource for some resource types. """
@@ -160,6 +160,8 @@ class Constants(object):
 	attrSudRI = '__sudRI__'
 	""" Constant: Name of the `Resource` internal *__sudRI__* attribute.  when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty. """
 
+	attrSubscriptionCounter = '__subCtr__'
+	""" Constant: Name of the `Resource` internal *__subCtr__* attribute. This attribute holds the subscription counter for a resource. """
 
 
 

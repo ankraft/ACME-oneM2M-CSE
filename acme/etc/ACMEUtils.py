@@ -281,7 +281,7 @@ def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
 			return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
 		# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 		return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
-	except Exception as e:
+	except Exception:
 		raise
 
 

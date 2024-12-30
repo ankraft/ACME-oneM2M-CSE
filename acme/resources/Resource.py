@@ -36,12 +36,14 @@ internalAttributes	= [ Constants.attrRtype,
 						Constants.attrNode, 
 						Constants.attrCreatedInternallyRI, 
 						Constants.attrImported, 
-						Constants.attrIsInstantiated,
+						Constants.attrIsManuallyInstantiated,
 						Constants.attrLocCoordinate,
 						Constants.attrOriginator, 
 						Constants.attrModified, 
 						Constants.attrRemoteID,
-						Constants.attrRvi ]
+						Constants.attrRvi,
+						Constants.attrSubscriptionCounter
+					 ]
 """	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 
@@ -52,12 +54,13 @@ class Resource(object):
 
 	"""
 
+	inheritACP = False
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+
 	__slots__ = (
 		'typeShortname',
-		'readOnly',
-		'inheritACP',
 		'dict',
-		'isImported',
 		'_originalDict',
 	)
 
@@ -65,122 +68,62 @@ class Resource(object):
 	"""	Resource attributes that are excluded when updating the resource """
 
 
-	def __init__(self, 
-				 ty:ResourceTypes, 
-				 dct:JSON, 
-				 pi:Optional[str] = None, 
-				 typeShortname:Optional[str] = None,
-				 create:Optional[bool] = False,
-				 inheritACP:Optional[bool] = False, 
-				 readOnly:Optional[bool] = False, 
-				 rn:Optional[str] = None) -> None:
+	def __init__(self, dct:JSON, create:Optional[bool] = False) -> None:
 		"""	Initialization of a Resource instance.
 		
 			Args:
-				ty: Mandatory resource type.
 				dct: Mandatory resource attributes.
-				pi: Optional parent resource identifier.
-				typeShortname: Optional domain and resource type short name.
-				create: Optional indicator whether this resource is just created or an instance of an existing resource.
-				inheritACP: Optional indicator whether this resource inherits *acpi* attribute from its parent (if any).
-				readOnly: Optional indicator whether this resource is read-only.
-				rn: Optional resource name. If none is given and the resource is created, then a random name is assigned to the resource.
 		"""
 
-		self.typeShortname = typeShortname
-		"""	The resource's domain and type name. """
-		self.readOnly	= readOnly
-		"""	Flag set during creation of a resource instance whether a resource type allows only read-only access to a resource. """
-		self.inheritACP	= inheritACP
-		"""	Flag set during creation of a resource instance whether a resource type inherits the `resources.ACP.ACP` from its parent resource. """
 		self.dict 		= {}
 		"""	Dictionary for public and internal resource attributes. """
-		self.isImported	= False
-		"""	Flag set during creation of a resource instance whether a resource is imported, which disables some validation checks. """
-		self._originalDict = {}
-		"""	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
-
-		# For some types the typeShortname/root is empty and will be set later in this method
-		if ty not in [ ResourceTypes.FCNT, ResourceTypes.FCI ]: 	
-			self.typeShortname = ty.typeShortname() if not typeShortname else typeShortname
+		# self._originalDict = {}
+		# """	When retrieved from the database: Holds a temporary version of the resource attributes as they were read from the database. """
 
 		if dct is not None: 
-			self.isImported = dct.get(Constants.attrImported)	# might be None, or boolean
-			self.dict = deepcopy(dct.get(self.typeShortname))
+			self.dict = deepcopy(dct.get(self.typeShortname))	# type:ignore[has-type]
 			if not self.dict:
 				self.dict = deepcopy(dct)
-			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
-			self.setAttribute(Constants.attrIsInstantiated, True)
+			self.setAttribute(Constants.attrIsManuallyInstantiated, True)
+		
+		# The original dictionary is only set when the resource is created. It is not
+		# required later
+		if create:
+			self._originalDict = deepcopy(self.dict)	# keep for validation in activate() later
 
-		# if self.dict is not None:
-		if not self.typeShortname: 
-			self.typeShortname = self[Constants.attrRtype]
-		if not self.hasAttribute('ri'):
-			self.setAttribute('ri', uniqueRI(self.typeShortname), overwrite = False)
-		if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
-			self.setAttribute('pi', pi)
 
-		# override rn if given
-		if rn:
-			self.setResourceName(rn)
+
+	def initialize(self, pi:str, originator:str) -> None:
+		""" This method is called when a new resource is created and before written to the database.
+
+			Args:
+				pi: The parent resource's ID.
+				originator: The request originator.
+		"""
+		# Store the shortname of the resource type
+		self.setAttribute(Constants.attrRtype, self.typeShortname)
+
+		# Set the parent resource ID
+		self.setAttribute('pi', pi if pi is not None else '', overwrite = False) # test for None bc pi might be '' (for cse). pi is used subsequently here
+
+		# if not already set: determine and add the srn
+		self.setResourceID()
 
 		# Create an RN if there is none (not given, none in the resource)
 		if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
 			self.setResourceName(uniqueRN(self.typeShortname))
 
-		# Check uniqueness of ri. otherwise generate a new one. Only when creating
-		if create:
-			while not isUniqueRI(ri := self.ri):
-				L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-				self['ri'] = uniqueRI(self.typeShortname)
-
-		# Set some more attributes
-		if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
-			ts = getResourceDate()
-			self.setAttribute('ct', ts, overwrite = False)
-			self.setAttribute('lt', ts, overwrite = False)
+		# Set the internal structure resource name
+		self.setSrn(self.structuredPath())
 
 		# Handle resource type
-		if ty is not None:
-			self.setAttribute('ty', int(ty))
-
-		#
-		## Note: ACPI is handled in activate() and update()
-		#
+		self.setAttribute('ty', int(self.resourceType))
 
 		# Remove empty / null attributes from dict
 		# But see also the comment in update() !!!
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
-
-		self.setAttribute(Constants.attrRtype, self.typeShortname)
-
-
-	# Default encoding implementation. Overwrite in subclasses
-	def asDict(self, embedded:Optional[bool] = True, 
-					 update:Optional[bool] = False, 
-					 noACP:Optional[bool] = False,
-					 sort:bool = False) -> JSON:
-		"""	Get the JSON resource representation.
-		
-			Args:
-				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
-				update: Optional indicator whether only the updated attributes shall be included in the result.
-				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
-			
-			Return:
-				A `JSON` object with the resource representation.
-		"""
-		# remove (from a copy) all internal attributes before printing
-		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
-					if k not in internalAttributes 				# if k is not in internal attributes (starting with __), AND
-					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
-					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
-				}
-		if sort:
-			dct = dict(sorted(dct.items())) # sort the dictionary by key
-		return { self.typeShortname : dct } if embedded else dct
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -201,15 +144,23 @@ class Resource(object):
 		# TODO check whether 				CR is set in RegistrationManager
 		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
 
+
+		# Set some more attributes
+		ts = getResourceDate()
+		self.setAttribute('ct', ts, overwrite = False)
+		self.setAttribute('lt', ts, overwrite = False)
+
+		# Set the internal
+
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
-		if not self[Constants.attrIsInstantiated] and not self.isVirtual() :
+		if not self[Constants.attrIsManuallyInstantiated] and not self.isVirtual() :
 			CSE.validator.validateAttributes(self._originalDict, 
 											 self.typeShortname, 
 											 self.ty, 
 											 self._attributes, 
-											 isImported = self.isImported, 
+											 isImported = self[Constants.attrImported],
 											 createdInternally = self.isCreatedInternally(), 
 											 isAnnounced = self.isAnnounced())
 
@@ -256,7 +207,7 @@ class Resource(object):
 			r.willBeDeactivated(originator, self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentresource:Resource) -> None:
 		"""	Deactivate an active resource.
 
 			This usually happens when creating the resource via a request.
@@ -266,6 +217,7 @@ class Resource(object):
 
 			Args:
 				originator: The requests originator that let to the deletion of the resource.
+				parentResource: The resource's parent resource.
 		"""
 		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
@@ -578,6 +530,32 @@ class Resource(object):
 
 	#########################################################################
 
+	# Default encoding implementation. Overwrite in subclasses
+	def asDict(self, embedded:Optional[bool] = True, 
+					 update:Optional[bool] = False, 
+					 noACP:Optional[bool] = False,
+					 sort:bool = False) -> JSON:
+		"""	Get the JSON resource representation.
+		
+			Args:
+				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
+				update: Optional indicator whether only the updated attributes shall be included in the result.
+				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
+			
+			Return:
+				A `JSON` object with the resource representation.
+		"""
+		# remove (from a copy) all internal attributes before printing
+		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
+					if k not in internalAttributes 				# if k is not in internal attributes (starting with __), AND
+					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
+					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromUpdate)
+				}
+		if sort:
+			dct = dict(sorted(dct.items())) # sort the dictionary by key
+		return { self.typeShortname : dct } if embedded else dct
+
+
 	def isCreatedInternally(self) -> bool:
 		""" Test whether a resource has been created for another resource.
 
@@ -725,6 +703,9 @@ class Resource(object):
 				value: Value to assign to the attribute.
 				overwrite: Overwrite the value if already set.
 		"""
+		if key in self.dict and overwrite:
+			self.dict[key] = value
+			return
 		setXPath(self.dict, key, value, overwrite)
 
 
@@ -738,7 +719,10 @@ class Resource(object):
 			Return:
 				The attribute's value, the *default* value, or None
 		"""
-		return findXPath(self.dict, key, default)
+		try:
+			return self.dict[key]
+		except KeyError:
+			return findXPath(self.dict, key, default)
 
 
 	def hasAttribute(self, key:str) -> bool:
@@ -1123,12 +1107,23 @@ class Resource(object):
 			Args:
 				rn: The new resource name for the resource.
 		"""
+
 		self.setAttribute('rn', rn)
 
 		# determine and add the srn, only when this is a local resource, otherwise we don't need this information
 		# It is *not* a remote resource when the __remoteID__ is set
 		if not self[Constants.attrRemoteID]:
 			self.setSrn(self.structuredPath())
+
+
+	def setResourceID(self) -> None:
+		"""	Set the resource ID for the resource if not already set.
+		"""
+		if not self.ri:
+			self.setAttribute('ri', uniqueRI(self.typeShortname))
+			while not isUniqueRI(self.ri):
+				L.isWarn and L.logWarn(f'RI: {self.ri} is already assigned. Generating new RI.')
+				self.setAttribute('ri', uniqueRI(self.typeShortname))
 
 
 	def getSrn(self) -> str:
@@ -1206,6 +1201,33 @@ class Resource(object):
 		# Set the selected attributes in the request. The actual filtering is done in the response processing.
 		request.selectedAttributes = attributeList
 		
+
+	def incrementSubscriptionCounter(self) -> None:
+		""" Increment the subscription counter for the resource.
+
+			This is used to determine whether a resource has active subscriptions.
+		"""
+		ctr = self.getSubscriptionCounter()
+		self.setAttribute(Constants.attrSubscriptionCounter, ctr + 1)
+		self.dbUpdate()
+	
+
+	def decrementSubscriptionCounter(self) -> None:
+		""" Decrement the subscription counter for the resource.
+
+			This is used to determine whether a resource has active subscriptions.
+		"""
+		self.setAttribute(Constants.attrSubscriptionCounter, self.getSubscriptionCounter() - 1)
+		self.dbUpdate()
+	
+
+	def getSubscriptionCounter(self) -> int:
+		""" Retrieve the subscription counter for the resource.
+
+			Return:
+				The current subscription counter value.
+		"""
+		return self.attribute(Constants.attrSubscriptionCounter, 0)
 
 
 #########################################################################

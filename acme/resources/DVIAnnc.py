@@ -7,13 +7,21 @@
 #	DVI : Announceable variant
 #
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..etc import ACMEUtils
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.MgmtObjAnnc import MgmtObjAnnc
 
 class DVIAnnc(MgmtObjAnnc):
+
+	resourceType = ResourceTypes.MGMTOBJAnnc
+	""" The resource type """
+
+	mgmtType = ResourceTypes.DVI
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
+
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -60,10 +68,4 @@ class DVIAnnc(MgmtObjAnnc):
 		'purl': None,
 		'ptl': None
 	}
-
-	
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.DVI, create = create)
 

@@ -18,6 +18,15 @@ from ..resources.Resource import Resource
 
 class WIFIC(MgmtObj):
 
+	resourceType = ResourceTypes.MGMTOBJ
+	""" The resource type """
+
+	mgmtType = ResourceTypes.WIFIC
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
@@ -58,13 +67,6 @@ class WIFIC(MgmtObj):
 		'trdst': None,
 		'rdst': None
 	}
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.WIFIC, create = create)
-
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

@@ -28,6 +28,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
+	resourceType = ResourceTypes.ACTR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
 													   ResourceTypes.SUB
@@ -69,23 +75,16 @@ class ACTR(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		# the following two lines are needed bc mypy cannot determine the type otherwise
-		self.sri:str
-		self.orc:str
-		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
-
-
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
 		sriResource, orcResource = self._checkReferencedResources(originator, 
-																  self.sri, 
-																  self.orc, 
+																  self.sri, 	# type: ignore[has-type]
+																  self.orc, 	# type: ignore[has-type]
 																  self._getApvOperation())
-		self.sri = riFromID(self.sri)
-		self.orc = riFromID(self.orc)
+		self.sri = riFromID(self.sri)	# type: ignore[has-type]
+		self.orc = riFromID(self.orc)	# type: ignore[has-type]
 
 		#	Check that the from parameter of the actionPrimitive is the originator
 		self._checkApvFrom(originator)
@@ -207,10 +206,10 @@ class ACTR(AnnounceableResource):
 			CSE.action.updateAction(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Unschedule the action
 		CSE.action.unscheduleAction(self)
-		return super().deactivate(originator)
+		return super().deactivate(originator, parentResource)
 
 
 	###########################################################################

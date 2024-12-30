@@ -10,13 +10,21 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, Result
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..resources.MgmtObj import MgmtObj
-from ..resources.Resource import Resource
 from ..helpers.TextTools import findXPath
 
 class EVL(MgmtObj):
+
+	resourceType = ResourceTypes.MGMTOBJ
+	""" The resource type """
+
+	mgmtType = ResourceTypes.EVL
+	""" The management object type """
+
+	typeShortname = mgmtType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -54,13 +62,12 @@ class EVL(MgmtObj):
 	}
 	
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(dct, pi, mgd = ResourceTypes.EVL, create = create)
 
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('lga', True)
 		self.setAttribute('lgo', True)
+		super().initialize(pi, originator)
+
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
