@@ -412,6 +412,24 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
+#
+# Creator attribute tests
+#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWithCreatorFail(self) -> None:
+		""" Create <AE> with creator attribute set to Null -> Fail"""
+		dct = 	{ 'm2m:ae' : { 
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'cr' : None,
+				}}
+		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct) 
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+
 # TODO register multiple AEs
 # TODO register with S
 
@@ -445,7 +463,10 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createAEAPIRVI4LowerCaseRFail',
 		'test_createAENoOriginator',
 		'test_createAEEmptyOriginator',
-		'test_createAEInvalidRNFail'
+		'test_createAEInvalidRNFail',
+
+		# Creator attribute tests
+		'test_createAEWithCreatorFail'
 	])
 
 	# Run tests
