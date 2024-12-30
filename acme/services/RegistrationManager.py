@@ -141,9 +141,14 @@ class RegistrationManager(object):
 	def handleCreator(self, resource:Resource, originator:str) -> None:
 		"""	Check for set creator attribute as well as assign it to allowed resources.
 		"""
-		if resource.hasAttribute('cr'):	# not get, might be empty
+		if resource.hasAttribute('cr'):	# not get, might be empty, which is an indication that it needs to be set
+			# Check whether the creator is allowed to be set for this resource 
+			# This could be done during validation, but we do it here to have a more specific error message
+			# and to return early
 			if not resource.hasAttributeDefined('cr'):
 				raise BAD_REQUEST(f'"creator" attribute is not allowed for resource type: {resource.ty}')
+			
+			# Check whether a creator is set in the request
 			if resource.cr is not None:		# Check whether cr is set to a value in the request. This is wrong
 				raise BAD_REQUEST(L.logWarn('setting the "creator" attribute is not allowed.'))
 			resource.setAttribute('cr', originator)

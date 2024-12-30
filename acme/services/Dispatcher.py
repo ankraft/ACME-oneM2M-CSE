@@ -686,19 +686,16 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
 
-		if (ty := request.ty) is None:	# Check for type parameter in request, integer
-			raise BAD_REQUEST(L.logDebug('type parameter missing in CREATE request'))
-
 		# Some Resources are not allowed to be created in a request, return immediately
-		if not ResourceTypes.isRequestCreatable(ty):
-			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {ty}')
+		if not ResourceTypes.isRequestCreatable(request.ty):
+			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {request.ty}')
 
 		# Get parent resource and check permissions
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id)
 
-		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, request=request):
-			if ty == ResourceTypes.AE:
+		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = request.ty, parentResource = parentResource, request=request):
+			if request.ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
@@ -708,9 +705,10 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
-		newResource = resourceFromDict(deepcopy(request.pc), 
+		# newResource = resourceFromDict(deepcopy(request.pc), 
+		newResource = resourceFromDict(request.pc, 
 								 	   pi = parentResource.ri, 
-									   ty = ty, 
+									   ty = request.ty, 
 									   create = True,
 									   originator = originator)
 
@@ -1000,7 +998,8 @@ class Dispatcher(object):
 		resource = self.updateLocalResource(resource, deepcopy(request.pc), originator = originator)
 
 		# Check resource update with registration
-		CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		# CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		CSE.registration.checkResourceUpdate(resource, request.pc)
 
 		#
 		# Handle RCN's
@@ -1052,7 +1051,7 @@ class Dispatcher(object):
 		else:
 			L.isDebug and L.logDebug('No check, skipping resource update')
 
-		# Signal a successful update so that further actions can be taken
+		# Signal a successful update to the resource so that further actions can be taken
 		resource.updated(dct, originator)
 
 		# Update and send an update event
