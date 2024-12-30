@@ -382,8 +382,8 @@ def sendRequest(operation:Operation,
 	if url.startswith(('http', 'https')):
 		if not httpSession:
 			httpSession = requests.Session()
-			httpAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=10)
-			httpsAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=10)
+			httpAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
+			httpsAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
 			httpSession.mount('http://', httpAdapter)
 			httpSession.mount('https://', httpsAdapter)
 
