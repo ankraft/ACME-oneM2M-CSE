@@ -522,6 +522,7 @@ class RemoteCSEManager(object):
 		csrResource = CSR()
 		csrResource.initialize(localCSE.ri, RC.cseOriginator)	# remoteCSE.csi as name!
 		csrResource.setResourceName(remoteCSE.csi[1:])				# set the resource name to the csi of the remote CSE
+		csrResource.setAttribute('rr', True)
 		self._copyCSE2CSR(csrResource, remoteCSE)
 		csrResource['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri
 
@@ -584,9 +585,9 @@ class RemoteCSEManager(object):
 		# get local CSEBase and copy relevant attributes
 		localCSE = getCSE()
 		csrResource = CSR()
-		csrResource.setResourceName(rn = localCSE.ri)	# set the resource name to the ri of the local CSE
+		csrResource.setResourceName(rn = localCSE.ri)
+		csrResource.setAttribute('rr', True)
 		self._copyCSE2CSR(csrResource, localCSE)
-		for _ in ['ty','ri', 'ct', 'lt']: csrResource.delAttribute(_, setNone = False)	# remove a couple of attributes
 
 		# Create the <csr> on the registrar CSE
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
@@ -613,7 +614,7 @@ class RemoteCSEManager(object):
 		return resourceFromDict(cast(JSON, res.data), pi = '')
 
 
-	def 	_updateCSRonRegistrarCSE(self, hostingCSE:Optional[Resource] = None) -> Resource:
+	def _updateCSRonRegistrarCSE(self, hostingCSE:Optional[Resource] = None) -> Resource:
 		"""	Update the own <CSR> resource on the registrar CSE.
 
 			Args:
