@@ -22,7 +22,7 @@ class SIMAnnc(MgmtObjAnnc):
 	mgmtType = ResourceTypes.SIM
 	""" The management object type """
 
-	typeShortname = mgmtType.typeShortname()
+	typeShortname = mgmtType.announced().typeShortname()
 	"""	The resource's domain and type name. """
 
 	# Attributes and Attribute policies for this Resource Class

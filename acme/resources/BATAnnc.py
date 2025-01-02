@@ -23,7 +23,7 @@ class BATAnnc(MgmtObjAnnc):
 	mgmtType = ResourceTypes.BAT
 	""" The management object type """
 
-	typeShortname = mgmtType.typeShortname()
+	typeShortname = mgmtType.announced().typeShortname()
 	"""	The resource's domain and type name. """
 
 	
