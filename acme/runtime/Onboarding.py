@@ -54,8 +54,9 @@ _iniValues = {
 
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8080,
-		'registrarCseID': 'id-in',
+		'registrarCseID': '/id-in',
 		'registrarCseName': 'cse-in',
+		'INCSEcseID': '/id-in',
 	},
 	'ASN' : { 
 		'cseID': 'id-asn',
@@ -70,8 +71,9 @@ _iniValues = {
 
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8081,
-		'registrarCseID': 'id-mn',
+		'registrarCseID': '/id-mn',
 		'registrarCseName': 'cse-mn',
+		'INCSEcseID': '/id-in',
 	}		
 }
 
@@ -181,7 +183,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 						long_instruction = 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
 						validate = lambda result: isValidID(result) or _containsVariable(result),
 						amark = '✓', 
-						invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
+						invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
 					 ).execute(),
 			'cseName': inquirer.text(
 							message = 'Name of the CSE:',
@@ -189,7 +191,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							long_instruction = 'This is the resource name of the CSEBase.',
 							validate = lambda result: isValidID(result) or _containsVariable(result),
 							amark = '✓', 
-							invalid_message = 'Invalid CSE name. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
+							invalid_message = 'Invalid CSE name. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
 						).execute(),
 			'adminID': inquirer.text(
 							message = 'Admin Originator:',
@@ -197,7 +199,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							long_instruction = 'The originator who has admin access rights to the CSE and the CSE\'s resources.',
 							validate = lambda result: (isValidID(result) and result.startswith('C')) or _containsVariable(result),
 							amark = '✓', 
-							invalid_message = 'Invalid Originator ID. Must start with "C", must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
+							invalid_message = 'Invalid Originator ID. Must start with "C", must not be empty and must only contain letters, digits, and the characters [-, _, .].',
 						).execute(),
 			'networkInterface': inquirer.text(
 								message = 'Network interface to bind to (IP address):',
@@ -237,9 +239,9 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Registrar CSE-ID:',
 									default = _iniValues[cseType]['registrarCseID'],
 									long_instruction = 'This is the CSE-ID of the remote (Registrar) CSE.',
-									validate = lambda result: isValidID(result) or _containsVariable(result),
+									validate = lambda result: isValidID(result, isCsi = True) or _containsVariable(result),
 									amark = '✓', 
-									invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
+									invalid_message = 'Invalid CSE-ID. Must not be empty, start with "/" and must only contain letters, digits, and the characters [-, _, .] .',
 								).execute(),
 			'registrarCseName':	inquirer.text(
 									message = 'The Name of the Registrar CSE:',
@@ -247,7 +249,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									long_instruction = 'The resource name of the remote (Registrar) CSE.',
 									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
-									invalid_message = 'Invalid CSE Name. Must not be empty and must only contain letters, digits, and the characters "-", "_", and ".".',
+									invalid_message = 'Invalid CSE Name. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
 								).execute(),
 			'registrarCseHost':	inquirer.text(
 									message = 'The Registrar CSE\' IP address / host name:',
@@ -267,6 +269,14 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									max_allowed = 65535,
 									amark = '✓',
 									invalid_message = 'Invalid port number. Must be a number between 1 and 65535.',
+								).execute(),
+			'INCSEcseID':	inquirer.text(
+									message = 'The Infrastructure CSE\'s CSE-ID:',
+									default = _iniValues[cseType]['INCSEcseID'],
+									long_instruction = 'This is the CSE-ID of the top Infrastructure CSE, NOT the registrar\'s one.',
+									validate = lambda result: isValidID(result, isCsi = True) or _containsVariable(result),
+									amark = '✓', 
+									invalid_message = 'Invalid CSE-ID. Must not be empty, start with "/" and must only contain letters, digits, and the characters [-, _, .] .',
 								).execute(),
 		}
 
@@ -499,8 +509,27 @@ schema={dbc["dbSchema"]}
 		else:
 			cnfPostgreSQL = ''
 
-		# Construct the configuration
-		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra
+		#
+		#	Construct registrar configuration
+		#
+
+		if cseType in [ 'MN', 'ASN' ]:
+			cnfRegistrar = \
+f"""
+[cse.registrar]
+INCSEcseID=/id-in
+"""
+		else:
+			cnfRegistrar = ''
+		# remove INCSEcseID from the cnf list
+		cnf = [ c for c in cnf if not c.startswith('INCSEcseID') ]
+
+
+		#
+		#	Construct the configuration
+		#
+
+		jcnf = '[basic.config]\n' + '\n'.join(cnf) + cnfExtra + cnfRegistrar
 
 		# add more mode-specific configurations
 		match cseEnvironment:

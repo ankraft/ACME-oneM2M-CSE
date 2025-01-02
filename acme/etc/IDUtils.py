@@ -263,7 +263,7 @@ def isValidAEI(aei:str) -> bool:
 
 
 
-def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
+def isValidID(id:str, allowEmpty:Optional[bool] = False, isCsi:Optional[bool] = False) -> bool:
 	""" Test for a valid ID. 
 
 		Args:
@@ -272,8 +272,18 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 		Returns:
 			Boolean
 	"""
+	if len(id) == 0 and not allowEmpty:
+		return False
+	
+	if isCsi:
+		if id.startswith('/'):
+			id = id[1:]
+		else:
+			return False
+		
 	if allowEmpty:
 		return id is not None and '/' not in id	# pi might be ""
+	
 	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
 
 

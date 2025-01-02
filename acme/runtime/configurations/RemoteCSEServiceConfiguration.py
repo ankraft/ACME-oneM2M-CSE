@@ -28,7 +28,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 		config.cse_registrar_checkInterval = parser.getint('cse.registrar', 'checkInterval', fallback = 30)		# Seconds
 		config.cse_registrar_cseID = parser.get('cse.registrar', 'cseID', fallback = None)
 		config.cse_registrar_excludeCSRAttributes = parser.getlist('cse.registrar', 'excludeCSRAttributes', fallback = [])		# type: ignore [attr-defined]
-		config.cse_registrar_resourceName = parser.get('cse.registrar', 'resourceName', fallback = None)
+		config.cse_registrar_resourceName = parser.get('cse.registrar', 'resourceName', fallback = '')
 		config.cse_registrar_root = parser.get('cse.registrar', 'root', fallback = '')
 		config.cse_registrar_serialization = parser.get('cse.registrar', 'serialization', fallback = 'json')
 

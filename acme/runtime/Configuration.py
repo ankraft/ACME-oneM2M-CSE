@@ -751,8 +751,8 @@ class Configuration(object):
 
 							'registrarCseHost'		: '127.0.0.1',							# The IP address of the registrar CSE
 							'registrarCsePort'		: 8080,									# The TCP port of the registrar CSE
-							'registrarCseID'		: 'id-in',								# The CSE-ID of the registrar CSE
-							'registrarCseName'		: 'cse-in',								# The resource name of the registrar CSE's CSEBase
+							'registrarCseID'		: '',									# The CSE-ID of the registrar CSE
+							'registrarCseName'		: '',									# The resource name of the registrar CSE's CSEBase
 						}
 					}
 		# Add environment variables to the defaults
