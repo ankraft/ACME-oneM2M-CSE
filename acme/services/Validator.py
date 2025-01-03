@@ -25,7 +25,7 @@ from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
-from ..resources.BAT import BatteryStatus
+from ..resources.mgmtobjs.BAT import BatteryStatus
 from ..runtime.Logging import Logging as L
 
 
@@ -692,6 +692,8 @@ class Validator(object):
 	def getAttributeValueName(self, attr:str, value:int, rtype:Optional[ResourceTypes] = None) -> str:
 		"""	Return the name of an attribute value. This is usually used for
 			enumerations, where the value is a number and the name is a string.
+
+			This method is mainly used for the interpretation of enumeration values in the UIs.
 
 			Args:
 				attr: Attribute name.

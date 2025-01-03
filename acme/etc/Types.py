@@ -2815,7 +2815,7 @@ RequestResponse = namedtuple('RequestResponse', 'request result')
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """
 
-FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str], object ]
+FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """
 
 
