@@ -517,9 +517,6 @@ enableUTCTimezone=False
 ;
 
 [cse.announcements]
-; Wait n seconds between tries to to announce resources to registered remote CSE.
-; Default: 10 seconds
-checkInterval=10
 ; Allow resource announcements to the own hosting CSE.
 ; Default: True
 allowAnnouncementsToHostingCSE=True

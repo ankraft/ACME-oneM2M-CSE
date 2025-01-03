@@ -173,9 +173,6 @@ class Configuration(object):
 	cse_announcements_allowAnnouncementsToHostingCSE:bool
 	"""	Allow announcements to the hosting CSE. """
 
-	cse_announcements_checkInterval:int
-	"""	The interval to check for announcements. """
-
 	cse_announcements_delayAfterRegistration:float
 	"""	The delay after registration for announcements. """
 

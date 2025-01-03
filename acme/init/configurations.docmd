@@ -302,15 +302,6 @@ The default value is `True`.
 
 
 
-# cse.announcements.checkInterval
-
-This setting is used to set a wait delay, in seconds, between tries to announce resources to registered remote CSE(s).
-It is used in case one or more announcement target is not reachable for some time.
-
-The default value is `10 seconds`.
-
-
-
 # cse.announcements.delayAfterRegistration
 
 Sometimes the registration process between two CSEs needs a moment on one side or the other. Announcements might fail in those cases while technically the CSEs are registered with each other.
