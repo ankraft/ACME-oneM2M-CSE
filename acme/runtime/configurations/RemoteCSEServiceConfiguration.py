@@ -14,7 +14,7 @@ import configparser
 
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
-from ...etc.Types import ContentSerializationType
+from ...etc.Types import ContentSerializationType, CSEType
 from ...etc.Utils import normalizeURL
 from ...etc.IDUtils import isValidCSI
 
@@ -45,8 +45,8 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			if config.cse_registrar_serialization == ContentSerializationType.UNKNOWN:
 				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
 
-		if config.cse_registrar_address and config.cse_registrar_cseID:
-			if not isValidCSI(val := config.cse_registrar_cseID):
+		if config.cse_registrar_address and config.cse_registrar_cseID and config.cse_type != CSEType.IN:
+			if not isValidCSI(val := config.cse_registrar_cseID): 
 				raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}')
 			if len(config.cse_registrar_cseID) > 0 and len(config.cse_registrar_resourceName) == 0:
 				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]')

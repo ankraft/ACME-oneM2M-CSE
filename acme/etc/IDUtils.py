@@ -227,7 +227,8 @@ def toCSERelative(id:str) -> str:
 
 
 
-_csiRx = re.compile(r'^/[a-zA-Z0-9\-._~]+') # Must start with a / and must not contain a further / or white space
+_csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
+# _csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 """	Regular expression to test for valid CSE-ID format (unreserved characters in IDs according to RFC 3986). """
 
 def isValidCSI(csi:str) -> bool:
