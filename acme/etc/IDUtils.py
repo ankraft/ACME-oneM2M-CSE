@@ -227,8 +227,8 @@ def toCSERelative(id:str) -> str:
 
 
 
-_csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
-"""	Regular expression to test for valid CSE-ID format. """
+_csiRx = re.compile(r'^/[a-zA-Z0-9\-._~]+') # Must start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid CSE-ID format (unreserved characters in IDs according to RFC 3986). """
 
 def isValidCSI(csi:str) -> bool:
 	"""	Test for valid CSE-ID format.
@@ -263,7 +263,7 @@ def isValidAEI(aei:str) -> bool:
 
 
 
-def isValidID(id:str, allowEmpty:Optional[bool] = False, isCsi:Optional[bool] = False) -> bool:
+def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	""" Test for a valid ID. 
 
 		Args:
@@ -272,15 +272,6 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False, isCsi:Optional[bool] = 
 		Returns:
 			Boolean
 	"""
-	if len(id) == 0 and not allowEmpty:
-		return False
-	
-	if isCsi:
-		if id.startswith('/'):
-			id = id[1:]
-		else:
-			return False
-		
 	if allowEmpty:
 		return id is not None and '/' not in id	# pi might be ""
 	

@@ -31,6 +31,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 		config.cse_registrar_resourceName = parser.get('cse.registrar', 'resourceName', fallback = '')
 		config.cse_registrar_root = parser.get('cse.registrar', 'root', fallback = '')
 		config.cse_registrar_serialization = parser.get('cse.registrar', 'serialization', fallback = 'json')
+		config.cse_registrar_INCSEcseID = parser.get('cse.registrar', 'INCSEcseID', fallback = '/id-in')
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -49,4 +50,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 				raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}')
 			if len(config.cse_registrar_cseID) > 0 and len(config.cse_registrar_resourceName) == 0:
 				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]')
-
+		
+		if config.cse_registrar_INCSEcseID:
+			if not isValidCSI(val := config.cse_registrar_INCSEcseID):
+				raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:INCSEcseID[/i]: {val}')

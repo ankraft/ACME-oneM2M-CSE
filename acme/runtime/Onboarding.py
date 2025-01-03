@@ -54,9 +54,9 @@ _iniValues = {
 
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8080,
-		'registrarCseID': '/id-in',
+		'registrarCseID': 'id-in',
 		'registrarCseName': 'cse-in',
-		'INCSEcseID': '/id-in',
+		'INCSEcseID': 'id-in',
 	},
 	'ASN' : { 
 		'cseID': 'id-asn',
@@ -71,9 +71,9 @@ _iniValues = {
 
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8081,
-		'registrarCseID': '/id-mn',
+		'registrarCseID': 'id-mn',
 		'registrarCseName': 'cse-mn',
-		'INCSEcseID': '/id-in',
+		'INCSEcseID': 'id-in',
 	}		
 }
 
@@ -105,7 +105,7 @@ def _containsVariable(value:str) -> bool:
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
-	from ..etc.IDUtils import isValidID
+	from ..etc.IDUtils import isValidID, isValidCSI
 
 	cseType = 'IN'
 	cseID:str = None
@@ -239,9 +239,9 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Registrar CSE-ID:',
 									default = _iniValues[cseType]['registrarCseID'],
 									long_instruction = 'This is the CSE-ID of the remote (Registrar) CSE.',
-									validate = lambda result: isValidID(result, isCsi = True) or _containsVariable(result),
+									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
-									invalid_message = 'Invalid CSE-ID. Must not be empty, start with "/" and must only contain letters, digits, and the characters [-, _, .] .',
+									invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
 								).execute(),
 			'registrarCseName':	inquirer.text(
 									message = 'The Name of the Registrar CSE:',
@@ -274,9 +274,9 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									message = 'The Infrastructure CSE\'s CSE-ID:',
 									default = _iniValues[cseType]['INCSEcseID'],
 									long_instruction = 'This is the CSE-ID of the top Infrastructure CSE, NOT the registrar\'s one.',
-									validate = lambda result: isValidID(result, isCsi = True) or _containsVariable(result),
+									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
-									invalid_message = 'Invalid CSE-ID. Must not be empty, start with "/" and must only contain letters, digits, and the characters [-, _, .] .',
+									invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
 								).execute(),
 		}
 
@@ -408,8 +408,10 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		
 		# Prompt for registrar configuration
 		if cseType in [ 'MN', 'ASN' ]:
-			for each in (bc := registrarConfig()):
-				cnf.append(f'{each}={bc[each]}')
+			for each in (regCnf := registrarConfig()):
+				if each == 'INCSEcseID':
+					continue
+				cnf.append(f'{each}={regCnf[each]}')
 		
 		# Prompt for the CSE database settings
 
@@ -417,8 +419,8 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		cnf.append(f'databaseType={dbc["databaseType"]}')
 		
 		# Prompt for the CSE policies
-		for each in (bc := csePolicies()):
-			cnf.append(f'{each}={bc[each]}')
+		for each in (policyConfig := csePolicies()):
+			cnf.append(f'{each}={policyConfig[each]}')
 
 
 		cnfHeader = \
@@ -517,13 +519,10 @@ schema={dbc["dbSchema"]}
 			cnfRegistrar = \
 f"""
 [cse.registrar]
-INCSEcseID=/id-in
+INCSEcseID=/{regCnf["INCSEcseID"]}
 """
 		else:
 			cnfRegistrar = ''
-		# remove INCSEcseID from the cnf list
-		cnf = [ c for c in cnf if not c.startswith('INCSEcseID') ]
-
 
 		#
 		#	Construct the configuration

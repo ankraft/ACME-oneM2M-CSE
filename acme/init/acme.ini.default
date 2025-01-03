@@ -453,7 +453,7 @@ address=http://${basic.config:registrarCseHost}:${basic.config:registrarCsePort}
 ; Registrar CSE root path. Never provide a trailing /. Default: empty string
 root=
 ; CSE-ID of the Registrar CSE. Default: None
-cseID=${basic.config:registrarCseID}
+cseID=
 ; The Registrar CSE's resource name. Default: None
 resourceName=${basic.config:registrarCseName}
 ; The CSE-ID of the top Infrastructure CSE. Default: /id-in

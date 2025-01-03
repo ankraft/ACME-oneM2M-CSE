@@ -411,6 +411,14 @@ Settings in this section are listed under the `[cse.registrar]` section.
 
 
 
+# cse.registrar.INCSEcseID
+
+This setting specifies the CSE-ID of the IN-CSE at the top of the CSE deployment hierarchy.
+
+The default value is `/in-cse`.
+
+
+
 # cse.registrar.address
 
 This setting specifies the URL of the registrar CSE.

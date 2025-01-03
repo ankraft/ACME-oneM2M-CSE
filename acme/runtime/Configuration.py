@@ -218,6 +218,9 @@ class Configuration(object):
 	cse_registrar_serialization:str|ContentSerializationType
 	"""	The serialization for the registrar. """
 
+	cse_registrar_INCSEcseID:str
+	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
+
 
 	cse_registration_allowedAEOriginators:list[str]
 	"""	Allowed AE originators for registration. """
