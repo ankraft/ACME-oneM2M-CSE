@@ -1,22 +1,25 @@
 #
-#	CINAnnc.py
+#	FCIAnnc.py
 #
-#	(c) 2020 by Andreas Kraft
+#	(c) 2025 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	CIN : Announceable variant
 #
-"""  ContentInstance announced (CINA) resource type."""
+"""  FlexContainerInstance announced (FCIA) resource type."""
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes
+from typing import Optional
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 
 
-class CINAnnc(AnnouncedResource):
-	""" ContentInstance announced (CINA) resource type. """
 
-	resourceType = ResourceTypes.CINAnnc
+class FCIAnnc(AnnouncedResource):
+	""" FlexContainerInstance announced (FCIA) resource type. """
+
+	resourceType = ResourceTypes.FCIAnnc
 	""" The resource type """
 
 	typeShortname = resourceType.typeShortname()
@@ -46,11 +49,15 @@ class CINAnnc(AnnouncedResource):
 		'lnk': None,
 
 		# Resource attributes
-		'cnf': None,
-		'conr': None,
-		'con': None,
-		'or': None,
-		'conr': None
+		'cs': None,
+		'org': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
+
+
+	# Forbidd updating
+	def update(self, dct:Optional[JSON] = None, 
+					 originator:Optional[str] = None,
+					 doValidateAttributes:Optional[bool] = True) -> None:
+		raise OPERATION_NOT_ALLOWED('updating FCIAnnc is forbidden')
 

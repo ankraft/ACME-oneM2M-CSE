@@ -191,6 +191,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeries resource type. """
 	TSIAnnc			= 10030
 	"""	Announced TimeSeriesInstance resource type. """
+	FCIAnnc 		= 10058
+	"""	Announced FlexContainerInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
 	PRPAnnc			= 10062
@@ -496,6 +498,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc, fullName='Dependency'),
 	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
+	ResourceTypes.FCIAnnc		: ResourceDescription(typeName = 'm2m:fciA', isAnnouncedResource = True, isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance Announced'),	# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
 	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),	# not an official type name

@@ -12,10 +12,10 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
-from ..resources.Resource import Resource
+from ..resources.AnnounceableResource import AnnounceableResource
 
 
-class FCI(Resource):
+class FCI(AnnounceableResource):
 
 	resourceType = ResourceTypes.FCI
 	""" The resource type """
@@ -57,5 +57,5 @@ class FCI(Resource):
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None,
 					 doValidateAttributes:Optional[bool] = True) -> None:
-		raise OPERATION_NOT_ALLOWED('updating FCIN is forbidden')
+		raise OPERATION_NOT_ALLOWED('updating FCI is forbidden')
 

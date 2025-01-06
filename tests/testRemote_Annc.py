@@ -16,6 +16,8 @@ from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 
+CND = 'org.onem2m.common.moduleclass.temperature'
+
 class TestRemote_Annc(unittest.TestCase):
 
 	acpORIGINATOR 	= 'testOriginator'
@@ -28,6 +30,7 @@ class TestRemote_Annc(unittest.TestCase):
 	remoteCbARI 	= None
 	remoteAeRI		= None
 	remoteCntRI		= None
+	remoteFcntRI	= None
 	remoteNodRI		= None
 	remoteBatRI 	= None
 	remoteAcpRI 	= None
@@ -868,6 +871,36 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	Announcement with FCNT & FCI
+	#
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_announceFCNT(self) -> None:
+		""" Create announced <FCNT> """
+		dct = 	{ 'cod:tempe' : { 
+					'rn': 		fcntRN,
+					'cnd': 		CND,
+					'curT0':	23.0,
+				 	'at': 		[ REMOTECSEID ],
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/at'), r)
+		self.assertIsInstance(findXPath(r, 'cod:tempe/at'), list, r)
+		TestRemote_Annc.remoteFcntRI = findXPath(r, 'cod:tempe/at')[0]
+		self.assertTrue(TestRemote_Annc.remoteFcntRI.startswith(REMOTECSEID), r)
+		self.assertGreater(len(TestRemote_Annc.remoteFcntRI), len(REMOTECSEID), r)	# must be longer if succeeded
+
+		# retrieve announced resource
+		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteFcntRI}', CSEID)
+		self.assertEqual(rsc, RC.OK)
+
+		# Delete the announced FCNT
+		r, rsc = DELETE(f'{cseURL}/{fcntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
 # TODO Test: non-resource attribute in "aa" attribute
 
 def run(testFailFast:bool) -> TestResult:
@@ -934,6 +967,9 @@ def run(testFailFast:bool) -> TestResult:
 
 		# annoncement with identifier attributes
 		'test_announceAEwithIdentifierAttributes',
+
+		# announcement with FCNT
+		'test_announceFCNT',
 
 	])
 

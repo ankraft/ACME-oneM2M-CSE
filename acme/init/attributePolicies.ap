@@ -247,7 +247,7 @@
 			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", 
 						"CIN", "CINAnnc",
 					    "CNT", "CNTAnnc", "CNT_LA", "CNT_OL",
-						"FCI", "FCNT", "FCNTAnnc", "FCNT_LA", "FCNT_OL",
+						"FCI", "FCIAnnc", "FCNT", "FCNTAnnc", "FCNT_LA", "FCNT_OL",
 						"TS", "TSAnnc", "TS_LA", "TS_OL", "TSI", "TSIAnnc", 
 						"REQRESP" ],	
 			"lname": "location",
@@ -1009,7 +1009,7 @@
 	],
 	"cs": [
 		{
-			"rtypes": [ "FCNT", "FCNTAnnc", "FCI", "FCNT_LA", "FCNT_OL",
+			"rtypes": [ "FCNT", "FCNTAnnc", "FCI", "FCIAnnc", "FCNT_LA", "FCNT_OL",
 						"CIN", "CNT_LA", "CNT_OL",
 						"TSI", "TSIAnnc", "TS_LA", "TS_OL",
 						"REQRESP"],
@@ -1993,7 +1993,7 @@
 		{
 			"rtypes": [ "ACPAnnc", "ACTRAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
 						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DATCAnnc", "DEPRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
-						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "LCPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
+						"FCIAnnc", "FCNTAnnc", "FWRAnnc", "GRPAnnc", "LCPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SCHAnnc", "SIMAnnc", "SMDAnnc", "SWRAnnc", "TSAnnc", "TSBAnnc", "TSIAnnc", "WIFIC", "WIFICAnnc",
 						"REQRESP" ],
 			"lname": "link",

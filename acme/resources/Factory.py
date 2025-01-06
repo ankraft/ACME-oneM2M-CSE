@@ -42,7 +42,7 @@ from ..resources.CSRAnnc import CSRAnnc
 from ..resources.DEPR import DEPR
 from ..resources.DEPRAnnc import DEPRAnnc
 from ..resources.FCI import FCI
-# TODO from ..resources.FCIAnnc import FCIAnnc
+from ..resources.FCIAnnc import FCIAnnc
 from ..resources.FCNT import FCNT
 from ..resources.FCNTAnnc import FCNTAnnc
 from ..resources.FCNT_LA import FCNT_LA
@@ -134,6 +134,7 @@ addResourceFactoryCallback(ResourceTypes.CSRAnnc,		CSRAnnc,		lambda dct, typeSho
 addResourceFactoryCallback(ResourceTypes.DEPR,			DEPR,			lambda dct, typeShortname, create : DEPR(dct, create = create)) 
 addResourceFactoryCallback(ResourceTypes.DEPRAnnc,		DEPRAnnc,		lambda dct, typeShortname, create : DEPRAnnc(dct, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCI,			FCI,			lambda dct, typeShortname, create : FCI(dct, typeShortname = typeShortname, create = create)) 
+addResourceFactoryCallback(ResourceTypes.FCIAnnc,		FCIAnnc,		lambda dct, typeShortname, create : FCIAnnc(dct, create = create))
 addResourceFactoryCallback(ResourceTypes.FCNT,			FCNT,			lambda dct, typeShortname, create : FCNT(dct, typeShortname = typeShortname, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNTAnnc,		FCNTAnnc,		lambda dct, typeShortname, create : FCNTAnnc(dct, create = create)) 
 addResourceFactoryCallback(ResourceTypes.FCNT_LA,		FCNT_LA,		lambda dct, typeShortname, create : FCNT_LA(dct, create = create)) 
