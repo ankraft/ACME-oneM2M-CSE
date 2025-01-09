@@ -1195,10 +1195,9 @@ class NotificationManager(object):
 
 			# get the notificationContentType
 			nct = sub['nct']
-			# TODO check whether the following is correct. The Standard is not clear about the nct
-			# for operationMonitor
-			if operationMonitor is not None:	# special case of operationMonitor
-				nct = NotificationContentType.allAttributes
+			# TODO check what the content is for operation monitor
+			# if operationMonitor is not None:	# special case of operationMonitor
+			# 	nct = NotificationContentType.allAttributes
 
 			creator = sub.get('cr')	# creator, might be None
 			# switch to populate data
