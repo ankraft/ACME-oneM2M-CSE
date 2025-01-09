@@ -105,7 +105,7 @@ def _containsVariable(value:str) -> bool:
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
-	from ..etc.IDUtils import isValidID, isValidCSI
+	from ..etc.IDUtils import isValidID
 
 	cseType = 'IN'
 	cseID:str = None
@@ -121,7 +121,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 		runtimeDirectory = inquirer.text(
 							message = 'Runtime data directory:',
-							default = str(Configuration.Configuration.baseDirectory),
+							default = str(Configuration.Configuration.baseDirectory) if Configuration.Configuration.baseDirectory else os.getcwd(),
 							long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
 							amark = '✓', 
 						).execute()
@@ -554,7 +554,7 @@ INCSEcseID=/{regCnf["INCSEcseID"]}
 		configFile = f'{runtimeDirectory}{os.sep}{_configFile}'
 		if not inquirer.confirm	(message = f'Write configuration to file "{configFile}"?', 
 			   					default = True,
-								long_instruction = 'Write the configuration file and start the CSE afterwards.',
+								long_instruction = 'Create the configuration file.',
 			  					amark = '✓'
 								).execute():
 			_print('\n[red]Configuration canceled\n')

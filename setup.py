@@ -30,6 +30,7 @@ setup(
 	entry_points={
 		'console_scripts': [
 			'acmecse=acmecse.__main__:main',
+			'acmecse-onboarding=acmecse.onboarding:main',
 		]
 	},
 	include_package_data=True,

@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [unreleased 2024.DEV] - xxxx-xx-xx
+## [unreleased 2025.DEV] - xxxx-xx-xx
 
 ### Added
 - [CSE] Added support for the [credential] ManagementObject specialization.
@@ -16,6 +16,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added configurable default settings for *mia* attribute in &lt;Container>, &lt;FlexContainer> and &lt;TimeSeries> resources.
 - [CSE] Added support for &lt;Subscription>'s *enableEventNotificationOriginator* attribute.
 - [CSE] Many small optimizations and improvements in the CSE's internal handling, especially for internal resource object creation.
+- [CSE] Made onboarding available as an extra application that can be started via the command line.
 - [TUI] Added support for enablong/disabling syntax highlighting in the resource editor of the text UI. The syntax package is now not installed by default because it is not available on all platforms. It be installed afterward if needed.
 - [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
 - [SCRIPTS] Added *fset* build-in command to set an alias to functions and lambdas.
