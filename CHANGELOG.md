@@ -26,6 +26,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for the revised &lt;FlexContainer> and &lt;FlexContainerInstance> resource types.
 
 ### Changed
+- [CSE] The method for creating resource IDs has been changed to use alphanumeric characters instead of only digits.
+- [CSE] The length of generated resource IDs is now configurable.
 - [MISC] Improved Docker image generation.
 - [TUI] Hiding the "Requests" tabs when request recording is disabled.
 - [TUI] Adapted to Textual release 1.0.0.

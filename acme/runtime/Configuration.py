@@ -170,6 +170,9 @@ class Configuration(object):
 	cse_type:str|CSEType
 	"""	The type of the CSE. """
 
+	cse_idLength:int
+	"""	The length of the generated resource IDs. """
+
 	cse_announcements_allowAnnouncementsToHostingCSE:bool
 	"""	Allow announcements to the hosting CSE. """
 

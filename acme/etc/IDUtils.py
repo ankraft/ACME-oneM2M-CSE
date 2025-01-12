@@ -12,11 +12,8 @@
 from __future__ import annotations
 from typing import Optional, Tuple
 
-import random, sys, re, string
-from .Constants import Constants, RuntimeConstants as RC
-
-# Optimize access (fewer look-up)
-_maxIDLength = Constants.maxIDLength
+import random, re, string
+from .Constants import RuntimeConstants as RC
 
 ##############################################################################
 #
@@ -42,7 +39,8 @@ def uniqueID() -> str:
 		Return:
 			String with the identifier
 	"""
-	return str(random.randint(1,sys.maxsize))
+	return _randomID()
+	# return str(random.randint(1,sys.maxsize))
 
 
 
@@ -97,7 +95,7 @@ def _randomID() -> str:
 			String with a random ID
 	"""
 	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = _maxIDLength))
+		result = ''.join(random.choices(_randomIDCharSet, k = RC.idLength))
 		if 'fopt' not in result:	# prevent 'fopt' in ID
 			return result
 

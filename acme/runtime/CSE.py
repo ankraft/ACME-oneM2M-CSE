@@ -205,6 +205,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.csePOA.append(Configuration.websocket_address)
 	if Configuration.coap_enable:
 		RC.csePOA.append(Configuration.coap_address)
+	
+	# Other configuration values
+	RC.idLength = Configuration.cse_idLength
 
 	#
 	# init Logging

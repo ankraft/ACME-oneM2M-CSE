@@ -82,6 +82,11 @@ sendToFromInResponses=true
 ; Set the CSE's point-of-access. This is a comma-separated list of URLs.
 ; Default: The configured HTTP server's address
 poa=${http:address}
+; Set the length of the CSE's resource IDs. This value can be increased or decreased as needed.
+; A longer ID increases the uniqueness of the resource ID, but also increases its size. This could be
+; be relevant for the overall size of requests and responses.
+; Default: 10
+idLength=10
 
 
 ;
