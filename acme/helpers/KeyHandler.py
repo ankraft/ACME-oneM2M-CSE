@@ -566,7 +566,7 @@ def loop(commands:Commands,
 			try:
 				# The following sleep is necessary to avoid 100% CPU load.
 				# It must be very short because the loop should react immediately to a key press.
-				time.sleep(0.01)
+				time.sleep(0.001)
 				continue
 			except KeyboardInterrupt:
 				break
