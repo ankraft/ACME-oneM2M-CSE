@@ -28,7 +28,7 @@ from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, 
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.IDUtils import uniqueRI, toSPRelative
-from ..etc.Utils import renameThread, isURL
+from ..etc.Utils import renameThread, getThreadName, isURL
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
@@ -285,6 +285,13 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
+
+		def _runRequest(request:CSERequest) -> Result:
+			try:
+				return CSE.request.handleRequest(request)	# type: ignore[arg-type]
+			except Exception as e:
+				return Result.exceptionToResult(e)
+
 		L.isDebug and L.logDebug(f'==> HTTP Request: {path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
 		L.isDebug and L.logDebug(f'Headers: { { k:v for k,v in request.headers.items()} }')
@@ -315,16 +322,15 @@ class HttpServer(object):
 				CSE.request.recordRequest(dissectResult.request, dissectResult)
 			return self._prepareResponse(dissectResult)
 
-		try:
-			responseResult = CSE.request.handleRequest(dissectResult.request)	# type: ignore[arg-type]
-		except Exception as e:
-			responseResult = Result.exceptionToResult(e)
-		
 		# Return without a response if the request is a noResponse request
-		# This means return a simple "status = 204" response
+		# This means return a simple "status = 204" response, but execute the request in the background
 		if dissectResult.request.rt == ResponseType.noResponse:
 			L.isDebug and L.logDebug('No response requested')
+			BackgroundWorkerPool.newActor(lambda: _runRequest(dissectResult.request), name=getThreadName()+'_1').start()
 			return Response(status = 204)	# No Content
+
+		# Otherwise, handle the request and return the response
+		responseResult = _runRequest(dissectResult.request)
 
 		# Return a proper response
 		# L.inspect(responseResult)
