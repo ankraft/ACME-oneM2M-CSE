@@ -108,6 +108,18 @@ def renameThread(prefix:Optional[str] = None,
 	return True
 
 
+def getThreadName(thread:Optional[threading.Thread] = None) -> str:
+	"""	Get the name of a thread.
+
+		Args:
+			thread: The Thread to get the name from. If none is provided then the current thread is used.
+
+		Returns:
+			The name of the thread.
+	"""
+	return threading.current_thread().name if not thread else thread.name
+
+
 ##############################################################################
 #
 #	URL and Addressung related
