@@ -4,8 +4,8 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Server to implement the http part of the oneM2M Mcx communication interface.
-#
+
+""" This module provides the HTTP server for the CSE. """
 
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
@@ -61,6 +61,8 @@ FlaskHandler = 	Callable[[str], Response]
 #
 
 class HttpServer(object):
+	""" The HTTP server for the CSE.
+	"""
 
 	__slots__ = (
 		'webuiDirectory',

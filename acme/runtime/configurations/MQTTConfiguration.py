@@ -4,8 +4,7 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	MQTT Client configurations
-#
+"""MQTT Client configurations"""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,6 +16,7 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class MQTTConfiguration(ModuleConfiguration):
+	"""MQTT Client configurations"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 		"""	Read the MQTT configuration from the configuration file.
@@ -50,6 +50,9 @@ class MQTTConfiguration(ModuleConfiguration):
 			Args:
 				config: The configuration.
 				initial: Whether this is the initial validation.
+
+			Raises:
+				ConfigurationError if the configuration is invalid.
 		"""
 
 		# override configuration with command line arguments

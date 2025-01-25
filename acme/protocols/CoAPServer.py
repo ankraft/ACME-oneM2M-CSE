@@ -474,6 +474,7 @@ class ACMECoAPRequestLayer(CoapthonRequestLayer):
 			defines.Codes.PUT.number: handler.handlePUT,
 			defines.Codes.DELETE.number: handler.handleDELETE,
 		}
+		"""	The handlers for the different CoAP operations. """
 
 
 	def receive_request(self, transaction:CoapthonTransaction) -> CoapthonTransaction:
@@ -535,6 +536,11 @@ class ACMECoAPServer(CoAP):
 		"""
 
 		def emit(self, record: logging.LogRecord) -> None:
+			"""	Emit a log record.
+
+				Args:
+					record: The log record.
+			"""
 			if L.enableBindingsLogging:
 				L._log(record.levelno, record.msg, 5)
 
@@ -894,7 +900,7 @@ class CoAPServer(object):
 		"""	Events for the different operations. """
 
 		self.actor:Optional[BackgroundWorker] = None
-		"""	The actor for running the CoAP server in the background. """
+		"""	The actor for running the synchronous CoAP server in the background. """
 
 		L.isInfo and L.log('CoAP server initialized')
 
@@ -943,7 +949,6 @@ class CoAPServer(object):
 		
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'CoAPServer').start()
-		"""	The actor for running the synchronous CoAP server in the background. """
 
 		L.isInfo and L.log('Start CoAP server')
 		return True

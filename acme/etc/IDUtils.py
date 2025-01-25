@@ -4,10 +4,11 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module contains various utilty functions to handle, test and manipulate IDs.
-#	There are no ACME CSE internal dependencies. This heelps to keep the module small and
-#	standalone.
-#
+
+"""	This module contains various utilty functions to handle, test and manipulate IDs.
+	
+	There are no ACME CSE internal dependencies. This heelps to keep the module small and standalone.
+"""
 
 from __future__ import annotations
 from typing import Optional, Tuple

@@ -4,8 +4,7 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	CoAP Server Binding configurations
-#
+""" CoAP Server Binding configurations """
 
 from __future__ import annotations
 from typing import Optional
@@ -18,8 +17,16 @@ from ...helpers.NetworkTools import isValidPort, isValidateHostname, isValidateI
 
 
 class CoAPServerConfiguration(ModuleConfiguration):
+	""" CoAP Server Binding configurations.
+	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
+		""" Read the CoAP configuration from the configuration file.
+
+			Args:
+				parser: The configuration parser.
+				config: The configuration object.
+		"""
 
 		# override configuration with command line arguments
 		if Configuration._args_coapEnabled is not None:
@@ -43,6 +50,15 @@ class CoAPServerConfiguration(ModuleConfiguration):
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+		"""	Validate the CoAP configuration.
+
+			Args:
+				config: The configuration object.
+				initial: If True, this is the initial validation.
+
+			Raises:
+				ConfigurationError if the configuration is invalid.
+		"""
 
 		# override configuration with command line arguments
 		if Configuration._args_coapEnabled is not None:
