@@ -73,7 +73,7 @@ class WebSocketServer(object):
 		"""	A counter for each opened WS connection opened by the CSE. """
 
 		self.actor:Optional[BackgroundWorker] = None
-		"""	The actor for running the WebSocket server. """
+		"""	The actor for running the synchronous WebSocket server in the background. """
 
 
 		self.operationEvents = {
@@ -161,7 +161,6 @@ class WebSocketServer(object):
 			return True
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'WSServer').start()
-		"""	The actor for running the synchronous WebSocket server in the background. """
 
 		L.isInfo and L.log('Start WebSocket server')
 		return True

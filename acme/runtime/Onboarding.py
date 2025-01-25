@@ -76,6 +76,8 @@ _iniValues = {
 		'INCSEcseID': 'id-in',
 	}		
 }
+""" Default values for the configuration file.
+"""
 
 
 def _print(msg:str|Rule = '\n') -> None:
@@ -92,6 +94,7 @@ def _print(msg:str|Rule = '\n') -> None:
 			Console().print('\n')
 
 _interpolationVariable = re.compile(r'\$\{([a-zA-Z0-9_]+)\}')
+""" Regular expression to match interpolation variables. """
 def _containsVariable(value:str) -> bool:
 	""" Check if the value contains an interpolation variable.
 	
@@ -105,6 +108,18 @@ def _containsVariable(value:str) -> bool:
 
 
 def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
+	""" Build a new user configuration file interactively.
+
+		Args:
+			configFile: The configuration file to create.
+
+		Return:
+			A tuple with three elements:
+			
+				- True if the configuration file was created, False otherwise.
+				- The configuration file name if created, None otherwise.
+				- The error message if the configuration file could not be created, None otherwise.
+	"""
 	from ..etc.IDUtils import isValidID
 
 	cseType = 'IN'

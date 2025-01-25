@@ -6,15 +6,15 @@
 #
 blinker==1.9.0
     # via flask
-cachetools==5.5.0
+cachetools==5.5.1
     # via acmecse-dev (setup.py)
 cbor2==5.6.5
     # via acmecse-dev (setup.py)
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via flask
 coapthon3-acme-cse==1.1.4
     # via acmecse-dev (setup.py)
@@ -49,7 +49,7 @@ mdit-py-plugins==0.4.2
     # via markdown-it-py
 mdurl==0.1.2
     # via markdown-it-py
-numpy==2.1.3
+numpy==2.2.2
     # via shapely
 paho-mqtt==2.1.0
     # via acmecse-dev (setup.py)
@@ -61,17 +61,17 @@ plotext==5.3.2
     # via
     #   acmecse-dev (setup.py)
     #   textual-plotext
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via inquirerpy
 psycopg2-binary==2.9.10
     # via acmecse-dev (setup.py)
-pygments==2.18.0
+pygments==2.19.1
     # via rich
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via rdflib
 pyperclip==1.9.0
     # via acmecse-dev (setup.py)
-rdflib==7.1.1
+rdflib==7.1.3
     # via acmecse-dev (setup.py)
 requests==2.32.3
     # via acmecse-dev (setup.py)
@@ -93,13 +93,13 @@ typing-extensions==4.12.2
     # via textual
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
 waitress==3.0.2
     # via acmecse-dev (setup.py)
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==14.1
+websockets==14.2
     # via acmecse-dev (setup.py)
 werkzeug==3.1.3
     # via flask

@@ -118,6 +118,7 @@ class PReturnFrom(PException):
 		"""
 		super().__init__(pcontext)
 		self.name = name
+		"""	Name of the block to return to. """
 
 
 class PRuntimeError(PException):
@@ -203,12 +204,6 @@ class SType(IntEnum):
 
 class SSymbol(object):
 	"""	The basic class to store and handle symbols, lists, and values in the Interpreter. 
-
-		Attributes:
-			value:	The actual stored value. This is either one of the the basic data typs, of a `SSymbol`, list of `SSymbol`, dictionary, etc.
-			type: `SType` to indicate the type.
-			length: The length of the symbol. Could be the length of a string, number of items in a list etc.
-	
 	"""
 
 	__slots__ = (
@@ -569,6 +564,7 @@ class SSymbol(object):
 
 # Define type for list of SSymbols
 SSymbolsList = List[SSymbol]
+"""	Type definition for a list of `SSymbol` objects. """
 
 class SExprParser(object):
 	"""	Class that implements an S-Expression parser. """
@@ -1009,6 +1005,7 @@ class PContext():
 		
 		# Save the built-in commands. Will be restored later during reset.
 		self.startupSymbols = deepcopy(self.symbols)
+		""" The built-in commands. This original list will be restored later during reset. """
 
 
 		# Extract meta data
