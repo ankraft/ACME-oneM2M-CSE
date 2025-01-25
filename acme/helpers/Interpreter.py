@@ -2704,8 +2704,8 @@ def _doFset(pcontext:PContext, symbol:SSymbol) -> PContext:
 		return pcontext
 	
 	# get symbol
-	if symbol[2].type not in (SType.tSymbolQuote, SType.tLambda, SType.tList):
-		raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'fset requires quoted symbol name for symbol 2, got type: {symbol[2].type}\n{symbol.printHierarchy()}'))
+	# if symbol[2].type not in (SType.tSymbolQuote, SType.tLambda):
+	# 	raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'fset requires quoted symbol name or lambda for argument 2, got type: {symbol[2].type}\n{symbol.printHierarchy()}'))
 
 	# pcontext, _symbol = pcontext.valueFromArgument(symbol, 2)
 	pcontext, _symbol = pcontext.resultFromArgument(symbol, 2)
@@ -2713,13 +2713,15 @@ def _doFset(pcontext:PContext, symbol:SSymbol) -> PContext:
 	match _symbol.type:
 		case SType.tLambda:
 			pcontext.symbols[_name] = _symbol
-		case _:
+		case SType.tSymbolQuote :
 			if _symbol.value in pcontext.functions:
 				# If the symbol is a function, then we need to copy it
 				pcontext.functions[_name] = deepcopy(pcontext.functions[cast(str, _symbol.value)])
 			else:
 				# pcontext.symbols[_name] = _symbol
 				pcontext.symbols[_name] = deepcopy(pcontext.symbols[cast(str, _symbol.value)])
+		case _:
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'fset requires quoted symbol name or lambda for argument 2, got type: {_symbol.type}\n{symbol.printHierarchy()}'))
 
 	return pcontext.setResult(_symbol)
 
