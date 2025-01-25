@@ -475,7 +475,8 @@ class SSymbol(object):
 				# Set the list chars
 				lchar1 = '[' if pythonList else '('
 				lchar2 = ']' if pythonList else ')'
-				return f'{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
+				_q = "'" if self.type == SType.tListQuote else ''
+				return f'{_q}{lchar1} {" ".join(lchar1 if v == "[" else lchar2 if v == "]" else v.toString(quoteStrings = quoteStrings, pythonList = pythonList) for v in cast(list, self.value))} {lchar2}'
 			case SType.tLambda:
 				_p = (v.toString(quoteStrings = quoteStrings, pythonList = pythonList) if isinstance(v, SSymbol) else v
 					  for v in cast(tuple, self.value)[0])
@@ -490,6 +491,8 @@ class SSymbol(object):
 				return json.dumps(self.value)
 			case SType.tNIL:
 				return 'nil'
+			case SType.tSymbolQuote:
+				return f"'{str(self.value)}"
 			case _:
 				return str(self.value)
 			
