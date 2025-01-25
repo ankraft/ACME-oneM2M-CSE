@@ -41,6 +41,7 @@ from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Interpreter import SType
+from ..helpers.PerfTimer import perfTimer
 from ..runtime.Logging import Logging as L
 from ..etc.Constants import RuntimeConstants as RC
 
@@ -337,6 +338,8 @@ class HttpServer(object):
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
+
+	# @perfTimer('handleGet', L.logDebug)
 	def handleGET(self, path:Optional[str] = None) -> Response:
 		if not self.handleAuthentication():
 			return Response(status = 401)
