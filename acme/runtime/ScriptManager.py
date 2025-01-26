@@ -1592,7 +1592,7 @@ class ScriptManager(object):
 	"""	This manager entity handles script execution in the CSE.
 
 		Attributes:
-			scripts: Dictionary of scripts and script `ACMEPContext`.
+			scripts: Dictionary of scripts and script `ACMEPContext`. The key is the script name.
 			storage: Dictionary for internal global variable storage.
 
 			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
@@ -1884,6 +1884,8 @@ class ScriptManager(object):
 	def loadScript(self, script:str, filename:str) -> Optional[ACMEPContext]:
 		"""	Load and initialize a script. If no name is set in the script itself, then the 
 			filename's stem is set as the name.
+
+			The script is stored in the `scripts` dictionary.
 
 			Args:
 				script: The script as a single string.
