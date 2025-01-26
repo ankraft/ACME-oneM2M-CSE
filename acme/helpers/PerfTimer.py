@@ -12,30 +12,25 @@
 
 		::
 		
-			with perfTimer("some code"):
+			with perfTimer(myCallback):
 				# do something
 
-			@perfTimer("some code")
+			@perfTimer(lambda ms: print(f'someFunction took: {ms} ms'))
 			def someFunction():
 				# do something
 """
 
-
-from typing import Callable
-import contextlib
+from typing import Callable, Generator
+from contextlib import contextmanager
 from time import perf_counter
-from typing import Generator
 
-@contextlib.contextmanager
-def perfTimer(subject:str = "time", outCB:Callable = print ) -> Generator [None, None, None]:
+@contextmanager
+def perfTimer(callback:Callable = print ) -> Generator [None, None, None]:
 	""" Meassure and print the elapsed time.
 
 		Args:
-			subject: The subject of the time measurement.
-			outCB: The output callback function. Default is print.
+			callback: The output callback function. It will receive the elapsed ms (float) as the only argument. Default is print.
 	"""
 	startTS = perf_counter()
 	yield
-	elapsedTS = perf_counter() - startTS
-	elapsedMs = elapsedTS * 1000
-	outCB(f"{subject}: elapsed {elapsedMs:.4f}ms")
+	callback((perf_counter() - startTS) * 1000)
