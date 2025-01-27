@@ -214,9 +214,12 @@ class FCNT(ContainerResource):
 		# Handle <fcinEnabled> set to false
 		if finFcied == False:
 			if self.fcied == finFcied:	# No change
-				L.isDebug and L.logDebug('fcied set to false')
+				L.isDebug and L.logDebug('fcied set to false, was: false')
 				super().update(dct, originator, doValidateAttributes)
 				return
+			if self.fcied is None:	# Previously not set at all, no fcin expected
+				L.isDebug and L.logDebug('fcied set to false, was: None')
+				self.addFlexContainerInstance(originator)	# Add a new FCIN
 			# delete all except the latest FCIN
 			L.isDebug and L.logDebug('Removing all FCINs except the latest')
 			self.cleanUpInstances(onlyInstances = True, keepLatest = True)

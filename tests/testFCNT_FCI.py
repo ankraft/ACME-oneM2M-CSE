@@ -577,6 +577,43 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateFCNTFciedFalsePreviousNull(self) -> None:
+		""" Update <FCNT> : set FCIED to None (remove), then to false (1 <FCIN>)"""
+		# First update the FCNT: remove fcied etc
+		dct = 	{ 'cod:tempe' : {
+					'fcied': None,	# remove fcied
+				}}
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNone(findXPath(r, 'cod:tempe/mbs'), r)
+		self.assertIsNone(findXPath(r, 'cod:tempe/cbs'), r)
+		self.assertIsNone(findXPath(r, 'cod:tempe/mni'), r)
+		self.assertIsNone(findXPath(r, 'cod:tempe/cni'), r)
+
+		# There should be no child resource
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)		# retrieve no latest
+		self.assertEqual(rsc, RC.NOT_FOUND)
+
+
+		# Update FCIED to false. There should be only one child resource
+		dct = 	{ 'cod:tempe' : {
+					'fcied':	False,	# type:ignore
+				}}
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cni'), r)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1, r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cbs'), r)
+		self.assertEqual(findXPath(r, 'cod:tempe/cbs'), findXPath(r, 'cod:tempe/cs'), r)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)		# retrieve no latest
+		self.assertEqual(rsc, RC.OK)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)		# retrieve no oldest
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self) -> None:
 		""" Delete <FCNT> """
 		_, rsc = DELETE(fcntURL, TestFCNT_FCI.originator)
@@ -626,6 +663,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_updateFCNTFciedFalse',
 		'test_updateFCNTFciedRemoved',	# After this no more fci present
 		'test_updateFCNTMniWithoutFciedFail',
+		'test_updateFCNTFciedFalsePreviousNull',
 
 		# DELETE tests
 		'test_deleteFCNT',
