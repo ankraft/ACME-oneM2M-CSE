@@ -614,6 +614,74 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCNTFciedFalseEmptyFCNT(self) -> None:
+		""" create <FCNT> : no custom attributes and FCIED to false"""
+		rn = f'{fcntRN}2'
+		url = f'{fcntURL}2'
+		# First update the FCNT: add mni, remove cbs, update custom attribute
+		dct = 	{ 'cod:aiQSr' : {
+					'rn':		rn,
+					'cnd':		'org.onem2m.common.moduleclass.airQualitySensor',
+					'fcied':	False,
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:aiQSr/cni'), r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cni'), 1, r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cbs'), 0, r)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)		# retrieve no latest
+		self.assertEqual(rsc, RC.OK)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)		# retrieve no oldest
+		self.assertEqual(rsc, RC.OK)
+
+		# Delete the FCNT
+		_, rsc = DELETE(url, TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateFCNTFciedFalseEmptyFCNT(self) -> None:
+		""" update <FCNT> : no custom attributes and FCIED to true"""
+		rn = f'{fcntRN}2'
+		url = f'{fcntURL}2'
+		# First update the FCNT: add mni, remove cbs, update custom attribute
+		dct = 	{ 'cod:aiQSr' : {
+					'rn':		rn,
+					'cnd':		'org.onem2m.common.moduleclass.airQualitySensor',
+					'fcied':	False,
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:aiQSr/cni'), r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cni'), 1, r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cbs'), 0, r)
+
+		# Update FCIED to true
+		dct = 	{ 'cod:aiQSr' : {
+					'fcied':	True,
+				}}
+		r, rsc = UPDATE(url, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:aiQSr/cni'), r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cni'), 1, r)
+		self.assertIsNotNone(findXPath(r, 'cod:aiQSr/cbs'), r)
+		self.assertEqual(findXPath(r, 'cod:aiQSr/cbs'), 0, r)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)		# retrieve no latest
+		self.assertEqual(rsc, RC.OK)
+
+		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)		# retrieve no oldest
+		self.assertEqual(rsc, RC.OK)
+
+		# Delete the FCNT
+		_, rsc = DELETE(url, TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self) -> None:
 		""" Delete <FCNT> """
 		_, rsc = DELETE(fcntURL, TestFCNT_FCI.originator)
@@ -664,6 +732,8 @@ def run(testFailFast:bool) -> TestResult:
 		'test_updateFCNTFciedRemoved',	# After this no more fci present
 		'test_updateFCNTMniWithoutFciedFail',
 		'test_updateFCNTFciedFalsePreviousNull',
+		'test_createFCNTFciedFalseEmptyFCNT',
+		'test_updateFCNTFciedFalseEmptyFCNT',
 
 		# DELETE tests
 		'test_deleteFCNT',

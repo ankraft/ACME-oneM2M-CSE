@@ -170,6 +170,7 @@ class FCNT(ContainerResource):
 
 		# Check whether the fcied attribute is present in the update request
 		_dct = dct[self.typeShortname]
+		fcied = None
 		if 'fcied' in _dct:
 			fcied = _dct['fcied']
 
@@ -258,6 +259,16 @@ class FCNT(ContainerResource):
 			self.setAttribute('cbs', self.cbs + self.cs)
 			self.setAttribute('cni', self.cni + 1)
 
+		# OR Check whether fcied if present in the request AND is no present with True in the resource
+		elif fcied == True and self.fcied != True:
+			needsFcin = True
+			self.setAttribute('cbs', self.cbs + self.cs)
+			self.setAttribute('cni', self.cni + 1)
+		
+		# Else fall-through
+		else:
+			pass
+
 
 		fcis = self.flexContainerInstances()	# already sorted by st
 		cni = self.cni	# number of instances # TODO sanity check here?
@@ -300,7 +311,7 @@ class FCNT(ContainerResource):
 		self.setAttribute('cni', cni)
 		self.setAttribute('cbs', cbs)
 
-		# Create FCIN
+		# Update self first
 		super().update(dct, originator, doValidateAttributes)
 
 		# Add a new FCIN if necessary (if any of the custom attributes or lbl is present in the request)	
