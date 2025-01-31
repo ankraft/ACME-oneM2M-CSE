@@ -130,17 +130,35 @@ class CriticalSection(object):
 				timeout: Timeout for waiting for the critical section. A timeout of 0.0 times out immediately.
 		"""
 		self.id = id
+		""" Resource ID of the resource to be monitored."""
+
 		self.state = state
+		""" State of the resource. """
+
 		self.timeout = timeout
+		""" Timeout for waiting for the critical section."""
 
 
 	def __enter__(self) -> None:
+		""" Enter the critical section. 
+
+		"""
 		enterCriticalSection(self.id, self.state, self.timeout)
 
 	
 	def __exit__(self,	exctype: Optional[Type[BaseException]],
 			 			excinst: Optional[BaseException],
 						exctb: Optional[TracebackType]) -> Optional[bool]:
+		""" Exit the critical section.
+
+			Args:
+				exctype: Exception type
+				excinst: Exception instance
+				exctb: Exception traceback
+
+			Return:
+				Always None
+		"""
 		leaveCriticalSection(self.id, self.state)
 		return None
 
