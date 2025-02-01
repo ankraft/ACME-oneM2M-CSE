@@ -4,8 +4,8 @@
 #	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Manager for TimeSeries handlings
-#
+""" Manager for TimeSeries handlings"""
+
 from __future__ import annotations
 
 from ..etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes
@@ -17,10 +17,15 @@ from ..runtime.Logging import Logging as L
 
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
+"""	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """
 
 class TimeSeriesManager(object):
+	""" Manager for TimeSeries handlings
+	"""
 
 	def __init__(self) -> None:
+		"""	Initialize the TimeSeriesManager. Register event handlers.
+		"""
 		self._restoreTimeSeriesStructures()	# Restore structures after a complete restart
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('TimeSeriesManager initialized')
@@ -28,6 +33,9 @@ class TimeSeriesManager(object):
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the TimeSeriesManager. Stop all the active workers.
+
+			Return:
+				True if the shutdown was successful.
 		"""
 		self.stopMonitoring()
 		L.isInfo and L.log('TimeSeriesManager shut down')
@@ -36,6 +44,9 @@ class TimeSeriesManager(object):
 	
 	def restart(self, name:str) -> None:
 		"""	Restart the TimeSeriesManager service.
+
+			Args:
+				name: The name of the event.
 		"""
 		self.stopMonitoring()
 		runningTimeserieses.clear()
@@ -45,6 +56,9 @@ class TimeSeriesManager(object):
 	def _restoreTimeSeriesStructures(self) -> bool:
 		"""	Restore the necessary internal in-memory structures when (re)starting
 			a CSE.
+
+			Return:
+				True if the structures have been restored.
 		"""
 		for each in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
 			if NotificationEventType.reportOnGeneratedMissingDataPoints in each.attribute('enc/net', []): # enc/net might be empty
@@ -71,6 +85,9 @@ class TimeSeriesManager(object):
 			Args:
 				tsRi: resourceID of the respective <TS> resource. 
 					Can be used to retrieve infos from `runningTimeserieses` dict.
+			
+			Return:
+				True if the monitor should continue, False if the monitor should stop.
 		"""
 		L.isDebug and L.logDebug(f'Running DGT-monitor for TS: {tsRi}')
 
@@ -146,6 +163,10 @@ class TimeSeriesManager(object):
 	def updateTimeSeries(self, timeSeries:Resource, instance:Resource) -> None:
 		"""	Add or update to the internal monitor DB.
 			The monitoring is started  when a first TSI is added for a <TS>.
+
+			Args:
+				timeSeries: The <TS> resource.
+				instance: The <TSI> resource.
 		"""
 
 		arrivedAt = fromAbsRelTimestamp(instance.ct)
@@ -203,7 +224,14 @@ class TimeSeriesManager(object):
 
 
 	def isMonitored(self, ri:str) -> bool:
-		"""	Check whether a resource is been monitored. """
+		"""	Check whether a resource is been monitored.
+
+			Args:
+				ri: ResourceID of the TimeSeries resource.
+
+			Return:
+				Boolean indicating whether the resource is monitored.
+		"""
 		return runningTimeserieses.get(ri) is not None  # if any
 
 
@@ -245,6 +273,10 @@ class TimeSeriesManager(object):
 
 	def addSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		"""	Add a subscription for the <TS> resource. Setup the internal structures.
+
+			Args:
+				timeSeries: The <TS> resource.
+				subscription: The <sub
 		"""
 		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Adding missing-data <sub>: {subscription.ri}. Not started yet.')
@@ -258,6 +290,10 @@ class TimeSeriesManager(object):
 
 	def updateSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		""" Update an existing missing data subscription.
+
+			Args:
+				timeSeries: The <TS> resource.
+				subscription: The <sub> resource.
 		"""
 		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Updating missing data <sub>: {subscription.ri}')
@@ -268,6 +304,10 @@ class TimeSeriesManager(object):
 
 	def removeSubscription(self, timeSeries:Resource, subscription:Resource) -> None:
 		"""	Remove a subcription from a <TS> resource. Remove the internal structures.
+
+			Args:
+				timeSeries: The <TS> resource.
+				subscription: The <sub> resource.
 		"""
 		if (net := subscription['enc/net']) is not None and NotificationEventType.reportOnGeneratedMissingDataPoints in net:
 			L.isDebug and L.logDebug(f'Removing missing data <sub>: {subscription.ri}')

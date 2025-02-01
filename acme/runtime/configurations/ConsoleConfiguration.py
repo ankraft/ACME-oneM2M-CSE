@@ -4,8 +4,7 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Console configurations
-#
+""" Console configurations"""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,8 +16,16 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 class ConsoleConfiguration(ModuleConfiguration):
+	""" Console configurations
+	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
+		""" Read the configuration from the configuration file.
+		
+			Args:
+				parser: The configuration parser
+				config: The configuration instance
+		"""
 					
 		#	Console
 		config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback = False)
@@ -31,6 +38,15 @@ class ConsoleConfiguration(ModuleConfiguration):
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+		""" Validate the configuration.
+
+			Args:
+				config: The configuration object
+				initial: If True, this is the initial validation
+
+			Raises:
+				ConfigurationError if the configuration is invalid
+		"""
 
 		# override configuration with command line arguments
 		if Configuration._args_headless is True:
