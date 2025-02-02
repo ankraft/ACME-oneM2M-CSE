@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: FlexContainer
-#
+"""  FlexContainer (FCNT) resource type."""
 
 from __future__ import annotations
 from typing import Optional
@@ -28,6 +27,7 @@ from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSecti
 addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ignore in validation etc
 
 class FCNT(ContainerResource):
+	""" FlexContainer (FCNT) resource type. """
 
 	resourceType = ResourceTypes.FCNT
 	""" The resource type """
@@ -45,6 +45,7 @@ class FCNT(ContainerResource):
 								   ResourceTypes.FCI,
 								   ResourceTypes.FCNT_LA,
 								   ResourceTypes.FCNT_OL ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -80,6 +81,7 @@ class FCNT(ContainerResource):
 		'cni': None,
 		'fcied': None,	# EXPERIMENTAL fcinEnabled
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 
@@ -88,6 +90,8 @@ class FCNT(ContainerResource):
 
 		# TODO this could be optimized? copy to an internal attribute?
 		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		"""	List of attributes that are not custom attributes. """
+
 		super().__init__(dct, create = create)
 
 
@@ -95,9 +99,6 @@ class FCNT(ContainerResource):
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)
 
-		# Indicates whether this FC has flexContainerInstances. 
-		# Might change during the lifetime of a resource. Used for optimization
-		self._hasInstances 	= False		# not stored in DB
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
 		super().initialize(pi, originator)
@@ -374,6 +375,11 @@ class FCNT(ContainerResource):
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
+		"""	Add a new FlexContainerInstance for this flexContainer.
+
+			Args:
+				originator: The originator of the request.
+		"""
 
 		L.isDebug and L.logDebug('Adding flexContainerInstance')
 

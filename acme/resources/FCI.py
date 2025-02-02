@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: FlexContainerInstance
-#
+"""  FlexContainerInstance (FCI) resource type."""
 
 from __future__ import annotations
 from typing import Optional
@@ -16,6 +15,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class FCI(AnnounceableResource):
+	""" FlexContainerInstance (FCI) resource type. """
 
 	resourceType = ResourceTypes.FCI
 	""" The resource type """
@@ -28,6 +28,7 @@ class FCI(AnnounceableResource):
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -46,6 +47,7 @@ class FCI(AnnounceableResource):
 		'cs': None,
 		'org': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:

@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: Group
-#
+""" Group (GRP) Resource Type """
 
 from __future__ import annotations
 from typing import Optional
@@ -19,6 +18,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class GRP(AnnounceableResource):
+	""" Represents the Group resource. """
 
 	resourceType = ResourceTypes.GRP
 	""" The resource type """
@@ -31,6 +31,7 @@ class GRP(AnnounceableResource):
 								   ResourceTypes.SMD, 
 								   ResourceTypes.SUB, 
 								   ResourceTypes.GRP_FOPT ]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -65,6 +66,7 @@ class GRP(AnnounceableResource):
 		'ssi': None,
 		'nar': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def initialize(self, pi:str, originator:str) -> None:

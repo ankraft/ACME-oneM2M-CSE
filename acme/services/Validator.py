@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Validation service and functions
-#
+"""	Validation service and functions. """
 
 from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional
@@ -53,10 +52,10 @@ flexContainerSpecializations:FlexContainerSpecializations = {}
 """
 
 complexTypeAttributes:dict[str, list[str]] = {}
-# TODO doc
+"""	Mapping of complex types to their attributes. """
 
 attributesComplexTypes:dict[str, list[str]] = {}
-# TODO doc
+"""	Mapping of attributes to their complex types. """
 
 
 # TODO make this more generic!
@@ -75,19 +74,27 @@ _valueNameMappings = {
 	'srt': lambda v: ResourceTypes.fullname(int(v)),
 	'ty': lambda v: ResourceTypes.fullname(int(v)),
 }
+"""	Mapping of attribute names to value mappings. """
 
 
 class Validator(object):
+	"""	Validator class. """
 
 	_scheduleRegex = re.compile(r'(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
 	"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
 
 
 	def __init__(self) -> None:
+		"""	Initialize the validator. """
 		L.isInfo and L.log('Validator initialized')
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the validator. 
+		
+			Return:
+				Always *True*.
+		"""
 		L.isInfo and L.log('Validator shut down')
 		return True
 
@@ -301,10 +308,19 @@ class Validator(object):
 		# }
 
 	}
-
+	"""	Some complex attribute policies. 
+	
+		Todo:
+			- move this to the attributePolicies file in init/ directory.
+	"""
 
 
 	def validatePrimitiveContent(self, pc:JSON) -> None:
+		""" Validate the primitive content.
+		
+			Args:
+				pc: The primitive content to validate.
+		"""
 		# None - pc is ok
 		if pc is None:
 			return
@@ -344,8 +360,13 @@ class Validator(object):
 		r'|^[^:/]+/[^:/]+:[0-2]$'	# TODO why twice?
 		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
+	"""	Compiled regular expression that matches a valid contentInfo string. """
+
 	def validateCNF(self, value:str) -> None:
 		"""	Validate the contents of the *contentInfo* attribute. 
+
+			Args:
+				value: The value to validate.
 		"""
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
 			return
@@ -355,6 +376,10 @@ class Validator(object):
 
 	def validateCSICB(self, val:str, name:str) -> None:
 		"""	Validate the format of a CSE-ID in csi or cb attributes.
+
+			Args:
+				val: The value to validate.
+				name: The name of the attribute.
 		"""
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
@@ -661,6 +686,14 @@ class Validator(object):
 	
 
 	def getComplexTypeAttributePolicies(self, ctype:str) -> Optional[list[AttributePolicy]]:
+		"""	Return the attribute policies for a complex type.
+
+			Args:
+				ctype: Complex type name.
+			
+			Return:
+				List of AttributePolicy or None.
+		"""
 		if (attrs := complexTypeAttributes.get(ctype)):
 			return [ self.getAttributePolicy(ctype, attr) for attr in attrs ]
 		L.logWarn(f'no policies found for complex type: {ctype}')
@@ -668,6 +701,11 @@ class Validator(object):
 
 
 	def getAllAttributePolicies(self) -> ResourceAttributePolicyDict:
+		"""	Return all attribute policies.
+
+			Return:
+				Dictionary with all attribute policies.
+		"""
 		return attributePolicies
 
 
@@ -838,6 +876,7 @@ class Validator(object):
 	_ncNameDisallowedChars = (	'!', '"', '#', '$', '%', '&', '\'', '(', ')', 
 						   		'*', '+', ',', '/', ':', ';', '<', '=', '>', 
 								'?', '@', '[', ']', '^', '´' , '`', '{', '|', '}', '~' )
+	"""	Disallowed characters in NCName. """
 
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 

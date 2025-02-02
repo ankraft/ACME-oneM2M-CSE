@@ -81,12 +81,6 @@ _httpMethods = {
 
 class ACMEPContext(PContext):
 	"""	Child class of the `PContext` context class that adds further functions and details.
-
-		Attributes:
-			scriptFilename: Script filename.
-			fileMtime: The script file's latest modified timestamp.
-			nextScript: The next script to be executed. Used for chaining scripts.
-
 	"""
 
 	__slots__ = (
@@ -169,9 +163,15 @@ class ACMEPContext(PContext):
 					)
 
 		self.scriptFilename = filename if filename else None
+		""" The script filename. """
+
 		self.meta[_metaFilename] = filename if filename else None
+
 		self.fileMtime = os.stat(filename).st_mtime if filename else None
+		""" The script file's latest modified timestamp. """
+
 		self.nextScript:Tuple[PContext, List[str]] = None	# Script to be started after another script ended
+		""" The next script to be executed. Used for chaining scripts. """
 
 		self._validate()	# May change the state to indicate an error
 
@@ -1590,13 +1590,6 @@ class ACMEPContext(PContext):
 
 class ScriptManager(object):
 	"""	This manager entity handles script execution in the CSE.
-
-		Attributes:
-			scripts: Dictionary of scripts and script `ACMEPContext`. The key is the script name.
-			storage: Dictionary for internal global variable storage.
-
-			scriptUpdatesMonitor: `BackgroundWorker` worker to monitor script directories.
-			scriptCronWorker: `BackgroundWorker` worker to run cron-enabled scripts.
 	"""
 
 	__slots__ = (
@@ -1614,11 +1607,19 @@ class ScriptManager(object):
 		"""
 
 		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
+		""" Dictionary of scripts and script `ACMEPContext`. The key is the script name. """
+
 		self.categoryDescriptions:Dict[str,str] = {}			# The category descriptions
+		""" Dictionary of category descriptions. """
+
 		self.storage:Dict[str, Dict[str, SSymbol]] = {}			# storage for global values
+		""" Dictionary for internal global variable storage. """
 
 		self.scriptUpdatesMonitor:BackgroundWorker = None
+		""" `BackgroundWorker` worker to monitor script directories. """
+
 		self.scriptCronWorker:BackgroundWorker = None
+		""" `BackgroundWorker` worker to run cron-enabled scripts. """
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
@@ -2079,6 +2080,7 @@ class ScriptManager(object):
 
 
 	_allowedQuerySymbols = ( '==', '!=', '<', '<=', '>', '>=', '&', '&&', '|', '||', '!', 'not', 'in')
+	""" Allowed symbols for comparison queries. """
 
 	def runComparisonQuery(self, query:str, resource:JSON|Resource) -> bool:
 		"""	Run a comparison query against a JSON strcture or a resource.

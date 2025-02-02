@@ -37,6 +37,17 @@ class VirtualResource(Resource):
 								   originator:str, 
 								   typ:ResourceTypes, 
 								   oldest:bool) -> Result:
+		""" Retrieve the latest or oldest instance of a container resource.
+
+			Args:
+				request: The request
+				originator: The originator
+				typ: The resource type of the instances
+				oldest: Whether to retrieve the oldest instance
+
+			Returns:
+				The result of the operation.
+		"""
 
 		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
 			raise NOT_FOUND(f'no instance for <{"oldest" if oldest else "latest"}>')
