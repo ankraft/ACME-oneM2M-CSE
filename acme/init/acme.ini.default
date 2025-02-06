@@ -330,6 +330,22 @@ caCertificateFile=${basic.config:baseDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. 
 ; Default: None
 caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
+; Enable basic authentication for the WebSocket binding.
+; Default: false
+enableBasicAuth=false
+; Enable token authentication for the WebSocket binding.
+; Default: false
+enableTokenAuth=false
+; Path and filename of the WebSocket basic authentication file. 
+; The file must contain lines with the format "username:password".
+; Comments are lines starting with a #.
+; Default: certs/ws_basic_auth.txt
+basicAuthFile=${basic.config:baseDirectory}/certs/ws_basic_auth.txt
+; Path and filename of the WebSocket bearer token authentication file.
+; The file must contain lines with the format "token".
+; Comments are lines starting with a #.
+; Default: certs/ws_token_auth.txt
+tokenAuthFile=${basic.config:baseDirectory}/certs/ws_token_auth.txt
 
 
 ;

@@ -1852,6 +1852,16 @@ Settings in this section are listed under the `[websocket.security]` section.
 
 
 
+# websocket.security.basicAuthFile
+
+This setting specifies the path to the CSE's WebSocket server's basic authentication file.
+The file must contain lines with the format "username:password".
+Comments are lines starting with a #.
+
+The default value is `${basic.config:baseDirectory}/certs/ws_basic_auth.txt`.
+
+
+
 # websocket.security.caCertificateFile
 
 This setting specifies the path to the CSE's WebSocket server's CA certificate file.
@@ -1872,6 +1882,24 @@ It is recommended to store the CSE's CA private key in the file `${basic.config:
 
 
 
+# websocket.security.enableBasicAuth
+
+Enable basic authentication for the WebSocket binding.
+The behavior is the same as for the HTTP binding.
+
+The default value is `false`
+
+
+
+# websocket.security.enableTokenAuth
+
+Enable bearer token authentication for the WebSocket binding.
+The behavior is the same as for the HTTP binding.
+
+The default value is `false`
+
+
+
 # websocket.security.tlsVersion
 
 This setting specifies the CSE's WebSocket server's TLS version.
@@ -1879,6 +1907,16 @@ This setting specifies the CSE's WebSocket server's TLS version.
 **Allowed values**: `TLS1.1`, `TLS1.2`, or `auto` (to allow client-server certificate version negotiation).
 
 The default value is `auto`.
+
+
+
+# websocket.security.tokenAuthFile
+
+This setting specifies the path to the CSE's WebSocket server's bearer token authentication file.
+The file must contain lines with the format "token".
+Comments are lines starting with a #.
+
+The default value is `${basic.config:baseDirectory}/certs/ws_token_auth.txt`.
 
 
 

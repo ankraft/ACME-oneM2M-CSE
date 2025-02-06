@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Optional, Any, Tuple
-import logging, uuid, os
+import logging, uuid, base64
 
 from websockets.sync.connection import Connection as WSConnection
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
@@ -24,7 +24,7 @@ from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseRe
 from ..etc.IDUtils import uniqueID, csiFromSPRelative
 from ..etc.Utils import renameThread
 from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -383,6 +383,11 @@ class WebSocketServer(object):
 		L.logDebug(f'Received headers: {websocket.request.headers}')
 		L.logDebug(f'Received request: {websocket.request}')
 
+		# Check the authentication
+		if not self._handleAuthentication(websocket):
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn('Authorization failed'))
+
+
 		# Get the originator from the WS headers
 		if 'X-M2M-Origin' in websocket.request.headers:
 			wsOriginator = websocket.request.headers['X-M2M-Origin']
@@ -513,7 +518,70 @@ class WebSocketServer(object):
 
 		L.logRequest(_r, _data) # type:ignore [arg-type]
 		websocket.send(_data)
-	
+
+
+	def _handleAuthentication(self, websocket:WSConnection) -> bool:
+		"""	Handle the authentication of a new connection.
+
+			Args:
+				websocket: The WebSocket connection.
+
+			Returns:
+				True if the authentication was successful, False otherwise.
+		"""
+
+		def testBasicAuthentication(auth:str) -> bool:
+			"""	Validate the basic authentication.
+
+				Args:
+					auth: The authentication string as a base64 encoded string. The decoded string is expected to be in the format
+						'username:password'.
+			
+				Return:
+					True if the authentication is valid, False otherwise.
+			"""
+			# Decode the base64 encoded string and split it into username and password
+			username, password = base64.b64decode(auth).decode().split(':')
+			if not CSE.security.validateWSBasicAuth(username, password):
+				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {username}')
+				return False
+			return True
+		
+
+		def testTokenAuthentication(token:str) -> bool:
+			"""	Validate the token.
+
+				Args:
+					token: The token to validate.
+			
+				Return:
+					True if the token is valid, False otherwise.
+			"""
+			if not CSE.security.validateWSTokenAuth(token):
+				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+				return False
+			return True
+		
+		L.isDebug and L.logDebug('Checking authentication')
+		authorization = websocket.request.headers.get('Authorization')
+		if not (Configuration.websocket_security_enableBasicAuth or Configuration.websocket_security_enableTokenAuth):
+			if authorization is not None:
+				L.isWarn and L.logWarn('Basic or token authentication is not enabled, but an authorization header was found.')
+			return True
+		
+		if authorization is None:
+			L.isDebug and L.logDebug('No authorization header found.')
+			return False
+		
+		if authorization.startswith('Basic '):
+			return testBasicAuthentication(authorization[6:])
+		elif authorization.startswith('Bearer '):
+			return testTokenAuthentication(authorization[7:])
+		else:
+			L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization}')
+			return False
+		
+
 
 	def sendWSRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send a request to another WebSocket server.
@@ -555,12 +623,23 @@ class WebSocketServer(object):
 			if url == Constants.defaultWebSocketSchema:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
 
+			# Construct addional headers
+			additionalHeaders = { 'X-m2m-Origin': RC.cseCsi }	#  Always add the originator
+			if request.credentials:	# Add the credentials if available
+				if request.credentials.wsUsername and request.credentials.wsPassword:
+					additionalHeaders['Authorization'] = request.credentials.getWsBasic()
+				elif request.credentials.wsToken:
+					additionalHeaders['Authorization'] = request.credentials.getWsBearerToken()
+				else:
+					L.logWarn('No credentials found for WS request found')
+
+
 			# Else connect to the target WS server using the URL
 			L.isDebug and L.logDebug(f'Establishing new temporary WS connection to send request to: {target}')
 			try:
 				websocket = connect(url, 
 									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-									additional_headers = { 'X-m2m-Origin': RC.cseCsi})
+									additional_headers = additionalHeaders)
 			except Exception as e:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
 			
