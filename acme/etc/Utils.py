@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any, Tuple, Generator, Optional
 import os, platform, re, subprocess, traceback, threading
+from urllib.parse import urlsplit, urlunsplit
 
 
 def strToBool(value:str) -> bool:
@@ -216,3 +217,40 @@ def normalizeURL(url:str) -> str:
 		while len(url) > 0 and url[-1] == '/':
 			url = url[:-1]
 	return url
+
+
+def getBasicAuthFromUrl(url:str) -> Tuple[str, str, str]:
+	""" Get the basic auth credentials from a URL.
+
+		Args:
+			url: URL to extract the basic auth credentials from.
+		Returns:
+			A tuple with the URL without the basic auth credentials, the username and the password.
+	"""
+	split = urlsplit(url)
+	if split.username is not None and split.password is not None:
+		return urlunsplit((split.scheme, 
+					 	   f'{split.hostname}{":"+str(split.port) if split.port else ""}',
+						   split.path,
+						   split.query, 
+						   split.fragment)), split.username, split.password
+	return url, '', ''
+
+
+def buildBasicAuthUrl(url:str, username:str, password:str) -> str:
+	""" Build a URL with basic auth credentials.
+
+		Args:
+			url: URL to add the basic auth credentials to.
+			username: Username for the basic auth.
+			password: Password for the basic auth.
+
+		Returns:
+			URL with the basic auth credentials.
+	"""
+	split = urlsplit(url)
+	return urlunsplit((split.scheme, 
+					   f'{username}:{password}@{split.hostname}{":"+str(split.port) if split.port else ""}',
+					   split.path,
+					   split.query, 
+					   split.fragment))
