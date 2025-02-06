@@ -20,8 +20,6 @@ from ..runtime.Configuration import Configuration
 
 # TODO Add editing of configuration values
 
-idConfigs = 'configurations'
-
 class ACMEConfigurationTree(TextualTree):
 	"""	Configurations view for the ACME text UI.
 	"""
@@ -53,6 +51,7 @@ class ACMEConfigurationTree(TextualTree):
 
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
+		""" A reference to the text UI application. """
 
 
 	
@@ -152,7 +151,9 @@ class ACMEContainerConfigurations(VerticalScroll):
 		self._configsTreeView = ACMEConfigurationTree(f'Configurations', 
 							 				 		id = 'configs-tree-view',
 													parentContainer = self)
+		"""	The documentation tree view. """
 		self._configsDocumentation = Markdown('', id = 'configs-documentation')
+		"""	The documentation view. """
 		
 	
 	def compose(self) -> ComposeResult:
@@ -163,6 +164,7 @@ class ACMEContainerConfigurations(VerticalScroll):
 
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
+		""" A reference to the text UI application. """
 
 		# Change the root label colour
 		self._configsTreeView.root.label = f'[{self._app.objectColor}]Configurations[/]'

@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import traceback, logging, sys
+import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
@@ -2367,6 +2367,69 @@ class FilterCriteria:
 
 
 @dataclass
+class RequestCredentials:
+	"""	Structure that holds the credentials for a request.
+	"""
+
+	httpUsername:Optional[str] = None
+	"""	Username for HTTP basic authentifcation. """
+
+	httpPassword:Optional[str] = None
+	"""	Password for HTTP basic authentication. """
+
+	httpToken:Optional[str] = None
+	"""	Token for HTTP bearer token authentication. """
+
+
+	wsUsername:Optional[str] = None
+	"""	Username for WebSockets HTTP basic authentifcation. """
+
+	wsPassword:Optional[str] = None
+	"""	Password for WebSockets HTTP basic authentication. """
+
+	wsToken:Optional[str] = None
+	"""	Token for WebSockets HTTP bearer token authentication. """
+
+
+	def getHttpBasic(self) -> str:
+		"""	Return the HTTP basic authentication string.
+			
+			Return:
+				The HTTP basic authentication string as base64 encoded string.
+		"""
+		creds = f'{self.httpUsername}:{self.httpPassword}'
+		return base64.b64encode(creds.encode("utf-8")).decode("utf-8")
+	
+
+	def getHttpBearerToken(self) -> str:
+		"""	Return the HTTP bearer token string.
+			
+			Return:
+				The HTTP bearer token string.
+		"""
+		return f'Bearer {self.httpToken}'
+	
+	
+	def getWsBasic(self) -> str:
+		"""	Return the WebSockets basic authentication string.
+			
+			Return:
+				The WebSockets basic authentication string as base64 encoded string.
+		"""
+		creds = f'{self.wsUsername}:{self.wsPassword}'
+		return f'Basic {base64.b64encode(creds.encode("utf-8")).decode("utf-8")}'
+	
+
+	def getWsBearerToken(self) -> str:
+		"""	Return the WebSockets bearer token string.
+			
+			Return:
+				The WebSockets bearer token string.
+		"""
+		return f'Bearer {self.wsToken}'
+	
+
+@dataclass
 class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
 	"""
@@ -2513,6 +2576,9 @@ class CSERequest:
 
 	_attributeList:list[str] = None
 	""" List of attribute names if this is a partial request. Otherwise not set. """
+
+	credentials:Optional[RequestCredentials] = None
+	""" Request credentials for HTTP, WebSockets etc. """
 
 
 

@@ -74,7 +74,9 @@ Available under the BSD 3-Clause License"""
 		"""	Initialize the view.
 		"""
 		super().__init__()
+
 		self._aboutButton = Button('hidden', id = 'about-button')
+		"""	A hidden button to get the focus on this page. """
 
 
 	
