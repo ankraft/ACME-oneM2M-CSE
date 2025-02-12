@@ -4,8 +4,18 @@
 #	(c) 2025 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Standalone onboarding program
-#
+
+""" This modiule provides the stand-alone program to start the onboarding process for the ACME CSE.
+
+	The onboarding process is used to create a first configuration file for the ACME CSE.
+
+	This module can be run as a standalone script to create a configuration file as follows:
+
+		::
+
+			python -m acme.onboarding <configfile>
+"""
+
 
 import argparse, os
 from rich.console import Console
@@ -14,6 +24,9 @@ from .runtime import Onboarding
 
 
 def main() -> None:
+	""" Main function to start the onboarding process. 
+	"""
+
 	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education - OnBoarding[/bold]\n\n', highlight = False)
 
 	parser = argparse.ArgumentParser(prog='acme.onboarding')

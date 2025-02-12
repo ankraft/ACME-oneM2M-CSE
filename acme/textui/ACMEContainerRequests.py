@@ -28,34 +28,68 @@ from ..runtime.Configuration import Configuration
 from ..helpers.TextTools import commentJson, limitLines
 
 class ACMEContainerRequests(Vertical):
+	"""	Requests view for the ACME text UI.
+	"""
 
 	def __init__(self, id:str) -> None:
-		super().__init__(id = id)
+		""" Initialize the Requests view.
 
+			Args:
+				id: The ID of the view.
+		"""
+		super().__init__(id = id)
 		self._requestsView = ACMEViewRequests(id = 'requests-view')
+		"""	The requests view. """
 
 	def compose(self) -> ComposeResult:
+		""" Compose the view.
+
+			Yields:
+				The widgets of the view.
+		"""
 		yield self._requestsView
 
 
 	def on_show(self) -> None:
+		""" Called when the view is shown.
+		"""
 		self.requestsView.onShow()
 		self.requestsView.updateBindings()
 
 
 	@property
 	def requestsView(self) -> ACMEViewRequests:
+		""" The requests view.
+
+			Returns:
+				The requests view.
+		"""
 		return self._requestsView
 
 
 class ACMEListItem(ListItem):
+	"""	Generic list item for the ACME text UI.
+	"""
+
 	# TODO own module?
 
 	def __init__(self, *children: Widget, name: str | None = None, id: str | None = None, classes: str | None = None, disabled: bool = False) -> None:
+		"""	Initialize the list item.
+
+			Args:
+				children: The children of the list item.
+				name: The name of the list item.
+				id: The ID of the list item.
+				classes: The classes of the list item.
+				disabled: Whether the list item is disabled.
+		"""
 		super().__init__(*children, name=name, id=id, classes=classes, disabled=disabled)
 		self._data:Any = None
+		"""	The data of the list item. """
 
 class ACMEViewRequests(Vertical):
+	"""	View to show the requests in the ACME text UI.
+	"""
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
@@ -63,13 +97,22 @@ class ACMEViewRequests(Vertical):
 				  Binding('t', 'toggle_list_details', 'List Details'),
 				  Binding('ctrl+t', 'toggle_comment_style', 'Comments Style'),
 				]
+	"""	The key bindings for the view. """
 
 
 	def __init__(self, id:str) -> None:
+		"""	Initialize the view.
+
+			Args:
+				id: The ID of the view.
+		"""
 		super().__init__(id = id)
 
 		self._currentRequests:List[JSON] = None
+		"""	The current requests. """
+
 		self._currentRI:str = None
+		"""	The current resource ID. """
 
 		self.currentRequest:JSON = None
 		"""	The current request. """
@@ -85,17 +128,31 @@ class ACMEViewRequests(Vertical):
 
 		# Some resources upfront
 		self._requestListList = ListView(id = 'request-list-list')
+		"""	The list of requests view. """
 		self._requestListRequest = Static(id = 'request-list-request')
+		"""	The request view. """
+
 		self._requestListResponse = Static(id = 'request-list-response')
+		"""	The response view. """
 
 	
 	@property
 	def currentRI(self) -> Optional[str]:
+		"""	The current resource ID.
+
+			Returns:
+				The current resource ID.
+		"""
 		return self._currentRI
 	
 
 	@currentRI.setter
 	def currentRI(self, ri:str) -> None:
+		"""	Set the current resource ID.
+
+			Args:
+				ri: The resource ID.
+		"""
 		self._currentRI = ri
 
 		# Change some bindings
@@ -105,20 +162,40 @@ class ACMEViewRequests(Vertical):
 
 	@property
 	def requestList(self) -> ListView:
+		"""	The view for the list of requests.
+
+			Returns:
+				The list of requests.
+		"""
 		return self._requestListList
 
 
 	@property
 	def requestListRequest(self) -> Static:
+		"""	The view for the list of requests.
+
+			Returns:
+				The view for the list of requests.
+		"""
 		return self._requestListRequest
 
 
 	@property
 	def requestListResponse(self) -> Static:
+		"""	The view for the list of responses.
+
+			Returns:
+				The view for the list of responses.
+		"""
 		return self._requestListResponse
 
 			
 	def compose(self) -> ComposeResult:
+		"""	Compose the view.
+
+			Yields:
+				The widgets of the view.
+		"""
 
 		# Requests List Header
 		with Horizontal(id = 'request-list-header'):
@@ -143,6 +220,8 @@ class ACMEViewRequests(Vertical):
 	
 
 	def onShow(self) -> None:
+		""" Called when the view is shown.
+		"""
 		self.updateRequests()
 	# 	self.requestList.focus()
 		self.requestList.index = 0
@@ -172,10 +251,20 @@ class ACMEViewRequests(Vertical):
 
 
 	async def on_list_view_selected(self, selected:ListView.Selected) -> None:
+		""" Handle the selection of a request in the list.
+		
+			Args:
+				selected: The selected request.
+		"""
 		self._showRequests(cast(ACMEListItem, selected.item))
 
 
 	async def on_list_view_highlighted(self, selected:ListView.Highlighted) -> None:
+		""" Handle the highlighting of a request in the list.
+
+			Args:
+				selected: The highlighted request.
+		"""
 		# self.tuiApp.bell()
 		if selected and selected.item:
 			self._showRequests(cast(ACMEListItem, selected.item))
@@ -202,7 +291,6 @@ class ACMEViewRequests(Vertical):
 		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Request is too large to display'
 			type = 'text'
-		_l1 = jsns.count('\n')
 
 		# Add syntax highlighting and explanations, and add to the view
 		self.requestListRequest.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
@@ -223,34 +311,48 @@ class ACMEViewRequests(Vertical):
 
 
 	def action_refresh_requests(self) -> None:
+		""" Refresh the requests.
+		"""
 		self.updateRequests()
 
 
 	def action_delete_requests(self) -> None:
+		""" Delete the requests.
+		"""
 		self.deleteRequests()
 	
 
 	def action_enable_requests(self) -> None:
+		""" Enable request recording.
+		"""
 		CSE.request.enableRequestRecording = True
 		self.updateBindings()
 
 
 	def action_disable_requests(self) -> None:
+		""" Disable request recording.
+		"""
 		CSE.request.enableRequestRecording = False
 		self.updateBindings()
 	
 
 	def action_toggle_list_details(self) -> None:
+		""" Toggle the list details.
+		"""
 		self.listDetails = not self.listDetails
 		self.updateRequests()
 
 
 	def action_toggle_comment_style(self) -> None:
+		""" Toggle the comment style.
+		"""
 		self.commentsOneLine = not self.commentsOneLine
 		self.updateRequests()
 
 
 	def updateBindings(self) -> None:
+		""" Update the bindings.
+		"""
 		#CSE.textUI.tuiApp.bell()
 
 		if CSE.request.enableRequestRecording:
@@ -264,9 +366,20 @@ class ACMEViewRequests(Vertical):
 
 
 	def updateRequests(self) -> None:
+		""" Update the requests.
+		"""
 			# TODO plantuml?
 
 		def rscFmt(rsc:int) -> str:
+			"""	Format the response status code.
+			
+				Args:
+					rsc: The response status code.
+
+				Returns:
+					The formatted response status code.
+			"""
+			
 			_rsc = ResponseStatusCode(rsc) if ResponseStatusCode.has(rsc) else ResponseStatusCode.UNKNOWN
 			_c = 'green3' if isSuccessRSC(_rsc) else 'red'
 			return f'[{_c}]{_rsc.name:30.30}[/{_c}]'
@@ -303,11 +416,18 @@ class ACMEViewRequests(Vertical):
 
 
 	def deleteRequests(self) -> None:
+		""" Delete the requests from the storage.
+		"""
 		CSE.storage.deleteRequests(self._currentRI)
 		self.updateRequests()
 
 
-	def setIndex(self, idx:int) -> None:
-		if 0 <= idx < len(self._currentRequests):
-			self.requestListRequest.update(Pretty(self._currentRequests[idx]['req']))
-			self.requestListResponse.update(Pretty(self._currentRequests[idx]['rsp']))
+	# def setIndex(self, idx:int) -> None:
+	# 	""" Set the index of the request list.
+
+	# 		Args:
+	# 			idx: The index to set.
+	# 	"""
+	# 	if 0 <= idx < len(self._currentRequests):
+	# 		self.requestListRequest.update(Pretty(self._currentRequests[idx]['req']))
+	# 		self.requestListResponse.update(Pretty(self._currentRequests[idx]['rsp']))

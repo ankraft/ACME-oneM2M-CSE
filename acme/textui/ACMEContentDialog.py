@@ -23,14 +23,27 @@ class ACMEContentDialog(ModalScreen):
 
 	BINDINGS = [("c", "dismiss", "Dismiss"), 
 			 	('escape', "dismiss", "Dismiss")]
+	"""	Key bindings for the dialog. """
 	
 	def __init__(self, content:str, title:Optional[str] = '', buttonEnabled:Optional[bool] = True) -> None:
+		"""	Initialize the dialog.
+
+			Args:
+				content:		The content to display.
+				title:			The title of the dialog.
+				buttonEnabled:	Whether the copy button is enabled. 
+		"""
 		self.content = content
+		"""	The content to display. """
+
 		self.borderTitle = title
+		"""	The title of the dialog. """
+
 		super().__init__()
 
 		# Create the copy button
 		self.button = Button('Copy', variant='primary', id='dialog-copy')
+		"""	The copy button. """
 		self.button.disabled = not buttonEnabled
 
 		from ..textui.ACMETuiApp import ACMETuiApp
@@ -39,6 +52,11 @@ class ACMEContentDialog(ModalScreen):
 
 
 	def compose(self) -> ComposeResult:
+		""" Compose the dialog.
+
+			Yields:
+				The dialog content.
+		"""
 		content = Vertical(
 			ScrollableContainer(Label(Syntax(self.content, 'shell', theme = self._app.syntaxTheme)), id = 'dialog-content'),
 			Center(self.button, id = 'dialog-button'),
@@ -49,6 +67,11 @@ class ACMEContentDialog(ModalScreen):
 
 
 	def on_button_pressed(self, event: Button.Pressed) -> None:
+		""" Handle the button press event.
+
+			Args:
+				event:	The button press event.
+		"""
 		if event.button.id == 'dialog-copy':
 			if self._app.copyToClipboard(self.content):
 				self.app.pop_screen()

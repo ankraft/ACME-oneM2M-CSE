@@ -43,14 +43,19 @@ class ACMETextArea(TextArea):
 		Binding('cmd+c', 'copy_to_clipboard'),
 		Binding('ctrl+v', 'paste_from_clipboard', 'paste', key_display = 'CTRL-v'),
 	]
+	"""	The key bindings for the text area. """
 
 
 	def action_copy_to_clipboard(self) -> None:
+		"""	Action callback: Copy the selected text to the clipboard.
+		"""
 		from ..textui.ACMETuiApp import ACMETuiApp
 		cast(ACMETuiApp, self.app).copyToClipboard(self.selected_text)
 
 	
 	def action_paste_from_clipboard(self) -> None:
+		"""	Action callback: Paste the clipboard content to the cursor position.
+		"""
 		self.begin_capture_print()
 		from ..textui.ACMETuiApp import ACMETuiApp
 		v = cast(ACMETuiApp, self.app).pasteFromClipboard()
@@ -94,19 +99,26 @@ class ACMEViewRequest(VerticalScroll):
 				responseView: The response view.
 		"""
 		super().__init__(id = id, classes = 'request-view')
+
 		self.header = Label(header, classes = 'request-header-label')
+		"""	The header label. """
+
 		self.button = Button(buttonLabel, 
 					   		 variant = buttonVariant, 
 							 id = 'request-button', 
 							 classes = 'request-button',
 							 disabled = operation == Operation.CREATE)	# start disabled when CREATE operation
+		"""	The button to submit the request. """
 		
 		self.childResources = Select([('None', 0), ('some', 1)], 
 							   		 prompt = 'Select resource type', 
 									 id = 'request-child-resources-select', 
 									 classes = 'request-child-resources-select'	)
-		self.inputOriginator = ACMEFieldOriginator(originator, 
-											 	   suggestions = [RC.cseOriginator, originator])
+		"""	The child resource select view. """
+
+		self.inputOriginator = ACMEFieldOriginator(originator, suggestions = [RC.cseOriginator, originator])
+		"""	The input originator. """
+
 		self.resourceTextArea = ACMETextArea('', 
 						 	 				 classes = 'request-resource-textarea', 
 											 language = 'json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
@@ -115,15 +127,34 @@ class ACMEViewRequest(VerticalScroll):
 				  							 show_line_numbers = True,
 											 disabled = operation == Operation.CREATE,	# start disabled for CREATE operation
 											 theme = 'monokai')
+		"""	The resource text area. """
+
 		self.border_title = title
+		"""	The border title. Inherited from the parent class. """
+
 		self.callback = callback
+		"""	The callback for the button action. """
+
 		self.enableEditor = enableEditor
+		"""	Enable the editor. """
+
 		self.operation = operation
+		"""	The operation for the request. """
+
 		self.selectCallback = selectCallback
+		"""	The callback for the select change. """
+
 		self.responseView = responseView
+		"""	The response view. """
 
 
 	def compose(self) -> ComposeResult:
+		"""	Compose the view.
+
+			Yields:
+				The view content.
+		"""
+
 		with Horizontal(classes = 'request-header'):
 			yield self.header
 			yield self.button
@@ -206,6 +237,11 @@ class ACMEViewRequest(VerticalScroll):
 
 	@on(Select.Changed)
 	def selectChanged(self, event: Select.Changed) -> None:
+		"""	Handle the select change.
+
+			Args:
+				event: The select change event.
+		"""
 		if self.selectCallback:
 			self.selectCallback(event.value)
 		if self.operation == Operation.CREATE:
@@ -345,6 +381,14 @@ class ACMEViewRequest(VerticalScroll):
 
 
 	def runRequest(self, resource:Resource) -> Optional[Result]:
+		"""	Run the request on a resource.
+		
+			Args:
+				resource: The resource to target.
+				
+			Returns:
+				The result.
+		"""
 		# Send the request and handle the response
 
 		try:

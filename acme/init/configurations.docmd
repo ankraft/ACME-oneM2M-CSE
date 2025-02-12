@@ -485,6 +485,73 @@ The default for is `json`.
 
 
 
+# cse.registrar.security
+
+
+This section contains settings that controls the security behavior when registrering to a registrar CSE.
+
+Settings in this section are listed under the `[cse.registrar.security]` section.
+
+
+
+# cse.registrar.security.httpBearerToken
+
+The authentication token for the Registrar's CSE authentication via **http** if bearer token authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.httpPassword
+
+The password for the Registrar's CSE authentication via **http** if basic authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.httpUsername
+
+The username for the Registrar's CSE authentication via **http** if basic authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.poaCredentialsFile
+
+The filename of the credential file for the Registrar CSE authentication via **http** or **WebSocket**. This file contains a mapping between CSE-IDs and username/password credentials. These credentials are used for the authentication by the remote CSE to this CSE. The credentials will be added to the URLs of the *poa* attribute of the *remoteCSE* resource.
+
+The format is one line per CSE-ID with the format "CSE-ID:username:password".
+
+The default value is `${basic.config:baseDirectory}/certs/poa_credentials.txt`.
+
+
+
+# cse.registrar.security.wsBearerToken
+
+The authentication token for the Registrar's CSE authentication via **WebSocket** if bearer token authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.wsPassword
+
+The password for the Registrar's CSE authentication via **WebSocket** if basic authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.wsUsername
+
+The username for the Registrar's CSE authentication via **WebSocket** if basic authentication is enabled for the Registrar CSE.
+
+The default value is an empty string.
+
+
+
 # cse.registration
 
 The settings in this section handle registrations to this CSE.
