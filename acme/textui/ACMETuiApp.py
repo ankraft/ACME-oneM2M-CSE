@@ -305,8 +305,16 @@ class ACMETuiApp(App):
 	def on_load(self) -> None:
 		"""Called when the app is loaded.
 		"""
-		self.dark = Configuration.textui_theme == 'dark'
-		"""	Flag to indicate if the theme is dark or light. Inherited from the parent class. """
+		self.dark:bool
+		"""Flag to indicate if the theme is dark or light. """
+
+		match Configuration.textui_theme:
+			case 'dark':
+				self.theme = 'textual-dark'
+				self.dark = True
+			case 'light':
+				self.theme = 'textual-light'
+				self.dark = False
 
 		self.syntaxTheme = 'ansi_dark' if self.dark else 'ansi_light'
 		"""	The syntax theme. Inherited from the parent class. """
