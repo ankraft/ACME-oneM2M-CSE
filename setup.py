@@ -14,10 +14,11 @@ print(directories)
 
 setup(
 	# name='acmecse-dev',
-	# version=f'2024.dev.{time.strftime("%Y%m%d%H%M%S")}',
+        # version=time.strftime("%Y%m%d%H%M%S"),
+
 
 	name='acmecse',
-	version='2024.10',
+	version='2024.10.1',
 
 
 	author='Andreas Kraft',
@@ -51,8 +52,8 @@ setup(
 		'rich', 
 		'shapely',
 		# 'textual',
-		'textual[syntax]',
-		'textual-plotext',
+		'textual[syntax]==0.82.0',
+		'textual-plotext==0.2.1',
 		'tinydb',
 		'waitress',
 		'websockets',
