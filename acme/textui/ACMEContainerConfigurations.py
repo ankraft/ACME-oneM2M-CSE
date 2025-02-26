@@ -119,14 +119,15 @@ class ACMEConfigurationTree(TextualTree):
 
 		value = Configuration.get(topic)
 		if isinstance(value, list):
-			value = ','.join(value)
+			value = ', '.join(value)
 		
 		header = f'# {topic}\n'
 		if value is not None:
 			# header with link for later editing feature
 			if len(_s := str(value)):
 				_s = _s.replace('*', '\\*')	# escape some markdown chars
-				header += f'> **{_s}**&nbsp;\n\n'
+				# header += f'> **{_s}**&nbsp;\n\n'
+				header += f'> **{_s}**\n\n'
 			else:
 				header += f'> &nbsp;\n\n'
 
