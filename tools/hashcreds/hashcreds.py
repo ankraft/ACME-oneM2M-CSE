@@ -8,8 +8,8 @@
 """
 
 if __name__ == '__main__':
-	import hashlib, sys
-	if len(sys.argv) != 2:
-		print('Usage: python3 hashcreds.py <password or token>')
+	import hmac, hashlib, sys
+	if len(sys.argv) != 3:
+		print('Usage: python3 hashcreds.py <password or token> <secret key>')
 		sys.exit(1)
-	print(hashlib.sha256(sys.argv[1].encode()).hexdigest())
+	print(hmac.new(sys.argv[2].encode(), msg=sys.argv[1].encode(), digestmod=hashlib.sha256).digest().hex())
