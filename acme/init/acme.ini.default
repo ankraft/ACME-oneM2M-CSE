@@ -200,12 +200,13 @@ enableTokenAuth=false
 ; Path and filename of the http basic authentication file. 
 ; The file must contain lines with the format "username:password".
 ; Comments are lines starting with a #.
-; Default: certs/http_basic_auth.txt
+; The password must be hashed with SHA-256 and encoded as a hex string.
+; Default: ${basic.config:baseDirectory}/certs/http_basic_auth.txt
 basicAuthFile=${basic.config:baseDirectory}/certs/http_basic_auth.txt
 ; Path and filename of the http bearer token authentication file.
 ; The file must contain lines with the format "token".
 ; Comments are lines starting with a #.
-; Default: certs/http_token_auth.txt
+; Default: ${basic.config:baseDirectory}/certs/http_token_auth.txt
 tokenAuthFile=${basic.config:baseDirectory}/certs/http_token_auth.txt
 
 
@@ -339,12 +340,13 @@ enableTokenAuth=false
 ; Path and filename of the WebSocket basic authentication file. 
 ; The file must contain lines with the format "username:password".
 ; Comments are lines starting with a #.
-; Default: certs/ws_basic_auth.txt
+; The password must be hashed with SHA-256 and encoded as a hex string.
+; Default: ${basic.config:baseDirectory}/certs/ws_basic_auth.txt
 basicAuthFile=${basic.config:baseDirectory}/certs/ws_basic_auth.txt
 ; Path and filename of the WebSocket bearer token authentication file.
 ; The file must contain lines with the format "token".
 ; Comments are lines starting with a #.
-; Default: certs/ws_token_auth.txt
+; Default: ${basic.config:baseDirectory}/certs/ws_token_auth.txt
 tokenAuthFile=${basic.config:baseDirectory}/certs/ws_token_auth.txt
 
 
@@ -504,7 +506,6 @@ httpPassword=
 ; Default: empty string
 httpBearerToken=
 ; The username for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
-
 ; Default: empty string
 wsUsername=
 ; The password for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
@@ -513,13 +514,22 @@ wsPassword=
 ; The authentication token for the Registrar CSE authentication via WebSocket if bearer token authentication is enabled for the Registrar CSE.
 ; Default: empty string
 wsBearerToken=
-; The filename of the credential file for the Registrar CSE authentication via http or WebSocket.
-; This file contains a mapping between CSE-IDs and username/password credentials. 
-; These credentials are used for the authentication by the remote CSE to this CSE. 
-; The credentials will be added to the URLs of the *poa* attribute of the *remoteCSE* resource.
-; The format is one line per CSE-ID with the format "CSE-ID:username:password".
-; Default: None
-poaCredentialsFile=${basic.config:baseDirectory}/certs/acme_poa_credentials.txt
+; The username for the Registrar CSE to be used when communicating with this CSE via http if 
+; basic authentication is enabled for http for this CSE.
+; Default: empty string
+selfHttpUsername=
+; The password for the Registrar CSE to be used when communicating with this CSE via http if
+; basic authentication is enabled for http for this CSE.
+; Default: empty string
+selfHttpPassword=
+; The username for the Registrar CSE to be used when communicating with this CSE via WebSocket if
+; basic authentication is enabled for WebSockets for this CSE.
+; Default: empty string
+selfWsUsername=
+; The password for the Registrar CSE to be used when communicating with this CSE via WebSocket if
+; basic authentication is enabled for WebSockets for this CSE.
+; Default: empty string
+selfWsPassword=
 
 
 ;

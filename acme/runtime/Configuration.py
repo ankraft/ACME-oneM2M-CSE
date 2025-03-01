@@ -21,7 +21,6 @@ from rich.console import Console
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode
 from ..helpers.NetworkTools import getIPAddress
-from ..runtime import Onboarding
 
 
 
@@ -222,6 +221,37 @@ class Configuration(object):
 	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
 
 
+	cse_registrar_security_httpUsername:str
+	"""	The username for HTTP basic security when registering to a http server with basic auth. """
+
+	cse_registrar_security_httpPassword:str
+	"""	The password for HTTP basic security when registering to a http server with basic auth. """
+
+	cse_registrar_security_httpBearerToken:str
+	"""	The token for HTTP bearer token security when registering to a http server with bearer token auth. """
+
+	cse_registrar_security_wsUsername:str
+	"""	The username for HTTP basic security when registering to a WebSocket server with basic auth. """
+
+	cse_registrar_security_wsPassword:str
+	"""	The password for HTTP basic security when registering to a WebSocket server with basic auth. """
+
+	cse_registrar_security_wsBearerToken:str
+	"""	The token for HTTP bearer token security when registering to a WebSocket server with bearer token auth. """
+
+	cse_registrar_security_selfHttpUsername:str
+	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
+
+	cse_registrar_security_selfHttpPassword:str
+	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
+
+	cse_registrar_security_selfWsUsername:str
+	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via WebSocket to this CSE. """
+
+	cse_registrar_security_selfWsPassword:str
+	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via WebSocjet to this CSE. """
+
+
 	cse_registration_allowedAEOriginators:list[str]
 	"""	Allowed AE originators for registration. """
 
@@ -231,6 +261,10 @@ class Configuration(object):
 	cse_registration_checkLiveliness:bool
 	"""	Check liveliness for registration. """
 
+
+
+	cse_security_masterSecret:str
+	"""	The master secret key for the CSE. """
 
 	cse_security_enableACPChecks:bool
 	"""	Enable or disable ACP checks. """
@@ -581,7 +615,19 @@ class Configuration(object):
 
 	websocket_security_verifyCertificate:bool
 	"""	Enable or disable certificate verification for WebSocket. """
+
+	websocket_security_enableBasicAuth:bool
+	"""	Enable or disable basic authentication for WebSocket. """
+
+	websocket_security_enableTokenAuth:bool
+	"""	Enable or disable token authentication for WebSocket. """
 	
+	websocket_security_basicAuthFile:str
+	"""	The file for basic authentication for WebSocket. """
+
+	websocket_security_tokenAuthFile:str
+	"""	The file for token authentication for WebSocket. """
+
 
 	moduleDirectory:pathlib.Path = None
 	""" The base directory of the ACME module. """
@@ -721,7 +767,15 @@ class Configuration(object):
 				if Configuration._args_headless:
 					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
 					return False
+				
+				# load onboarding module and create user config file.
+				# After that, remove the module from the modules list, because it is not needed anymore
+				from ..runtime import Onboarding
+				import sys
 				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
+				del sys.modules['acme.runtime.Onboarding']
+				del Onboarding
+
 				if not result:
 					return False
 				Configuration._args_configfile = str(pathlib.Path(_configFile))
@@ -747,15 +801,17 @@ class Configuration(object):
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
-							'baseDirectory' 		: Configuration.baseDirectory,			# points to the currenr working directory
-							'moduleDirectory' 		: Configuration.moduleDirectory,		# points to the acme module's directory
-							'initDirectory' 		: Configuration.initDirectory,			# points to the acme/init directory		
-							'hostIPAddress'			: getIPAddress(),						# provide the IP address of the host
+							'baseDirectory' 		: Configuration.baseDirectory,				# points to the currenr working directory
+							'moduleDirectory' 		: Configuration.moduleDirectory,			# points to the acme module's directory
+							'initDirectory' 		: Configuration.initDirectory,				# points to the acme/init directory		
+							'hostIPAddress'			: getIPAddress(),							# provide the IP address of the host
 
-							'registrarCseHost'		: '127.0.0.1',							# The IP address of the registrar CSE
-							'registrarCsePort'		: 8080,									# The TCP port of the registrar CSE
-							'registrarCseID'		: '',									# The CSE-ID of the registrar CSE
-							'registrarCseName'		: '',									# The resource name of the registrar CSE's CSEBase
+							'registrarCseHost'		: '127.0.0.1',								# The IP address of the registrar CSE
+							'registrarCsePort'		: 8080,										# The TCP port of the registrar CSE
+							'registrarCseID'		: '',										# The CSE-ID of the registrar CSE
+							'registrarCseName'		: '',										# The resource name of the registrar CSE's CSEBase
+
+							'masterSecret'			: os.getenv('ACME_MASTER_SECRET', 'acme'),	# The master secret for the CSE
 						}
 					}
 		# Add environment variables to the defaults
@@ -786,6 +842,9 @@ class Configuration(object):
 		try:
 
 			# Call the configuration handler for each module
+			# The "readConfiguration" methods are responsible for reading the configuration values from the configuration file
+			# and to set the respective attributes in the Configuration class.
+			# Validations are done later below.
 			for m in _moduleConfigs:
 				m.readConfiguration(config, Configuration)	# type:ignore [arg-type]
 		

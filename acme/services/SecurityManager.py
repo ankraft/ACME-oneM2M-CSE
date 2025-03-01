@@ -10,16 +10,17 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any
+from typing import List, cast, Optional, Any, Tuple
 
 import ssl
 from dataclasses import dataclass
 
-from ..etc.Types import ResourceTypes, Permission, CSERequest
+from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
 from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
+from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
@@ -46,14 +47,16 @@ class SecurityManager(object):
 	__slots__ = (
 		'httpBasicAuthData',
 		'httpTokenAuthData',
+		'wsBasicAuthData',
+		'wsTokenAuthData',
+		'requestCredentials',
 	)
 
 
 	def __init__(self) -> None:
 
 		# Get the configuration settings
-		self._readHttpBasicAuthFile()
-		self._readHttpTokenAuthFile()
+		self._initAuthInformation()
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
@@ -76,8 +79,7 @@ class SecurityManager(object):
 	def restart(self, name:str) -> None:
 		"""	Restart the Security manager service.
 		"""
-		self._readHttpBasicAuthFile()
-		self._readHttpTokenAuthFile()
+		self._initAuthInformation()
 		L.logDebug('SecurityManager restarted')
 
 
@@ -819,7 +821,7 @@ class SecurityManager(object):
 	#
 
 	def validateHttpBasicAuth(self, username:str, password:str) -> bool:
-		"""	Validate the provided username and password against the configured basic authentication file.
+		"""	Validate the provided username and password against the configured HTTP basic authentication file.
 
 			Args:
 				username: The username to validate.
@@ -828,11 +830,11 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return self.httpBasicAuthData.get(username) == password
+		return self.httpBasicAuthData.get(username) == hashString(password, 'acme')
 
 
 	def validateHttpTokenAuth(self, token:str) -> bool:
-		"""	Validate the provided token against the configured token authentication file.
+		"""	Validate the provided token against the configured HTTP token authentication file.
 
 			Args:
 				token: The token to validate.
@@ -840,8 +842,46 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return token in self.httpTokenAuthData
+		return hashString(token, 'acme') in self.httpTokenAuthData
+	
 
+	def validateWSBasicAuth(self, username:str, password:str) -> bool:
+		"""	Validate the provided username and password against the configured WebSocket basic authentication file.
+
+			Args:
+				username: The username to validate.
+				password: The password to validate.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return self.wsBasicAuthData.get(username) == hashString(password, 'acme')
+
+
+	def validateWSTokenAuth(self, token:str) -> bool:
+		"""	Validate the provided token against the configured WebSocket token authentication file.
+
+			Args:
+				token: The token to validate.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return hashString(token, 'acme') in self.wsTokenAuthData
+
+
+	def _initAuthInformation(self) -> None:
+		self._readHttpBasicAuthFile()
+		self._readHttpTokenAuthFile()
+		self._readWSBasicAuthFile()
+		self._readWSTokenAuthFile()
+
+		self.requestCredentials = RequestCredentials(httpUsername=Configuration.cse_registrar_security_httpUsername, 
+													 httpPassword=Configuration.cse_registrar_security_httpPassword,
+													 httpToken=Configuration.cse_registrar_security_httpBearerToken,
+													 wsUsername=Configuration.cse_registrar_security_wsUsername,
+													 wsPassword=Configuration.cse_registrar_security_wsPassword,
+													 wsToken=Configuration.cse_registrar_security_wsBearerToken)
 
 	def _readHttpBasicAuthFile(self) -> None:
 		"""	Read the HTTP basic authentication file and store the data in a dictionary.
@@ -884,3 +924,89 @@ class SecurityManager(object):
 						self.httpTokenAuthData.append(line.strip())
 			except Exception as e:
 				L.logErr(f'Error reading token authentication file: {e}')
+
+
+	def _readWSBasicAuthFile(self) -> None:
+		"""	Read the WebSocket basic authentication file and store the data in a dictionary.
+			The authentication information is stored as username:password.
+
+			The data is stored in the `wsBasicAuthData` dictionary.
+		"""
+		self.wsBasicAuthData = {}
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.websocket_security_enableBasicAuth and Configuration.websocket_security_basicAuthFile:
+			try:
+				with open(Configuration.websocket_security_basicAuthFile, 'r') as f:
+					for line in f:
+						if line.startswith('#'):
+							continue
+						if len(line.strip()) == 0:
+							continue
+						(username, password) = line.strip().split(':')
+						self.wsBasicAuthData[username] = password.strip()
+			except Exception as e:
+				L.logErr(f'Error reading basic authentication file: {e}')
+
+
+	def _readWSTokenAuthFile(self) -> None:
+		"""	Read the WebSocket token authentication file and store the data in a dictionary.
+			The authentication information is stored as a single token per line.
+
+			The data is stored in the `wsTokenAuthData` list.
+		"""
+		self.wsTokenAuthData = []
+		# We need to access the configuration directly, since the http server is not yet initialized
+		if Configuration.websocket_security_enableTokenAuth and Configuration.websocket_security_tokenAuthFile:
+			try:
+				with open(Configuration.websocket_security_tokenAuthFile, 'r') as f:
+					for line in f:
+						if line.startswith('#'):
+							continue
+						if len(line.strip()) == 0:
+							continue
+						self.wsTokenAuthData.append(line.strip())
+			except Exception as e:
+				L.logErr(f'Error reading token authentication file: {e}')
+	
+
+	def getCredentialsForRegistrarCSE(self) -> RequestCredentials:
+		"""	Return the credentials to access the registrar CSE. 
+		
+			For the moment this these are the http authentication credentials.
+
+			Return:
+				The username and password or token for the registrar CSE.
+		"""
+		return RequestCredentials(httpUsername=Configuration.cse_registrar_security_httpUsername, 
+								  httpPassword=Configuration.cse_registrar_security_httpPassword,
+								  httpToken=Configuration.cse_registrar_security_httpBearerToken,
+								  wsUsername=Configuration.cse_registrar_security_wsUsername,
+								  wsPassword=Configuration.cse_registrar_security_wsPassword,
+								  wsToken=Configuration.cse_registrar_security_wsBearerToken)
+	
+
+	def getPOACredentialsForCSEID(self, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
+		"""	Return the credentials for the Point of Access (POA) for the given CSE-ID.
+			These credentials are used by the registrar CSE to access this hosting CSE, 
+			or by the hosting CSE to access the registrar CSE. The credentials are used
+			in the POA attribute. Currently, only HTTP and WS bindings are supported.
+
+			Args:
+				cseID: The CSE-ID to get the credentials for.
+				binding: The binding type to get the credentials for. Default is HTTP.
+
+			Return:
+				A tuple with the username and password or token for the given CSE-ID and binding.
+			
+		"""
+		match binding:
+			case BindingType.HTTP if cseID == Configuration.cse_registrar_cseID:
+				return Configuration.cse_registrar_security_selfHttpUsername, Configuration.cse_registrar_security_selfHttpPassword
+			case BindingType.HTTP if cseID in (None, Configuration.cse_cseID):
+				return Configuration.cse_registrar_security_httpUsername, Configuration.cse_registrar_security_httpPassword
+			case BindingType.WS if cseID == Configuration.cse_registrar_cseID:
+				return Configuration.cse_registrar_security_selfWsUsername, Configuration.cse_registrar_security_selfWsPassword
+			case BindingType.WS if cseID in (None, Configuration.cse_cseID):
+				return Configuration.cse_registrar_security_wsUsername, Configuration.cse_registrar_security_wsPassword
+		return None, None
+		

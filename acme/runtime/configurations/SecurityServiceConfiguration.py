@@ -22,10 +22,13 @@ class SecurityServiceConfiguration(ModuleConfiguration):
 
 		#	CSE Security
 
+		config.cse_security_masterSecret = parser.get('cse.security', 'masterSecret', fallback = 'acme')
 		config.cse_security_enableACPChecks = parser.getboolean('cse.security', 'enableACPChecks', fallback = True)
 		config.cse_security_fullAccessAdmin = parser.getboolean('cse.security', 'fullAccessAdmin', fallback = True)
 
 
 	def validateConfiguration(sel, config:Configuration, initial:Optional[bool] = False) -> None:
+		if not config.cse_security_masterSecret:
+			raise ConfigurationError('Configuration Error: Missing or empty [i]\[cse.security\]:masterSecret[/i] configuration')
 		pass
 

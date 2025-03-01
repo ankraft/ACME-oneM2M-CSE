@@ -1204,7 +1204,6 @@ class RequestManager(object):
 				try:
 					_, newValue = CSE.validator.validateAttribute(attribute, value, attributeType, rtype = ResourceTypes.REQRESP)
 				except ResponseException as e:
-					#L.inspect(e)
 					e.dbg = f'attribute: {attribute}, value: {value} : {e.dbg}'
 					e.data = cseRequest
 					raise e

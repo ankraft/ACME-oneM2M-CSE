@@ -15,10 +15,11 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
 from ..etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
-from ..etc.Types import ContentSerializationType
+from ..etc.Types import ContentSerializationType, RequestCredentials, BindingType
 from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import pureResource
 from ..etc.IDUtils import csiFromRelativeAbsoluteUnstructured	# cannot import at the top because of circel import
+from ..etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR
@@ -568,7 +569,8 @@ class RemoteCSEManager(object):
 													   to = self.csrOnRegistrarURI,
 													   _directURL = self.csrOnRegistrarURI,	# Fallback, because there might be no registration yet
 													   originator = RC.cseCsi,
-													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))	# own CSE.csi is the originator
+													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization),
+						  							   credentials = CSE.security.getCredentialsForRegistrarCSE())
 										   )[0].result	# there should be at least one result
 		if not res.rsc == ResponseStatusCode.OK:
 			_exc = exceptionFromRSC(res.rsc)
@@ -587,7 +589,7 @@ class RemoteCSEManager(object):
 		csrResource = CSR()
 		csrResource.setResourceName(rn = localCSE.ri)
 		csrResource.setAttribute('rr', True)
-		self._copyCSE2CSR(csrResource, localCSE)
+		self._copyCSE2CSR(csrResource, localCSE, targetCsi=Configuration.cse_registrar_cseID)
 
 		# Create the <csr> on the registrar CSE
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
@@ -596,7 +598,8 @@ class RemoteCSEManager(object):
 													   originator = RC.cseCsi,		# own CSE.csi is the originator
 													   ty = ResourceTypes.CSR, 
 													   pc = csrResource.asDict(),
-													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
+													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization),
+													   credentials = CSE.security.getCredentialsForRegistrarCSE())
 										   )[0].result	# there should be at least one result
 
 		if res.rsc not in [ ResponseStatusCode.CREATED, ResponseStatusCode.OK, ResponseStatusCode.CONFLICT ]:
@@ -629,14 +632,15 @@ class RemoteCSEManager(object):
 		
 		# create a new CSR resource and fill it with the current attributes
 		csr = CSR()
-		self._copyCSE2CSR(csr, hostingCSE, isUpdate = True)
+		self._copyCSE2CSR(csr, hostingCSE, isUpdate = True, targetCsi = Configuration.cse_registrar_cseID)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates!)
 		
 		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
 													   to = self.csrOnRegistrarURI, 
 													   originator = RC.cseCsi,  	# own CSE.csi is the originator
 													   pc = csr.asDict(), 
-													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
+													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization),
+													   credentials = CSE.security.getCredentialsForRegistrarCSE())
 										   )[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			if res.rsc != ResponseStatusCode.CONFLICT:
@@ -658,7 +662,8 @@ class RemoteCSEManager(object):
 													   to = self.csrOnRegistrarURI,
 													   _directURL = self.registrarCSEURL,	# Fallback, because there might be no registration yet
 													   originator = RC.cseCsi, 			# own CSE.csi is the originator
-													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
+													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization),
+													   credentials = CSE.security.getCredentialsForRegistrarCSE())
 										   )[0].result	# there should be at least one result
 
 		# NOT_FOUND might be raised above
@@ -690,7 +695,8 @@ class RemoteCSEManager(object):
 													   to = self.registrarCSEURI,
 													   _directURL = self.registrarCSEURL,	# Fallback, because there might be no registration yet
 													   originator = RC.cseCsi,				# own CSE.csi is the originator
-													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization))
+													   ct = cast(ContentSerializationType, Configuration.cse_registrar_serialization),
+													   credentials = CSE.security.getCredentialsForRegistrarCSE())
 										   )[0].result	# there should be at least one result
 
 		if (_registrarCSI := findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
@@ -829,27 +835,51 @@ class RemoteCSEManager(object):
 	#########################################################################
 
 
-	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:Optional[bool] = False) -> None:
+	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:Optional[bool] = False, targetCsi:str = None) -> None:
 		"""	Copy the relevant attributes from a <CSEBase> to a <CSR> resource.
 		
 			Args:
 				target: The target <CSEBase> resource.
 				source: The source <CSR> resource.
 				isUpdate: Indicator that the copy operation is for an UPDATE request.
+				targetCsi: Optional target CSE-ID to use for the copy operation.
 		"""
 
 		if 'csb' in source and 'csb' not in Configuration.cse_registrar_excludeCSRAttributes:
 			target['csb'] = self.registrarCSEURL
 		
 		# copy certain attributes
-		for attr in [ 'csi', 'cst', 'csz', 'lbl', 'nl', 'poa', 'rr', 'srv', 'st' ]:
+		for attr in [ 'csi', 'cst', 'csz', 'lbl', 'nl', 'rr', 'srv', 'st' ]:
 			if attr in source and attr not in Configuration.cse_registrar_excludeCSRAttributes:
 				target[attr] = source[attr]
-
+		
 		if 'cb' not in Configuration.cse_registrar_excludeCSRAttributes:
 			target['cb'] = f'{source.csi}/{source.rn}'
 		if 'dcse' not in Configuration.cse_registrar_excludeCSRAttributes:
 			target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
+		
+		# Modify POA for http and ws if necessary
+		# so far, only basic auth is supported
+		target['poa'] = []
+		for p in source.poa:
+			# Get the credentials that we want the remote CSE to use to connect to us
+			if Configuration.http_security_enableBasicAuth or Configuration.websocket_security_enableBasicAuth:
+
+				# Determine the binding type
+				bindingType = BindingType.HTTP if isHttpUrl(p) else BindingType.WS if isWSUrl(p) else BindingType.UNKNOWN
+
+				# Get the credentials for the remote CSE
+				# targetCsi might be None, but then we want create a URL to be used in the creation of the localCSR
+				username, password = CSE.security.getPOACredentialsForCSEID(targetCsi, binding=bindingType)
+				if username and password:
+					# Check if we need to add basic auth to the URL (http or ws) and do so
+					if (bindingType == BindingType.HTTP and Configuration.http_security_enableBasicAuth) or (bindingType == BindingType.WS and Configuration.websocket_security_enableBasicAuth):
+						# Add basic auth to the URL (same for http and ws)
+						p = buildBasicAuthUrl(p, username, password)
+				else:
+					L.isWarn and L.logWarn(f'No credentials found for POA authentiction for CSE: {targetCsi} - using plain URL')
+							
+			target['poa'].append(p)
 		
 		# Always remove some attributes
 		for attr in [ 'acpi' ]:

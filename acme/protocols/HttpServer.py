@@ -24,11 +24,11 @@ import requests
 import isodate
 
 from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel
+from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.IDUtils import uniqueRI, toSPRelative
-from ..etc.Utils import renameThread, getThreadName, isURL
+from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
@@ -336,7 +336,6 @@ class HttpServer(object):
 		responseResult = _runRequest(dissectResult.request)
 
 		# Return a proper response
-		# L.inspect(responseResult)
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
@@ -536,6 +535,22 @@ class HttpServer(object):
 		if request.vsi:
 			hds[Constants.hfVSI] = request.vsi
 
+		# check for basic authentication in the URL. This overwrites any other credentials!!!
+		parsedUrl = getBasicAuthFromUrl(url)
+		url = parsedUrl[0] # replace with the URL without credentials
+		if parsedUrl[1] and parsedUrl[2]: # credentials are present in the URL
+			request.credentials = RequestCredentials(httpUsername=parsedUrl[1], httpPassword=parsedUrl[2])
+
+		# Add authentication headers
+		if request.credentials:
+			if request.credentials.httpUsername and request.credentials.httpPassword:
+				hds['Authorization'] = f'Basic {request.credentials.getHttpBasic()}'
+			elif request.credentials.httpToken:
+				hds['Authorization'] = f'Bearer {request.credentials.getHttpBearerToken()}'
+			else:
+				L.logWarn('No credentials found for HTTP request found')
+
+
 		arguments = []
 		if request.rcn and request.rcn != ResultContentType.default(request.op):
 			arguments.append(f'rcn={request.rcn.value}')
@@ -636,7 +651,52 @@ class HttpServer(object):
 			Return:
 				True if the request is authenticated, False otherwise.
 		"""
+
+		def testBasicAuthentication(parameters:dict) -> bool:
+			"""	Validate the basic authentication.
+
+				If basic authentication is not enabled, a warning is logged, but the
+				authentication is considered valid.
+
+				Args:
+					parameters: The parameters for the basic authentication.
+			
+				Return:
+					True if the authentication is valid, False otherwise.
+			"""
+			if not Configuration.http_security_enableBasicAuth:
+				L.isWarn and L.logWarn('Basic authentication is not enabled, but a basic authorization header was found.')
+				return True
+			if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
+				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
+				return False
+			return True
+		
+
+		def testTokenAuthentication(token:str) -> bool:
+			"""	Validate the token.
+
+				If token authentication is not enabled, a warning is logged, but the
+				authentication is considered valid.
+
+				Args:
+					token: The token to validate.
+			
+				Return:
+					True if the token is valid, False otherwise.
+			"""
+			if not Configuration.http_security_enableTokenAuth:
+				L.isWarn and L.logWarn('Token authentication is not enabled, but a bearer authorization header was found.')
+				return True
+			if not CSE.security.validateHttpTokenAuth(token):
+				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+				return False
+			return True
+
+		L.isDebug and L.logDebug('Checking authentication')
 		if not (Configuration.http_security_enableBasicAuth or Configuration.http_security_enableTokenAuth):
+			if request.authorization:
+				L.isWarn and L.logWarn('Basic or token authentication is not enabled, but an authorization header was found.')
 			return True
 		
 		if (authorization := request.authorization) is None:
@@ -645,26 +705,13 @@ class HttpServer(object):
 		
 		match authorization.type:
 			case 'basic':
-				return self._handleBasicAuthentication(authorization.parameters)
+				return testBasicAuthentication(authorization.parameters)
 			case 'bearer':
-				return self._handleTokenAuthentication(authorization.token)
+				return testTokenAuthentication(authorization.token)
 			case _:
 				L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization.type}')
 				return False
 	
-
-	def _handleBasicAuthentication(self, parameters:dict) -> bool:
-		if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
-			L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
-			return False
-		return True
-	
-
-	def _handleTokenAuthentication(self, token:str) -> bool:
-		if not CSE.security.validateHttpTokenAuth(token):
-			L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
-			return False
-		return True
 
 	#########################################################################
 

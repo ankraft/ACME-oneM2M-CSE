@@ -2804,6 +2804,20 @@ class LogLevel(ACMEIntEnum):
 				return None
 
 
+class BindingType(ACMEIntEnum):
+	""" Type of Binding connection.
+	"""
+	UNKNOWN = auto()
+	""" No binding. """
+	HTTP = auto()
+	"""	HTTP. """
+	COAP = auto()
+	"""	COAP. """
+	MQTT = auto()
+	"""	MQTT. """
+	WS = auto()
+	"""	WebSockets. """
+
 
 class TreeMode(ACMEIntEnum):
 	""" Available modes do display the resource tree in the console.
