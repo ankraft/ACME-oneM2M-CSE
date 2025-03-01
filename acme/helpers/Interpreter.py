@@ -13,7 +13,7 @@
 """
 from __future__ import annotations
 
-from rich import inspect, print
+from rich import print
 from typing import Any, List, Union, Callable, Optional, Dict, cast, Tuple, cast
 from dataclasses import dataclass, field
 

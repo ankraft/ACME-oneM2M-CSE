@@ -13,7 +13,7 @@
 from __future__ import annotations
 
 from typing import Any, Tuple, Generator, Optional
-import os, platform, re, subprocess, traceback, threading
+import os, platform, re, subprocess, traceback, threading, hashlib, hmac
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -254,3 +254,16 @@ def buildBasicAuthUrl(url:str, username:str, password:str) -> str:
 					   split.path,
 					   split.query, 
 					   split.fragment))
+
+
+def hashString(s:str, salt:str='') -> str:
+	""" Hash a string using SHA256.
+
+		Args:
+			s: String to hash.
+			salt: Salt to add to the string before hashing. 
+
+		Returns:
+			The SHA256 hash of the string as hex.
+	"""
+	return hmac.new(salt.encode(), msg=s.encode(), digestmod=hashlib.sha256).digest().hex()
