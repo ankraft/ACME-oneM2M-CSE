@@ -518,13 +518,38 @@ The default value is an empty string.
 
 
 
-# cse.registrar.security.poaCredentialsFile
+# cse.registrar.security.selfHttpPassword
 
-The filename of the credential file for the Registrar CSE authentication via **http** or **WebSocket**. This file contains a mapping between CSE-IDs and username/password credentials. These credentials are used for the authentication by the remote CSE to this CSE. The credentials will be added to the URLs of the *poa* attribute of the *remoteCSE* resource.
+The password that is added to the URL when registering to the registrar CSE via **http**. This password part of the credentials for the registrar CSE to authenticate itself to this hosting CSE.
 
-The format is one line per CSE-ID with the format "CSE-ID:username:password".
+The default value is an empty string.
 
-The default value is `${basic.config:baseDirectory}/certs/poa_credentials.txt`.
+
+
+# cse.registrar.security.selfHttpUsername
+
+The username that is added to the URL when registering to the registrar CSE via **http**. This username is part of the credentials for the registrar CSE to authenticate itself to this hosting CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.selfWsPassword
+
+
+
+
+The password that is added to the URL when registering to the registrar CSE via **WebSockets**. This password part of the credentials for the registrar CSE to authenticate itself to this hosting CSE.
+
+The default value is an empty string.
+
+
+
+# cse.registrar.security.selfWsUsername
+
+The username that is added to the URL when registering to the registrar CSE via **WebSockets**. This username is part of the credentials for the registrar CSE to authenticate itself to this hosting CSE.
+
+The default value is an empty string.
 
 
 
