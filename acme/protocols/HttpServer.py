@@ -24,7 +24,7 @@ import requests
 import isodate
 
 from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials
+from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.IDUtils import uniqueRI, toSPRelative
@@ -283,7 +283,7 @@ class HttpServer(object):
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
 
 
-	def _handleRequest(self, path:str, operation:Operation) -> Response:
+	def _handleRequest(self, path:str, operation:Operation, authResult:AuthorizationResult) -> Response:
 		"""	Get and check all the necessary information from the request and
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
@@ -303,6 +303,8 @@ class HttpServer(object):
 		except ResponseException as e:
 			dissectResult = Result(rsc = e.rsc, request = e.data, dbg = e.dbg)
 
+		# Set the authorization result
+		dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request and dissectResult.request.originalData:
@@ -339,55 +341,54 @@ class HttpServer(object):
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
-
 	# @perfTimer('handleGet', L.logDebug)
 	def handleGET(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_R')
 		self._eventHttpRetrieve()
-		return self._handleRequest(path, Operation.RETRIEVE)
+		return self._handleRequest(path, Operation.RETRIEVE, authResult)
 
 
 	def handlePOST(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		if self._hasContentType():
 			L.enableScreenLogging and renameThread('HT_C')
 			self._eventHttpCreate()
-			return self._handleRequest(path, Operation.CREATE)
+			return self._handleRequest(path, Operation.CREATE, authResult)
 		else:
 			L.enableScreenLogging and renameThread('HT_N')
 			self._eventHttpNotify()
-			return self._handleRequest(path, Operation.NOTIFY)
+			return self._handleRequest(path, Operation.NOTIFY, authResult)
 
 
 	def handlePUT(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_U')
 		self._eventHttpUpdate()
-		return self._handleRequest(path, Operation.UPDATE)
+		return self._handleRequest(path, Operation.UPDATE, authResult)
 
 
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
-		return self._handleRequest(path, Operation.DELETE)
+		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
 	def handlePATCH(self, path:Optional[str] = None) -> Response:
 		"""	Support instead of DELETE for http/1.0.
 		"""
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
-		return self._handleRequest(path, Operation.DELETE)
+		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
 	#########################################################################
@@ -645,11 +646,12 @@ class HttpServer(object):
 	#	Handle authentication
 	#
 
-	def handleAuthentication(self) -> bool:
+	def handleAuthentication(self) -> AuthorizationResult:
 		"""	Handle the authentication for the current request.
 
 			Return:
-				True if the request is authenticated, False otherwise.
+				Enum value for the authentication result.
+
 		"""
 
 		def testBasicAuthentication(parameters:dict) -> bool:
@@ -697,20 +699,20 @@ class HttpServer(object):
 		if not (Configuration.http_security_enableBasicAuth or Configuration.http_security_enableTokenAuth):
 			if request.authorization:
 				L.isWarn and L.logWarn('Basic or token authentication is not enabled, but an authorization header was found.')
-			return True
+			return AuthorizationResult.NOTSET
 		
 		if (authorization := request.authorization) is None:
 			L.isDebug and L.logDebug('No authorization header found.')
-			return False
+			return AuthorizationResult.UNAUTHORIZED
 		
 		match authorization.type:
 			case 'basic':
-				return testBasicAuthentication(authorization.parameters)
+				return AuthorizationResult.AUTHORIZED if testBasicAuthentication(authorization.parameters) else AuthorizationResult.UNAUTHORIZED
 			case 'bearer':
-				return testTokenAuthentication(authorization.token)
+				return AuthorizationResult.AUTHORIZED if testTokenAuthentication(authorization.token) else AuthorizationResult.UNAUTHORIZED
 			case _:
 				L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization.type}')
-				return False
+				return AuthorizationResult.UNAUTHORIZED
 	
 
 	#########################################################################

@@ -2580,6 +2580,9 @@ class CSERequest:
 	credentials:Optional[RequestCredentials] = None
 	""" Request credentials for HTTP, WebSockets etc. """
 
+	rq_authn:bool = False
+	""" Whether the request is authenticated. See TS-0003, clause 7.1.2. """
+
 
 
 	def fillOriginalRequest(self, update:bool = False) -> None:
@@ -2817,6 +2820,17 @@ class BindingType(ACMEIntEnum):
 	"""	MQTT. """
 	WS = auto()
 	"""	WebSockets. """
+
+
+class AuthorizationResult(ACMEIntEnum):
+	""" Type of internal Authorization evaluation.
+	"""
+	NOTSET = auto()
+	""" Authorization is unknown. May be even not enabled. """
+	AUTHORIZED = auto()
+	"""	Authorization is granted. """
+	UNAUTHORIZED = auto()
+	"""	Authorization is denied. """
 
 
 class TreeMode(ACMEIntEnum):

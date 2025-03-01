@@ -18,6 +18,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Many small optimizations and improvements in the CSE's internal handling, especially for internal resource object creation.
 - [CSE] Made onboarding available as an extra application that can be started via the command line.
 - [CSE] Added authentication support (HTTP and WS basic authentication) for registrations to registrar. 
+- [CSE] Added support for the internal *rq_authn* attribute in requests (see TS-0003).
+- [CSE] Added support to set the *rq_authn* attribute in authenticated http and WebSocket requests.
 - [TUI] Added support for enablong/disabling syntax highlighting in the resource editor of the text UI. The syntax package is now not installed by default because it is not available on all platforms. It be installed afterward if needed.
 - [TESTS] Added cmdline argument to disable the check and use of the Upper Tester interface.
 - [SCRIPTS] Added *fset* build-in command to set an alias to functions and lambdas.
