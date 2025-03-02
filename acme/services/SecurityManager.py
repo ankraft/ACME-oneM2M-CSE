@@ -127,7 +127,7 @@ class SecurityManager(object):
 				Boolean indicating access.
 		"""
 
-		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes) -> ACPResult:
+		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes, request:CSERequest) -> ACPResult:
 			""" Check the access control policy for a single ACP resource.
 
 				Args:
@@ -135,6 +135,7 @@ class SecurityManager(object):
 					acpRo: The resourceID of the ACP resource.
 					requestedPermission: The permission to check.
 					ty: The resource type to check for.
+					request: The original request.
 
 				Return:
 					A data structure with the result of the check.
@@ -146,7 +147,7 @@ class SecurityManager(object):
 					return ACPResult(False, [])
 				
 				# check general operation permission. This also returns the attributes (if any)
-				result = self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty)
+				result = self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty, request=request)
 				if result.allowed:
 					return result
 				if result.attributes:
@@ -175,7 +176,7 @@ class SecurityManager(object):
 		if requestedPermission == Permission.NOTIFY and originator == RC.cseCsi:
 			L.isDebug and L.logDebug(f'NOTIFY permission granted for CSE: {originator}')
 			return True
-
+		
 		#
 		# Preparation: Remove CSE-ID if this is the same CSE
 		#
@@ -294,7 +295,7 @@ class SecurityManager(object):
 
 					# Check ALL acp
 					for acpRi in macp:
-						acpResult = _checkACPI(originator, acpRi, requestedPermission, ty)
+						acpResult = _checkACPI(originator, acpRi, requestedPermission, ty, request)
 						allAcpAttributes.extend(acpResult.attributes)
 						allowed = allowed or acpResult.allowed	# OR all results together
 					if allowed:
@@ -375,7 +376,7 @@ class SecurityManager(object):
 		# Check all ACPs and get also the optional accessControlAttributes
 		allAcpAttributes = []
 		for acpRi in acpi:
-			if (acpResult := _checkACPI(originator, acpRi, requestedPermission, ty)).allowed:
+			if (acpResult := _checkACPI(originator, acpRi, requestedPermission, ty, request)).allowed:
 				return True
 			# not general grant, but we may need to check further
 			allAcpAttributes.extend(acpResult.attributes)
@@ -504,9 +505,10 @@ class SecurityManager(object):
 							  		   originator:str, 
 									   requestedPermission:Permission, 
 									   ty:ResourceTypes,
-									   context:Optional[str] = 'pv'
+									   context:Optional[str] = 'pv',
+									   request:Optional[CSERequest] = None
 									   ) -> ACPResult:
-		"""	Check whether an *originator* has the requested permissions.
+		"""	Check whether an *originator* has the requested permissions with this ACP.
 
 			Args:
 				acp: The ACP resource to check.
@@ -519,6 +521,7 @@ class SecurityManager(object):
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise. Additionally, a list of accessControlAttributes combined is returned.
 		"""
 		allAttributes:list[str] = []
+		requestAuthenticated = request.rq_authn	if request else False # Get the authentication flag from the request
 
 		# Get through all accessControlRules because we need to collect all attributes
 		# This means we cannot return early
@@ -575,11 +578,10 @@ class SecurityManager(object):
 					continue	# Not in any context, so continue with the next acr. Dont check further in this acr
 
 			# Check accessControlAuthenticationFlag
-			if acr.get('acaf') is not None:
-				L.isWarn and L.logWarn('AccessControlAuthenticationFlag is not supported yet. Ignoring.')
-				# To support this, we need to check whether the request is authenticated.
-				# See TS-0003, 7.1.2
-			
+			if (acaf := acr.get('acaf')) is not None:
+				# Check whether the request is authenticated
+				if acaf and not requestAuthenticated:
+					continue
 
 			# Check accessControlAttributes
 			if (aca := acr.get('aca')) is not None:

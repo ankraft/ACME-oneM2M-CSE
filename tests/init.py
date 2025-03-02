@@ -986,7 +986,7 @@ def lastRequestID() -> str:
 	return _lastRequstID
 
 
-def connectionPossible(url:str) -> bool:
+def connectionPossible(url:str) -> Tuple[bool, int]:
 	"""	Check whether a connection to the CSE is possible and the CSE is running. This is
 		done by retrieving the CSEBase using the protocol binding that is used also
 		for the rest of the tests. So, the Upper Tester interface is not used.
@@ -995,15 +995,16 @@ def connectionPossible(url:str) -> bool:
 			url: The URL of the CSEBase
 		
 		Return:
-			Return the status (reachable and available).
+			Return the status (reachable and available) and the response code.
 	"""
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
-		return RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)[1] == ResponseStatusCode.OK
+		result = RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)
+		return result[1] == ResponseStatusCode.OK, result[1]
 	except Exception as e:
 		print(e)
-		return False
+		return False, 5103 
 	
 def checkUpperTester() -> None:
 	if UPPERTESTERENABLED:
@@ -1606,8 +1607,19 @@ match PROTOCOL:
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.
 # It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-noRemote = not connectionPossible(REMOTEcseURL)
+_r, status = connectionPossible(cseURL)
+if status == 401:	# Access denied
+	console.print('[red]CSE requires authorization')
+	console.print('Add authorization settings to the test suite configuration file')
+	quit(-1)
+noCSE = not _r
+
+_r,status = connectionPossible(REMOTEcseURL)
+if status == 401:	# Access denied
+	console.print('[red]Remote CSE requires authorization')
+	console.print('Add authorization settings to the test suite configuration file')
+	quit(-1)
+noRemote = not _r
 
 # Set the notification server URL
 setNotificationServerURL()

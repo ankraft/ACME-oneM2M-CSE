@@ -1610,9 +1610,12 @@ class TestACP(unittest.TestCase):
 		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
+		# The following test fails or succeeds depending on authentication status
+		expectedStatus = RC.OK if doHttpBasicAuth or doHttpTokenAuth or doOAuth else RC.ORIGINATOR_HAS_NO_PRIVILEGE
+		
 		# Retrieve full resource -> Fail
 		r, rsc = RETRIEVE(cntURL, 'Cae1')
-		self.assertEqual(rsc, RC.OK, r)
+		self.assertEqual(rsc, expectedStatus, r)
 
 		# Delete the AE+ACP+CNT again
 		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
