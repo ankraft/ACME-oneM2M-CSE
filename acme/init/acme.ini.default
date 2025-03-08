@@ -94,6 +94,9 @@ idLength=10
 ;
 
 [cse.security]
+; Set the main secret for the CSE. This secret is used for internal encryption and decryption of sensitive data.
+; Default: ${basic.config:secret}
+secret=${basic.config:secret}
 ; Enable access control checks. 
 ; Default: True
 enableACPChecks=true
@@ -267,11 +270,11 @@ timeout=${cse:requestExpirationDelta}
 
 [mqtt.security]
 ; The username for MQTT broker authentication if required by the broker.
-; Default: empty string
-username=
+; Default: value in the environment variable "ACME_MQTT_SECURITY_USERNAME" or an empty string if not set
+username=${ACME_MQTT_SECURITY_USERNAME}
 ; The password for MQTT broker authentication if required by the broker.
-; Default: empty string
-password=
+; Default: value in the environment variable "ACME_MQTT_SECURITY_PASSWORD" or an empty string if not set
+password=${ACME_MQTT_SECURITY_PASSWORD}
 ; Enable TLS for communications with the MQTT broker.
 ; Default: False
 useTLS=False
@@ -444,8 +447,8 @@ schema=acmecse
 ; Default: the CSE-ID
 role=${basic.config:cseID}
 ; The password for the PostgreSQL server.
-; Default: none set
-password=
+; Default: value in the environment variable "ACME_DATABASE_POSTGRESQL_PASSWORD" or an empty string if not set
+password=${ACME_DATABASE_POSTGRESQL_PASSWORD}
 
 
 ;
@@ -497,39 +500,39 @@ excludeCSRAttributes=
 
 [cse.registrar.security]
 ; The username for the Registrar CSE authentication via http if basic authentication is enabled for the Registrar CSE.
-; Default: empty string
-httpUsername=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME" or an empty string if not set
+httpUsername=${ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME}
 ; The password for the Registrar CSE authentication via http if basic authentication is enabled for the Registrar CSE.
-; Default: empty string
-httpPassword=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD" or an empty string if not set
+httpPassword=${ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD}
 ; The authentication token for the Registrar CSE authentication via http if bearer token authentication is enabled for the Registrar CSE.
-; Default: empty string
-httpBearerToken=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN" or an empty string if not set
+httpBearerToken=${ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN}
 ; The username for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
-; Default: empty string
-wsUsername=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME" or an empty string if not set
+wsUsername=${ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME}
 ; The password for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
-; Default: empty string
-wsPassword=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD" or an empty string if not set
+wsPassword=${ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD}
 ; The authentication token for the Registrar CSE authentication via WebSocket if bearer token authentication is enabled for the Registrar CSE.
-; Default: empty string
-wsBearerToken=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN" or an empty string if not set
+wsBearerToken=${ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN}
 ; The username for the Registrar CSE to be used when communicating with this CSE via http if 
 ; basic authentication is enabled for http for this CSE.
-; Default: empty string
-selfHttpUsername=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME" or an empty string if not set
+selfHttpUsername=${ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME}
 ; The password for the Registrar CSE to be used when communicating with this CSE via http if
 ; basic authentication is enabled for http for this CSE.
-; Default: empty string
-selfHttpPassword=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD" or an empty string if not set
+selfHttpPassword=${ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD}
 ; The username for the Registrar CSE to be used when communicating with this CSE via WebSocket if
 ; basic authentication is enabled for WebSockets for this CSE.
-; Default: empty string
-selfWsUsername=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME" or an empty string if not set
+selfWsUsername=${ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME}
 ; The password for the Registrar CSE to be used when communicating with this CSE via WebSocket if
 ; basic authentication is enabled for WebSockets for this CSE.
-; Default: empty string
-selfWsPassword=
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD" or an empty string if not set
+selfWsPassword=${ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD}
 
 
 ;

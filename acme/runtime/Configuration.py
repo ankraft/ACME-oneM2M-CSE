@@ -263,8 +263,8 @@ class Configuration(object):
 
 
 
-	cse_security_masterSecret:str
-	"""	The master secret key for the CSE. """
+	cse_security_secret:str
+	"""	The main secret key for the CSE. """
 
 	cse_security_enableACPChecks:bool
 	"""	Enable or disable ACP checks. """
@@ -801,21 +801,34 @@ class Configuration(object):
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
-							'baseDirectory' 		: Configuration.baseDirectory,				# points to the currenr working directory
-							'moduleDirectory' 		: Configuration.moduleDirectory,			# points to the acme module's directory
-							'initDirectory' 		: Configuration.initDirectory,				# points to the acme/init directory		
-							'hostIPAddress'			: getIPAddress(),							# provide the IP address of the host
+							'baseDirectory' 		: Configuration.baseDirectory,					# points to the currenr working directory
+							'moduleDirectory' 		: Configuration.moduleDirectory,				# points to the acme module's directory
+							'initDirectory' 		: Configuration.initDirectory,					# points to the acme/init directory		
+							'hostIPAddress'			: getIPAddress(),								# provide the IP address of the host
 
-							'registrarCseHost'		: '127.0.0.1',								# The IP address of the registrar CSE
-							'registrarCsePort'		: 8080,										# The TCP port of the registrar CSE
-							'registrarCseID'		: '',										# The CSE-ID of the registrar CSE
-							'registrarCseName'		: '',										# The resource name of the registrar CSE's CSEBase
+							'registrarCseHost'		: '127.0.0.1',									# The IP address of the registrar CSE
+							'registrarCsePort'		: 8080,											# The TCP port of the registrar CSE
+							'registrarCseID'		: '',											# The CSE-ID of the registrar CSE
+							'registrarCseName'		: '',											# The resource name of the registrar CSE's CSEBase
 
-							'masterSecret'			: os.getenv('ACME_MASTER_SECRET', 'acme'),	# The master secret for the CSE
+							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
 		# Add environment variables to the defaults
 		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
+
+		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
+		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
+			for e in (
+					'ACME_MQTT_SECURITY_PASSWORD', 'ACME_MQTT_SECURITY_USERNAME',
+					'ACME_DATABASE_POSTGRESQL_PASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD',
+				)
+		}
+		_defaults['DEFAULT'].update(_envVariables)
 
 		# Set the defaults
 		config.read_dict(_defaults)
