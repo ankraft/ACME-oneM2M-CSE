@@ -216,8 +216,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.queueOff()				# No queuing of log messages during startup
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {RC.cseType.name}')
-	for l in Configuration.print().split('\n'):
-		L.logDebug(l)
+	if args.printconfig:
+		for l in Configuration.print().split('\n'):
+			L.log(l)
 	
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber

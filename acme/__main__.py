@@ -81,6 +81,7 @@ def parseArgs() -> argparse.Namespace:
 														if arg.strip()] 
 
 	parser.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
+	parser.add_argument('--print-config', '-pc', action='store_true', dest='printconfig', default=False, help='print the configuration during startup to the "info" level log')
 	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
 
 	groupDarkLight = parser.add_mutually_exclusive_group()

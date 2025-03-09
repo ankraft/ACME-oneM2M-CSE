@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for &lt;Subscription>'s *enableEventNotificationOriginator* attribute.
 - [CSE] Many small optimizations and improvements in the CSE's internal handling, especially for internal resource object creation.
 - [CSE] Made onboarding available as an extra application that can be started via the command line.
+- [CSE] Added configuration of other bindings in onboarding.
 - [CSE] Added authentication support (HTTP and WS basic authentication) for registrations to registrar. 
 - [CSE] Added support for the internal *rq_authn* attribute in requests (see TS-0003).
 - [CSE] Added support to set the *rq_authn* attribute in authenticated http and WebSocket requests.
@@ -37,6 +38,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] The method for creating resource IDs has been changed to use alphanumeric characters instead of only digits.
 - [CSE] The length of generated resource IDs is now configurable.
 - [CSE] Password and tokens in the auth credential files are now hashed.
+- [CSE] Added command line argument to print the configuration settings to the *info* log. The configuration settings are not printed to the console by default anymore.
 - [MISC] Improved Docker image generation.
 - [MISC] Improved plantuml diagram generation.
 - [TUI] Hiding the "Requests" tabs when request recording is disabled.
@@ -134,7 +136,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Changed the values for the [SIM] and [MobileNetwork] ManagementObject specializations to adapt the changes in TS-0022.
 - [CSE] Changed the location for the *init* directory. It is now located in the *acme* package directory. This is a breaking change.
 - [CSE] Changed the location for the *acme.ini.default* configuration file. It is now located in the *acme/init* directory. This is a breaking change.
-- [CSE] Improved the onboarding manager to allow for more flexible onboarding configurations and improved the  interpolation support.
+- [CSE] Improved the onboarding manager to allow for more flexible onboarding configurations and improved the interpolation support.
 - [CSE] Made Upper Tester commands case-insensitive.
 - [CONSOLE] Improved the statistics view layout.
 
