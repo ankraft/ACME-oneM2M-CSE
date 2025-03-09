@@ -168,6 +168,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									],
 							default = 'Development',
 							transformer = lambda result: result.split()[0],
+							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Run the CSE for development, for learning, regular operation, or in headless mode.',
 							amark = '✓', 
 						).execute()
@@ -182,13 +183,14 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									  ],
 							default = 'IN',
 							transformer = lambda result: result.split()[0],
+							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Type of CSE to run: Infrastructure, Middle, or Application Service Node.',
 							amark = '✓', 
 						).execute()
 
 
 	def cseConfig() -> InquirerPySessionResult:
-		_print(Rule('[b][b]CSE Configuration[/b]', style = 'dim'))
+		_print(Rule('[b]CSE Configuration[/b]', style = 'dim'))
 		_print('The following questions determine the basic CSE settings.\n')
 
 		return {
@@ -246,7 +248,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 
 	def registrarConfig() -> InquirerPySessionResult:
-		_print(Rule('[b][b]Registrar Configuration[/b]', style = 'dim'))
+		_print(Rule('[b]Registrar Configuration[/b]', style = 'dim'))
 		_print('The following settings concern the registrar CSE to which this CSE will be registering.\n')
 
 		return {
@@ -302,7 +304,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 			Return:
 				A dictionary with the selected policies.
 		"""
-		_print(Rule('[b][b]CSE Policies[/b]', style = 'dim'))
+		_print(Rule('[b]CSE Policies[/b]', style = 'dim'))
 		_print('The following configuration settings determine miscellaneous CSE policies.\n')
 
 		return {
@@ -310,6 +312,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							message = 'Log level:',
 							choices = [ 'debug', 'info', 'warning', 'error', 'off' ],
 							default = 'debug' if cseEnvironment in ('Development') else 'warning',
+							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Set the logging verbosity',
 							amark = '✓',
 						).execute(),
@@ -321,6 +324,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 												value = 'light'),
 										],
 								default = 'dark',
+								instruction="(select with cursor keys, confirm with <enter>)", 
 								long_instruction = 'Set the console and Text UI theme',
 								amark = '✓',
 							).execute(),
@@ -333,7 +337,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 			Return:
 				A dictionary with the selected policies.
 		"""
-		_print(Rule('[b][b]Database Configuration[/b]', style = 'dim'))
+		_print(Rule('[b]Database Configuration[/b]', style = 'dim'))
 		_print('The following configuration settings determine the database configuration.\n')
 
 		dbType = inquirer.select(
@@ -347,11 +351,13 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									  ],
 							default = 'memory' if cseEnvironment in ('Development', 'Introduction') else 'tinydb',
 							transformer = lambda result: result.split()[0],
+							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Store data in memory, or persist in a database.',
 							amark = '✓',
 						).execute()
 		if dbType == 'postgresql':
-			_print('\nPlease provide the connection parameters for the PostgreSQL database.\n')
+			_print('\n[b][u]PostgreSQL configuration[/]\n')
+			_print('Please provide the connection parameters for the PostgreSQL database.\n')
 			return {
 				'databaseType': dbType,
 				'dbName': inquirer.text(
@@ -399,6 +405,92 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 			}
 
 
+	def cseBindings() -> dict:
+		""" Prompts for CSE Protocol Bindings settings. 
+
+			Return:
+				A dictionary with the selected policies.
+		"""
+		_print(Rule('[b]Protocol Bindings Configuration[/b]', style = 'dim'))
+		_print('The following allows to enable additional protocol bindings.\n')
+
+		bindings = inquirer.checkbox(
+			message='Select addition bindings to enable:',
+        	choices=['MQTT', 'CoAP', 'WebSocket'],
+	        instruction="(select with cursor keys and <space>, confirm with <enter>)", 
+			long_instruction='Enable additional protocol bindings in addition to HTTP.',
+			amark='✓',
+			transformer=lambda result: ', '.join(result),
+
+    	).execute()
+
+		result = {}
+		if 'MQTT' in bindings:
+			_print('\n[b][u]MQTT configuration[/]\n')
+			_print('Please provide the connection parameters for the MQTT broker.\n')
+			result['mqtt'] = {
+				'address': inquirer.text(
+							message = 'MQTT broker host address:',
+							default = 'localhost',
+							long_instruction = 'The host name or IP address of the MQTT broker.',
+							amark = '✓', 
+							validate = lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result) or _containsVariable(result),
+						).execute(),
+				'port': inquirer.number(
+							message = 'MQTT broker port:',
+							default = 1883,
+							long_instruction = 'The port number of the MQTT broker.',
+							amark = '✓', 
+							validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
+							min_allowed = 1,
+							max_allowed = 65535,
+						).execute(),
+				'username': inquirer.text(
+							message = 'MQTT broker username:',
+							long_instruction = 'The username to connect to the MQTT broker. Leave empty for no authentication.',
+							amark = '✓', 
+						).execute(),
+				'password': inquirer.secret(
+							message = 'MQTT broker password:',
+							long_instruction = 'The password to connect to the MQTT broker. Leave empty for no authentication.',
+							amark = '✓', 
+						).execute()
+			}
+		
+		if 'CoAP' in bindings:
+			_print('\n[b][u]CoAP configuration[/]\n')
+			_print('Please provide the connection parameters for the CoAP server.\n')
+			result['coap'] = {
+				'port': inquirer.number(
+							message = 'CoAP server port:',
+							default = 5683,
+							long_instruction = 'The listening port number of the CoAP server.',
+							amark = '✓', 
+							validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
+							min_allowed = 1,
+							max_allowed = 65535,
+						).execute(),
+			}
+		
+		if 'WebSocket' in bindings:
+			_print('\n[b][u]WebSocket configuration[/]\n')
+			_print('Please provide the connection parameters for the WebSocket server.\n')
+			result['websocket'] = {
+				'port': inquirer.number(
+							message = 'WebSocket server port:',
+							default = 8180,
+							long_instruction = 'The listening port number of the WebSocket server.',
+							amark = '✓', 
+							validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
+							min_allowed = 1,
+							max_allowed = 65535,
+						).execute(),
+			}
+
+		return result
+
+
+
 	#
 	#	On-boarding Dialog
 
@@ -432,6 +524,10 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 		dbc = cseDatabase()
 		cnf.append(f'databaseType={dbc["databaseType"]}')
+
+
+		# Prompt for additional protocol bindings
+		bindings = cseBindings()
 		
 		# Prompt for the CSE policies
 		for each in (policyConfig := csePolicies()):
@@ -560,6 +656,42 @@ INCSEcseID=/{regCnf["INCSEcseID"]}
 		
 		# Add the database configuration
 		jcnf += cnfPostgreSQL
+
+
+
+		# Add MQTT, CoAP, WebSocket configuration
+
+		if 'mqtt' in bindings:
+			jcnf += \
+f"""
+[mqtt]
+enable=true
+address={bindings['mqtt']['address']}
+port={bindings['mqtt']['port']}
+"""
+			if bindings['mqtt']['username']:
+				jcnf += f"""
+[mqtt.security]
+username={bindings['mqtt']['username']}
+password={bindings['mqtt']['password']}
+"""
+				
+		if 'coap' in bindings:
+			jcnf += \
+f"""
+[coap]
+enable=true
+port={bindings['coap']['port']}
+"""
+			
+		if 'websocket' in bindings:
+			jcnf += \
+f"""
+[websocket]
+enable=true
+port={bindings['websocket']['port']}
+"""
+
 
 		# Show configuration and confirm write
 		_print(Rule('[b][b]Saving Configuration[/b]', style = 'dim'))
