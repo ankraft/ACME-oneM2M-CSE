@@ -33,6 +33,15 @@ class PCH(Resource):
 	"""	PollingChannel resource class.
 	"""
 
+	resourceType = ResourceTypes.PCH
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
@@ -57,21 +66,10 @@ class PCH(Resource):
 	"""	Attributes and Attribute policies for this Resource Class. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		"""	Initialize the PCH object.
-
-			Args:
-				dct:		The dictionary containing the resource data.
-				pi:			The parent resource ID.
-				create:		True if this resource should be created.
-		"""
-		# PCH inherits from its parent, the <AE>
-		super().__init__(ResourceTypes.PCH, dct, pi, create = create, inheritACP = True)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -89,7 +87,11 @@ class PCH(Resource):
 				'rn' : 'pcu'
 			}
 		}
-		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = ResourceTypes.PCH_PCU)	# rn is assigned by resource itself
+		pcu = Factory.resourceFromDict(dct, 
+								 	   pi = self.ri, 
+									   ty = ResourceTypes.PCH_PCU,
+									   create = True,
+									   originator = originator)	# rn is assigned by resource itself
 		
 		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
 		self.setAttribute(Constants.attrPCURI, resource.ri)	# store own PCU ri

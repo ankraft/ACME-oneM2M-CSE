@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Optional, Any, Tuple
-import logging, uuid, os
+import logging, uuid, base64
 
 from websockets.sync.connection import Connection as WSConnection
 from websockets.sync.server import WebSocketServer as WSServer, serve, ServerConnection
@@ -23,8 +23,8 @@ from ..helpers.ThreadSafeCounter import ThreadSafeCounter
 from ..etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
 from ..etc.IDUtils import uniqueID, csiFromSPRelative
 from ..etc.Utils import renameThread
-from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE
+from ..etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType, AuthorizationResult
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -73,7 +73,7 @@ class WebSocketServer(object):
 		"""	A counter for each opened WS connection opened by the CSE. """
 
 		self.actor:Optional[BackgroundWorker] = None
-		"""	The actor for running the WebSocket server. """
+		"""	The actor for running the synchronous WebSocket server in the background. """
 
 
 		self.operationEvents = {
@@ -161,7 +161,6 @@ class WebSocketServer(object):
 			return True
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'WSServer').start()
-		"""	The actor for running the synchronous WebSocket server in the background. """
 
 		L.isInfo and L.log('Start WebSocket server')
 		return True
@@ -335,7 +334,7 @@ class WebSocketServer(object):
 		return True
 
 
-	def receiveLoop(self, websocket:WSConnection, wsOriginator:str, ct:ContentSerializationType) -> None:
+	def receiveLoop(self, websocket:WSConnection, wsOriginator:str, ct:ContentSerializationType, authResult:AuthorizationResult) -> None:
 		"""	Receive loop for the WebSocket server. This is the main entry point for handling a received message,
 			whether the connection was initiated by the server or the client.
 
@@ -343,6 +342,7 @@ class WebSocketServer(object):
 				websocket: The WebSocket connection.
 				wsOriginator: The originator of the connection.
 				ct: The content type.
+				authResult: The result of the request authentication.
 		"""
 		try:	
 			# Handle incoming requests in separate threads as long as there is no error or the server is stopped
@@ -352,7 +352,7 @@ class WebSocketServer(object):
 				if not self._checkIsServerRunning(websocket):
 					continue
 				# Run the message handling in a separate thread
-				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, ct), name = f'ws_{uniqueID()}')
+				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, ct, authResult), name = f'ws_{uniqueID()}')
 		except ConnectionClosedError as e:
 			L.isWarn and L.logWarn('Connection closed: {e}')
 		except ConnectionClosedOK:
@@ -384,6 +384,11 @@ class WebSocketServer(object):
 		L.logDebug(f'Received headers: {websocket.request.headers}')
 		L.logDebug(f'Received request: {websocket.request}')
 
+		# Check the authentication
+		if (authResult := self._handleAuthentication(websocket)) == AuthorizationResult.UNAUTHORIZED:
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn('Authorization failed'))
+
+
 		# Get the originator from the WS headers
 		if 'X-M2M-Origin' in websocket.request.headers:
 			wsOriginator = websocket.request.headers['X-M2M-Origin']
@@ -409,7 +414,11 @@ class WebSocketServer(object):
 				if not self._checkIsServerRunning(websocket):
 					continue
 				# Run the message handling in a separate thread
-				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, contentType),
+				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, 
+																				message, 
+																				wsOriginator, 
+																				contentType, 
+																				authResult),
 											name = f'ws_{uniqueID()}')
 		except ConnectionClosedError as e:
 			L.isWarn and L.logWarn('Connection closed: {e}')
@@ -420,7 +429,11 @@ class WebSocketServer(object):
 		self.removeConnection(websocket, wsOriginator)
 
 
-	def _handleReceivedMessage(self, websocket:WSConnection, message:str|bytes, wsOriginator:str, contentType:ContentSerializationType) -> None:
+	def _handleReceivedMessage(self, websocket:WSConnection, 
+									 message:str|bytes, 
+									 wsOriginator:str, 
+									 contentType:ContentSerializationType,
+									 authResult:AuthorizationResult) -> None:
 		"""	Handle a received message. This is the main entry point for handling a received message, whether the
 			message is a request or a response.
 
@@ -429,6 +442,7 @@ class WebSocketServer(object):
 				message: The received message.
 				wsOriginator: The originator of the connection.
 				contentType: The content type.
+				authResult: The result of the request authentication.
 		"""
 		if isinstance(message, str):
 			message = message.encode()	# Encode to bytes
@@ -447,6 +461,9 @@ class WebSocketServer(object):
 
 			request = dissectResult.request	# type:ignore [attr-defined]
 			requestOriginator:str = request.originator	# type:ignore [attr-defined]
+
+			# Add Authorization result to the request
+			request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
 
 			# Check whether the message is a response or a request. If it is a response, then put it into the
 			# response queue and return. Another process might have sent the request and is waiting for the response.
@@ -482,6 +499,7 @@ class WebSocketServer(object):
 
 			L.isDebug and L.logDebug(f'Operation: {request.op}')
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
+			L.isDebug and L.logDebug(f'Authorization: {authResult}')
 
 			responseResult = CSE.request.handleRequest(request)
 
@@ -514,7 +532,69 @@ class WebSocketServer(object):
 
 		L.logRequest(_r, _data) # type:ignore [arg-type]
 		websocket.send(_data)
-	
+
+
+	def _handleAuthentication(self, websocket:WSConnection) -> AuthorizationResult:
+		"""	Handle the authentication of a new connection.
+
+			Args:
+				websocket: The WebSocket connection.
+
+			Returns:
+				Eneumeration value of the result of the authentication.
+		"""
+
+		def testBasicAuthentication(auth:str) -> bool:
+			"""	Validate the basic authentication.
+
+				Args:
+					auth: The authentication string as a base64 encoded string. The decoded string is expected to be in the format
+						'username:password'.
+			
+				Return:
+					True if the authentication is valid, False otherwise.
+			"""
+			# Decode the base64 encoded string and split it into username and password
+			username, password = base64.b64decode(auth).decode().split(':')
+			if not CSE.security.validateWSBasicAuth(username, password):
+				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {username}')
+				return False
+			return True
+		
+
+		def testTokenAuthentication(token:str) -> bool:
+			"""	Validate the token.
+
+				Args:
+					token: The token to validate.
+			
+				Return:
+					True if the token is valid, False otherwise.
+			"""
+			if not CSE.security.validateWSTokenAuth(token):
+				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+				return False
+			return True
+		
+		L.isDebug and L.logDebug('Checking authentication')
+		authorization = websocket.request.headers.get('Authorization')
+		if not (Configuration.websocket_security_enableBasicAuth or Configuration.websocket_security_enableTokenAuth):
+			if authorization is not None:
+				L.isWarn and L.logWarn('Basic or token authentication is not enabled, but an authorization header was found.')
+			return AuthorizationResult.NOTSET
+		
+		if authorization is None:
+			L.isDebug and L.logDebug('No authorization header found.')
+			return AuthorizationResult.UNAUTHORIZED
+		
+		if authorization.startswith('Basic '):
+			return AuthorizationResult.AUTHORIZED if testBasicAuthentication(authorization[6:]) else AuthorizationResult.UNAUTHORIZED
+		elif authorization.startswith('Bearer '):
+			return AuthorizationResult.AUTHORIZED if testTokenAuthentication(authorization[7:]) else AuthorizationResult.UNAUTHORIZED
+		else:
+			L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization}')
+			return AuthorizationResult.UNAUTHORIZED
+
 
 	def sendWSRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send a request to another WebSocket server.
@@ -556,12 +636,26 @@ class WebSocketServer(object):
 			if url == Constants.defaultWebSocketSchema:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'No WS connection established. Target is not reachable by default.'))	# No WS connection established
 
+			# Construct addional headers
+			additionalHeaders = { 'X-m2m-Origin': RC.cseCsi }	#  Always add the originator
+			authResult = AuthorizationResult.NOTSET
+			if request.credentials:	# Add the credentials if available
+				if request.credentials.wsUsername and request.credentials.wsPassword:
+					additionalHeaders['Authorization'] = request.credentials.getWsBasic()
+					authResult = AuthorizationResult.AUTHORIZED	# Assume success. Otherwise, the connection would not be established anyway
+				elif request.credentials.wsToken:
+					additionalHeaders['Authorization'] = request.credentials.getWsBearerToken()
+					authResult = AuthorizationResult.AUTHORIZED # Assume success. Otherwise, the connection would not be established anyway
+				else:
+					L.logWarn('No credentials for WS request found')
+
+
 			# Else connect to the target WS server using the URL
 			L.isDebug and L.logDebug(f'Establishing new temporary WS connection to send request to: {target}')
 			try:
 				websocket = connect(url, 
 									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
-									additional_headers = { 'X-m2m-Origin': RC.cseCsi})
+									additional_headers = additionalHeaders)
 			except Exception as e:
 				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
 			
@@ -569,7 +663,7 @@ class WebSocketServer(object):
 			self.addConnection(websocket, True)
 			self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
 
-			BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct),
+			BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct, authResult),
 										name = f'ws_{uniqueID()}')
 			return websocket, True
 

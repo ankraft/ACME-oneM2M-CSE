@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND
-from ..resources.Resource import Resource
 from ..runtime import CSE
+from ..resources.Resource import Resource
 
 # TODO DOCs
 
@@ -21,10 +21,33 @@ class VirtualResource(Resource):
 		It adds methods for virtual resources.
 	"""
 
+	resourceName:str = None
+	""" Possibility for virtual sub-classes to provide a fixed resource name. """
+
+
+	def initialize(self, pi:str, originator:str) -> None:
+
+		# Virtual resources have a fixed resource name that is provided in the sub-class
+		self.setResourceName(self.resourceName)
+
+		super().initialize(pi, originator)
+
+
 	def retrieveLatestOldest(self, request:CSERequest, 
 								   originator:str, 
 								   typ:ResourceTypes, 
 								   oldest:bool) -> Result:
+		""" Retrieve the latest or oldest instance of a container resource.
+
+			Args:
+				request: The request
+				originator: The originator
+				typ: The resource type of the instances
+				oldest: Whether to retrieve the oldest instance
+
+			Returns:
+				The result of the operation.
+		"""
 
 		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
 			raise NOT_FOUND(f'no instance for <{"oldest" if oldest else "latest"}>')

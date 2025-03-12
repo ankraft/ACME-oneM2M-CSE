@@ -4,19 +4,17 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	This module contains various utilty functions to handle, test and manipulate IDs.
-#	There are no ACME CSE internal dependencies. This heelps to keep the module small and
-#	standalone.
-#
+
+"""	This module contains various utilty functions to handle, test and manipulate IDs.
+	
+	There are no ACME CSE internal dependencies. This heelps to keep the module small and standalone.
+"""
 
 from __future__ import annotations
 from typing import Optional, Tuple
 
-import random, sys, re, string
-from .Constants import Constants, RuntimeConstants as RC
-
-# Optimize access (fewer look-up)
-_maxIDLength = Constants.maxIDLength
+import random, re, string
+from .Constants import RuntimeConstants as RC
 
 ##############################################################################
 #
@@ -42,7 +40,8 @@ def uniqueID() -> str:
 		Return:
 			String with the identifier
 	"""
-	return str(random.randint(1,sys.maxsize))
+	return _randomID()
+	# return str(random.randint(1,sys.maxsize))
 
 
 
@@ -97,7 +96,7 @@ def _randomID() -> str:
 			String with a random ID
 	"""
 	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = _maxIDLength))
+		result = ''.join(random.choices(_randomIDCharSet, k = RC.idLength))
 		if 'fopt' not in result:	# prevent 'fopt' in ID
 			return result
 
@@ -227,8 +226,9 @@ def toCSERelative(id:str) -> str:
 
 
 
-_csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
-"""	Regular expression to test for valid CSE-ID format. """
+_csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
+# _csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid CSE-ID format (unreserved characters in IDs according to RFC 3986). """
 
 def isValidCSI(csi:str) -> bool:
 	"""	Test for valid CSE-ID format.
@@ -274,6 +274,7 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	"""
 	if allowEmpty:
 		return id is not None and '/' not in id	# pi might be ""
+	
 	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
 
 

@@ -107,12 +107,35 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createUnknownResourceType(self) -> None:
+	def test_createUnknownResourceTypeFail(self) -> None:
 		"""	Create an unknown resource type -> Fail """
 		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createNoResourceTypeFail(self) -> None:
+		"""	Create without resource type -> Fail """
+		dct = 	{ 'm2m:ae' : { 
+					'rn' : 'foo',
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, None, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_sendNotificationToOwnCSEFail(self) -> None:
+		"""	Send Notification to own CSE -> Fail """
+		dct = 	{ 'm2m:sgn' : { 
+					'nev' : {
+						'rep' : {},
+						'net' : NotificationEventType.resourceUpdate
+					}
+				}}
+		r, rsc = NOTIFY(cseURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
@@ -169,7 +192,7 @@ class TestMisc(unittest.TestCase):
 		self.assertIn(C.hfOT, lastHeaders())
 		try:
 			raised = False
-			isodate.parse_time(lastHeaders()[C.hfOT])
+			isodate.parse_datetime(lastHeaders()[C.hfOT])
 		except:
 			raised = True
 		finally:
@@ -348,6 +371,28 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_partialRetrieveFCNT(self) -> None:
+		""" Partial RETRIEVE of a FCNT optional attribute"""
+		dct = 	{ 'cod:lock' : {			# type:ignore [var-annotated]
+					'rn': fcntRN,
+					'cnd': 'org.onem2m.common.moduleclass.lock',
+					'lock': False,
+				}}
+		fcnt, rsc = CREATE(cseURL, ORIGINATOR, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, fcnt)
+
+		# RETRIEVE with single optional attribute
+		r, rsc = RETRIEVE(f'{cseURL}/{fcntRN}?atrl=lock', ORIGINATOR)	# try to get mni from CSEBase
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'cod:lock/ri'), r)
+		self.assertIsNotNone(findXPath(r, 'cod:lock/lock'), r)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{fcntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
 # TODO test partial RETRIEVE of <CIN> with missing optional attribute
 
 
@@ -492,7 +537,9 @@ def run(testFailFast:bool) -> TestResult:
 		'test_checkHTTPRETWrong',
 		'test_checkHTTPRETRelativeWrong',
 		'test_checkHTTPRVIWrongInRequest',
-		'test_createUnknownResourceType',
+		'test_createUnknownResourceTypeFail',
+		'test_createNoResourceTypeFail',
+		'test_sendNotificationToOwnCSEFail',
 		'test_createEmpty',
 		'test_updateEmpty',
 		'test_createAlphaResourceType',
@@ -513,6 +560,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_partialRetrieveCSEBaseWrongAttributeFail',
 		'test_partialRetrieveCSEBaseROAttribute',
 		'test_partialRetrieveCSingleOptionalAttribute',
+		'test_partialRetrieveFCNT',
 
 		# send NOTIFY requests
 		'test_notifyAE',

@@ -8,12 +8,20 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..resources.AnnouncedResource import AnnouncedResource
 
 class TSIAnnc(AnnouncedResource):
+
+	resourceType = ResourceTypes.TSIAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
@@ -40,10 +48,3 @@ class TSIAnnc(AnnouncedResource):
 		'cs': None,
 		'snr': None
 	}
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TSIAnnc, dct, pi = pi, inheritACP = True, create = create)
-		 

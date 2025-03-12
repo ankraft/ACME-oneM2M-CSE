@@ -21,26 +21,45 @@ from ..runtime.Configuration import Configuration
 from ..textui import ACMETuiApp
 
 class ACMEContainerInfo(VerticalScroll):
+	"""	The *Infos* view for the ACME text UI. """
 
 	def __init__(self, id:str) -> None:
+		"""	Initialize the view.
+
+			Args:
+				id:	The view ID.
+		"""
 		super().__init__(id = id)
 
 		self._updateTimer:Timer = None
 		"""	The timer to update the statistics. """
 
 		self._statsView = Static(expand = True, id = 'stats-view')
+		"""	The statistics view. """
+
 
 
 	def compose(self) -> ComposeResult:
+		"""	Compose the view.
+
+			Yields:
+				The view content.
+		"""
+		# App must be assigned here. This is a workaround because the app is not available in the constructor
+		self._app = cast(ACMETuiApp.ACMETuiApp, self.app)
+		"""	The application. """
+
 		yield self._statsView
 
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-		"""	The application. """
 
 
 	@property
 	def statsView(self) -> Static:
+		"""	Return the statistics view.
+
+			Returns:
+				The statistics view.
+		"""
 		return self._statsView
 
 
@@ -62,7 +81,12 @@ class ACMEContainerInfo(VerticalScroll):
 
 
 	def _statsUpdate(self, force:bool = False) -> None:
+		"""	Update the statistics.
+
+			Args:
+				force:	Force the update.
+		"""
 		if force or self._app.tabs.active == ACMETuiApp.tabInfo:
 			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self.app.get_css_variables()['primary']), 
-																	textStyle = Style(color = fontDark if self._app.dark else fontLight)))
+																textStyle = Style(color = fontDark if self._app.dark else fontLight)))
 

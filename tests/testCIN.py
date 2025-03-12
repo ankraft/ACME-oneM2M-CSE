@@ -131,15 +131,82 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.INVALID_CHILD_RESOURCE_TYPE, r)
 
 
-	def test_createCINwithNoneString(self) -> None:
-		""" Create a <CIN> resource with non-string value -> Fail """
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithString(self) -> None:
+		""" Create a <CIN> resource with string value """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'AnyValue')	
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithInteger(self) -> None:
+		""" Create a <CIN> resource with integer value """
 		self.assertIsNotNone(TestCIN.ae)
 		self.assertIsNotNone(TestCIN.cnt)
 		dct = 	{ 'm2m:cin' : {
 					'con' : 23
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 23)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithFloat(self) -> None:
+		""" Create a <CIN> resource with float value """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : 23.17
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 23.17)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithBoolean(self) -> None:
+		""" Create a <CIN> resource with boolean value """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : True
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithList(self) -> None:
+		""" Create a <CIN> resource with list value """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : [ 1, 2, 3, 4, 5 ]
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), [ 1, 2, 3, 4, 5 ])
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithStructure(self) -> None:
+		""" Create a <CIN> resource with dict/JSON structure value """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : { 'a': 1, 'b': 2, 'c': 3 }
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), { 'a': 1, 'b': 2, 'c': 3 })
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -300,7 +367,16 @@ def run(testFailFast:bool) -> TestResult:
 		'test_attributesCIN',
 		'test_updateCINFail',
 		'test_createCINUnderAE',
-		'test_createCINwithNoneString',
+
+		# Various content types
+		'test_createCINwithString',
+		'test_createCINwithInteger',
+		'test_createCINwithFloat',
+		'test_createCINwithBoolean',
+		'test_createCINwithList',
+		'test_createCINwithStructure',
+
+
 		'test_deleteCIN',
 		'test_createCINWithCreatorWrong',
 		'test_createCINWithCnfWrong1',

@@ -103,6 +103,22 @@ class TestRequests(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_OETafterRSETFail(self) -> None:
+		"""	RETRIEVE <AE> with OET after RSET -> Fail"""
+		now = DateUtils.utcTime()
+		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfOET : f'{expirationCheckDelay*2000}', C.hfRST : f'{expirationCheckDelay*1000}'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_OETafterRQETFail(self) -> None:
+		"""	RETRIEVE <AE> with OET after RQET -> Fail"""
+		now = DateUtils.utcTime()
+		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfOET : f'{expirationCheckDelay*2000}', C.hfRET: f'{expirationCheckDelay*1000}'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_RETnowFail(self) -> None:
 		"""	RETRIEVE <AE> with RQET absolute now -> FAIL """
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : DateUtils.getResourceDate()})
@@ -148,7 +164,7 @@ class TestRequests(unittest.TestCase):
 	def test_OETRETfutureSecondsWrongFail(self) -> None:
 		"""	RETRIEVE <AE> with OET > RQET seconds in the future -> Fail"""
 		r, rsc = RETRIEVE(aeURL, TestRequests.originator, headers={ C.hfRET : f'{expirationCheckDelay*1000/2}', C.hfOET : f'{expirationCheckDelay*1000}'})
-		self.assertEqual(rsc, RC.REQUEST_TIMEOUT, r)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -197,6 +213,9 @@ def run(testFailFast:bool) -> TestResult:
 		'test_OETfuture',
 		'test_OETfuturePeriod',
 		'test_OETfutureSeconds',
+
+		'test_OETafterRSETFail',
+		'test_OETafterRQETFail',
 
 		'test_RETnowFail',
 		'test_RETpastFail',

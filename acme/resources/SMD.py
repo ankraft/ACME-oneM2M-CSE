@@ -14,7 +14,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
@@ -33,6 +33,13 @@ class SMD(AnnounceableResource):
 	""" The <semanticDescriptor> resource is used to store a semantic description pertaining to a
 		resource and potentially subresources.
 	"""
+
+	resourceType = ResourceTypes.SMD
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
@@ -73,14 +80,9 @@ class SMD(AnnounceableResource):
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
 
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   fcntType:Optional[str] = None,
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.SMD, dct, pi, typeShortname = fcntType, create = create)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -123,9 +125,9 @@ class SMD(AnnounceableResource):
 		#CSE.semantic.updateDescription(self)
 
 	
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		CSE.semantic.removeDescriptor(self)
-		return super().deactivate(originator)
+		return super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator:Optional[str] = None,

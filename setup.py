@@ -14,11 +14,10 @@ print(directories)
 
 setup(
 	# name='acmecse-dev',
-        # version=time.strftime("%Y%m%d%H%M%S"),
-
+	# version=time.strftime("%Y%m%d%H%M%S"),
 
 	name='acmecse',
-	version='2024.10.1',
+	version='2025.3',
 
 
 	author='Andreas Kraft',
@@ -31,6 +30,7 @@ setup(
 	entry_points={
 		'console_scripts': [
 			'acmecse=acmecse.__main__:main',
+			'acmecse-onboarding=acmecse.onboarding:main',
 		]
 	},
 	include_package_data=True,
@@ -51,9 +51,9 @@ setup(
 		'requests', 
 		'rich', 
 		'shapely',
-		# 'textual',
-		'textual[syntax]==0.82.0',
-		'textual-plotext==0.2.1',
+		'textual>=1.0.0',
+		# 'textual[syntax]',
+		'textual-plotext',
 		'tinydb',
 		'waitress',
 		'websockets',

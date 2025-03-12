@@ -26,6 +26,16 @@ addToInternalAttributes(Constants.attrRiTyMapping)
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
 
+	resourceType = ResourceTypes.ACP
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
 	""" The allowed child-resource types. """
 
@@ -54,14 +64,13 @@ class ACP(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:JSON, 
-					   pi:Optional[str] = None, 
-					   rn:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.ACP, dct, pi, create = create, inheritACP = True, rn = rn)
+	def activate(self, parentResource:Resource, originator:str) -> None:
 
+		# Set default permissions
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
+
+		super().activate(parentResource, originator)
 
 
 	def validate(self, originator:Optional[str] = None, 
@@ -105,9 +114,9 @@ class ACP(AnnounceableResource):
 
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Inherited
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')

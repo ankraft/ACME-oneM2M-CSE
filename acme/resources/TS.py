@@ -10,13 +10,11 @@
 from __future__ import annotations
 from typing import Optional
 
-from configparser import ConfigParser
-
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import getResourceDate, toISO8601Date
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -28,6 +26,12 @@ from ..resources import Factory		# attn: circular import
 #	- peid is set to pei/2 if ommitted, and pei is set
 
 class TS(ContainerResource):
+
+	resourceType = ResourceTypes.TS
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
@@ -76,11 +80,7 @@ class TS(ContainerResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TS, dct, pi, create = create)
-
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
@@ -91,6 +91,8 @@ class TS(ContainerResource):
 			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
+		
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -104,22 +106,32 @@ class TS(ContainerResource):
 		# add latest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 										    pi = self.ri, 
-										    ty = ResourceTypes.TS_LA)	# rn is assigned by resource itself
+										    ty = ResourceTypes.TS_LA,
+											create = True,
+											originator = originator)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
 		self.setLatestRI(resource.ri)	# Set the latest resource ID
 
 		# add oldest
 		resource = Factory.resourceFromDict({ 'et': self.et }, 
 										    pi = self.ri, 
-										    ty = ResourceTypes.TS_OL)	# rn is assigned by resource itself
+										    ty = ResourceTypes.TS_OL,
+											create = True,
+											originator = originator)	# rn is assigned by resource itself
 		CSE.dispatcher.createLocalResource(resource, self)
 		self.setOldestRI(resource.ri)	# Set the oldest resource ID
+
+		# Set mni, mbn and mia to the default values if not present
+		if Configuration.resource_ts_enableLimits:
+			self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
+			self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
+			self.setAttribute('mia', Configuration.resource_ts_mia, overwrite = False)
 		
 		self._validateDataDetect()
 
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
@@ -163,6 +175,15 @@ class TS(ContainerResource):
 			peid = updatedAttributes.get('peid', self.peid)		# old or new value, default: self.peid
 			if mdt is not None and peid is not None and mdt <= peid:
 				raise BAD_REQUEST(L.logDebug('mdt must be > peid'))
+
+		# Set mni, mbs and mia to the default values if not present
+		if self.getFinalResourceAttribute('mni', dct) is None and \
+			self.getFinalResourceAttribute('mbs', dct) is None and \
+			self.getFinalResourceAttribute('mia', dct) is None and \
+			Configuration.resource_fcnt_enableLimits:	# Only when limits are enabled
+				self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
+				self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
+				self.setAttribute('mia', Configuration.resource_ts_mia, overwrite = False)
 
 		# Check if mdn was changed and shorten mdlt accordingly, if exists
 		# shorten the mdlt if a limit is set in mdn

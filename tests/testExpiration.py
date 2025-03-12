@@ -235,6 +235,7 @@ class TestExpiration(unittest.TestCase):
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND,
+					'fcied'	: True,
 					'mia'	: expirationCheckDelay,
 					'curT0'	: 23.0
 				}}

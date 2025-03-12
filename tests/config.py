@@ -8,8 +8,10 @@
 #
 
 from typing import Optional
+import socket
 
-BINDING						= 'http'	# possible values: http, https, mqtt, ws, coap
+BINDING						= 'http'		# possible values: http, https, mqtt, ws, coap
+TARGETHOST					= 'localhost'	# Hostname of the CSE	
 
 match BINDING:
 	case 'mqtt':
@@ -75,8 +77,9 @@ TESTHOSTIP:Optional[str]		= None				# IP address of the host running the tests.
 #
 #	CSE SuT
 #
+TARGETHOSTIP 			= socket.gethostbyname(TARGETHOST)
 
-CSEHOST					= 'localhost'		# CSE Server address.
+CSEHOST 				= TARGETHOSTIP		# CSE Server address.
 CSEPORT					= 8080				# CSE Server port.
 HTTPROOT				= '/'				# Root of the HTTP path. Needs a leading and trailing slash (or a single slash)
 CSEURL					= f'{PROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}'	# CSE Server address.
@@ -109,7 +112,7 @@ MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
 #	WS (if configured)
 #
 
-wsAddress			= 'localhost'
+wsAddress			= TARGETHOST
 wsPort				= 8180
 wsSubProtocols		= ('oneM2M.json',)
 
@@ -120,7 +123,7 @@ wsSubProtocols		= ('oneM2M.json',)
 #	CoAP (if configured)
 #
 
-coapAddress			= '127.0.0.1'	# CoAP Server address. must be IP address, not hostname!
+coapAddress			= TARGETHOSTIP	# CoAP Server address. must be IP address, not hostname!
 coapPort			= 5683
 coapTimeout			= 10.0			# Timeout for CoAP requests
 

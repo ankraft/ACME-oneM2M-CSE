@@ -82,6 +82,11 @@ sendToFromInResponses=true
 ; Set the CSE's point-of-access. This is a comma-separated list of URLs.
 ; Default: The configured HTTP server's address
 poa=${http:address}
+; Set the length of the CSE's resource IDs. This value can be increased or decreased as needed.
+; A longer ID increases the uniqueness of the resource ID, but also increases its size. This could be
+; be relevant for the overall size of requests and responses.
+; Default: 10
+idLength=10
 
 
 ;
@@ -89,6 +94,9 @@ poa=${http:address}
 ;
 
 [cse.security]
+; Set the main secret for the CSE. This secret is used for internal encryption and decryption of sensitive data.
+; Default: ${basic.config:secret}
+secret=${basic.config:secret}
 ; Enable access control checks. 
 ; Default: True
 enableACPChecks=true
@@ -195,12 +203,13 @@ enableTokenAuth=false
 ; Path and filename of the http basic authentication file. 
 ; The file must contain lines with the format "username:password".
 ; Comments are lines starting with a #.
-; Default: certs/http_basic_auth.txt
+; The password must be hashed with SHA-256 and encoded as a hex string.
+; Default: ${basic.config:baseDirectory}/certs/http_basic_auth.txt
 basicAuthFile=${basic.config:baseDirectory}/certs/http_basic_auth.txt
 ; Path and filename of the http bearer token authentication file.
 ; The file must contain lines with the format "token".
 ; Comments are lines starting with a #.
-; Default: certs/http_token_auth.txt
+; Default: ${basic.config:baseDirectory}/certs/http_token_auth.txt
 tokenAuthFile=${basic.config:baseDirectory}/certs/http_token_auth.txt
 
 
@@ -261,11 +270,11 @@ timeout=${cse:requestExpirationDelta}
 
 [mqtt.security]
 ; The username for MQTT broker authentication if required by the broker.
-; Default: empty string
-username=
+; Default: value in the environment variable "ACME_MQTT_SECURITY_USERNAME" or an empty string if not set
+username=${ACME_MQTT_SECURITY_USERNAME}
 ; The password for MQTT broker authentication if required by the broker.
-; Default: empty string
-password=
+; Default: value in the environment variable "ACME_MQTT_SECURITY_PASSWORD" or an empty string if not set
+password=${ACME_MQTT_SECURITY_PASSWORD}
 ; Enable TLS for communications with the MQTT broker.
 ; Default: False
 useTLS=False
@@ -325,6 +334,23 @@ caCertificateFile=${basic.config:baseDirectory}/certs/acme_cert.pem
 ; Path and filename of the private key file. 
 ; Default: None
 caPrivateKeyFile=${basic.config:baseDirectory}/certs/acme_key.pem
+; Enable basic authentication for the WebSocket binding.
+; Default: false
+enableBasicAuth=false
+; Enable token authentication for the WebSocket binding.
+; Default: false
+enableTokenAuth=false
+; Path and filename of the WebSocket basic authentication file. 
+; The file must contain lines with the format "username:password".
+; Comments are lines starting with a #.
+; The password must be hashed with SHA-256 and encoded as a hex string.
+; Default: ${basic.config:baseDirectory}/certs/ws_basic_auth.txt
+basicAuthFile=${basic.config:baseDirectory}/certs/ws_basic_auth.txt
+; Path and filename of the WebSocket bearer token authentication file.
+; The file must contain lines with the format "token".
+; Comments are lines starting with a #.
+; Default: ${basic.config:baseDirectory}/certs/ws_token_auth.txt
+tokenAuthFile=${basic.config:baseDirectory}/certs/ws_token_auth.txt
 
 
 ;
@@ -421,8 +447,8 @@ schema=acmecse
 ; Default: the CSE-ID
 role=${basic.config:cseID}
 ; The password for the PostgreSQL server.
-; Default: none set
-password=
+; Default: value in the environment variable "ACME_DATABASE_POSTGRESQL_PASSWORD" or an empty string if not set
+password=${ACME_DATABASE_POSTGRESQL_PASSWORD}
 
 
 ;
@@ -456,6 +482,8 @@ root=
 cseID=/${basic.config:registrarCseID}
 ; The Registrar CSE's resource name. Default: None
 resourceName=${basic.config:registrarCseName}
+; The CSE-ID of the top Infrastructure CSE. Default: /id-in
+INCSEcseID=/id-in
 ; Specify the serialization type that must be used for the registration to the registrar CSE.
 ; Allowed values: json, cbor. Default: json
 serialization=json
@@ -464,6 +492,47 @@ serialization=json
 checkInterval=30
 ; List of resources that are excluded when creating a registrar CSR. Default: empty list
 excludeCSRAttributes=
+
+
+;
+;	Settings for Registrar CSE security
+;
+
+[cse.registrar.security]
+; The username for the Registrar CSE authentication via http if basic authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME" or an empty string if not set
+httpUsername=${ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME}
+; The password for the Registrar CSE authentication via http if basic authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD" or an empty string if not set
+httpPassword=${ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD}
+; The authentication token for the Registrar CSE authentication via http if bearer token authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN" or an empty string if not set
+httpBearerToken=${ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN}
+; The username for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME" or an empty string if not set
+wsUsername=${ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME}
+; The password for the Registrar CSE authentication via WebSocket if basic authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD" or an empty string if not set
+wsPassword=${ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD}
+; The authentication token for the Registrar CSE authentication via WebSocket if bearer token authentication is enabled for the Registrar CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN" or an empty string if not set
+wsBearerToken=${ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN}
+; The username for the Registrar CSE to be used when communicating with this CSE via http if 
+; basic authentication is enabled for http for this CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME" or an empty string if not set
+selfHttpUsername=${ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME}
+; The password for the Registrar CSE to be used when communicating with this CSE via http if
+; basic authentication is enabled for http for this CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD" or an empty string if not set
+selfHttpPassword=${ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD}
+; The username for the Registrar CSE to be used when communicating with this CSE via WebSocket if
+; basic authentication is enabled for WebSockets for this CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME" or an empty string if not set
+selfWsUsername=${ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME}
+; The password for the Registrar CSE to be used when communicating with this CSE via WebSocket if
+; basic authentication is enabled for WebSockets for this CSE.
+; Default: value in the environment variable "ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD" or an empty string if not set
+selfWsPassword=${ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD}
 
 
 ;
@@ -515,9 +584,6 @@ enableUTCTimezone=False
 ;
 
 [cse.announcements]
-; Wait n seconds between tries to to announce resources to registered remote CSE.
-; Default: 10 seconds
-checkInterval=10
 ; Allow resource announcements to the own hosting CSE.
 ; Default: True
 allowAnnouncementsToHostingCSE=True
@@ -574,6 +640,24 @@ enableLimits=False
 mni=10
 ; Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
+; Default for maxInstanceAge. Default: The CSE's maxExpirationDelta
+mia=${cse:maxExpirationDelta}
+
+
+;
+;	Resource defaults: FlexContainer
+;
+
+[resource.fcnt]
+; Enable/disable the default limits. Default: False
+enableLimits=False
+; Default for maxNrOfInstances. Default: 10
+mni=10
+; Default for maxByteSize. Default: 10.000 bytes
+mbs=10000
+; Default for maxInstanceAge. Default: The CSE's maxExpirationDelta
+mia=${cse:maxExpirationDelta}
+
 
 
 [resource.grp]
@@ -624,6 +708,8 @@ enableLimits=False
 mni=10
 ; Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
+; Default for maxInstanceAge. Default: The CSE's maxExpirationDelta
+mia=${cse:maxExpirationDelta}
 ; Default for missingDataMaxNr. Default: 10
 mdn=10
 
@@ -702,6 +788,11 @@ maxRequestSize=10000
 ; How long to display a notification in seconds.
 ; Default: 2.0
 notificationTimeout=2.0
+; Enable or disable syntax highlighting in the resource text editor.
+; Default: False
+; Note: Syntax highlighting is only available when the package "textual[syntax]" is installed. This 
+; package is not installed by default and may not be available for all platforms.
+enableTextEditorSyntaxHighlighting=False
 
 ;
 ;	Scripting settings

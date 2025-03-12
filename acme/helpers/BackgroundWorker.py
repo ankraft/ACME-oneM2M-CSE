@@ -334,9 +334,6 @@ class Job(Thread):
 
 		Job objects are not deleted immediately after they finished but pooled for reuse. They are
 		only destroyed when the pressure on the pool was low for a certain time.
-
-		Attributes:
-			name: Optional name of the job (from Thread).
 	"""
 
 	__slots__ = (
@@ -393,6 +390,9 @@ class Job(Thread):
 
 		self.finished:Callable = None
 		""" Optional callback that is called after the `task` finished. """
+
+		self.name:Optional[str] = None
+		""" Name of the job. """
 
 
 	def run(self) -> None:

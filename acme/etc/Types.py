@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import traceback, logging, sys
+import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
@@ -152,6 +152,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	MyCertFileCred ManagementObject specialization. """
 	WIFIC			= 1028	# WifiClient
 	"""	WifiClient ManagementObject specialization. """
+	CRDS			= 1029	# credentials
+	"""	Credentials ManagementObject specialization. """
 	SIM 			= 1030	# SIM
 	"""	SIM ManagementObject specialization. """
 	MNWK			= 1031	# mobileNetwork
@@ -189,6 +191,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced TimeSeries resource type. """
 	TSIAnnc			= 10030
 	"""	Announced TimeSeriesInstance resource type. """
+	FCIAnnc 		= 10058
+	"""	Announced FlexContainerInstance resource type. """
 	TSBAnnc			= 10060
 	"""	Announced TimeSyncBeacon resource type. """
 	PRPAnnc			= 10062
@@ -227,6 +231,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced MyCertFileCred ManagementObject specialization. """
 	WIFICAnnc		= -30028
 	"""	Announced WifiClient ManagementObject specialization. """
+	CRDSAnnc		= -30029
+	"""	Announced Credentials ManagementObject specialization. """
 	SIMAnnc			= -30030
 	"""	Announced SIM ManagementObject specialization. """
 	MNWKAnnc		= -30031
@@ -479,7 +485,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True, fullName = 'ApplicationEntity'),
 	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'ApplicationEntity Announced'),
 	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='ContentInstance'),
-	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True, fullName='ContentInstance Announced'),
+	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True,  isInstanceResource = True, fullName='ContentInstance Announced'),
 	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
 	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
 	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
@@ -492,6 +498,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc, fullName='Dependency'),
 	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
+	ResourceTypes.FCIAnnc		: ResourceDescription(typeName = 'm2m:fciA', isAnnouncedResource = True, isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance Announced'),	# not an official type name
 	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
 	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
 	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),	# not an official type name
@@ -524,7 +531,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
 	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
 	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
-	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True, fullName='TimeSeriesInstance Announced'),
+	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True,  isInstanceResource = True, fullName='TimeSeriesInstance Announced'),
 	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
 	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True, fullName='TimeSyncBeacon Announced'),
 
@@ -555,6 +562,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Software Announced'),
 	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True, fullName='WiFi Client'),
 	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='WiFi Client Announced'),
+	ResourceTypes.CRDS			: ResourceDescription(typeName = 'dcfg:crds', announcedType = ResourceTypes.CRDSAnnc, isMgmtSpecialization = True, fullName='Credentials'),
+	ResourceTypes.CRDSAnnc		: ResourceDescription(typeName = 'dcfg:crdsA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Credentials Announced'),
 	ResourceTypes.SIM			: ResourceDescription(typeName = 'dcfg:sim', announcedType = ResourceTypes.SIMAnnc, isMgmtSpecialization = True, fullName='SIM'),
 	ResourceTypes.SIMAnnc		: ResourceDescription(typeName = 'dcfg:simA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='SIM Announced'),
 	ResourceTypes.MNWK			: ResourceDescription(typeName = 'dcfg:mnwk', announcedType = ResourceTypes.MNWKAnnc, isMgmtSpecialization = True, fullName='Mobile Network'),
@@ -727,6 +736,8 @@ class BasicType(ACMEIntEnum):
 	"""	Base64 encoded data. """
 	schedule			= auto()	# scheduleEntry
 	"""	Schedule entry. """
+	jsonLike			= auto()	# JSON like structure or data types
+	""" JSON like structure, list, or allowed data types. """
 
 	# Special string types
 	ID					= auto()	# m2m:ID
@@ -2356,6 +2367,69 @@ class FilterCriteria:
 
 
 @dataclass
+class RequestCredentials:
+	"""	Structure that holds the credentials for a request.
+	"""
+
+	httpUsername:Optional[str] = None
+	"""	Username for HTTP basic authentifcation. """
+
+	httpPassword:Optional[str] = None
+	"""	Password for HTTP basic authentication. """
+
+	httpToken:Optional[str] = None
+	"""	Token for HTTP bearer token authentication. """
+
+
+	wsUsername:Optional[str] = None
+	"""	Username for WebSockets HTTP basic authentifcation. """
+
+	wsPassword:Optional[str] = None
+	"""	Password for WebSockets HTTP basic authentication. """
+
+	wsToken:Optional[str] = None
+	"""	Token for WebSockets HTTP bearer token authentication. """
+
+
+	def getHttpBasic(self) -> str:
+		"""	Return the HTTP basic authentication string.
+			
+			Return:
+				The HTTP basic authentication string as base64 encoded string.
+		"""
+		creds = f'{self.httpUsername}:{self.httpPassword}'
+		return base64.b64encode(creds.encode("utf-8")).decode("utf-8")
+	
+
+	def getHttpBearerToken(self) -> str:
+		"""	Return the HTTP bearer token string.
+			
+			Return:
+				The HTTP bearer token string.
+		"""
+		return f'Bearer {self.httpToken}'
+	
+	
+	def getWsBasic(self) -> str:
+		"""	Return the WebSockets basic authentication string.
+			
+			Return:
+				The WebSockets basic authentication string as base64 encoded string.
+		"""
+		creds = f'{self.wsUsername}:{self.wsPassword}'
+		return f'Basic {base64.b64encode(creds.encode("utf-8")).decode("utf-8")}'
+	
+
+	def getWsBearerToken(self) -> str:
+		"""	Return the WebSockets bearer token string.
+			
+			Return:
+				The WebSockets bearer token string.
+		"""
+		return f'Bearer {self.wsToken}'
+	
+
+@dataclass
 class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
 	"""
@@ -2502,6 +2576,12 @@ class CSERequest:
 
 	_attributeList:list[str] = None
 	""" List of attribute names if this is a partial request. Otherwise not set. """
+
+	credentials:Optional[RequestCredentials] = None
+	""" Request credentials for HTTP, WebSockets etc. """
+
+	rq_authn:bool = False
+	""" Whether the request is authenticated. See TS-0003, clause 7.1.2. """
 
 
 
@@ -2727,6 +2807,31 @@ class LogLevel(ACMEIntEnum):
 				return None
 
 
+class BindingType(ACMEIntEnum):
+	""" Type of Binding connection.
+	"""
+	UNKNOWN = auto()
+	""" No binding. """
+	HTTP = auto()
+	"""	HTTP. """
+	COAP = auto()
+	"""	COAP. """
+	MQTT = auto()
+	"""	MQTT. """
+	WS = auto()
+	"""	WebSockets. """
+
+
+class AuthorizationResult(ACMEIntEnum):
+	""" Type of internal Authorization evaluation.
+	"""
+	NOTSET = auto()
+	""" Authorization is unknown. May be even not enabled. """
+	AUTHORIZED = auto()
+	"""	Authorization is granted. """
+	UNAUTHORIZED = auto()
+	"""	Authorization is denied. """
+
 
 class TreeMode(ACMEIntEnum):
 	""" Available modes do display the resource tree in the console.
@@ -2807,7 +2912,7 @@ RequestResponse = namedtuple('RequestResponse', 'request result')
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """
 
-FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, str, bool], object ]
+FactoryCallableT:TypeAlias = Callable[ [ Dict[str, object], str, bool], object ]
 """	Type definition for a factory callback to create and initializy a Resource instance. """
 
 

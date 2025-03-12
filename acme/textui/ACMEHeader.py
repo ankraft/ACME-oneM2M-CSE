@@ -34,13 +34,26 @@ class ACMEHeaderTitle(HeaderTitle):
 	"""	Display the title / subtitle in the header."""
 
 	def render(self) -> Text:
+		"""Render the title.
+
+			Returns:
+				The rendered title.
+		"""
 		return Text.from_markup(f'{RC.cseType.name}-CSE : {RC.cseCsi}', overflow = 'ellipsis')
 
 
 class ACMEHeader(Header):
+	"""	Display the header of the ACME text UI."""
 
 	def compose(self) -> ComposeResult:
+		"""Compose the header.
+		
+			Yields:
+				The header content.
+		"""
 		self.tall = True
+		"""	Make the header tall. Inherited from the parent class. """
+
 		_logoContainer = Middle()
 		_logoContainer.styles.height = self.styles.height
 

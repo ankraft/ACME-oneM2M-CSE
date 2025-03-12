@@ -69,7 +69,7 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cb/csi')[0], '/')
 		self.assertEqual(findXPath(r, 'm2m:cb/csi'), CSEID)
 		self.assertEqual(findXPath(r, 'm2m:cb/pi'), '')
-		self.assertEqual(findXPath(r, 'm2m:cb/rr'), True)
+		self.assertIsNone(findXPath(r, 'm2m:cb/rr'))
 		self.assertEqual(findXPath(r, 'm2m:cb/rn'), CSERN)
 		self.assertEqual(findXPath(r, 'm2m:cb/ty'), 5)
 		self.assertEqual(findXPath(r, 'm2m:cb/ri'), CSEID[1:])

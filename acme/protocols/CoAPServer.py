@@ -474,6 +474,7 @@ class ACMECoAPRequestLayer(CoapthonRequestLayer):
 			defines.Codes.PUT.number: handler.handlePUT,
 			defines.Codes.DELETE.number: handler.handleDELETE,
 		}
+		"""	The handlers for the different CoAP operations. """
 
 
 	def receive_request(self, transaction:CoapthonTransaction) -> CoapthonTransaction:
@@ -535,6 +536,11 @@ class ACMECoAPServer(CoAP):
 		"""
 
 		def emit(self, record: logging.LogRecord) -> None:
+			"""	Emit a log record.
+
+				Args:
+					record: The log record.
+			"""
 			if L.enableBindingsLogging:
 				L._log(record.levelno, record.msg, 5)
 
@@ -547,7 +553,7 @@ class ACMECoAPServer(CoAP):
 				port: The port to bind the CoAP server to.
 		"""
 
-		CoAP.__init__(self, (host, port))
+		CoAP.__init__(self, (host, port), cb_ignore_listen_exception = self._handleListenException)
 
 		# Register the oneM2M options, codes etc first
 		registerOneM2MOptions()
@@ -593,6 +599,20 @@ class ACMECoAPServer(CoAP):
 			_, client = self.clientCache.popitem()
 			cast(HelperClient, client).close()
 		self.close()
+
+
+	def _handleListenException(self, e:Exception, coapServer:CoAP) -> bool:
+		"""	Handle a listen exception.
+
+			Args:
+				e: The exception.
+				coapServer: The CoAP server.
+
+			Returns:
+				*True* if the exception was handled, *False* otherwise.
+		"""
+		L.isWarn and L.logWarn(f'CoAP server listen exception: {str(e)}')
+		return True
 
 
 	def sendRequest(self, request:CSERequest, url:str, ignoreResponse:bool = False) -> Result:
@@ -804,7 +824,7 @@ class ACMECoAPServer(CoAP):
 						case defines.OptionRegistry.oneM2M_OT.number:		# type:ignore[attr-defined]
 							ot = options.getOne(number)
 							try:
-								isodate.parse_date(ot) # Check if valid ISO 8601 date, may raise exception
+								isodate.parse_datetime(ot) # Check if valid ISO 8601 date, may raise exception
 								resp.ot = ot
 							except Exception as ee:
 								raise BAD_REQUEST(L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
@@ -880,7 +900,7 @@ class CoAPServer(object):
 		"""	Events for the different operations. """
 
 		self.actor:Optional[BackgroundWorker] = None
-		"""	The actor for running the CoAP server in the background. """
+		"""	The actor for running the synchronous CoAP server in the background. """
 
 		L.isInfo and L.log('CoAP server initialized')
 
@@ -929,7 +949,6 @@ class CoAPServer(object):
 		
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'CoAPServer').start()
-		"""	The actor for running the synchronous CoAP server in the background. """
 
 		L.isInfo and L.log('Start CoAP server')
 		return True

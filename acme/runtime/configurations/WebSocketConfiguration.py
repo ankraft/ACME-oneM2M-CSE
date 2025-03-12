@@ -43,6 +43,10 @@ class WebSocketConfiguration(ModuleConfiguration):
 		config.websocket_security_tlsVersion = parser.get('websocket.security', 'tlsVersion', fallback ='auto')
 		config.websocket_security_useTLS = parser.getboolean('websocket.security', 'useTLS', fallback = False)
 		config.websocket_security_verifyCertificate = parser.getboolean('websocket.security', 'verifyCertificate', fallback = False)
+		config.websocket_security_enableBasicAuth = parser.getboolean('websocket.security', 'enableBasicAuth', fallback = False)
+		config.websocket_security_enableTokenAuth = parser.getboolean('websocket.security', 'enableTokenAuth', fallback = False)
+		config.websocket_security_basicAuthFile = parser.get('websocket.security', 'basicAuthFile', fallback = './certs/ws_basic_auth.txt')
+		config.websocket_security_tokenAuthFile = parser	.get('websocket.security', 'tokenAuthFile', fallback = './certs/ws_token_auth.txt')
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -105,3 +109,9 @@ class WebSocketConfiguration(ModuleConfiguration):
 			if not os.path.exists(val):
 				raise ConfigurationError(fr'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
 
+
+		# WebSocket authentication
+		if config.websocket_security_enableBasicAuth and not config.websocket_security_basicAuthFile:
+			raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:basicAuthFile[/i] must be set when WebSocket Basic Auth is enabled')
+		if config.websocket_security_enableTokenAuth and not config.websocket_security_tokenAuthFile:
+			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:tokenAuthFile[/i] must be set when WebSocket Token Auth is enabled')

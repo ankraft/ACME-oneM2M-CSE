@@ -8,9 +8,8 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import ResourceTypes, JSON
+from ..etc.Types import ResourceTypes
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
@@ -19,8 +18,4 @@ class MgmtObj(AnnounceableResource):
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SMD, 
 								   ResourceTypes.SUB ]
-
-	def __init__(self, dct:JSON, pi:str, mgd:ResourceTypes, create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.MGMTOBJ, dct, pi, typeShortname = mgd.typeShortname(), create=create)
-		self.setAttribute('mgd', int(mgd), overwrite=True)
 

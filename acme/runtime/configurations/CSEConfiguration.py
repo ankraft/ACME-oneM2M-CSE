@@ -4,8 +4,7 @@
 #	(c) 2024 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	CSE configurations
-#
+""" CSE configurations"""
 
 from __future__ import annotations
 from typing import Optional
@@ -20,8 +19,16 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class CSEConfiguration(ModuleConfiguration):
+	""" CSE configurations
+	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
+		""" Read the configuration from the configuration file.
+		
+			Args:
+				parser: The configuration parser
+				config: The configuration instance
+		"""
 
 		#	CSE
 
@@ -46,6 +53,7 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback = ['2a', '3', '4', '5']) # type: ignore [attr-defined]
 		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback = 'acme.example.com')
 		config.cse_type = parser.get('cse', 'type', fallback = 'IN')		# IN, MN, ASN
+		config.cse_idLength = parser.getint('cse', 'idLength', fallback = 10)
 
 		#	CSE Operation : Jobs
 
@@ -60,6 +68,15 @@ class CSEConfiguration(ModuleConfiguration):
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+		""" Validate the configuration.
+		
+			Args:
+				config: The configuration object
+				initial: If True, this is the initial validation
+
+			Raises:
+				ConfigurationError if the configuration is invalid
+		"""
 
 		# override configuration with command line arguments
 		if Configuration._args_initDirectory is not None:
@@ -88,37 +105,41 @@ class CSEConfiguration(ModuleConfiguration):
 			if config.cse_defaultSerialization == ContentSerializationType.UNKNOWN:
 				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
 			
-			# Operation
-			if config.cse_operation_jobs_balanceTarget <= 0.0:
-				raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
-			if config.cse_operation_jobs_balanceLatency < 0:
-				raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
-			if config.cse_operation_jobs_balanceReduceFactor < 1.0:
-				raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
+		# Operation
+		if config.cse_operation_jobs_balanceTarget <= 0.0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
+		if config.cse_operation_jobs_balanceLatency < 0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
+		if config.cse_operation_jobs_balanceReduceFactor < 1.0:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
 
-			# check the csi format and value
-			if not isValidCSI(config.cse_cseID):
-				raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
-			if config.cse_cseID[1:] == config.cse_resourceName:
-				raise ConfigurationError(fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
+		# check the csi format and value
+		if not isValidCSI(config.cse_cseID):
+			raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
+		if config.cse_cseID[1:] == config.cse_resourceName:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
 
-			# Check flexBlocking value
-			config.cse_flexBlockingPreference = config.cse_flexBlockingPreference.lower()
-			if config.cse_flexBlockingPreference not in ['blocking', 'nonblocking']:
-				raise ConfigurationError(r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
+		# Check flexBlocking value
+		config.cse_flexBlockingPreference = config.cse_flexBlockingPreference.lower()
+		if config.cse_flexBlockingPreference not in ['blocking', 'nonblocking']:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
 
-			# Check release versions
-			if len(config.cse_supportedReleaseVersions) == 0:
-				raise ConfigurationError(r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty')
-			if len(config.cse_releaseVersion) == 0:
-				raise ConfigurationError(r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty')
-			if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
-				raise ConfigurationError(fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
+		# Check release versions
+		if len(config.cse_supportedReleaseVersions) == 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty')
+		if len(config.cse_releaseVersion) == 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty')
+		if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
+			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
 
-			# Check various intervals
-			if config.cse_checkExpirationsInterval <= 0:
-				raise ConfigurationError(r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0')
-			if config.cse_maxExpirationDelta <= 0:
-				raise ConfigurationError(r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0')
+		# Check various intervals
+		if config.cse_checkExpirationsInterval <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0')
+		if config.cse_maxExpirationDelta <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0')
 
+
+		# Check ID Length
+		if config.cse_idLength < 1:
+			raise ConfigurationError(r'Configuration Error: [i]\[cse]:idLength[/i] must be > 0')
 

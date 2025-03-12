@@ -27,25 +27,50 @@ from ..textui.ACMEFieldOriginator import ACMEInputField
 
 
 class ACMEToolsTree(TextualTree):
+	"""	The tree view for the tools and commands.
+	"""
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:	# type: ignore[no-untyped-def]
-		from ..textui.ACMETuiApp import ACMETuiApp
+		"""	Initialize the tree view.
+		
+			Args:
+				args: The arguments.
+				kwargs: The keyword arguments.
+		"""
 
 		self.parentContainer = kwargs.pop('parentContainer', None)
+		"""	The parent container. """
+		
 		super().__init__(*args, **kwargs)
 
 		self.allLogs = False
+		"""	Whether all logs should be shown. """
+
 		self.logs:dict[str, List[str]] = {'Commands': []}	# Create a log for the tree root
+		"""	The logs for the scripts. """
+
 		self.nodes:dict[str, TreeNode] = {}
+		"""	The nodes for the scripts. """
+
 		self.autoRunWorker:BackgroundWorker = None
+		"""	The autorun worker. """
+
 		self.autoRunName:str = None
-		self._app = cast(ACMETuiApp, self.app)
+		"""	The name of the autorun script. """
 
 		
 	def on_mount(self) -> None:
+		"""	Mount the tree view.
+		"""
+
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 		# Build the resource tree
 		self.auto_expand = False
+		"""	Whether the tree should auto expand. Inherited from TextualTree. """
+
 		root = self.root
 
 		# Iterate over all scripts and add them to the tree. Sort them by the meta tag "tuiSortOrder" and then by name.
@@ -71,6 +96,8 @@ class ACMEToolsTree(TextualTree):
 	
 
 	def on_show(self) -> None:
+		"""	Show the tools tree.
+		"""
 		node = self.cursor_node
 		self._showTool(node)
 	
@@ -202,34 +229,61 @@ class ACMEToolsTree(TextualTree):
 
 
 class ACMEContainerTools(Horizontal):
-
-	from . import ACMETuiApp
+	"""	The container for the tools and commands.
+	"""
 
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
+	"""	The bindings for the container. """
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
-		from ..textui.ACMETuiApp import ACMETuiApp
+		"""	Initialize the container.
 
+			Args:
+				args: The arguments.
+				kwargs: The keyword arguments.
+		"""
 		super().__init__(*args, **kwargs)
-		self._app = cast(ACMETuiApp, self.app)
 
 		# Initialize the compontents in advance
-		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
-								 		id = 'tools-tree-view',
-										parentContainer = self)
+		self._toolsTree:ACMEToolsTree
+		"""	The tree view for the tools. """
 		
 		# some widgets in advance
 		self._toolsArgument = ACMEInputField(label = 'Argument', id = 'tools-argument')
+		"""	The input field for the tools. """
+
 		self._toolsExecuteButton = Button('Execute', id = 'tool-execute-button', variant = 'primary')
+		"""	The execute button for the tools. """
+
 		self._toolsTopView = Center(id = 'tools-top-view')
+		"""	The top view for the tools. """
+
 		self._toolsHeader = Markdown('', id = 'tools-header')
+		"""	The header for the tools. """
+
 		self._toolsLogView = RichLog(id = 'tools-log-view', markup=True)
+		"""	The log view for the tools. """
+
 
 	def compose(self) -> ComposeResult:
+		"""	Compose the container.
+
+			Yields:
+				The container content.
+		"""
 
 		# Prepare some widgets in advance
-		
+
+		# App must be assigned here. This is a workaround because the app is not available in the constructor
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
+		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
+								 		id = 'tools-tree-view',
+										parentContainer = self)
+		"""	The tree view for the tools. """
 
 		yield self._toolsTree
 		with Vertical():
@@ -244,6 +298,8 @@ class ACMEContainerTools(Horizontal):
 	
 
 	def on_mount(self) -> None:
+		"""	Mount the container.
+		"""
 		self.toolsInput.display = False
 		self.toolsExecButton.display = False
 		self.toolsLog.border_title = 'Output'
@@ -263,45 +319,77 @@ class ACMEContainerTools(Horizontal):
 
 	@property
 	def toolsInput(self) -> ACMEInputField:
+		"""	Return the input field for the tools.
+		
+			Returns:
+				The input field for the tools.
+		"""
 		return self._toolsArgument
 
 
 	@property
 	def toolsExecButton(self) -> Button:
+		"""	Return the execute button for the tools.
+		
+			Returns:
+				The execute button for the tools.
+		"""
 		return self._toolsExecuteButton
 
 
 	@property
 	def toolsLog(self) -> RichLog:
+		"""	Return the log view for the tools.
+		
+			Returns:
+				The log view for the tools.
+		"""
 		return cast(RichLog, self._toolsLogView)
 	
 
 	@property
 	def toolsTree(self) -> ACMEToolsTree:
+		"""	Return the tools tree.
+
+			Returns:
+				The tools tree.
+		"""
 		# This is a bit of a hack to get the ACMEToolsTree object
 		# because it is not available anymore after the DOM is removed.
 		return self._toolsTree
 
 
 	def on_show(self) -> None:
+		"""	Show the tools container.
+		"""
 		self.toolsTree.focus()
 
 	
 	def leaving_tab(self) -> None:
+		"""	Leaving the tab.
+
+			Stop the autorun script if any.
+		"""
 		self.toolsTree.stopAutoRunScript()
 
 	
 	@on(Button.Pressed, '#tool-execute-button')
 	def buttonExecute(self) -> None:
+		"""	Callback for the execute button.
+		"""
 		_executeScript(str(self.toolsTree.cursor_node.label), argument = str(self.toolsInput.value))
 	
 
 	@on(ACMEInputField.Submitted)
 	def inputFieldSubmitted(self) -> None:
+		"""	Callback for the input field.
+		"""
 		self.buttonExecute()
 
 
 	def action_clear_log(self) -> None:
+		"""	Clear the log view.
+		"""
 		# Clear the log view
 		self.toolsLog.clear()
 
@@ -311,6 +399,8 @@ class ACMEContainerTools(Horizontal):
 
 
 	def action_toggle_log(self) -> None:
+		"""	Toggle the log view.
+		"""
 		# Clear the log view
 		self.toolsLog.clear()
 		# toggle logs
@@ -330,6 +420,13 @@ class ACMEContainerTools(Horizontal):
 	#
 
 	def _logMessage(self, scriptName:str, msg:str, prefix:str) -> None:
+		"""	Logs a message for a script.
+
+			Args:
+				scriptName: The name of the script.
+				msg: The message to log.
+				prefix: The prefix for the message.
+		"""	
 		
 		# Prepare the message
 		_s = msg if msg else ' '

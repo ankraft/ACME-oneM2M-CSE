@@ -21,8 +21,12 @@ from ..helpers.ResourceSemaphore import CriticalSection, inCriticalSection
 from ..resources.Resource import Resource
 
 class ACMEContainerUpdate(Container):
+	"""	The *Update* view for the ACME text UI. 
+		This is a container that contains the *Update* request view and the response view.
+	"""
 
 	BINDINGS = [('c', 'show_request', 'cURL command')]
+	"""	Key bindings for the *Update* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -56,6 +60,9 @@ class ACMEContainerUpdate(Container):
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Update* view.
+
+			Return:
+				The composed view.
 		"""
 		yield self.requestView
 		yield self.responseView
@@ -63,8 +70,6 @@ class ACMEContainerUpdate(Container):
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
 		"""	The application. """
-
-
 
 
 	def updateResource(self, resource:Resource) -> None:

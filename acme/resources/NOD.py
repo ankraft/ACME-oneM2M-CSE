@@ -8,12 +8,12 @@
 #
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes
 from ..etc.IDUtils import uniqueID
 from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources.Resource import Resource
 
 
 # TODO Support cmdhPolicy
@@ -21,6 +21,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class NOD(AnnounceableResource):
+
+	resourceType = ResourceTypes.NOD
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
@@ -62,18 +68,16 @@ class NOD(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.NOD, dct, pi, create = create)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('ni', uniqueID(), overwrite = False)
+		super().initialize(pi, originator)
 
 
-	def deactivate(self, originator:str) -> None:
-		super().deactivate(originator)
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
+		super().deactivate(originator, parentResource)
 
 		# Remove self from all hosted AE's (their node links)
-		if not (hael := self['hael']):
+		if not self['hael']:
 			return
 		ri = self['ri']
 		for ae in self['hael']:

@@ -4,8 +4,8 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Server to implement the http part of the oneM2M Mcx communication interface.
-#
+
+""" This module provides the HTTP server for the CSE. """
 
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
@@ -24,11 +24,11 @@ import requests
 import isodate
 
 from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel
+from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ..etc.IDUtils import uniqueRI, toSPRelative
-from ..etc.Utils import renameThread, isURL
+from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
@@ -41,6 +41,7 @@ from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Interpreter import SType
+from ..helpers.PerfTimer import perfTimer
 from ..runtime.Logging import Logging as L
 from ..etc.Constants import RuntimeConstants as RC
 
@@ -60,6 +61,8 @@ FlaskHandler = 	Callable[[str], Response]
 #
 
 class HttpServer(object):
+	""" The HTTP server for the CSE.
+	"""
 
 	__slots__ = (
 		'webuiDirectory',
@@ -280,11 +283,18 @@ class HttpServer(object):
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
 
 
-	def _handleRequest(self, path:str, operation:Operation) -> Response:
+	def _handleRequest(self, path:str, operation:Operation, authResult:AuthorizationResult) -> Response:
 		"""	Get and check all the necessary information from the request and
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
+
+		def _runRequest(request:CSERequest) -> Result:
+			try:
+				return CSE.request.handleRequest(request)	# type: ignore[arg-type]
+			except Exception as e:
+				return Result.exceptionToResult(e)
+
 		L.isDebug and L.logDebug(f'==> HTTP Request: {path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
 		L.isDebug and L.logDebug(f'Headers: { { k:v for k,v in request.headers.items()} }')
@@ -293,6 +303,8 @@ class HttpServer(object):
 		except ResponseException as e:
 			dissectResult = Result(rsc = e.rsc, request = e.data, dbg = e.dbg)
 
+		# Set the authorization result
+		dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request and dissectResult.request.originalData:
@@ -315,69 +327,68 @@ class HttpServer(object):
 				CSE.request.recordRequest(dissectResult.request, dissectResult)
 			return self._prepareResponse(dissectResult)
 
-		try:
-			responseResult = CSE.request.handleRequest(dissectResult.request)	# type: ignore[arg-type]
-		except Exception as e:
-			responseResult = Result.exceptionToResult(e)
-		
 		# Return without a response if the request is a noResponse request
-		# This means return a simple "status = 204" response
+		# This means return a simple "status = 204" response, but execute the request in the background
 		if dissectResult.request.rt == ResponseType.noResponse:
 			L.isDebug and L.logDebug('No response requested')
+			BackgroundWorkerPool.newActor(lambda: _runRequest(dissectResult.request), name=getThreadName()+'_1').start()
 			return Response(status = 204)	# No Content
 
+		# Otherwise, handle the request and return the response
+		responseResult = _runRequest(dissectResult.request)
+
 		# Return a proper response
-		# L.inspect(responseResult)
 		return self._prepareResponse(responseResult, dissectResult.request)
 
 
+	# @perfTimer('handleGet', L.logDebug)
 	def handleGET(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_R')
 		self._eventHttpRetrieve()
-		return self._handleRequest(path, Operation.RETRIEVE)
+		return self._handleRequest(path, Operation.RETRIEVE, authResult)
 
 
 	def handlePOST(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		if self._hasContentType():
 			L.enableScreenLogging and renameThread('HT_C')
 			self._eventHttpCreate()
-			return self._handleRequest(path, Operation.CREATE)
+			return self._handleRequest(path, Operation.CREATE, authResult)
 		else:
 			L.enableScreenLogging and renameThread('HT_N')
 			self._eventHttpNotify()
-			return self._handleRequest(path, Operation.NOTIFY)
+			return self._handleRequest(path, Operation.NOTIFY, authResult)
 
 
 	def handlePUT(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_U')
 		self._eventHttpUpdate()
-		return self._handleRequest(path, Operation.UPDATE)
+		return self._handleRequest(path, Operation.UPDATE, authResult)
 
 
 	def handleDELETE(self, path:Optional[str] = None) -> Response:
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
-		return self._handleRequest(path, Operation.DELETE)
+		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
 	def handlePATCH(self, path:Optional[str] = None) -> Response:
 		"""	Support instead of DELETE for http/1.0.
 		"""
-		if not self.handleAuthentication():
+		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status = 401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
-		return self._handleRequest(path, Operation.DELETE)
+		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
 	#########################################################################
@@ -525,6 +536,22 @@ class HttpServer(object):
 		if request.vsi:
 			hds[Constants.hfVSI] = request.vsi
 
+		# check for basic authentication in the URL. This overwrites any other credentials!!!
+		parsedUrl = getBasicAuthFromUrl(url)
+		url = parsedUrl[0] # replace with the URL without credentials
+		if parsedUrl[1] and parsedUrl[2]: # credentials are present in the URL
+			request.credentials = RequestCredentials(httpUsername=parsedUrl[1], httpPassword=parsedUrl[2])
+
+		# Add authentication headers
+		if request.credentials:
+			if request.credentials.httpUsername and request.credentials.httpPassword:
+				hds['Authorization'] = f'Basic {request.credentials.getHttpBasic()}'
+			elif request.credentials.httpToken:
+				hds['Authorization'] = f'Bearer {request.credentials.getHttpBearerToken()}'
+			else:
+				L.logWarn('No credentials found for HTTP request found')
+
+
 		arguments = []
 		if request.rcn and request.rcn != ResultContentType.default(request.op):
 			arguments.append(f'rcn={request.rcn.value}')
@@ -592,7 +619,7 @@ class HttpServer(object):
 			try:
 				# Add Originating Timestamp if present in request
 				if (ot := r.headers.get(Constants().hfOT)):
-					isodate.parse_date(ot) # Check if valid ISO 8601 date, may raise exception
+					isodate.parse_datetime(ot) # Check if valid ISO 8601 date, may raise exception
 					resp.ot = ot
 			except Exception as ee:
 				raise BAD_REQUEST(L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
@@ -619,41 +646,74 @@ class HttpServer(object):
 	#	Handle authentication
 	#
 
-	def handleAuthentication(self) -> bool:
+	def handleAuthentication(self) -> AuthorizationResult:
 		"""	Handle the authentication for the current request.
 
 			Return:
-				True if the request is authenticated, False otherwise.
+				Enum value for the authentication result.
+
 		"""
-		if not (Configuration.http_security_enableBasicAuth or Configuration.http_security_enableTokenAuth):
+
+		def testBasicAuthentication(parameters:dict) -> bool:
+			"""	Validate the basic authentication.
+
+				If basic authentication is not enabled, a warning is logged, but the
+				authentication is considered valid.
+
+				Args:
+					parameters: The parameters for the basic authentication.
+			
+				Return:
+					True if the authentication is valid, False otherwise.
+			"""
+			if not Configuration.http_security_enableBasicAuth:
+				L.isWarn and L.logWarn('Basic authentication is not enabled, but a basic authorization header was found.')
+				return True
+			if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
+				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
+				return False
 			return True
+		
+
+		def testTokenAuthentication(token:str) -> bool:
+			"""	Validate the token.
+
+				If token authentication is not enabled, a warning is logged, but the
+				authentication is considered valid.
+
+				Args:
+					token: The token to validate.
+			
+				Return:
+					True if the token is valid, False otherwise.
+			"""
+			if not Configuration.http_security_enableTokenAuth:
+				L.isWarn and L.logWarn('Token authentication is not enabled, but a bearer authorization header was found.')
+				return True
+			if not CSE.security.validateHttpTokenAuth(token):
+				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+				return False
+			return True
+
+		L.isDebug and L.logDebug('Checking authentication')
+		if not (Configuration.http_security_enableBasicAuth or Configuration.http_security_enableTokenAuth):
+			if request.authorization:
+				L.isWarn and L.logWarn('Basic or token authentication is not enabled, but an authorization header was found.')
+			return AuthorizationResult.NOTSET
 		
 		if (authorization := request.authorization) is None:
 			L.isDebug and L.logDebug('No authorization header found.')
-			return False
+			return AuthorizationResult.UNAUTHORIZED
 		
 		match authorization.type:
 			case 'basic':
-				return self._handleBasicAuthentication(authorization.parameters)
+				return AuthorizationResult.AUTHORIZED if testBasicAuthentication(authorization.parameters) else AuthorizationResult.UNAUTHORIZED
 			case 'bearer':
-				return self._handleTokenAuthentication(authorization.token)
+				return AuthorizationResult.AUTHORIZED if testTokenAuthentication(authorization.token) else AuthorizationResult.UNAUTHORIZED
 			case _:
 				L.isWarn and L.logWarn(f'Unsupported authentication method: {authorization.type}')
-				return False
+				return AuthorizationResult.UNAUTHORIZED
 	
-
-	def _handleBasicAuthentication(self, parameters:dict) -> bool:
-		if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
-			L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
-			return False
-		return True
-	
-
-	def _handleTokenAuthentication(self, token:str) -> bool:
-		if not CSE.security.validateHttpTokenAuth(token):
-			L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
-			return False
-		return True
 
 	#########################################################################
 

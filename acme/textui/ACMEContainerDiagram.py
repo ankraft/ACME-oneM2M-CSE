@@ -25,6 +25,7 @@ from ..runtime.Configuration import Configuration
 class DiagramTypes(IntEnum):
 	"""	Enumeration of the different diagram types.
 	"""
+
 	Line = 0
 	"""	Line diagram."""
 
@@ -45,8 +46,6 @@ class ACMEContainerDiagram(Container):
 	"""	The Diagram view for *Container* resources for the ACME text UI.
 	"""
 
-
-	from ..textui import ACMETuiApp
 
 	def __init__(self, refreshCallback:Callable, id:str) -> None:
 		"""	Initialize the Diagram view.

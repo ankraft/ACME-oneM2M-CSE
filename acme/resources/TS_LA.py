@@ -13,7 +13,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
@@ -25,6 +25,19 @@ class TS_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <timeSeries> resources.
 	"""
 
+	resourceType = ResourceTypes.TS_LA
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+	resourceName = 'la'
+	""" Possibility for virtual sub-classes to provide a specific resource name. """
+
+
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 	"""	A list of allowed child-resource types for this resource type. """
 
@@ -35,11 +48,6 @@ class TS_LA(VirtualResource):
 		The attribute policies are assigned during startup by the `Importer`.
 	"""
 
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TS_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

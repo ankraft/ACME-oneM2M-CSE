@@ -26,6 +26,7 @@ class TextUIConfiguration(ModuleConfiguration):
 		config.textui_theme = parser.get('textui', 'theme', fallback = 'dark')
 		config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback = 10000)
 		config.textui_notificationTimeout = parser.getfloat('textui', 'notificationTimeout', fallback = 2.0)
+		config.textui_enableTextEditorSyntaxHighlighting = parser.getboolean('textui', 'enableTextEditorSyntaxHighlighting', fallback = False)
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:

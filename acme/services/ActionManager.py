@@ -13,7 +13,7 @@ from typing import Optional, Any, cast
 
 import sys, copy
 
-from ..etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes
+from ..etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes, Permission
 from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
 from ..helpers.TextTools import setXPath
 from ..etc.DateUtils import utcTime
@@ -21,6 +21,7 @@ from ..etc.RequestUtils import responseFromResult
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
+from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..helpers.ResourceSemaphore import CriticalSection
 
@@ -296,10 +297,96 @@ class ActionManager(object):
 			action['dep'] = actr.dep
 			CSE.storage.updateActionRepr(action)
 
+
+	#######################################################################
+	#
+	#	Process Statue Management
+	#	See TS-0001 10.2.27
+	#
+
+	def enterActiveState(self, resource:Resource) -> None:
+		"""	Enter the active state for a resource.
+
+			Args:
+				resource: The resource to enter the active state.
+		"""
+		L.isDebug and L.logDebug(f'Entering active state for resource: {resource.ri}')
+		# TODO implement
+		pass
+
+	
+	def enterDisabledState(self, resource:Resource) -> None:
+		"""	Enter the disabled state for a resource.
+
+			Args:
+				resource: The resource to enter the disabled state.
+		"""
+		L.isDebug and L.logDebug(f'Entering disabled state for resource: {resource.ri}')
+		# TODO stop monitoring for endCondition
+		# TODO implement
+		pass
+
+
+	def enterPauseState(self, resource:Resource) -> None:
+		"""	Enter the pause state for a resource.
+
+			Args:
+				resource: The resource to enter the pause state.
+		"""
+		L.isDebug and L.logDebug(f'Entering pause state for resource: {resource.ri}')
+		# TODO implement
+		pass
+
+
+
 	#######################################################################
 	#
 	#	Helper 
 	#
+
+	def checkEvalCriteria(self, evc:JSON, subject:str|Resource, originator:str, checkEvc:bool = True) -> None:
+		"""	Check the evaluation criteria for a given subject resource.
+
+			Args:
+				evc: The evaluation criteria to check.
+				subject: The subject resource ID or the subject resource itself.
+				originator: The originator of the request.
+				checkEvc: Check the evaluation criteria. Default is *True*.
+
+			Returns:
+				A tuple with a boolean indicating the success of the check and a possible error message.
+
+			Raises:
+				BAD_REQUEST: If the evaluation criteria is invalid.
+				Originator_HAS_NO_PRIVILEGE: If the originator has no access to the subject resource.
+				NOT_FOUND: If the subject resource does not exist.
+		"""
+
+		# Check if the subject resource exists and is accessible
+		match subject:
+			case str():
+				subjectResource = CSE.dispatcher.retrieveResourceWithPermission(subject, originator, Permission.RETRIEVE)
+			case _:
+				subjectResource = cast(Resource, subject)
+
+		# Check the evaluation criteria if requested
+		if checkEvc:
+			# Check whether the subject resource has the subject attribute defined
+			if (sbjt := evc.get('sbjt')) is None:
+				raise BAD_REQUEST('Subject attribute not defined in evalCriteria')
+			if not subjectResource.hasAttributeDefined(sbjt):
+				raise BAD_REQUEST('Subject attribute not defined')
+
+			#	Check evalCriteria threshold attribute's value type and operation validity
+			if (thld := evc.get('thld')) is None:
+				raise BAD_REQUEST('Threshold value not defined in evalCriteria')
+			dataType = self.checkAttributeThreshold(sbjt, thld, subjectResource.ty)
+
+			#	Check evalCriteria operator
+			if (optr := evc.get('optr')) is None:
+				BAD_REQUEST('Operator not defined in evalCriteria')
+			CSE.action.checkAttributeOperator(EvalCriteriaOperator(optr), dataType, sbjt)
+
 
 	def checkAttributeThreshold(self, sbjt:str, thld:Any, rtype:ResourceTypes) -> BasicType:
 		""" Check the threshold value for the given subject attribute.

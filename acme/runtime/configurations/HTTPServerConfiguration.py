@@ -131,9 +131,9 @@ class HTTPServerConfiguration(ModuleConfiguration):
 
 		# HTTP authentication
 		if config.http_security_enableBasicAuth and not config.http_security_basicAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:httpBasicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
+			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:basicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
 		if config.http_security_enableTokenAuth and not config.http_security_tokenAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:httpTokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
+			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:tokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
 
 		# HTTP WSGI
 		if config.http_wsgi_enable and config.http_security_useTLS:

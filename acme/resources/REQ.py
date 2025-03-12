@@ -9,7 +9,7 @@
 """ Request (REQ) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST
@@ -23,6 +23,12 @@ from ..resources import Factory	# attn: circular import
 
 class REQ(Resource):
 	""" Request (REQ) resource type. """
+
+	resourceType = ResourceTypes.REQ
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
@@ -55,12 +61,6 @@ class REQ(Resource):
 		'ors': None
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.REQ, dct, pi, create = create)
 
 
 	def willBeDeactivated(self, originator: str, parentResource: Resource) -> None:
@@ -146,5 +146,9 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		return Factory.resourceFromDict(dct, pi = RC.cseRi, ty = ResourceTypes.REQ)
+		return Factory.resourceFromDict(dct, 
+								  		pi = RC.cseRi, 
+										ty = ResourceTypes.REQ, 
+										create = True,
+										originator = RC.cseCsi)
 

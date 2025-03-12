@@ -27,6 +27,7 @@ class TSResourceConfiguration(ModuleConfiguration):
 		config.resource_ts_mbs = parser.getint('resource.ts', 'mbs', fallback = 10000)
 		config.resource_ts_mdn = parser.getint('resource.ts', 'mdn', fallback = 10)
 		config.resource_ts_mni = parser.getint('resource.ts', 'mni', fallback = 10)
+		config.resource_ts_mia = parser.getint('resource.ts', 'mia', fallback = 60*60*24*365*5)  # 5 years, in seconds
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -36,3 +37,5 @@ class TSResourceConfiguration(ModuleConfiguration):
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mdn[/i] must be >= 0')
 		if config.resource_ts_mni <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mni[/i] must be > 0')
+		if config.resource_ts_mia <= 0:
+			raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mia[/i] must be > 0')

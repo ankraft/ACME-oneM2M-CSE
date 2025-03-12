@@ -20,6 +20,7 @@ from textual.screen import ModalScreen
 from textual.binding import Binding
 from rich.syntax import Syntax
 from ..runtime import CSE
+from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
@@ -35,11 +36,29 @@ from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
 
 class ACMEResourceTree(TextualTree):
+	"""	The *Resources* tree conmponent view for the ACME text UI."""
+
+	_virtualResourcesParameter = {
+		ResourceTypes.CNT_LA: (ResourceTypes.CIN, False),
+		ResourceTypes.CNT_OL: (ResourceTypes.CIN, True),
+		ResourceTypes.FCNT_LA: (ResourceTypes.FCI, False),
+		ResourceTypes.FCNT_OL: (ResourceTypes.FCI, True),
+		ResourceTypes.TS_OL: (ResourceTypes.TSI, True),
+		ResourceTypes.TS_LA: (ResourceTypes.TSI, False),
+	}
+	"""	Dictionary of virtual resources and their parameters. """
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		"""	Initialize the view.
 
+			Args:
+				args:		Arguments.
+				kwargs:		Keyword arguments.
+		"""
 		self.parentContainer = kwargs.pop('parentContainer', None)
+		"""	The parent container of the tree view. """
+
 		super().__init__(*args, **kwargs)
 
 	
@@ -47,15 +66,23 @@ class ACMEResourceTree(TextualTree):
 	# 	self.root.expand()
 
 	def on_show(self) -> None:
+		"""	Handle the show event.
+		"""
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
 
 
 	def _update_tree(self) -> None:
+		"""	Update the tree view.
+		"""
 		if not self.visible:
 			return
 		self.clear()
+		
 		self.auto_expand = False
+		"""	Whether to auto expand the tree. Inherited from TextualTree. """
+
 		self.select_node(None)
 		prevType = ''
 		for resource in self._retrieve_resource_children(RC.cseRi):
@@ -68,6 +95,11 @@ class ACMEResourceTree(TextualTree):
 
 
 	def on_tree_node_highlighted(self, node:TextualTree.NodeHighlighted) -> None:
+		"""	Handle the highlighted event.
+		
+			Args:
+				node: The highlighted node.
+		"""
 		try:
 			if node.node.data:
 				self._update_content(node.node.data)
@@ -81,6 +113,11 @@ class ACMEResourceTree(TextualTree):
 
 
 	def on_tree_node_expanded(self, node:TextualTree.NodeSelected) -> None:
+		"""	Handle the expanded event.
+		
+			Args:
+				node: The expanded node.
+		"""
 		self._buildNodeChildren(node.node)
 		# node.node._children = []	# no available method?
 		# prevType = ''
@@ -93,36 +130,45 @@ class ACMEResourceTree(TextualTree):
 	
 
 	def on_tree_node_hover(self, event:events.MouseMove) -> None:
+		"""	Handle the hover event.
+		
+			Args:
+				event: The hover event.
+		"""
 		self.parentContainer.setResourceHeader('Resources')
 
 
-	_virtualResourcesParameter = {
-		ResourceTypes.CNT_LA: (ResourceTypes.CIN, False),
-		ResourceTypes.CNT_OL: (ResourceTypes.CIN, True),
-		ResourceTypes.FCNT_LA: (ResourceTypes.FCI, False),
-		ResourceTypes.FCNT_OL: (ResourceTypes.FCI, True),
-		ResourceTypes.TS_OL: (ResourceTypes.TSI, True),
-		ResourceTypes.TS_LA: (ResourceTypes.TSI, False),
-	}
-
-
 	def refreshNode(self, node:TreeNode) -> None:
+		"""	Refresh a node.
+
+			Args:
+				node: The node to refresh.
+		"""
 		if not self.visible:
 			return
 		self._buildNodeChildren(node)
 
 
 	def refreshCurrentNode(self) -> None:
+		"""	Refresh the current node.
+		"""
 		self.refreshNode(self.cursor_node)
 
 
 	def refreshCurrentParrentNode(self) -> None:
+		"""	Refresh the parent node of the current node.
+		"""
 		parentNode = self.cursor_node.parent
 		if parentNode:
 			self.refreshNode(parentNode)
 
 
 	def _update_content(self, ri:str) -> None:
+		"""	Update the resource view.
+		
+			Args:
+				ri: The resource id of the content.
+		"""
 		try:
 			resource = CSE.dispatcher.retrieveLocalResource(ri)
 
@@ -157,6 +203,9 @@ class ACMEResourceTree(TextualTree):
 				label: The label of the type section.
 		"""
 		self.parentContainer.setResourceHeader(f'{label} Resources')
+		self.parentContainer.setResourceSubtitle('')
+		self.parentContainer.currentResource = None
+
 		# self.parentContainer.resourceView.update('')
 		self.parentContainer.updateResourceView()
 		self.parentContainer.tabs.hide_tab('tree-tab-diagram')
@@ -168,6 +217,11 @@ class ACMEResourceTree(TextualTree):
 
 
 	def _buildNodeChildren(self, node:TreeNode) -> None:
+		"""	Build the children of a node.
+		
+			Args:
+				node: The node to build the children for.
+		"""
 		try:
 			node.remove_children()
 		except KeyError:
@@ -218,6 +272,8 @@ class ACMEResourceTree(TextualTree):
 
 
 class ACMEContainerTree(Container):
+	"""	The *Resources* tree view for the ACME text UI.
+	"""
 
 	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh'),
 				#   Binding('o', 'overlay', 'Overlay'),
@@ -228,9 +284,8 @@ class ACMEContainerTree(Container):
 
 				# delete requests
 				]
+	"""	Key bindings for the *Resources* view. """
 
-
-	from ..textui import ACMETuiApp
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -240,33 +295,67 @@ class ACMEContainerTree(Container):
 		"""
 		super().__init__(id = id)
 
-		
 		self.currentResource:Resource = None
+		"""	The current resource. """
 
 		# Create some views and widgets beforehand
 		self._treeView = ACMEResourceTree(RC.cseRn, data = RC.cseRi, id = 'tree-view', parentContainer = self)
+		"""	The tree view. """
+
 		self._treeTabs = TabbedContent(id = 'tree-tabs')
+		"""	The tabs of the tree view. """
 
 		self._treeTabRequests = TabPane('Requests', id = 'tree-tab-requests')
+		"""	The requests tab. """
+
 		self._treeTabServices = TabPane('Services', id = 'tree-tab-services')
+		"""	The services tab. """
+
 		self._treeTabCreate = TabPane('CREATE', id = 'tree-tab-create')
+		"""	The CREATE request tab. """
+
 		self._treeTabUpdate = TabPane('UPDATE', id = 'tree-tab-update')
+		"""	The UPDATE request tab. """
+
 		self._treeTabDelete = TabPane('DELETE', id = 'tree-tab-delete')
+		"""	The DELETE request tab. """
+
 		self._treeTabDiagram = TabPane('Diagram', id = 'tree-tab-diagram')
+		"""	The diagram tab. """
+
 		self._treeTabDiagramView = ACMEContainerDiagram(refreshCallback = lambda: self.updateResource(self.currentResource), 
 														id = 'tree-tab-diagram-view')
+		"""	The diagram view for the diagram tab. """
 
 		self._treeTabResourceServices = ACMEContainerResourceServices(id = 'tree-tab-resource-services')
+		"""	The services view for the services tab. """
+
 		self._treeTabResourceCreate = ACMEContainerCreate(id = 'tree-tab-resource-create')
+		"""	The CREATE view for the CREATE request tab. """
+
 		self._treeTabResourceUpdate = ACMEContainerUpdate(id = 'tree-tab-resource-update')
+		"""	The UPDATE view for the UPDATE request tab. """
+
 		self._treeTabResourceDelete = ACMEContainerDelete(id = 'tree-tab-resource-delete')
+		"""	The DELETE view for the DELETE request tab. """
+
 		self._treeTabRequestsView = ACMEViewRequests(id = 'tree-tab-requests-view')
+		"""	The requests view for the requests tab. """
+
 		self._resourceViewContainer = Container(id = 'resource-view-container')
+		"""	The container for the resource view. """
+
 		self._resourceView = Static(id = 'resource-view', expand = True)
+		"""	The resource view. """
 
 
 
 	def compose(self) -> ComposeResult:
+		"""	Build the view.
+
+			Yields:
+				The view content.
+		"""
 		with Container():
 			yield self._treeView
 			with self._treeTabs:
@@ -276,6 +365,9 @@ class ACMEContainerTree(Container):
 
 				with self._treeTabRequests:
 					yield self._treeTabRequestsView
+					# Disable the requests tab if the operation requests are disabled
+					if not Configuration.cse_operation_requests_enable:
+						self._treeTabRequests.disabled = True
 
 				with self._treeTabServices:
 					yield self._treeTabResourceServices
@@ -295,10 +387,18 @@ class ACMEContainerTree(Container):
 				
 	@property
 	def resourceContainer(self) -> Container:
+		"""	Return the resource container.
+		
+			Returns:
+				The resource container
+		"""
 		return self._resourceViewContainer
 
 
 	def on_show(self) -> None:
+		"""	Handle the show event.
+		"""
+
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
 		"""	The application. """
@@ -314,6 +414,10 @@ class ACMEContainerTree(Container):
 			Args:
 				event: The Click event.
 		"""
+
+		# Just return if there is no current resource
+		if not self.currentResource:
+			return
 
 		# When clicking on the container of the resource view
 		if self.screen.get_widget_at(event.screen_x, event.screen_y)[0] is (_cnt := self.resourceContainer):
@@ -348,29 +452,40 @@ class ACMEContainerTree(Container):
 
 
 	def action_refresh_resources(self) -> None:
+		"""	Handle the *Refresh* action.
+		"""
 		self._app.showNotification('Refreshing resources', 'info', 'information', 2)
 		self.update()
 
 			
 	def update(self) -> None:
+		"""	Update the whole tree view.
+		"""
 		self.resourceTree._update_tree()
 	
 
 	def refreshCurrentNode(self) -> None:
+		"""	Refresh the current node.
+		"""
 		self.resourceTree.refreshCurrentNode()
 
 	
 	def refreshCurrentParrentNode(self) -> None:
+		"""	Refresh the parent node of the current node.
+		"""
 		self.resourceTree.refreshCurrentParrentNode()
 
 
 	def updateResource(self, resource:Optional[Resource] = None) -> None:
-		# Store the resource for later
+		"""	Update the resource view.
 
+			Args:
+				resource: The resource to update.
+		"""
+		# Store the resource for later
 
 		if resource:
 			self.currentResource = resource
-
 
 		# Add attribute explanations
 		if resource:
@@ -484,6 +599,12 @@ class ACMEContainerTree(Container):
 
 
 	def updateResourceView(self, value:Optional[str|Resource] = None, error:Optional[str] = None) -> None:
+		"""	Update the resource view with a value or an error message.
+
+			Args:
+				value:	The value to display.
+				error:	The error message to display.
+		"""
 		if value:
 			if isinstance(value, Resource):
 				value = commentJson(value.asDict(sort = True), 
@@ -496,8 +617,13 @@ class ACMEContainerTree(Container):
 			self.resourceView.update('')
 
 	
-	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
 	#async def on_tabs_tab_activated(self, event:Tabs.TabActivated) -> None:
+	async def on_tabbed_content_tab_activated(self, event:TabbedContent.TabActivated) -> None:
+		""" Handle TabActivated message sent by TabbedContent.
+		
+			Args:
+				event: The TabActivated event.
+		"""
 		"""Handle TabActivated message sent by Tabs."""
 		# self.app.debugConsole.update(event.tab.id)
 
@@ -518,6 +644,11 @@ class ACMEContainerTree(Container):
 
 
 	def _update_requests(self, ri:Optional[str] = None) -> None:
+		"""	Update the requests view.
+
+			Args:
+				ri: The resource id to set as the current resource.
+		"""
 		if self.tabs.active == 'tree-tab-requests':
 			self.requestView.currentRI = ri if ri else self.resourceTree.cursor_node.data
 			self.requestView.updateRequests()
@@ -547,61 +678,128 @@ class ACMEContainerTree(Container):
 
 	@property
 	def tabs(self) -> TabbedContent:
+		"""	Return the tabs.
+		
+			Returns:
+				The tabs.
+		"""
 		return self._treeTabs
 
 
 	@property
 	def resourceTree(self) -> ACMEResourceTree:
+		"""	Return the resource tree.
+		
+			Returns:
+				The resource tree.
+		"""
 		return self._treeView
 
 
 	@property
 	def createView(self) -> ACMEContainerCreate:
+		"""	Return the CREATE view.
+		
+			Returns:
+				The CREATE view.
+		"""
 		return self._treeTabResourceCreate
 
 
 	@property
 	def deleteView(self) -> ACMEContainerDelete:
+		"""	Return the DELETE view.
+		
+			Returns:
+				The DELETE view.
+		"""
 		return self._treeTabResourceDelete
 
 
 	@property
 	def updateView(self) -> ACMEContainerUpdate:
+		"""	Return the UPDATE view.
+		
+			Returns:
+				The UPDATE view.
+		"""
 		return self._treeTabResourceUpdate
 
 	@property
 	def servicesView(self) -> ACMEContainerResourceServices:
+		"""	Return the services view.
+		
+			Returns:
+				The services view.
+		"""
 		return self._treeTabResourceServices
 
 
 	@property
 	def requestView(self) -> ACMEViewRequests:
+		"""	Return the requests view.
+		
+			Returns:
+				The requests view.
+		"""
 		return self._treeTabRequestsView
 
 
 	@property
 	def resourceView(self) -> Static:
+		"""	Return the resource view.
+		
+			Returns:
+				The resource view.
+		"""
 		return self._resourceView
 
 
 	@property
 	def diagram(self) -> ACMEContainerDiagram:
+		"""	Return the diagram view.
+		
+			Returns:
+				The diagram view.
+		"""
 		return self._treeTabDiagramView
 
 	
 # TODO move the following to a more generic dialog module
 class ACMEDialog(ModalScreen):
+	"""	A simple dialog for the ACME text UI. """
+
 	BINDINGS = [('escape', 'pop_dialog', 'Close')]
+	"""	Key bindings for the dialog. """
 
 	def __init__(self, message:str = 'Really?', buttonOK:str = 'OK', buttonCancel:str = 'Cancel') -> None:
+		"""	Initialize the dialog.
+		
+			Args:
+				message:		The message to display.
+				buttonOK:		The label of the OK button.
+				buttonCancel:	The label of the Cancel button.
+		"""
 		super().__init__()
 		self.message = message
+		"""	The message to display. """
+
 		self.buttonOK = buttonOK
+		"""	The label of the OK button. """
+
 		self.buttonCancel = buttonCancel
+		"""	The label of the Cancel button. """
+
 		self.width = len(self.message) + 10 if len(self.message) + 10 > 50 else 50
+		"""	The width of the dialog. """
 
 
 	def compose(self) -> ComposeResult:
+		"""	Build the dialog.
+
+			Yields:
+				The dialog content.
+		"""
 		with (_v := Vertical(id = 'confirm')):
 			yield Label(self.message, id = 'confirm-label')
 			with Horizontal(id = 'confirm-buttons'):
@@ -612,10 +810,17 @@ class ACMEDialog(ModalScreen):
 
 
 	def action_pop_dialog(self) -> None:
+		"""	Close the dialog. 
+		"""
 		self.dismiss(False)
 
 
 	def on_button_pressed(self, event: Button.Pressed) -> None:
+		"""	Handle the button press event.
+
+			Args:
+				event:	The button press event.
+		"""
 		if event.button.id == 'confirm-ok':
 			self.dismiss(True)
 		else:

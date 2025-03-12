@@ -36,6 +36,12 @@ addToInternalAttributes(Constants.attrSudRI)
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
+	resourceType = ResourceTypes.CRS
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
@@ -74,11 +80,9 @@ class CRS(Resource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CRS, dct, pi, create = create)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite = False)	
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -172,7 +176,7 @@ class CRS(Resource):
 	
 
 	@criticalResourceSection(state = 'deactivate')
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 
 		# Deactivate time windows
 		match self.twt:
@@ -187,7 +191,7 @@ class CRS(Resource):
 		# Handle removing the csr by the notification manager
 		CSE.notification.removeCrossResourceSubscription(self)
 
-		super().deactivate(originator)
+		super().deactivate(originator, parentResource)
 
 
 	def validate(self, originator:Optional[str] = None, 

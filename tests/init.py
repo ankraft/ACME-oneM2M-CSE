@@ -15,6 +15,7 @@ from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit, base64, urllib
 import unittest
 
+import requests.adapters
 from rich import inspect
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random, importlib
@@ -264,6 +265,7 @@ reqRN	= 'testREQ'
 schRN 	= 'testSCH'
 smdRN	= 'testSMD'
 subRN	= 'testSUB'
+stteRN	= 'testSTTE'
 tsRN	= 'testTS'
 tsbRN	= 'testTSB'
 tsiRN	= 'testTSI'
@@ -292,7 +294,9 @@ tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{cntURL}/{actrRN}'
 deprURL = f'{actrURL}/{deprRN}'
 prmrURL = f'{aeURL}/{prmrRN}'
+stteURL = f'{prmrURL}/{stteRN}'
 prpURL 	= f'{cseURL}/{prpRN}'
+
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
@@ -378,6 +382,10 @@ def sendRequest(operation:Operation,
 	if url.startswith(('http', 'https')):
 		if not httpSession:
 			httpSession = requests.Session()
+			httpAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
+			httpsAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
+			httpSession.mount('http://', httpAdapter)
+			httpSession.mount('https://', httpsAdapter)
 
 
 		# if operation == Operation.CREATE:
@@ -392,15 +400,15 @@ def sendRequest(operation:Operation,
 		# 	return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		match operation:
 			case Operation.CREATE:
-				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+				return sendHttpRequest('post', url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.RETRIEVE:
-				return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+				return sendHttpRequest('get', url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.UPDATE:
-				return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+				return sendHttpRequest('put', url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.DELETE:
-				return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+				return sendHttpRequest('delete', url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			case Operation.NOTIFY:
-				return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+				return sendHttpRequest('post', url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 			
 	elif url.startswith('mqtt'):
 		match operation:
@@ -548,7 +556,7 @@ def addHttpAuthorizationHeader(headers:Parameters) -> Optional[Tuple[str, int]]:
 	return None
 
 
-def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendHttpRequest(method:str, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	global httpSession
 
 	# correct url
@@ -602,7 +610,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	# Verbose output
 	if verboseRequests:
 		console.print('\n[b u]Request')
-		console.print(f'[dark_orange]{method.__name__.upper()}[/dark_orange] {url}')
+		console.print(f'[dark_orange]{method}[/dark_orange] {url}')
 		console.print('\n'.join([f'{h}: {v}' for h,v in hds.items()]))
 		console.print()
 		if isinstance(data, dict):
@@ -617,17 +625,17 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 			else:
 				sendData = data
 			# data = cbor2.dumps(data)	# TODO use CBOR as well
-		r = method(url, data=sendData, headers=hds, verify=verifyCertificate, timeout=timeout)
-		# print(f'HTTP request sent: {r.status_code}')
+		r = httpSession.request(method=method, url=url, data=sendData, headers=hds, verify=verifyCertificate, timeout=timeout)
 	except Exception as e:
 		# print(f'Failed to send request: {str(e)}')
 		return f'Failed to send request: {str(e)}', 5103
+	
 	rc = int(r.headers.get(C.hfRSC, r.status_code))
 	if rc == 204:
 		rc = ResponseStatusCode.NO_CONTENT
 
 	# save last header for later
-	setLastHeaders(r.headers)
+	setLastHeaders(r.headers)	# type: ignore[arg-type]
 
 	# Verbose output
 	if verboseRequests:
@@ -978,7 +986,7 @@ def lastRequestID() -> str:
 	return _lastRequstID
 
 
-def connectionPossible(url:str) -> bool:
+def connectionPossible(url:str) -> Tuple[bool, int]:
 	"""	Check whether a connection to the CSE is possible and the CSE is running. This is
 		done by retrieving the CSEBase using the protocol binding that is used also
 		for the rest of the tests. So, the Upper Tester interface is not used.
@@ -987,15 +995,38 @@ def connectionPossible(url:str) -> bool:
 			url: The URL of the CSEBase
 		
 		Return:
-			Return the status (reachable and available).
+			Return the status (reachable and available) and the response code.
 	"""
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
-		return RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)[1] == ResponseStatusCode.OK
+		result = RETRIEVE(url, ORIGINATOR, timeout = initialRequestTimeout)
+		return result[1] == ResponseStatusCode.OK, result[1]
 	except Exception as e:
 		print(e)
-		return False
+		return False, 5103 
+	
+def checkUpperTester() -> None:
+	if UPPERTESTERENABLED:
+		try:
+			headers = { UTCMD: f'Status'}
+			addHttpAuthorizationHeader(headers)
+			response = requests.post(UTURL, headers = headers)
+			match response.status_code:
+				case 200:
+					pass
+				case 401:
+					console.print('[red]CSE requires authorization')
+					console.print('Add authorization settings to the test suite configuration file')
+					quit(-1)
+				case _:
+					console.print('[red]Upper Tester Interface not enabeled in CSE')
+					console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+					quit(-1)
+		except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+			shutdown()
+			quit(-1)
 		
 
 _lastHeaders:Parameters = None
@@ -1160,6 +1191,13 @@ def testCaseEnd(name:str) -> None:
 		console.print(f'[dim]{ln}[ End {name} ]{ln}')
 
 
+def disableUpperTester() -> None:
+	"""	Disable the use of the upper tester interface.
+	"""
+	global UPPERTESTERENABLED
+	UPPERTESTERENABLED = False
+
+
 ###############################################################################
 
 # Surpress warnings for insecure requests, e.g. self-signed certificates
@@ -1284,6 +1322,7 @@ def stopNotificationServer() -> None:
 
 def isNotificationServerRunning() -> bool:
 	try:
+		print(NOTIFICATIONSERVER)
 		_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
 		return True
 	except Exception:
@@ -1568,29 +1607,20 @@ match PROTOCOL:
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.
 # It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-noRemote = not connectionPossible(REMOTEcseURL)
+_r, status = connectionPossible(cseURL)
+if status == 401:	# Access denied
+	console.print('[red]CSE requires authorization')
+	console.print('Add authorization settings to the test suite configuration file')
+	quit(-1)
+noCSE = not _r
+
+_r,status = connectionPossible(REMOTEcseURL)
+if status == 401:	# Access denied
+	console.print('[red]Remote CSE requires authorization')
+	console.print('Add authorization settings to the test suite configuration file')
+	quit(-1)
+noRemote = not _r
 
 # Set the notification server URL
 setNotificationServerURL()
 
-if UPPERTESTERENABLED:
-	try:
-		headers = { UTCMD: f'Status'}
-		addHttpAuthorizationHeader(headers)
-		response = requests.post(UTURL, headers = headers)
-		match response.status_code:
-			case 200:
-				pass
-			case 401:
-				console.print('[red]CSE requires authorization')
-				console.print('Add authorization settings to the test suite configuration file')
-				quit(-1)
-			case _:
-				console.print('[red]Upper Tester Interface not enabeled in CSE')
-				console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
-				quit(-1)
-	except (ConnectionRefusedError, requests.exceptions.ConnectionError):
-		console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
-		shutdown()
-		quit(-1)

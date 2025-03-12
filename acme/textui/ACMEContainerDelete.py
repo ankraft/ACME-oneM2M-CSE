@@ -22,8 +22,12 @@ from ..resources.Resource import Resource
 
 
 class ACMEContainerDelete(Container):
+	"""	The *Delete* view for the ACME text UI.
+		This is a container that contains the *Delete* request view and the response view.
+	"""
 
 	BINDINGS = [('c', 'show_request', 'cURL command')]
+	"""	Key bindings for the *Delete* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -58,13 +62,17 @@ class ACMEContainerDelete(Container):
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Delete* view.
-		"""		
-		yield self.requestView
-		yield self.responseView
 		
+			Return:
+				The composed view.
+		"""		
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
 		"""	The application. """
+
+		yield self.requestView
+		yield self.responseView
+		
 
 
 

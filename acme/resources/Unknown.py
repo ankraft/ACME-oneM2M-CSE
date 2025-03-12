@@ -18,9 +18,13 @@ from ..resources.Resource import Resource
 
 class Unknown(Resource):
 
-	def __init__(self, dct:Optional[JSON], 
-					   typeShortname:Optional[str], 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.UNKNOWN, dct, pi, typeShortname = typeShortname, create = create)
+	resourceType = ResourceTypes.UNKNOWN
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	def __init__(self, dct:Optional[JSON], typeShortname:Optional[str], create:Optional[bool] = False) -> None:
+		self.typeShortname = typeShortname
+		super().__init__(dct, create = create)
 

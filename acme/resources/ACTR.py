@@ -28,6 +28,12 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
+	resourceType = ResourceTypes.ACTR
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
 													   ResourceTypes.SUB
@@ -69,23 +75,16 @@ class ACTR(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, pi:Optional[str] = None, create:Optional[bool] = False) -> None:
-		# the following two lines are needed bc mypy cannot determine the type otherwise
-		self.sri:str
-		self.orc:str
-		super().__init__(ResourceTypes.ACTR, dct, pi, create = create)
-
-
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
 		sriResource, orcResource = self._checkReferencedResources(originator, 
-																  self.sri, 
-																  self.orc, 
+																  self.sri, 	# type: ignore[has-type]
+																  self.orc, 	# type: ignore[has-type]
 																  self._getApvOperation())
-		self.sri = riFromID(self.sri)
-		self.orc = riFromID(self.orc)
+		self.sri = riFromID(self.sri)	# type: ignore[has-type]
+		self.orc = riFromID(self.orc)	# type: ignore[has-type]
 
 		#	Check that the from parameter of the actionPrimitive is the originator
 		self._checkApvFrom(originator)
@@ -94,20 +93,17 @@ class ACTR(AnnounceableResource):
 		evm = self.evm
 		if evm in [EvalMode.off, EvalMode.once] and self.hasAttribute('ecp'):
 			raise BAD_REQUEST(L.logDebug(f'ecp - must not be present for evm: {evm}'))
-
+		
 		#	Check that the attribute referenced by the evalCriteria does exist
 		checkResource = parentResource \
 						if self.sri is None \
 						else sriResource
-		sbjt = self.evc['sbjt']
-		if not checkResource.hasAttributeDefined(sbjt):
-			raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {checkResource.ri}'))
 
-		#	Check evalCriteria threshold attribute's value type and operation validity
-		dataType = CSE.action.checkAttributeThreshold(sbjt, (thld := self.evc['thld']), checkResource.ty)
-
-		#	Check evalCriteria operator
-		CSE.action.checkAttributeOperator(EvalCriteriaOperator(self.evc['optr']), dataType, sbjt)
+		# Check that the evalCriteria is correct
+		try:
+			CSE.action.checkEvalCriteria(self.evc, checkResource, originator)
+		except ResponseException as e:
+			raise BAD_REQUEST(e.dbg)
 
 		# Schedule and process the <action> resource
 		CSE.action.scheduleAction(self)
@@ -161,27 +157,25 @@ class ACTR(AnnounceableResource):
 		# Check that a new sbjt attribute exists in the (potentially new) subject target
 		# Also check when only the subject target changes
 		sriResource:Resource = None
-		if dctEvc or dctSri:
+		if dctEvc or dctSri:	# only if there is a new evalCriteria or a new subject resource
 			try:
 				sriResource = CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
 			except ResponseException as e:
 				raise BAD_REQUEST(L.logDebug(f'sri - subject resource not found: {newSri}'))
-			sbjt = newEvc['sbjt']
-			if not sriResource.hasAttributeDefined(sbjt):
-				raise BAD_REQUEST(L.logDebug(f'sbjt - subject resource hasn\'t the attribute: {sbjt} defined: {sriResource.ri}'))
+			# Actual check of the sbjt attribute is done in the checkEvalCriteria method below
 		
 		# Else use the current subject resource
 		elif self.sri:
 			sriResource = CSE.dispatcher.retrieveResource(self.sri)
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
-		if dctEvc and sriResource:
+		if dctEvc or dctSri:	# If we have a evalCriteria at all or a subject resource
 
-			# Check the value space of the threshold attribute.
-			dataType = CSE.action.checkAttributeThreshold(sbjt, (dctEvc['thld']), sriResource.ty)
-
-			# Check evalCriteria operator
-			CSE.action.checkAttributeOperator(EvalCriteriaOperator(dctEvc['optr']), dataType, sbjt)
+			# Check that the evalCriteria is correct
+			try:
+				CSE.action.checkEvalCriteria(newEvc, sriResource, originator)
+			except ResponseException as e:
+				raise BAD_REQUEST(e.dbg)
 
 		# Store some attributes for later evaluation
 		newEcp = findXPath(dct, 'm2m:actr/ecp')
@@ -212,10 +206,10 @@ class ACTR(AnnounceableResource):
 			CSE.action.updateAction(self)
 
 
-	def deactivate(self, originator:str) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Unschedule the action
 		CSE.action.unscheduleAction(self)
-		return super().deactivate(originator)
+		return super().deactivate(originator, parentResource)
 
 
 	###########################################################################

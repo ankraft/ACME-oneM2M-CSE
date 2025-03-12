@@ -20,9 +20,14 @@ from ..resources.Resource import Resource
 from ..runtime import CSE
 
 class ACMEContainerResourceServices(Container):
+	"""	The *Services* view for the ACME text UI.
+	"""
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
+
+			Args:
+				id:	The view ID.
 		"""
 
 		super().__init__(id = id)
@@ -35,14 +40,25 @@ class ACMEContainerResourceServices(Container):
 
 		# Some resources upfront
 		self._servicesExportResource = Vertical(id = 'services-export-resource')
+		"""	The export resource view. """
+
 		self._servicesExportInstances = Vertical(id = 'services-export-instances')
+		"""	The export instances view. """
 
 		self._servicesExportResourceResult = Static('', id = 'services-export-resource-result', classes = 'result')
+		"""	The result view of the resource export. """
+
 		self._servicesExportInstancesResult = Static('', id = 'services-export-instances-result', classes = 'result')
+		"""	The result view of the instances export. """
 
 		self._servicesExportResourceLoadingIndicator = LoadingIndicator(id = 'services-export-resource-loading-indicator', classes = 'loading-indicator')
+		"""	The loading indicator for the resource export. """
+
 		self._servicesExportInstancesLoadingIndicator = LoadingIndicator(id = 'services-export-instances-loading-indicator', classes = 'loading-indicator')
+		"""	The loading indicator for the instances export. """
+
 		self._servicesExportResourceCheckbox = Checkbox('Include child resources', self.exportIncludingChildResources, id = 'services-export-resource-checkbox')
+		"""	The checkbox to include child resources in the export. """
 
 
 	def compose(self) -> ComposeResult:
@@ -77,31 +93,61 @@ class ACMEContainerResourceServices(Container):
 
 	@property
 	def exportResourceResult(self) -> Static:
+		"""	Return the result view of the resource export.
+		
+			Returns:
+				The result view.
+		"""
 		return self._servicesExportResourceResult
 	
 
 	@property
 	def exportInstancesResult(self) -> Static:
+		"""	Return the result view of the instances export.
+		
+			Returns:
+				The result view.
+		"""
 		return self._servicesExportInstancesResult
 	
 
 	@property
 	def exportResourceLoadingIndicator(self) -> LoadingIndicator:
+		"""	Return the loading indicator for the resource export.
+		
+			Returns:
+				The loading indicator.
+		"""
 		return self._servicesExportResourceLoadingIndicator
 	
 
 	@property
 	def exportInstancesLoadingIndicator(self) -> LoadingIndicator:
+		"""	Return the loading indicator for the instances export.
+		
+			Returns:
+				The loading indicator view.
+		"""
 		return self._servicesExportInstancesLoadingIndicator
 	
 
 	@property
 	def exportInstancesView(self) -> Vertical:
+		"""	Return the export instances view.
+		
+			Returns:
+				The export instances view.
+		"""
 		return self._servicesExportInstances
 
 
 	@property
 	def exportChildResourcesCheckbox(self) -> Checkbox:
+		"""	Return the checkbox to include child resources in the export.
+		
+			Returns:
+				The checkbox.
+		"""
 		return self._servicesExportResourceCheckbox
 	
 
@@ -109,7 +155,7 @@ class ACMEContainerResourceServices(Container):
 		"""	Update the current resource for the services view.
 
 			Args:
-				resource: The resource to use for services
+				resource: The resource to use for services.
 		"""
 		self.resource = resource
 
@@ -122,13 +168,15 @@ class ACMEContainerResourceServices(Container):
 
 
 	def on_show(self) -> None:
+		"""	Called when the view is shown.
+		"""
+		from ..textui.ACMETuiApp import ACMETuiApp
+		self._app = cast(ACMETuiApp, self.app)
+		"""	The application. """
+
 		# Hide the loading indicators
 		self.exportResourceLoadingIndicator.display = False
 		self.exportInstancesLoadingIndicator.display = False
-
-		from ..textui.ACMETuiApp import ACMETuiApp
-		self._app = cast(ACMETuiApp, self.app)
-
 
 
 	#
@@ -136,6 +184,11 @@ class ACMEContainerResourceServices(Container):
 	#
 		
 	def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+		"""	Callback when the checkbox to include child resources in the export is changed.
+
+			Args:
+				event: The *Checkbox.Changed* event.
+		"""
 		self.exportIncludingChildResources = event.value
 		self.exportChildResourcesCheckbox.BUTTON_INNER = 'X' if self.exportIncludingChildResources else ' '
 		self.exportChildResourcesCheckbox.refresh()
@@ -147,6 +200,8 @@ class ACMEContainerResourceServices(Container):
 		"""
 
 		def _exportResource() -> None:
+			"""	Background runner callback to xport the resource.
+			"""
 			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
@@ -172,6 +227,8 @@ class ACMEContainerResourceServices(Container):
 		"""
 
 		def _exportInstances() -> None:
+			"""	Background runner callback to export the instances.
+			"""
 			count, filename = CSE.console.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
@@ -192,12 +249,14 @@ class ACMEContainerResourceServices(Container):
 		"""
 
 		def _copyInstances() -> None:
+			"""	Background runner callback to copy the instances to the clipboard.
+			"""
 			count, data = CSE.console.doExportInstances(self.resource.ri, asString = True)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
-			self._app.copyToClipboard(data)
-			self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
-			self._app.showNotification(n, 'Data Points Copy', 'information')
+			if self._app.copyToClipboard(data):
+				self.exportInstancesResult.update(n := f'Copied [{self._app.objectColor}]{count}[/] data point(s) to the clipboard')
+				self._app.showNotification(n, 'Data Points Copy', 'information')
 
 
 		# Show the loading indicator instead of the result

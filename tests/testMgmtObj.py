@@ -1432,6 +1432,70 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	CRDS
+	#
+
+	crdsRN	= 'CRDS'
+	crdsURL	= f'{nodURL}/{crdsRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRDS(self) -> None:
+		"""	CREATE [CRDS] """
+		dct =  { 'dcfg:crds' : {
+					'mgd' : T.CRDS,
+					'rn'  : self.crdsRN,
+					'dc'  : 'aCrds',
+
+					'pur': 'aPurpose',
+					'crid': 'aCredId',
+					'crse': 'aCredSecret',
+					'crtk': 'aCredToken',
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(findXPath(r, 'dcfg:crds/mgd'), T.CRDS)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCRDS(self) -> None:
+		"""	RETRIEVE [CRDS] """
+		r, rsc = RETRIEVE(self.crdsURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:crds/mgd'), T.CRDS)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesCRDS(self) -> None:
+		"""	Test [CRDS] attributes """
+		r, rsc = RETRIEVE(self.crdsURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'dcfg:crds/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:crds/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/rn'), self.crdsRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/ct'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/lt'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/et'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/dc'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/dc'), 'aCrds')
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/pur'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/pur'), 'aPurpose')
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/crid'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/crid'), 'aCredId')
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/crse'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/crse'), 'aCredSecret')
+		self.assertIsNotNone(findXPath(r, 'dcfg:crds/crtk'))
+		self.assertEqual(findXPath(r, 'dcfg:crds/crtk'), 'aCredToken')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCRDS(self) -> None:
+		""" DELETE [CRDS]] """
+		_, rsc = DELETE(self.crdsURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
@@ -1541,6 +1605,12 @@ def run(testFailFast:bool) -> TestResult:
 		'test_retrieveMNWK',
 		'test_attributesMNWK',
 		'test_deleteMNWK',
+
+		'test_createCRDS',
+		'test_retrieveCRDS',
+		'test_attributesCRDS',
+		'test_deleteCRDS',
+
 	])
 
 	# Run tests

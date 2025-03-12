@@ -22,8 +22,12 @@ from ..resources.Resource import Resource
 
 
 class ACMEContainerCreate(Container):
+	"""	The *Create* view for the ACME text UI.
+		This is a container that contains the *Create* request view and the response view.
+	"""
 
 	BINDINGS = [('c', 'show_request', 'cURL command')]
+	"""	Key bindings for the *Create* view. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -58,11 +62,13 @@ class ACMEContainerCreate(Container):
 
 	def compose(self) -> ComposeResult:
 		"""	Build the *Update* view.
+
+			Return:
+				The composed view.
 		"""
 		from ..textui.ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)
 		"""	The application. """
-
 
 		yield self.requestView
 		yield self.responseView
@@ -108,7 +114,7 @@ class ACMEContainerCreate(Container):
 			# The following is a critical section, because the resource tree has to be updated
 			# but we don't want to update the editor. The 'updateResource()' method would do that.
 			# There is a check for the critical section in the 'updateResource()' method above.
-			with CriticalSection('tuiRequest', timeout = 0.0):
+			with CriticalSection('tuiRequest', timeout = 0.0): 
 				self._app.containerTree.refreshCurrentNode()
 				self._app.containerTree.updateResource(self.resource)
 

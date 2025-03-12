@@ -13,7 +13,8 @@
 from __future__ import annotations
 
 from typing import Any, Tuple, Generator, Optional
-import os, platform, re, subprocess, traceback, threading
+import os, platform, re, subprocess, traceback, threading, hashlib, hmac
+from urllib.parse import urlsplit, urlunsplit
 
 
 def strToBool(value:str) -> bool:
@@ -106,6 +107,18 @@ def renameThread(prefix:Optional[str] = None,
 	else:
 		thread.name = str(thread.native_id)
 	return True
+
+
+def getThreadName(thread:Optional[threading.Thread] = None) -> str:
+	"""	Get the name of a thread.
+
+		Args:
+			thread: The Thread to get the name from. If none is provided then the current thread is used.
+
+		Returns:
+			The name of the thread.
+	"""
+	return threading.current_thread().name if not thread else thread.name
 
 
 ##############################################################################
@@ -204,3 +217,53 @@ def normalizeURL(url:str) -> str:
 		while len(url) > 0 and url[-1] == '/':
 			url = url[:-1]
 	return url
+
+
+def getBasicAuthFromUrl(url:str) -> Tuple[str, str, str]:
+	""" Get the basic auth credentials from a URL.
+
+		Args:
+			url: URL to extract the basic auth credentials from.
+		Returns:
+			A tuple with the URL without the basic auth credentials, the username and the password.
+	"""
+	split = urlsplit(url)
+	if split.username is not None and split.password is not None:
+		return urlunsplit((split.scheme, 
+					 	   f'{split.hostname}{":"+str(split.port) if split.port else ""}',
+						   split.path,
+						   split.query, 
+						   split.fragment)), split.username, split.password
+	return url, '', ''
+
+
+def buildBasicAuthUrl(url:str, username:str, password:str) -> str:
+	""" Build a URL with basic auth credentials.
+
+		Args:
+			url: URL to add the basic auth credentials to.
+			username: Username for the basic auth.
+			password: Password for the basic auth.
+
+		Returns:
+			URL with the basic auth credentials.
+	"""
+	split = urlsplit(url)
+	return urlunsplit((split.scheme, 
+					   f'{username}:{password}@{split.hostname}{":"+str(split.port) if split.port else ""}',
+					   split.path,
+					   split.query, 
+					   split.fragment))
+
+
+def hashString(s:str, salt:str='') -> str:
+	""" Hash a string using SHA256.
+
+		Args:
+			s: String to hash.
+			salt: Salt to add to the string before hashing. 
+
+		Returns:
+			The SHA256 hash of the string as hex.
+	"""
+	return hmac.new(salt.encode(), msg=s.encode(), digestmod=hashlib.sha256).digest().hex()

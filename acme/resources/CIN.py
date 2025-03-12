@@ -25,6 +25,15 @@ class CIN(AnnounceableResource):
 	""" ContentInstance resource type.
 	"""
 
+	resourceType = ResourceTypes.CIN
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SMD ]
 	""" The allowed child-resource types. """
@@ -65,14 +74,12 @@ class CIN(AnnounceableResource):
 	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.CIN, dct, pi, create = create, inheritACP = True, readOnly = True)
-
+	def initialize(self, pi:str, originator:str) -> None:
+		# Initializations must happen just after the resource is created
+		# because the parent resource checks some of the attributes
 		self.setAttribute('con', '', overwrite = False)
 		self.setAttribute('cs', getAttributeSize(self.con))
-		self.setAttribute('st', 0, overwrite = False)
+		super().initialize(pi, originator)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

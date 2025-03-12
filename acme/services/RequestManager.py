@@ -4,8 +4,10 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Main request dispatcher. All external requests are routed through here.
-#
+"""	RequestManager module.
+	
+	Main request dispatcher. All external requests are routed through here.
+"""
 
 from __future__ import annotations
 from typing import Any, List, Tuple, cast, Dict, Optional, Union
@@ -57,6 +59,8 @@ TargetDetails = List[ 						#type: ignore[misc]
 expirationCheckFactor = 2.0
 
 class RequestManager(object):
+	"""	RequestManager class.
+	"""
 
 	__slots__ = (
 		'_requestLock',
@@ -107,12 +111,23 @@ class RequestManager(object):
 		#
 		#	Structures for pollingChannel requests
 		#
-		self._requestLock = Lock()													# Lock to access the following two dictionaries
-		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeests. Used for handling polling requests.
-		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
+		self._requestLock = Lock()
+		""" Lock to access the following two dictionaries."""
+
+		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}
+		""" Dictionary to map request originators to a list of reqeests. Used for handling polling requests."""
+		
+		self._rqiOriginator:Dict[str, str] = {}
+		""" Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests."""
+		
 		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * expirationCheckFactor, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
+		""" Worker to clean up expired polling requests."""
+
 		self._receivedResponses:Dict[str, Tuple[Result, str]] = {}
+		""" Dictionary to store received responses for non-blocking requests."""
+
 		self._receivedResponsesLock = Lock()
+		""" Lock to access the received responses dictionary."""
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
@@ -122,27 +137,70 @@ class RequestManager(object):
 
 		# Optimized access to events
 		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
+		""" Event for received requests. """
+
 		self._eventCoAPSendRetrieve = CSE.event.coapSendRetrieve 	# type: ignore [attr-defined]
+		""" Event for sending a RETRIEVE request via CoAP. """
+
 		self._eventCoAPSendCreate = CSE.event.coapSendCreate		# type: ignore [attr-defined]
+		""" Event for sending a CREATE request via CoAP. """
+
 		self._eventCoAPSendUpdate = CSE.event.coapSendUpdate		# type: ignore [attr-defined]
+		""" Event for sending an UPDATE request via CoAP. """
+
 		self._eventCoAPSendDelete = CSE.event.coapSendDelete		# type: ignore [attr-defined]
+		""" Event for sending a DELETE request via CoAP. """
+
 		self._eventCoAPSendNotify = CSE.event.coapSendNotify		# type: ignore [attr-defined]
+		""" Event for sending a NOTIFY request via CoAP. """
+
 		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
+		""" Event for sending a RETRIEVE request via HTTP. """
+
 		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
+		""" Event for sending a CREATE request via HTTP. """
+
 		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
+		""" Event for sending an UPDATE request via HTTP. """
+
 		self._eventHttpSendDelete = CSE.event.httpSendDelete		# type: ignore [attr-defined]
+		""" Event for sending a DELETE request via HTTP. """
+
 		self._eventHttpSendNotify = CSE.event.httpSendNotify		# type: ignore [attr-defined]
+		""" Event for sending a NOTIFY request via HTTP. """
+
 		self._eventMqttSendRetrieve = CSE.event.mqttSendRetrieve	# type: ignore [attr-defined]
+		""" Event for sending a RETRIEVE request via MQTT. """
+
 		self._eventMqttSendCreate = CSE.event.mqttSendCreate		# type: ignore [attr-defined]
+		""" Event for sending a CREATE request via MQTT. """
+
 		self._eventMqttSendUpdate = CSE.event.httpSendUpdate		# type: ignore [attr-defined]
+		""" Event for sending an UPDATE request via MQTT. """
+
 		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
+		""" Event for sending a DELETE request via MQTT. """
+
 		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
+		""" Event for sending a NOTIFY request via MQTT. """
+
 		self._eventWsSendRetrieve = CSE.event.wsSendRetrieve		# type: ignore [attr-defined]
+		""" Event for sending a RETRIEVE request via WebSocket. """
+
 		self._eventWsSendCreate = CSE.event.wsSendCreate			# type: ignore [attr-defined]
+		""" Event for sending a CREATE request via WebSocket. """
+
 		self._eventWsSendUpdate = CSE.event.wsSendUpdate			# type: ignore [attr-defined]
+		""" Event for sending an UPDATE request via WebSocket. """
+
 		self._eventWsSendDelete = CSE.event.wsSendDelete			# type: ignore [attr-defined]
+		""" Event for sending a DELETE request via WebSocket. """
+
 		self._eventWsSendNotify = CSE.event.wsSendNotify			# type: ignore [attr-defined]
+		""" Event for sending a NOTIFY request via WebSocket. """
+		
 		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
+		""" Event for sending a NOTIFY request via ACME internally. """
 
 
 		# Map request handlers and events for operations in the RequestManager and the dispatcher
@@ -1146,7 +1204,6 @@ class RequestManager(object):
 				try:
 					_, newValue = CSE.validator.validateAttribute(attribute, value, attributeType, rtype = ResourceTypes.REQRESP)
 				except ResponseException as e:
-					#L.inspect(e)
 					e.dbg = f'attribute: {attribute}, value: {value} : {e.dbg}'
 					e.data = cseRequest
 					raise e
@@ -1290,6 +1347,14 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug('error in provided Operation Execution Time'), data = cseRequest)
 				else:
 					cseRequest.oet = toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+
+				# EXPERIMENTAL: check if the operation execution time is after rqet or rset
+				# see: https://git.onem2m.org/issues/issues/-/issues/217
+				if cseRequest.rqet and _ts >= cseRequest._rqetUTCts:
+					raise BAD_REQUEST(L.logDebug(f'operation execution time is before request expiration time: oet {_ts} >= rqet {cseRequest._rqetUTCts}'), data = cseRequest)
+				if cseRequest.rset and _ts >= cseRequest._rsetUTCts:
+					raise BAD_REQUEST(L.logDebug(f'operation execution time is before result expiration time: oet {_ts} >= rset {cseRequest._rsetUTCts}'), data = cseRequest)
+
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
@@ -1626,7 +1691,7 @@ class RequestManager(object):
 		# Check requestReachability
 		# If the target is NOT reachable then try to retrieve a pollingChannel
 		pollingChannelResources = []
-		if targetResource.rr == False:
+		if targetResource.rr == False and targetResource.ri != RC.cseRi:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
 			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')

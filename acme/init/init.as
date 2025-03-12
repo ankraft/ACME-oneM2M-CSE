@@ -30,7 +30,6 @@
 		"ri":   "${get-config \"cse.resourceID\"}",
 		"rn":   "${get-config \"cse.resourceName\"}",
 		"csi":  "${get-config \"cse.cseID\"}",
-		"rr":   true,
 		"csz":  [ "application/json", "application/cbor" ],
 		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ]
 	}})

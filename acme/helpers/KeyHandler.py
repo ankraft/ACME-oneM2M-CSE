@@ -15,7 +15,7 @@ from typing import Callable, Dict, Tuple, Optional
 import sys, time, select
 from enum import Enum
 
-_timeout = 0.5
+_timeout = 1
 """ Timeout for getch() in seconds. """
 
 try:
@@ -562,9 +562,11 @@ def loop(commands:Commands,
 			ch = '\x03'										# Assign ^C
 
 		# hande potential headless state: just sleep a moment, but only when not keyboad interrupt was received
-		if headless and not _stopLoop:
+		if (headless and not _stopLoop) or ch is None:
 			try:
-				time.sleep(0.2)
+				# The following sleep is necessary to avoid 100% CPU load.
+				# It must be very short because the loop should react immediately to a key press.
+				time.sleep(0.001)
 				continue
 			except KeyboardInterrupt:
 				break

@@ -27,6 +27,18 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 
 class PCH_PCU(VirtualResource):
 
+	resourceType = ResourceTypes.PCH_PCU
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+	resourceName = 'pcu'
+	""" Possibility for virtual sub-classes to provide a specific resource name. """
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
 
@@ -36,20 +48,12 @@ class PCH_PCU(VirtualResource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None,
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.PCH_PCU, 
-						 dct, 
-						 pi = pi, 
-						 create = create, 
-						 inheritACP = True, 
-						 readOnly = True, 
-						 rn = 'pcu')
 
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
+		super().initialize(pi, originator)
 		
-
+	
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
 									id:Optional[str] = None, 
 									originator:Optional[str] = None) -> Result:

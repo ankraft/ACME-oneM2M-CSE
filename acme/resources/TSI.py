@@ -10,13 +10,22 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class TSI(AnnounceableResource):
+
+	resourceType = ResourceTypes.TSI
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+	inheritACP = True
+	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
@@ -48,11 +57,9 @@ class TSI(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
+	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
+		super().initialize(pi, originator)
 
 
 	# Forbid updating

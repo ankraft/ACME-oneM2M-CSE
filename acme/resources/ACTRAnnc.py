@@ -15,6 +15,13 @@ from .AnnouncedResource import AnnouncedResource
 class ACTRAnnc(AnnouncedResource):
 	""" Action announced (ACTRA) resource type """
 
+	resourceType = ResourceTypes.ACTRAnnc
+	""" The resource type """
+
+	typeShortname = resourceType.typeShortname()
+	"""	The resource's domain and type name. """
+
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB,
 													   ResourceTypes.DEPRAnnc 
@@ -49,10 +56,4 @@ class ACTRAnnc(AnnouncedResource):
 		'air': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def __init__(self, dct:Optional[JSON] = None, 
-					   pi:Optional[str] = None, 
-					   create:Optional[bool] = False) -> None:
-		super().__init__(ResourceTypes.ACTRAnnc, dct, pi = pi, create = create)
 

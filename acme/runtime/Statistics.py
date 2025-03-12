@@ -455,6 +455,7 @@ skinparam rectangle {
 	Shadowing<< CSE >> false
 	bordercolor<< CSE >> #cccccc
 }
+skinparam linetype ortho
 """
 
 		# Own CSE node & http interface
@@ -467,8 +468,22 @@ skinparam rectangle {
 		http = 'https' if Configuration.http_security_useTLS else 'http'
 		result += f'interface "{http}\\n{Configuration.http_port}" as http_own #white\n'
 
+		# MQTT broker connection
+		if Configuration.mqtt_enable:
+			mqtt = 'mqtts' if Configuration.mqtt_security_useTLS else 'mqtt'
+			result += f'interface "{mqtt}\\n{mqtt}://{Configuration.mqtt_address}:{Configuration.mqtt_port}" as mqtt_own #white\n'
+		
+		# Own CoAP interface
+		if Configuration.coap_enable:
+			result += f'interface "coap\\n{Configuration.coap_port}" as coap_own #white\n'
+
+		# Own WS interface
+		if Configuration.websocket_enable:
+			ws = 'wss' if Configuration.websocket_security_useTLS else 'ws'
+			result += f'interface "{ws}\\n{Configuration.websocket_port}" as ws_own #white\n'
+
 		# Build Resource Tree
-		result += 'note right of CSE\n'
+		result += 'note left of CSE\n'
 		result += '**Resource Tree**\n\n'
 		cse = getCSE()
 		result += f'{cse.rn}\n'
@@ -476,7 +491,13 @@ skinparam rectangle {
 		result += 'end note\n'
 
 		# Build Own
-		result += 'http_own - [CSE] : \\t\n'
+		result += 'http_own -[norank]- [CSE] #lightblue\n'
+		if Configuration.mqtt_enable:
+			result += 'mqtt_own -[norank]- [CSE] #lightblue\n'
+		if Configuration.coap_enable:
+			result += 'coap_own -[norank]- [CSE] #lightblue\n'
+		if Configuration.websocket_enable:
+			result += 'ws_own -[norank]- [CSE] #lightblue\n'
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?

@@ -70,6 +70,8 @@ class ResponseStatusCode(ACMEIntEnum):
 	"""	OPERATION_DENIED_BY_REMOTE_ENTITY """
 	SERVICE_SUBSCRIPTION_NOT_ESTABLISHED		= 4128
 	"""	SERVICE_SUBSCRIPTION_NOT_ESTABLISHED """
+	INVALID_PROCESS_CONFIGURATION				= 4142
+	"""	INVALID PROCESS CONFIGURATION """
 	INVALID_SPARQL_QUERY 						= 4143
 	"""	INVALID_SPARQL_QUERY """
 	INTERNAL_SERVER_ERROR						= 5000
@@ -147,6 +149,7 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.INVALID_ARGUMENTS							: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INVALID ARGUMENTS
 	ResponseStatusCode.MAX_NUMBER_OF_MEMBER_EXCEEDED				: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST), 								# MAX NUMBER OF MEMBER EXCEEDED
 	ResponseStatusCode.GROUP_MEMBER_TYPE_INCONSISTENT				: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# GROUP MEMBER TYPE INCONSISTENT
+	ResponseStatusCode.INVALID_PROCESS_CONFIGURATION				: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INVALID PROCESS CONFIGURATION
 	ResponseStatusCode.INVALID_SPARQL_QUERY							: (HTTPStatus.BAD_REQUEST, CoAPCodes.BAD_REQUEST),								# INVALID SPARQL QUERY
 	ResponseStatusCode.SERVICE_SUBSCRIPTION_NOT_ESTABLISHED			: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# SERVICE SUBSCRIPTION NOT ESTABLISHED
 	ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE					: (HTTPStatus.FORBIDDEN, CoAPCodes.FORBIDDEN),									# ORIGINATOR HAS NO PRIVILEGE
@@ -384,6 +387,19 @@ class INVALID_ARGUMENTS(ResponseException):
 				data: Optional data.
 		"""
 		super().__init__(ResponseStatusCode.INVALID_ARGUMENTS, dbg, data)
+
+
+class INVALID_PROCESS_CONFIGURATION(ResponseException):
+	"""	INVALID PROCESS CONFIGURATION Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.INVALID_PROCESS_CONFIGURATION, dbg, data)
 
 
 class INVALID_SPARQL_QUERY(ResponseException):

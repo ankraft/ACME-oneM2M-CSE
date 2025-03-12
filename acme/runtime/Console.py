@@ -1121,7 +1121,7 @@ function createResource() {{
 						  cse.rn, 
 						  cse.ri, 
 						  '' if not cse.srv else ', '.join(cse.srv),
-						  str(cse.rr), 
+						  str(cse.rr) if cse.rr is not None else '', 
 						  '' if cse.poa is None else ', '.join(cse.poa),
 						  '' if not registrarCSE else registrarCSE.csi,
 						  '' if not registrees else ', '.join(registrees),
