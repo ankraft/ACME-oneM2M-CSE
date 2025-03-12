@@ -124,6 +124,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 	cseType = 'IN'
 	cseID:str = None
+	cseSecret:str = None
 	cseEnvironment = 'Development'
 	runtimeDirectory = os.path.dirname(configFile)
 	_configFile = os.path.basename(configFile)
@@ -150,7 +151,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		
 
 	def basicConfig() -> None:
-		nonlocal cseType, cseEnvironment
+		nonlocal cseType, cseEnvironment, cseSecret
 		_print(Rule('[b]Basic Configuration[/b]', style = 'dim'))
 
 		cseEnvironment = inquirer.select(
@@ -186,6 +187,11 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Type of CSE to run: Infrastructure, Middle, or Application Service Node.',
 							amark = '✓', 
+						).execute()
+		cseSecret = inquirer.secret(
+							message = 'CSE Secret:',
+							long_instruction='The secret key to secure credentials used by the CSE. Leave empty to use the default.',
+							amark = '✓',
 						).execute()
 
 
@@ -512,6 +518,11 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		for each in (bc := cseConfig()):
 			cnf.append(f'{each}={bc[each]}')
 		cseID = cast(str, bc['cseID'])
+
+		# Add the CSE secret
+		if cseSecret:
+			cnf.append(f'secret={cseSecret}')
+
 		
 		# Prompt for registrar configuration
 		if cseType in [ 'MN', 'ASN' ]:
