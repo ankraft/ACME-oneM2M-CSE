@@ -13,11 +13,11 @@ directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
 print(directories)
 
 setup(
-	name='acmecse-dev',
-	version=time.strftime("%Y%m%d%H%M%S"),
+	# name='acmecse-dev',
+	# version=time.strftime("%Y%m%d%H%M%S"),
 
-	# name='acmecse',
-	# version='2024.10',
+	name='acmecse',
+	version='2025.3',
 
 
 	author='Andreas Kraft',

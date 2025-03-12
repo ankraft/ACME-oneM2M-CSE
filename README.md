@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2024.DEV
+Version 2025.3
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-52C82D.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-52C82D)](LICENSE) ![MyPy](https://img.shields.io/badge/MyPy-covered-52C82D)  
 [![](https://img.shields.io/pypi/v/acmecse)](https://pypi.org/project/acmecse/) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ankraft/ACME-oneM2M-CSE/main.yml?label=docs)](https://acmecse.net)   
@@ -25,17 +25,19 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 ### Highlights in this release
 
-### Improvements
-...
-
-### Misc
-
-...
+- Improved authentication on Mcc (communication between CSEs) and configuration management
+- Improved support for using environment variables for credentials in configuration files
+- &lt;ContentInstance>'s *content* can now store other types than just strings
+- Added support for the [credentials] ManagementOject specialization
+- Many small bug fixes and performance improvements
+- Experimental "no response" response type and the new FlexContainer definition
+- On-boarding can be now run as a separate application
+- Improved the planuml structure diagrams
 
 
 ### What to expect in the next release
 
-See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/166) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
+See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/172) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
 ## Acknowledgements
 
