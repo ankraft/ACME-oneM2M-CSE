@@ -1,10 +1,14 @@
 recursive-include acmecse/init *
 recursive-include acmecse/webui *
+recursive-include acmecse/resources *
 recursive-include acmecse/textui *
+recursive-include tools/notificationServer *
+recursive-include tools/hashcreds *
+recursive-include tools/Docker *
 include CHANGELOG.md
+include CITATION.cff
 include LICENSE
 include README.md
-include tools/pypi/README.md
 global-exclude */__pycache__/*
 global-exclude *.pyc
 global-exclude .DS_Store

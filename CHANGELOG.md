@@ -7,8 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
+## [2025.03.1] - 2025-03-13
 
-## [unreleased 2025.DEV] - xxxx-xx-xx
+### Changed
+- [CSE] Made unloading of the onboarding module more portable.
+
+
+
+## [2025.03] - 2025-03-12
 
 ### Added
 - [CSE] Added support for the [credential] ManagementObject specialization.
