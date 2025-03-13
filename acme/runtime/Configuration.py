@@ -771,9 +771,9 @@ class Configuration(object):
 				# load onboarding module and create user config file.
 				# After that, remove the module from the modules list, because it is not needed anymore
 				from ..runtime import Onboarding
-				import sys
 				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
-				del sys.modules['acme.runtime.Onboarding']
+				import sys
+				del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
 				del Onboarding
 
 				if not result:

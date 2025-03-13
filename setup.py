@@ -13,11 +13,11 @@ directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
 print(directories)
 
 setup(
-	# name='acmecse-dev',
-	# version=time.strftime("%Y%m%d%H%M%S"),
+	name='acmecse-dev',
+	version=time.strftime("%Y%m%d%H%M%S"),
 
-	name='acmecse',
-	version='2025.3',
+	# name='acmecse',
+	# version='2025.03.1',
 
 
 	author='Andreas Kraft',
@@ -51,9 +51,9 @@ setup(
 		'requests', 
 		'rich', 
 		'shapely',
-		'textual>=1.0.0',
+		'textual==1.0.0',
 		# 'textual[syntax]',
-		'textual-plotext',
+		'textual-plotext>=1.0.0',
 		'tinydb',
 		'waitress',
 		'websockets',
