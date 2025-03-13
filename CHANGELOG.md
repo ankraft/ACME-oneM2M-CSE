@@ -7,6 +7,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
+
+## [2025.dev] - unreleased
+
+### Added
+
+### Experimental
+
+### Changed
+
+### Fixed
+
+
+
 ## [2025.03.1] - 2025-03-13
 
 ### Changed
@@ -56,9 +69,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed regression bug when using newer versions of the *isodate* package. 
 - [CSE] Prevent other content than 'm2m:sgn' and 'm2m:rsp' in notification requests.
 - [CSE] Prevent targeting CSE as target of a notification to prevent notification loops.
-
-
-### Removed
 
 
 
