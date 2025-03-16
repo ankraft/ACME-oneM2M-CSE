@@ -154,6 +154,7 @@ oauthClientSecret 	= ''
 doHttpBasicAuth		= False
 httpUserName 		= 'test'
 httpPassword 		= 'testPassword'
+httpPassword 		= 'test'
 
 #
 #	HTTP Token authentication

@@ -1289,6 +1289,7 @@ def setNotificationServerURL() -> None:
 
 def runNotificationServer() -> None:
 	global notificationServerIsRunning
+
 	httpd = HTTPServer(('', NOTIFICATIONPORT), SimpleHTTPRequestHandler)
 	if PROTOCOL == 'https':
 		# init ssl socket
@@ -1304,7 +1305,7 @@ def runNotificationServer() -> None:
 def startNotificationServer() -> None:
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
-	waitMessage('Starting notification server', 2)
+	waitMessage(f'Starting notification server at {NOTIFICATIONSERVER}', 2)
 
 
 def stopNotificationServer() -> None:
@@ -1322,7 +1323,6 @@ def stopNotificationServer() -> None:
 
 def isNotificationServerRunning() -> bool:
 	try:
-		print(NOTIFICATIONSERVER)
 		_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
 		return True
 	except Exception:
