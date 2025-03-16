@@ -5,6 +5,7 @@ recursive-include acmecse/textui *
 recursive-include tools/notificationServer *
 recursive-include tools/hashcreds *
 recursive-include tools/Docker *
+recursive-include tools/pypi *
 include CHANGELOG.md
 include CITATION.cff
 include LICENSE
