@@ -17,7 +17,7 @@ setup(
 	version=time.strftime("%Y%m%d%H%M%S"),
 
 	# name='acmecse',
-	# version='2025.03.1',
+	# version='2025.03.2',
 
 
 	author='Andreas Kraft',
