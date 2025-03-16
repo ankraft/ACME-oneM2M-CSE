@@ -832,7 +832,7 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return self.httpBasicAuthData.get(username) == hashString(password, 'acme')
+		return self.httpBasicAuthData.get(username) == hashString(password, Configuration.cse_security_secret)
 
 
 	def validateHttpTokenAuth(self, token:str) -> bool:
@@ -844,7 +844,7 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return hashString(token, 'acme') in self.httpTokenAuthData
+		return hashString(token, Configuration.cse_security_secret) in self.httpTokenAuthData
 	
 
 	def validateWSBasicAuth(self, username:str, password:str) -> bool:
@@ -857,7 +857,7 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return self.wsBasicAuthData.get(username) == hashString(password, 'acme')
+		return self.wsBasicAuthData.get(username) == hashString(password, Configuration.cse_security_secret)
 
 
 	def validateWSTokenAuth(self, token:str) -> bool:
@@ -869,7 +869,7 @@ class SecurityManager(object):
 			Return:
 				Boolean indicating the result.
 		"""
-		return hashString(token, 'acme') in self.wsTokenAuthData
+		return hashString(token, Configuration.cse_security_secret) in self.wsTokenAuthData
 
 
 	def _initAuthInformation(self) -> None:

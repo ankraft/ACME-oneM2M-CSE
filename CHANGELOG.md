@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [CSE] Replaced accidental constant with configurable secret when testing hashed credentials.
 
 
 
