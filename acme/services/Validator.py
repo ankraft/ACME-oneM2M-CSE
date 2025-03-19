@@ -983,7 +983,7 @@ class Validator(object):
 							if fromAbsRelTimestamp(value) == 0.0:
 								raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
 						# fallthrough
-					case int():
+					case int() if not isinstance(value, bool):	# bool is a subclass of int !
 						pass
 						# fallthrough
 					case _:
