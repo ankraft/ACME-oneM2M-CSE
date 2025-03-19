@@ -265,8 +265,12 @@ class Validator(object):
 				value: Value to validate for the attribute.
 				attributeType: If *attributeType* is set then that type is taken to perform the check, otherwise the attribute type is determined.
 				rtype: Some attributes' validations depend on the resource type.
+			
 			Return:
 				A tuple with determined data type and the converted value.
+			
+			Raises:
+				BAD_REQUEST: If the validation fails.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
@@ -622,12 +626,13 @@ class Validator(object):
 				attributesComplexTypes[attr] = [ attrPolicy.ctype ]
 
 
-	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
+	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str, specific:bool=False) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
 
 			Args:
-				rtype: Resource type.
+				rtype: Resource type to check first.
 				attr: Attribute name.
+				specific: Boolean, indicating whether to search for a specific type.
 			
 			Return:
 				AttributePolicy or None.
@@ -636,8 +641,22 @@ class Validator(object):
 		if (ap := attributePolicies.get((rtype, attr))):
 			return ap
 
+		# We can return here if we are looking for a specific type		
+		if specific:
+			return None
+		
+		# Try Request or Response parameters
+		if (ap := attributePolicies.get((ResourceTypes.REQUEST, attr))):
+			return ap
+		if (ap := attributePolicies.get((ResourceTypes.RESPONSE, attr))):
+			return ap
+
 		# If it couldn't be found, look whether it has been defined for ALL
 		if (ap := attributePolicies.get((ResourceTypes.ALL, attr))):
+			return ap
+
+		# Request or Reponse Attribute?
+		if (ap := attributePolicies.get((ResourceTypes.REQRESP, attr))):
 			return ap
 		
 		# TODO look for other types, requests, filter...
@@ -892,6 +911,9 @@ class Validator(object):
 					is an error. 
 			Return:
 				Result. If the check is positive then a tuple is returned: (the determined data type, the converted value).
+
+			Raises:
+				BAD_REQUEST: If the validation fails.
 		"""
 
 		# Ignore None values

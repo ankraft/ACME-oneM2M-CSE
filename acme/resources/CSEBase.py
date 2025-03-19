@@ -69,15 +69,16 @@ class CSEBase(AnnounceableResource):
 			'acpi': None,
 
 			# Resource attributes
-			'poa': None,
-			'nl': None,
-			'daci': None,
-			'esi': None,
-			'srv': None,
-			'cst': None,
 			'csi': None,
+			'cst': None,
 			'csz': None,
 			'ctm': None,
+			'daci': None,
+			'esi': None,
+			'nl': None,
+			'poa': None,
+			'srt': None,
+			'srv': None,
 	}
 	"""	Represent a dictionary of attribute policies used in validation. """
 
@@ -88,10 +89,10 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('rn', 'cse', overwrite = False)
 		self.setAttribute('csi', '/cse', overwrite = False)
 
-		self.setAttribute('poa', RC.csePOA, overwrite = False)	
 		self.setAttribute('cst', RC.cseType, overwrite = False)
-		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
 		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations())
+		self.setAttribute('poa', RC.csePOA, overwrite = False)	
+		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
 		self.setAttribute('srv', RC.supportedReleaseVersions)			# This must be a list
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
