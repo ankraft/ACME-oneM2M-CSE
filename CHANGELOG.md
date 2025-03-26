@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.
 
 
 
