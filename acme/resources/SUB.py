@@ -130,7 +130,6 @@ class SUB(Resource):
 		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
 
-
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		super().deactivate(originator, parentResource)
 		CSE.notification.removeSubscription(self, originator)
@@ -169,7 +168,7 @@ class SUB(Resource):
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
 			for crsRI in set(self.acrs) - set(newAcrs):
 				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
-				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
+				CSE.notification.sendDeletionNotification(crsRI, self.ri, self.cr)	# TODO ignore result?
 
 		# Do actual update
 		super().update(dct, originator, doValidateAttributes = False)

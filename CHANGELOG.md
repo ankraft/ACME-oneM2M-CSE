@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [2025.dev] - unreleased
 
 ### Added
+- [CSE] Added tests for deletion notifications (*creator* attribute).
 
 ### Experimental
 
@@ -18,6 +19,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.
+- [CSE] Added missing *creator* attribute in deletion notifications for &lt;crossResourceSubscription> resources.
 
 
 

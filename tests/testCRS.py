@@ -1942,6 +1942,81 @@ class TestCRS(unittest.TestCase):
 		r, rsc = DELETE(crsURL, TestCRS.originator)
 		self.assertEqual(rsc, RC.DELETED, r)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCRSWithCreator(self) -> None:
+		""" DELETE <RS> with creator. Deletion request must contain the creator"""
+		dct = 	{ 'm2m:crs' : { 
+			'rn' : crsRN,
+			'nu' : [ NOTIFICATIONSERVER ],
+			'twt': 1,
+			'tws' : f'PT{crsTimeWindowSize}S',
+			'rrat': [ self.cnt1RI, self.cnt2RI],
+			'encs': {
+				'enc' : [
+					{
+						'net': [ NET.createDirectChild ],
+					}
+					]
+			},
+			'su': NOTIFICATIONSERVER,
+			'cr': None,
+		}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# Clear the notification first
+		testSleep(1) 	# wait a moment
+		clearLastNotification()
+
+		# Delete the sub
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+		# Check notification
+		lastNotification = getLastNotification()	# no delay! blocking
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/cr'), TestCRS.originator, lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCRSWithoutCreator(self) -> None:
+		""" DELETE <CRS> without creator. Deletion request must not contain the creator"""
+		dct = 	{ 'm2m:crs' : { 
+			'rn' : crsRN,
+			'nu' : [ NOTIFICATIONSERVER ],
+			'twt': 1,
+			'tws' : f'PT{crsTimeWindowSize}S',
+			'rrat': [ self.cnt1RI, self.cnt2RI],
+			'encs': {
+				'enc' : [
+					{
+						'net': [ NET.createDirectChild ],
+					}
+					]
+			},
+			'su': NOTIFICATIONSERVER,
+		}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.CREATED, TestCRS.crs)
+
+		# Clear the notification first
+		testSleep(1) 	# wait a moment
+		clearLastNotification()
+
+		# Delete the sub
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+		# Check notification
+		lastNotification = getLastNotification()	# no delay! blocking
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+
+
 	#########################################################################
 
 	def _testSubscriptionForCnt(self, cnt:str, present:bool = True) -> str:
@@ -2101,6 +2176,10 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createCRSSlidingSomeEventsMissingAll',
 		'test_createCRSSlidingSomeEventsMissingSome',
 		'test_createCRSSlidingSomeEventsMissingNone',
+
+		# Test creator
+		'test_deleteCRSWithCreator',
+		'test_deleteCRSWithoutCreator',
 	
 	])
 

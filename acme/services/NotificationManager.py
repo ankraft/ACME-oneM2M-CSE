@@ -141,12 +141,12 @@ class NotificationManager(object):
 
 		# Send a deletion request to the subscriberURI
 		if (su := subscription.su):
-			if not self.sendDeletionNotification(su, subscription.ri):
+			if not self.sendDeletionNotification(su, subscription.ri, subscription.cr):
 				L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
 		if (acrs := subscription.acrs):
-			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
+			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri, subscription.cr)
 		
 		# Finally remove subscriptions from storage
 		try:
@@ -610,7 +610,7 @@ class NotificationManager(object):
 
 		# Send a deletion request to the subscriberURI
 		if (su := crs.su):
-			if not self.sendDeletionNotification(su, crs.ri):
+			if not self.sendDeletionNotification(su, crs.ri, crs.cr):
 				L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
 
 
@@ -1108,7 +1108,7 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender)
 
 
-	def sendDeletionNotification(self, uri:Union[str, list[str]], ri:str) -> bool:
+	def sendDeletionNotification(self, uri:Union[str, list[str]], ri:str, creator:str = None) -> bool:
 		"""	Send a Deletion Notification to a single or a list of target.
 
 			Args:
@@ -1126,6 +1126,8 @@ class NotificationManager(object):
 					'sur' : toSPRelative(ri)
 				}
 			}
+			# Set the creator attribute if there is an originator for the subscription
+			creator and setXPath(deletionNotification, 'm2m:sgn/cr', creator)
 
 			try:
 				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,

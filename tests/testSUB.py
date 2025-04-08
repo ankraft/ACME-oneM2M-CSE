@@ -885,6 +885,58 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBWithCreator(self) -> None:
+		""" DELETE <SUB> with creator. Deletion request must contain the creator"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+        			'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+					'cr' : None,	# will be provided by the CSE
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Clear the notification first
+		testSleep(1) 	# wait a moment
+		clearLastNotification()
+
+		# Delete the sub
+		r, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+		# Check notification
+		lastNotification = getLastNotification()	# no delay! blocking
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/cr'), TestSUB.originator, lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBWithoutCreator(self) -> None:
+		""" DELETE <SUB> without creator. Deletion request must not contain the creator"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+        			'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Clear the notification first
+		testSleep(1) 	# wait a moment
+		clearLastNotification()
+
+		# Delete the sub
+		r, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+		# Check notification
+		lastNotification = getLastNotification()	# no delay! blocking
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAESUBwithURIctCBOR(self) -> None:
 		""" CREATE new <AE> and <SUB>. nu=uri&ct=cbor -> Send verification request"""
 		# create a second AE
@@ -2060,7 +2112,11 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createCNTwithOriginatorPOACBOR',
 		'test_deleteAEwithOriginatorPOA',
 
-		# With non-reqzest reachable 
+		# creator
+		'test_deleteSUBWithCreator',
+		'test_deleteSUBWithoutCreator',
+
+		# With non-request reachable 
 		'test_createAESUBwithOriginatorPOANotReachable',
 		'test_deleteAEwithOriginatorPOA',
 
