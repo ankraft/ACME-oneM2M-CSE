@@ -148,6 +148,10 @@ class Dispatcher(object):
 		self.checkRequestExpiration(request)
 		self.checkResultExpiration(request)
 
+		#
+		#	Handle virtual resources
+		#
+
 		# handle fanout point requests
 		if (fanoutPointResource := self._getFanoutPointResource(srn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
@@ -160,7 +164,6 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIRsrc.getSrn()}')
 			return pollingChannelURIRsrc.handleRetrieveRequest(request, id, originator)
 
-		# EXPERIMENTAL
 		# Handle latest and oldest RETRIEVE
 		if (laOlResource := self._latestOldestResource(srn)):		# We need to check the srn here
 			# Check for virtual resource
@@ -681,10 +684,16 @@ class Dispatcher(object):
 		self.checkRequestExpiration(request)
 		self.checkResultExpiration(request)
 
+		#
+		# 	Handle virtual resources
+		#
+
 		# handle fanout point requests
 		if (fanoutPointRsrc := self._getFanoutPointResource(srn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
+		
+		# la, ol, pcu, ntsr cannot receive CREATE request
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if not ResourceTypes.isRequestCreatable(request.ty):
@@ -975,6 +984,8 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
+		# la, ol, pcu, ntsr cannot receive UPDATE request
+		
 		# Get resource to update
 		resource = self.retrieveResource(id)
 
@@ -1856,9 +1867,7 @@ class Dispatcher(object):
 			Return:
 				Return either the virtual PollingChannelURI resource or None.
 		"""
-		if not id:
-			return None
-		if id.endswith('pcu'):
+		if id and id.endswith('/pcu'):
 			# Convert to srn
 			if not isStructured(id):
 				if not (id := structuredPathFromRI(id)):
@@ -1910,9 +1919,7 @@ class Dispatcher(object):
 			Return:
 				Return either the virtual resource, or None in case of an error.
 		"""
-		if not id:
-			return None
-		if id.endswith(('la', 'ol')):
+		if id and id.endswith(('/la', '/ol')):
 			# Convert to srn
 			if not isStructured(id):
 				if not (id := structuredPathFromRI(id)):
