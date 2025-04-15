@@ -300,6 +300,15 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSEwithResourceTypeFail(self) -> None:
+		""" Retrieve <CSEBAse> with set Resource Type paramater -> Fail """
+		# Space in Content-Type header field
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'Content-Type' : 'application/json;ty=2'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
 	#
 	#	Partial RETRIEVE
 	#
@@ -551,6 +560,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_resourceWithoutRN',
 		'test_subWithoutRN',
 		'test_createAEContentTypeWithSpacesHeader',
+		'test_retrieveCSEwithResourceTypeFail',
 
 		# Partial retrieve
 		'test_partialRetrieveCSEBaseSingle',

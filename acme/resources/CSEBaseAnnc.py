@@ -57,9 +57,16 @@ class CSEBaseAnnc(AnnouncedResource):
 		'lnk': None,
 
 		# Resource attributes
+		'csi': None,
+		'cst': None,
+		'csz': None,
+		'ctm': None,
+		'daci': None,
 		'esi': None,
+		'nl': None,
+		'poa': None,
+		'srt': None,
 		'srv': None,
-		# TODO no CSI?
 	}
 
 

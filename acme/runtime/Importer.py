@@ -422,7 +422,6 @@ class Importer(object):
 					for entry in attributeDefs:
 						if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
 							return False
-						#L.isDebug and L.logDebug(attributePolicy)
 						if not attributePolicy.rtypes:
 							L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace = False)
 							return False
@@ -617,6 +616,12 @@ class Importer(object):
 				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
 
+		# Test whether the rtypes are known and convert them to the internal representation
+		_rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None 	# type:ignore[arg-type]
+		if rtypes and not _rtypes:
+			L.logErr(f'Unknown resource type definition: {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+			return None
+		
 		#	Create an AttributePolicy instance and return it
 		ap = AttributePolicy(	type = typ,
 								typeName = typeName,
@@ -629,7 +634,7 @@ class Importer(object):
 								lname = lname,
 								sname = sname,
 								typeShortname = typeShortname,
-								rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
+								rtypes = _rtypes,
 								ctype = ctype,
 								fname = fn,
 								ltype = ltype,

@@ -1295,6 +1295,8 @@ class RequestManager(object):
 
 			# TY - resource type
 			if (ty := gget(cseRequest.originalRequest, 'ty', greedy = False)) is not None:	# ty is an int
+				if op != Operation.CREATE:
+					raise BAD_REQUEST(L.logDebug('Resource Type parameter is only allowed in CREATE operation'), data = cseRequest)
 				if ResourceTypes.has(ty):
 					cseRequest.ty = ResourceTypes(ty)
 				else:

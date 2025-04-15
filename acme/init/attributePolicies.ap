@@ -98,7 +98,7 @@
 	],
 	"ctm": [
 		{
-			"rtypes": [ "CSEBase" ],
+			"rtypes": [ "CSEBase", "CSEBaseAnnc" ],
 			"lname": "currentTime",
 			"ns": "m2m",
 			"type": "timestamp",
@@ -151,7 +151,7 @@
 	],
 	"st": [
 		{
-			"rtypes": [ "ALL" ], 
+			"rtypes": [ "CNT", "CINxx", "FCNT", "FCI" ], 
 			"lname": "stateTag",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -304,7 +304,7 @@
 
 	"acrs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SUB" ],
 			"lname": "associatedCrossResourceSub",
 			"ns": "m2m",
 			"type": "list",
@@ -318,7 +318,7 @@
 	],
 	"act": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SWR", "SWRAnnc" ],
 			"lname": "activate",
 			"ns": "m2m",
 			"type": "boolean",
@@ -331,7 +331,7 @@
 	],
 	"acts": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SWR", "SWRAnnc" ],
 			"lname": "activeStatus",
 			"ns": "m2m",
 			"type": "m2m:actionStatus",	
@@ -358,7 +358,7 @@
 	],
 	"adri": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACP", "ACPAnnc" ],
 			"lname": "authorizationDecisionResourceIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -372,7 +372,7 @@
 	],
 	"aei": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "AE-ID",
 			"ns": "m2m",
 			"type": "ID",
@@ -411,7 +411,7 @@
 	],
 	"airi": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACP", "ACPAnnc" ],
 			"lname": "authorizationInformationResourceIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -425,7 +425,7 @@
 	],
 	"ant": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANI", "ANIAnnc" ],
 			"lname": "areaNwkType",
 			"ns": "m2m",
 			"type": "string",
@@ -438,7 +438,7 @@
 	],
 	"ape": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc", "CSR", "CSRAnnc" ],
 			"lname": "activityPatternElements",
 			"ns": "m2m",
 			"type": "list",
@@ -452,7 +452,7 @@
 	],
 	"api": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "App-ID",
 			"ns": "m2m",
 			"type": "string",
@@ -465,7 +465,7 @@
 	],
 	"apn": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "appName",
 			"ns": "m2m",
 			"type": "string",
@@ -505,7 +505,7 @@
 	],
 	"apri": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACP", "ACPAnnc" ],
 			"lname": "authorizationPolicyResourceIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -574,7 +574,7 @@
 	],
 	"att": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVC", "DVCAnnc" ],
 			"lname": "attached",
 			"ns": "m2m",
 			"type": "boolean",
@@ -1047,7 +1047,7 @@
 	],
 	"csi": [
 		{
-			"rtypes": [ "CSEBase", "CSRAnnc" ],
+			"rtypes": [ "CSEBase", "CSEBaseAnnc", "CSRAnnc" ],
 			"lname": "CSE-ID",
 			"ns": "m2m",
 			"type": "ID",
@@ -1536,7 +1536,7 @@
 	],
 	"fc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "filterCriteria",
 			"ns": "m2m",
 			"type": "m2m:filterCriteria",
@@ -2383,7 +2383,7 @@
 	],
 	"mi": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "metaInformation",
 			"ns": "m2m",
 			"type": "m2m:metaInformation",
@@ -2396,7 +2396,7 @@
 	],
 	"mia": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CNT", "CNTAnnc", "FCNT", "FCNTAnnc", "TS", "TSAnnc" ],
 			"lname": "maxInstanceAge",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -2924,7 +2924,7 @@
 	],
 	"psn": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SUB" ],
 			"lname": "preSubscriptionNotify",
 			"ns": "m2m",
 			"type": "positiveInteger",	// non-enum
@@ -2964,7 +2964,7 @@
 	],
 	"purl": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVI", "DVIAnnc"],
 			"lname": "presentationURL",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2977,7 +2977,7 @@
 	],
 	"pv": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACP", "ACPAnnc" ],
 			"lname": "privileges",
 			"ns": "m2m",
 			"type": "m2m:setOfAcrs",
@@ -2990,7 +2990,7 @@
 	],
 	"pvs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ACP", "ACPAnnc" ],
 			"lname": "selfPrivileges",
 			"ns": "m2m",
 			"type": "m2m:setOfAcrs",
@@ -3003,7 +3003,7 @@
 	],
 	"rbo": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "RBO", "RBOAnnc", "REQRESP"],
 			"lname": "reboot",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3029,7 +3029,7 @@
 	],
 	"regs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "registrationStatus",
 			"ns": "m2m",
 			"type": "string",
@@ -3540,7 +3540,7 @@
 	],
 	"spty": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "GRP", "GRPAnnc" ],
 			"lname": "specializationType",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -3553,7 +3553,7 @@
 	],
 	"spur": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVI", "DVIAnnc" ],
 			"lname": "supportURL",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -3566,7 +3566,7 @@
 	],
 	"sqi": [
 		{
-			"rtypes": [ "REQRESP" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "semanticQueryIndicator",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3606,7 +3606,7 @@
 	],
 	"srt": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CSEBase", "CSEBaseAnnc" ],
 			"lname": "supportedResourceType",
 			"ns": "m2m",
 			"type": "list",
@@ -3621,7 +3621,7 @@
 	],
 	"srv": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc" ],
 			"lname": "supportedReleaseVersions",
 			"ns": "m2m",
 			"type": "list",
@@ -3635,7 +3635,7 @@
 	],
 	"ss": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc" ],
 			"lname": "devStatus",
 			"ns": "m2m",
 			"type": "string",
@@ -3648,7 +3648,7 @@
 	],
 	"ssi": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "GRP", "GRPAnnc" ],
 			"lname": "semanticSupportIndicator",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3701,7 +3701,7 @@
 	],
 	"su": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "SUB" ],
 			"lname": "subscriberURI",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -3740,7 +3740,7 @@
 
 	"suids": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "NYCFC", "NYCFCAnnc" ],
 			"lname": "SUIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -3768,7 +3768,7 @@
 	],
 	"swn": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SWR", "SWRAnnc" ],
 			"lname": "softwareName",
 			"ns": "m2m",
 			"type": "string",
@@ -3781,7 +3781,7 @@
 	],
 	"swv": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVI", "DVIAnnc"],
 			"lname": "swVersion",
 			"ns": "m2m",
 			"type": "string",
@@ -3794,7 +3794,7 @@
 	],
 	"syst": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVI", "DVIAnnc" ],
 			"lname": "systemTime",
 			"ns": "m2m",
 			"type": "timestamp",
@@ -3807,7 +3807,7 @@
 	],
 	"tg": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQ" ],
 			"lname": "target",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -3833,7 +3833,7 @@
 	],
 	"tren": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc", "CSR", "CSRAnnc" ],
 			"lname": "triggerEnable",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3846,7 +3846,7 @@
 	],
 	"tri": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CSR" ],
 			"lname": "Trigger-Recipient-ID",
 			"ns": "m2m",
 			"type": "string",
@@ -3859,7 +3859,7 @@
 	],
 	"trn": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CSR" ],
 			"lname": "triggerReferenceNumber",
 			"ns": "m2m",
 			"type": "unsignedInt",
@@ -3872,7 +3872,7 @@
 	],
 	"trps": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "trackRegistrationPoints",
 			"ns": "m2m",
 			"type": "boolean",
@@ -3912,7 +3912,7 @@
 	],
 	"ud": [
 		{
-			"rtypes": [ "WIFIC", "WIFICAnnc" ],
+			"rtypes": [ "WIFIC", "WIFICAnnc"],
 			"lname": "update",
 			"ns": "dcfg",
 			"type": "boolean",
@@ -3923,7 +3923,7 @@
 			"annc": "OA"
 		},
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "FWR", "FWRAnnc" ],
 			"lname": "update",
 			"ns": "m2m",
 			"type": "boolean",
@@ -4112,7 +4112,7 @@
 	],
 	"drt": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
 			"type": "enum",
@@ -4245,7 +4245,7 @@
 	],
 	"rcn": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "resultContent",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -4323,7 +4323,7 @@
 	],
 	"arp": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "applyRelativePath",
 			"ns": "m2m",
 			"type": "string",
@@ -4336,7 +4336,7 @@
 	],
 	"rt": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST" ],
 			"lname": "responseType",
 			"ns": "m2m",
 			"type": "m2m:responseTypeInfo",
@@ -4362,7 +4362,7 @@
 	],
 	"rvi": [	
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST", "RESPONSE" ],
 			"lname": "releaseVersionIndicator",
 			"ns": "m2m",
 			"type": "string",
@@ -4402,7 +4402,7 @@
 	],
 	"vsi": [
 		{
-			"rtypes": [ "ALL", "REQRESP" ],
+			"rtypes": [ "REQUEST", "RESPONSE" ],
 			"lname": "vendorInformation",
 			"ns": "m2m",
 			"type": "string",

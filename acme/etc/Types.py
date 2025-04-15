@@ -43,6 +43,10 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Type for request / response structures (internal). """
 	COMPLEX			= -4
 	"""	Indicate a comples data structure (internal). """
+	REQUEST 		= -5
+	"""	Request primitive (internal). """
+	RESPONSE		= -6
+	"""	Response primitive (internal). """
 
 	# Resource Types
 	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
@@ -575,6 +579,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.MIXED		: ResourceDescription(typeName = 'm2m:mixed', isInternalType = True),
 	ResourceTypes.REQRESP	: ResourceDescription(typeName = 'reqresp', isInternalType = True),
 	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
+	ResourceTypes.REQUEST	: ResourceDescription(typeName = 'requestPrimitive', isInternalType = True),
+	ResourceTypes.RESPONSE	: ResourceDescription(typeName = 'responsePrimitive', isInternalType = True),
 
 }
 """	Mapping between resource types and their description. """
