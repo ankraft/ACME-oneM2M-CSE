@@ -758,6 +758,8 @@ class BasicType(ACMEIntEnum):
 	"""	IPv4 address. """
 	ipv6Address			= auto()	# dcfg:ipv6Address
 	"""	IPv6 address. """
+	token				= auto()	# xs:token
+	"""	XML token. """
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time

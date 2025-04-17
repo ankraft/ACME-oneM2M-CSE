@@ -168,7 +168,7 @@
 			"lname": "labels",
 			"ns": "m2m",
 			"type": "list",
-			"ltype" : "string",
+			"ltype" : "token",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",

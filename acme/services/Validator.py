@@ -821,6 +821,8 @@ class Validator(object):
 					return '<string>'
 				case BasicType.ID:
 					return '<ID>'
+				case BasicType.token:
+					return '<token>'
 				case BasicType.anyURI:
 					return '<uri>'
 				case BasicType.ncname:
@@ -896,6 +898,9 @@ class Validator(object):
 						   		'*', '+', ',', '/', ':', ';', '<', '=', '>', 
 								'?', '@', '[', ']', '^', '´' , '`', '{', '|', '}', '~' )
 	"""	Disallowed characters in NCName. """
+
+	_tokenDisallowedChars = ( '\t', '\n', '\r' )
+	"""	Disallowed characters in token. """
 
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 
@@ -995,7 +1000,12 @@ class Validator(object):
 
 			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
 				return (dataType, value)
-			
+		
+			case BasicType.token if isinstance(value, str):
+				if any(_c in value for _c in self._tokenDisallowedChars) or '  ' in value:
+					raise BAD_REQUEST(f'invalid token: "{value}" must not contain double spaces or any of ' + ', '.join([f'0x{ord(c):02x}' for c in self._tokenDisallowedChars]))
+				return (dataType, value)			
+
 			case BasicType.ncname if isinstance(value, str):
 				if len(value) == 0 or value[0].isdigit() or value[0] in ('-', '.'):
 					raise BAD_REQUEST(f'invalid NCName: {value} (must not start with a digit, "-", or ".")')

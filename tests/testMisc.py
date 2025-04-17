@@ -300,13 +300,58 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED, r)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSEwithResourceTypeFail(self) -> None:
 		""" Retrieve <CSEBAse> with set Resource Type paramater -> Fail """
 		# Space in Content-Type header field
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'Content-Type' : 'application/json;ty=2'})
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_tokenValidationFail(self) -> None:
+		""" Test token validation -> Fail """
+
+		# create test container
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, cnt)
+
+		# Update with invalid token: double spaces
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ 'a  double space label' ],
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Update with invalid token: tab
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ 'a label with\ttab' ],
+				}}
+		# Space in Content-Type header field
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Update with invalid token: newline
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ 'a label with\nnewline' ],
+				}}
+		# Space in Content-Type header field
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Update with invalid token: carriage return
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ 'a label with\rcarriage return' ],
+				}}
+		# Space in Content-Type header field
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
 
 	#
@@ -561,6 +606,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_subWithoutRN',
 		'test_createAEContentTypeWithSpacesHeader',
 		'test_retrieveCSEwithResourceTypeFail',
+		'test_tokenValidationFail',
 
 		# Partial retrieve
 		'test_partialRetrieveCSEBaseSingle',
