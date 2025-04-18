@@ -1004,6 +1004,8 @@ class Validator(object):
 			case BasicType.token if isinstance(value, str):
 				if any(_c in value for _c in self._tokenDisallowedChars) or '  ' in value:
 					raise BAD_REQUEST(f'invalid token: "{value}" must not contain double spaces or any of ' + ', '.join([f'0x{ord(c):02x}' for c in self._tokenDisallowedChars]))
+				if len(value) == 0:
+					raise BAD_REQUEST(f'invalid token: "{value}" must not be empty')
 				return (dataType, value)			
 
 			case BasicType.ncname if isinstance(value, str):

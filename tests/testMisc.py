@@ -350,6 +350,14 @@ class TestMisc(unittest.TestCase):
 		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
+		# Update with invalid token: empty
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ '' ],
+				}}
+		# Space in Content-Type header field
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
 		# delete the CNT again
 		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
