@@ -2719,6 +2719,8 @@ class AttributePolicy:
 	""" Dict of enum values and interpretations. """
 	ptype:Type					= None	# Implementation type of the enum values
 	""" Implementation type of the enum values. """
+	lSize:int					= None	# mandatory size of the list
+	""" Mandatory size of a list. """
 
 	# TODO support annnouncedSyncType
 

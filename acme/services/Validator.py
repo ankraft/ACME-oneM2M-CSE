@@ -1022,6 +1022,8 @@ class Validator(object):
 				if dataType == BasicType.listNE and len(value) == 0:
 					raise BAD_REQUEST('empty list is not allowed')
 				if policy is not None and policy.ltype is not None:
+					if policy.lSize is not None and len(value) != policy.lSize:
+						raise BAD_REQUEST(f'list size mismatch: {len(value)} != {policy.lSize}')
 					for each in value:
 						self._validateType(policy.ltype, each, convert = convert, policy = policy)
 				return (dataType, value)

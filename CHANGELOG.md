@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 - [CSE] Added tests for deletion notifications (*creator* attribute).
 - [CSE] Added support for xs:token type in attribute policies and validation.
+- [CSE] Added validation support for fixed list lengths in attribute policies.
 
 ### Experimental
 

@@ -589,6 +589,15 @@ class Importer(object):
 					# evalues = self._expandEnumValues(evalues, typeShortname, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {typeShortname} in file: {fn}')
+		
+		# Check optional list size
+		if lSize := findXPath(attr, 'lsize'):
+			if not lTypeName:
+				L.logErr(f'List size (lsize) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				return None
+			if not isinstance(lSize, int) or lSize < 0:
+				L.logErr(f'Wrong list size (lsize): {lSize} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				return None
 
 		#	Check and get enum definitions
 		evalues = None
@@ -623,24 +632,25 @@ class Importer(object):
 			return None
 		
 		#	Create an AttributePolicy instance and return it
-		ap = AttributePolicy(	type = typ,
-								typeName = typeName,
-								optionalCreate = oc,
-								optionalUpdate = ou,
-								optionalDiscovery = od,
-								cardinality = car,
-								announcement = annc,
-								namespace = ns,
-								lname = lname,
-								sname = sname,
-								typeShortname = typeShortname,
-								rtypes = _rtypes,
-								ctype = ctype,
-								fname = fn,
-								ltype = ltype,
-								etype = etype,
-								lTypeName = lTypeName,
-								evalues = evalues
+		ap = AttributePolicy(	type=typ,
+								typeName=typeName,
+								optionalCreate=oc,
+								optionalUpdate=ou,
+								optionalDiscovery=od,
+								cardinality=car,
+								announcement=annc,
+								namespace=ns,
+								lname=lname,
+								sname=sname,
+								typeShortname=typeShortname,
+								rtypes=_rtypes,
+								ctype=ctype,
+								fname=fn,
+								ltype=ltype,
+								etype=etype,
+								lTypeName=lTypeName,
+								evalues=evalues,
+								lSize=lSize
 							)
 		return ap
 
