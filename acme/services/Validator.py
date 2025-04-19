@@ -1035,11 +1035,16 @@ class Validator(object):
 
 				if isinstance(value, dict):
 					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+					choiceAttributes:list[str] = []
 					for k, v in value.items():
 						if not (p := self.getAttributePolicy(typeName, k)):
 							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+						if policy.choice:
+							choiceAttributes.append(k)
+							if len(choiceAttributes) > 1:
+								raise BAD_REQUEST(f'only one of the attributes {choiceAttributes} is allowed in complex type: {typeName}')
 						# recursively validate a dictionary attribute
-						self._validateType(p.type, v, convert = convert, policy = p)
+						self._validateType(p.type, v, convert=convert, policy=p)
 
 					# Check that all mandatory attributes are present
 					attributeNames = value.keys()

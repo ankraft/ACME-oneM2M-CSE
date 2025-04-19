@@ -530,6 +530,12 @@ class Importer(object):
 			if not isinstance(ctype, str) or len(ctype) == 0:
 				L.logErr(f'Wrong complex type name (ctype) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
+		
+		# Get the optional choice attribute
+		if (choice := findXPath(attr, 'choice')) is not None:
+			if not isinstance(choice, bool):
+				L.logErr(f'Wrong type for choice for attribute: {typeShortname} in file: {fn} - must be boolean', showStackTrace=False)
+				return None
 
 		#	Determine the type name and assign the internal data type
 		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
@@ -650,7 +656,8 @@ class Importer(object):
 								etype=etype,
 								lTypeName=lTypeName,
 								evalues=evalues,
-								lSize=lSize
+								lSize=lSize,
+								choice=choice,
 							)
 		return ap
 
