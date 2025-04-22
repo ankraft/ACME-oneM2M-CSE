@@ -790,17 +790,20 @@ class Validator(object):
 		return str(value)
 
 
-	def getAttributeValueRepresentation(self, attr:str, resourceType:ResourceTypes) -> str:
+	def getAttributeValueRepresentation(self, attr:str, resourceType:ResourceTypes, withComments:Optional[bool]=True) -> str:
 		"""	Return the representation of an attribute value. This is usually used for
 			the representation of an attribute where the value is not known yet.
 
 			Args:
 				attr: Attribute name.
 				resourceType: Type of the attribute's resource.
+				withComments: Boolean, indicating whether to include comments in the representation.
 				
 			Return:
 				String, representation of the attribute value. This might be a JSON representation of the value.
 		"""
+
+		commentChars = '//' if withComments else ''
 
 		def basicTypeDefaultValue(typ:BasicType, 
 								  policy:Optional[AttributePolicy] = None, 
@@ -818,21 +821,21 @@ class Validator(object):
 
 			match typ:
 				case BasicType.string:
-					return '<string>'
+					return '"<string>"'
 				case BasicType.ID:
-					return '<ID>'
+					return '"<ID>"'
 				case BasicType.token:
-					return '<token>'
+					return '"<token>"'
 				case BasicType.anyURI:
-					return '<uri>'
+					return '"<uri>"'
 				case BasicType.ncname:
-					return '<NCname>'
+					return '"<NCname>"'
 				case BasicType.imsi:
-					return '<imsi>'
+					return '"<imsi>"'
 				case BasicType.iccid:
-					return '<iccid>'
+					return '"<iccid>"'
 				case BasicType.base64:
-					return '<base64 encoded string>'
+					return '"<base64 encoded string>"'
 				case BasicType.positiveInteger:
 					return '<positiveInteger>'
 				case BasicType.nonNegInteger:
@@ -848,13 +851,13 @@ class Validator(object):
 				case BasicType.boolean:
 					return '<boolean true|false>'
 				case BasicType.timestamp:
-					return '<ISO 8601 timestamp>'
+					return '"<ISO 8601 timestamp>"'
 				case BasicType.absRelTimestamp:
-					return '<ISO 8601 timestamp or integer>'
+					return '"<ISO 8601 timestamp or integer>"'
 				case BasicType.duration:
-					return '<ISO 8601 duration>'
+					return '"<ISO 8601 duration>"'
 				case BasicType.schedule:
-					return '<schedule 7-digits cron-like>'
+					return '"<schedule 7-digits cron-like>"'
 				case BasicType.geoJsonCoordinate:
 					return '<GeoJsonCoordinate>'
 				case BasicType.list | BasicType.listNE:
@@ -862,8 +865,8 @@ class Validator(object):
 						if policy.ltype == BasicType.complex:
 							_result = '[ {\n'
 							for a in self.getComplexTypeAttributePolicies(policy.lTypeName):
-								_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
-							_result += f'        //{" "*4*(level+1)} }} ]'
+								_result += f'        {commentChars}{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+							_result += f'        {commentChars}{" "*4*(level+1)} }} ]'
 							return _result
 
 						return f'[ {basicTypeDefaultValue(policy.ltype, policy, level+1)} ]'
@@ -879,8 +882,8 @@ class Validator(object):
 					if policy:
 						_result = '{\n'
 						for a in self.getComplexTypeAttributePolicies(policy.typeName):
-							_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
-						_result += f'        //{" "*4*(level+1)} }}'
+							_result += f'        {commentChars}{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+						_result += f'        {commentChars}{" "*4*(level+1)} }}'
 						return _result
 					return '{ ... }'
 				case _:

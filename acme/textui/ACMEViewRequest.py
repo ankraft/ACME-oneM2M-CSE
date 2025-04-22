@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import cast, Optional, Callable
 from copy import deepcopy
-import json
+import json, re
 
 from rich.syntax import Syntax
 from textual import on
@@ -297,6 +297,7 @@ class ACMEViewRequest(VerticalScroll):
 				elif self.operation == Operation.CREATE and _policy.optionalCreate == RequestOptionality.M:
 					# set the default value
 					_resourceAttributes[attr] = None
+					_possibleResourceAttributes.pop(attr)
 				
 				# remove to-be-processed attributes that are already in the resource
 				elif attr in _resourceAttributes:
@@ -306,7 +307,13 @@ class ACMEViewRequest(VerticalScroll):
 			_text = json.dumps({ resource.typeShortname: _resourceAttributes }, indent = 4)
 
 			# Replace all None values with an indication that the value is not yet present and must be added
-			_text = _text.replace('null', '... // mandatory attribute')
+			_newText:list[str] = []
+			for line in _text.split('\n'):
+				if line.endswith(('null', 'null,')):
+					match = re.search(r'"([^"]*)"', line)
+					line = line.replace('null', f'{CSE.validator.getAttributeValueRepresentation( match.group(1), resourceType, False)}, // mandatory attribute')
+				_newText.append(line)
+			_text = '\n'.join(_newText)	
 		
 			# add the not-yet present but possible resource attributes in the middle of the resource
 			_result = [ f'        // "{attr}": {CSE.validator.getAttributeValueRepresentation(attr, resourceType)}'
