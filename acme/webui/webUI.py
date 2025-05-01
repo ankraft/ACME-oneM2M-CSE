@@ -11,9 +11,9 @@
 """
 
 from __future__ import annotations
-from typing import Callable, Optional
+from typing import Callable, Optional, NamedTuple
 
-import flask, sys, argparse, logging, ssl, collections, time, webbrowser
+import flask, sys, argparse, logging, ssl, time, webbrowser
 from rich.console import Console
 import requests
 from flask import Flask, request
@@ -326,7 +326,7 @@ class ACMERequestHandler(WSGIRequestHandler):
 #	OAuth2 token handling
 #	
 
-Token = collections.namedtuple('Token', 'token expiration')
+Token = NamedTuple('Token', [('token', str), ('expiration', float)])
 """ Named tuple for a token. """
 _expirationLeeway	= 5.0		# 5 seconds leeway for token expiration
 """	Leeway for token expiration. """

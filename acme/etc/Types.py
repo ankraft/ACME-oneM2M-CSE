@@ -13,16 +13,15 @@ from __future__ import annotations
 from copy import deepcopy
 import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple
 from enum import auto
-from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
+from ..helpers.EventManager import Event
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
 from ..etc.Constants import RuntimeConstants as RC
-
 
 
 #
@@ -2912,12 +2911,18 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest coapEvent httpEvent mqttEvent wsEvent')
+RequestCallback = NamedTuple('RequestCallback', [('ownRequest', Callable), 
+												 ('dispatcherRequest', Callable), 
+												 ('sendRequest', Callable), 
+												 ('coapEvent', Event),
+												 ('httpEvent', Event),
+												 ('mqttEvent', Event),
+												 ('wsEvent', Event)])
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
-RequestResponse = namedtuple('RequestResponse', 'request result')
+RequestResponse = NamedTuple('RequestResponse', [('request', CSERequest), ('result', Result)])
 """ Type definition for a request/response pair. """
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """

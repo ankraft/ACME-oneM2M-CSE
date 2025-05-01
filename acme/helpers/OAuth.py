@@ -8,11 +8,11 @@
 """
 
 from __future__ import annotations
-from typing import Optional
-import collections, time
+from typing import Optional, NamedTuple
+import time
 import requests
 
-Token = collections.namedtuple('Token', 'token expiration')
+Token = NamedTuple('Token', [('token', str), ('expiration', float)])
 """	A named tuple for a token. """
 
 _expirationLeeway:float	= 5.0		# 5 seconds leeway for token expiration
