@@ -10,7 +10,7 @@
 """
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple
+from typing import List, cast, Optional, Any, Tuple, TextIO
 
 import csv, datetime, json, os, sys, webbrowser, socket, platform, io
 
@@ -786,7 +786,7 @@ function createResource() {{
 
 		count:int = 0
 
-		def _writeTo(f:io.TextIOWrapper, instances:List[Resource]) -> None:
+		def _writeTo(f:TextIO, instances:List[Resource]) -> None:
 			nonlocal count
 
 			writer = csv.writer(f)
