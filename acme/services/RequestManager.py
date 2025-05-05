@@ -510,7 +510,6 @@ class RequestManager(object):
 	def notifyRequest(self, request:CSERequest) -> Result:
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
-
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
 				return CSE.dispatcher.processNotifyRequest(request, request.originator)

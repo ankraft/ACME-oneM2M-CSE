@@ -54,8 +54,12 @@ from ..resources.LCP import LCP
 from ..resources.LCPAnnc import LCPAnnc
 from ..resources.NOD import NOD
 from ..resources.NODAnnc import NODAnnc
+from ..resources.NTP import NTP
+from ..resources.NTPR import NTPR
+from ..resources.NTSR import NTSR
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
+from ..resources.PDR import PDR
 from ..resources.PRMR import PRMR
 # TODO from ..resources.PRMRAnnc import PRMRAnnc
 from ..resources.PRP import PRP
@@ -146,8 +150,12 @@ addResourceFactoryCallback(ResourceTypes.LCP,			LCP,			lambda dct, typeShortname
 addResourceFactoryCallback(ResourceTypes.LCPAnnc,		LCPAnnc,		lambda dct, typeShortname, create : LCPAnnc(dct, create = create))
 addResourceFactoryCallback(ResourceTypes.NOD,			NOD,			lambda dct, typeShortname, create : NOD(dct, create = create)) 
 addResourceFactoryCallback(ResourceTypes.NODAnnc,		NODAnnc,		lambda dct, typeShortname, create : NODAnnc(dct, create = create)) 
+addResourceFactoryCallback(ResourceTypes.NTP,			NTP,			lambda dct, typeShortname, create : NTP(dct, create=create)) 
+addResourceFactoryCallback(ResourceTypes.NTPR,			NTPR,			lambda dct, typeShortname, create : NTPR(dct, create=create)) 
+addResourceFactoryCallback(ResourceTypes.NTSR,			NTSR,			lambda dct, typeShortname, create : NTSR(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.PCH,			PCH,			lambda dct, typeShortname, create : PCH(dct, create = create)) 
 addResourceFactoryCallback(ResourceTypes.PCH_PCU,		PCH_PCU,		lambda dct, typeShortname, create : PCH_PCU(dct, create = create)) 
+addResourceFactoryCallback(ResourceTypes.PDR,			PDR,			lambda dct, typeShortname, create : PDR(dct, create=create))
 addResourceFactoryCallback(ResourceTypes.PRMR,			PRMR,			lambda dct, typeShortname, create : PRMR(dct, create = create))
 # TODO addResourceFactoryCallback(ResourceTypes.PRMRAnnc,	PRMRAnnc,		lambda dct, typeShortname : PRMRAnnc(dct))
 addResourceFactoryCallback(ResourceTypes.PRP,			PRP,			lambda dct, typeShortname, create : PRP(dct, create = create))

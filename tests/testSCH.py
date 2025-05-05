@@ -13,16 +13,9 @@ if '..' not in sys.path:
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acme.etc.Types import NotificationEventType, NotificationEventType as NET
 from init import *
-from datetime import timedelta
 
 nodeID  = 'urn:sn:1234'
 
-def createScheduleString(range:int, delay:int = 0) -> str:
-	"""	Create schedule string for range seconds """
-	dts = datetime.now(tz = timezone.utc) + timedelta(seconds = delay)
-	dte = dts + timedelta(seconds = range)
-	return f'{dts.second}-{dte.second} {dts.minute}-{dte.minute} {dts.hour}-{dte.hour} * * * *'
-		
 
 class TestSCH(unittest.TestCase):
 

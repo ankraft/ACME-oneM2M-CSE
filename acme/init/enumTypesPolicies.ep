@@ -136,6 +136,10 @@
 	"m2m:locationUpdateEventCriteria": {
 		"0": "Location_Change"
 	},
+	"m2m:logicalOperator" : {
+		"1": "AND",
+		"2": "OR"
+	},
 	"m2m:logStatus" : {
 		"1": "Started",
 		"2": "Stopped",
@@ -202,6 +206,12 @@
 		"9": "blockingRetrieve (EXPERIMENTAL)",	// EXPERIMENTAL
 		"10": "blockingRetrieveDirectChild (EXPERIMENTAL)"	// EXPERIMENTAL
 	},
+	"m2m:notificationTargetPolicyAction" : {
+		"1": "accept request",
+		"2": "reject request",
+		"3": "accept request and inform the subscription originator",
+		"4": "inform the subscription originator without taking any action"
+	},
 	"m2m:operation" : {
 		"1": "Create",
 		"2": "Retrieve",
@@ -255,6 +265,9 @@
 		"18": "schedule",
 		"23": "subscription",
 		"24": "semanticDescriptor",
+		"25": "NotificationTargetMgmtPolicyRef",
+		"26": "notificationTargetPolicy",
+		"27": "policyDeletionRules",
 		"28": "flexContainer",
 		"29": "timeSeries",
 		"30": "timeSeriesInstance",

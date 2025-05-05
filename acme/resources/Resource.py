@@ -464,9 +464,9 @@ class Resource(object):
 		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator:Optional[str]=None, 
+					   dct:Optional[JSON]=None, 
+					   parentResource:Optional[Resource]=None) -> None:
 		""" Validate a resource. 
 		
 			Usually called within `activate()` or `update()` methods.
@@ -1069,6 +1069,8 @@ class Resource(object):
 
 	def getOriginator(self) -> str:
 		"""	Retrieve a resource's originator.
+
+			This is the originator that created the resource. It is stored internally within the resource.
 
 			Return:
 				The resource's originator.

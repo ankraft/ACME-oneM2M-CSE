@@ -40,6 +40,7 @@ from ..runtime.Configuration import Configuration
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
+from ..resources.NTSR import NTSR
 from ..resources.SMD import SMD
 from ..runtime.Logging import Logging as L
 
@@ -158,11 +159,11 @@ class Dispatcher(object):
 			return fanoutPointResource.handleRetrieveRequest(request, srn, request.originator)
 
 		# Handle PollingChannelURI RETRIEVE
-		if (pollingChannelURIRsrc := self._getPollingChannelURIResource(srn)):		# We need to check the srn here
-			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIRsrc):
+		if (pollingChannelURIResource := self._getPollingChannelURIResource(srn)):		# We need to check the srn here
+			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has not RETRIEVE privileges to <pollingChannelURI>: {id}'))
-			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIRsrc.getSrn()}')
-			return pollingChannelURIRsrc.handleRetrieveRequest(request, id, originator)
+			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.getSrn()}')
+			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
 
 		# Handle latest and oldest RETRIEVE
 		if (laOlResource := self._latestOldestResource(srn)):		# We need to check the srn here
@@ -184,6 +185,11 @@ class Dispatcher(object):
 				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE, request=request, resultResource = res.resource):
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {Permission.RETRIEVE}')
 				return res
+
+		# Handle notificationTargetSelfReference RETRIEVE
+		if (notificationTargetSelfReferenceResource := self._getNotificationTargetSelfReferenceResource(srn)):
+			L.isDebug and L.logDebug(f'Redirecting request to notificationTargetSelfReference: {notificationTargetSelfReferenceResource.getSrn()}')
+			return notificationTargetSelfReferenceResource.handleRetrieveRequest(request, id, originator)
 
 		# The permission also indicates whether this is RETRIEVE or DISCOVERY
 		permission = Permission.DISCOVERY if request.fc.fu == FilterUsage.discoveryCriteria else Permission.RETRIEVE
@@ -985,6 +991,11 @@ class Dispatcher(object):
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
 		# la, ol, pcu, ntsr cannot receive UPDATE request
+
+		if (ntsrResource := self._getNotificationTargetSelfReferenceResource(id)) and ntsrResource.ty == ResourceTypes.NTSR:
+			L.isDebug and L.logDebug(f'Redirecting request to notification target self reference: {ntsrResource.getSrn()}')
+			return ntsrResource.handleUpdateRequest(request, id, request.originator)
+
 		
 		# Get resource to update
 		resource = self.retrieveResource(id)
@@ -1173,6 +1184,12 @@ class Dispatcher(object):
 		if (fanoutPointRsrc := self._getFanoutPointResource(fopsrn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleDeleteRequest(request, fopsrn, request.originator)
+	
+		# handle notification target self reference requests
+		if (ntsrResource := self._getNotificationTargetSelfReferenceResource(id)):
+			L.isDebug and L.logDebug(f'Redirecting request to notification target self reference: {ntsrResource.getSrn()}')
+			return ntsrResource.handleDeleteRequest(request, id, request.originator)
+
 
 		# get resource to be removed and check permissions
 		resource = self.retrieveResource(id)
@@ -1462,7 +1479,7 @@ class Dispatcher(object):
 			An empty list is returned if no child resource could be found.
 
 			Args:
-				pi: The parent's resourceIdentifier.
+				pi: The parent's resourceIdentifier. This is the resourceID of resource.
 				ty: The resource type or list of resource types to filter for.
 
 			Return:
@@ -1859,6 +1876,28 @@ class Dispatcher(object):
 
 
 
+	def _getVirtualResource(self, id:str, rn:str|tuple[str, ...]) -> Optional[Resource]:
+		"""	Check whether the target is a virtual resource and return it.
+		
+			Args:
+				id: Target resource ID
+				rn: The resource name to check for. Can be a tuple of names. Must begin with a slash.
+			Return:
+				Return either the virtual resource or None.
+		"""
+
+		if id and id.endswith(rn):
+			# Convert to srn
+			if not isStructured(id):
+				if not (id := structuredPathFromRI(id)):
+					return None
+			resource = self.retrieveResource(id)
+			if resource.isVirtual():
+				return resource
+		return None
+
+
+
 	def _getPollingChannelURIResource(self, id:str) -> Optional[PCH_PCU]:
 		"""	Check whether the target is a PollingChannelURI resource and return it.
 
@@ -1867,19 +1906,39 @@ class Dispatcher(object):
 			Return:
 				Return either the virtual PollingChannelURI resource or None.
 		"""
-		if id and id.endswith('/pcu'):
-			# Convert to srn
-			if not isStructured(id):
-				if not (id := structuredPathFromRI(id)):
-					return None
-
-			resource = self.retrieveResource(id)
-			if resource.ty == ResourceTypes.PCH_PCU:
-				return cast(PCH_PCU, resource)
-
-
-			# Fallthrough
+		if (res := self._getVirtualResource(id, '/pcu')) and res.ty == ResourceTypes.PCH_PCU:
+			return cast(PCH_PCU, res)
+		# Fallthrough
 		return None
+
+
+	def _latestOldestResource(self, id:str) -> Optional[Resource]:
+		"""	Check whether the target is a latest or oldest virtual resource and return it.
+
+			Args:
+				id: Target resource ID
+			Return:
+				Return either the virtual resource, or None in case of an error.
+		"""
+		if (res := self._getVirtualResource(id, ('/la', '/ol'))) and ResourceTypes.isLatestOldestResource(res.ty):
+			return res
+		# Fallthrough
+		return None
+	
+
+	def _getNotificationTargetSelfReferenceResource(self, id:str) -> Optional[NTSR]:
+		"""	Check whether the target is a notificationTargetSelfReference virtual resource and return it.
+
+			Args:
+				id: Target resource ID
+			Return:
+				Return either the virtual resource, or None in case of an error.
+		"""
+		if (res := self._getVirtualResource(id, '/ntsr')):
+			return cast(NTSR, res)
+		# Fallthrough
+		return None
+
 
 	
 	def _getFanoutPointResource(self, id:str) -> Optional[Resource]:
@@ -1908,25 +1967,6 @@ class Dispatcher(object):
 				return self.retrieveResource(nid)
 			except:
 				pass
-		return None
-
-
-	def _latestOldestResource(self, id:str) -> Optional[Resource]:
-		"""	Check whether the target is a latest or oldest virtual resource and return it.
-
-			Args:
-				id: Target resource ID
-			Return:
-				Return either the virtual resource, or None in case of an error.
-		"""
-		if id and id.endswith(('/la', '/ol')):
-			# Convert to srn
-			if not isStructured(id):
-				if not (id := structuredPathFromRI(id)):
-					return None
-			if (resource := self.retrieveResource(id)) and ResourceTypes.isLatestOldestResource(resource.ty):
-				return resource
-		# Fallthrough
 		return None
 
 

@@ -21,6 +21,7 @@ from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
+from ..resources import Factory
 
 
 # TODO notificationForwardingURI
@@ -36,7 +37,9 @@ class SUB(Resource):
 	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
+												   	   ResourceTypes.NTPR,
+												   	   ResourceTypes.SCH,
 						   							 ]
 
 	# Attributes and Attribute policies for this Resource Class
@@ -128,6 +131,21 @@ class SUB(Resource):
 		# Increment the parent's subscription counter
 		parentResource.incrementSubscriptionCounter()
 		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
+
+		L.isDebug and L.logDebug(f'Registering <NTSR> for: {self.ri}')
+		dct = {
+			'm2m:ntsr' : {
+				'rn' : 'ntsr'
+			}
+		}
+		pcu = Factory.resourceFromDict(dct, 
+								 	   pi = self.ri, 
+									   ty = ResourceTypes.NTSR,
+									   create = True,
+									   originator = originator)	# rn is assigned by resource itself
+		
+		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
+
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:

@@ -82,6 +82,12 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Subscription resource type. """
 	SMD				= 24
 	""" SemanticDescriptor resouce type. """
+	NTPR			= 25
+	""" notificationTargetMgmtPolicyRef resource type. """
+	NTP				= 26
+	""" NotificationTargetPolicy resource type. """
+	PDR 			= 27
+	""" PolicyDeletionRules resource type. """
 	FCNT	 		= 28
 	"""	FlexContainer resource type. """
 	TS				= 29
@@ -124,6 +130,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Latest virtual resource type for TimeSeries. """
 	TS_LA			=  -20008
 	"""	Oldest virtual resource type for TimeSeries. """
+	NTSR			=  -20009
+	"""	NotificationTargetSelfReference of a Subscription. """
 
 
 	# <mgmtObj> Specializations
@@ -515,8 +523,12 @@ _ResourceTypeDetails = {
 	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
+	ResourceTypes.NTP			: ResourceDescription(typeName = 'm2m:ntp', fullName='NotificationTargetPolicy'),
+	ResourceTypes.NTPR			: ResourceDescription(typeName = 'm2m:ntpr', fullName='notificationTargetMgmtPolicyRef'),
+	ResourceTypes.NTSR			: ResourceDescription(typeName = 'm2m:ntsr', virtualResourceName = 'ntsr', isRequestCreatable = False, fullName='NotificationTargetSelfReference'),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
+	ResourceTypes.PDR			: ResourceDescription(typeName = 'm2m:pdr', fullName='PolicyDeletionRules'),
 	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
 	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
 	ResourceTypes.PRP			: ResourceDescription(typeName = 'm2m:prp', announcedType = ResourceTypes.PRPAnnc, fullName='PrimitiveProfile'),
@@ -1605,6 +1617,29 @@ _defaultNCT = {
 	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
 }
 """	Mappings between NotificationEventType and default NotificationContentType """
+
+
+class LogicalOperator(ACMEIntEnum):
+	"""	Logical Operator enum values for notification target policies. """
+
+	AND = 1
+	""" AND operation. """
+	OR = 2
+	""" OR operation. """
+
+
+class NotificationTargetPolicyAction(ACMEIntEnum):
+	"""	Notification Target Policy Action enum values. """
+
+	ACCEPTREQUEST = 1
+	""" Accept request. """
+	REJECTREQUEST = 2
+	""" Reject request. """
+	SEEKAUTHORIZATION = 3
+	""" Seek authorization from the subscription originator before taking any action. """
+	INFORMONLY = 4
+	""" Inform the subscription originator without taking any action. """
+
 
 ##############################################################################
 #
@@ -2720,6 +2755,8 @@ class AttributePolicy:
 	""" Implementation type of the enum values. """
 	lSize:int					= None	# mandatory size of the list
 	""" Mandatory size of a list. """
+	choice:bool					= False	# whether this is a choice attribute
+	""" Whether this attribute is part of a choice. """
 
 	# TODO support annnouncedSyncType
 
@@ -2739,6 +2776,9 @@ class AttributePolicy:
 
 AttributePolicyDict:TypeAlias = Dict[str, AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
+
+AttributePolicyDictList:TypeAlias = Dict[str, list[AttributePolicy]]
+"""	Represent a dictionary of  attribute policies lists used in validation. """
 
 ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """

@@ -1122,6 +1122,32 @@
 		}
 	],
 
+	//
+	//	m2m:deletionContexts
+	//
+	
+	"tod": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:deletionContexts",
+			"lname": "timeOfDay",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "schedule",
+			"car": "01L"
+		}
+	],
+	"lr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:deletionContexts",
+			"lname": "locationRegions",
+			"ns": "m2m",
+			"type": "m2m:locationRegion",
+			"car": "01L"
+		}
+	],
+
 
 	//
 	//	m2m:eventNotificationCriteria
@@ -1470,10 +1496,12 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:locationRegion",
+			"choice": true,
 			"lname": "circRegion",
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "float",
+			"lsize": 3,
 			"car": "01"
 		}
 	],
@@ -1481,6 +1509,7 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:locationRegion",
+			"choice": true,
 			"lname": "countryCode",
 			"ns": "m2m",
 			"type": "list",		// m2m:countryCode

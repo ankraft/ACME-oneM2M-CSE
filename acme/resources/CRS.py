@@ -44,7 +44,10 @@ class CRS(Resource):
 
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
+												   	   ResourceTypes.NTPR,
+													   ResourceTypes.SCH,
+													]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

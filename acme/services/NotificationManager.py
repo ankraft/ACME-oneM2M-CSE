@@ -13,16 +13,18 @@
 from __future__ import annotations
 from typing import Callable, Union, Any, cast, Optional
 
-import sys, copy
+import sys, copy, isodate
 from threading import Lock, current_thread
+from operator import or_, and_
 
-import isodate
 from ..etc.Types import CSERequest, MissingData, ResourceTypes, NotificationContentType, NotificationEventType, TimeWindowType, EventEvaluationMode
-from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation, OperationMonitor
+from ..etc.Types import EventCategory, JSON, JSONLIST, ResourceTypes, Operation, OperationMonitor, NotificationTargetPolicyAction, LogicalOperator
+from ..etc.Types import RequestResponseList
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_REACHABLE, OPERATION_NOT_ALLOWED
-from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND
+from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND, ORIGINATOR_HAS_NO_PRIVILEGE
+from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
 from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
 from ..etc.Utils import isAcmeUrl
@@ -33,6 +35,9 @@ from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
+from ..resources.NTSR import NTSR
+from ..resources.PDR import PDR
+from ..resources.NTP import NTP
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 
@@ -823,7 +828,7 @@ class NotificationManager(object):
 									   originator:Optional[str] = None, 
 									   background:Optional[bool] = False, 
 									   preFunc:Optional[Callable] = None, 
-									   postFunc:Optional[Callable] = None) -> None:
+									   postFunc:Optional[Callable] = None) -> RequestResponseList:
 		"""	Send a notification to a single URI or a list of URIs. 
 		
 			A URI may be a resource ID, then the *poa* of that resource is taken. 
@@ -839,19 +844,23 @@ class NotificationManager(object):
 				background: Send the notifications in a background task.
 				preFunc: Function that is called before each notification sending, with the notification target as a single argument.
 				postFunc: Function that is called after each notification sending, with the notification target as a single argument.
+			
+			Return:
+				A list of results for each notification sent. An empty list is returned if *background* is set to *True*.	
 		"""
 
-		def _sender(nu: str, originator:str, content:JSON) -> bool:
+		def _sender(nu: str, originator:str, content:JSON) -> RequestResponseList:
 			if preFunc:
 				preFunc(nu)
-			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-													 to = nu, 
-													 originator = originator, 
-													 pc = content))
+			res = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+														   to=nu, 
+														   originator=originator, 
+														   pc=content))
 			if postFunc:
 				postFunc(nu)
-			return True
+			return res
 
+		result:RequestResponseList = []
 		if isinstance(nus, str):
 			nus = [ nus ]
 		for nu in nus:
@@ -861,7 +870,9 @@ class NotificationManager(object):
 																						  originator = originator,
 																						  content = dct)
 			else:
-				_sender(nu, originator = originator, content = dct)
+				result.extend(_sender(nu, originator = originator, content = dct))
+		
+		return result
 
 
 	###########################################################################
@@ -1108,7 +1119,7 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender)
 
 
-	def sendDeletionNotification(self, uri:Union[str, list[str]], ri:str, creator:str = None) -> bool:
+	def sendDeletionNotification(self, uri:Union[str, list[str]], ri:str, creator:str=None) -> bool:
 		"""	Send a Deletion Notification to a single or a list of target.
 
 			Args:
@@ -1130,10 +1141,13 @@ class NotificationManager(object):
 			creator and setXPath(deletionNotification, 'm2m:sgn/cr', creator)
 
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-														 to = uri, 
-														 originator = RC.cseCsi,
-											  			 pc = deletionNotification))
+				responses = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																	to=uri, 
+																	originator=RC.cseCsi,
+													  				pc=deletionNotification))
+				# if (response := responses[0] if len(responses) > 0 else None): 
+				# 	L.inspect(response)
+				
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {e.dbg}')
 				return False
@@ -1145,12 +1159,12 @@ class NotificationManager(object):
 
 	def _handleSubscriptionNotification(self, sub:JSON, 
 											  notificationEventType:NotificationEventType, 
-											  resource:Optional[Resource] = None, 
-											  modifiedAttributes:Optional[JSON] = None, 
-											  missingData:Optional[MissingData] = None,
-											  asynchronous:bool = False,
-											  operationMonitor:Optional[OperationMonitor] = None,
-											  originator:str = None) ->  bool:
+											  resource:Optional[Resource]=None, 
+											  modifiedAttributes:Optional[JSON]=None, 
+											  missingData:Optional[MissingData]=None,
+											  asynchronous:bool=False,
+											  operationMonitor:Optional[OperationMonitor]=None,
+											  originator:str=None) ->  bool:
 		"""	Send a subscription notification.
 
 			Args:
@@ -1452,4 +1466,169 @@ class NotificationManager(object):
 				String with the ID.
 		"""
 		return f'{ri};{nu}'
+
+
+
+	############################################################################
+	#
+	#	Target removal processing
+	#
+
+	def removeNotificationTarget(self, ntsr:NTSR, originator:str) -> None:
+
+		def removeOriginatorFromParentNUs(parentSubscription:Resource) -> None:
+			# Get the parent subscription or cross resource subscription
+			if (nu := parentSubscription.nu):
+				# Remove the Originator from the list of notification targets
+				if originator in nu:
+					nu.remove(originator)
+					L.isDebug and L.logDebug(f'Removed {originator} from notification targets in:  {parentSubscription.ri}')
+					parentSubscription.dbUpdate()
+				else:
+					L.isDebug and L.logDebug(f'Originator {originator} not found in notification targets of: {parentSubscription.ri}')
+
+		# Get the sibling <notificationTargetMgmtPolicyRef> resources
+		ntprs = CSE.dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
+
+		# Check if the Originator is listed as one of the Notification Targets in any <notificationTargetMgmtPolicyRef> resource
+		ntp:NTP = None	# This is the linked to ntp resource
+		if ntprs:
+			for ntpr in ntprs:
+				if (ntu := ntpr.ntu) and originator in ntu:
+					L.logDebug(f'Originator {originator} found in <ntpr>: {ntpr.ri}')
+					if not (npi := ntpr.npi):
+						L.isDebug and L.logDebug(f'No <ntp> resource referenced in <ntpr>: {ntpr.ri}')
+						continue
+					try:
+						r = CSE.dispatcher.retrieveLocalResource(npi, originator=originator)
+						if r.ty != ResourceTypes.NTP:
+							raise NOT_FOUND(f'Referenced resource is not a <ntp> resource: {r.ri}')
+						ntp = cast(NTP, r)
+					except ResponseException as e:
+						L.logDebug(f'Cannot retrieve <ntp> resource: {npi}: {e.dbg}')
+					break # Stop after the first good match
+		
+		# If no <ntp> resource is found, then check for the default <notificationTargetPolicy> resource
+		if not ntp:
+			# Use the original creator of the resource. Actually, this should be the parent subscription's creator, 
+			# but in this implementation this is the same.
+			originalCreator = ntsr.getOriginator()	
+			L.isDebug and L.logDebug(f'No referenced <NTP> resource found, checking for Default <NTP> resource for original creator: {originalCreator}')
+			rs = CSE.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default', 'cr': originalCreator })
+			match len(rs):
+				case 1:
+					ntp = cast(NTP, rs[0])
+					L.isDebug and L.logDebug(f'Found Default <NTP> resource: {ntp.ri}')
+					# fallthrough
+				case 0:
+					L.isDebug and L.logDebug(f'Originator {originator} not found in any Default <NTP>. Searching for global Default <NTP>.')
+					# TODO this could be optimized. Cache the default NTP
+					rs = CSE.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default' })	
+					if len(rs) == 1:
+						ntp = cast(NTP, rs[0])
+						L.isDebug and L.logDebug(f'Found Default <NTP> resource: {ntp.ri}')
+					else:
+						raise INTERNAL_SERVER_ERROR(L.logErr(f'No Default <NTP> resource found'))
+					# fallthrough
+				case _:
+					raise INTERNAL_SERVER_ERROR(L.logErr(f'Multiple Default <NTP> resources found for originator: {originator}'))
+			
+		# From here on, we have the <ntp> resource
+
+		# Retrieve the <PDR> child resources of the <ntp> resource
+		pdrs:list[PDR] = cast(list[PDR], CSE.dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
+		action:NotificationTargetPolicyAction = None
+		match len(pdrs):
+			case 0:	
+				# If there are no <policyDeletionRules> resources, then the Hosting CSE shall perform the action as specified in the action attribute.
+				action = NotificationTargetPolicyAction(ntp.acn)
+			case 1:	
+				action = ntp.acn if self.evaluatePolicyDeletionRule(pdrs[0]) else None
+			case 2: 
+				match ntp.rrs:
+					case LogicalOperator.AND | None:
+						action = ntp.acn if self.evaluatePolicyDeletionRule(pdrs[0]) and self.evaluatePolicyDeletionRule(pdrs[1]) else None
+					case LogicalOperator.OR:
+						action = ntp.acn if self.evaluatePolicyDeletionRule(pdrs[0]) or self.evaluatePolicyDeletionRule(pdrs[1]) else None
+		
+		L.isDebug and L.logDebug(f'Action to perform after evaluation: {action}')
+		if action is None:
+			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Policies evaluated to false for originator: {originator} for target: {ntsr.ri}'))
+
+		dct:JSON
+		match action:
+			case NotificationTargetPolicyAction.ACCEPTREQUEST:
+				removeOriginatorFromParentNUs(ntsr.retrieveParentResource())
+				# fallthrough
+
+			case NotificationTargetPolicyAction.REJECTREQUEST:
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Rejecting self-removal request for originator: {originator} for target: {ntsr.pi}/ntsr'))
+			
+			case NotificationTargetPolicyAction.SEEKAUTHORIZATION:
+				parentSubscription = ntsr.retrieveParentResource()
+				
+				dct = { 'm2m:sgn' : {
+					'sur' : toSPRelative(parentSubscription.ri),
+					'tra' : True,
+				}}
+
+				responses = self.sendNotificationWithDict(dct, nus=parentSubscription.getOriginator(), originator=RC.cseCsi)
+				if len(responses) == 1:
+					response = responses[0]
+					if response.result.rsc != ResponseStatusCode.OK:
+						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Inform notification failed or rejected: for originator: {originator} for target: {ntsr.pi}/ntsr'))
+					removeOriginatorFromParentNUs(parentSubscription)
+				else:
+					raise INTERNAL_SERVER_ERROR(L.logErr('More than one response received for inform notification'))
+				# fallthrough
+				
+			case NotificationTargetPolicyAction.INFORMONLY:
+				parentSubscription = ntsr.retrieveParentResource()
+				dct = { 'm2m:sgn' : {
+					'sur' : toSPRelative(parentSubscription.ri),
+					'trr' : True,
+				}}
+				self.sendNotificationWithDict(dct, nus=parentSubscription.getOriginator(), originator=RC.cseCsi, background=True)
+				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Rejecting self-removal request for originator: {originator} for target: {ntsr.pi}/ntsr and informing creator'))
+
+
+	def evaluatePolicyDeletionRule(self, pdr:PDR) -> bool:
+		"""	Evaluate a policy deletion rule. 
+
+			Args:
+				pdr: The <policyDeletionRules> resource.
+			
+			Return:
+				True if the rule is satisfied, False otherwise.
+		"""
+		L.isDebug and L.logDebug(f'Evaluating policy deletion rule: {pdr.ri}')
+
+		# Return True when there are no deletion rules
+		if (dr := pdr.dr) is None:
+			L.isDebug and L.logDebug(f'No deletionRules found')
+			return True
+		lrs = dr.get('lr')			# locationRegions
+		tods = dr.get('tod')		# timeOfDay
+		if not lrs and not tods:	# none or empty
+			L.isDebug and L.logDebug(f'No entries for locationRegions or timeOfDay found')
+			return True
+
+		# Get the logical operator		
+		logicalOperator = or_ if pdr.drr is None or pdr.drr == LogicalOperator.OR else and_
+		L.isDebug and L.logDebug(f'Logical operator: {"and" if logicalOperator == and_ else "or"}')
+		
+		# Evaluate the deletion rules
+		result = logicalOperator == and_	# initial value of the result. Start with True for AND, False for OR
+		currentTime = utcDatetime()
+		# Regions (NOT SUPPORTED YET)
+		if lrs:
+			raise NOT_IMPLEMENTED(L.logErr('locationRegions are not implemented for <PDR> resources'))
+		# Time of day
+		if tods:
+			L.isDebug and L.logDebug(f'Evaluating time(s) of day: {tods}')
+			for tod in tods:
+				result = logicalOperator(result, cronMatchesTimestamp(tod, currentTime))
+
+		L.isDebug and L.logDebug(f'Policy deletion rule evaluation result: {result}')
+		return result
 

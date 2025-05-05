@@ -39,7 +39,7 @@
 
 
 ;;
-;;	Allow all originators to create (only) <ACP> under the CSEBase
+;;	Allow all originators to create (only) <ACP> and <NTP> under the CSEBase
 ;;
 
 (import-raw 
@@ -51,7 +51,7 @@
 		"pv": {
 			"acr": [ {
 				"acor": [ "all"	],
-				"acod": [ {	"chty": [ 1 ] }	],
+				"acod": [ {	"chty": [ 1, 26 ] }	],	;; Allow ACP and NTP
 				"acop": 1
 			} ]
 		},
@@ -79,4 +79,17 @@
 		"csz": [ "application/json", "application/cbor" ]
 	}})
 
+
+;;
+;;	Default <NotificationTargetPolicy> resource
+;;
+(import-raw 
+	cse-originator
+	{ "m2m:ntp": {
+		"ri":  "defaultNTP",
+		"rn":  "defaultNTP",
+		"pi":  "${get-config \"cse.resourceID\"}",
+		"acn": 2,	;; reject as a default
+		"plbl": "Default"
+	}})
 

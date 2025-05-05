@@ -67,6 +67,23 @@ def riFromStructuredPath(srn: str) -> Optional[str]:
 		return None
 
 
+def resourceTypeFromID(id:str) -> Optional[ResourceTypes]:
+	""" Get the resource type from a resource ID.
+
+		Args:
+			id: Resource ID to check.
+		Return:
+			Resource type, or None in case of an error.
+	"""
+	if isStructured(id):
+		lst = CSE.storage.structuredIdentifier(id)
+	else:
+		lst = CSE.storage.identifier(id)
+	if not lst:
+		return None
+	return ResourceTypes(lst[0]['ty'])
+
+
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	""" Get the structured part of a hybrid resource ID, including the necessary handling of virtual
 		resources in the path.
@@ -324,6 +341,7 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 		Args:
 			old: Old resource dictionary to compare.
 			new: New resource dictionary to compare.
+			requestPC: The original request's content. This is used to remove the attributes that are part of the update request.
 			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
 		Return:	
 			Return a dictionary of those attributes that have been changed in a CREATE or UPDATE request.	

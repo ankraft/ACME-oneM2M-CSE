@@ -151,7 +151,7 @@
 	],
 	"st": [
 		{
-			"rtypes": [ "CNT", "CINxx", "FCNT", "FCI" ], 
+			"rtypes": [ "CNT", "CIN", "FCNT", "FCI" ], 
 			"lname": "stateTag",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -302,6 +302,20 @@
 	// Resource Attributes 
 	//
 
+	"acn": [
+		{
+			"rtypes": [ "NTP", "REQRESP" ],
+			"lname": "action",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:notificationTargetPolicyAction",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
 	"acrs": [
 		{
 			"rtypes": [ "SUB" ],
@@ -587,7 +601,7 @@
 	],
 	"awi": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc" ],
 			"lname": "areaNwkId",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -666,7 +680,7 @@
 	],
 	"bn": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SUB" ],
 			"lname": "batchNotify",
 			"ns": "m2m",
 			"type": "m2m:batchNotify",
@@ -679,7 +693,7 @@
 	],
 	"btl": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "BAT", "BATAnnc" ],
 			"lname": "batteryLevel",
 			"ns": "m2m",
 			"type": "unsignedInt",
@@ -692,8 +706,8 @@
 	],
 	"bts": [
 		{
-			"rtypes": [ "ALL" ],
-			"lname": "batteryLevel",
+			"rtypes": [ "BAT", "BATAnnc" ],
+			"lname": "batteryStatus",
 			"ns": "m2m",
 			"type": "enum",
 			"etype": "m2m:batteryStatus",
@@ -706,7 +720,7 @@
 	],
 	"can": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVC", "DVCAnnc" ],
 			"lname": "capabilityName",
 			"ns": "m2m",
 			"type": "string",
@@ -719,7 +733,7 @@
 	],
 	"cas": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "DVC", "DVCAnnc" ],
 			"lname": "capabilityActionStatus",
 			"ns": "m2m",
 			"type": "m2m:actionStatus",
@@ -732,7 +746,7 @@
 	],
 	"cb": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CSR", "CSRAnnc" ],
 			"lname": "CSEBase",
 			"ns": "m2m",
 			"type": "string",
@@ -745,7 +759,7 @@
 	],
 	"cbs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CNT", "FCNT", "TS" ],
 			"lname": "currentByteSize",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -771,9 +785,9 @@
 	],
 	"chanl": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "WIFIC", "WIFICAnnc" ],
 			"lname": "channel",
-			"ns": "m2m",
+			"ns": "dcfg",
 			"type": "string",
 			"car": "01",
 			"oc": "O",
@@ -784,7 +798,11 @@
 	],
 	"cmlk": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "mgmtLink",
 			"ns": "m2m",
 			"type": "list",
@@ -812,7 +830,7 @@
 	],
 	"cnd": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "FCNT", "FCNTAnnc" ],
 			"lname": "containerDefinition",
 			"ns": "m2m",
 			"type": "string",
@@ -825,7 +843,7 @@
 	],
 	"cnf": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CIN", "CINAnnc", "TS", "TSAnnc" ],
 			"lname": "contentInfo",
 			"ns": "m2m",
 			"type": "string",
@@ -1137,7 +1155,11 @@
 	],
 	"dc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "description",
 			"ns": "m2m",
 			"type": "string",
@@ -1277,6 +1299,33 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"dr": [
+		{
+			"rtypes": [ "PDR", "REQRESP" ],
+			"lname": "deletionRules",
+			"ns": "m2m",
+			"type": "m2m:deletionContexts",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+	"drr": [
+		{
+			"rtypes": [ "PDR", "REQRESP" ],
+			"lname": "deletionRulesRelation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:logicalOperator",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
 		}
 	],
 	"dsp": [
@@ -1841,6 +1890,19 @@
 			"annc": "OA"
 		}
 	],
+	"plbl": [
+		{
+			"rtypes": [ "NTP", "REQRESP" ],
+			"lname": "policyLabel",
+			"ns": "m2m",
+			"type": "token",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
 	"ldv": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2356,7 +2418,11 @@
 	],
 	"mgd": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
 			"type": "enum",	
@@ -2370,7 +2436,11 @@
 	],
 	"mgs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "mgmtSchema",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -2409,7 +2479,7 @@
 	],
 	"mid": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "GRP", "GRPAnnc" ],
 			"lname": "memberIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -2650,6 +2720,19 @@
 			"annc": "OA"
 		}
 	],
+	"npi": [
+		{
+			"rtypes": [ "NTPR", "REQRESP" ],
+			"lname": "notificationlPolicyID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"nse": [
 		{
 			"rtypes": [ "CRS", "SUB", "REQRESP" ],
@@ -2685,6 +2768,20 @@
 			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"ntu": [
+		{
+			"rtypes": [ "NTPR", "REQRESP" ],
+			"lname": "notificationTargetURI",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "1LN",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
@@ -2732,7 +2829,11 @@
 	],
 	"obis": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "objectIDs",
 			"ns": "m2m",
 			"type": "list",
@@ -2746,7 +2847,11 @@
 	],
 	"obps": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
+						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
+						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
+						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+					 ],
 			"lname": "objectPaths",
 			"ns": "m2m",
 			"type": "list",
@@ -3221,6 +3326,20 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "MA"
+		}
+	],
+	"rrs": [
+		{
+			"rtypes": [ "NTP", "REQRESP" ],
+			"lname": "rulesRelationship",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:logicalOperator",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
 		}
 	],
 	"rs": [

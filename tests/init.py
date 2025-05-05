@@ -12,8 +12,10 @@ from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
 from dataclasses import dataclass
 
 from urllib.parse import ParseResult, urlparse, parse_qs
-import sys, io, atexit, base64, urllib
+import sys, io, atexit, base64
 import unittest
+from datetime import timedelta
+
 
 import requests.adapters
 from rich import inspect
@@ -258,7 +260,10 @@ fcntRN	= 'testFCNT'
 grpRN	= 'testGRP'
 lcpRN	= 'testLCP'
 nodRN 	= 'testNOD'
+ntpRN	= 'testNTP'
+ntprRN	= 'testNTPR'
 pchRN 	= 'testPCH'
+pdrRN 	= 'testPDR'
 prmrRN	= 'testPRMR'
 prpRN	= 'testPRP'
 reqRN	= 'testREQ'
@@ -285,7 +290,9 @@ fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
 lcpURL 	= f'{aeURL}/{lcpRN}'	# under the <ae>
 nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
+ntpURL 	= f'{cseURL}/{ntpRN}'	# under the <cse>
 pchURL 	= f'{aeURL}/{pchRN}'
+pdrURL 	= f'{ntpURL}/{pdrRN}'	# under the <ntp>
 pcuURL 	= f'{pchURL}/pcu'
 smdURL 	= f'{aeURL}/{smdRN}'	# under the <ae>
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
@@ -1405,6 +1412,22 @@ def utcTimestamp() -> float:
 			Float UTC-based timestamp
 	"""
 	return utcNow().timestamp()
+
+
+def createScheduleString(range:int, delay:int=0) -> str:
+	"""	Create schedule string for range seconds.
+
+		Args:
+			range: The range in seconds
+			delay: The delay in seconds. This can be used to delay the start of the schedule to create an schedule for a later time.
+		
+		Return:
+			String with the schedule string
+	"""
+	dts = datetime.now(tz = timezone.utc) + timedelta(seconds = delay)
+	dte = dts + timedelta(seconds = range)
+	return f'{dts.second}-{dte.second} {dts.minute}-{dte.minute} {dts.hour}-{dte.hour} * * * *'
+
 
 
 #

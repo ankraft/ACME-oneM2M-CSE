@@ -43,6 +43,7 @@ class CSEBase(AnnounceableResource):
 								   ResourceTypes.GRP, 
 								   ResourceTypes.LCP,
 								   ResourceTypes.NOD,
+								   ResourceTypes.NTP,
 								   ResourceTypes.PRMR,
 								   ResourceTypes.PRP,
 								   ResourceTypes.REQ, 
