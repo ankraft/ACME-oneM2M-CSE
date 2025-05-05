@@ -11,6 +11,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [2025.dev] - unreleased
 
 ### Added
+- [CSE] Added support for notification target removal.
+- [CSE] Added new resource types *&lt;notificationTargetPolicy>*, *&lt;notificationTargetSelfReference>*, *&lt;notificationTargetMgmtPolicyRef>*, and *&lt;policyDeletionRules>*.
 - [CSE] Added tests for deletion notifications (*creator* attribute).
 - [CSE] Added support for xs:token type in attribute policies and validation.
 - [CSE] Added validation support for fixed list lengths in attribute policies.

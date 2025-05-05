@@ -1497,14 +1497,15 @@ function createResource() {{
 			rightGrid.add_row(workerGrid)
 			rightGrid.add_row(infoGrid)
 
-			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
-															ResourceTypes.CNT_OL,
-															ResourceTypes.FCNT_LA,
-															ResourceTypes.FCNT_OL,
-															ResourceTypes.TS_LA,
-															ResourceTypes.TS_OL, 
-															ResourceTypes.GRP_FOPT, 
-															ResourceTypes.PCH_PCU))
+			# _virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
+			# 												ResourceTypes.CNT_OL,
+			# 												ResourceTypes.FCNT_LA,
+			# 												ResourceTypes.FCNT_OL,
+			# 												ResourceTypes.TS_LA,
+			# 												ResourceTypes.TS_OL, 
+			# 												ResourceTypes.GRP_FOPT, 
+			# 												ResourceTypes.PCH_PCU,
+			# 												ResourceTypes.NTSR))
 
 			#
 			#	Left column
@@ -1526,7 +1527,10 @@ function createResource() {{
 			resourceTypes += f'LCP     : {(_cLCP  := CSE.dispatcher.countResources(ResourceTypes.LCP))}\n'
 			resourceTypes += f'MgmtObj : {(_cMOBJ := CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ))}\n'
 			resourceTypes += f'NOD     : {(_cNOD  := CSE.dispatcher.countResources(ResourceTypes.NOD))}\n'
+			resourceTypes += f'NTP     : {(_cNTP  := CSE.dispatcher.countResources(ResourceTypes.NTP))}\n'
+			resourceTypes += f'NTPR    : {(_cNTPR := CSE.dispatcher.countResources(ResourceTypes.NTPR))}\n'
 			resourceTypes += f'PCH     : {(_cPCH  := CSE.dispatcher.countResources(ResourceTypes.PCH))}\n'
+			resourceTypes += f'PDR     : {(_cPDR  := CSE.dispatcher.countResources(ResourceTypes.PDR))}\n'
 			resourceTypes += f'REQ     : {(_cREQ  := CSE.dispatcher.countResources(ResourceTypes.REQ))}\n'
 			resourceTypes += f'SCH     : {(_cSCH  := CSE.dispatcher.countResources(ResourceTypes.SCH))}\n'
 			resourceTypes += f'SMD     : {(_cSMD  := CSE.dispatcher.countResources(ResourceTypes.SMD))}\n'
@@ -1536,11 +1540,11 @@ function createResource() {{
 			resourceTypes += f'TSI     : {(_cTSI  := CSE.dispatcher.countResources(ResourceTypes.TSI))}\n'
 			resourceTypes += '\n'
 			# resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cAE + _cACP + _cACTR + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMOBJ + _cNOD + _cPCH + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI }')	# substract the virtual resources
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cAE + _cACP + _cACTR + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMOBJ + _cNOD + _cNTP + _cNTPR + _cPCH + _cPDR + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI }')	# substract the virtual resources
 
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
-			_padding = 16 + (miscHeight - 15) * 2
+			_padding = 13 + (miscHeight - 15) * 2
 			
 			panelResources = Panel(resourceTypes, 
 								   box = box.ROUNDED, 
