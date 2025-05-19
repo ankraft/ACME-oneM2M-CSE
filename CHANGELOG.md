@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for xs:token type in attribute policies and validation.
 - [CSE] Added validation support for fixed list lengths in attribute policies.
 - [CSE] Added validation support for choices in attribute policies, when only one of the marked attributes is allowed.
+- [CSE] Added *UtTriggerPrimitive* and *UtTriggerAckPrimitive* support to the Upper Tester interface.
 
 ### Experimental
 
