@@ -23,7 +23,7 @@ zookeeperDefaultPort = 2181
 @dataclass
 class ZookeperNode():
 	""" Class to represent a Zookeeper node. """
-	
+
 	key:str
 	""" The key of the Zookeeper node. """
 
@@ -60,7 +60,8 @@ class Zookeeper():
 			  			port:Optional[int]=zookeeperDefaultPort, 
 						rootNode:Optional[str]='/',
 						logger:Optional[Callable]=print,
-						verbose:Optional[bool]=False) -> None:
+						verbose:Optional[bool]=False,
+						caseSensitive:Optional[bool]=True) -> None:
 		""" Initialize the Zookeeper client. 
 		
 			Args:
@@ -69,6 +70,7 @@ class Zookeeper():
 				rootNode: The root node of the Zookeeper server.
 				logger: The logger function to use for logging.
 				verbose: Flag to enable verbose output.
+				caseSensitive: Flag to enable case-sensitive key names.
 		"""
 		self.zk = None
 		self.host = host
@@ -76,6 +78,20 @@ class Zookeeper():
 		self.rootNode = f'/{rootNode.strip("/ ")}/'	# Remove leading and trailing slashes
 		self.logger = logger
 		self.verbose = verbose
+		self.caseSensitive = caseSensitive
+		self.normalizedRootNode = self._normalizeKey(self.rootNode)
+
+	
+	def _normalizeKey(self, key:str) -> str:
+		""" Normalize the key to be case-sensitive or not. 
+
+			Args:
+				key: The key to normalize.
+
+			Returns:
+				The normalized key.
+		"""
+		return key.lower() if not self.caseSensitive else key
 		
 
 	def connect(self, createRoot:Optional[bool]=True) -> Zookeeper:
@@ -95,9 +111,9 @@ class Zookeeper():
 		self.verbose and self.logger(f'Connected to Zookeeper server at {self.host}:{self.port}')	# type: ignore[func-returns-value]
 
 		# Check if the root node exists, if not create it
-		if not self.zk.exists(self.rootNode) and createRoot:
-			self.addKeyValue(self.rootNode)
-			self.verbose and self.logger(f'[dim]Created root key at {self.rootNode}')
+		if not self.zk.exists(self.normalizedRootNode) and createRoot:
+			self.addKeyValue(self.normalizedRootNode)
+			self.verbose and self.logger(f'[dim]Created root key at {self.normalizedRootNode}')
 		return self
 	
 
@@ -128,7 +144,7 @@ class Zookeeper():
 		"""
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
-		return (self.zk.exists(node) if node else self.zk.exists(self.rootNode)) is not None
+		return (self.zk.exists(self._normalizeKey(node)) if node else self.zk.exists(self.normalizedRootNode)) is not None
 
 
 	def listNode(self, node:str) -> list[ZookeperNode]:
@@ -143,20 +159,21 @@ class Zookeeper():
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
 
-		if not node.startswith('/'):
-			node = f'{self.rootNode}{node}'.rstrip('/ ')
+		_n = self._normalizeKey(node)
+		if not _n.startswith('/'):
+			_n = f'{self.normalizedRootNode}{_n}'.rstrip('/ ')
 		result:list[ZookeperNode] = []
-		if self.zk.exists(node):
-			data, stat = self.zk.get(node)
-			result.append(ZookeperNode('.', data.decode('utf-8') if data != '' else None, node, stat.children_count > 0))
+		if self.zk.exists(_n):
+			data, stat = self.zk.get(_n)
+			result.append(ZookeperNode('.', data.decode('utf-8') if data != '' else None, _n, stat.children_count > 0))
 			if stat.children_count > 0:
-				for child in self.zk.get_children(node):
-					childData, stat = self.zk.get(f'{node}/{child}')
-					result.append(ZookeperNode(child, childData.decode('utf-8'), f'{node}/{child}', stat.children_count > 0))
+				for child in self.zk.get_children(_n):
+					childData, stat = self.zk.get(f'{_n}/{child}')
+					result.append(ZookeperNode(child, childData.decode('utf-8'), f'{_n}/{child}', stat.children_count > 0))
 			
 			# Sort the child nodes alphabetically (all nodes except the first one)
 			if len(result) > 1:
-				result[1:] = sorted(result[1:], key=lambda node: node.key)
+				result[1:] = sorted(result[1:], key=lambda n: n.key)
 
 			return result
 		return None
@@ -203,7 +220,7 @@ class Zookeeper():
 						lines.extend(l)
 			return lines
 
-		return '\n'.join(buildSections(self.listNode(node if node else self.rootNode)))
+		return '\n'.join(buildSections(self.listNode(self._normalizeKey(node) if node else self.normalizedRootNode)))
 
 
 	def storeIniConfig(self, config:ConfigParser|list[ConfigParser], node:Optional[str]=None) -> Zookeeper:
@@ -223,7 +240,7 @@ class Zookeeper():
 				Exception: If the Zookeeper client is not connected or if the configuration is empty.
 		"""
 		config = config if isinstance(config, list) else [config]
-		node = node if node else self.rootNode
+		node = self._normalizeKey(node) if node else self.normalizedRootNode
 
 		for c in config:
 			self.verbose and self.logger(f'[dim]Writing configuration to Zookeeper node {node}')	# type: ignore[func-returns-value]
@@ -252,8 +269,9 @@ class Zookeeper():
 		"""
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
+		key = self._normalizeKey(key)
 		if not key.startswith('/'):
-			key = f'{self.rootNode}{key}'.rstrip('/ ')
+			key = f'{self.normalizedRootNode}{key}'.rstrip('/ ')
 		
 		if self.zk.exists(key):
 			raise Exception(f'Key {key} already exists')
@@ -278,8 +296,9 @@ class Zookeeper():
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
 		
+		key = self._normalizeKey(key)
 		if not key.startswith('/'):
-			key = f'{self.rootNode}{key}'.rstrip('/ ')
+			key = f'{self.normalizedRootNode}{key}'.rstrip('/ ')
 		
 		if self.zk.exists(key):
 			self.zk.set(key, value.encode('utf-8'))
@@ -305,8 +324,9 @@ class Zookeeper():
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
 		
+		key = self._normalizeKey(key)
 		if not key.startswith('/'):
-			key = f'{self.rootNode}{key}'.rstrip('/ ')
+			key = f'{self.normalizedRootNode}{key}'.rstrip('/ ')
 		
 		if self.zk.exists(key):
 			return self.updateKeyValue(key, value)
@@ -328,8 +348,9 @@ class Zookeeper():
 		if self.zk is None:
 			raise Exception('Not connected to Zookeeper server')
 		
+		key = self._normalizeKey(key)
 		if not key.startswith('/'):
-			key = f'{self.rootNode}{key}'.rstrip('/ ')
+			key = f'{self.normalizedRootNode}{key}'.rstrip('/ ')
 		
 		if self.zk.exists(key):
 			self.zk.delete(key, recursive=True)
