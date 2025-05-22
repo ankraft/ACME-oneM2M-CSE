@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
 	configGroup = parser.add_argument_group('ACME CSE configuration operations')
 	configGroup.add_argument('--config', '-c', dest='config', default=_configFile, metavar='filename', help=f'specify the ACME CSE\'s instance configuration file (default: {_configFile})')
-	configGroup.add_argument('--config-default', '-cd', dest='configDefault', default=_defaultConfigFile, metavar='filename', help=f'specify the ACME CSE\' default configuration file (default: {_defaultConfigFile})')
+	configGroup.add_argument('--config-default', '-cd', dest='configDefault', default=_defaultConfigFile, metavar='filename', help=f'specify the ACME CSE\'s default configuration file (default: {_defaultConfigFile})')
 
 	configFileGroup = configGroup.add_mutually_exclusive_group(required=False)
 	configFileGroup.add_argument('--store-config', '-store', dest='storeConfig', action='store_true', help='store individual ACME CSE configuration in Zookeeper')
