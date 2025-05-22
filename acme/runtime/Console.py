@@ -1261,7 +1261,7 @@ function createResource() {{
 			miscLeft += '\n'
 			miscLeft += f'CWD               : {os.getcwd()}\n'
 			miscLeft += f'Runtime Directory : {Configuration.baseDirectory}\n'
-			miscLeft += f'Config File       : {Configuration.configfile}\n'
+			miscLeft += f'Config Source     : {Configuration.configfile if Configuration.configfile else "Zookeeper (" + Configuration._args_zkHost + " - " + Configuration._args_zkRoot + ")"  if Configuration._args_zkHost else "Unknown"}\n'
 			miscLeft += '\n'
 			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'

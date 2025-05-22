@@ -21,6 +21,7 @@ from rich.console import Console
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode
 from ..helpers.NetworkTools import getIPAddress
+from ..helpers.Zookeeper import Zookeeper
 
 
 
@@ -687,19 +688,26 @@ class Configuration(object):
 	_args_statisticsEnabled:bool = None
 	""" The statistics enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_args_textUI:bool = None
-	""" The text UI flag passed as argument. This overrides the respective value in the configuration file. """			
+	""" The text UI flag passed as argument. This overrides the respective value in the configuration file. """
+	_args_zkHost:str = None
+	""" The Zookeeper host passed as argument. **There is no equivalent in the configuration file.** """
+	_args_zkPort:int = None
+	""" The Zookeeper port passed as argument. **There is no equivalent in the configuration file.** """
+	_args_zkRoot:str = None
+	""" The Zookeeper root node passed as argument. **There is no equivalent in the configuration file.** """
 
 
 	# Internal print function that takes the headless setting into account
 	@staticmethod
-	def _print(msg:str) -> None:
+	def _print(msg:str, markup:Optional[bool]=True) -> None:
 		"""	Print a message to the console. If the CSE is running in headless mode, then the message is not printed.
 		
 			Args:
-				msg: The message to print.	
+				msg: The message to print.
+				markup: If True, then the message is printed with markup. If False, then the message is printed without markup.
 		"""
 		if not Configuration._args_headless:
-			Console().print(msg)	# Print error message to console
+			Console().print(msg, markup=markup)	# Print error message to console
 
 
 	@staticmethod
@@ -734,6 +742,9 @@ class Configuration(object):
 		Configuration._args_textUI				= args.textui if args and 'textui' in args else None
 		Configuration._args_coapEnabled			= args.coapenabled if args and 'coapenabled' in args else None
 		Configuration._args_wsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
+		Configuration._args_zkHost				= args.zkHost if args and 'zkHost' in args else None
+		Configuration._args_zkPort				= args.zkPort if args and 'zkPort' in args else None
+		Configuration._args_zkRoot				= args.zkRoot if args and 'zkRoot' in args else None
 
 		# The path to the ACME module directory
 		Configuration.moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
@@ -753,38 +764,6 @@ class Configuration(object):
 		if Configuration._args_baseDirectory:	# Use the runtime data directory if given as argument
 			Configuration.baseDirectory = pathlib.Path(Configuration._args_baseDirectory)
 
-		# Check and re-set the configuration file's path if the runtime data directory is given AND
-		# the configuration file is not given as argument
-		if Configuration._args_baseDirectory and not args.configfile:
-			Configuration._args_configfile = f'{Configuration._args_baseDirectory}/{C.defaultUserConfigFile}'
-
-		# Adapt configuration file path to the runtime data directory
-		Configuration._args_configfile = f'{Configuration.baseDirectory}{os.sep}{os.path.basename(Configuration._args_configfile)}'
-
-		# Create user config file if doesn't exist
-		if not os.path.exists(Configuration._args_configfile):
-			try:
-				if Configuration._args_headless:
-					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
-					return False
-				
-				# load onboarding module and create user config file.
-				# After that, remove the module from the modules list, because it is not needed anymore
-				from ..runtime import Onboarding
-				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
-				import sys
-				del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
-				del Onboarding
-
-				if not result:
-					return False
-				Configuration._args_configfile = str(pathlib.Path(_configFile))
-				Configuration.baseDirectory = pathlib.Path(_baseDirectory)
-			except Exception as e:
-				Console().print(e)
-				raise e
-		Configuration.configfile = Configuration._args_configfile
-
 		# Set the default ini file and check if it exists and is readable
 		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
 		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
@@ -792,6 +771,66 @@ class Configuration(object):
 			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
 			return False
 
+		# The list of configuration files to read (significantly, the default config file is always the first one)
+		# The list of configuration strings contain optional extra strings in ini format. They are interpolated
+		# after the configuration files are read.
+		configurationFiles = [Configuration._defaultConfigFile]
+		configurationStrings:list[str] = []
+
+		# Check if there are no arguments given for the Zookeeper host and root node. Then use the
+		# normal file-based configuration
+		if not (Configuration._args_zkHost and Configuration._args_zkRoot):
+
+			# Check and re-set the configuration file's path if the runtime data directory is given AND
+			# the configuration file is not given as argument
+			if Configuration._args_baseDirectory and not args.configfile:
+				Configuration._args_configfile = f'{Configuration._args_baseDirectory}/{C.defaultUserConfigFile}'
+
+			# Adapt configuration file path to the runtime data directory
+			Configuration._args_configfile = f'{Configuration.baseDirectory}{os.sep}{os.path.basename(Configuration._args_configfile)}'
+
+			# Create user config file if doesn't exist
+			if not os.path.exists(Configuration._args_configfile):
+				try:
+					if Configuration._args_headless:
+						Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+						return False
+					
+					# load onboarding module and create user config file.
+					# After that, remove the module from the modules list, because it is not needed anymore
+					from ..runtime import Onboarding
+					result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
+					import sys
+					del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
+					del Onboarding
+
+					if not result:
+						return False
+					Configuration._args_configfile = str(pathlib.Path(_configFile))
+					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
+				except Exception as e:
+					Console().print(e)
+					raise e
+			Configuration.configfile = Configuration._args_configfile
+			configurationFiles.append(Configuration.configfile)	
+
+		# Read the configuration from a Zookeeper server
+		else:
+			try:
+				zk = Zookeeper(host=Configuration._args_zkHost, 
+				   			   port=Configuration._args_zkPort, 
+							   rootNode=Configuration._args_zkRoot, 
+							   logger=lambda x: Configuration._print(x),
+							   caseSensitive=False,	# switch off case sensitivity for ini files
+							   ).connect(createRoot=False)
+				if not zk.exists():
+					raise Exception(f'Root node "{Configuration._args_zkRoot}" does not exist.')
+				configurationStrings.append(zk.retrieveIniConfig())
+			except Exception as e:
+				Configuration._print(f'[red]Error connecting to Zookeeper server: {e}')
+				return False
+			finally:
+				zk.disconnect()
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
@@ -833,11 +872,17 @@ class Configuration(object):
 		# Set the defaults
 		config.read_dict(_defaults)
 		
-
 		try:
-			if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
+			# Read the configuration files
+			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
+			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
+			
+			# Read the extra configuration strings (e.g. from Zookeeper)
+			for cs in configurationStrings:
+				config.read_string(cs)
+
 		except configparser.Error as e:
 			Configuration._print('[red]Error in configuration file')
 			Configuration._print(str(e))

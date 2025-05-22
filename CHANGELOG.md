@@ -18,6 +18,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added validation support for fixed list lengths in attribute policies.
 - [CSE] Added validation support for choices in attribute policies, when only one of the marked attributes is allowed.
 - [CSE] Added *UtTriggerPrimitive* and *UtTriggerAckPrimitive* support to the Upper Tester interface.
+- [CSE] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
+- [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental
 
