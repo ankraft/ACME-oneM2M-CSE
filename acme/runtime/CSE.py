@@ -175,40 +175,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
-	# Initialize configurable constants
-	# cseType					 = Configuration.cse_type
-	RC.supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
-	RC.cseType = cast(CSEType, Configuration.cse_type)
-	RC.cseCsi = Configuration.cse_cseID
-	RC.cseRn = Configuration.cse_resourceName
-	RC.cseRi = Configuration.cse_resourceID
-	RC.cseCsiSlash = f'{RC.cseCsi}/'
-	RC.cseCsiSlashLen = len(RC.cseCsiSlash)
-	RC.cseCsiSlashLess = RC.cseCsi[1:]
-	RC.cseSpid = Configuration.cse_serviceProviderID
-	RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
-	RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
-	RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
-	RC.cseOriginator = Configuration.cse_originator
-	RC.slashCseOriginator = f'/{RC.cseOriginator}'
-
-
-	RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
-	RC.releaseVersion = Configuration.cse_releaseVersion
-	RC.isHeadless = Configuration.console_headless
-
-	# Set the CSE's point-of-access
-	RC.csePOA = [ Configuration.http_address ]
-	if Configuration.mqtt_enable:
-		RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
-	if Configuration.websocket_enable:
-		RC.csePOA.append(Configuration.websocket_address)
-	if Configuration.coap_enable:
-		RC.csePOA.append(Configuration.coap_address)
-	
-	# Other configuration values
-	RC.idLength = Configuration.cse_idLength
-
 	#
 	# init Logging
 	#

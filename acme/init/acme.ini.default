@@ -467,6 +467,9 @@ allowedAEOriginators=C*,S*,/*/C*,/*/S*
 allowedCSROriginators=
 ; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
 checkLiveliness=True
+; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
+; Default: 60
+checkInterval=60
 
 
 ;
@@ -487,9 +490,6 @@ INCSEcseID=/id-in
 ; Specify the serialization type that must be used for the registration to the registrar CSE.
 ; Allowed values: json, cbor. Default: json
 serialization=json
-; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
-; Default: 30
-checkInterval=30
 ; List of resources that are excluded when creating a registrar CSR. Default: empty list
 excludeCSRAttributes=
 

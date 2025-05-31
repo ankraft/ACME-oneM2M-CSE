@@ -7,7 +7,7 @@
 """ CSE configurations"""
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 import configparser
 from ...etc.Types import CSEType, ContentSerializationType
@@ -143,3 +143,38 @@ class CSEConfiguration(ModuleConfiguration):
 		if config.cse_idLength < 1:
 			raise ConfigurationError(r'Configuration Error: [i]\[cse]:idLength[/i] must be > 0')
 
+
+		# Already assign some Constants
+
+		# Initialize configurable constants
+		RC.supportedReleaseVersions = config.cse_supportedReleaseVersions
+		RC.cseType = cast(CSEType, config.cse_type)
+		RC.cseCsi = config.cse_cseID
+		RC.cseRn = config.cse_resourceName
+		RC.cseRi = config.cse_resourceID
+		RC.cseCsiSlash = f'{RC.cseCsi}/'
+		RC.cseCsiSlashLen = len(RC.cseCsiSlash)
+		RC.cseCsiSlashLess = RC.cseCsi[1:]
+		RC.cseSpid = config.cse_serviceProviderID
+		RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
+		RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
+		RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
+		RC.cseOriginator = config.cse_originator
+		RC.slashCseOriginator = f'/{RC.cseOriginator}'
+
+
+		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
+		RC.releaseVersion = Configuration.cse_releaseVersion
+		RC.isHeadless = Configuration.console_headless
+
+		# Set the CSE's point-of-access
+		RC.csePOA = [ Configuration.http_address ]
+		if Configuration.mqtt_enable:
+			RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
+		if Configuration.websocket_enable:
+			RC.csePOA.append(Configuration.websocket_address)
+		if Configuration.coap_enable:
+			RC.csePOA.append(Configuration.coap_address)
+		
+		# Other configuration values
+		RC.idLength = Configuration.cse_idLength

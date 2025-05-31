@@ -25,6 +25,7 @@ class RegistrationServiceConfiguration(ModuleConfiguration):
 		config.cse_registration_allowedAEOriginators = parser.getlist('cse.registration', 'allowedAEOriginators', fallback = ['C*','S*'])		# type: ignore [attr-defined]
 		config.cse_registration_allowedCSROriginators = parser.getlist('cse.registration', 'allowedCSROriginators', fallback = [])				# type: ignore [attr-defined]
 		config.cse_registration_checkLiveliness = parser.getboolean('cse.registration', 'checkLiveliness', fallback = True)
+		config.cse_registration_checkInterval = parser.getint('cse.registration', 'checkIntervall', fallback = 60)
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:

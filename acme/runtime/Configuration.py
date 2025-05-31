@@ -19,7 +19,7 @@ from rich.console import Console
 
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode
+from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, CSERegistrar
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.Zookeeper import Zookeeper
 
@@ -197,60 +197,64 @@ class Configuration(object):
 	"""	The size of the operation requests. """
 
 
-	cse_registrar_address:str
-	"""	The address of the registrar. """
+	# cse_registrar_address:str
+	# """	The address of the registrar. """
 
-	cse_registrar_checkInterval:int
-	"""	The interval to check the registrar. """
+	# cse_registrar_checkInterval:int
+	# """	The interval to check the registrar. """
 
-	cse_registrar_cseID:str
-	"""	The CSE-ID of the registrar. """
+	# cse_registrar_cseID:str
+	# """	The CSE-ID of the registrar. """
 
-	cse_registrar_excludeCSRAttributes:list[str]
-	"""	Attributes to exclude from CSR. """
+	# cse_registrar_excludeCSRAttributes:list[str]
+	# """	Attributes to exclude from CSR. """
 
-	cse_registrar_resourceName:str
-	"""	The resource name of the registrar. """
+	# cse_registrar_resourceName:str
+	# """	The resource name of the registrar. """
 
-	cse_registrar_root:str
-	"""	The root of the registrar. """
+	# cse_registrar_root:str
+	# """	The root of the registrar. """
 
-	cse_registrar_serialization:str|ContentSerializationType
-	"""	The serialization for the registrar. """
+	# cse_registrar_serialization:str|ContentSerializationType
+	# """	The serialization for the registrar. """
 
-	cse_registrar_INCSEcseID:str
-	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
+	# cse_registrar_INCSEcseID:str
+	# """	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
 
 
-	cse_registrar_security_httpUsername:str
-	"""	The username for HTTP basic security when registering to a http server with basic auth. """
+	# cse_registrar_security_httpUsername:str
+	# """	The username for HTTP basic security when registering to a http server with basic auth. """
 
-	cse_registrar_security_httpPassword:str
-	"""	The password for HTTP basic security when registering to a http server with basic auth. """
+	# cse_registrar_security_httpPassword:str
+	# """	The password for HTTP basic security when registering to a http server with basic auth. """
 
-	cse_registrar_security_httpBearerToken:str
-	"""	The token for HTTP bearer token security when registering to a http server with bearer token auth. """
+	# cse_registrar_security_httpBearerToken:str
+	# """	The token for HTTP bearer token security when registering to a http server with bearer token auth. """
 
-	cse_registrar_security_wsUsername:str
-	"""	The username for HTTP basic security when registering to a WebSocket server with basic auth. """
+	# cse_registrar_security_wsUsername:str
+	# """	The username for HTTP basic security when registering to a WebSocket server with basic auth. """
 
-	cse_registrar_security_wsPassword:str
-	"""	The password for HTTP basic security when registering to a WebSocket server with basic auth. """
+	# cse_registrar_security_wsPassword:str
+	# """	The password for HTTP basic security when registering to a WebSocket server with basic auth. """
 
-	cse_registrar_security_wsBearerToken:str
-	"""	The token for HTTP bearer token security when registering to a WebSocket server with bearer token auth. """
+	# cse_registrar_security_wsBearerToken:str
+	# """	The token for HTTP bearer token security when registering to a WebSocket server with bearer token auth. """
 
-	cse_registrar_security_selfHttpUsername:str
-	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
+	# cse_registrar_security_selfHttpUsername:str
+	# """	The username for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
 
-	cse_registrar_security_selfHttpPassword:str
-	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
+	# cse_registrar_security_selfHttpPassword:str
+	# """	The password for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
 
-	cse_registrar_security_selfWsUsername:str
-	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via WebSocket to this CSE. """
+	# cse_registrar_security_selfWsUsername:str
+	# """	The username for HTTP basic security to be used by the registrar CSE when connecting via WebSocket to this CSE. """
 
-	cse_registrar_security_selfWsPassword:str
-	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via WebSocjet to this CSE. """
+	# cse_registrar_security_selfWsPassword:str
+	# """	The password for HTTP basic security to be used by the registrar CSE when connecting via WebSocjet to this CSE. """
+
+	cse_registrars:dict[str, CSERegistrar] = {}
+	"""	A dictionary of CSE or service provider CSEs registrars. The keys are the CSE IDs, the values are dictionaries with the registrar information. """
+
 
 
 	cse_registration_allowedAEOriginators:list[str]
@@ -262,6 +266,8 @@ class Configuration(object):
 	cse_registration_checkLiveliness:bool
 	"""	Check liveliness for registration. """
 
+	cse_registration_checkInterval:int
+	"""	Time interval to check liveliness of registration(s). """
 
 
 	cse_security_secret:str
@@ -1092,7 +1098,7 @@ from ..runtime.configurations.TSResourceConfiguration import TSResourceConfigura
 from ..runtime.configurations.WebSocketConfiguration import WebSocketConfiguration
 
 
-# Instantiate all configuration modules here
+# Instantiate all configuration modules here, in a specfic order.
 
 _moduleConfigs:list[ModuleConfiguration] = [
 

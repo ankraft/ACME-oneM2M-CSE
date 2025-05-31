@@ -9,11 +9,11 @@
 """
 
 from __future__ import annotations
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
 import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple
 from enum import auto
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..helpers.EventManager import Event
@@ -22,6 +22,9 @@ from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
 from ..etc.Constants import RuntimeConstants as RC
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
 
 
 #
@@ -2700,6 +2703,67 @@ class CSERequest:
 			newRequest.vsi = None
 		return newRequest
 
+##############################################################################
+#
+#	Registration related
+#
+
+@dataclass
+class CSERegistrarSecurity:
+	"""	Structure to hold the security information for a CSE registrar.
+	"""
+
+	credentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+	selfCredentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+
+@dataclass
+class CSERegistrar:
+	"""	Structure to hold the CSE registrar information.
+	"""
+
+	spID:str = None
+	"""	The service provider ID of the registrar. """
+	
+	address:str = None
+	"""	The address of the registrar. """
+
+	cseID:str = None
+	"""	The CSE-ID of the registrar. """
+
+	excludeCSRAttributes:list[str] = field(default_factory=list)
+	"""	Attributes to exclude from CSR. """
+
+	resourceName:str = None
+	"""	The resource name of the registrar. """
+
+	root:str = None
+	"""	The root of the registrar. """
+
+	# serialization: str | ContentSerializationType = field(default_factory=ContentSerializationType.JSON)
+	serialization: str | ContentSerializationType = None
+	"""	The serialization for the registrar. """
+
+	INCSEcseID:str = None
+	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
+
+	security:CSERegistrarSecurity = field(default_factory=CSERegistrarSecurity)
+	""" Security information for the registrar. """
+
+	_registrarResource:Optional[Resource] = None
+	""" Internal: The registrar resource. This is set after the registration. """
+
+	_registrarCSEURL:Optional[str] = None
+	""" Internal: The registrar CSE URL. This is set after the registration. """
+
+	_registrarCSESRN:Optional[str] = None
+	""" Internal: The registrar CSE's SP-relative structured resource name. This is set after the registration. """
+
+	_csrOnRegistrarSRN:Optional[str] = None
+	""" Internal: The SP-relative structured resource name to the CSR on the registrar. This is set after the registration. """
 
 
 
