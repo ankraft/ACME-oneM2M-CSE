@@ -30,7 +30,7 @@ from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TA
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
-from ..etc.IDUtils import localResourceID, isSPRelative, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
+from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
@@ -347,11 +347,11 @@ class Dispatcher(object):
 				NOT_FOUND: If the resource cannot be found.
 		"""
 		if id:
-			if id.startswith(RC.cseCsiSlash) and len(id) > RC.cseCsiSlashLen:		# TODO for all operations?
-				id = id[RC.cseCsiSlashLen:]
+			if (_id := localResourceID(id)) is not None:
+				id = _id 
 			else:
 				# Retrieve from remote
-				if isSPRelative(id):
+				if isSPRelative(id) or isAbsolute(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
 
 		# TODO use Utils.riFromID()
