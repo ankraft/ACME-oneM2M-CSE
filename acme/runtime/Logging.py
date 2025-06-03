@@ -172,7 +172,7 @@ class Logging:
 
 			logpath = Configuration.logging_path
 			os.makedirs(logpath, exist_ok = True)# create log directory if necessary
-			logfile = f'{logpath}/cse-{RC.cseType.name}.log'
+			logfile = f'{logpath}/cse-{RC.cseSpid}-{RC.cseCsi[1:]}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes = Configuration.logging_size,
 														 backupCount = Configuration.logging_count)
