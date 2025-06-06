@@ -13,7 +13,7 @@ from typing import Any, Optional
 from ..etc.Types import ResourceTypes, JSON, CSEType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
-from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN
+from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN, originatorToID
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
@@ -270,7 +270,7 @@ class RegistrationManager(object):
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
-		# Check whether an AE with the same originator has already registered
+		# Check whether a CSE with the same originator has already registered
 
 		if originator != RC.cseOriginator and self.hasRegisteredAE(originator):
 			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Originator has already registered an AE: {originator}'))
@@ -278,7 +278,7 @@ class RegistrationManager(object):
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
 			csr['csi'] = originator
-			csr['ri']  = getIdFromOriginator(originator)
+			csr['ri']  = originatorToID(originator)
 
 		# Validate csi in csr
 		CSE.validator.validateCSICB(csr.csi, 'csi')

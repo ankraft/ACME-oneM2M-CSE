@@ -1142,11 +1142,11 @@ function createResource() {{
 		_addCSERow(tableCSE, 
 			 	   Style.combine((Style(italic = True, bold = True), textStyle)), 
 				   cse, 
-				   CSE.remote.registrarCSE, 
+				   CSE.remote.registrarConfig._registrarCSEBaseResource if CSE.remote.registrarConfig else None, 
 				   CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
 		# _addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
-			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
+			if CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
 				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
 			else:
 				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
@@ -1248,6 +1248,7 @@ function createResource() {{
 
 			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
+			miscLeft += f'SP-ID             : {RC.cseSpid}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
@@ -1544,7 +1545,7 @@ function createResource() {{
 
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
-			_padding = 13 + (miscHeight - 15) * 2
+			_padding = 12 + (miscHeight - 15) * 2
 			
 			panelResources = Panel(resourceTypes, 
 								   box = box.ROUNDED, 

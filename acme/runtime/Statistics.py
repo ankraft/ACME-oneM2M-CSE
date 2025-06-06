@@ -502,7 +502,7 @@ skinparam linetype ortho
 
 		# Has parent Registrar CSE?
 		if RC.cseType != CSEType.IN and Configuration.cse_registrar_address:
-			registrarCSE = CSE.remote.registrarCSE
+			registrarCSE = CSE.remote.registrarConfig._registrarCSEBaseResource
 			bg = 'white' if registrarCSE else 'lightgrey'
 			color = 'green' if registrarCSE else 'black'
 			address = urlparse(Configuration.cse_registrar_address)

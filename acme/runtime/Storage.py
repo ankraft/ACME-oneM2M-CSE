@@ -379,7 +379,7 @@ class Storage(object):
 		try:
 			resource.dict = self.db.updateResource(resource.dict, resource.ri)
 		except KeyError:
-			raise NOT_FOUND(L.logDebug(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
+			raise NOT_FOUND(L.logWarn(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 		# L.logDebug(str(resource.dict))
 		return resource
 

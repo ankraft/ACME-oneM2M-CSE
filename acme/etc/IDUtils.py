@@ -203,7 +203,7 @@ def toSPRelative(id:str) -> str:
 		Return:
 			A string in the format */<csi>/<id>*.
 	"""
-	if not isSPRelative(id):
+	if not isSPRelative(id) and not isAbsolute(id):
 		return  f'{RC.cseCsi}/{id}'
 	return id
 
@@ -342,7 +342,7 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 	return id, ids
 
 
-def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
+def getIdFromOriginator(originator:str, idOnly:Optional[bool]=False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used).
 
 		Args:
@@ -355,3 +355,29 @@ def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
 		return originator.split("/")[-1] if originator else originator
 	else:
 		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
+
+
+def originatorToID(originator:str) -> str:
+	""" Convert an originator to a resource ID. The originator is expected to be in CSE-relative, SP-relative or absolute format.
+	
+		Args:
+			originator: An originator in CSE-relative, SP-relative or absolute format.
+		Return:
+			A resource ID in CSE-relative format.
+	"""
+	return originator.replace('/', '_').strip('_')
+
+
+def getSPFromID(id:str) -> str:
+	"""	Get the SP-ID from an Absolute resource ID. If the ID is not in absolute format, 
+		None is returned.
+
+		Args:
+			id: An Absolute resource ID.
+		Return:
+			The SP-ID of the resource ID, or None if the ID is not in absolute format.
+	"""
+	if not isAbsolute(id):
+		return None
+	ids = id.split('/')
+	return ids[2] if len(ids) > 2 else None

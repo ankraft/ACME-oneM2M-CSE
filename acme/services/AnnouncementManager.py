@@ -18,7 +18,7 @@ import time
 from ..etc.IDUtils import isSPRelative
 from ..helpers.TextTools import findXPath
 from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
-from ..etc.Types import Operation 
+from ..etc.Types import Operation, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.Constants import Constants, RuntimeConstants as RC
@@ -67,11 +67,12 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRegistrarCSE(self, name:str, remoteCSE:Resource, remoteCSR:Resource) -> None:
+	def handleRegisteredToRegistrarCSE(self, registrarConfig:CSERegistrar, name:str, remoteCSE:Resource, remoteCSR:Resource) -> None:
 		"""	Handle registrations to a registrar CSE.
 
 			Args:
 				name:Event name.
+				registrarConfig: The registrar configuration that is registered.
 				remoteCSE: The remote `CSEBase` resource.
 				remoteCSR: The own CSE's remote `CSR` resource.
 		"""

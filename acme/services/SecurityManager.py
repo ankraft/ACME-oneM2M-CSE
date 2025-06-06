@@ -15,9 +15,9 @@ from typing import List, cast, Optional, Any, Tuple
 import ssl
 from dataclasses import dataclass
 
-from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType
+from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
@@ -712,7 +712,7 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
-		_originator = getIdFromOriginator(originator)
+		_originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
 		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
 		
 		# Always allow for the hosting CSE
@@ -968,30 +968,14 @@ class SecurityManager(object):
 				L.logErr(f'Error reading token authentication file: {e}')
 	
 
-	# REMOVEME
-	# def getCredentialsForRegistrarCSE(self) -> RequestCredentials:
-	# 	"""	Return the credentials to access the registrar CSE. 
-		
-	# 		For the moment this these are the http authentication credentials.
-
-	# 		Return:
-	# 			The username and password or token for the registrar CSE.
-	# 	"""
-	# 	return RequestCredentials(httpUsername=Configuration.cse_registrar_security_httpUsername, 
-	# 							  httpPassword=Configuration.cse_registrar_security_httpPassword,
-	# 							  httpToken=Configuration.cse_registrar_security_httpBearerToken,
-	# 							  wsUsername=Configuration.cse_registrar_security_wsUsername,
-	# 							  wsPassword=Configuration.cse_registrar_security_wsPassword,
-	# 							  wsToken=Configuration.cse_registrar_security_wsBearerToken)
-	
-
-	def getPOACredentialsForCSEID(self, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
+	def getPOACredentialsForCSEID(self, registrarConfig:CSERegistrar, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
 		"""	Return the credentials for the Point of Access (POA) for the given CSE-ID.
 			These credentials are used by the registrar CSE to access this hosting CSE, 
 			or by the hosting CSE to access the registrar CSE. The credentials are used
 			in the POA attribute. Currently, only HTTP and WS bindings are supported.
 
 			Args:
+				registrarConfig: The CSERegistrar configuration to use.
 				cseID: The CSE-ID to get the credentials for.
 				binding: The binding type to get the credentials for. Default is HTTP.
 
@@ -999,20 +983,14 @@ class SecurityManager(object):
 				A tuple with the username and password or token for the given CSE-ID and binding.
 			
 		"""
-		# TODO make this more generic, so that it can be used for other SPIDs as well
-		registrar = Configuration.cse_registrars[RC.cseSpid]
 		match binding:
-			case BindingType.HTTP if cseID == registrar.cseID:
-				return registrar.security.selfCredentials.httpUsername, registrar.security.selfCredentials.httpPassword
-				# return Configuration.cse_registrar_security_selfHttpUsername, Configuration.cse_registrar_security_selfHttpPassword
+			case BindingType.HTTP if cseID == registrarConfig.cseID:
+				return registrarConfig.security.selfCredentials.httpUsername, registrarConfig.security.selfCredentials.httpPassword
 			case BindingType.HTTP if cseID in (None, Configuration.cse_cseID):
-				return registrar.security.credentials.httpUsername, registrar.security.credentials.httpPassword
-				# return Configuration.cse_registrar_security_httpUsername, Configuration.cse_registrar_security_httpPassword
-			case BindingType.WS if cseID == registrar.cseID:
-				return registrar.security.selfCredentials.wsUsername, registrar.security.selfCredentials.wsPassword
-				# return Configuration.cse_registrar_security_selfWsUsername, Configuration.cse_registrar_security_selfWsPassword
+				return registrarConfig.security.credentials.httpUsername, registrarConfig.security.credentials.httpPassword
+			case BindingType.WS if cseID == registrarConfig.cseID:
+				return registrarConfig.security.selfCredentials.wsUsername, registrarConfig.security.selfCredentials.wsPassword
 			case BindingType.WS if cseID in (None, Configuration.cse_cseID):
-				return registrar.security.credentials.wsUsername, registrar.security.credentials.wsPassword
-				# return Configuration.cse_registrar_security_wsUsername, Configuration.cse_registrar_security_wsPassword
+				return registrarConfig.security.credentials.wsUsername, registrarConfig.security.credentials.wsPassword
 		return None, None
 		

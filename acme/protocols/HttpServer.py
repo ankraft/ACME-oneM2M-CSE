@@ -574,7 +574,7 @@ class HttpServer(object):
 			elif request.credentials.httpToken:
 				hds['Authorization'] = f'Bearer {request.credentials.getHttpBearerToken()}'
 			else:
-				L.logWarn('No credentials found for HTTP request found')
+				L.logWarn('No credentials found for HTTP request')
 
 
 		arguments = []

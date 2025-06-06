@@ -181,8 +181,9 @@ class AnnounceableResource(Resource):
 				body['lbl'] = deepcopy(lbl)
 
 			# copy mandatoy and optional attributes
+			ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 			for attr in announcedAttributes:
-				policy = CSE.validator.getAttributePolicy(self.ty, attr)
+				policy = CSE.validator.getAttributePolicy(ty, attr)
 				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
 				# body[attr] = self[attr]
 

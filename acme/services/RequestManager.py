@@ -1669,8 +1669,8 @@ class RequestManager(object):
 			elif (t := CSE.remote.getCSRFromPath(uri)): # target is a registering CSE
 				targetResource, _ = t
 				isForwardedRequest = True
-			elif CSE.remote.registrarCSE:	# just send it up to the registrar CSE, if any
-				targetResource = CSE.remote.registrarCSE
+			elif CSE.remote.registrarConfig._registrarCSEBaseResource:	# just send it up to the registrar CSE, if any
+				targetResource = CSE.remote.registrarConfig._registrarCSEBaseResource
 				isForwardedRequest = True
 
 		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarded request to: {uri}')
@@ -1714,7 +1714,6 @@ class RequestManager(object):
 		
 		# TODO define a type for the result list
 		resultList:List[Tuple[str, List[str], str, PCH, str, str, ResourceTypes, bool]] = []
-		
 		for p in targetResource.poa:
 			if isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
 				p += '/'

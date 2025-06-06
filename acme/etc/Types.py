@@ -2747,24 +2747,70 @@ class CSERegistrar:
 	serialization: str | ContentSerializationType = None
 	"""	The serialization for the registrar. """
 
+	originator:str = None
+	"""	The originator of the sending requesrs to the registrar. """
+
 	INCSEcseID:str = None
 	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
 
 	security:CSERegistrarSecurity = field(default_factory=CSERegistrarSecurity)
 	""" Security information for the registrar. """
 
-	_registrarResource:Optional[Resource] = None
-	""" Internal: The registrar resource. This is set after the registration. """
+	_registrarCSEBaseResource:Optional[Resource] = None
+	""" Internal: The registrar's CSEBase resource. This is set after the registration. """
 
 	_registrarCSEURL:Optional[str] = None
 	""" Internal: The registrar CSE URL. This is set after the registration. """
 
 	_registrarCSESRN:Optional[str] = None
 	""" Internal: The registrar CSE's SP-relative structured resource name. This is set after the registration. """
+	
+	_registrarAbsoluteCSI:Optional[str] = None
+	""" Internal: The registrar CSE's absolute CSE-ID. """
+
 
 	_csrOnRegistrarSRN:Optional[str] = None
 	""" Internal: The SP-relative structured resource name to the CSR on the registrar. This is set after the registration. """
 
+	_registrarCSRRN:Optional[str] = None
+	""" The resource name for the remote CSR. """
+
+
+	_localCSRRN:Optional[str] = None
+	""" The resource name for the local CSR. """
+
+
+	def postInit(self) -> None:
+		"""	Post initialization actions. Set various internal attributes based on the
+			registrar's attributes.
+			
+			This is called after the CSERegistrar object is created, so that the attributes
+			are available.
+		"""
+
+		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
+		if self.spID is not None and self.spID != RC.cseSpid:
+			self._registrarCSRRN = f'{RC.cseSpid}_{RC.cseCsi[1:]}'	# prefix: own SP-ID
+			self._localCSRRN = f'{self.spID}_{self.cseID}'			# prefix: remote SP-ID
+		else:
+			self._registrarCSRRN = RC.cseCsi[1:]
+			self._localCSRRN = self.cseID
+
+		# Set other manager attributes
+		self._registrarAbsoluteCSI = f'{self.cseID}' if self.spID is None or self.spID == RC.cseSpid else f'//{self.spID}/{self.cseID}'
+
+		# Set the registrar CSE URL and structured resource name
+		self._registrarCSEURL = f'{self.address}{self.root}/'
+		self._registrarCSESRN = f'{self.cseID}/{self.resourceName}'
+		if self.spID is not None and self.spID != RC.cseSpid:
+			self._registrarCSESRN = f'//{self.spID}/{self._registrarCSESRN}' 
+		
+		if self.spID is not None and self.spID != RC.cseSpid:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self.spID}_{RC.cseCsi[1:]}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
+		else:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 
 
 ##############################################################################
