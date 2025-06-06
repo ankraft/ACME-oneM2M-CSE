@@ -456,8 +456,8 @@ class RemoteCSEManager(object):
 					try:
 						registrarConfig._registrarCSEBaseResource = self._retrieveRegistrarCB(registrarConfig)	# We are registered to the registrar CSE again
 						self._createLocalCSR(registrarConfig)		# ignore result
-						L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 						self._eventRegisteredToRegistrarCSE(registrarConfig, registrarConfig._registrarCSEBaseResource, csr)
+						L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 					except:
 						pass
 				except:
@@ -486,8 +486,8 @@ class RemoteCSEManager(object):
 
 					registrarConfig._registrarCSEBaseResource = self._retrieveRegistrarCB(registrarConfig)	# retrieve remote CSE
 					self._createLocalCSR(registrarConfig) 	# create local CSR including ACPs to local CSR and local CSE. Ignore result
-					L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 					self._eventRegisteredToRegistrarCSE(registrarConfig, registrarConfig._registrarCSEBaseResource, csr)
+					L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 				except:
 					registrarConfig._registrarCSEBaseResource = None
 
@@ -574,7 +574,6 @@ class RemoteCSEManager(object):
 		# add local CSR and ACP's
 		try:
 			CSE.dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
-			# CSE.registration.handleCSRRegistration(csrResource, remoteCSE.csi)
 			CSE.registration.handleCSRRegistration(csrResource, csrResource.csi)
 		except ResponseException as e:
 			raise BAD_REQUEST(f'cannot register CSR: {e.dbg}')

@@ -35,8 +35,9 @@ from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
 from ..etc.ResponseStatusCodes import ResponseException
-from ..helpers.NetworkTools import getIPAddress
 from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
+from ..etc.IDUtils import getSPFromID, isAbsolute
+from ..helpers.NetworkTools import getIPAddress
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..runtime import Statistics
@@ -1098,8 +1099,8 @@ function createResource() {{
 	#	Generators for rich output
 	#
 
-	def getRegistrationsRich(self, style:Optional[Style] = Style(), 
-						  		   textStyle:Optional[Style] = None) -> Table:
+	def getRegistrationsRich(self, style:Optional[Style]=Style(), 
+						  		   textStyle:Optional[Style]=None) -> Table:
 		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
 
@@ -1115,10 +1116,13 @@ function createResource() {{
 		if textStyle is None:
 			textStyle = style
 
-		def _addCSERow(table:Table, style:Style, cse:Resource, registrarCSE:Resource, registrees:List[str]) -> None:
+		def _addCSERow(table:Table, 
+				 	   style:Style, 
+					   cse:Resource, 
+					   registrarCSE:Resource, 
+					   registrees:List[str]) -> None:
 			table.add_row(cse.csi, 
 						  CSEType(cse.cst.value if isinstance(cse.cst, CSEType) else cse.cst).name, 
-						  cse.rn, 
 						  cse.ri, 
 						  '' if not cse.srv else ', '.join(cse.srv),
 						  str(cse.rr) if cse.rr is not None else '', 
@@ -1127,46 +1131,76 @@ function createResource() {{
 						  '' if not registrees else ', '.join(registrees),
 						  style = style)
 
-		tableCSE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 12, no_wrap = True)
-		tableCSE.add_column(_markup('[u]Release[/u]\n', style = textStyle), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]POA[/u]\n', style = textStyle), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style = textStyle), no_wrap = False)
-
 		cse = getCSE()
+
+		tableCSE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Type[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), width=12, no_wrap=True)
+		tableCSE.add_column(_markup('[u]Release[/u]\n', style=textStyle), no_wrap=False)
+		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]POA[/u]\n', style=textStyle), no_wrap=False)
+		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style=textStyle), no_wrap=False)
+
+		# one row for the CSE itself
 		_addCSERow(tableCSE, 
-			 	   Style.combine((Style(italic = True, bold = True), textStyle)), 
+			 	   Style.combine((Style(italic=True, bold=True), textStyle)), 
 				   cse, 
 				   CSE.remote.registrarConfig._registrarCSEBaseResource if CSE.remote.registrarConfig else None, 
 				   CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
-		# _addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+
+		spCsr:list[Resource] = []
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSpid:	# store the CSR for other SP for later
+				spCsr.append(csr)
+				continue
 			if CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
 				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
 			else:
 				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
-		
+
 		panelCSE = Panel(tableCSE, 
 				  		 box=box.ROUNDED, 
-						 title=_markup('[b]Common Services Entities (CSE)[/b]'), 
+						 title=_markup('[b]CSE – Common Services Entities[/b]'), 
 						 title_align='left', 
 						 padding = (1, 0, 0, 0),
 						 expand=True,
-						 style = style)
+						 style=style)
+
+		if spCsr:
+
+			tableSPCSE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+			tableSPCSE.add_column(_markup('[u]SP-ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]CSE-ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]Release[/u]\n', style=textStyle), no_wrap=False)
+			tableSPCSE.add_column(_markup('[u]POA[/u]\n', style=textStyle), no_wrap=False)
+
+			for csr in spCsr:
+				tableSPCSE.add_row(f'//{getSPFromID(csr.csi)}',
+								csr.csi, 
+								csr.ri, 
+								'' if not csr.srv else ', '.join(csr.srv),
+								'' if csr.poa is None else ', '.join(csr.poa),
+								style=textStyle)
+			
+			panelSPCSE = Panel(tableSPCSE, 
+							box=box.ROUNDED, 
+							title=_markup("[b]SP CSE – Services Providers via Mcc'[/b]"), 
+							title_align='left', 
+							padding=(1, 0, 0, 0),
+							expand=True,
+							style=style)
 		
 
-		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Name[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), width = 5, no_wrap = True)
-		tableAE.add_column(_markup('[u]POA[/u]\n', style = textStyle), width = 15, no_wrap = False)
+		tableAE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Name[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Reachable[/u]\n', style=textStyle), width=5, no_wrap=True)
+		tableAE.add_column(_markup('[u]POA[/u]\n', style=textStyle), width=15, no_wrap=False)
 
 		for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 			tableAE.add_row(ae.aei, 
@@ -1175,48 +1209,24 @@ function createResource() {{
 							ae.api, 
 							str(ae.rr), 
 							'' if ae.poa is None else ', '.join(ae.poa),
-							style = textStyle)
+							style=textStyle)
 
 		panelAE = Panel(tableAE, 
 				  		box=box.ROUNDED, 
-						title=_markup('[b]Application Entities (AE)[/b]'), 
+						title=_markup('[b]AE – Application Entities[/b]'), 
 						title_align='left', 
-						padding = (1, 0, 0, 0),
+						padding=(1, 0, 0, 0),
 						expand=True,
-						style = style)
+						style=style)
 
-		result = Table.grid(expand = True)
+		result = Table.grid(expand=True)
 		result.add_column()
 		result.add_row(panelCSE)
+		if spCsr:
+			result.add_row(panelSPCSE)
 		result.add_row(panelAE)
 
 		return result
-		# result = ''
-
-		# if RC.cseType != CSEType.IN:
-		# 	result += f'- **Registrar CSE**\n'
-		# 	if CSE.remote.registrarAddress:
-		# 		registrarCSE = CSE.remote.registrarCSE
-		# 		registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-		# 		result += f'    - {Configuration.cse_registrar_cseID[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
-		# 	else:
-		# 		result += '   - None'
-
-		# if RC.cseType != CSEType.ASN:
-		# 	result += f'- **Registree CSEs**\n'
-		# 	if len(CSE.remote.descendantCSR) > 0:
-		# 		for desc in CSE.remote.descendantCSR.keys():
-		# 			(csr, _) = CSE.remote.descendantCSR[desc]
-		# 			if csr:
-		# 				result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-		# 				for desc2 in CSE.remote.descendantCSR.keys():
-		# 					(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-		# 					if not csr2 and atCsi2 == desc:
-		# 						result += f'    - {desc2[1:]}\n'
-		# 	else:
-		# 		result += '    - None'
-	
-		# return result if len(result) else 'None'
 		
 
 # TODO events transit requests
@@ -1248,7 +1258,7 @@ function createResource() {{
 
 			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
-			miscLeft += f'SP-ID             : {RC.cseSpid}\n'
+			miscLeft += f'SP-ID             : //{RC.cseSpid}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:

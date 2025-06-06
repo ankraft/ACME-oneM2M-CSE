@@ -52,6 +52,8 @@ class TextUI(object):
 							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
 							  CSE.event.registreeCSEUpdate,  								# type:ignore[attr-defined]
+							  CSE.event.registeredToRegistrarCSE, 							# type:ignore[attr-defined]
+							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
 							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
 
 		_textUI = self
