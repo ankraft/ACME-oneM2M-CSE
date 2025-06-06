@@ -1567,6 +1567,7 @@ class TestACP(unittest.TestCase):
 	#
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(not doHttpBasicAuth, 'No HTTP Basic Auth')
 	def test_createACPwithACAFRetrieveCnt(self) -> None:
 		"""	Create an ACP with acaf attribut, create and retrieve CNT"""
 
