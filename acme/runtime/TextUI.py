@@ -75,7 +75,9 @@ class TextUI(object):
 		L.logDebug('TextUI restarted')
 
 
-	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
+	# TODO the following parameters do not match the event signatures, but we ignore this for now until
+	# the arguments are used.
+	def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
