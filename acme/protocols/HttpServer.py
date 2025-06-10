@@ -304,7 +304,8 @@ class HttpServer(object):
 			dissectResult = Result(rsc = e.rsc, request = e.data, dbg = e.dbg)
 
 		# Set the authorization result
-		dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
+		if dissectResult.request:
+			dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request and dissectResult.request.originalData:

@@ -557,7 +557,7 @@ def deserializeContent(data:bytes, contentType:ContentSerializationType) -> JSON
 		except UNSUPPORTED_MEDIA_TYPE as e:
 			raise
 		except Exception as e:
-			raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}'), data = None)
+			raise BAD_REQUEST(L.logWarn(f'Malformed request/content? {str(e)}: {data!r}'), data = None)
 	
 	return dct
 
