@@ -203,9 +203,14 @@ def toSPRelative(id:str) -> str:
 		Return:
 			A string in the format */<csi>/<id>*.
 	"""
-	if not isSPRelative(id) and not isAbsolute(id):
-		return  f'{RC.cseCsi}/{id}'
-	return id
+	if isSPRelative(id):
+		return id
+	if isAbsolute(id):
+		s = id.split('/')
+		return f'/{ "/".join(s[3:])}'
+	# if not isSPRelative(id) and not isAbsolute(id):
+		# return  f'{RC.cseCsi}/{id}'
+	return  f'{RC.cseCsi}/{id}'
 
 
 def toCSERelative(id:str) -> str:
@@ -222,6 +227,22 @@ def toCSERelative(id:str) -> str:
 	elif isAbsolute(id) and len(_e) > 3:
 		return '/'.join(_e[3:])
 	return id
+
+
+def toAbsolute(id:str, spId:Optional[str] = None) -> str:
+	"""	Convert an ID to absolute format.
+
+		Args:
+			id: 	An ID in CSE-Relative or SP-Relative format.
+			spId:	Optional SP-ID. If not provided, the CSE-ID is used.
+		Return:
+			An ID in absolute format.
+	"""
+	if isAbsolute(id):
+		return id
+	if isSPRelative(id):
+		return f'//{spId or RC.cseSpid}{id}'
+	return f'//{spId or RC.cseSpid}{RC.cseCsi}/{id}'	
 
 
 

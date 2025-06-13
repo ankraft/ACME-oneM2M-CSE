@@ -27,7 +27,7 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.IDUtils import uniqueRI, toSPRelative
+from ..etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
 from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
@@ -539,7 +539,7 @@ class HttpServer(object):
 				'Content-Type' 	: f'{ct.toHttpContentType()}{hty}',
 				'cache-control'	: 'no-cache',
 		}
-		hds[Constants.hfOrigin]	= toSPRelative(request.originator)
+		hds[Constants.hfOrigin]	= toSPRelative(request.originator) if isCSERelative(request.originator) else request.originator
 		if not request.rqi:
 			request.rqi = uniqueRI()
 		hds[Constants.hfRI]		= request.rqi
@@ -857,11 +857,11 @@ class HttpServer(object):
 		# TODO: change the args handling to the MultiDict like in CoAP
 
 
-		cseRequest 					= CSERequest()
-		req:ReqResp 				= {}
-		cseRequest.originalData 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
-		cseRequest.op 				= operation
-		req['op']   				= operation.value		# Needed later for validation
+		cseRequest = CSERequest()
+		req:ReqResp = {}
+		cseRequest.originalData = request.data		# get the data first. This marks the request as consumed, just in case that we have to return early
+		cseRequest.op = operation
+		req['op'] = operation.value					# Needed later for validation
 
 		# resolve http's /~ and /_ special prefixs
 		req['to'] = fromHttpURL(path)

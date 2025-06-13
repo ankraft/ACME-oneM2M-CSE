@@ -18,7 +18,7 @@ from ..etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, J
 from ..etc.Types import ContentSerializationType, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import pureResource
-from ..etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isAbsolute, getSPFromID, originatorToID	# cannot import at the top because of circel import
+from ..etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isAbsolute, getSPFromID, originatorToID, toSPRelative	# cannot import at the top because of circel import
 from ..etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..helpers.TextTools import findXPath, setXPath
@@ -858,6 +858,10 @@ class RemoteCSEManager(object):
 
 		if not id:
 			return None, None
+		
+		# Check whether this ID points to a CSE within the own SP. Then convert the ID to SP-relative format.
+		if isAbsolute(id) and getSPFromID(id) == RC.cseSpid:
+			id = toSPRelative(id)
 		
 		ri, ids = csiFromRelativeAbsoluteUnstructured(id)
 

@@ -2501,6 +2501,9 @@ class CSERequest:
 	csi:Optional[str] = None
 	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
 
+	spid:Optional[str] = None
+	""" The Service Provider ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
+
 	# Request attributes
 	op:Optional[Operation] = None
 	"""	Request Operation. """

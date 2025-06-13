@@ -156,11 +156,16 @@ class CSEConfiguration(ModuleConfiguration):
 		RC.cseCsiSlashLen = len(RC.cseCsiSlash)
 		RC.cseCsiSlashLess = RC.cseCsi[1:]
 		RC.cseSpid = config.cse_serviceProviderID
+		RC.cseSPCsi = f'//{RC.cseSpid}{RC.cseCsi}'
+		RC.cseSPCsiSlash = f'{RC.cseSPCsi}/'
 		RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
 		RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
 		RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
 		RC.cseOriginator = config.cse_originator
-		RC.slashCseOriginator = f'/{RC.cseOriginator}'
+		RC.spRelativeCseOriginator = f'{RC.cseCsi}/{RC.cseOriginator}'
+		RC.absoluteCseOriginator = f'//{RC.cseSpid}{RC.spRelativeCseOriginator}'
+		RC.cseOriginators = [ RC.cseOriginator, RC.spRelativeCseOriginator, RC.absoluteCseOriginator ]
+		RC.cseIDs = [ RC.cseCsi, RC.cseSPCsi ]
 
 
 		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)

@@ -453,7 +453,7 @@ def removeNoneValuesFromDict(jsn:JSON, allowedNull:Optional[list[str]] = []) -> 
 
 
 
-def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str] = None) -> CSERequest:
+def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSERequest, sep:Optional[str]=None) -> CSERequest:
 	"""	Fill a request with arguments from a `MultiDict`. The `MultiDict` contains the arguments from a request.
 
 		Args:
@@ -475,17 +475,17 @@ def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSEReques
 			# Actually, the following attributes are filterCriteria attributes, but are
 			# stored in the CSERequest object as request attributes
 			case 'rcn' | 'rp' | 'drt' | 'sqi':
-				dct[arg] = arguments.getOne(arg, greedy = True)
+				dct[arg] = arguments.getOne(arg, greedy=True)
 
 			case 'rt':
 				if not (rt := cast(JSON, dct.get('rt'))):	# if not yet in the req
 					rt = {}
-				rt['rtv'] = arguments.getOne(arg, greedy = True)	# type: ignore [assignment]
+				rt['rtv'] = arguments.getOne(arg, greedy=True)	# type: ignore [assignment]
 				dct['rt'] = rt
 
 			case 'atrl':
 				# the attribute list could appear multiple times in the query, or have multiple values separated by '+'
-				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+				while (_a := arguments.getOne(arg, greedy=True)) is not None:
 					attributeList.extend(_a.split(sep))
 				# If there is only one attribute, add it to the to field instead of the atrl in the CONTENT
 				if len(attributeList) == 1:
@@ -495,21 +495,21 @@ def fillRequestWithArguments(arguments:MultiDict, dct:JSON, cseRequest:CSEReques
 			# Maxage
 			# TODO make this a propper request attribute later when accepted for the spec. Also for http
 			case 'ma':
-				cseRequest.ma = arguments.getOne(arg, greedy = True)
+				cseRequest.ma = arguments.getOne(arg, greedy=True)
 
 			# Some filter criteria attributes are stored as lists, and can appear multiple times
 			# in the query. A single entry could also have multiple values separated by "+"
 			# The goal is to store them as a single list in the filterCriteria
 			case 'ty' | 'lbl' | 'cty':
 				filterCriteria[arg] = []
-				while (_a := arguments.getOne(arg, greedy = True)) is not None:
+				while (_a := arguments.getOne(arg, greedy=True)) is not None:
 					filterCriteria[arg].extend(_a.split(sep))	# type: ignore [union-attr]
 				
 			# Extract further request arguments from the coaprequest
 			# add all the args to the filterCriteria
 			# Some args are lists, so keep them as lists from the multi-dict
 			case _:
-				filterCriteria[arg] = arguments.get(arg, flatten = True, greedy = True)
+				filterCriteria[arg] = arguments.get(arg, flatten=True, greedy=True)
 
 	# Add the filterCriteria to the request
 	if len(filterCriteria) > 0:

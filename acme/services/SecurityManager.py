@@ -167,8 +167,17 @@ class SecurityManager(object):
 		#
 		# grant full access to the CSE originator
 		#
-		if originator is None or originator == RC.cseOriginator or originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
-			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
+		if	originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
+			# originator == RC.cseOriginator or \
+			# originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
+			L.isDebug and L.logDebug('Request from CSE Admin. OK.')
+			return True
+		
+		#
+		# grant full access to the CSE ID
+		#
+		if originator in RC.cseIDs:
+			L.isDebug and L.logDebug(f'Request from CSE ID: {originator}. OK.')
 			return True
 
 		#
