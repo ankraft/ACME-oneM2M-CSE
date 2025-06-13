@@ -468,7 +468,9 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveRCNOriginalResource(self) -> None:
 		""" Retrieve original resource from remote CSE """
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteBatRI}?rcn={int(RCN.originalResource)}', ORIGINATOR)
+		# Originator is the CSEID, so we can retrieve the original resource. Normally, ACP is used 
+		# to allow accessm, but the CSEID should always be allowed to retrieve the original resource.
+		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteBatRI}?rcn={int(RCN.originalResource)}', CSEID)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ty'))
