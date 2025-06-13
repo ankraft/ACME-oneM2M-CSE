@@ -19,11 +19,14 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added validation support for choices in attribute policies, when only one of the marked attributes is allowed.
 - [CSE] Added *UtTriggerPrimitive* and *UtTriggerAckPrimitive* support to the Upper Tester interface.
 - [CSE] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
+- [CSE] Added announcement via Mcc'.
+- [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental
 
 ### Changed
+- [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
 - [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
 - [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.
 
