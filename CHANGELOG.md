@@ -21,6 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
 - [CSE] Added announcement via Mcc'.
 - [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
+- [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental

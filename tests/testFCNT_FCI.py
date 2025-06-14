@@ -377,6 +377,42 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateLOC(self) -> None:
+		""" Update <FCNT> LOC """
+
+		""" Retrieve <FCNT> """
+		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.OK)
+		cni = findXPath(r, 'cod:tempe/cni')
+		cbs = findXPath(r, 'cod:tempe/cbs')
+		st = findXPath(r, 'cod:tempe/st')
+
+		""" Update <FCNT> LOC """
+		dct = 	{ 'cod:tempe' : {
+		  		'loc': {
+					  'typ': 2,
+					  'crd': '[[ 1.0, 2.0 ], [ 3.0, 4.0 ]]'
+				 },
+				}}
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertIn('aLabel', findXPath(r, 'cod:tempe/lbl'))
+
+		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(rla)
+		self.assertIsNotNone(findXPath(rla, 'cod:tempe/loc'))
+		self.assertEqual(findXPath(r, 'cod:tempe/loc/crd'), '[[ 1.0, 2.0 ], [ 3.0, 4.0 ]]', r)
+		self.assertEqual(st + 1, findXPath(rla, 'cod:tempe/st'))
+
+		""" Retrieve <FCNT> and compare cni and cbs """
+		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(cni + 1, findXPath(r, 'cod:tempe/cni'), r)
+		self.assertLess(cbs, findXPath(r, 'cod:tempe/cbs'), r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateNothing(self) -> None:
 		""" Update <FCNT> with no changes """
 
@@ -713,6 +749,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_retrieveFCNTLatest',
 		'test_retrieveFCNTOldest',
 		'test_updateLBL',
+		'test_updateLOC',
 		'test_updateNothing',
 
 		# create and update FCI
