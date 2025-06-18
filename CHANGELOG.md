@@ -22,6 +22,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added announcement via Mcc'.
 - [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
 - [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
+- [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Currently, only a a "shutdown" command is implemented. Thanks to Egan Perais.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental

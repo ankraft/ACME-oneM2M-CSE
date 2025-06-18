@@ -518,7 +518,7 @@ class HttpServer(object):
 			case 'shutdown':
 				# Shutdown the CSE
 				L.isInfo and L.log('Management request: shutdown')
-				signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
+				CSE.forceShutdown()	# This might not return (e.g. under Windows)
 				return Response(response='CSE shutting down', status=200, headers=self._responseHeaders)
 			case _:
 				L.isWarn and L.logWarn(f'Unknown management command: {command}')
