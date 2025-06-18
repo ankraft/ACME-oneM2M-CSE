@@ -15,7 +15,7 @@
 from __future__ import annotations
 from typing import Dict, Any, cast
 
-import atexit, argparse, sys
+import atexit, argparse, sys, platform, os, signal
 from threading import Lock
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -174,40 +174,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	if not Configuration.init(args):
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
-
-	# Initialize configurable constants
-	# cseType					 = Configuration.cse_type
-	RC.supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
-	RC.cseType = cast(CSEType, Configuration.cse_type)
-	RC.cseCsi = Configuration.cse_cseID
-	RC.cseRn = Configuration.cse_resourceName
-	RC.cseRi = Configuration.cse_resourceID
-	RC.cseCsiSlash = f'{RC.cseCsi}/'
-	RC.cseCsiSlashLen = len(RC.cseCsiSlash)
-	RC.cseCsiSlashLess = RC.cseCsi[1:]
-	RC.cseSpid = Configuration.cse_serviceProviderID
-	RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
-	RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
-	RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
-	RC.cseOriginator = Configuration.cse_originator
-	RC.slashCseOriginator = f'/{RC.cseOriginator}'
-
-
-	RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
-	RC.releaseVersion = Configuration.cse_releaseVersion
-	RC.isHeadless = Configuration.console_headless
-
-	# Set the CSE's point-of-access
-	RC.csePOA = [ Configuration.http_address ]
-	if Configuration.mqtt_enable:
-		RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
-	if Configuration.websocket_enable:
-		RC.csePOA.append(Configuration.websocket_address)
-	if Configuration.coap_enable:
-		RC.csePOA.append(Configuration.coap_address)
-	
-	# Other configuration values
-	RC.idLength = Configuration.cse_idLength
 
 	#
 	# init Logging
@@ -389,6 +355,25 @@ def _shutdown() -> None:
 
 	L.finit()
 	RC.cseStatus = CSEStatus.STOPPED
+
+
+def forceShutdown() -> None:
+	"""	Force shutdown the CSE. 
+	
+		This is different for different platforms. On Windows, we send a SIGINT to the process,
+		while on other platforms we raise a SIGINT signal. This is to ensure that the CSE can
+		shutdown gracefully, even if the main thread is blocked or busy.
+
+		This function might not return, e.g. when running under Windows, where the process is killed.
+	"""	
+	_platform = platform.system()
+	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
+	match _platform:
+		case 'Windows':
+			_shutdown()
+			os.kill(os.getpid(), signal.SIGINT)
+		case _:
+			signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
 
 
 def resetCSE() -> None:

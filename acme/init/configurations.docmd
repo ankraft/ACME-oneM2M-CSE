@@ -1038,9 +1038,11 @@ The default value is `False`.
 This setting enables an endpoint for supporting sending Upper Tester commands to the CSE. 
 This is to support certain testing and certification systems. See oneM2M's TS-0019 for further details.
 
-The Upper tester endpoint is available at the URL path `/__UT__`.
+The Upper tester endpoint is available at the URL path `/__ut__`.
 
 **ATTENTION**: Enabling this feature may exposes various potentially sensitive information and also may lead to a total loss of data.
+
+Remember, that this endpoint only accepts *POST* requests.
 
 The default value is `False`.
 

@@ -96,14 +96,14 @@ class Storage(object):
 				case 'tinydb':
 					# create tinyDB object and open DB for file handling
 					self.db = TinyDBBinding(Configuration.database_tinydb_path, 		
-											RC.cseCsi[1:], # add CSE CSI as postfix
+											f'{RC.cseSpid}-{RC.cseCsi[1:]}', # add SP-ID + CSE CSI as postfix
 											Configuration.database_tinydb_cacheSize,
 											Configuration.database_tinydb_writeDelay
 										) 
 				case 'memory':
 					# create tinyDB object and open DB for in-memory handling
 					self.db = TinyDBBinding(None,
-											RC.cseCsi[1:], # add CSE CSI as postfix
+											f'{RC.cseSpid}-{RC.cseCsi[1:]}', # add SP-ID + CSE CSI as postfix
 											Configuration.database_tinydb_cacheSize,
 											Configuration.database_tinydb_writeDelay
 										)
@@ -379,7 +379,7 @@ class Storage(object):
 		try:
 			resource.dict = self.db.updateResource(resource.dict, resource.ri)
 		except KeyError:
-			raise NOT_FOUND(L.logDebug(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
+			raise NOT_FOUND(L.logWarn(f'Cannot update: {resource.ri} (NOT_FOUND). Could be an expected error.'))
 		# L.logDebug(str(resource.dict))
 		return resource
 

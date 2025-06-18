@@ -354,7 +354,7 @@ class WebSocketServer(object):
 				# Run the message handling in a separate thread
 				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, ct, authResult), name = f'ws_{uniqueID()}')
 		except ConnectionClosedError as e:
-			L.isWarn and L.logWarn('Connection closed: {e}')
+			L.isWarn and L.logWarn(f'Connection closed: {e}')
 		except ConnectionClosedOK:
 			L.isDebug and L.logDebug('Connection closed by client')
 		

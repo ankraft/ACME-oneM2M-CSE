@@ -139,7 +139,7 @@ class TestRemote(unittest.TestCase):
 		dct = { 'm2m:csr' : {
 			'rn': csrRN,
 			'cb': '/someCB',
-			'csi': 'wrongCSI',	# wrong
+			'csi': '/wrongCSI',	# wrong
 			'rr': False,
 			'cst': 2, 
 			'csz': [ 'application/json' ],
@@ -151,9 +151,11 @@ class TestRemote(unittest.TestCase):
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.CREATED, r)	# actually, it is overwritten by the CSE
+		rn = findXPath(r, 'm2m:csr/rn')
 
-		_, rsc = DELETE(csrURL, csrOriginator)
-		self.assertEqual(rsc, RC.DELETED)
+		r, rsc = DELETE(f'{cseURL}/{rn}', csrOriginator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createCSRnoCsi(self) -> None:

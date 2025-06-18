@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
-from ..etc.IDUtils import getIdFromOriginator
+from ..etc.IDUtils import getIdFromOriginator, originatorToID
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
@@ -105,8 +105,9 @@ class CSR(AnnounceableResource):
 	def initialize(self, pi:str, originator:str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
-			# self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
-			self.setAttribute('ri', getIdFromOriginator(self.csi))	# overwrite ri (only after /'s')
+			self.setAttribute('ri', originatorToID(self.csi))	# overwrite ri (only after /'s')
+			self.setResourceName(originatorToID(self.csi))				# set the resource name to the csi of the remote CSE
+
 		self.setAttribute('rr', False, overwrite = False)
 		super().initialize(pi, originator)
 

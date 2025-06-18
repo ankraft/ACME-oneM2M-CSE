@@ -17,10 +17,21 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for xs:token type in attribute policies and validation.
 - [CSE] Added validation support for fixed list lengths in attribute policies.
 - [CSE] Added validation support for choices in attribute policies, when only one of the marked attributes is allowed.
+- [CSE] Added *UtTriggerPrimitive* and *UtTriggerAckPrimitive* support to the Upper Tester interface.
+- [CSE] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
+- [CSE] Added announcement via Mcc'.
+- [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
+- [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
+- [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Currently, only a a "shutdown" command is implemented. Thanks to Egan Perais.
+- [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental
 
 ### Changed
+- [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
+- [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
+- [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.
+
 
 ### Fixed
 - [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.

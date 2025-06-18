@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re
+import logging, sys, urllib3, re, signal
 
 import flask
 from flask import Flask, Request, request
@@ -27,12 +27,12 @@ from ..etc.Constants import Constants
 from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.IDUtils import uniqueRI, toSPRelative
+from ..etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
 from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, prepareResultForSending
 from ..etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..runtime.Configuration import Configuration
@@ -134,14 +134,20 @@ class HttpServer(object):
 		if Configuration.http_enableStructureEndpoint:
 			structureEndpoint = f'{Configuration.http_root}/__structure__'
 			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
-			self.addEndpoint(structureEndpoint, handler = self.handleStructure, methods  =['GET'], strictSlashes = False)
-			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler = self.handleStructure, methods = ['GET', 'PUT'])
+			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
 		# Enable the upper tester endpoint
 		if Configuration.http_enableUpperTesterEndpoint:
 			upperTesterEndpoint = f'{Configuration.http_root}/__ut__'
 			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
-			self.addEndpoint(upperTesterEndpoint, handler = self.handleUpperTester, methods = ['POST'], strictSlashes=False)
+			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
+
+		if Configuration.http_enableManagementEndpoint:
+			managementEndpoint = f'{Configuration.http_root}/__mgmt__'
+			L.isInfo and L.log(f'Registering management endpoint at: {managementEndpoint}')
+			self.addEndpoint(managementEndpoint, handler=self.handleManagement, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{managementEndpoint}/<command>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 
 		# Allow to use PATCH as a replacement for the DELETE method
 		if Configuration.http_allowPatchForDelete:
@@ -275,12 +281,12 @@ class HttpServer(object):
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
-	def addEndpoint(self, endpoint:Optional[str] = None, 
-						  endpoint_name:Optional[str] = None, 
-						  handler:Optional[FlaskHandler] = None, 
-						  methods:Optional[list[str]] = None, 
-						  strictSlashes:Optional[bool] = True) -> None:
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
+	def addEndpoint(self, endpoint:Optional[str]=None, 
+						  endpoint_name:Optional[str]=None, 
+						  handler:Optional[FlaskHandler]=None, 
+						  methods:Optional[list[str]]=None, 
+						  strictSlashes:Optional[bool]=True) -> None:
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
 	def _handleRequest(self, path:str, operation:Operation, authResult:AuthorizationResult) -> Response:
@@ -304,7 +310,8 @@ class HttpServer(object):
 			dissectResult = Result(rsc = e.rsc, request = e.data, dbg = e.dbg)
 
 		# Set the authorization result
-		dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
+		if dissectResult.request:
+			dissectResult.request.rq_authn = authResult == AuthorizationResult.AUTHORIZED
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request and dissectResult.request.originalData:
@@ -420,50 +427,102 @@ class HttpServer(object):
 		return Response(response = 'unsupported', status = 422, headers = self._responseHeaders)
 
 
-	def handleUpperTester(self, path:Optional[str] = None) -> Response:
+	def handleUpperTester(self, path:Optional[str]=None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
 		if self.isStopped:
 			return Response('Service not available', status = 503)
 
 		# Check, when authentication is enabled, the user is authorized, else return status 401
-		if not self.handleAuthentication():
-			return Response(status = 401)
+		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			return Response(status=401)
 
 
-		def prepareUTResponse(rcs:ResponseStatusCode, result:str) -> Response:
+		def prepareUTResponse(rcs:ResponseStatusCode, result:Optional[str]=None, body:Optional[str|bytes]=None) -> Response:
 			"""	Prepare the Upper Tester Response.
+
+				Args:
+					rcs: The response status code.
+					result: The result to be returned.
+
+				Return:
+					The response object.
 			"""
 			headers = {}
 			headers['Server'] = self.serverID
 			headers['X-M2M-RSC'] = str(rcs.value)	# Set the ResponseStatusCode accordingly
 			if result:								# Return an optional return value
 				headers['X-M2M-UTRSP'] = result
-			resp = Response(status = 200 if rcs == ResponseStatusCode.OK else 400, headers = headers)
+			resp = Response(status=200 if rcs == ResponseStatusCode.OK else 400, headers=headers, response=body)
 			L.isDebug and L.logDebug(f'<== Upper Tester Response:') 
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
 			return resp
 
+
 		L.enableScreenLogging and renameThread('UT')
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
-		if request.data:
-			L.isDebug and L.logDebug(f'Body: \n{request.json}')
 
 		# Handle special commands
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
-			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ], ignoreCase = True))[0]:
+			if not (res := CSE.script.run(cmd, arg, metaFilter=[ 'uppertester' ], ignoreCase=True))[0]:
 				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, str(res[1]))
 			
 			if res[1].type in [SType.tList, SType.tListQuote]:
 				_r = ','.join(res[1].raw())
 			else:
-				_r = res[1].toString(quoteStrings = False, pythonList = True)
+				_r = res[1].toString(quoteStrings=False, pythonList=True)
 			return prepareUTResponse(ResponseStatusCode.OK, _r)
+		
+		# Treat the request as a normal UT request
+		
+		# Extract the request from the body
+		L.isDebug and L.logDebug(f'Body: \n{request.data!r}')
+		if request.data:
+			try:
+				# Dissect the request
+				dissectResult = CSE.request.dissectRequestFromBytes(request.data, ContentSerializationType.getType(request.content_type))
+				# Directly handle the request
+				responseResult = CSE.request.handleRequest(dissectResult.request)
+			except ResponseException as e:
+				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, body=f'{{ "m2m:dbg" : "{e.dbg}" }}')
+			
+			# Prepare and send the response
+			_rs, _b = prepareResultForSending(responseResult.prepareResultFromRequest(dissectResult.request),
+									 		  True, 
+											  dissectResult.request)
+			return prepareUTResponse(ResponseStatusCode.OK, body=_b)
 
-		L.logWarn('UT functionality is not fully supported.')
-		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, None)
+		# Return an error if no body or command is present
+		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, L.logWarn('UT requires request body or X-M2M-UTCMD.'))
+
+
+	def handleManagement(self, command:Optional[str]=None) -> Response:
+		"""	Handle a management request. This is used to control the CSE.
+
+			Args:
+				command: The management command to execute. If None, the request is rejected.
+			
+			Return:
+				A response object.
+		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
+
+		# Check, when authentication is enabled, the user is authorized, else return status 401
+		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			return Response(status=401)
+
+		match command:
+			case 'shutdown':
+				# Shutdown the CSE
+				L.isInfo and L.log('Management request: shutdown')
+				CSE.forceShutdown()	# This might not return (e.g. under Windows)
+				return Response(response='CSE shutting down', status=200, headers=self._responseHeaders)
+			case _:
+				L.isWarn and L.logWarn(f'Unknown management command: {command}')
+		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
 	#########################################################################
@@ -513,7 +572,7 @@ class HttpServer(object):
 				'Content-Type' 	: f'{ct.toHttpContentType()}{hty}',
 				'cache-control'	: 'no-cache',
 		}
-		hds[Constants.hfOrigin]	= toSPRelative(request.originator)
+		hds[Constants.hfOrigin]	= toSPRelative(request.originator) if isCSERelative(request.originator) else request.originator
 		if not request.rqi:
 			request.rqi = uniqueRI()
 		hds[Constants.hfRI]		= request.rqi
@@ -549,7 +608,7 @@ class HttpServer(object):
 			elif request.credentials.httpToken:
 				hds['Authorization'] = f'Bearer {request.credentials.getHttpBearerToken()}'
 			else:
-				L.logWarn('No credentials found for HTTP request found')
+				L.logWarn('No credentials found for HTTP request')
 
 
 		arguments = []
@@ -831,11 +890,11 @@ class HttpServer(object):
 		# TODO: change the args handling to the MultiDict like in CoAP
 
 
-		cseRequest 					= CSERequest()
-		req:ReqResp 				= {}
-		cseRequest.originalData 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
-		cseRequest.op 				= operation
-		req['op']   				= operation.value		# Needed later for validation
+		cseRequest = CSERequest()
+		req:ReqResp = {}
+		cseRequest.originalData = request.data		# get the data first. This marks the request as consumed, just in case that we have to return early
+		cseRequest.op = operation
+		req['op'] = operation.value					# Needed later for validation
 
 		# resolve http's /~ and /_ special prefixs
 		req['to'] = fromHttpURL(path)

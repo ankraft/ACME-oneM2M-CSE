@@ -80,9 +80,14 @@ def parseArgs() -> argparse.Namespace:
 													 	for arg in (arg_line.split() if not arg_line.strip().startswith('#') else [])
 														if arg.strip()] 
 
-	parser.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
+	groupConfig = parser.add_mutually_exclusive_group()
+	groupConfig.add_argument('--config', action='store', dest='configfile', default=None, metavar='<filename>', help='specify the configuration file name (path is ignored)')
+	groupConfig.add_argument('--config-zk-host', action='store', dest='zkHost', default=None, metavar='<hostname>', help='specify the Zookeeper host name')
+	
+	parser.add_argument('--config-zk-port', action='store', dest='zkPort', default=2181, metavar='<port>', help='specify the Zookeeper port (default: 2181)')
+	parser.add_argument('--config-zk-root', action='store', dest='zkRoot', default=None, metavar='<root node>', help='specify the Zookeeper root node (default: None, i.e. the CSE ID)')
 	parser.add_argument('--print-config', '-pc', action='store_true', dest='printconfig', default=False, help='print the configuration during startup to the "info" level log')
-	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files')
+	parser.add_argument('--base-directory', '-dir', action='store', dest='rtDirectory', metavar='<directory>', default=None, help='specify the root directory for runtime data such as data, logs, and temporary files (default: current directory)')
 
 	groupDarkLight = parser.add_mutually_exclusive_group()
 	groupDarkLight.add_argument('--dark', action='store_const', const='dark', dest='lightScheme', default=None, help='enable dark UI scheme')
@@ -126,7 +131,15 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--headless', action='store_true', dest='headless', default=None, help='operate the CSE in headless mode')
 	parser.add_argument('--textui', action='store_true', dest='textui', default=None, help='start with the CSE\'s text UI')
 	
-	return parser.parse_args()
+	# Parse the command line arguments
+	p = parser.parse_args()
+
+	# Some command lines arguments cannot be used together
+	if p.zkHost and not p.zkRoot:
+		print('Error: argument --config-zk-root is required when using --config-zk-host')
+		quit(1)
+
+	return p
 
 
 

@@ -42,6 +42,7 @@ setup(
 		'flask-cors',
 		'InquirerPy',
 		'isodate',
+		'kazoo',
 		'paho-mqtt>=2.0.0',
 		'plotext',
 		'psycopg2-binary',

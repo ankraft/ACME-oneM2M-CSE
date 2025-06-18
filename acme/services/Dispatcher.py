@@ -30,7 +30,7 @@ from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TA
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
 from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
-from ..etc.IDUtils import localResourceID, isSPRelative, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
+from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
@@ -250,6 +250,7 @@ class Dispatcher(object):
 								raise INTERNAL_SERVER_ERROR('internal error: missing lnk attribute in target resource')
 
 							# Retrieve and check the linked-to request
+							# Use the original resource's originator, because this is the one that has access to the linked resource
 							linkedResource = self.retrieveResource(lnk, originator, request)
 							
 							# Normally, we would do some checks here and call "willBeRetrieved", 
@@ -328,9 +329,9 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id:str, 
-							   originator:Optional[str] = None, 
-							   request:Optional[CSERequest] = None, 
-							   postRetrieveHook:Optional[bool] = False) -> Resource:
+							   originator:Optional[str]=None, 
+							   request:Optional[CSERequest]=None, 
+							   postRetrieveHook:Optional[bool]=False) -> Resource:
 		"""	Retrieve a resource locally or from remote CSE.
 
 			Args:
@@ -347,30 +348,32 @@ class Dispatcher(object):
 				NOT_FOUND: If the resource cannot be found.
 		"""
 		if id:
-			if id.startswith(RC.cseCsiSlash) and len(id) > RC.cseCsiSlashLen:		# TODO for all operations?
-				id = id[RC.cseCsiSlashLen:]
+			if (_id := localResourceID(id)) is not None:
+				id = _id 
 			else:
 				# Retrieve from remote
-				if isSPRelative(id):
+				if isSPRelative(id) or isAbsolute(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
+		if not id:
+			raise NOT_FOUND(L.logDebug(f'No resource with this ID: {request.to if request else "unknown"}'))
 
 		# TODO use Utils.riFromID()
 
 		
 		# Retrieve locally
 		if isStructured(id):
-			resource = self.retrieveLocalResource(srn = id, originator = originator, request = request) 
+			resource = self.retrieveLocalResource(srn=id, originator=originator, request=request) 
 		else:
-			resource = self.retrieveLocalResource(ri = id, originator = originator, request = request)
+			resource = self.retrieveLocalResource(ri=id, originator=originator, request=request)
 		if postRetrieveHook:
-			resource.willBeRetrieved(originator, request, subCheck = False)
+			resource.willBeRetrieved(originator, request, subCheck=False)
 		return resource
 
 
-	def retrieveLocalResource(self, ri:Optional[str] = None, 
-									srn:Optional[str] = None, 
-									originator:Optional[str] = None, 
-									request:Optional[CSERequest] = None) -> Resource:
+	def retrieveLocalResource(self, ri:Optional[str]=None, 
+									srn:Optional[str]=None, 
+									originator:Optional[str]=None, 
+									request:Optional[CSERequest]=None) -> Resource:
 		"""	Retrieve a resource locally.
 
 			Args:
@@ -652,8 +655,8 @@ class Dispatcher(object):
 	#
 
 	def processCreateRequest(self, request:CSERequest, 
-								   originator:Optional[str] = None, 
-								   id:Optional[str] = None) -> Result:
+								   originator:Optional[str]=None, 
+								   id:Optional[str]=None) -> Result:
 		"""	Process a CREATE request. Create and register resource(s).
 
 			Args:
@@ -707,7 +710,7 @@ class Dispatcher(object):
 
 		# Get parent resource and check permissions
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
-		parentResource = self.retrieveResource(id)
+		parentResource = self.retrieveResource(id, request=request)
 
 		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = request.ty, parentResource = parentResource, request=request):
 			if request.ty == ResourceTypes.AE:
@@ -950,7 +953,7 @@ class Dispatcher(object):
 
 	def processUpdateRequest(self, request:CSERequest, 
 								   originator:str, 
-								   id:Optional[str] = None) -> Result: 
+								   id:Optional[str]=None) -> Result: 
 		"""	Process a UPDATE request. Update resource(s).
 
 			Args:
@@ -998,7 +1001,7 @@ class Dispatcher(object):
 
 		
 		# Get resource to update
-		resource = self.retrieveResource(id)
+		resource = self.retrieveResource(id, request=request)
 
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if ResourceTypes.isInstanceResource(resource.ty):
@@ -1192,7 +1195,7 @@ class Dispatcher(object):
 
 
 		# get resource to be removed and check permissions
-		resource = self.retrieveResource(id)
+		resource = self.retrieveResource(id, request=request)
 
 		if not CSE.security.hasAccess(originator, resource, Permission.DELETE, request = request, resultResource = resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
@@ -1244,19 +1247,19 @@ class Dispatcher(object):
 		# TODO RCN.discoveryResultReferences
 
 		# remove resource
-		self.deleteLocalResource(resource, originator, withDeregistration = True)
+		self.deleteLocalResource(resource, originator, withDeregistration=True)
 
 		# Some post-deletion stuff
 		CSE.registration.postResourceDeletion(resource)
 
-		return Result(resource = resultContent, rsc = ResponseStatusCode.DELETED)
+		return Result(resource=resultContent, rsc=ResponseStatusCode.DELETED)
 
 
 	def deleteLocalResource(self, resource:Resource, 
-								  originator:Optional[str] = None, 
-								  withDeregistration:Optional[bool] = False, 
-								  parentResource:Optional[Resource] = None, 
-								  doDeleteCheck:Optional[bool] = True) -> None:
+								  originator:Optional[str]=None, 
+								  withDeregistration:Optional[bool]=False, 
+								  parentResource:Optional[Resource]=None, 
+								  doDeleteCheck:Optional[bool]=True) -> None:
 		"""	Delete a resource from the CSE. Call deactivate() and deleted() callbacks on the resource.
 
 			Args:
@@ -1319,7 +1322,7 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Deleting local resource with ID: {id} originator: {originator}')
 
 			# Retrieve the resource
-			resource = self.retrieveLocalResource(rID, originator = originator)
+			resource = self.retrieveLocalResource(rID, originator=originator)
 			
 			if id in [ RC.cseRi, RC.cseRn ]:
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')

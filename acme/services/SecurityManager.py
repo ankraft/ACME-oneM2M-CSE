@@ -15,9 +15,9 @@ from typing import List, cast, Optional, Any, Tuple
 import ssl
 from dataclasses import dataclass
 
-from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType
+from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator
+from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
@@ -50,6 +50,7 @@ class SecurityManager(object):
 		'wsBasicAuthData',
 		'wsTokenAuthData',
 		'requestCredentials',
+		'allowedCSIOriginators',
 	)
 
 
@@ -93,16 +94,16 @@ class SecurityManager(object):
 				key: The key of the configuration value.
 				value: The new value of the configuration value.
 		"""
-		if key not in (	'http.security.caCertificateFile',
-						'http.security.caPrivateKeyFile',
-						'http.security.basicAuthFile',
-						'http_security_tokenAuthFile',
-						'websocket.security.caCertificateFile',
-						'websocket.security.caPrivateKeyFile',
-					  ):
-			return
-		self._readHttpBasicAuthFile()
-		self._readHttpTokenAuthFile()
+		# if key not in (	'http.security.caCertificateFile',
+		# 				'http.security.caPrivateKeyFile',
+		# 				'http.security.basicAuthFile',
+		# 				'http_security_tokenAuthFile',
+		# 				'websocket.security.caCertificateFile',
+		# 				'websocket.security.caPrivateKeyFile',
+		# 			  ):
+		# 	return
+		# TODO further optimization: only reload the changed files
+		self._initAuthInformation()
 
 
 	###############################################################################################
@@ -166,8 +167,17 @@ class SecurityManager(object):
 		#
 		# grant full access to the CSE originator
 		#
-		if originator is None or originator == RC.cseOriginator or originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
-			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
+		if	originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
+			# originator == RC.cseOriginator or \
+			# originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
+			L.isDebug and L.logDebug('Request from CSE Admin. OK.')
+			return True
+		
+		#
+		# grant full access to the CSE ID
+		#
+		if originator in RC.cseIDs:
+			L.isDebug and L.logDebug(f'Request from CSE ID: {originator}. OK.')
 			return True
 
 		#
@@ -250,7 +260,8 @@ class SecurityManager(object):
 			# Allow some Originators to RETRIEVE the CSEBase
 			case ResourceTypes.CSEBase if requestedPermission & Permission.RETRIEVE:
 				# Allow remote CSE to RETRIEVE the CSEBase
-				if originator == Configuration.cse_registrar_cseID:
+				# if originator == Configuration.cse_registrar_cseID:
+				if originator in self.allowedCSIOriginators:
 					L.isDebug and L.logDebug(f'Grant registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
 					return True
 				if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators):
@@ -710,7 +721,7 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
-		_originator = getIdFromOriginator(originator)
+		_originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
 		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
 		
 		# Always allow for the hosting CSE
@@ -877,13 +888,8 @@ class SecurityManager(object):
 		self._readHttpTokenAuthFile()
 		self._readWSBasicAuthFile()
 		self._readWSTokenAuthFile()
+		self.allowedCSIOriginators = [ r.cseID for r in Configuration.cse_registrars.values() ]
 
-		self.requestCredentials = RequestCredentials(httpUsername=Configuration.cse_registrar_security_httpUsername, 
-													 httpPassword=Configuration.cse_registrar_security_httpPassword,
-													 httpToken=Configuration.cse_registrar_security_httpBearerToken,
-													 wsUsername=Configuration.cse_registrar_security_wsUsername,
-													 wsPassword=Configuration.cse_registrar_security_wsPassword,
-													 wsToken=Configuration.cse_registrar_security_wsBearerToken)
 
 	def _readHttpBasicAuthFile(self) -> None:
 		"""	Read the HTTP basic authentication file and store the data in a dictionary.
@@ -971,29 +977,14 @@ class SecurityManager(object):
 				L.logErr(f'Error reading token authentication file: {e}')
 	
 
-	def getCredentialsForRegistrarCSE(self) -> RequestCredentials:
-		"""	Return the credentials to access the registrar CSE. 
-		
-			For the moment this these are the http authentication credentials.
-
-			Return:
-				The username and password or token for the registrar CSE.
-		"""
-		return RequestCredentials(httpUsername=Configuration.cse_registrar_security_httpUsername, 
-								  httpPassword=Configuration.cse_registrar_security_httpPassword,
-								  httpToken=Configuration.cse_registrar_security_httpBearerToken,
-								  wsUsername=Configuration.cse_registrar_security_wsUsername,
-								  wsPassword=Configuration.cse_registrar_security_wsPassword,
-								  wsToken=Configuration.cse_registrar_security_wsBearerToken)
-	
-
-	def getPOACredentialsForCSEID(self, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
+	def getPOACredentialsForCSEID(self, registrarConfig:CSERegistrar, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
 		"""	Return the credentials for the Point of Access (POA) for the given CSE-ID.
 			These credentials are used by the registrar CSE to access this hosting CSE, 
 			or by the hosting CSE to access the registrar CSE. The credentials are used
 			in the POA attribute. Currently, only HTTP and WS bindings are supported.
 
 			Args:
+				registrarConfig: The CSERegistrar configuration to use.
 				cseID: The CSE-ID to get the credentials for.
 				binding: The binding type to get the credentials for. Default is HTTP.
 
@@ -1002,13 +993,13 @@ class SecurityManager(object):
 			
 		"""
 		match binding:
-			case BindingType.HTTP if cseID == Configuration.cse_registrar_cseID:
-				return Configuration.cse_registrar_security_selfHttpUsername, Configuration.cse_registrar_security_selfHttpPassword
+			case BindingType.HTTP if cseID == registrarConfig.cseID:
+				return registrarConfig.security.selfCredentials.httpUsername, registrarConfig.security.selfCredentials.httpPassword
 			case BindingType.HTTP if cseID in (None, Configuration.cse_cseID):
-				return Configuration.cse_registrar_security_httpUsername, Configuration.cse_registrar_security_httpPassword
-			case BindingType.WS if cseID == Configuration.cse_registrar_cseID:
-				return Configuration.cse_registrar_security_selfWsUsername, Configuration.cse_registrar_security_selfWsPassword
+				return registrarConfig.security.credentials.httpUsername, registrarConfig.security.credentials.httpPassword
+			case BindingType.WS if cseID == registrarConfig.cseID:
+				return registrarConfig.security.selfCredentials.wsUsername, registrarConfig.security.selfCredentials.wsPassword
 			case BindingType.WS if cseID in (None, Configuration.cse_cseID):
-				return Configuration.cse_registrar_security_wsUsername, Configuration.cse_registrar_security_wsPassword
+				return registrarConfig.security.credentials.wsUsername, registrarConfig.security.credentials.wsPassword
 		return None, None
 		

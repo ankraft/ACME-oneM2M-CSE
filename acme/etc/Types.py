@@ -9,11 +9,11 @@
 """
 
 from __future__ import annotations
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
 import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple
 from enum import auto
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..helpers.EventManager import Event
@@ -22,6 +22,9 @@ from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
 from ..etc.Constants import RuntimeConstants as RC
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
 
 
 #
@@ -2498,6 +2501,9 @@ class CSERequest:
 	csi:Optional[str] = None
 	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
 
+	spid:Optional[str] = None
+	""" The Service Provider ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
+
 	# Request attributes
 	op:Optional[Operation] = None
 	"""	Request Operation. """
@@ -2700,7 +2706,114 @@ class CSERequest:
 			newRequest.vsi = None
 		return newRequest
 
+##############################################################################
+#
+#	Registration related
+#
 
+@dataclass
+class CSERegistrarSecurity:
+	"""	Structure to hold the security information for a CSE registrar.
+	"""
+
+	credentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+	selfCredentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+
+@dataclass
+class CSERegistrar:
+	"""	Structure to hold the CSE registrar information.
+	"""
+
+	spID:str = None
+	"""	The service provider ID of the registrar. """
+	
+	address:str = None
+	"""	The address of the registrar. """
+
+	cseID:str = None
+	"""	The CSE-ID of the registrar. """
+
+	excludeCSRAttributes:list[str] = field(default_factory=list)
+	"""	Attributes to exclude from CSR. """
+
+	resourceName:str = None
+	"""	The resource name of the registrar. """
+
+	root:str = None
+	"""	The root of the registrar. """
+
+	# serialization: str | ContentSerializationType = field(default_factory=ContentSerializationType.JSON)
+	serialization: str | ContentSerializationType = None
+	"""	The serialization for the registrar. """
+
+	originator:str = None
+	"""	The originator of the sending requesrs to the registrar. """
+
+	INCSEcseID:str = None
+	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
+
+	security:CSERegistrarSecurity = field(default_factory=CSERegistrarSecurity)
+	""" Security information for the registrar. """
+
+	_registrarCSEBaseResource:Optional[Resource] = None
+	""" Internal: The registrar's CSEBase resource. This is set after the registration. """
+
+	_registrarCSEURL:Optional[str] = None
+	""" Internal: The registrar CSE URL. This is set after the registration. """
+
+	_registrarCSESRN:Optional[str] = None
+	""" Internal: The registrar CSE's SP-relative structured resource name. This is set after the registration. """
+	
+	_registrarAbsoluteCSI:Optional[str] = None
+	""" Internal: The registrar CSE's absolute CSE-ID. """
+
+
+	_csrOnRegistrarSRN:Optional[str] = None
+	""" Internal: The SP-relative structured resource name to the CSR on the registrar. This is set after the registration. """
+
+	_registrarCSRRN:Optional[str] = None
+	""" The resource name for the remote CSR. """
+
+
+	_localCSRRN:Optional[str] = None
+	""" The resource name for the local CSR. """
+
+
+	def postInit(self) -> None:
+		"""	Post initialization actions. Set various internal attributes based on the
+			registrar's attributes.
+			
+			This is called after the CSERegistrar object is created, so that the attributes
+			are available.
+		"""
+
+		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
+		if self.spID is not None and self.spID != RC.cseSpid:
+			self._registrarCSRRN = f'{RC.cseSpid}_{RC.cseCsi[1:]}'	# prefix: own SP-ID
+			self._localCSRRN = f'{self.spID}_{self.cseID}'			# prefix: remote SP-ID
+		else:
+			self._registrarCSRRN = RC.cseCsi[1:]
+			self._localCSRRN = self.cseID
+
+		# Set other manager attributes
+		self._registrarAbsoluteCSI = f'{self.cseID}' if self.spID is None or self.spID == RC.cseSpid else f'//{self.spID}/{self.cseID}'
+
+		# Set the registrar CSE URL and structured resource name
+		self._registrarCSEURL = f'{self.address}{self.root}/'
+		self._registrarCSESRN = f'{self.cseID}/{self.resourceName}'
+		if self.spID is not None and self.spID != RC.cseSpid:
+			self._registrarCSESRN = f'//{self.spID}/{self._registrarCSESRN}' 
+		
+		if self.spID is not None and self.spID != RC.cseSpid:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self.spID}_{RC.cseCsi[1:]}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
+		else:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 
 
 ##############################################################################

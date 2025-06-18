@@ -39,7 +39,7 @@ class ACMEHeaderTitle(HeaderTitle):
 			Returns:
 				The rendered title.
 		"""
-		return Text.from_markup(f'{RC.cseType.name}-CSE : {RC.cseCsi}', overflow = 'ellipsis')
+		return Text.from_markup(f'{RC.cseType.name}-CSE – //{RC.cseSpid}{RC.cseCsi}', overflow = 'ellipsis')
 
 
 class ACMEHeader(Header):

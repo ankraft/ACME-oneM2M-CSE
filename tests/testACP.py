@@ -1567,6 +1567,7 @@ class TestACP(unittest.TestCase):
 	#
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(not doHttpBasicAuth, 'No HTTP Basic Auth')
 	def test_createACPwithACAFRetrieveCnt(self) -> None:
 		"""	Create an ACP with acaf attribut, create and retrieve CNT"""
 
@@ -1613,9 +1614,9 @@ class TestACP(unittest.TestCase):
 		# The following test fails or succeeds depending on authentication status
 		expectedStatus = RC.OK if doHttpBasicAuth or doHttpTokenAuth or doOAuth else RC.ORIGINATOR_HAS_NO_PRIVILEGE
 		
-		# Retrieve full resource -> Fail
+		# Retrieve full resource -> Fail or OK, depending on authentication status
 		r, rsc = RETRIEVE(cntURL, 'Cae1')
-		self.assertEqual(rsc, expectedStatus, r)
+		self.assertEqual(rsc, expectedStatus, str(r) + '\n\n[red]Is the CSE configured to use authentication?[/red]')
 
 		# Delete the AE+ACP+CNT again
 		_, rsc = DELETE(f'{aeURL}', TestACP.originator)

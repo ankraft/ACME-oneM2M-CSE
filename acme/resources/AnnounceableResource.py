@@ -15,9 +15,9 @@ from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolic
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
+from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..etc.ACMEUtils import toSPRelative
 from .Resource import Resource, addToInternalAttributes
 
 # Add to internal attributes
@@ -99,16 +99,17 @@ class AnnounceableResource(Resource):
 			self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 
-	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:
+	def createAnnouncedResourceDict(self, isCreate:Optional[bool]=False, announceTo:Optional[str]=None) -> JSON:
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
-			return self._createAnnouncedDict(attributes, isCreate = isCreate)
+			return self._createAnnouncedDict(attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo))
 		# Normal behaviour for other resources
-		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate = isCreate) )
+		L.inspect(self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
+		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
 
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
@@ -118,7 +119,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:Optional[bool] = False) -> JSON:
+	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool, isRemoteSP:bool) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 
@@ -143,11 +144,13 @@ class AnnounceableResource(Resource):
 			if value is None:
 				return None
 			
-			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to SP-relative form.')
+			L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
 			match typ:
 				case BasicType.ID:
-					return toSPRelative(value)
+					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
+					return toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value)
 				case BasicType.list | BasicType.listNE:
+					# L.inspect([ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value])
 					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
 				case BasicType.complex:
 					_r = {}
@@ -170,7 +173,7 @@ class AnnounceableResource(Resource):
 		if isCreate:
 			dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
 							'et'	: self.et,
-							'lnk'	: f'{RC.cseCsi}/{self.ri}',
+							'lnk'	: f'{RC.cseSPCsi}/{self.ri}' if isRemoteSP else f'{RC.cseCsi}/{self.ri}',
 						}
 				}
 			# Add more  attributes
@@ -181,13 +184,16 @@ class AnnounceableResource(Resource):
 				body['lbl'] = deepcopy(lbl)
 
 			# copy mandatoy and optional attributes
+			ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 			for attr in announcedAttributes:
-				policy = CSE.validator.getAttributePolicy(self.ty, attr)
+				policy = CSE.validator.getAttributePolicy(ty, attr)
 				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
 				# body[attr] = self[attr]
 
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
+				# acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi 
+				# 		 for acpi in self.acpi]	# set to local CSE.csi
+				acpi = [ toAbsolute(acpi, spId=RC.cseSpid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
 				body['acpi'] = acpi
 
 
