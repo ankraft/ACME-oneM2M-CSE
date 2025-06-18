@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re
+import logging, sys, urllib3, re, signal
 
 import flask
 from flask import Flask, Request, request
@@ -134,14 +134,20 @@ class HttpServer(object):
 		if Configuration.http_enableStructureEndpoint:
 			structureEndpoint = f'{Configuration.http_root}/__structure__'
 			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
-			self.addEndpoint(structureEndpoint, handler = self.handleStructure, methods  =['GET'], strictSlashes = False)
-			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler = self.handleStructure, methods = ['GET', 'PUT'])
+			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
 		# Enable the upper tester endpoint
 		if Configuration.http_enableUpperTesterEndpoint:
 			upperTesterEndpoint = f'{Configuration.http_root}/__ut__'
 			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
-			self.addEndpoint(upperTesterEndpoint, handler = self.handleUpperTester, methods = ['POST'], strictSlashes=False)
+			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
+
+		if Configuration.http_enableManagementEndpoint:
+			managementEndpoint = f'{Configuration.http_root}/__mgmt__'
+			L.isInfo and L.log(f'Registering management endpoint at: {managementEndpoint}')
+			self.addEndpoint(managementEndpoint, handler=self.handleManagement, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{managementEndpoint}/<command>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 
 		# Allow to use PATCH as a replacement for the DELETE method
 		if Configuration.http_allowPatchForDelete:
@@ -275,12 +281,12 @@ class HttpServer(object):
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
-	def addEndpoint(self, endpoint:Optional[str] = None, 
-						  endpoint_name:Optional[str] = None, 
-						  handler:Optional[FlaskHandler] = None, 
-						  methods:Optional[list[str]] = None, 
-						  strictSlashes:Optional[bool] = True) -> None:
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
+	def addEndpoint(self, endpoint:Optional[str]=None, 
+						  endpoint_name:Optional[str]=None, 
+						  handler:Optional[FlaskHandler]=None, 
+						  methods:Optional[list[str]]=None, 
+						  strictSlashes:Optional[bool]=True) -> None:
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
 	def _handleRequest(self, path:str, operation:Operation, authResult:AuthorizationResult) -> Response:
@@ -428,8 +434,8 @@ class HttpServer(object):
 			return Response('Service not available', status = 503)
 
 		# Check, when authentication is enabled, the user is authorized, else return status 401
-		if not self.handleAuthentication():
-			return Response(status = 401)
+		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			return Response(status=401)
 
 
 		def prepareUTResponse(rcs:ResponseStatusCode, result:Optional[str]=None, body:Optional[str|bytes]=None) -> Response:
@@ -490,6 +496,33 @@ class HttpServer(object):
 
 		# Return an error if no body or command is present
 		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, L.logWarn('UT requires request body or X-M2M-UTCMD.'))
+
+
+	def handleManagement(self, command:Optional[str]=None) -> Response:
+		"""	Handle a management request. This is used to control the CSE.
+
+			Args:
+				command: The management command to execute. If None, the request is rejected.
+			
+			Return:
+				A response object.
+		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
+
+		# Check, when authentication is enabled, the user is authorized, else return status 401
+		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			return Response(status=401)
+
+		match command:
+			case 'shutdown':
+				# Shutdown the CSE
+				L.isInfo and L.log('Management request: shutdown')
+				signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
+				return Response(response='CSE shutting down', status=200, headers=self._responseHeaders)
+			case _:
+				L.isWarn and L.logWarn(f'Unknown management command: {command}')
+		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
 	#########################################################################
