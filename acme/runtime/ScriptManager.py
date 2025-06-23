@@ -18,7 +18,8 @@ from rich.text import Text
 
 
 from ..helpers.KeyHandler import FunctionKey
-from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result, BasicType, AttributePolicy, LogLevel
+from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result,\
+	BasicType, AttributePolicy, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.IDUtils import uniqueRI, uniqueID
@@ -26,11 +27,18 @@ from ..etc.ACMEUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
-from ..helpers.Interpreter import PContext, PFuncCallable, PUndefinedError, PError, PState, SSymbol, SType, PSymbolCallable
-from ..helpers.Interpreter import PInvalidArgumentError,PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
+
+from ..helpers.interpreter.Interpreter import assertSymbol, valueFromArgument, resultFromArgument, getArgument
+from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
+	SSymbol, SNumberSymbol, SBooleanSymbol, SStringSymbol, SListQuoteSymbol, \
+	SJsonSymbol, SNilSymbol, \
+	SType, PSymbolCallable
+from ..helpers.interpreter.Exceptions import PUndefinedError, PInvalidArgumentError, \
+	PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
+from ..helpers.interpreter.PContext import PContext
+
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
-from ..helpers.TextTools import setXPath
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
 from ..resources.Factory import resourceFromDict
 from ..resources.Resource import Resource
@@ -281,7 +289,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(clear-console)
+					(clear-console) -> nil
 
 			Args:
 				pcontext: `PContext` object of the running script.
@@ -290,11 +298,11 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 1)
+		assertSymbol(pcontext, symbol, 1)
 		if not RC.isHeadless:
 			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(SNilSymbol(parent=symbol))
 
 
 	def doCreateResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -324,7 +332,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		assertSymbol(pcontext, symbol, minLength=4, maxLength=5)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.CREATE)
 	
 
@@ -370,11 +378,10 @@ class ACMEPContext(PContext):
 				case _:
 					return policy.typeName
 
-
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		# get attribute name
-		pcontext, _name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _name = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		result = CSE.validator.getAttributePoliciesByName(_name)
 		resultSymbolList = []
@@ -392,11 +399,12 @@ class ACMEPContext(PContext):
 				# 	case _:
 				# 		_t = policy.typeName
 				
-				resultSymbolList.append(SSymbol(lstQuote = [ SSymbol(string = policy.sname), 
-					   										 SSymbol(string = policy.lname), 
-															 SSymbol(string = _t) ]))
+				resultSymbolList.append(SListQuoteSymbol([	SStringSymbol(policy.sname), 
+					   										SStringSymbol(policy.lname), 
+															SStringSymbol(_t) 
+														]))
 
-		return pcontext.setResult(SSymbol(lstQuote = resultSymbolList))
+		return pcontext.setResult(SListQuoteSymbol(resultSymbolList, symbol)) # type: ignore[arg-type]
 
 
 	def doCseStatus(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -414,8 +422,8 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. the CSE status as a string.
 		"""
-		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(string = RC.cseStatus.name))
+		assertSymbol(pcontext, symbol, 1)
+		return pcontext.setResult(SStringSymbol(RC.cseStatus.name, symbol))
 
 
 	def doDeleteResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -444,7 +452,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 4)
+		assertSymbol(pcontext, symbol, minLength=3, maxLength=4)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.DELETE)
 
 
@@ -466,16 +474,16 @@ class ACMEPContext(PContext):
 			Raises:
 				`PUndefinedError`: In case the configuration key is undefined
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		# key path
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# config value
 		if (_v := Configuration.get(_key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined configuration key: {_key}'))
 		
-		return pcontext.setResult(SSymbol(value = _v))
+		return pcontext.setResult(SSymbol.symbolFromValue(_v))
 
 
 	def doGetLogLevel(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -500,8 +508,8 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(string  = str(L.logLevel)))
+		assertSymbol(pcontext, symbol, 1)
+		return pcontext.setResult(SStringSymbol(str(L.logLevel), symbol))
 
 
 	def doGetStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -522,13 +530,13 @@ class ACMEPContext(PContext):
 			Raises:
 				`PUndefinedError`: If the key is undefined in the persistent storage.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 
 		# get storage
-		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# get key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		if (_val := CSE.script.storageGet(_storage, _key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'Undefined storage key: {_key}'))
@@ -551,12 +559,12 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		# extract key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
-		return pcontext.setResult(SSymbol(boolean = Configuration.has(_key)))
+		return pcontext.setResult(SBooleanSymbol(Configuration.has(_key), symbol))
 
 
 	def doHasStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -574,15 +582,15 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 
 		# extract storage
-		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# extract key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
-		return pcontext.setResult(SSymbol(boolean = CSE.script.storageHas(_storage, _key)))
+		return pcontext.setResult(SBooleanSymbol(CSE.script.storageHas(_storage, _key), symbol))
 
 
 	def doHttp(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -610,21 +618,21 @@ class ACMEPContext(PContext):
 		for k, _ in pcontext.getVariables('response\\.*'):
 			pcontext.delVariable(k)
 
-		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 5)
+		assertSymbol(pcontext, symbol, minLength=3, maxLength=5)
 
 		# Get operation
-		pcontext, _op = pcontext.valueFromArgument(symbol, 1, (SType.tSymbol, SType.tSymbolQuote))
+		pcontext, _op = valueFromArgument(pcontext, symbol, 1, (SType.tSymbol, SType.tSymbolQuote))
 		_op = _op.lower()
 		if (_method := _httpMethods.get(_op)) is None:
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'unknown or unsupported http method: {_op}'))
 
 		# Get URL
-		pcontext, _url = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _url = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		# Get optional headers
 		_headers:JSON = {}
 		if symbol.length > 3:
-			pcontext, result = pcontext.resultFromArgument(symbol, 3, (SType.tJson, SType.tListQuote, SType.tNIL))
+			pcontext, result = resultFromArgument(pcontext, symbol, 3, (SType.tJson, SType.tListQuote, SType.tNIL))
 			match result.type:
 				case SType.tJson:
 					_headers = cast(JSON, result.value)
@@ -632,11 +640,11 @@ class ACMEPContext(PContext):
 					for item in result.value:	# type: ignore[union-attr]
 						item = cast(SSymbol, item)
 						try:
-							pcontext.assertSymbol(item, 2)
+							assertSymbol(pcontext, item, 2)
 						except:
 							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header definition: {item}'))
-						pcontext, _key = pcontext.resultFromArgument(item, 0)
-						pcontext, _value = pcontext.resultFromArgument(item, 1)
+						pcontext, _key = resultFromArgument(pcontext, item, 0)
+						pcontext, _value = resultFromArgument(pcontext, item, 1)
 						if _key.type not in [SType.tSymbol, SType.tSymbolQuote, SType.tString]:
 							raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid header key: {_key}'))
 						if _value.type not in [SType.tString, SType.tNumber]:
@@ -649,7 +657,7 @@ class ACMEPContext(PContext):
 		# get body, if present
 		_body:str|JSON = None
 		if symbol.length == 5:
-			pcontext, result = pcontext.resultFromArgument(symbol, 4, (SType.tString, SType.tJson, SType.tNIL))
+			pcontext, result = resultFromArgument(pcontext, symbol, 4, (SType.tString, SType.tJson, SType.tNIL))
 			match result.type:
 				case SType.tString | SType.tJson:
 					_body = str(result)
@@ -666,20 +674,21 @@ class ACMEPContext(PContext):
 							  verify = Configuration.http_security_verifyCertificate,
 							  timeout = Configuration.http_timeout)		# type: ignore[operator, call-arg]
 		except requests.exceptions.ConnectionError:
-			pcontext.variables['response.status'] = SSymbol()	# nil
-			return pcontext.setResult(SSymbol())
+			pcontext.variables['response.status'] = SNilSymbol()
+			return pcontext.setResult(SNilSymbol())
 
 		# parse response and assign to variables
 
-		pcontext.variables['response.status'] = SSymbol(number = Decimal(response.status_code))
-		pcontext.variables['response.body'] =  SSymbol(string = response.text) if response.text else SSymbol()
+		pcontext.variables['response.status'] = SNumberSymbol(Decimal(response.status_code))
+		pcontext.variables['response.body'] =  SStringSymbol(response.text) if response.text else SNilSymbol()
 		if response.headers: # fill header variables
 			for k, v in response.headers.items():
-				pcontext.variables[f'response.{k}'] = SSymbol(string = v)
+				pcontext.variables[f'response.{k}'] = SStringSymbol(v)
 
-		pcontext.result = SSymbol(lstQuote = [	SSymbol(number = Decimal(response.status_code)),
-												SSymbol(string = response.text),
-												SSymbol(jsn = dict(response.headers)) ])
+		pcontext.result = SListQuoteSymbol([	SNumberSymbol(Decimal(response.status_code)),
+												SStringSymbol(response.text),
+												SJsonSymbol(jsn=dict(response.headers)) 
+											])
 		return pcontext
 
 
@@ -702,13 +711,13 @@ class ACMEPContext(PContext):
 			Raises:
 				`PRuntimeError`: In case an error during the import and create is encountered.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 		
 		# originator
-		pcontext, _originator = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _originator = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# resource object
-		pcontext, _resource = pcontext.valueFromArgument(symbol, 2, SType.tJson)
+		pcontext, _resource = valueFromArgument(pcontext, symbol, 2, SType.tJson)
 		_resource = resourceFromDict(cast(dict, _resource),
 							   		 create = True, 
 									 isImported = True,
@@ -734,7 +743,7 @@ class ACMEPContext(PContext):
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {e.dbg}', showStackTrace = False)))
 		# return self._pcontextFromRequestResult(pcontext, result)
-		return pcontext.setResult(SSymbol(jsn = resource.asDict()))
+		return pcontext.setResult(SJsonSymbol(jsn=resource.asDict()))
 
 
 	def doLogDivider(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -754,12 +763,12 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 1, maxLength = 2)
+		assertSymbol(pcontext, symbol, minLength = 1, maxLength = 2)
 	
 		# Message
 		msg = ''
 		if symbol.length == 2:
-			pcontext, msg = pcontext.valueFromArgument(symbol, 1, SType.tString)
+			pcontext, msg = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		L.logDivider(LogLevel.DEBUG, msg)
 		return pcontext
@@ -792,7 +801,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		assertSymbol(pcontext, symbol, minLength=4, maxLength=5)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.NOTIFY)
 
 
@@ -818,17 +827,17 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		# URL
-		pcontext, _url = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _url = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# Open the browser
 		try:
 			webbrowser.open(_url)
-			return pcontext.setResult(SSymbol(boolean = True))
+			return pcontext.setResult(SBooleanSymbol(True, symbol))
 		except Exception as e:
-			return pcontext.setResult(SSymbol(boolean = False))
+			return pcontext.setResult(SBooleanSymbol(False, symbol))
 		
 
 	def doPingTcpService(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -855,24 +864,24 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 3, maxLength = 4)
+		assertSymbol(pcontext, symbol, minLength=3, maxLength=4)
 
 		# server
-		pcontext, _server = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _server = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# port
-		pcontext, _port = pcontext.valueFromArgument(symbol, 2, SType.tNumber)
+		pcontext, _port = valueFromArgument(pcontext, symbol, 2, SType.tNumber)
 		if not isValidPort(_port):
 			raise PInvalidArgumentError(self.setError(PError.invalid, f'Invalid port number: {_port}'))
 
 		# timeout
 		_timeout = 10
 		if symbol.length == 4:
-			pcontext, _timeout = pcontext.valueFromArgument(symbol, 3, SType.tNumber)
+			pcontext, _timeout = valueFromArgument(pcontext, symbol, 3, SType.tNumber)
 			if _timeout <= 0.0:
 				raise PInvalidArgumentError(self.setError(PError.invalid, f'Invalid timeout: {_timeout}. Must be greater than 0.0'))
 
-		return pcontext.setResult(SSymbol(boolean = pingTCPServer(_server, int(_port), float(_timeout))))
+		return pcontext.setResult(SBooleanSymbol(pingTCPServer(_server, int(_port), float(_timeout)), symbol))
 
 
 	def doPrintJSON(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -892,13 +901,13 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		if RC.isHeadless:
 			return pcontext
 		
 		# json
-		pcontext, _json = pcontext.valueFromArgument(symbol, 1, SType.tJson)
+		pcontext, _json = valueFromArgument(pcontext, symbol, 1, SType.tJson)
 
 		L.console(cast(dict, _json))
 		return pcontext
@@ -919,17 +928,17 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 4)
+		assertSymbol(pcontext, symbol, 4)
 
 
 		# get storage
-		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# get key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		# get value
-		pcontext, _value = pcontext.resultFromArgument(symbol, 3, _storageTypes)
+		pcontext, _value = resultFromArgument(pcontext, symbol, 3, _storageTypes)
 
 		CSE.script.storagePut(_storage, _key, _value)
 		return pcontext
@@ -953,16 +962,16 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 
 		# get query
-		pcontext = pcontext.getArgument(symbol, 1, (SType.tList, SType.tListQuote))
+		pcontext = getArgument(pcontext, symbol, 1, (SType.tList, SType.tListQuote))
 		_query = pcontext.result.toString(quoteStrings = True)
 
 		# get JSON
-		pcontext, _json = pcontext.valueFromArgument(symbol, 2, SType.tJson)
+		pcontext, _json = valueFromArgument(pcontext, symbol, 2, SType.tJson)
 
-		return pcontext.setResult(SSymbol(boolean = CSE.script.runComparisonQuery(_query, _json)))
+		return pcontext.setResult(SBooleanSymbol(CSE.script.runComparisonQuery(_query, _json), symbol))
 
 
 	def doRemoveStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -982,20 +991,20 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 2, maxLength = 3)
+		assertSymbol(pcontext, symbol, minLength=2, maxLength=3)
 
 		if symbol.length == 2:
 
 			# get storage
-			pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+			pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
 			CSE.script.storageRemoveStorage(_storage)
 			return pcontext
 		
 		# get storage
-		pcontext, _storage = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# get key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		CSE.script.storageRemove(_storage, _key)
 		return pcontext
@@ -1016,9 +1025,9 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 1)
+		assertSymbol(pcontext, symbol, 1)
 		CSE.resetCSE()
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(SNilSymbol(symbol))
 	
 
 	def doRetrieveResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1065,8 +1074,8 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
-		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(boolean = runsInIPython()))
+		assertSymbol(pcontext, symbol, 1)
+		return pcontext.setResult(SBooleanSymbol(runsInIPython(), symbol))
 
 
 	def doRunsInTUI(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1084,8 +1093,8 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
-		pcontext.assertSymbol(symbol, 1)
-		return pcontext.setResult(SSymbol(boolean = CSE.textUI.tuiApp is not None))
+		assertSymbol(pcontext, symbol, 1)
+		return pcontext.setResult(SBooleanSymbol(CSE.textUI.tuiApp is not None, symbol))
 
 
 	def doScheduleNextScript(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1104,16 +1113,16 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 2)
+		assertSymbol(pcontext, symbol, minLength=2)
 
 		# script name
-		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, name = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# arguments
 		arguments:list[str] = []
 		if symbol.length > 2:
 			for idx in range(2, symbol.length):
-				pcontext, value = pcontext.valueFromArgument(symbol, idx)
+				pcontext, value = valueFromArgument(pcontext, symbol, idx)
 				arguments.append(str(value))
 
 		# find script
@@ -1147,16 +1156,16 @@ class ACMEPContext(PContext):
 				`PUndefinedError`: In case there is no script with that name.
 				`PRuntimeError`:  In case the script exits with an error.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 2)
+		assertSymbol(pcontext, symbol, minLength=2)
 
 		# script name
-		pcontext, name = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, name = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# arguments
 		arguments:list[str] = []
 		if symbol.length > 2:
 			for idx in range(2, symbol.length):
-				pcontext, value = pcontext.valueFromArgument(symbol, idx)
+				pcontext, value = valueFromArgument(pcontext, symbol, idx)
 				arguments.append(value.toString())
 
 		# find script
@@ -1194,13 +1203,13 @@ class ACMEPContext(PContext):
 			Return:
 				The updated PContext object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 
 		# category
-		pcontext, _category = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _category = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# description
-		pcontext, _description = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, _description = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		# Set the description
 		CSE.script.categoryDescriptions[_category] = _description
@@ -1230,13 +1239,13 @@ class ACMEPContext(PContext):
 				`PInvalidArgumentError`: In case the setting could not be updated.
 				`PUndefinedError`: In case the key references an undefined configuration setting.
 		"""
-		pcontext.assertSymbol(symbol, 3)
+		assertSymbol(pcontext, symbol, 3)
 
 		# key
-		pcontext, _key = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, _key = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# value
-		pcontext, result = pcontext.resultFromArgument(symbol, 2)
+		pcontext, result = resultFromArgument(pcontext, symbol, 2)
 
 		if Configuration.has(_key):	# could be None, False, 0, empty string etc
 			# Do some conversions first
@@ -1291,7 +1300,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(set-console-logging true)
+					(set-console-logging true) -> nil
 
 			Args:
 				pcontext: `PContext` object of the running script.
@@ -1300,12 +1309,12 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, 2)
+		assertSymbol(pcontext, symbol, 2)
 
 		# Value
-		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tBool)
+		pcontext, value = valueFromArgument(pcontext, symbol, 1, SType.tBool)
 		L.enableScreenLogging = cast(bool, value)
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(SNilSymbol(symbol))
 
 
 	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1326,7 +1335,7 @@ class ACMEPContext(PContext):
 			Example:
 				::
 
-					(tui-notify "This is a notification")
+					(tui-notify "This is a notification") -> nil
 
 			Args:
 				pcontext: `PContext` object of the running script.
@@ -1335,24 +1344,24 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 2, maxLength = 5)
+		assertSymbol(pcontext, symbol, minLength=2, maxLength=5)
 
 		# Value
-		pcontext, value = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, value = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# Title
-		pcontext, title = pcontext.valueFromArgument(symbol, 2, SType.tString, optional = True)
+		pcontext, title = valueFromArgument(pcontext, symbol, 2, SType.tString, optional=True)
 
 		# Severity
-		pcontext, severity = pcontext.valueFromArgument(symbol, 3, SType.tString, optional = True)
+		pcontext, severity = valueFromArgument(pcontext, symbol, 3, SType.tString, optional=True)
 
 		# Timeout
-		pcontext, timeout = pcontext.valueFromArgument(symbol, 4, SType.tNumber, optional = True)
+		pcontext, timeout = valueFromArgument(pcontext, symbol, 4, SType.tNumber, optional=True)
 
 		# show the notification
 		CSE.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
 
-		return pcontext.setResult(SSymbol())
+		return pcontext.setResult(SNilSymbol())
 
 
 	def doTuiRefreshResources(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1371,7 +1380,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object.
 		"""
-		pcontext.assertSymbol(symbol, 1)
+		assertSymbol(pcontext, symbol, 1)
 		CSE.textUI.refreshResources()
 		return pcontext
 
@@ -1391,7 +1400,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object.
 		"""
-		pcontext.assertSymbol(symbol, 1)
+		assertSymbol(pcontext, symbol, 1)
 		CSE.textUI.scriptVisualBell(pcontext.scriptName)
 		return pcontext
 
@@ -1423,7 +1432,7 @@ class ACMEPContext(PContext):
 			Return:
 				The updated `PContext` object with the operation result.
 		"""
-		pcontext.assertSymbol(symbol, minLength = 4, maxLength = 5)
+		assertSymbol(pcontext, symbol, minLength=4, maxLength=5)
 		return self._handleRequest(cast(ACMEPContext, pcontext), symbol, Operation.UPDATE)
 
 	#########################################################################
@@ -1443,26 +1452,26 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result.
 		"""
 		# Construct response
-		responseStatus = SSymbol(number = Decimal(res.rsc.value))
+		responseStatus = SNumberSymbol(Decimal(res.rsc.value))
 		try:
 			if res.dbg:
 				# L.isDebug and L.logDebug(f'Request response: {res.dbg}')
-				responseResource = SSymbol(jsn = { 'm2m:dbg:': f'{str(res.dbg)}'})
+				responseResource = SJsonSymbol(jsn={ 'm2m:dbg:': f'{str(res.dbg)}'})
 			elif res.resource:
 				# L.isDebug and L.logDebug(f'Request response: {res.resource}')
-				responseResource = SSymbol(jsn = cast(Resource, res.resource).asDict())
+				responseResource = SJsonSymbol(jsn=cast(Resource, res.resource).asDict())
 			elif res.data:
 				# L.isDebug and L.logDebug(f'Request response: {res.data}')
-				responseResource = SSymbol(jsnString = json.dumps(res.data)) if isinstance(res.data, dict) else SSymbol(string = str(res.data))
+				responseResource = SJsonSymbol(jsnString=json.dumps(res.data)) if isinstance(res.data, dict) else SStringSymbol(str(res.data))	# type: ignore[assignment]
 				# L.logDebug(self.getVariable('response.resource'))
 			else:
 				# L.isDebug and L.logDebug('Request response: (unknown or none)')
-				responseResource = SSymbol()
+				responseResource = SNilSymbol()	# type: ignore[assignment]
 		except Exception as e:
 			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}'))
 		
-		return pcontext.setResult(SSymbol(lstQuote = [ responseStatus, responseResource ]))
+		return pcontext.setResult(SListQuoteSymbol([ responseStatus, responseResource ]))
 
 
 	def _handleRequest(self, pcontext:PContext, symbol:SSymbol, operation:Operation) -> PContext:
@@ -1484,15 +1493,15 @@ class ACMEPContext(PContext):
 		"""
 
 		# Get originator
-		pcontext, originator = pcontext.valueFromArgument(symbol, 1, SType.tString)
+		pcontext, originator = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
 		# Get target
-		pcontext, target = pcontext.valueFromArgument(symbol, 2, SType.tString)
+		pcontext, target = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		# Get Content
 		content:JSON = None
 		if operation in [Operation.CREATE, Operation.UPDATE, Operation.NOTIFY]:
-			pcontext, content = pcontext.valueFromArgument(symbol, 3, SType.tJson)
+			pcontext, content = valueFromArgument(pcontext, symbol, 3, SType.tJson)
 			idx = 4
 		else:
 			idx = 3
@@ -1500,7 +1509,7 @@ class ACMEPContext(PContext):
 		# Get extra request attributes
 		attributes:JSON = {}
 		if symbol.length > idx:
-			pcontext, attributes = pcontext.valueFromArgument(symbol, idx, SType.tJson)
+			pcontext, attributes = valueFromArgument(pcontext, symbol, idx, SType.tJson)
 
 		# Prepare request structure
 		req = { 'op': operation,
@@ -1756,9 +1765,9 @@ class ScriptManager(object):
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
 								  uri,
 								  background = False, 
-								  environment = { 'notification.resource' : SSymbol(jsn = request.pc), 
-								  				  'notification.originator' : SSymbol(string = request.originator),
-												  'notification.uri': SSymbol(string = uri) })	
+								  environment = { 'notification.resource' : SJsonSymbol(jsn=request.pc), 
+								  				  'notification.originator' : SStringSymbol(request.originator),
+												  'notification.uri': SStringSymbol(uri) })	
 		except Exception as e:
 			L.logErr('Error in JSON', exc = e)
 
@@ -2019,7 +2028,7 @@ class ScriptManager(object):
 			pcontext.setMaxRuntime(Configuration.scripting_maxRuntime)
 
 			# Set environemt
-			environment['tui.theme'] = SSymbol(string = Configuration.textui_theme)
+			environment['tui.theme'] = SStringSymbol(Configuration.textui_theme)
 			pcontext.setEnvironment(environment)
 
 			# Handle arguments
@@ -2066,16 +2075,16 @@ class ScriptManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {arguments if arguments else "None"}, meta: {metaFilter}')
 		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter, ignoreCase = ignoreCase)) != 1:
-			return (False, SSymbol(string = L.logWarn(f'Script not found: "{scriptName}"')))
+			return (False, SStringSymbol(L.logWarn(f'Script not found: "{scriptName}"')))
 		script = scripts[0]
 		if self.runScript(script, arguments = arguments, background = False):
 			L.isDebug and L.logDebug(f'Script: "{scriptName}" finished successfully')
-			return (True, script.result if script.result else SSymbol())
+			return (True, script.result if script.result else SNilSymbol())
 			
 		L.isWarn and L.logWarn(f'Script "{scriptName}" finished with error: {script.error.error.name} : {script.error.message}')
 
 		if script.error.error == PError.quitWithError:
-			script.result = script.error.message
+			script.result = SStringSymbol(script.error.message)
 		return (False, script.result)
 
 
@@ -2106,9 +2115,9 @@ class ScriptManager(object):
 				raise ValueError(f'attribute: {_attr} must be a string')
 			if (_value := jsn.get(_attr)) is not None:
 				L.isDebug and L.logDebug(f'Attribute: {_attr} = {_value}')
-				return pcontext.setResult(SSymbol(value = _value))
+				return pcontext.setResult(SSymbol.symbolFromValue(_value))
 			L.isDebug and L.logDebug(f'Attribute: {_attr} not found')
-			return pcontext.setResult(SSymbol()) # nil
+			return pcontext.setResult(SNilSymbol(symbol)) 
 	
 
 		def monitorExecution(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2246,10 +2255,10 @@ class ScriptManager(object):
 				L.on()
 			return r
 
-		environment['event.type'] = SSymbol(string = _metaOnKey)
+		environment['event.type'] = SStringSymbol(_metaOnKey)
 		
 		if eventData:
-			environment['event.data'] = SSymbol(string = cast(FunctionKey, eventData).name if isinstance(eventData, FunctionKey) else eventData)
+			environment['event.data'] = SStringSymbol(cast(FunctionKey, eventData).name if isinstance(eventData, FunctionKey) else eventData)
 
 		for each in self.findScripts(meta = event):
 			if eventData:

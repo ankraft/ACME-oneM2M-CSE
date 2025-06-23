@@ -30,7 +30,8 @@ from ..runtime import CSE
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress, Commands
 from ..helpers.TextTools import simpleMatch
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..helpers.Interpreter import PContext, PError
+from ..helpers.interpreter.PContext import PContext
+from ..helpers.interpreter.Types import PError
 from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
