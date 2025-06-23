@@ -353,7 +353,10 @@ class Zookeeper():
 			key = f'{self.normalizedRootNode}{key}'.rstrip('/ ')
 		
 		if self.zk.exists(key):
-			self.zk.delete(key, recursive=True)
+			try:
+				self.zk.delete(key, recursive=True)
+			except Exception as e:
+				raise Exception(f'Failed to delete key {key}: {e}')
 			self.verbose and self.logger(f'Deleted key {key}')	# type: ignore[func-returns-value]
 		else:
 			raise Exception(f'Key {key} does not exist')
