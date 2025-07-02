@@ -40,7 +40,7 @@ from ..runtime import CSE
 from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..helpers.Interpreter import SType
+from ..helpers.interpreter.Interpreter import SType
 from ..helpers.PerfTimer import perfTimer
 from ..runtime.Logging import Logging as L
 from ..etc.Constants import RuntimeConstants as RC

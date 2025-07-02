@@ -564,6 +564,13 @@ class ACMEContainerTree(Container):
 						self.tabs.show_tab('tree-tab-create')
 						self.tabs.hide_tab('tree-tab-update')
 						self.tabs.show_tab('tree-tab-delete')
+					
+					# Notification Target Self Reference Virtual Resource
+					case ResourceTypes.NTSR:	
+						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.hide_tab('tree-tab-create')
+						self.tabs.hide_tab('tree-tab-update')
+						self.tabs.show_tab('tree-tab-delete')
 
 					case _:
 						self.tabs.hide_tab('tree-tab-diagram') 
@@ -591,14 +598,18 @@ class ACMEContainerTree(Container):
 			# Update the requests view with an empty string
 			self._update_requests('')
 			
-		# Add syntax highlighting and add to the view
-		# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
-		self.updateResourceView(commentJson(self.currentResource.asDict(sort = True), 
-								explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-								getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
+		if ResourceTypes.isVirtualResource(resource.ty):
+			self.updateResourceView(error='Virtual resource has no resource view')
+		else:
+			# Add syntax highlighting and add to the view
+			# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+			self.updateResourceView(commentJson(self.currentResource.asDict(sort=True), 
+									explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
+									getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
 
 
-	def updateResourceView(self, value:Optional[str|Resource] = None, error:Optional[str] = None) -> None:
+	def updateResourceView(self, value:Optional[str|Resource]=None, 
+								 error:Optional[str]=None) -> None:
 		"""	Update the resource view with a value or an error message.
 
 			Args:
@@ -607,10 +618,10 @@ class ACMEContainerTree(Container):
 		"""
 		if value:
 			if isinstance(value, Resource):
-				value = commentJson(value.asDict(sort = True), 
-									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
-			self.resourceView.update(Syntax(value, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+				value = commentJson(value.asDict(sort=True), 
+									explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
+									getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
+			self.resourceView.update(Syntax(value, 'json', theme=self.app.syntaxTheme))	# type: ignore [attr-defined]
 		elif error:
 			self.resourceView.update(error)
 		else:
