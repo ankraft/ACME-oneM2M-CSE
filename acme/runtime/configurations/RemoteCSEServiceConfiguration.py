@@ -79,8 +79,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 					spName = section[len('cse.sp.registrar.'):-len('.security')]
 					if spName not in spMapping:
 						raise ConfigurationError(fr'Configuration Error: No SP Registrar configuration found for security section: {spName} -> {section}')
-					spName = spMapping[spName]  # Use the mapped SP name if available
-					registrar = config.cse_registrars.get(spName, None)
+					registrar = config.cse_registrars.get(spMapping[spName], None)
 					if not registrar:
 						raise ConfigurationError(fr'Configuration Error: No SP Registrar configuration found for security section: {spName} -> {section}')
 					parseRegistrarSecurity(f'cse.sp.registrar.{spName}.security', registrar)

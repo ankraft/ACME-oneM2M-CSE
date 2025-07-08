@@ -18,7 +18,7 @@ import sys, re
 from .Constants import Constants
 from .Types import ResourceTypes
 from .Types import JSON
-from .IDUtils import isStructured, isCSERelative, toSPRelative
+from .IDUtils import isStructured, isCSERelative, toSPRelative, isAbsolute, toAbsolute, isSPRelative
 from ..runtime import CSE
 from ..etc.Constants import RuntimeConstants as RC
 
@@ -246,10 +246,10 @@ def compareIDs(id1:str, id2:str) -> bool:
 	if not isStructured(id1) and not isStructured(id2):
 		ri1 = id1
 		ri2 = id2
-		if isCSERelative(id1):
-			ri1 = toSPRelative(id1)
-		if isCSERelative(id2):
-			ri2 = toSPRelative(id2)
+		if not isAbsolute(id1):
+			ri1 = toAbsolute(id1)
+		if not isAbsolute(id2):
+			ri2 = toAbsolute(id2) 		
 		return ri1 == ri2
 
 	return riFromID(id1) == riFromID(id2)

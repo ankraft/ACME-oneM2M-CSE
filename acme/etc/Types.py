@@ -1240,6 +1240,8 @@ class CSEStatus(ACMEIntEnum):
 	"""	CSE is stopping. """
 	RESETTING			= auto()
 	"""	CSE is resetting. """
+	RESTARTING			= auto()
+	"""	CSE is restarting. """
 
 ##############################################################################
 #
@@ -2474,6 +2476,10 @@ class RequestCredentials:
 		return f'Bearer {self.wsToken}'
 	
 
+	def __repr__(self) -> str:
+		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
+
+
 @dataclass
 class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
@@ -2723,6 +2729,10 @@ class CSERegistrarSecurity:
 	"""	Credentials for the registrar CSE to connect to this CSE. """
 
 
+	def __repr__(self) -> str:
+		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
+
+
 @dataclass
 class CSERegistrar:
 	"""	Structure to hold the CSE registrar information.
@@ -2815,6 +2825,18 @@ class CSERegistrar:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
 			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 
+	def dct(self) -> dict:
+		"""	Return a dictionary representation of the CSERegistrar object.
+		
+			This is used for serialization and debugging.
+			
+			Return:
+				Dictionary representation of the CSERegistrar object.
+		"""
+		return {k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')}
+
+	# def __repr__(self) -> str:
+	# 	return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
 
 ##############################################################################
 #
