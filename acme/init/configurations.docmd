@@ -399,6 +399,41 @@ Note, that a large number of requests might take a moment to be processed and di
 The default value is `250`.
 
 
+# cse.registrars
+
+This section specifies the settings needed to register to a registrar CSE.
+
+This entry is a list of configuration settings in one single structure. 
+Usually it contains only one setting for one registrar CSE, but multiple settings can 
+be defined in case of an Infrastructure CSE (IN-CSE) that registers to other
+Service Provider IN-CSEs in other domains.
+
+Though this entry contains all the combined settings for all registrar CSEs, the configuration
+in the configuration file is done separately for each registrar CSE.
+
+## Settings Explained
+
+Each registrar CSE is identified by its *spID* which is the service provider ID of the registrar CSE.
+Each configuration settings contains the following attributes:
+
+- **spID**: The service provider ID of the registrar CSE.
+- **address**: The URL (scheme, address and port) of the registrar CSE.
+- **cseID**: The CSE-ID of the registrar CSE. The CSE-ID must start with a "/" character. In case of an IN-CSE this is the CSE-ID of the IN-CSE at the top of the service providers CSE deployment hierarchy.
+- **resourceName**: The resource name of the registrar CSE.
+- **serialization**: The serialization type that must be used for the registration to the registrar CSE. **Allowed values**: **json**, **cbor**.
+- **originator**: The originator ID of the registrar CSE. This is usually the CSEID of the CSE that is used to register to the registrar CSE. For a service provider IN-CSE this ID must be in absolute format and contain the registree's service provider ID.
+- **security**: This setting contains a structure of security credentials for the registration to the registrar CSE as well as the own CSE's credentials that are used by the registrar CSE to authenticate itself to the hosting CSE.
+	- **httpUsername**: The username used for the registrar CSE's authentication via *http* if basic authentication is enabled for the registrar CSE.
+	- **httpPassword**: The password used for the registrar CSE's authentication via *http* if basic authentication is enabled for the registrar CSE.
+	- **httpBearerToken**: The authentication token used for the registrar CSE's authentication via *http* if bearer token authentication is enabled for the registrar CSE.
+	- **wsUsername**: The username used for the registrar CSE's authentication via *WebSocket* if basic authentication is enabled for the registrar CSE.
+	- **wsPassword**: The password used for the registrar CSE's authentication via *WebSocket* if basic authentication is enabled for the registrar CSE.
+	- **wsBearerToken**: The authentication token used for the registrar CSE's authentication via *WebSocket* if bearer token authentication is enabled for the registrar CSE.
+	- **selfHttpUsername**: The own CSE's username used for the registrar CSE's authentication via *http* if basic authentication is enabled for the registrar CSE.
+	- **selfHttpPassword**: The own CSE's password used for the registrar CSE's authentication via *http* if basic authentication is enabled for the registrar CSE.
+	- **selfWsUsername**: The own CSE's username used for the registrar CSE's authentication via *WebSocket* if basic authentication is enabled for the registrar CSE.
+	- **selfWsPassword**: The own CSE's password used for the registrar CSE's authentication via *WebSocket* if basic authentication is enabled for the registrar CSE.
+
 
 # cse.registrar
 
