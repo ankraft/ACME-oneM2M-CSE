@@ -113,6 +113,7 @@ class Logging:
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
+	ringBufferHandler:ACMERingBufferLogHandler = None
 	_handlers:List[Any] 			= None
 	_logWorker:BackgroundWorker		= None
 	_basenames:dict[str, str]		= {}
@@ -149,9 +150,12 @@ class Logging:
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
+		Logging.ringBufferHandler		= ACMERingBufferLogHandler()
 
 		# Add logging filter
 		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
+		Logging.ringBufferHandler.addFilter(LogFilter(Logging.filterSources))
+		Logging.ringBufferHandler.setFormatter(ACMESimpleLogFormatter('%(levelname)s %(asctime)s %(message)s'))
 
 		Logging.setLogLevel(cast(LogLevel, Configuration.logging_level))					# Assign the initial log level
 
@@ -160,7 +164,7 @@ class Logging:
 		Logging.queueOn()
 
 		# List of log handlers
-		Logging._handlers = [ Logging._richHandler ]
+		Logging._handlers = [ Logging._richHandler, Logging.ringBufferHandler ]
 
 		# Configurable: Set the timezone converter for file logging to UTC
 		if Logging.utcTime:
@@ -177,7 +181,7 @@ class Logging:
 														 maxBytes = Configuration.logging_size,
 														 backupCount = Configuration.logging_count)
 			logfp.setLevel(Logging.logLevel)
-			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
+			logfp.setFormatter(ACMESimpleLogFormatter('%(levelname)s %(asctime)s %(message)s'))
 			logfp.addFilter(LogFilter(Logging.filterSources))
 			Logging.logger.addHandler(logfp) 
 			Logging._handlers.append(logfp)
@@ -754,3 +758,75 @@ class ACMERichLogHandler(RichHandler):
 				line_no		= lineno,
 			)
 		)
+
+
+class ACMERingBufferLogHandler(logging.Handler):
+	"""	A ring buffer handler for logging. It buffers log records and
+		flushes them to the console or file when the buffer is full.
+	"""
+
+	def __init__(self, capacity:int=10) -> None:
+		"""	Initialize the ring buffer handler with a given capacity.
+		
+			Args:
+				capacity: The maximum number of log records to keep in the buffer.
+		"""
+		super().__init__()
+		self.capacity = capacity
+		self.buffer:list[LogRecord] = [None] * capacity	# create a buffer of the given capacity
+		self.head = -1
+
+	def emit(self, record:LogRecord) -> None:
+		"""	Emit a log record to the buffer.
+		
+			Args:
+				record: The log record to emit.
+		"""
+		# add the record to the buffer
+		self.head = self.getIncrementedIndex(self.head)	# increment the head index in a circular manner
+		self.buffer[self.head] = record
+
+	
+	def getIncrementedIndex(self, index:int) -> int:
+		"""	Increment the index in a circular manner.
+		
+			Args:
+				index: The index to increment.
+			Return:
+				The incremented index.
+		"""
+		return (index + 1) % self.capacity
+
+
+	def getLogEntry(self, index:int) -> Optional[str]:
+		"""	Get a log entry from the buffer by index.
+		
+			Args:
+				index: The index of the log entry to get.
+			Return:
+				The log entry as a string, or None if the index is out of bounds.
+		"""
+		if 0 <= index < self.capacity:
+			record = self.buffer[index]
+			if record:
+				return self.format(record)
+		return None
+	
+class ACMESimpleLogFormatter(logging.Formatter):
+	"""	Formatter for the file logging handler. It formats the log messages
+		for file output.
+	"""
+
+	def format(self, record:LogRecord) -> str:
+		"""	Format the log record for file output.
+		
+			Args:
+				record: The log record to format.
+			Return:
+				The formatted log message.
+		"""
+		_e = record.msg.split('\x04')
+		if len(_e) < 3:
+			return super().format(record)	# replace the separator with a dash for file output
+		record.msg = f'<{_e[2]}> [{_e[0]}:{_e[1]}] {_e[3]}'
+		return super().format(record)
