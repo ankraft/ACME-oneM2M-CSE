@@ -2816,7 +2816,7 @@ class CSERegistrar:
 		self._registrarCSEURL = f'{self.address}{self.root}/'
 		self._registrarCSESRN = f'{self.cseID}/{self.resourceName}'
 		if self.spID is not None and self.spID != RC.cseSpid:
-			self._registrarCSESRN = f'//{self.spID}/{self._registrarCSESRN}' 
+			self._registrarCSESRN = f'//{self.spID}{self._registrarCSESRN}' 
 		
 		if self.spID is not None and self.spID != RC.cseSpid:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self.spID}_{RC.cseCsi[1:]}' 
