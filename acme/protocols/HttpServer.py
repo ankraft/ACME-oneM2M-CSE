@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re, signal
+import logging, sys, urllib3, re, json
 
 import flask
 from flask import Flask, Request, request
@@ -43,6 +43,7 @@ from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.interpreter.Interpreter import SType
 from ..helpers.PerfTimer import perfTimer
 from ..runtime.Logging import Logging as L
+from ..runtime import Management as Mgmt
 from ..etc.Constants import RuntimeConstants as RC
 
 
@@ -143,11 +144,13 @@ class HttpServer(object):
 			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
 			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
 
+		# Enable the management endpoint
 		if Configuration.http_enableManagementEndpoint:
 			managementEndpoint = f'{Configuration.http_root}/__mgmt__'
 			L.isInfo and L.log(f'Registering management endpoint at: {managementEndpoint}')
 			self.addEndpoint(managementEndpoint, handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{managementEndpoint}/<command>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{managementEndpoint}/<command>/<param>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 
 		# Allow to use PATCH as a replacement for the DELETE method
 		if Configuration.http_allowPatchForDelete:
@@ -249,7 +252,7 @@ class HttpServer(object):
 			# Disable the flask banner messages
 			cli = sys.modules['flask.cli']
 			cli.show_server_banner = lambda *x: None 	# type: ignore
-			# Start the server
+			# Start the serverz
 			try:
 				if Configuration.http_wsgi_enable:
 					L.isInfo and L.log(f'HTTP server listening on {Configuration.http_listenIF}:{Configuration.http_port} (wsgi)')
@@ -498,7 +501,7 @@ class HttpServer(object):
 		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, L.logWarn('UT requires request body or X-M2M-UTCMD.'))
 
 
-	def handleManagement(self, command:Optional[str]=None) -> Response:
+	def handleManagement(self, command:Optional[str]=None, param:Optional[str]=None) -> Response:
 		"""	Handle a management request. This is used to control the CSE.
 
 			Args:
@@ -513,16 +516,76 @@ class HttpServer(object):
 		# Check, when authentication is enabled, the user is authorized, else return status 401
 		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
+		
+		try:
+			command = command.lower() if command else None
+			L.isInfo and L.log(f'Management request: {command}{"(" + param + ")" if param else ""}')
+			match command:
 
-		match command:
-			case 'shutdown':
-				# Shutdown the CSE
-				L.isInfo and L.log('Management request: shutdown')
-				CSE.forceShutdown()	# This might not return (e.g. under Windows)
-				return Response(response='CSE shutting down', status=200, headers=self._responseHeaders)
-			case _:
-				L.isWarn and L.logWarn(f'Unknown management command: {command}')
-		return Response(response='unsupported', status=422, headers=self._responseHeaders)
+				case 'config':
+					return Response(response=Mgmt.getConfig(), mimetype='application/json',	headers=self._responseHeaders)
+			
+				case 'log':
+					return Response(Mgmt.getLogGenerator(), mimetype='text/event-stream')
+					
+				case 'loglevel':
+					if param is None: # No parameter given, return the current log level
+						return Response(response=Mgmt.getLoglevel(), headers=self._responseHeaders)
+					else: # A parameter is given, try to set the log level
+						if (_n := Mgmt.setLogLevel(param)):
+							L.isInfo and L.log(f'Management request: loglevel set to {_n}')
+							return Response(response=f'Log level set to {_n}', headers=self._responseHeaders)
+						else:
+							L.isWarn and L.logWarn(f'Unknown log level: {param}')
+							return Response(response=f'Unknown log level: {param}.\nValid log levels are: {list(LogLevel.__members__.keys())}', 
+					   						status=422, 
+											headers=self._responseHeaders)
+				
+				case 'registrations':
+					return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self._responseHeaders)
+
+				case 'reset':
+					Mgmt.resetCSE()
+					return Response(response='CSE resetting', headers=self._responseHeaders)
+				
+				case 'restart':
+					Mgmt.restartCSE()	# This might not return (e.g. under Windows)
+					return Response(response='CSE is shutting down to restart', headers=self._responseHeaders)
+
+				case 'shutdown':
+					Mgmt.shutdownCSE()	# This might not return (e.g. under Windows)
+					return Response(response='CSE is shutting down', headers=self._responseHeaders)
+				
+				case 'status':
+					return Response(response=Mgmt.getCSEStatus(), mimetype='application/json', headers=self._responseHeaders)
+
+				case 'help':
+					return Response(response='''ACME oneM2M CSE Management Commands
+					
+config         Get the current configuration
+log            Stream the live log output
+loglevel       Get or set the log level (info, debug, warn, error, off)
+registrations  Get the current registrations
+reset          Reset the CSE
+restart        Shutdown the CSE to restart it (exit code 82)
+shutdown       Shutdown the CSE normally (exit code 0)
+status         Get the current CSE status
+help           Show this help message
+''',
+									status=200,
+									headers=self._responseHeaders)
+
+				case _:
+					L.isWarn and L.logWarn(f'Unknown management command: {command}')
+
+		except Exception as e:
+			return Response(response=L.logWarn(f'Error occurred while processing command: {e}'),
+							status=500, 
+							headers=self._responseHeaders)
+
+		return Response(response='Unsupported command.\nUse "help" for a list of commands.', 
+				  		status=422, 
+						headers=self._responseHeaders)
 
 
 	#########################################################################

@@ -14,7 +14,9 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional, cast, Set
 
 import configparser, argparse, os, os.path, pathlib
+from copy import deepcopy
 from inspect import getmembers
+
 from rich.console import Console
 
 
@@ -903,7 +905,23 @@ class Configuration(object):
 			return not callable(v)
 		
 		attributeNames = [ k for k,v in getmembers(Configuration, isprop) if not k.startswith('_') ]
-		return { k.replace('_', '.'): getattr(Configuration, k) for k in attributeNames }
+		result = {}
+		for k in attributeNames:
+			attr = deepcopy(getattr(Configuration, k))
+			match attr:
+				case pathlib.Path():
+					# Convert pathlib.Path to string
+					attr = str(attr)
+				case dict():
+					# Convert dict elements to instances dict, if necessary
+					for k2,v2 in attr.items():
+						if isinstance(v2, CSERegistrar):
+							# Convert the CSERegistrar to a dict
+							attr[k2] = v2.toDict()
+
+			# Replace underscores with dots in the key names
+			result[k.replace('_', '.')] = attr
+		return result
 
 
 	@staticmethod

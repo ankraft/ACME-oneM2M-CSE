@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
-import traceback, logging, sys, base64
+import traceback, logging, sys, base64, json
 from dataclasses import dataclass, field, astuple
 from enum import auto
 from ..helpers.ACMEIntEnum import ACMEIntEnum
@@ -1236,12 +1236,12 @@ class CSEStatus(ACMEIntEnum):
 	"""	CSE is starting. """
 	RUNNING				= auto()
 	"""	CSE is running. """
-	STOPPING			= auto()
-	"""	CSE is stopping. """
+	SHUTTINGDOWN		= auto()
+	"""	CSE is shutting down. """
 	RESETTING			= auto()
 	"""	CSE is resetting. """
-	RESTARTING			= auto()
-	"""	CSE is restarting. """
+	SHUTTINGDOWNRESTART	= auto()
+	"""	CSE is shutting down to restart. """
 
 ##############################################################################
 #
@@ -2827,7 +2827,8 @@ class CSERegistrar:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
 			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 
-	def dct(self) -> dict:
+
+	def toDict(self) -> dict:
 		"""	Return a dictionary representation of the CSERegistrar object.
 		
 			This is used for serialization and debugging.
@@ -2835,7 +2836,27 @@ class CSERegistrar:
 			Return:
 				Dictionary representation of the CSERegistrar object.
 		"""
-		return {k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')}
+		result = {}
+		for k,v in self.__dict__.items():
+			if k.startswith('_') or v is None:	# skip private attributes and None values
+				continue
+			if isinstance(v, CSERegistrarSecurity):	# convert the sub-attribute to a dictionary
+				v = v.__repr__()
+			result[k] = v
+		return result
+
+
+	def __str__(self) -> str:
+		"""	String representation of the CSERegistrar object.
+		
+			Return:
+				String representation of the CSERegistrar object.
+		"""
+		return str(self.toDict())
+	
+
+	def __repr__(self) -> str:
+		return self.__str__()
 
 	# def __repr__(self) -> str:
 	# 	return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})

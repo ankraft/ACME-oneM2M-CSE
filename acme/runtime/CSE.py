@@ -15,18 +15,20 @@
 from __future__ import annotations
 from typing import Dict, Any, cast
 
-import atexit, argparse, sys, platform, os, signal
+import atexit, argparse, sys, platform, os, signal, platform
 from threading import Lock
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Constants import Constants as C, RuntimeConstants as RC
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
-from ..etc.Types import CSEStatus, CSEType, ContentSerializationType, LogLevel
+from ..etc.Types import CSEStatus, LogLevel
+from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
 from ..services.ActionManager import ActionManager
 from ..runtime.Configuration import Configuration
 from ..runtime.Console import Console
+
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
@@ -205,7 +207,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
-		httpServer = HttpServer()				# Initialize the HTTP server
+		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
 		coapServer = CoAPServer()				# Initialize the CoAP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
 		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
@@ -299,12 +301,12 @@ def shutdown() -> None:
 
 		The actual shutdown happens in the _shutdown() method.
 	"""
-	if RC.cseStatus in [ CSEStatus.STOPPING, CSEStatus.STOPPED ]:
+	if RC.cseStatus in [ CSEStatus.SHUTTINGDOWN, CSEStatus.STOPPED ]:
 		return
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	RC.cseStatus = CSEStatus.STOPPING
+	RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	if console:
 		console.stop()				# This will end the main run loop.
 	
@@ -316,10 +318,14 @@ def shutdown() -> None:
 def _shutdown() -> None:
 	"""	Shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
-	if RC.cseStatus != CSEStatus.RUNNING:
+	if RC.cseStatus not in [CSEStatus.RUNNING, CSEStatus.SHUTTINGDOWNRESTART]:
 		return
-		
-	RC.cseStatus = CSEStatus.STOPPING
+	
+	# The status STOPPINGRESTART is used to indicate that the CSE is shutting down to restart.
+	# This is a normal shutdown but in the end the CSE process will return with a special exit code
+	# to indicate that the CSE is restarting. This code is 82 (ASCII code for 'R').
+	_cseStatus = RC.cseStatus	
+	RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	L.queueOff()
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
@@ -356,6 +362,9 @@ def _shutdown() -> None:
 	L.finit()
 	RC.cseStatus = CSEStatus.STOPPED
 
+	# If the CSE is stopping to restart, we exit with a special exit code
+	if _cseStatus == CSEStatus.SHUTTINGDOWNRESTART:
+		os._exit(82) 
 
 def forceShutdown() -> None:
 	"""	Force shutdown the CSE. 
@@ -368,6 +377,14 @@ def forceShutdown() -> None:
 	"""	
 	_platform = platform.system()
 	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
+
+	if textUI and textUI.tuiApp:	# Shutdown the TextUI first
+		textUI.shutdown()	
+		import time as _time
+		_time.sleep(1)	 			# Give the TextUI a moment to shutdown
+
+	# Platform specific shutdown
+	# On Windows, we send a SIGINT to the process, which will be caught by the main thread
 	match _platform:
 		case 'Windows':
 			_shutdown()
@@ -416,6 +433,18 @@ def resetCSE() -> None:
 
 		RC.cseStatus = CSEStatus.RUNNING
 		L.isWarn and L.logWarn('Resetting CSE finished')
+
+
+def restartCSE() -> None:
+	"""	Restart the CSE. This is a convenience function that calls the shutdown() function.
+	"""
+	if RC.cseStatus != CSEStatus.RUNNING:
+		L.logErr('CSE is not running, cannot restart')
+		return
+	L.isWarn and L._log(LogLevel.WARNING, 'Restarting CSE', immediate=True)
+	console.stop()
+	_shutdown()
+	RC.cseStatus = CSEStatus.SHUTTINGDOWNRESTART
 
 
 def run() -> None:
