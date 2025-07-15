@@ -111,8 +111,8 @@ class RemoteCSEManager(object):
 		"""	Store relevant configuration values in the manager.
 		"""
 		# Locally store the own registrar's config entry for simplicity
-		self.registrarConfig = Configuration.cse_registrars.get(RC.cseSpid)
-		self.spRegistrarConfigs = {spid:config for spid, config in Configuration.cse_registrars.items() if spid != RC.cseSpid}	# all SP registrar configs except the own one
+		self.registrarConfig = Configuration.cse_registrars.get(RC.cseSPid)
+		self.spRegistrarConfigs = {spid:config for spid, config in Configuration.cse_registrars.items() if spid != RC.cseSPid}	# all SP registrar configs except the own one
 
 
 	def configUpdate(self, name:str, 
@@ -151,7 +151,7 @@ class RemoteCSEManager(object):
 		self.descendantCSR.clear()
 		for eachCsr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 
-			if self.registrarConfig and self.registrarConfig.spID == RC.cseSpid and (csi := eachCsr.csi) != self.registrarConfig.cseID:			# Skipping the own registrar csr
+			if self.registrarConfig and self.registrarConfig.spID == RC.cseSPid and (csi := eachCsr.csi) != self.registrarConfig.cseID:			# Skipping the own registrar csr
 				L.isDebug and L.logDebug(f'Addind remote CSE: {csi}')
 				self.descendantCSR[csi] = (eachCsr, RC.cseCsi)		# Add the direct child CSR
 				
@@ -508,10 +508,10 @@ class RemoteCSEManager(object):
 			try:
 				sp = getSPFromID(eachCsr.csi)	# !!! In CSR the csi attribute contains the absolute csi, other then in the CSEBase
 				match sp:
-					case None | RC.cseSpid:	# no SP or own SP
+					case None | RC.cseSPIDSlashLess:	# no SP or own SP
 						originator = RC.cseCsi
 					case _:
-						originator = f'//{RC.cseSpid}{RC.cseCsi}'	# SP-relative originator
+						originator = f'{RC.cseSPid}{RC.cseCsi}'	# SP-relative originator
 
 				L.isDebug and L.logDebug(f'Requesting remote CSEBase: {eachCsr.csi} originator: {originator}')
 				res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
@@ -860,7 +860,7 @@ class RemoteCSEManager(object):
 			return None, None
 		
 		# Check whether this ID points to a CSE within the own SP. Then convert the ID to SP-relative format.
-		if isAbsolute(id) and getSPFromID(id) == RC.cseSpid:
+		if isAbsolute(id) and getSPFromID(id) == RC.cseSPid:
 			id = toSPRelative(id)
 		
 		ri, ids = csiFromRelativeAbsoluteUnstructured(id)
@@ -932,16 +932,16 @@ class RemoteCSEManager(object):
 				target[attr] = source[attr]
 
 		if 'csi' not in registrarConfig.excludeCSRAttributes:
-			if registrarConfig.spID == RC.cseSpid:
+			if registrarConfig.spID == RC.cseSPid:
 				target['csi'] = source['csi']
 			else:
-				target['csi'] = f'//{RC.cseSpid}{source.csi}' if forOwnCSR else f'//{registrarConfig.spID}{source.csi}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+				target['csi'] = f'{RC.cseSPid}{source.csi}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
 
 		if 'cb' not in registrarConfig.excludeCSRAttributes:
-			if registrarConfig.spID == RC.cseSpid:
+			if registrarConfig.spID == RC.cseSPid:
 				target['cb'] = f'{source.csi}/{source.rn}'
 			else:
-				target['cb'] = f'//{RC.cseSpid}{source.csi}/{source.rn}' if forOwnCSR else f'//{registrarConfig.spID}{source.csi}/{source.rn}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+				target['cb'] = f'{RC.cseSPid}{source.csi}/{source.rn}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}/{source.rn}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
 
 		if 'dcse' not in registrarConfig.excludeCSRAttributes:
 			target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update

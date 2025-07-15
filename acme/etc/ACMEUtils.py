@@ -187,7 +187,7 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 			csi = ids[1]
 			# if spi != RC.cseSpid:			# Check for SP-ID
 			# 	return None, None, None, f'SP-ID: {RC.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
-			if spi != RC.cseSpid or csi != RC.cseCsiSlashLess:	# Check for SP-ID and CSE-ID
+			if spi != RC.cseSPIDSlashLess or csi != RC.cseCsiSlashLess:	# Check for SP-ID and CSE-ID
 				if vrPresent:				# append virtual last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, spi, None	# Not for this CSE or SP? retargeting

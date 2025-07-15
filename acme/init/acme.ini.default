@@ -22,10 +22,12 @@
 ; CSE type. Allowed values: IN, MN, ASN. 
 ; Default: IN
 type=${basic.config:cseType}
-; The CSE's service provider ID. 
+; The CSE's service provider ID.
+; The service provider ID must start with "//" and must not contain a further "/" or white space.
 ; Default: acme.example.com
-serviceProviderID=acme.example.com
+serviceProviderID=//acme.example.com
 ; The CSE ID. Can be overwritten in imported CSE definition. 
+; The CSE ID must start with a "/" and must not contain a further "/" or white space.
 ; Default: /id-in
 cseID=/${basic.config:cseID}
 ; The CSE's resource ID. Can be overwritten in imported CSE definition. 

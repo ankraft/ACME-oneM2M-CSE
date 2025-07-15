@@ -155,15 +155,16 @@ class CSEConfiguration(ModuleConfiguration):
 		RC.cseCsiSlash = f'{RC.cseCsi}/'
 		RC.cseCsiSlashLen = len(RC.cseCsiSlash)
 		RC.cseCsiSlashLess = RC.cseCsi[1:]
-		RC.cseSpid = config.cse_serviceProviderID
-		RC.cseSPCsi = f'//{RC.cseSpid}{RC.cseCsi}'
+		RC.cseSPid = config.cse_serviceProviderID
+		RC.cseSPIDSlashLess = RC.cseSPid[2:] 
+		RC.cseSPCsi = f'{RC.cseSPid}{RC.cseCsi}'
 		RC.cseSPCsiSlash = f'{RC.cseSPCsi}/'
 		RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
-		RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
+		RC.cseAbsolute = f'{RC.cseSPid}{RC.cseSPRelative}'
 		RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
 		RC.cseOriginator = config.cse_originator
 		RC.spRelativeCseOriginator = f'{RC.cseCsi}/{RC.cseOriginator}'
-		RC.absoluteCseOriginator = f'//{RC.cseSpid}{RC.spRelativeCseOriginator}'
+		RC.absoluteCseOriginator = f'{RC.cseSPid}{RC.spRelativeCseOriginator}'
 		RC.cseOriginators = [ RC.cseOriginator, RC.spRelativeCseOriginator, RC.absoluteCseOriginator ]
 		RC.cseIDs = [ RC.cseCsi, RC.cseSPCsi ]
 

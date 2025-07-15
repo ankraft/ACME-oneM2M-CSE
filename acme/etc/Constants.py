@@ -230,8 +230,11 @@ class RuntimeConstants(object):
 	cseRn:str = None
 	""" The CSE's Resource Name. """
 
-	cseSpid:str = None
+	cseSPid:str = None
 	""" The Service Provider ID. """
+
+	cseSPIDSlashLess:str = None
+	""" The Service Provider ID without the leading //. """
 
 	cseSPRelative:str = None
 	"""	The SP-Relative CSE-ID. """

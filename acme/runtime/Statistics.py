@@ -501,7 +501,7 @@ skinparam linetype ortho
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if RC.cseType != CSEType.IN and len(Configuration.cse_registrars) > 0:
+		if len(Configuration.cse_registrars) > 0:
 			for index, registrar in enumerate(Configuration.cse_registrars.values()):
 				registrarCSE = registrar._registrarCSEBaseResource
 				bg = 'white' if registrarCSE else 'lightgrey'
@@ -509,7 +509,7 @@ skinparam linetype ortho
 				address = urlparse(registrar.address)
 				(ip, port) = tuple(address.netloc.split(':'))
 				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-				result += f'cloud PARENT_{index} as "<color:{color}>{registrar.cseID[1:] if registrar.spID != RC.cseSpid else "//" + registrar.spID + registrar.cseID}</color> ({registrarType})\\n{registrar.address}" #{bg}\n'
+				result += f'cloud PARENT_{index} as "<color:{color}>{registrar.cseID[1:] if registrar.spID != RC.cseSPid else registrar.spID + registrar.cseID}</color> ({registrarType})\\n{registrar.address}" #{bg}\n'
 				result += f'CSE -UP- PARENT_{index}\n'
 
 		

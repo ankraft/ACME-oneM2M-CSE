@@ -777,7 +777,7 @@ class RequestManager(object):
 		
 			See TS-0004, 7.3.2.6, Forwarding
 		"""
-		if request.spid != RC.cseSpid:
+		if request.spid != RC.cseSPid:
 			# If the request is not to the same SP, convert the originator to Absulute format
 			request.originator = toAbsolute(request.originator)
 			if request.originalRequest:
@@ -1279,7 +1279,7 @@ class RequestManager(object):
 
 						# if the ID is in absolute format and the SP is the same as the CSE's SP, then
 						# convert the ID to SP-relative format
-						if cseRequest.spid == RC.cseSpid:
+						if cseRequest.spid == RC.cseSPIDSlashLess:
 							cseRequest.id = toSPRelative(cseRequest.id)
 						# L.inspect(cseRequest)
 

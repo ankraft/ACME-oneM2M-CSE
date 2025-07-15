@@ -241,10 +241,21 @@ def toAbsolute(id:str, spId:Optional[str] = None) -> str:
 	if isAbsolute(id):
 		return id
 	if isSPRelative(id):
-		return f'//{spId or RC.cseSpid}{id}'
-	return f'//{spId or RC.cseSpid}{RC.cseCsi}/{id}'	
+		return f'{spId or RC.cseSPid}{id}'
+	return f'{spId or RC.cseSPid}{RC.cseCsi}/{id}'	
 
 
+_spidRx = re.compile(r'^//[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid SP-ID format (unreserved characters in IDs according to RFC 3986). """
+def isValidSPID(spid:str) -> bool:
+	"""	Test for valid SP-ID format.
+
+		Args:
+			spid: The SP-ID to check
+		Return:
+			Boolean
+	"""
+	return re.fullmatch(_spidRx, spid) is not None
 
 
 _csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
@@ -396,7 +407,7 @@ def getSPFromID(id:str) -> str:
 		Args:
 			id: An Absolute resource ID.
 		Return:
-			The SP-ID of the resource ID, or None if the ID is not in absolute format.
+			The SP-ID of the resource ID without leading slashes, or None if the ID is not in absolute format.
 	"""
 	if not isAbsolute(id):
 		return None

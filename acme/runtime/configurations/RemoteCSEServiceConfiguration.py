@@ -17,7 +17,7 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 from ...etc.Constants import RuntimeConstants as RC
 from ...etc.Types import ContentSerializationType, CSEType, CSERegistrar
 from ...etc.Utils import normalizeURL
-from ...etc.IDUtils import isValidCSI
+from ...etc.IDUtils import isValidCSI, isValidSPID
 
 
 class RemoteCSEServiceConfiguration(ModuleConfiguration):
@@ -25,6 +25,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		def parseRegistrar(section:str, registrar:CSERegistrar) -> None:
+			registrar._configurationSection = section # Set the configuration section for the registrar
 			# Parse a registrar configuration section and populate the registrar object
 			registrar.spID = parser.get(section, 'spID', fallback=None)
 			registrar.address = parser.get(section, 'address', fallback = None)
@@ -60,7 +61,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			# parseRegistrarSecurity('cse.registrar.security', registrar)
 			parseRegistrarSecurity('cse.registrar.security', registrar)
 
-		config.cse_registrars[RC.cseSpid] = registrar
+		config.cse_registrars[RC.cseSPid] = registrar
 
 		# Get the SP (Mcc') configurations
 		spMapping:dict[str, str] = {}
@@ -69,7 +70,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 				if not section.endswith('.security'):
 					registrar = CSERegistrar()
 					spName = section[len('cse.sp.registrar.'):]  # Extract the SP name from the section
-					if spName == RC.cseSpid:
+					if spName == RC.cseSPIDSlashLess:
 						raise ConfigurationError(r'Configuration Error: The registrar within the same Service Provider domain must be configured in the [cse.registrar] section.')
 					parseRegistrar(section, registrar)
 					spMapping[spName] = registrar.spID 					# Map the SP name to its spID
@@ -97,49 +98,55 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			if registrar.originator is None:
 				# If the originator is not set, use the own Service Provider ID as the originator
 				registrar.originator = RC.cseCsi
-				if registrar.spID is not None and registrar.spID != RC.cseSpid:
+				if registrar.spID is not None and registrar.spID != RC.cseSPid:
 					# If the Service Provider ID is set and is not the own Service Provider ID, expand the
 					# originator to include the Service Provider ID and CSE ID
-					registrar.originator = f'//{RC.cseSpid}{RC.cseCsi}'
+					registrar.originator = f'{RC.cseSPid}{RC.cseCsi}'
 
 			# If the registrar has no name, use the own spID as the key
 			# This seems to be a bit of a hack, but at the time when the own registrar is added, the RC.cseSpid is not yet set
 			if spName is None:
 				# Find the first non-None cseID or spID to use as the key
-				registrar.spID = registrar.spID or RC.cseSpid	# Use the own Service Provider ID if not set
-				config.cse_registrars[RC.cseSpid] = registrar
+				registrar.spID = registrar.spID or RC.cseSPid	# Use the own Service Provider ID if not set
+				config.cse_registrars[RC.cseSPid] = registrar
 				config.cse_registrars.pop(spName)
-				spName = RC.cseSpid
+				spName = RC.cseSPid
+			
+			# Check if the Service Provider ID is valid
+			if not isValidSPID(registrar.spID):
+				raise ConfigurationError(f'Configuration Error: The Service Provider ID {registrar.spID} is not set or invalid.')
 			
 			match config.cse_type:
 				# IN CSEs can NOT have a registrar other than other SP's one
-				case CSEType.IN if spName == RC.cseSpid:
+				case CSEType.IN if spName == RC.cseSPid:
 					if registrar.cseID != '/':	# "/" indicates an empty CSE ID
 						raise ConfigurationError(r'Configuration Error: An IN CSE can not have a registrar (section: \[cse.registrar])')
-					config.cse_registrars.pop(RC.cseSpid)
+					config.cse_registrars.pop(RC.cseSPid)
 
 				# MN and ASN CSEs may have a registrar
-				case CSEType.MN | CSEType.ASN if spName == RC.cseSpid:	
+				case CSEType.MN | CSEType.ASN if spName == RC.cseSPid:	
 					if registrar.cseID == '/':	# "/" indicates an empty CSE ID, so remove it
-						config.cse_registrars.pop(RC.cseSpid)
+						config.cse_registrars.pop(RC.cseSPid)
 
 				# MN and ASCN CSE must not have a SP registrar
-				case CSEType.MN | CSEType.ASN if spName != RC.cseSpid:	
+				case CSEType.MN | CSEType.ASN if spName != RC.cseSPid:	
 					raise ConfigurationError(fr'Configuration Error: Service Provider Registrar: "{spName}" is not allowed for CSE Type: "{config.cse_type.name}"')
 
 		# Validate CSE Registrars
+		print(registrar)
+
 
 		for spName, registrar in config.cse_registrars.items():
 
-			if spName != RC.cseSpid:
+			if spName != RC.cseSPid:
 				if not registrar.spID:
-					raise ConfigurationError(fr'Configuration Error: Missing \[cse.sp.registrar.{spName}]:spID for registrar: {spName}')
+					raise ConfigurationError(fr'Configuration Error: Missing \[{registrar._configurationSection}]:spID for registrar: {spName}')
 				if not registrar.cseID:
-					raise ConfigurationError(fr'Configuration Error: Missing \[cse.sp.registrar.{spName}]:cseID for registrar: {spName}')
+					raise ConfigurationError(fr'Configuration Error: Missing \[{registrar._configurationSection}]:cseID for registrar: {spName}')
 				if not registrar.resourceName:
-					raise ConfigurationError(fr'Configuration Error: Missing \[cse.sp.registrar.{spName}]:resourceName for registrar: {spName}')
+					raise ConfigurationError(fr'Configuration Error: Missing \[{registrar._configurationSection}]:resourceName for registrar: {spName}')
 				if not registrar.address:
-					raise ConfigurationError(fr'Configuration Error: Missing \[cse.sp.registrar.{spName}]:address for registrar: {spName}')
+					raise ConfigurationError(fr'Configuration Error: Missing \[{registrar._configurationSection}]:address for registrar: {spName}')
 
 			# Normalize addresses
 			registrar.address = normalizeURL(registrar.address)
@@ -149,37 +156,38 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			if isinstance(ct := registrar.serialization, str):
 				registrar.serialization = ContentSerializationType.getType(ct)
 				if registrar.serialization == ContentSerializationType.UNKNOWN:
-					raise ConfigurationError(fr'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
+					raise ConfigurationError(fr'Configuration Error: Unsupported \[{registrar._configurationSection}]:serialization: {ct}')
 
-			if registrar.address and registrar.cseID and config.cse_type != CSEType.IN:
+			# Check that the CSE-ID is valid
+			# if registrar.address and registrar.cseID and config.cse_type != CSEType.IN:
+			if registrar.address and registrar.cseID:
 				if not isValidCSI(val := registrar.cseID): 
-					raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:cseID[/i]: {val}')
+					raise ConfigurationError(fr'Configuration Error: Invalid format for [i]\[{registrar._configurationSection}]:cseID[/i]: {val}')
 				if len(registrar.cseID) > 0 and len(registrar.resourceName) == 0:
-					raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar]:resourceName[/i]')
+					raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}]:resourceName[/i]')
 
 			if registrar.INCSEcseID:
 				if not isValidCSI(val := registrar.INCSEcseID):
-					raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse.registrar]:INCSEcseID[/i]: {val}')
+					raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[{registrar._configurationSection}]:INCSEcseID[/i]: {val}')
 
 			if registrar.security.credentials.httpUsername and not registrar.security.credentials.httpPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:httpPassword[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:httpPassword[/i]')
 			if not registrar.security.credentials.httpUsername and registrar.security.credentials.httpPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:httpUsername[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:httpUsername[/i]')
 			if registrar.security.credentials.httpToken and registrar.security.credentials.httpUsername:
-				raise ConfigurationError(r'Configuration Error: Only one of [i]\[cse.registrar.security]:httpBearerToken[/i] or [i]\[cse.registrar.security]:httpUsername[/i] can be set')
+				raise ConfigurationError(r'Configuration Error: Only one of [i]\[{registrar._configurationSection}.security]:httpBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:httpUsername[/i] can be set')
 			if registrar.security.credentials.wsUsername and not registrar.security.credentials.wsPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:wsPassword[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:wsPassword[/i]')
 			if not registrar.security.credentials.wsUsername and registrar.security.credentials.wsPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:wsUsername[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:wsUsername[/i]')
 			if registrar.security.credentials.wsToken and registrar.security.credentials.wsUsername:
-				raise ConfigurationError(r'Configuration Error: Only one of [i]\[cse.registrar.security]:wsBearerToken[/i] or [i]\[cse.registrar.security]:wsUsername[/i] can be set')
-			
+				raise ConfigurationError(r'Configuration Error: Only one of [i]\[{registrar._configurationSection}.security]:wsBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:wsUsername[/i] can be set')
+
 			if registrar.security.selfCredentials.httpUsername and not registrar.security.selfCredentials.httpPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:selfHttpPassword[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpPassword[/i]')
 			if not registrar.security.selfCredentials.httpUsername and registrar.security.selfCredentials.httpPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:selfHttpUsername[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpUsername[/i]')
 			if registrar.security.selfCredentials.wsUsername and not registrar.security.selfCredentials.wsPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:selfWsPassword[/i]')
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsPassword[/i]')
 			if not registrar.security.selfCredentials.wsUsername and registrar.security.selfCredentials.wsPassword:
-				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[cse.registrar.security]:selfWsUsername[/i]')
-			
+				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsUsername[/i]')

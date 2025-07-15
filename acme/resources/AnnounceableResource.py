@@ -148,7 +148,7 @@ class AnnounceableResource(Resource):
 			match typ:
 				case BasicType.ID:
 					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
-					return toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value)
+					return toAbsolute(value, spId=RC.cseSPid) if isRemoteSP else toSPRelative(value)
 				case BasicType.list | BasicType.listNE:
 					# L.inspect([ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value])
 					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
@@ -193,7 +193,7 @@ class AnnounceableResource(Resource):
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
 				# acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi 
 				# 		 for acpi in self.acpi]	# set to local CSE.csi
-				acpi = [ toAbsolute(acpi, spId=RC.cseSpid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
+				acpi = [ toAbsolute(acpi, spId=RC.cseSPid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
 				body['acpi'] = acpi
 
 

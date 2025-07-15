@@ -2792,6 +2792,9 @@ class CSERegistrar:
 	_localCSRRN:Optional[str] = None
 	""" The resource name for the local CSR. """
 
+	_configurationSection:Optional[str] = None
+	""" Internal: The configuration section for the registrar. """
+
 
 	def postInit(self) -> None:
 		"""	Post initialization actions. Set various internal attributes based on the
@@ -2802,23 +2805,22 @@ class CSERegistrar:
 		"""
 
 		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
-		if self.spID is not None and self.spID != RC.cseSpid:
-			self._registrarCSRRN = f'{RC.cseSpid}_{RC.cseCsi[1:]}'	# prefix: own SP-ID
-			self._localCSRRN = f'{self.spID}_{self.cseID}'			# prefix: remote SP-ID
+		if self.spID is not None and self.spID != RC.cseSPid:
+			self._registrarCSRRN = f'{RC.cseSPIDSlashLess}_{RC.cseCsi[1:]}'	# prefix: own SP-ID
+			self._localCSRRN = f'{self.spID[2:]}_{self.cseID[1:]}'			# prefix: remote SP-ID
 		else:
 			self._registrarCSRRN = RC.cseCsi[1:]
-			self._localCSRRN = self.cseID
+			self._localCSRRN = self.cseID[1:]
 
 		# Set other manager attributes
-		self._registrarAbsoluteCSI = f'{self.cseID}' if self.spID is None or self.spID == RC.cseSpid else f'//{self.spID}/{self.cseID}'
+		self._registrarAbsoluteCSI = f'{self.cseID}' if self.spID is None or self.spID == RC.cseSPid else f'{self.spID}{self.cseID}'
 
 		# Set the registrar CSE URL and structured resource name
 		self._registrarCSEURL = f'{self.address}{self.root}/'
 		self._registrarCSESRN = f'{self.cseID}/{self.resourceName}'
-		if self.spID is not None and self.spID != RC.cseSpid:
-			self._registrarCSESRN = f'//{self.spID}{self._registrarCSESRN}' 
-		
-		if self.spID is not None and self.spID != RC.cseSpid:
+		if self.spID is not None and self.spID != RC.cseSPid:
+			self._registrarCSESRN = f'{self.spID}{self._registrarCSESRN}' 	# assumes that the CSEID is valid (ie. starts with a slash)
+		if self.spID is not None and self.spID != RC.cseSPid:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self.spID}_{RC.cseCsi[1:]}' 
 			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 		else:

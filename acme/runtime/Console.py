@@ -1153,7 +1153,7 @@ function createResource() {{
 
 		spCsr:list[Resource] = []
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
-			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSpid:	# store the CSR for other SP for later
+			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:	# store the CSR for other SP for later
 				spCsr.append(csr)
 				continue
 			if CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
@@ -1259,7 +1259,7 @@ function createResource() {{
 
 			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
-			miscLeft += f'SP-ID             : //{RC.cseSpid}\n'
+			miscLeft += f'SP-ID             : {RC.cseSPid}\n'
 			miscLeft += f'Hostname          : {socket.gethostname()}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
