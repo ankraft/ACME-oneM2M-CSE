@@ -133,9 +133,6 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 					raise ConfigurationError(fr'Configuration Error: Service Provider Registrar: "{spName}" is not allowed for CSE Type: "{config.cse_type.name}"')
 
 		# Validate CSE Registrars
-		print(registrar)
-
-
 		for spName, registrar in config.cse_registrars.items():
 
 			if spName != RC.cseSPid:

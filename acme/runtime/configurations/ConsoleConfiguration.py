@@ -14,6 +14,7 @@ import configparser
 from ...etc.Types import TreeMode
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
+from ...etc.Constants import RuntimeConstants as RC
 
 class ConsoleConfiguration(ModuleConfiguration):
 	""" Console configurations
@@ -49,7 +50,7 @@ class ConsoleConfiguration(ModuleConfiguration):
 		"""
 
 		# override configuration with command line arguments
-		if Configuration._args_headless is True:
+		if Configuration._args_headless:
 			Configuration.console_headless = True
 		if Configuration._args_lightScheme is not None:
 			Configuration.console_theme = Configuration._args_lightScheme 					# Override console theme 
@@ -71,3 +72,5 @@ class ConsoleConfiguration(ModuleConfiguration):
 		if Configuration.console_headless:
 			Configuration.logging_enableScreenLogging = False
 			Configuration.textui_startWithTUI = False
+			RC.isHeadless = True
+			

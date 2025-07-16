@@ -171,7 +171,6 @@ class CSEConfiguration(ModuleConfiguration):
 
 		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
 		RC.releaseVersion = Configuration.cse_releaseVersion
-		RC.isHeadless = Configuration.console_headless
 
 		# Set the CSE's point-of-access
 		RC.csePOA = [ Configuration.http_address ]
