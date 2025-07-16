@@ -12,8 +12,8 @@
 from typing import Generator
 
 import os, re, sys
-if sys.version_info < (3, 8):
-	print('Python version >= 3.8 is required')
+if sys.version_info < (3, 10):
+	print('Python version >= 3.10 is required')
 	quit(1)
 
 import argparse
