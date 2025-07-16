@@ -28,7 +28,7 @@ _configFile = '../../acme.ini'
 _defaultConfigFile = '../../acme/init/acme.ini.default'
 """ Default configuration file. """
 
-_zookeeperRootNode = '/acme'
+_zookeeperRootNode = '/'
 """ Zookeeper node for the ACME CSE. """
 
 
