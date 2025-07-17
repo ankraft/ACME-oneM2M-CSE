@@ -1820,7 +1820,7 @@ skinparam BoxPadding 60
 				ri = f'"{ri}"'
 
 			org = r['org']
-			if org == RC.cseCsi or org == f'{RC.cseSpid}/{RC.cseCsi}':
+			if org == RC.cseCsi or org == f'{RC.cseSPid}/{RC.cseCsi}':
 				participants.add(orig := f'"{org[1:]}"')	# CSI without the leading /
 			else:
 				participants.add(orig := f'"{origPrefix}{org}"')
