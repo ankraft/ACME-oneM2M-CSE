@@ -798,7 +798,8 @@ class Storage(object):
 						 outgoing:bool, 
 						 ot:str,
 						 request:JSON, 
-						 response:JSON) -> bool:
+						 response:JSON,
+						 additionalCB:Optional[Callable]=None) -> bool:
 		"""	Add a request to the *requests* database.
 		
 			Args:
@@ -833,6 +834,8 @@ class Storage(object):
 				  'rsp': { k: v for k, v in response.items() if v is not None }	# Remove None values
 				}
 		_doc = { k: v for k, v in _doc.items() if v is not None }	# Remove remaining None values
+		if additionalCB:
+			additionalCB(_doc)
 		return self.db.insertRequest(_doc, _ts)
 
 

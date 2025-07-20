@@ -34,13 +34,15 @@ def getConfig() -> str:
 def getLogGenerator() -> Generator[str, None, None]:
 
 	def generate() -> Generator[str, None, None]:
-		index = L.ringBufferHandler.head
+		_rb = L.ringBufferHandler
+		index = _rb.head	# get the current index of the ring buffer
 		try:
 			while True:
-				if index != L.ringBufferHandler.head:
-					index = L.ringBufferHandler.getIncrementedIndex(index)	# increment the index in a circular manner
-					yield L.ringBufferHandler.getLogEntry(index) + '\n'
-				time.sleep(0.0001)
+				if index != _rb.head:
+					index = _rb.nextIndex(index)	# increment the index in a circular manner
+					yield _rb.getLogEntryAsString(index) + '\n'
+				else:
+					time.sleep(0.0001)
 		except GeneratorExit:
 			# This exception happens after the next yield and the connection to the client is closed
 			pass
@@ -64,6 +66,30 @@ def getRegistrations() -> str:
 			str: The registration status of the CSE in JSON format.
 	"""
 	return json.dumps(getRegistrationStatus(), indent=4)
+
+
+
+def getRequests() -> Generator[str, None, None]:
+	"""Get the current requests of the CSE as a generator of JSON strings.
+
+		Returns:
+			Generator[str, None, None]: A generator that yields JSON strings of the request."""
+
+	def generate() -> Generator[str, None, None]:
+		_rb = CSE.request.requestRingBuffer
+		index = _rb.head	# Ensure the ring buffer is initialized
+		try:
+			while True:
+				if index != _rb.head:
+					index = _rb.nextIndex(index)	# increment the index in a circular manner
+					yield json.dumps(_rb[index], indent=4) + '\n'
+				else:
+					time.sleep(0.0001)
+		except GeneratorExit:
+			# This exception happens after the next yield and the connection to the client is closed
+			pass
+
+	return generate()
 
 
 def getCSEStatus() -> str:
@@ -282,6 +308,32 @@ def setLogLevel(level:str) -> str:
 		return newLevel.name
 	except KeyError:
 		return None
+
+
+def setRequestRecording(param:str) -> str:
+	"""Enable or disable request recording.
+
+		Args:
+			param (str): The parameter to set. Should be 'enable' or 'disable'.
+		
+		Returns:
+			str: The new status of the request recording.
+	"""
+	match param.lower():
+		case 'enable':
+			L.isInfo and L.log('Enabling request recording')
+			Configuration.cse_operation_requests_enable = True
+			CSE.request.enableRequestRecording = True
+			return 'Request recording enabled'
+		case 'disable':
+			L.isInfo and L.log('Disabling request recording')
+			Configuration.cse_operation_requests_enable = False
+			CSE.request.enableRequestRecording = False
+			return 'Request recording disabled'
+		case 'status':
+			return 'Request recording is ' + ('enabled' if Configuration.cse_operation_requests_enable else 'disabled')
+		case _:
+			return 'Invalid parameter. Use "enable", "disable", "status".'
 
 
 def shutdownCSE() -> None:

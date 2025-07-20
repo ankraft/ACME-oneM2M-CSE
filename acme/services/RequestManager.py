@@ -34,6 +34,7 @@ from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
 from ..etc.Utils import isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
+from ..helpers.RingBuffer import RingBuffer
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -70,6 +71,7 @@ class RequestManager(object):
 		'_pcWorker',
 		'_receivedResponses',
 		'_receivedResponsesLock',
+		
 
 
 		'requestHandlers',
@@ -78,6 +80,7 @@ class RequestManager(object):
 		'maxExpirationDelta',
 		'sendToFromInResponses',
 		'enableRequestRecording',
+		'requestRingBuffer',
 
 		'_eventRequestReceived',
 		'_eventRequestReceived',
@@ -116,7 +119,7 @@ class RequestManager(object):
 		""" Lock to access the following two dictionaries."""
 
 		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}
-		""" Dictionary to map request originators to a list of reqeests. Used for handling polling requests."""
+		""" Dictionary to map request originators to a list of requests. Used for handling polling requests."""
 		
 		self._rqiOriginator:Dict[str, str] = {}
 		""" Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests."""
@@ -255,6 +258,9 @@ class RequestManager(object):
 												  self._eventWsSendNotify),
 												#   self.sendNotifyRequest),
 		}
+
+		self.requestRingBuffer:RequestRingBuffer = RequestRingBuffer(Configuration.cse_operation_requests_size)
+		""" RingBuffer to store requests for later retrieval. """
 
 		L.isInfo and L.log('RequestManager initialized')
 
@@ -668,6 +674,9 @@ class RequestManager(object):
 					if operationResult.resource.get('acme:incomplete'):
 						rs = RequestStatus.PARTIALLY_COMPLETED
 						del operationResult.resource['acme:incomplete']
+					
+					# The resource is just a dict, so we can use it directly
+					# Could be the case in some cases.
 					pc = operationResult.resource
 			
 			# Check whether the response is a request. This could be the
@@ -918,7 +927,7 @@ class RequestManager(object):
 					# if fall through then there is no further request available.
 					# build the aggregated request
 					agrp = { 'm2m:agrp' : [ requestFromResult(Result(request = each)).data for each in lst ] }
-					return Result(resource = agrp, rsc = ResponseStatusCode.OK)
+					return Result(resource=agrp, rsc=ResponseStatusCode.OK)
 				
 			else:
 				if req := self.unqueuePollingRequest(originator, requestID, reqType):
@@ -1786,7 +1795,8 @@ class RequestManager(object):
 		elif request.id:
 			rid = request.id
 		else:
-			rid = 'unknown'
+			# rid = 'unknown'
+			rid = None
 		
 		# Map the response
 		match request.rt:
@@ -1814,5 +1824,15 @@ class RequestManager(object):
 							   request._outgoing,
 							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
 							   request.originalRequest,
-							   response)
+							   response,
+							   self.requestRingBuffer.append)
+	
+class RequestRingBuffer(RingBuffer[JSON]):
+	"""	A ring buffer for requests.
+	
+		This is used to store the last N requests in memory.
+		It is used to retrieve the last requests for debugging purposes.
+	"""
+	def __init__(self, size:int):
+		super().__init__(size)
 	

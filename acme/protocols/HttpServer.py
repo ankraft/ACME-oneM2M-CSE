@@ -543,6 +543,12 @@ class HttpServer(object):
 				
 				case 'registrations':
 					return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self._responseHeaders)
+				
+				case 'requests':
+					if param is None:
+						return Response(response=Mgmt.getRequests(), mimetype='application/json', headers=self._responseHeaders)
+					else:
+						return Response(response=Mgmt.setRequestRecording(param), headers=self._responseHeaders)
 
 				case 'reset':
 					Mgmt.resetCSE()

@@ -38,6 +38,7 @@ from rich.syntax import Syntax
 from ..etc.Types import JSON, LogLevel, Result, ContentSerializationType
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers import TextTools
+from ..helpers.RingBuffer import RingBuffer
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..runtime.Configuration import Configuration
 
@@ -760,7 +761,7 @@ class ACMERichLogHandler(RichHandler):
 		)
 
 
-class ACMERingBufferLogHandler(logging.Handler):
+class ACMERingBufferLogHandler(logging.Handler, RingBuffer[LogRecord]):
 	"""	A ring buffer handler for logging. It buffers log records and
 		flushes them to the console or file when the buffer is full.
 	"""
@@ -771,10 +772,9 @@ class ACMERingBufferLogHandler(logging.Handler):
 			Args:
 				capacity: The maximum number of log records to keep in the buffer.
 		"""
-		super().__init__()
-		self.capacity = capacity
-		self.buffer:list[LogRecord] = [None] * capacity	# create a buffer of the given capacity
-		self.head = -1
+		logging.Handler.__init__(self)
+		RingBuffer.__init__(self, capacity)
+
 
 	def emit(self, record:LogRecord) -> None:
 		"""	Emit a log record to the buffer.
@@ -783,22 +783,10 @@ class ACMERingBufferLogHandler(logging.Handler):
 				record: The log record to emit.
 		"""
 		# add the record to the buffer
-		self.head = self.getIncrementedIndex(self.head)	# increment the head index in a circular manner
-		self.buffer[self.head] = record
-
-	
-	def getIncrementedIndex(self, index:int) -> int:
-		"""	Increment the index in a circular manner.
-		
-			Args:
-				index: The index to increment.
-			Return:
-				The incremented index.
-		"""
-		return (index + 1) % self.capacity
+		self.append(record)	
 
 
-	def getLogEntry(self, index:int) -> Optional[str]:
+	def getLogEntryAsString(self, index:int) -> Optional[str]:
 		"""	Get a log entry from the buffer by index.
 		
 			Args:
@@ -806,12 +794,12 @@ class ACMERingBufferLogHandler(logging.Handler):
 			Return:
 				The log entry as a string, or None if the index is out of bounds.
 		"""
-		if 0 <= index < self.capacity:
-			record = self.buffer[index]
-			if record:
-				return self.format(record)
+		record = self[index]
+		if record:
+			return self.format(record)
 		return None
 	
+
 class ACMESimpleLogFormatter(logging.Formatter):
 	"""	Formatter for the file logging handler. It formats the log messages
 		for file output.
