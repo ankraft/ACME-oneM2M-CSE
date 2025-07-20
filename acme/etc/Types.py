@@ -2047,7 +2047,7 @@ class Result:
 	"""	This class represents the generic return state for many functions. It main contain
 		the general result, a status code, values, resources etc.
 	"""
-	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	resource:Resource|JSON					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	""" Resource instance. """
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
 	""" Data. """
