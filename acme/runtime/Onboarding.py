@@ -306,7 +306,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 	def spRegistrations() -> dict:
 		_print(Rule('[b]Service Provider Registration[/b]', style = 'dim'))
-		_print('The following settings concern the service provider registration.\n')
+		_print('The following settings concern the service provider registration.')
 		_print('This is only relevant for Infrastructure Nodes (IN) in a multi-provider environment.\n')
 
 		spRegistration = False
@@ -321,6 +321,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		if not spRegistration:
 			return {}
 		idx = 0
+		_print()
 		_print('Please provide the connection parameters for the service provider\'s IN-CSE.\n')
 		_continue = True
 		while _continue:
