@@ -12,6 +12,7 @@
 
 from typing import Optional
 import ipaddress, re, socket, contextlib
+from urllib.parse import urlparse
 
 def isValidateIpAddress(ip:str) -> bool:
 	"""	Validate an IP address.
@@ -64,6 +65,24 @@ def isValidPort(port:str|int) -> bool:
 		except ValueError:
 			return False
 	return 0 < _port <= 65535
+
+
+def isValidURL(url:str) -> bool:
+	"""	Validate a URL.
+	
+		Args:
+			url: The URL to validate.
+		
+		Return:
+			True if *url* is valid, or False otherwise.
+	"""
+	try:
+		if len(url.split()) > 1: # If there are spaces in the URL, it is invalid
+			return False
+		parsed = urlparse(url)
+		return all([parsed.scheme, parsed.netloc])
+	except Exception:
+		return False
 
 
 def isTCPPortAvailable(port:int) -> bool:
