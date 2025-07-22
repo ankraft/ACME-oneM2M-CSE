@@ -26,7 +26,7 @@ def getConfig() -> str:
 	"""Get the current configuration of the CSE as a JSON string.
 
 		Returns:
-			str: The configuration of the CSE in JSON format.
+			The configuration of the CSE in JSON format.
 	"""
 	return json.dumps(Configuration.all(), indent=4)
 
@@ -54,7 +54,7 @@ def getLoglevel() -> str:
 	"""Get the current log level of the CSE.
 
 		Returns:
-			str: The current log level of the CSE.
+			The current log level of the CSE.
 	"""
 	return L.logLevel.name
 
@@ -63,7 +63,7 @@ def getRegistrations() -> str:
 	"""Get the current registration status of the CSE as a JSON string.
 
 		Returns:
-			str: The registration status of the CSE in JSON format.
+			The registration status of the CSE in JSON format.
 	"""
 	return json.dumps(getRegistrationStatus(), indent=4)
 
@@ -73,7 +73,7 @@ def getRequests() -> Generator[str, None, None]:
 	"""Get the current requests of the CSE as a generator of JSON strings.
 
 		Returns:
-			Generator[str, None, None]: A generator that yields JSON strings of the request."""
+			A generator that yields JSON strings of the request."""
 
 	def generate() -> Generator[str, None, None]:
 		_rb = CSE.request.requestRingBuffer
@@ -96,7 +96,7 @@ def getCSEStatus() -> str:
 	"""Get the current status of the CSE.
 
 		Returns:
-			str: The status of the CSE in JSON format.
+			The status of the CSE in JSON format.
 	"""
 	return json.dumps(getCSEStatusJSON(), indent=4)
 
@@ -297,10 +297,10 @@ def setLogLevel(level:str) -> str:
 	"""Set the log level of the CSE.
 
 		Args:
-			level (str): The log level to set. Should be one of the Logging levels.
-		
+			level: The log level to set. Should be one of the Logging levels.
+
 		Returns:
-			Response: A response indicating the result 
+			A response indicating the result 
 	"""
 	try:
 		newLevel = LogLevel[level.upper()]
@@ -314,10 +314,10 @@ def setRequestRecording(param:str) -> str:
 	"""Enable or disable request recording.
 
 		Args:
-			param (str): The parameter to set. Should be 'enable' or 'disable'.
+			param: The parameter to set. Should be 'enable' or 'disable'.
 		
 		Returns:
-			str: The new status of the request recording.
+			The new status of the request recording.
 	"""
 	match param.lower():
 		case 'enable':
@@ -345,6 +345,9 @@ def shutdownCSE() -> None:
 
 def getRegistrationStatus() -> JSON:
 	"""	Return the registration status of the CSE, and registrations of CSEs and AEs.
+
+		Return:
+			A JSON object with the registration status of the CSE, and registrations of CSEs and AEs.
 	"""
 	status:JSON = {
 		'registrar': [],

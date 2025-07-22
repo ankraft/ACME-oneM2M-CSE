@@ -43,9 +43,6 @@ class RingBuffer(Generic[T]):
 	def incrementHead(self) -> int:
 		"""	Increment the head in a circular manner.
 		
-			Args:
-				index: The index to increment.
-
 			Return:
 				The new head value.
 		"""

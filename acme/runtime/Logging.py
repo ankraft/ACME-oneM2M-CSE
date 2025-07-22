@@ -55,14 +55,28 @@ levelName = {
 
 # Color Schemes for the terminal
 terminalColorDark		= '#2DFE54' 
+""" Color for the terminal text color in dark mode. """
+
 terminalColorErrorDark	= '#FF073A'
+""" Color for the terminal error text color in dark mode. """
+
 tableRowColorDark		= 'grey15'
+""" Color for the table row background in dark mode. """
+
 fontDark				= '#E4E4E4'
+""" Font color in dark mode. """
 
 terminalColorLight		= '#137E6D'
+""" Color for the terminal text color in light mode. """
+
 terminalColorErrorLight	= '#FF073A'
+""" Color for the terminal error text color in light mode. """
+
 tableRowColorLight		= 'grey89'
+""" Color for the table row background in light mode. """
+
 fontLight				= '#1C1C1C'
+""" Font color in light mode. """
 
 
 class LogFilter(logging.Filter):
@@ -82,6 +96,14 @@ class LogFilter(logging.Filter):
 
 
 	def filter(self, record:LogRecord) -> bool:
+		""" Filter out log messages from the given sources.
+		
+			Args:
+				record: The log record to filter.
+			
+			Return:
+				True if the record should be logged, False otherwise.
+		"""
 		# filter out unwanted debug messages's loggings
 		return not record.name.startswith(self.sources)
 
@@ -94,38 +116,95 @@ class Logging:
 	"""
 
 	logger  						= None
+	""" The main logger for the logging subsystem. """
+
 	loggerConsole					= None
+	""" The rich console logger for the logging subsystem. """
+
 	logLevel:LogLevel				= LogLevel.INFO
+	""" The current log level. This is set by the configuration and during runtime. """
+
 	isInfo 							= False
+	""" Flag to indicate whether the log level is set to INFO. """
+
 	isWarn 							= False
+	""" Flag to indicate whether the log level is set to WARNING. """
+
 	isDebug 						= False
+	""" Flag to indicate whether the log level is set to DEBUG. """
+
 	lastLogLevel:LogLevel			= None
+	""" The last log level that was set. This is used to determine whether the log level has changed. """
+
 	enableFileLogging				= True
+	""" Flag to indicate whether file logging is enabled. """
+
 	enableScreenLogging				= True
+	""" Flag to indicate whether screen logging is enabled. """
+
 	stackTraceOnError				= True
+	""" Flag to indicate whether to include stack traces in error logs. """
+
 	enableBindingsLogging			= True
+	""" Flag to enable low-level logging in protocol bindings. """
+
 	worker 							= None
+	""" The worker that handles the logging in the background. """
+
 	queue:Queue						= None
-	enableQueue						= False		# Can be used to enable/disable the logging queue 
-	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
-	filterSources:tuple[str, ...]	= ()		# List of log sources that will be removed while processing the log messages
-	maxLogMessageLength:int			= 0			# Max length of a log message. Longer messages will be truncated
-	utcTime							= False		# Use UTC time for logging
+	""" The queue for the logging messages. This is used to handle the logging processing in the background. """
+
+	enableQueue						= False	
+	""" Flag to indicate whether the logging queue is enabled. Can be used to enable/disable the logging queue. """
+	
+	queueSize:int					= 0	
+	""" The size of the logging queue. This is used to limit the number of log messages in the queue. """
+	
+	filterSources:tuple[str, ...]	= ()
+	""" List of log sources that will be filtered out. This is used to remove unwanted log messages from the output. """
+
+	maxLogMessageLength:int			= 0	
+	""" Maximum length of a log message. If the message is longer than this, it will be truncated. """
+	
+	utcTime							= False
+	""" Flag to indicate whether to use UTC time for logging. """
 
 	_console:Console				= None
+	""" The rich console object for the logging subsystem. """
+
 	_richHandler:ACMERichLogHandler	= None
+	""" The rich handler for the logging subsystem. This is used to format the log messages for the console. """
+
 	ringBufferHandler:ACMERingBufferLogHandler = None
+	""" The ring buffer handler for the logging subsystem. This is used to store log messages in a ring buffer. """
+
 	_handlers:List[Any] 			= None
+	""" List of log handlers for the logging subsystem. This is used to store the log handlers for the logging subsystem. """
+
 	_logWorker:BackgroundWorker		= None
+	""" The background worker for the logging subsystem. This is used to handle the logging in the background. """
+
 	_basenames:dict[str, str]		= {}
+	""" Dictionary to store the basenames of the source files. This is used to optimize the log output. """
 
 	_eventLogError					= None
+	""" Event handler for logging errors. This is used to trigger an event when an error is logged. """
+
 	_eventLogWarning				= None
+	""" Event handler for logging warnings. This is used to trigger an event when a warning is logged. """
 
 	terminalStyle:Style				= Style(color = terminalColorDark)
+	""" Style for the terminal text in dark mode. """
+
 	terminalStyleRGBTupple			= (0,0,0)
+	""" RGB tuple for the terminal text color. """
+
 	terminalStyleError:Style		= Style(color = terminalColorErrorDark)
+	""" Style for the terminal error text. """
+
 	tableRowStyle:Style				= Style(bgcolor = tableRowColorDark)
+	""" Style for the table row background. """
+
 
 
 	@staticmethod
@@ -774,6 +853,10 @@ class ACMERingBufferLogHandler(logging.Handler, RingBuffer[LogRecord]):
 		"""
 		logging.Handler.__init__(self)
 		RingBuffer.__init__(self, capacity)
+
+		# Configurable: Set the timezone converter for file logging to UTC
+		if Logging.utcTime:
+			logging.Formatter.converter = time.gmtime
 
 
 	def emit(self, record:LogRecord) -> None:

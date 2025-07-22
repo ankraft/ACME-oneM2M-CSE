@@ -2252,16 +2252,16 @@ def _doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool = True) -> PContext:
 	return __doProgn(pcontext, symbol, doEval=doEval, start=1)
 
 
-def __doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool = True, start:int=0) -> PContext:
+def __doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool=True, start:int=0) -> PContext:
 	"""	Execute a symbol list.
 
-		This function is used by the `progn` function and internally by the interpreter.
+		This function is used internally by the interpreter.
 
 		Args:
 			pcontext: `PContext` object of the running script.
 			symbol: The symbol to execute.
 			doEval: Indicator whether to evaluate the arguments.
-			start: The index to start the evaluation. This is 1 for the `progn` function and 0 for the interpreter.
+			start: The offset to start the evaluation. This is 1 for the `_doProgn` function and 0 for the interpreter.
 		
 		Return:
 			The updated `PContext` object with the function result.

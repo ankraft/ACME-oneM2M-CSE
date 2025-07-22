@@ -281,15 +281,14 @@ class ACMEContainerTools(Horizontal):
 		"""	The application. """
 
 		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
-								 		id = 'tools-tree-view',
-										parentContainer = self)
-		"""	The tree view for the tools. """
+								 		id='tools-tree-view',
+										parentContainer=self)
 
 		yield self._toolsTree
 		with Vertical():
 			with self._toolsTopView:
 				yield self._toolsHeader
-				with Container(id = 'tools-arguments-view'):
+				with Container(id='tools-arguments-view'):
 					with Center():
 						yield self._toolsArgument
 					with Center():

@@ -194,10 +194,6 @@ class PContext():
 
 	def reset(self) -> None:
 		"""	Reset the context / script. 
-			
-			Args:
-				pcontext: The `PContext` object to reset.
-			
 		"""
 		self.symbols = deepcopy(self.startupSymbols)
 		self.error = PErrorState(PError.noError, '', None, None)

@@ -207,7 +207,7 @@ class Resource(object):
 			r.willBeDeactivated(originator, self)
 
 
-	def deactivate(self, originator:str, parentresource:Resource) -> None:
+	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		"""	Deactivate an active resource.
 
 			This usually happens when creating the resource via a request.
