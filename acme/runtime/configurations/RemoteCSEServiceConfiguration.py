@@ -166,6 +166,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			if registrar.INCSEcseID:
 				if not isValidCSI(val := registrar.INCSEcseID):
 					raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[{registrar._configurationSection}]:INCSEcseID[/i]: {val}')
+			#TODO Investigate: The INCSEcseID above might need be set the same as the cseID, if not set.
 
 			if registrar.security.credentials.httpUsername and not registrar.security.credentials.httpPassword:
 				raise ConfigurationError(r'Configuration Error: Missing configuration [i]\[{registrar._configurationSection}.security]:httpPassword[/i]')

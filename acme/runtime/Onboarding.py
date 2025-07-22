@@ -302,7 +302,84 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 									invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
 								).execute(),
 		}
+	
 
+	def spRegistrations() -> dict:
+		_print(Rule('[b]Service Provider Registration[/b]', style = 'dim'))
+		_print('The following settings concern the service provider registration.\n')
+		_print('This is only relevant for Infrastructure Nodes (IN) in a multi-provider environment.\n')
+
+		spRegistration = False
+		result = {}
+		if cseType in ['IN']:
+			spRegistration = inquirer.confirm(
+								message = 'Do you want to register this CSE with one or more service providers\' IN-CSE?',
+								default = False,
+								long_instruction = 'Register this CSE with one or more service providers\' IN-CSE.'
+							).execute()
+
+		if not spRegistration:
+			return {}
+		idx = 0
+		_print('Please provide the connection parameters for the service provider\'s IN-CSE.\n')
+		_continue = True
+		while _continue:
+			idx += 1
+			_print(f'\n[b][u]Service Provider {idx}[/]\n')
+			_result = {}
+
+			_result['SPName'] = inquirer.text(
+				message = 'Service Provider Name:',
+				default = f'sp{idx}',
+				long_instruction = 'The name of the service provider.',
+				validate= lambda result: (isValidID(result) or _containsVariable(result)) and not result.endswith('.security'),
+				invalid_message = 'Invalid Service Provider Name. Must not be empty and must only contain letters, digits, and the characters [-, _, .] and must not end with ".security".',
+				amark = '✓',
+			).execute()
+			_result['SPID'] = inquirer.text(
+				message = 'Service Provider ID:',
+				default = f'sp-{idx}.example.com',
+				long_instruction = 'The ID of the service provider.',
+				amark = '✓',
+			).execute()
+			_result['SPCSEID'] = inquirer.text(
+				message = 'Service Provider\'s IN-CSE CSE-ID:',
+				default = f'sp-{idx}-id-in',
+				amark = '✓',
+				long_instruction = 'The CSE-ID of the service provider\'s IN-CSE.',
+				validate = lambda result: isValidID(result) or _containsVariable(result),
+				invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
+
+			).execute()
+			_result['SPCSERN'] = inquirer.text(
+				message = 'Service Provider\'s IN-CSE Resource Name:',
+				default = f'sp-{idx}-cse-in',
+				long_instruction = 'The resource name of the service provider\'s IN-CSE.',
+				amark = '✓',
+				validate = lambda result: isValidID(result) or _containsVariable(result),
+				invalid_message = 'Invalid CSE Name. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
+			).execute()
+			_result['url'] = inquirer.text(
+				message = 'Service Provider URL Address:',
+				default = f'http://${{basic.config:registrarCseHost}}:{8080 + (idx*100)}',
+				# default = f'http://sp-{idx}.example.com:8080',
+				long_instruction = 'The address (URL) of the service provider.',
+				validate= lambda result: NetworkTools.isValidURL(result) or _containsVariable(result),
+				invalid_message = 'Invalid URL. ',
+				amark = '✓',
+			).execute()
+
+			result[_result['SPName']] = _result
+
+			_print('\n')
+			_continue = inquirer.confirm(
+				message = 'Do you want to add another service provider?',
+				default = False,
+				long_instruction = 'Add another service provider\'s IN-CSE to register with.'
+			).execute()
+
+		return result
+		
 
 	def csePolicies() -> InquirerPySessionResult:
 		""" Prompts for CSE policies. 
@@ -421,7 +498,7 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 		_print('The following allows to enable additional protocol bindings.\n')
 
 		bindings = inquirer.checkbox(
-			message='Select addition bindings to enable:',
+			message='Select additional bindings to enable:',
         	choices=['MQTT', 'CoAP', 'WebSocket'],
 	        instruction="(select with cursor keys and <space>, confirm with <enter>)", 
 			long_instruction='Enable additional protocol bindings in addition to HTTP.',
@@ -505,7 +582,9 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 
 	try:
 		_print(Rule(f'[b]Creating a New {Constants.textLogo} Configuration File', characters = '═', style = Style(color = Constants.logoColor)))
-		_print('You may press CTRL-C at any point to cancel the configuration.\n')
+		_print('The following steps will create a new configuration file for the ACME CSE.\n')
+		_print('Press CTRL-C to abort at any time.\n')
+		
 		
 		# Prompt for directories and configuration file
 		directoriesAndConfigFile()
@@ -530,7 +609,11 @@ def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[s
 				if each == 'INCSEcseID':
 					continue
 				cnf.append(f'{each}={regCnf[each]}')
-		
+
+		# Prompt for Service Provider registration
+		spRegistration = spRegistrations()
+
+
 		# Prompt for the CSE database settings
 
 		dbc = cseDatabase()
@@ -573,8 +656,7 @@ f"""
 
 [cse.registration]
 ; Edit this to add more allowed originators.
-allowedCSROriginators=id-in,id-mn,id-asn
-"""
+allowedCSROriginators=id-in,id-mn,id-asn"""	# <- keep on same line. Will be extended below
 
 		cnfRegular = \
 """
@@ -645,6 +727,28 @@ INCSEcseID=/{regCnf["INCSEcseID"]}
 """
 		else:
 			cnfRegistrar = ''
+		
+		#
+		#	Construct the SP registration configuration
+		#	Add to the cnfRegistrar part
+		#
+
+		if spRegistration:
+			# Add SPs to the allowedCSROriginators list
+			for spID, spCnf in spRegistration.items():
+				cnfRegistrar += f',//{spCnf["SPID"]}/{spCnf["SPCSEID"]}'
+			cnfRegistrar += '\n'
+
+			# Generate the registrar configuration for each SP
+			for spID, spCnf in spRegistration.items():
+				cnfRegistrar += '\n'
+				cnfRegistrar += f'[cse.sp.registrar.{spID}]\n'
+				cnfRegistrar += f'spID=//{spCnf["SPID"]}\n'
+				cnfRegistrar += f'cseID=/{spCnf["SPCSEID"]}\n'
+				cnfRegistrar += f'resourceName={spCnf["SPCSERN"]}\n'
+				cnfRegistrar += f'address={spCnf["url"]}\n'
+		else:
+			cnfRegistrar = '\n'
 
 		#
 		#	Construct the configuration
