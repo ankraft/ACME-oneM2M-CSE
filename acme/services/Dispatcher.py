@@ -181,8 +181,8 @@ class Dispatcher(object):
 				# add oldestRi and latestRi internal attributes con con, ts, fc
 
 
-				res = laOlResource.handleRetrieveRequest(request = request, originator = originator)
-				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE, request=request, resultResource = res.resource):
+				res = laOlResource.handleRetrieveRequest(request=request, originator=originator)
+				if not CSE.security.hasAccess(originator, cast(Resource, res.resource), Permission.RETRIEVE, request=request, resultResource=cast(Resource, res.resource)):
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {Permission.RETRIEVE}')
 				return res
 
@@ -1136,8 +1136,8 @@ class Dispatcher(object):
 				if _exc:
 					raise _exc(result.request.pc.get('dbg'))	# type:ignore[call-arg]
 				raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {result.rsc}')
-			
-			updatedResource = result.resource
+
+			updatedResource = cast(Resource, result.resource)
 
 		# Return updated resource 
 		return updatedResource

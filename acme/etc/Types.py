@@ -314,7 +314,7 @@ class ResourceTypes(ACMEIntEnum):
 		return self.value in _ResourceTypesVirtualResourcesSet
 
 
-	def resourceClass(self) -> Resource:			# type:ignore [name-defined]
+	def resourceClass(self) -> Type[Resource]:			# type:ignore [name-defined]
 		"""	Return a Resource class for this resource type.
 
 			Return:
@@ -478,7 +478,7 @@ class ResourceDescription():
 	"""	Whether the resource type is an internal type. """
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
 	"""	The name of a virtual resource. """
-	clazz:Resource = None 			# type:ignore [name-defined]
+	clazz:Type[Resource] = None 			# type:ignore [name-defined]
 	"""	The resource class. """
 	factory:FactoryCallableT = None
 	"""	The resource factory callable to create this resource. """
@@ -600,7 +600,7 @@ _ResourceTypeDetails = {
 """	Mapping between resource types and their description. """
 
 
-def addResourceFactoryCallback(ty:ResourceTypes, clazz:Resource, factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
+def addResourceFactoryCallback(ty:ResourceTypes, clazz:Type[Resource], factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
 	"""	Add a class and a factory to create an instande for a resource type.
 
 		Args:

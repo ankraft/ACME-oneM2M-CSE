@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, cast
 import logging, uuid, base64
 
 from websockets.sync.connection import Connection as WSConnection
@@ -506,7 +506,7 @@ class WebSocketServer(object):
 			# Associate the connection with the originator, if not yet done.
 			# wsOriginator is None if the connection is not yet associated with an originator, and this
 			# can only be the case when the request is an AE registration
-			if wsOriginator is None and (res := responseResult.resource) is not None and res.ty == ResourceTypes.AE:
+			if wsOriginator is None and (res := cast(Resource, responseResult.resource)) is not None and res.ty == ResourceTypes.AE:
 				self.associateConnectionWithOriginator(websocket, res.aei)
 				wsOriginator = res.aei
 

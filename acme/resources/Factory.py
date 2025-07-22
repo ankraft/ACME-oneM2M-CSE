@@ -11,7 +11,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast
+from typing import Optional, cast, Type
 
 from ..etc.Types import ResourceTypes, addResourceFactoryCallback, FactoryCallableT
 from ..etc.ResponseStatusCodes import BAD_REQUEST

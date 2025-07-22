@@ -432,9 +432,9 @@ class ACMEViewRequest(VerticalScroll):
 				
 				from ..helpers.TextTools import commentJson
 
-				jsns = commentJson(result.resource.asDict(sort = True), 
+				jsns = commentJson(cast(Resource, result.resource).asDict(sort = True), 
 									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, result.resource.ty if result.resource else None))	# type: ignore [attr-defined]
+									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, cast(Resource, result.resource).ty if result.resource else None))	# type: ignore [attr-defined]
 				self.responseView.success(Syntax(jsns,
 												'json', 
 												theme = self._app.syntaxTheme),
