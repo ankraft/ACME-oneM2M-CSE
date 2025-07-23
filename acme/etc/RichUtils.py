@@ -13,6 +13,15 @@ from rich.console import Console
 from rich.text import Text
 
 def richToString(obj:JupyterMixin, width:Optional[int]=None) -> str:
+	"""	Convert a rich object to a string.
+	
+		Args:
+			obj: The rich object to convert.
+			width: Optional width for the console output. If not provided, the default width is used.
+		
+		Return:
+			A string representation of the rich object.
+	"""
 	console = Console(width=width)
 	with console.capture() as capture:
 		console.print(obj)

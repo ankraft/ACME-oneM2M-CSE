@@ -404,6 +404,8 @@ else:
 
 
 	_errorInGetch:bool = False
+	"""	Internal variable to indicate that getch() does not work properly. """
+
 	def getch() -> Optional[str|FunctionKey]:
 		"""	getch() -> key character
 
@@ -442,6 +444,10 @@ else:
 		return ch
 	
 	def flushInput() -> None:
+		"""	Flush the input buffer of stdin. This is necessary to remove any
+			remaining characters in the input buffer that may have been left
+			by a previous getch() call.
+		"""
 		sys.stdin.flush()
 
 _functionKeys:Tuple[FunctionKey, str] = [(e, e.value) for e in FunctionKey] # type:ignore

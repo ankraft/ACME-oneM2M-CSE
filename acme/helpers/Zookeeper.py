@@ -14,7 +14,10 @@ from configparser import ConfigParser
 from kazoo.client import KazooClient	# type:ignore[import-untyped]
 
 from rich.console import Console
+
 console = Console()
+""" Console instance for rich output. """
+
 print = console.print
 
 zookeeperDefaultPort = 2181
@@ -73,13 +76,28 @@ class Zookeeper():
 				caseSensitive: Flag to enable case-sensitive key names.
 		"""
 		self.zk = None
+		""" The Zookeeper client instance. """
+
 		self.host = host
+		""" The hostname of the Zookeeper server. """
+
 		self.port = port
+		""" The port of the Zookeeper server. """
+
 		self.rootNode = f'/{rootNode.strip("/ ")}/'	# Remove leading and trailing slashes
+		""" The root node of the Zookeeper server. This is always an absolute path. """
+		
 		self.logger = logger
+		""" The logger function to use for logging. If None, the default print function is used. """
+
 		self.verbose = verbose
+		""" Flag to enable verbose output. If True, the logger will be used to print messages. """
+
 		self.caseSensitive = caseSensitive
+		""" Flag to indicate if the keys are case-sensitive. """
+
 		self.normalizedRootNode = self._normalizeKey(self.rootNode)
+		""" The normalized root node, which is always an absolute path. """
 
 	
 	def _normalizeKey(self, key:str) -> str:

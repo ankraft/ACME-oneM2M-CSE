@@ -2477,6 +2477,11 @@ class RequestCredentials:
 	
 
 	def __repr__(self) -> str:
+		"""	String representation of the RequestCredentials.
+			
+			Return:
+				String representation.
+		"""
 		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
 
 
@@ -2730,6 +2735,11 @@ class CSERegistrarSecurity:
 
 
 	def __repr__(self) -> str:
+		"""	String representation of the CSERegistrarSecurity object.
+
+			Return:
+				String representation of the CSERegistrarSecurity object.
+		"""
 		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
 
 
@@ -2856,10 +2866,13 @@ class CSERegistrar:
 	
 
 	def __repr__(self) -> str:
+		"""	Return a string representation of the CSERegistrar object.
+		
+			Return:
+				String representation of the CSERegistrar object.
+		"""
 		return self.__str__()
 
-	# def __repr__(self) -> str:
-	# 	return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
 
 ##############################################################################
 #

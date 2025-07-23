@@ -10,6 +10,7 @@
 from typing import Generic, TypeVar, List, Optional
 
 T = TypeVar('T')
+""" Type variable for the items stored in the ring buffer. """
 
 class RingBuffer(Generic[T]):
 	""" A simple ring buffer implementation that allows for fixed-size storage of items.
@@ -26,9 +27,16 @@ class RingBuffer(Generic[T]):
 		Args:
 			size: The maximum number of items the buffer can hold.
 		"""
+
 		self.capacity = size
+		""" The maximum number of items the buffer can hold. """
+		
 		self.buffer:List[T] = [None] * self.capacity
+		""" The internal storage for the ring buffer, initialized with None values. """
+
 		self.head = -1
+		""" The current head index of the ring buffer, initialized to -1 indicating an empty buffer. """
+
 
 
 	def append(self, item:T) -> None:
