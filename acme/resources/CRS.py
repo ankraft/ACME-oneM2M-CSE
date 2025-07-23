@@ -48,6 +48,7 @@ class CRS(Resource):
 												   	   ResourceTypes.NTPR,
 													   ResourceTypes.SCH,
 													]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

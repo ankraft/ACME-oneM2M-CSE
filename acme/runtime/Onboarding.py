@@ -107,16 +107,23 @@ def _containsVariable(value:str) -> bool:
 	return _interpolationVariable.search(value) is not None
 
 
-def buildUserConfigFile(configFile:str) -> Tuple[bool, Optional[str], Optional[str]]:
-	""" Build a new user configuration file interactively.
+def buildUserConfigFile(configFile:str,
+						zkHost:str,
+						zkPort:int,
+						zkRoot:str) -> Tuple[bool, Optional[str], Optional[str]]:
+	""" Build a new user configuration file interactively. If the zookeeper host, port, and root path are provided, 
+		the configuration will be stored in the ZooKeeper service instead of a local file.
 
 		Args:
 			configFile: The configuration file to create.
+			zkHost: The host name or IP address of the ZooKeeper server.
+			zkPort: The port number of the ZooKeeper server.
+			zkRoot: The root path in the ZooKeeper server where the configuration is stored.
 
 		Return:
 			A tuple with three elements:
 			
-				- True if the configuration file was created, False otherwise.
+				- True if the configuration was created, False otherwise.
 				- The configuration file name if created, None otherwise.
 				- The error message if the configuration file could not be created, None otherwise.
 	"""

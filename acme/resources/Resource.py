@@ -63,6 +63,7 @@ class Resource(object):
 		'dict',
 		'_originalDict',
 	)
+	"""	Slots for the class. """
 
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	"""	Resource attributes that are excluded when updating the resource """

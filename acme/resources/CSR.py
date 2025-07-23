@@ -6,6 +6,7 @@
 #
 #	ResourceType: RemoteCSE
 #
+""" RemoteCSE resource class. """
 
 from __future__ import annotations
 from typing import Optional
@@ -20,6 +21,7 @@ from ..runtime import CSE
 
 
 class CSR(AnnounceableResource):
+	""" RemoteCSE resource class."""
 
 	resourceType = ResourceTypes.CSR
 	""" The resource type """
@@ -56,6 +58,7 @@ class CSR(AnnounceableResource):
 									ResourceTypes.TS,
 									ResourceTypes.TSAnnc,
 									ResourceTypes.TSB ]
+	""" The allowed child-resource types. """
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -98,6 +101,7 @@ class CSR(AnnounceableResource):
 		'ape': None,
 		'srv': None
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
