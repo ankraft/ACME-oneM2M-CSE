@@ -310,6 +310,32 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
 
 
+def isValidPath(id:str) -> bool:
+	"""	Test for a valid path. A path is a string that does not start with a slash and does not contain spaces and
+		invalid characters. It may contain slashes, but not at the beginning.
+
+		Args:
+			id: The ID to check
+		Returns:
+			Boolean
+	"""
+	if not id: # None or empty
+		return False
+	
+	elem = id.split('/')
+	if len(elem) == 1:
+		return hasOnlyUnreserved(elem[0])
+	
+	# if the first element is empty, then the path starts with a slash
+	if elem[0] == '':
+		elem = elem[1:]  # remove the first empty element
+	# check all elements for unreserved characters
+	for e in elem:
+		if not hasOnlyUnreserved(e):
+			return False
+	# if all elements are valid, return True
+	return True
+
 _unreserved = re.compile(r'^[\w\-.~]*$')
 """	Regular expression to test for unreserved characters. """
 
