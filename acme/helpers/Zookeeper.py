@@ -120,6 +120,9 @@ class Zookeeper():
 		
 			Returns:
 				The Zookeeper instance.
+
+			Raises:
+				Exception: If the Zookeeper client cannot be created or connected.
 		"""
 		self.disconnect()
 		self.zk = KazooClient(hosts=f'{self.host}:{self.port}')
@@ -241,14 +244,14 @@ class Zookeeper():
 		return '\n'.join(buildSections(self.listNode(self._normalizeKey(node) if node else self.normalizedRootNode)))
 
 
-	def storeIniConfig(self, config:ConfigParser|list[ConfigParser], node:Optional[str]=None) -> Zookeeper:
+	def storeIniConfig(self, config:ConfigParser|list[ConfigParser]|str, node:Optional[str]=None) -> Zookeeper:
 		""" Store the INI configuration in the Zookeeper node.
 
 			Dots (.) in the section names will be replaced with slashes (/) and be stored as a path in Zookeeper.
 			For example, the section name 'section.subsection' will be stored as 'section/subsection'.
 
 			Args:
-				config: The INI configuration to store. This can be a single ConfigParser object or a list of ConfigParser objects. The order of the list is important, as entries in the first ConfigParser will be overwritten by entries in the second ConfigParser if they have the same section and key.
+				config: The INI configuration to store. This can be a single ConfigParser object, a list of ConfigParser objects, or a string. If the configuration is a string it will be parsed. The order of the list is important, as entries in the first ConfigParser will be overwritten by entries in the second ConfigParser if they have the same section and key.
 				node: The node to store the configuration in. This can be node relative to the root node, or an absolute path.
 			
 			Returns:
@@ -257,6 +260,13 @@ class Zookeeper():
 			Raises:
 				Exception: If the Zookeeper client is not connected or if the configuration is empty.
 		"""
+		
+		# If the config is a string it will be parsed into a ConfigParser object.
+		if isinstance(config, str):
+			c = ConfigParser()
+			c.read_string(config)
+			config = c
+
 		config = config if isinstance(config, list) else [config]
 		node = self._normalizeKey(node) if node else self.normalizedRootNode
 
