@@ -676,6 +676,42 @@ class Configuration(object):
 				True on success, False otherwise.
 		"""
 
+		def runOnboarding(withZookeeper: bool=False) -> bool:
+			"""	Run the onboarding process to create a user configuration file if it does not exist.
+
+				Args:
+					withZookeeper: If True, then the onboarding process will use Zookeeper for configuration management. If False, then the onboarding process will create a local configuration file.
+				Returns:
+					True if the onboarding was successful, False otherwise.
+
+				Raises:
+					Exception: If an error occurs during the onboarding process.
+			"""
+			try:
+				if Configuration._args_headless:
+					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+					return False
+				
+				# load onboarding module and create user config file.
+				# After that, remove the module from the modules list, because it is not needed anymore
+				from ..runtime import Onboarding
+				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile if not withZookeeper else None,
+																					 (Configuration._args_zkHost, Configuration._args_zkPort, Configuration._args_zkRoot))	
+				import sys
+				del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
+				del Onboarding
+
+				if not result:
+					return False
+				if _configFile:
+					Configuration._args_configfile = str(pathlib.Path(_configFile))
+				if _baseDirectory:
+					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
+			except Exception as e:
+				Console().print(e)
+				raise e
+			return True
+
 		# resolve the args and set them as attributes
 		Configuration._args_configfile			= args.configfile if args and 'configfile' in args and args.configfile else C.defaultUserConfigFile
 		Configuration._args_baseDirectory		= args.rtDirectory if args and 'rtDirectory' in args else None	# baseDirectory
@@ -746,26 +782,31 @@ class Configuration(object):
 
 			# Create user config file if doesn't exist
 			if not os.path.exists(Configuration._args_configfile):
-				try:
-					if Configuration._args_headless:
-						Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
-						return False
+				if not runOnboarding():
+					return False
+				# try:
+				# 	if Configuration._args_headless:
+				# 		Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+				# 		return False
 					
-					# load onboarding module and create user config file.
-					# After that, remove the module from the modules list, because it is not needed anymore
-					from ..runtime import Onboarding
-					result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
-					import sys
-					del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
-					del Onboarding
+				# 	# load onboarding module and create user config file.
+				# 	# After that, remove the module from the modules list, because it is not needed anymore
+				# 	from ..runtime import Onboarding
+				# 	result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile,
+				# 														  				 Configuration._args_zkHost,
+				# 																		 Configuration._args_zkPort,
+				# 																		 Configuration._args_zkRoot)
+				# 	import sys
+				# 	del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
+				# 	del Onboarding
 
-					if not result:
-						return False
-					Configuration._args_configfile = str(pathlib.Path(_configFile))
-					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
-				except Exception as e:
-					Console().print(e)
-					raise e
+				# 	if not result:
+				# 		return False
+				# 	Configuration._args_configfile = str(pathlib.Path(_configFile))
+				# 	Configuration.baseDirectory = pathlib.Path(_baseDirectory)
+				# except Exception as e:
+				# 	Console().print(e)
+				# 	raise e
 			Configuration.configfile = Configuration._args_configfile
 			configurationFiles.append(Configuration.configfile)	
 
@@ -779,18 +820,24 @@ class Configuration(object):
 							   caseSensitive=False,	# switch off case sensitivity for ini files
 							   ).connect(createRoot=False)
 				if not zk.exists():
-					raise Exception(f'Root node "{Configuration._args_zkRoot}" does not exist.')
+					if not runOnboarding(withZookeeper=True):
+						return False
+					# try again to connect to read the configuration
+					if not zk.exists():
+						raise Exception(f'Root node "{Configuration._args_zkRoot}" does not exist.')
 				configurationStrings.append(zk.retrieveIniConfig())
 			except Exception as e:
+				import traceback
+				traceback.print_exc()
 				Configuration._print(f'[red]Error connecting to Zookeeper server: {e}')
 				return False
 			finally:
 				zk.disconnect()
 
 		# Read and parse the configuration file
-		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
+		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
 											# Convert csv to list, ignore empty elements
-											converters = {'list': lambda x: [i.strip() for i in x.split(',') if i]}
+											converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
 										  )
 	
 		# Construct the default values that are used for interpolation
