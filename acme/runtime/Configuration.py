@@ -800,6 +800,8 @@ class Configuration(object):
 							'initDirectory' 		: Configuration.initDirectory,					# points to the acme/init directory		
 							'hostIPAddress'			: getIPAddress(),								# provide the IP address of the host
 
+							'serviceProviderID'		: '//acme.example.com',							# The service provider ID of the CSE.
+
 							'registrarCseHost'		: '127.0.0.1',									# The IP address of the registrar CSE
 							'registrarCsePort'		: 8080,											# The TCP port of the registrar CSE
 							'registrarCseID'		: '',											# The CSE-ID of the registrar CSE
