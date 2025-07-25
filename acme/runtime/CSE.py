@@ -449,8 +449,11 @@ def restartCSE() -> None:
 
 def run() -> None:
 	"""	Run the CSE.
+
+		Raises:
+			TimeoutError: If the CSE does not start within the specified time.
 	"""
-	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus == CSEStatus.RUNNING):
+	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
 		console.run()
 	else:
 		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))

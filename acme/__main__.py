@@ -156,7 +156,12 @@ def main() -> None:
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
 	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight = False)
 	if CSE.startup(parseArgs()):
-		CSE.run()
+		try:
+			CSE.run()
+		except TimeoutError as e:
+			Console().print(f'\n[bold red]Error: {e}\n', highlight = False)
+			Console().print('[red]The CSE did not start within the specified time or was interrupted.[/red]\nPlease check the configuration and try again.')
+			quit(1)
 
 if __name__ == '__main__':
 	main()
