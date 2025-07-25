@@ -21,12 +21,16 @@ from InquirerPy.base import Choice
 from rich.console import Console
 from rich.rule import Rule
 from rich.style import Style
+from rich.spinner import Spinner
 
 from ..etc.Constants import Constants, RuntimeConstants as RC
+from ..etc.IDUtils import isValidID, isValidPath
+from ..helpers import Zookeeper
 
 from ..helpers import NetworkTools
 
 from ..runtime import Configuration
+
 
 
 _iniValues = {
@@ -107,18 +111,16 @@ def _containsVariable(value:str) -> bool:
 	return _interpolationVariable.search(value) is not None
 
 
-def buildUserConfigFile(configFile:str,
-						zkHost:str,
-						zkPort:int,
-						zkRoot:str) -> Tuple[bool, Optional[str], Optional[str]]:
+def buildUserConfigFile(configFile:Optional[str],
+						zkConfiguration:Optional[Tuple[str, int, Optional[str]]] = None,
+						overwrite:bool = False) -> Tuple[bool, Optional[str], Optional[str]]:
 	""" Build a new user configuration file interactively. If the zookeeper host, port, and root path are provided, 
 		the configuration will be stored in the ZooKeeper service instead of a local file.
 
 		Args:
 			configFile: The configuration file to create.
-			zkHost: The host name or IP address of the ZooKeeper server.
-			zkPort: The port number of the ZooKeeper server.
-			zkRoot: The root path in the ZooKeeper server where the configuration is stored.
+			zkConfiguration: A tuple containing the ZooKeeper host, port, and root path.
+			overwrite: If True, overwrite the configuration or configuration file if it already exists.
 
 		Return:
 			A tuple with three elements:
@@ -127,35 +129,79 @@ def buildUserConfigFile(configFile:str,
 				- The configuration file name if created, None otherwise.
 				- The error message if the configuration file could not be created, None otherwise.
 	"""
-	from ..etc.IDUtils import isValidID
-
 	cseType = 'IN'
 	cseID:str = None
 	cseSecret:str = None
+	spID:str = None
 	cseEnvironment = 'Development'
-	runtimeDirectory = os.path.dirname(configFile)
-	_configFile = os.path.basename(configFile)
-
+	runtimeDirectory = os.path.dirname(configFile) if configFile else None
+	_configFile = os.path.basename(configFile) if configFile else None
+	_zookeeperInstance:Optional[Zookeeper.Zookeeper] = None
 
 	def directoriesAndConfigFile() -> None:
-		nonlocal runtimeDirectory, _configFile
-		_print(Rule('[b]Directories and Configuration File[/b]', style = 'dim'))
-		_print('The following questions determine the runtime data directory and the configuration file.\n')
+		nonlocal runtimeDirectory, _configFile, _zookeeperInstance, zkConfiguration
 
-		runtimeDirectory = inquirer.text(
-							message = 'Runtime data directory:',
-							default = str(Configuration.Configuration.baseDirectory) if Configuration.Configuration.baseDirectory else os.getcwd(),
-							long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
-							amark = '✓', 
-						).execute()
-		_configFile = inquirer.text(
-							message = 'Configuration file:',
-							default = _configFile,
-							long_instruction = 'The name of the configuration file in the runtime data directory.',
-							amark = '✓', 
-						).execute()
-		
-		
+		if configFile:
+			_print(Rule('[b]Directories and Configuration File[/b]', style = 'dim'))
+			_print('The following questions determine the runtime data directory and the configuration file.\n')
+			runtimeDirectory = inquirer.text(
+								message = 'Runtime data directory:',
+								default = str(Configuration.Configuration.baseDirectory) if Configuration.Configuration.baseDirectory else os.getcwd(),
+								long_instruction = 'The directory under which the configuration file, and the "data", "init" and "log" directories are located.',
+								amark = '✓', 
+							).execute()
+			_configFile = inquirer.text(
+								message = 'Configuration file:',
+								default = _configFile,
+								long_instruction = 'The name of the configuration file in the runtime data directory.',
+								amark = '✓', 
+							).execute()
+		else:
+			_print(Rule('[b]Zookeeper[/b]', style = 'dim'))
+			_print('You are using Zookeeper for configuration management.\n')
+			_print('This means that the configuration will be stored in Zookeeper instead of a local file.\n')
+			_print('The following questions determine the Zookeeper configuration.\n')
+			_zkHost = inquirer.text(
+					message = 'Zookeeper host:',
+					default = zkConfiguration[0],
+					validate= lambda result: NetworkTools.isValidateIpAddress(result) or NetworkTools.isValidateHostname(result),
+					invalid_message = 'Invalid host name or IP address.',
+					long_instruction = 'The host name or IP address of the Zookeeper server.',
+					amark = '✓', 
+				).execute()
+			_zkPort = inquirer.number(
+					message = 'Zookeeper port:',
+					default = zkConfiguration[1],
+					validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
+					min_allowed = 1,
+					max_allowed = 65535,
+					invalid_message = 'Invalid port number.',
+					long_instruction = 'The port number of the Zookeeper server.',
+					amark = '✓', 
+				).execute()
+			_zkRoot = inquirer.text(
+					message = 'Zookeeper root:',
+					default = zkConfiguration[2] if zkConfiguration and zkConfiguration[2] else '',
+					long_instruction = 'The root path in the Zookeeper server.\nLeave empty to use the CSE-ID as root path.',
+					validate= lambda result: len(result.strip()) == 0 or isValidPath(result.strip()),
+					invalid_message = 'Invalid root. Must be a valid path.',
+					filter= lambda result: '' if not result else result.strip() if result.startswith('/') else f'/{result.strip()}',
+					amark = '✓', 
+				).execute()
+
+			try:
+				_print()
+				with Console().status('Testing Zookeeper connection...'):
+					_zookeeperInstance = Zookeeper.Zookeeper(_zkHost, _zkPort, _zkRoot)
+					_zookeeperInstance.connect(createRoot=False)
+					_zookeeperInstance.disconnect()
+			except Exception as e:
+				_print(f'\n[red]Error connecting to Zookeeper: {e}')
+				raise ConnectionError(f'Could not connect to Zookeeper at {_zkHost}:{_zkPort}') from e
+				return
+			
+			# set the Zookeeper configuration to the new values
+			zkConfiguration = (_zkHost, _zkPort, _zkRoot)
 
 	def basicConfig() -> None:
 		nonlocal cseType, cseEnvironment, cseSecret
@@ -211,9 +257,10 @@ def buildUserConfigFile(configFile:str,
 						message = 'CSE-ID:',
 						default = _iniValues[cseType]['cseID'],
 						long_instruction = 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
-						validate = lambda result: isValidID(result) or _containsVariable(result),
-						amark = '✓', 
+						validate = lambda result: isValidID(result) or (result.startswith('/') and isValidID(result[1:])) or _containsVariable(result),
 						invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
+						filter= lambda result: result if not result.startswith('/') else result[1:],	# Remove leading slash if present
+						amark = '✓', 
 					 ).execute(),
 			'cseName': inquirer.text(
 							message = 'Name of the CSE:',
@@ -222,6 +269,15 @@ def buildUserConfigFile(configFile:str,
 							validate = lambda result: isValidID(result) or _containsVariable(result),
 							amark = '✓', 
 							invalid_message = 'Invalid CSE name. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
+						).execute(),
+			'serviceProviderID' : inquirer.text(
+							message = 'Service Provider ID:',
+							default = '//acme.example.com',
+							long_instruction = 'This is the ID of the own service provider.',
+							validate = lambda result: isValidID(result) or (result.startswith('//') and isValidID(result[2:])) or _containsVariable(result),
+							invalid_message = 'Invalid Service Provider ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
+							filter = lambda result: result if result.startswith('//') else f'//{result}',
+							amark = '✓',
 						).execute(),
 			'adminID': inquirer.text(
 							message = 'Admin Originator:',
@@ -312,6 +368,8 @@ def buildUserConfigFile(configFile:str,
 	
 
 	def spRegistrations() -> dict:
+		nonlocal spID
+
 		_print(Rule('[b]Service Provider Registration[/b]', style = 'dim'))
 		_print('The following settings concern the service provider registration.')
 		_print('This is only relevant for Infrastructure Nodes (IN) in a multi-provider environment.\n')
@@ -327,6 +385,7 @@ def buildUserConfigFile(configFile:str,
 
 		if not spRegistration:
 			return {}
+		
 		idx = 0
 		_print()
 		_print('Please provide the connection parameters for the service provider\'s IN-CSE.\n')
@@ -347,6 +406,9 @@ def buildUserConfigFile(configFile:str,
 			_result['SPID'] = inquirer.text(
 				message = 'Service Provider ID:',
 				default = f'sp-{idx}.example.com',
+				validate = lambda result: isValidID(result) or (result.startswith('//') and isValidID(result[2:])) or _containsVariable(result),
+				invalid_message = 'Invalid Service Provider ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
+				filter = lambda result: result if not result.startswith('//') else result[2:],
 				long_instruction = 'The ID of the service provider.',
 				amark = '✓',
 			).execute()
@@ -355,8 +417,9 @@ def buildUserConfigFile(configFile:str,
 				default = f'sp-{idx}-id-in',
 				amark = '✓',
 				long_instruction = 'The CSE-ID of the service provider\'s IN-CSE.',
-				validate = lambda result: isValidID(result) or _containsVariable(result),
+				validate = lambda result: isValidID(result) or (result.startswith('/') and isValidID(result[1:])) or _containsVariable(result),
 				invalid_message = 'Invalid CSE-ID. Must not be empty and must only contain letters, digits, and the characters [-, _, .] .',
+				filter = lambda result: result if not result.startswith('/') else result[1:],	# Remove leading slash if present
 
 			).execute()
 			_result['SPCSERN'] = inquirer.text(
@@ -373,7 +436,7 @@ def buildUserConfigFile(configFile:str,
 				# default = f'http://sp-{idx}.example.com:8080',
 				long_instruction = 'The address (URL) of the service provider.',
 				validate= lambda result: NetworkTools.isValidURL(result) or _containsVariable(result),
-				invalid_message = 'Invalid URL. ',
+				invalid_message = 'Invalid URL.',
 				amark = '✓',
 			).execute()
 
@@ -612,14 +675,17 @@ def buildUserConfigFile(configFile:str,
 
 		
 		# Prompt for registrar configuration
-		if cseType in [ 'MN', 'ASN' ]:
-			for each in (regCnf := registrarConfig()):
-				if each == 'INCSEcseID':
-					continue
-				cnf.append(f'{each}={regCnf[each]}')
+		match cseType:
+			case 'IN':
+				# Prompt for Service Provider registration
+				spRegistration = spRegistrations()
 
-		# Prompt for Service Provider registration
-		spRegistration = spRegistrations()
+			case 'MN' | 'ASN':
+				for each in (regCnf := registrarConfig()):
+					if each == 'INCSEcseID':
+						continue
+					cnf.append(f'{each}={regCnf[each]}')
+				spRegistration = None
 
 
 		# Prompt for the CSE database settings
@@ -821,27 +887,74 @@ port={bindings['websocket']['port']}
 		_jcnf = jcnf.replace('[', r'\[')
 		_print(f'[dim]{_jcnf}\n')
 
-		configFile = f'{runtimeDirectory}{os.sep}{_configFile}'
-		if not inquirer.confirm	(message = f'Write configuration to file "{configFile}"?', 
-			   					default = True,
-								long_instruction = 'Create the configuration file.',
-			  					amark = '✓'
-								).execute():
-			_print('\n[red]Configuration canceled\n')
-			return False, None, None
+		# If the configuration file is provided, ask for confirmation to write the configuration file
+		if configFile:
 
-	except KeyboardInterrupt:
+			configFile = f'{runtimeDirectory}{os.sep}{_configFile}'
+			if not inquirer.confirm	(message = f'Write configuration to file "{configFile}"?', 
+									default = True,
+									long_instruction = 'Create the configuration file.',
+									amark = '✓'
+									).execute():
+				_print('\n[red]Configuration canceled\n')
+				return False, None, None
+			
+			try:
+				os.makedirs(os.path.dirname(configFile), exist_ok=True)
+				with open(configFile, 'w') as file:
+					file.write(cnfHeader)
+					file.write(jcnf)
+			except Exception as e:
+				_print(str(e))
+				return False, None, None
+
+		
+		# Write to ZooKeeper if zkConfiguration is provided
+		else:
+			zkConfiguration = (zkConfiguration[0], zkConfiguration[1], zkConfiguration[2] or f'/{cseID}'	)
+			if not inquirer.confirm	(message = f'Write configuration to ZooKeeper at {zkConfiguration[2]}?', 
+									default = True,
+									long_instruction = 'Create the configuration in ZooKeeper.',
+									amark = '✓'
+									).execute():
+				_print('\n[red]Configuration canceled\n')
+				return False, None, None
+
+			# Open a connection to ZooKeeper and check if the root path already exists
+			_zookeeperInstance = Zookeeper.Zookeeper(zkConfiguration[0], zkConfiguration[1], zkConfiguration[2])
+			_zookeeperInstance.connect(False)
+
+			if _zookeeperInstance.exists(zkConfiguration[2]): 			# zkConfiguration is a tuple of (host, port, rootPath)
+				# If the root path already exists, ask for confirmation to overwrite it
+				if not overwrite and not inquirer.confirm(
+						message = f'ZooKeeper configuration "{zkConfiguration[2]}" already exists. Overwrite it?',
+						default = False,
+						long_instruction = 'Overwrite the existing ZooKeeper configuration.',
+						amark = '✓'
+					).execute():
+					_print('\n[red]Configuration canceled\n')
+					_zookeeperInstance.disconnect()
+					return False, None, None
+
+				# delete the existing root path
+				with Console().status('Deleting existing ZooKeeper configuration...'):
+					_zookeeperInstance.delete(zkConfiguration[2])
+
+			with Console().status('Writing configuration to ZooKeeper...'):
+				try:
+					# create the root path 
+					_zookeeperInstance.addKeyValue(zkConfiguration[2])
+					
+					# Write the configuration to ZooKeeper and disconnect afterwards
+					_zookeeperInstance.storeIniConfig(jcnf, zkConfiguration[2])
+				except Exception as e:
+					_print(f'\n[red]Error writing configuration to ZooKeeper: {e}')
+					return False, None, None
+				finally:
+					_zookeeperInstance.disconnect()
+
+	except (KeyboardInterrupt, ConnectionError):
 		_print('\n[red]Configuration canceled\n')
-		return False, None, None
-
-	try:
-
-		os.makedirs(os.path.dirname(configFile), exist_ok=True)
-		with open(configFile, 'w') as file:
-			file.write(cnfHeader)
-			file.write(jcnf)
-	except Exception as e:
-		_print(str(e))
 		return False, None, None
 
 	_print(f'\n[spring_green2]New {cseType}-CSE configuration created.\n')
