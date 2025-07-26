@@ -28,7 +28,7 @@ type=${basic.config:cseType}
 serviceProviderID=${basic.config:serviceProviderID}
 ; The CSE ID. Can be overwritten in imported CSE definition. 
 ; The CSE ID must start with a "/" and must not contain a further "/" or white space.
-; Default: /id-in
+; Default: Basic config value "cseID"
 cseID=/${basic.config:cseID}
 ; The CSE's resource ID. Can be overwritten in imported CSE definition. 
 ; Default: id-in

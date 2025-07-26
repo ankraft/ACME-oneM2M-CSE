@@ -784,29 +784,6 @@ class Configuration(object):
 			if not os.path.exists(Configuration._args_configfile):
 				if not runOnboarding():
 					return False
-				# try:
-				# 	if Configuration._args_headless:
-				# 		Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
-				# 		return False
-					
-				# 	# load onboarding module and create user config file.
-				# 	# After that, remove the module from the modules list, because it is not needed anymore
-				# 	from ..runtime import Onboarding
-				# 	result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile,
-				# 														  				 Configuration._args_zkHost,
-				# 																		 Configuration._args_zkPort,
-				# 																		 Configuration._args_zkRoot)
-				# 	import sys
-				# 	del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
-				# 	del Onboarding
-
-				# 	if not result:
-				# 		return False
-				# 	Configuration._args_configfile = str(pathlib.Path(_configFile))
-				# 	Configuration.baseDirectory = pathlib.Path(_baseDirectory)
-				# except Exception as e:
-				# 	Console().print(e)
-				# 	raise e
 			Configuration.configfile = Configuration._args_configfile
 			configurationFiles.append(Configuration.configfile)	
 
@@ -846,14 +823,16 @@ class Configuration(object):
 							'moduleDirectory' 		: Configuration.moduleDirectory,				# points to the acme module's directory
 							'initDirectory' 		: Configuration.initDirectory,					# points to the acme/init directory		
 							'hostIPAddress'			: getIPAddress(),								# provide the IP address of the host
-
+							'networkInterface'		: '0.0.0.0',									# The network interface to listen on for HTTP, CoAP, MQTT and WebSocket.
+							
 							'serviceProviderID'		: '//acme.example.com',							# The service provider ID of the CSE.
-
-							'registrarCseHost'		: '127.0.0.1',									# The IP address of the registrar CSE
+							'registrarCseHost'		: getIPAddress(),								# The IP address of the registrar CSE
 							'registrarCsePort'		: 8080,											# The TCP port of the registrar CSE
 							'registrarCseID'		: '',											# The CSE-ID of the registrar CSE
 							'registrarCseName'		: '',											# The resource name of the registrar CSE's CSEBase
 
+							'logLevel'				: 'debug',										# The main secret key for the CSE. 
+							'consoleTheme'			: 'dark',										# The theme for the console.
 							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
