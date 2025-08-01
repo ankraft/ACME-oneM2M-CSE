@@ -349,7 +349,8 @@ def isCSI(uri:str) -> bool:
 			Boolean if the URI is a CSE-ID
 	"""
 	_r = csiFromRelativeAbsoluteUnstructured(uri)[1]
-	return len(_r) == 2 and _r[0] == ''
+	return len(_r) == 2 and _r[0] == '' or \
+		   len(_r) == 4 and _r[0] == _r[1] == ''
 
 
 
