@@ -25,17 +25,22 @@
 ;;	Create the CSEBase
 ;;
 
-(setq cb 
-	{ "m2m:cb": {
-		"ri":   "${get-config \"cse.resourceID\"}",
-		"rn":   "${get-config \"cse.resourceName\"}",
-		"csi":  "${get-config \"cse.cseID\"}",
-		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ]
-	}})
-(setq cb (set-json-attribute cb "m2m:cb/poa" (get-config "cse.poa")))
+(import-raw 
+	cse-originator
+	;; The input must be a valid JSON object. We can late-execute inline expressions in strings,
+	;; but not in the object itself.
+	;; So we have to use set-json-attribute to set the poa attribute afterwards.
+	(set-json-attribute 
+		{ "m2m:cb": {
+			"ri":   "${get-config \"cse.resourceID\"}",
+			"rn":   "${get-config \"cse.resourceName\"}",
+			"csi":  "${get-config \"cse.cseID\"}",
+			"csz":  [ "application/json", "application/cbor" ],
+			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources" ]
+		}}
+		"m2m:cb/poa" 
+		(get-config "cse.poa")))
 
-(import-raw cse-originator cb)
 
 
 ;;
@@ -45,21 +50,23 @@
 (import-raw 
 	cse-originator
 	{ "m2m:acp": {
-		"rn": "acpCreateACPs",
-		"ri": "acpCreateACPs",
+		"rn": "acpCreateRootResources",
+		"ri": "acpCreateRootResources",
 		"pi": "${get-config \"cse.resourceID\"}",
 		"pv": {
-			"acr": [ {
-				"acor": [ "all"	],
-				"acod": [ {	"chty": [ 1, 26 ] }	],	;; Allow ACP and NTP
-				"acop": 1
-			} ]
+			"acr": [ 
+				{	"acor": [ "all"	],
+					"acod": [ {	"chty": [ 1, 26 ] }	],	;; Allow  NTP and ACP
+					"acop": 1
+				}
+			]
 		},
 		"pvs": {
-			"acr": [ {
-				"acor": [ "${cse-originator}" ],
-				"acop": 63
-			} ]
+			"acr": [ 
+				{	"acor": [ "${cse-originator}" ],
+					"acop": 63
+				}
+			]
 		}
 	}})
 
