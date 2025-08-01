@@ -14,6 +14,7 @@ import configparser
 
 from ..Configuration import Configuration, ConfigurationError
 from .ModuleConfiguration import ModuleConfiguration
+from ...etc.IDUtils import isAbsolute, isSPRelative, isCSI
 
 
 class RegistrationServiceConfiguration(ModuleConfiguration):
@@ -29,5 +30,13 @@ class RegistrationServiceConfiguration(ModuleConfiguration):
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		pass
+
+		if config.cse_registration_allowedCSROriginators:
+			for originator in config.cse_registration_allowedCSROriginators:
+				if (isAbsolute(originator) and isCSI(originator)) or \
+				   (isSPRelative(originator) and isCSI(originator)):
+					# Valid originator
+					continue
+				# Invalid originator
+				raise ConfigurationError(f'Invalid originator: "{originator}" in \[cse.registration].allowedCSROriginators. Must be a CSE-ID in absolute or SP-relative form')
 

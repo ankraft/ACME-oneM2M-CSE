@@ -721,15 +721,15 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
-		_originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
-		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
+		# _originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
+		L.isDebug and L.logDebug(f'Originator: {originator} - allowed originators: {allowedOriginators}')
 		
 		# Always allow for the hosting CSE
 		if originator in [RC.cseCsi, RC.cseSPRelative] :
 			return True
 
 		for ao in allowedOriginators:
-			if simpleMatch(_originator, ao):
+			if simpleMatch(originator, ao):
 				return True
 		return False
 

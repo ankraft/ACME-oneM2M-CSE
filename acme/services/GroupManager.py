@@ -114,17 +114,18 @@ class GroupManager(object):
 		for mid in group.mid:
 			isLocalResource = True
 			#Check whether it is a local resource or not
-			if isSPRelative(mid):
-				if csiFromSPRelative(mid) != RC.cseCsi:
-					# RETRIEVE member from a remote CSE
-					isLocalResource = False
-					# if not (url := CSE.request._getForwardURL(mid)):
-					# 	raise NOT_FOUND(f'forwarding URL not found for group member: {mid}')
-					L.isDebug and L.logDebug(f'Retrieve request to: {mid}')
-					remoteResult = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
-																			to = mid, 
-																			originator = RC.cseCsi)
-																)[0].result	# there should be at least one result
+			if isSPRelative(mid) and csiFromSPRelative(mid) != RC.cseCsi:
+				# RETRIEVE member from a remote CSE
+				isLocalResource = False
+				# if not (url := CSE.request._getForwardURL(mid)):
+				# 	raise NOT_FOUND(f'forwarding URL not found for group member: {mid}')
+				L.isDebug and L.logDebug(f'RETRIEVE request to: {mid}')
+				remoteResult = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+																		to=mid,
+																		originator=originator)
+															)[0].result	# there should be at least one result
+				if remoteResult.rsc != ResponseStatusCode.OK:
+					raise RECEIVER_HAS_NO_PRIVILEGES(f'Insufficient privileges for originator: {originator} to retrieve remote resource: {mid}')
 
 			# get the resource and check it
 			hasFopt = False
@@ -151,7 +152,7 @@ class GroupManager(object):
 
 			# check privileges
 			if isLocalResource:
-				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource = resource):
+				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource=resource):
 					raise RECEIVER_HAS_NO_PRIVILEGES(f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
@@ -175,6 +176,7 @@ class GroupManager(object):
 			if not (mt == ResourceTypes.MIXED or ty == mt):	# types don't match
 				match group.csy:
 					case ConsistencyStrategy.abandonMember:	# abandon member
+						L.isDebug and L.logDebug(f'Abandoning group member: {mid} with type: {ty} because of group consistency strategy: {group.csy}')
 						continue
 					case ConsistencyStrategy.setMixed:		# change group's member type
 						mt = ResourceTypes.MIXED

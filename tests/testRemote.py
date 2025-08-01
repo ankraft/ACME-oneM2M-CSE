@@ -203,10 +203,10 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, 'Ctest', T.CSR, dct)
+		r, rsc = CREATE(cseURL, '/Ctest', T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print('\n[r]Please add "[b]Ctest[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
+			console.print('\n[r]Please add "[b]/Ctest[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+		self.assertEqual(rsc, RC.CONFLICT, r)
 
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.DELETED)

@@ -677,7 +677,7 @@ help           Show this help message
 			elif request.credentials.httpToken:
 				hds['Authorization'] = f'Bearer {request.credentials.getHttpBearerToken()}'
 			else:
-				L.logWarn('No credentials found for HTTP request')
+				L.isDebug and L.logDebug('No credentials found for HTTP request')
 
 
 		arguments = []
@@ -728,18 +728,18 @@ help           Show this help message
 			
 			# Actual sending the request
 			r = method(url, 
-					   data = data,
-					   headers = hds,
-					   verify = Configuration.http_security_verifyCertificate,
-					   timeout = timeout)
-		
+					   data=data,
+					   headers=hds,
+					   verify=Configuration.http_security_verifyCertificate,
+					   timeout=timeout)
+
 			# Ignore the response to notifications in some cases
 			if ignoreResponse and request.op == Operation.NOTIFY:
 				L.isDebug and L.logDebug('HTTP: Ignoring response to notification')
 				return createPositiveResponseResult()
 
 			# Construct CSERequest response object from the result
-			resp = CSERequest(requestType = RequestType.RESPONSE)
+			resp = CSERequest(requestType=RequestType.RESPONSE)
 			resp.ct = ContentSerializationType.getType(r.headers.get('Content-Type', ct))
 			resp.rsc = ResponseStatusCode(int(r.headers.get(Constants.hfRSC, ResponseStatusCode.INTERNAL_SERVER_ERROR)))
 			resp.pc = deserializeData(r.content, resp.ct)

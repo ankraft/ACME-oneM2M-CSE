@@ -1126,12 +1126,12 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				_result = self.waitForResponseToPCH(self.queueRequestForPCH(request.op,
-																			pchOriginator = pch.getOriginator(), 
-																			content = request.pc,
-																			ec = _request.ec,
-																			originator = _request.originator,
-																			rvi = _request.rvi,
-																			request = request))
+																			pchOriginator=pch.getOriginator(),
+																			content=request.pc,
+																			ec=_request.ec,
+																			originator=_request.originator,
+																			rvi=_request.rvi,
+																			request=request))
 				results.append( RequestResponse(_request, _result) )
 				continue
 

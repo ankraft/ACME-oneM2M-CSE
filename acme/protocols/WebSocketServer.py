@@ -647,7 +647,7 @@ class WebSocketServer(object):
 					additionalHeaders['Authorization'] = request.credentials.getWsBearerToken()
 					authResult = AuthorizationResult.AUTHORIZED # Assume success. Otherwise, the connection would not be established anyway
 				else:
-					L.logWarn('No credentials for WS request found')
+					L.isDebug and L.logDebug('No credentials for WS request found')
 
 
 			# Else connect to the target WS server using the URL

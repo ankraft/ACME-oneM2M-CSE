@@ -22,12 +22,16 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added announcement via Mcc'.
 - [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
 - [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Currently, only a a "shutdown" command is implemented. Thanks to Egan Perais.
+- [CSE] Added onboarding support for Service Provider registrations and storing the config settings in a Zookeeper service.
 - [MISC] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 
 ### Experimental
 
 ### Changed
+- [CSE] Added *serviceProviderID* to the *[basic.config]* configuration section. This way the service provider ID can be easier configured.
+- [CSE] Renamed the default ACP that is created during CSE initialization from *acpCreateAcps* to *acpCreateRootResources*.
+- [CSE] Changed the format of the configuration setting *\[[cse.registration].allowedCSROriginators* to correct SP-relative identifiers. This could be a breaking change if the configuration file is not adapted.
 - [MISC] Python 3.10 is now the minimum required version to run the CSE.
 - [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
 - [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
