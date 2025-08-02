@@ -226,7 +226,6 @@ def executeExpression(pcontext:PContext, symbol:SSymbol) -> PContext:
 				pcontext.result = deepcopy(pcontext.variables[_s])
 				return pcontext
 			elif (_cb := pcontext.symbols.get(_s)) is not None:	# type:ignore[arg-type]
-
 				if pcontext.monitorFunc:
 					pcontext.monitorFunc(pcontext, firstSymbol)
 
@@ -332,7 +331,7 @@ def executeFunction(pcontext:PContext, symbol:SSymbol, functionName:str, functio
 	return pcontext
 
 
-def executeSymbolWithArguments(pcontext:PContext, symbol:SSymbol, arguments:SSymbolsList = []) -> PContext:
+def executeSymbolWithArguments(pcontext:PContext, symbol:SSymbol, arguments:SSymbolsList=[]) -> PContext:
 	"""	Execute a symbol with a list of arguments. A symbol can be a function,
 		a lambda function, or another (quoted) symbol.
 
@@ -346,7 +345,7 @@ def executeSymbolWithArguments(pcontext:PContext, symbol:SSymbol, arguments:SSym
 	"""
 	# lambda functions are handled differently
 	if symbol.type == SType.tLambda:
-		pcontext = __doProgn(pcontext, SListSymbol(arguments, symbol), doEval=False)	#type:ignore[operator]
+		pcontext = __doProgn(pcontext, SListSymbol([symbol] + arguments, symbol), doEval=False)	#type:ignore[operator]
 	else:
 		if symbol.value in pcontext.symbols:
 			_symbol = SSymbolSymbol(symbol.value) if symbol.type == SType.tSymbolQuote else symbol	# type:ignore[arg-type]
@@ -430,7 +429,6 @@ def getArgument(pcontext:PContext,
 		if pcontext.result is not None and pcontext.result.type not in expectedType: 
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'expression:\n{symbol.printHierarchy()}\nInvalid type for argument: {_symbol}, expected type: {expectedType}, is: {pcontext.result.type}'))
 
-	pcontext.result = pcontext.result
 	return pcontext
 
 
@@ -2266,14 +2264,14 @@ def __doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool=True, start:int=0) 
 		Return:
 			The updated `PContext` object with the function result.
 	"""
-
 	for i in range(start, symbol.length):	# type:ignore [arg-type]
 		pcontext, result = resultFromArgument(pcontext, symbol, i, doEval=doEval)
 		if pcontext.state == PState.returning:
 			return pcontext
+	
 
 		# if the first element is a lambda then execute it
-		if i == 1 and result is not None and result.type == SType.tLambda:
+		if i == 0 and result is not None and result.type == SType.tLambda:
 			# Construct lambda call
 			_name = f'lambda_{"".join(random.choices(string.ascii_letters + string.digits, k = 10))}'
 			_call = cast(Tuple[list[str], SSymbol], result.value)
@@ -2282,15 +2280,15 @@ def __doProgn(pcontext:PContext, symbol:SSymbol, doEval:bool=True, start:int=0) 
 			# print(f'progn> lambda: {_name} {_arguments} {_code}')
 			
 			# Check arguments
-			if len(_arguments) != symbol.length - 2:
-				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Number of arguments mismatch. Expected: {len(_arguments)}, got: {symbol.length - 2}\n{symbol.printHierarchy()}'))
-			
+			if len(_arguments) != symbol.length - 1:
+				raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Number of arguments mismatch. Expected: {len(_arguments)}, got: {symbol.length - 1}\nHint: Lambdas assigned to a symbol must not be enclosed by parentheses\n{symbol.printHierarchy()}'))
+
 			# Temporarily add to functions
 			pcontext.functions[_name] = (_arguments, _code)
 
 			# Execute as function
 			pcontext = executeFunction(pcontext, 
-							  		   SListSymbol(cast(SSymbolsList, symbol.value[1:]), symbol), 	# type:ignore[index]
+							  		   SListSymbol(cast(SSymbolsList, symbol.value), symbol), 	# type:ignore[index]
 									   _name)		
 
 			# Remove temp function
