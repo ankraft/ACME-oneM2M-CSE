@@ -7,7 +7,7 @@
 from typing import Optional, cast
 from decimal import Decimal, InvalidOperation
 from .Types import SSymbol, SBooleanSymbol, SNumberSymbol, SStringSymbol, SSymbolQuoteSymbol, \
-	SListCharSymbol, SJsonSymbol, SListQuoteSymbol, SListSymbol, \
+	SListCharSymbol, SJsonSymbol, SListQuoteSymbol, SListSymbol, STSymbol, \
 	SType, SSymbolsList, SSymbolSymbol, SNilSymbol
 
 class SExprParser(object):
@@ -197,7 +197,9 @@ class SExprParser(object):
 							case SType.tSymbol if symbol.value in [ 'true', 'false' ]:
 								_ast.append(SBooleanSymbol(symbol.value == 'true', parentSymbol))
 							case SType.tSymbol if symbol.value == 'nil':
-								_ast.append(SNilSymbol(parent=parentSymbol))
+								_ast.append(SNilSymbol(parentSymbol))
+							case SType.tSymbol if symbol.value in ['T', 't']:
+								_ast.append(STSymbol(parentSymbol))
 							case _:
 								if (_str := cast(str, symbol.value)).startswith('\''):
 									_ast.append(SSymbolQuoteSymbol(_str, parentSymbol))

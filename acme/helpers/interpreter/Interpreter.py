@@ -23,7 +23,7 @@ from copy import deepcopy
 from ..TextTools import removeCommentsFromJSON, findXPath, setXPath
 
 from .Types import SSymbol, SBooleanSymbol, SNumberSymbol, SStringSymbol, SSymbolSymbol, \
-	SListSymbol, SListQuoteSymbol, SLambdaSymbol, SJsonSymbol, SNilSymbol, \
+	SListSymbol, SListQuoteSymbol, SLambdaSymbol, SJsonSymbol, SNilSymbol, STSymbol, \
 	SSymbolsList, PState, SType, PError, FunctionDefinition, PSymbolDict
 from .Exceptions import PAssertionFailed, PTimeoutError, PInvalidArgumentError, PUndefinedError, \
 	PReturnFrom, PQuitRegular, PQuitWithError, PInvalidTypeError, PDivisionByZeroError, \
@@ -189,15 +189,23 @@ def executeExpression(pcontext:PContext, symbol:SSymbol) -> PContext:
 	pcontext.logSymbol(symbol)
 	
 	# First resolve the S-Expression
-	if not symbol.length and symbol.type != SType.tString:
-		return pcontext.setResult(SNilSymbol(symbol))
+	match symbol.type:	# Check for zero-length symbols
+		case SType.tString:
+			pass
+		case SType.tNIL:
+			return pcontext.setResult(SNilSymbol(symbol))
+		case SType.tT:
+			return pcontext.setResult(STSymbol(symbol))
+		case _ if not symbol.length:
+			return pcontext.setResult(SNilSymbol(symbol))
+		
 	firstSymbol = symbol[0] if symbol.length and symbol.type == SType.tList else symbol
 
 	match firstSymbol.type:
 		case SType.tString:
 			return evaluateInlineExpressions(pcontext, firstSymbol)	# Evaluate inline expressions in strings
 	
-		case SType.tNumber | SType.tBool | SType.tNIL:
+		case SType.tNumber | SType.tBool | SType.tNIL | SType.tT:
 			return pcontext.setResult(firstSymbol)	# type:ignore [arg-type]
 	
 		case SType.tJson:
@@ -1513,7 +1521,7 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	assertSymbol(pcontext, symbol, minLength=3)
 
-	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString))
 	if isinstance(_e, (list, str)):
 		_e = len(_e) > 0
 
@@ -2035,7 +2043,7 @@ def _doNot(pcontext:PContext, symbol:SSymbol) -> PContext:
 		Example:
 			::
 
-				(not tru) -> false
+				(not true) -> false
 
 		Args:
 			pcontext: `PContext` object of the running script.
@@ -2045,8 +2053,14 @@ def _doNot(pcontext:PContext, symbol:SSymbol) -> PContext:
 			The updated `PContext` object with the function result.
 	"""
 	assertSymbol(pcontext, symbol, maxLength=2)
-	pcontext, _v = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL))
-	return pcontext.setResult(SBooleanSymbol(not _v, symbol))
+	pcontext, _v = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT))
+	match pcontext.result.type:
+		case SType.tNIL:
+			return pcontext.setResult(STSymbol(symbol))
+		case SType.tT:
+			return pcontext.setResult(SNilSymbol(symbol))
+		case _:
+			return pcontext.setResult(SBooleanSymbol(not _v, symbol))
 
 
 def _doNth(pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -2137,28 +2151,36 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 			# Get the second operant
 			r2 = executeExpression(pcontext, symbol[i]).result
 			
-			# If the first operant is a list, then we have to perform a bit different
-			if r1.type in (SType.tList, SType.tListQuote):
-
-				# If both operants are list then do a raw comparison
-				if r2.type in (SType.tList, SType.tListQuote):
-					r1.value = op(r1.raw(), r2.raw())
+			match r1.type:
 				
-				# If the second operant is NOT a list, then iterate of the first and do the
-				# operation. If any succeeds, then the operation is true.
-				# This is only possible for boolean operations
-				else:
-					if tp != SType.tBool:
-						raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators:\n{symbol.printHierarchy()}'))
-					_v1 = None
-					for s in cast(list, r1.value):
-						if _v1 := op(s.value, r2.value):	# True if any
-							break
-					r1.value = _v1
+				# If the first operant is a list, then we have to perform a bit different
+				case SType.tList | SType.tListQuote:
+
+					# If both operants are list then do a raw comparison
+					if r2.type in (SType.tList, SType.tListQuote):
+						r1.value = op(r1.raw(), r2.raw())
+					
+					# If the second operant is NOT a list, then iterate of the first and do the
+					# operation. If any succeeds, then the operation is true.
+					# This is only possible for boolean operations
+					else:
+						if tp != SType.tBool:
+							raise PInvalidTypeError(pcontext.setError(PError.invalidType, f'if the first operant is a list then iterating over it is only allowed for boolean operators:\n{symbol.printHierarchy()}'))
+						_v1 = None
+						for s in cast(list, r1.value):
+							if _v1 := op(s.value, r2.value):	# True if any
+								break
+						r1.value = _v1
+				
+				case SType.tNIL | SType.tT:
+					if r2.type not in (SType.tNIL, SType.tT):
+						raise InvalidOperation()
+					r1.value = op(r1.value, r2.value)
 			
-			# Otherwise just apply the operator
-			else:
-				r1.value = op(r1.value, r2.value)
+				# Otherwise just apply the operator
+				case _:
+					r1.value = op(r1.value, r2.value)
+
 		except ZeroDivisionError as e:
 			raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, f'{str(e)}\n{symbol.printHierarchy()}'))
 		except TypeError as e:
@@ -2168,7 +2190,11 @@ def _doOperation(pcontext:PContext, symbol:SSymbol, op:Callable, tp:SType) -> PC
 				raise PDivisionByZeroError(pcontext.setError(PError.divisionByZero, str(e)))
 			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'invalid arguments in expression: {str(e)}\n{symbol.printHierarchy()}'))
 
-	r1.type = tp
+	if r1.type in (SType.tNIL, SType.tT):
+		# If the result is nil or t, then we return a boolean symbol
+		r1 = SBooleanSymbol(cast(bool, r1.value), symbol)
+	else:
+		r1.type = tp
 	return pcontext.setResult(r1)
 
 
@@ -2964,7 +2990,7 @@ def _doWhile(pcontext:PContext, symbol:SSymbol) -> PContext:
 	while True:
 		
 		# evaluate while expression
-		pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tList, SType.tListQuote, SType.tString))
+		pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString))
 		if isinstance(_e, (list, str)):
 			_e = len(_e) > 0
 		if not _e:

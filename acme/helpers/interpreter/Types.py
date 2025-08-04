@@ -22,29 +22,33 @@ from enum import IntEnum, auto
 class SType(IntEnum):
 	"""	Type definitions for supported interpreter types. """
 
-	tNIL 			= auto()
+	tNIL = auto()
 	"""	NIL data type. """
-	tString	 		= auto()
+	tT = auto()
+	"""	True (ie. not nil) data type. """
+	tFalse = auto()
+	"""	False data type. """
+	tString	= auto()
 	"""	String data type. """
-	tSymbol 		= auto()
+	tSymbol = auto()
 	"""	Symbol data type. """
-	tSymbolQuote	= auto()
+	tSymbolQuote = auto()
 	"""	Quoted data type. It is not executed. """
-	tNumber			= auto()
+	tNumber	= auto()
 	"""	Number data type (integer or float). """
-	tBool			= auto()
+	tBool = auto()
 	"""	Boolean data type. """
-	tList			= auto()
+	tList = auto()
 	"""	List of `SSymbol`'s data type. """
-	tListQuote		= auto()
+	tListQuote = auto()
 	"""	List of `SSymbol`'s data type. It it not executed. """
-	tLambda			= auto()
+	tLambda = auto()
 	"""	Lambda expression data type. """
-	tJson			= auto()
+	tJson = auto()
 	"""	JSON / dictionary data type. """
-	tListBegin		= auto()
+	tListBegin = auto()
 	"""	Beginning of a list. Internally used only. """
-	tListEnd 		= auto()
+	tListEnd = auto()
 	"""	Ending of a list. Internally used only. """
 
 	def __str__(self) -> str:
@@ -533,6 +537,28 @@ class SNilSymbol(SSymbol):
 				A string representation of the value.
 		"""
 		return 'nil'
+
+
+class STSymbol(SSymbol):
+	
+	def __init__(self, parent:Optional[SSymbol]=None) -> None:
+		super().__init__(SType.tT, parent=parent)
+		self.value = not None
+		self.length = 0
+
+
+	def toString(self, quoteStrings:bool=False, pythonList:bool=False) -> str:
+		"""	Return a string representation of the value.
+
+			Args:
+				quoteStrings: Quote strings.
+				pythonList: Return a Python list representation.
+
+			Return:
+				A string representation of the value.
+		"""
+		return 'T'
+
 
 
 class PState(IntEnum):
