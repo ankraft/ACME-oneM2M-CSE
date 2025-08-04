@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
 
 from pathlib import Path
-import json, os, fnmatch, traceback
+import json, os, fnmatch, traceback, shlex
 import requests, webbrowser
 from decimal import Decimal
 from rich.text import Text
@@ -101,13 +101,13 @@ class ACMEPContext(PContext):
 
 	def __init__(self, 
 				 script:str, 
-				 preFunc:Optional[PFuncCallable] = None,
-				 postFunc:Optional[PFuncCallable] = None, 
-				 errorFunc:Optional[PFuncCallable] = None,
-				 filename:Optional[str] = None,
-				 fallbackFunc:PSymbolCallable = None,
-				 monitorFunc:PSymbolCallable = None,
-				 allowBrackets:bool = False) -> None:
+				 preFunc:Optional[PFuncCallable]=None,
+				 postFunc:Optional[PFuncCallable]=None, 
+				 errorFunc:Optional[PFuncCallable]=None,
+				 filename:Optional[str]=None,
+				 fallbackFunc:PSymbolCallable=None,
+				 monitorFunc:PSymbolCallable=None,
+				 allowBrackets:bool=False) -> None:
 		"""	Initializer for the context class.
 
 			Args:
@@ -134,7 +134,7 @@ class ACMEPContext(PContext):
 							'has-storage':				self.doHasStorage,
 							'http':						self.doHttp,
 							'import-raw':				self.doImportRaw,
-							'include-script':			lambda p, a: self.doRunScript(p, a, isInclude = True),
+							'include-script':			lambda p, a: self.doRunScript(p, a, isInclude=True),
 							'log-divider':				self.doLogDivider,
 							'open-web-browser':			self.doOpenWebBrowser,
 							'ping-tcp-service':			self.doPingTcpService,
@@ -1174,7 +1174,7 @@ class ACMEPContext(PContext):
 
 		# run script
 		script = scripts[0]
-		if not CSE.script.runScript(script, arguments = arguments, background = False):
+		if not CSE.script.runScript(script, arguments=arguments, background=False):
 			raise PRuntimeError(pcontext.setError(PError.runtime, f'Error in running script: {script.scriptName}: {script.error.message}'))
 		
 		if isInclude:
@@ -1973,10 +1973,10 @@ class ScriptManager(object):
 
 
 	def runScript(self, pcontext:PContext, 
-						arguments:Optional[list[str]|str] = '', 
-						background:Optional[bool] = False, 
-						finished:Optional[Callable] = None,
-						environment:Optional[dict[str, SSymbol]] = {}) -> bool:
+						arguments:Optional[list[str]|str]='', 
+						background:Optional[bool]=False, 
+						finished:Optional[Callable]=None,
+						environment:Optional[dict[str, SSymbol]]={}) -> bool:
 		""" Run a script.
 
 			Args:
@@ -2034,7 +2034,7 @@ class ScriptManager(object):
 			# Handle arguments
 			_arguments:Optional[list[str]] = []
 			if arguments:
-				_arguments = cast(str, arguments).split() if isinstance(arguments, str) else arguments
+				_arguments = shlex.split(cast(str, arguments)) if isinstance(arguments, str) else arguments
 			_arguments.insert(0, pcontext.scriptName)
 
 			# Run in background or direct

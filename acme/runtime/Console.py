@@ -914,14 +914,14 @@ function createResource() {{
 				L.console(f'Script {name} not found', isError = True, nlb = True)
 				L.on()
 				return
-			argument = L.consolePrompt('Arguments', default = self.previousArgument)
+			argument = L.consolePrompt('Arguments', default=self.previousArgument)
 			self.previousArgument = argument
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			try:
-				CSE.script.runScript(pcontext, arguments = argument, background = True, finished = finished)
+				CSE.script.runScript(pcontext, arguments=argument, background=True, finished=finished)
 			except Exception as e:
-				L.logErr(f'Exception during script execution: {str(e)}', exc = e)
+				L.logErr(f'Exception during script execution: {str(e)}', exc=e)
 
 		L.on()
 
