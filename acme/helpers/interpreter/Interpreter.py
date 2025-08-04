@@ -776,6 +776,28 @@ def _doAssert(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext
 
 
+def _doB64Decode(pcontext:PContext, symbol:SSymbol) -> PContext:
+	"""	Base64-decode a string.
+
+		Example:
+			::
+
+				(base64-decode "SGVsbG8gV29ybGQ=") -> "Hello, World"
+
+		Args:
+			pcontext: Current `PContext` for the script.
+			symbol: The symbol to execute.
+
+		Return:
+			The updated `PContext` object. The result includes the decoded string.
+	"""
+	assertSymbol(pcontext, symbol, 2)
+
+	# get string
+	pcontext, value = valueFromArgument(pcontext, symbol, 1, SType.tString)
+	return pcontext.setResult(SStringSymbol(base64.b64decode(value.encode('utf-8')).decode('utf-8'), symbol))
+
+
 def _doB64Encode(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""	Base64-encode a string.
 
@@ -3069,6 +3091,7 @@ builtinFunctions:PSymbolDict = {
 	'any':					_doAny,
 	'argv':					_doArgv,
 	'assert':				_doAssert,
+	'base64-decode':		_doB64Decode,
 	'base64-encode':		_doB64Encode,
 	'block':				_doBlock,
 	'car':					_doCar,
