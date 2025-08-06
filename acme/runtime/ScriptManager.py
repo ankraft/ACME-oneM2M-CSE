@@ -1360,7 +1360,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result. 
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.shutdown()
+		Mgmt.shutdownCSE()
 		return pcontext.setResult(SNilSymbol(symbol))
 
 
