@@ -23,7 +23,7 @@ class Constants(object):
 	logoColor = '#b42025'
 	"""	oneM2M logo colour """
 	
-	textLogo = f'[dim][[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
+	textLogo = f'[dim]\[[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
 
 	copyright = '(c) 2025 by Andreas Kraft'
