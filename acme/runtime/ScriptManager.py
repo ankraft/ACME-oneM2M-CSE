@@ -152,6 +152,7 @@ class ACMEPContext(PContext):
 							'set-config':				self.doSetConfig,
 							'set-console-logging':		self.doSetLogging,
 							'schedule-next-script':		self.doScheduleNextScript,
+							'shutdown-cse':				self.doShutDown,
 							'tui-confirm':				self.doTuiConfirm,
 							'tui-notify':				self.doTuiNotify,
 							'tui-refresh-resources':	self.doTuiRefreshResources,
@@ -1318,54 +1319,76 @@ class ACMEPContext(PContext):
 		return pcontext.setResult(SNilSymbol(symbol))
 
 
-	def doTuiConfirm(self, pcontext:PContext, symbol:SSymbol) -> PContext:
-		"""	Show a TUI confirmation dialog.
+	def doShutDown(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Shut down the CSE. This will stop the CSE and all running services.
 
-			This function is only available in TUI mode. It has the following arguments.
+			This function returns normally, but the CSE will start to shut down after
+			returning. The script will be stopped at any time after this function returns.
 
-				- text: The text to show in the confirmation dialog.
-				- title: The title of the confirmation dialog.
-				- confirmButtonText: (Optional) The text for the confirm button. Default: "OK".
-				- cancelButtonText: (Optional) The text for the cancel button. Default: "Cancel".
-
-			The function returns a boolean value indicating whether the user confirmed or cancelled the dialog, or
-			NIL if the dialog was closed without a selection.
-
-			Example:
+						Example:
 				::
 
-					(tui-confirm "Do you want to continue?" "Confirmation") -> true
+					(shutdown-cse) -> nil
 
 			Args:
 				pcontext: `PContext` object of the running script.
 				symbol: The symbol to execute.
 
 			Return:
-				The updated `PContext` object with the operation result.
+				The updated `PContext` object with the operation result. 
 		"""
-		assertSymbol(pcontext, symbol, minLength=2, maxLength=5)
+		assertSymbol(pcontext, symbol, 1)
+		CSE.shutdown()
+		return pcontext.setResult(SNilSymbol(symbol))
 
-		# Text
-		pcontext, text = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
-		# Title
-		pcontext, title = valueFromArgument(pcontext, symbol, 2, SType.tString)
+	def doTuiConfirm(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+			"""	Show a TUI confirmation dialog.
 
-		# Confirm button text
-		pcontext, confirmButtonText = valueFromArgument(pcontext, symbol, 3, SType.tString, optional=True, default='OK')
+				This function is only available in TUI mode. It has the following arguments.
 
-		# Cancel button text
-		pcontext, cancelButtonText = valueFromArgument(pcontext, symbol, 4, SType.tString, optional=True, default='Cancel')
+					- text: The text to show in the confirmation dialog.
+					- title: The title of the confirmation dialog.
+					- confirmButtonText: (Optional) The text for the confirm button. Default: "OK".
+					- cancelButtonText: (Optional) The text for the cancel button. Default: "Cancel".
 
-		# show the confirmation dialog
-		result = CSE.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText)
+				The function returns a boolean value indicating whether the user confirmed or cancelled the dialog, or
+				NIL if the dialog was closed without a selection.
 
-		if result is None:
-			# User cancelled the confirmation, neither confirm nor cancel was pressed
-			return pcontext.setResult(SNilSymbol(symbol))
+				Example:
+					::
 
-		return pcontext.setResult(SBooleanSymbol(result, symbol))
+						(tui-confirm "Do you want to continue?" "Confirmation") -> true
 
+				Args:
+					pcontext: `PContext` object of the running script.
+					symbol: The symbol to execute.
+
+				Return:
+					The updated `PContext` object with the operation result.
+			"""
+			assertSymbol(pcontext, symbol, minLength=2, maxLength=5)
+
+			# Text
+			pcontext, text = valueFromArgument(pcontext, symbol, 1, SType.tString)
+
+			# Title
+			pcontext, title = valueFromArgument(pcontext, symbol, 2, SType.tString)
+
+			# Confirm button text
+			pcontext, confirmButtonText = valueFromArgument(pcontext, symbol, 3, SType.tString, optional=True, default='OK')
+
+			# Cancel button text
+			pcontext, cancelButtonText = valueFromArgument(pcontext, symbol, 4, SType.tString, optional=True, default='Cancel')
+
+			# show the confirmation dialog
+			result = CSE.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText)
+
+			if result is None:
+				# User cancelled the confirmation, neither confirm nor cancel was pressed
+				return pcontext.setResult(SNilSymbol(symbol))
+
+			return pcontext.setResult(SBooleanSymbol(result, symbol))
 
 
 	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
