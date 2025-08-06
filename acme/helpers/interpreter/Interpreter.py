@@ -470,7 +470,8 @@ def valueFromArgument(pcontext:PContext,
 					  idx:Optional[int]=None, 
 					  expectedType:Optional[SType|Tuple[SType, ...]]=None, 
 					  doEval:Optional[bool]=True,
-					  optional:Optional[bool]=False) -> Tuple[PContext, Any]:
+					  optional:Optional[bool]=False,
+					  default:Optional[Any]=None) -> Tuple[PContext, Any]:
 	"""	Return the actual value from an argument symbol.
 		
 		Args:
@@ -480,6 +481,7 @@ def valueFromArgument(pcontext:PContext,
 			expectedType: one or multiple data types that are allowed for the retrieved argument symbol.
 			doEval: Optionally recursively evaluate the symbol.
 			optional: Allow the argument to be optional.
+			default: Optional default value to return if the argument is not found or is None.
 		
 		Return:
 			Result tuple of the updated `PContext` object with the result and the value.
@@ -488,6 +490,9 @@ def valueFromArgument(pcontext:PContext,
 		p, r = resultFromArgument(pcontext, symbol, idx, expectedType, doEval, optional)
 		return (p, r.value)
 	elif optional:
+		if default is not None:
+			pcontext.result = default
+			return (pcontext, default)
 		return (pcontext, None)
 	raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid argument index: {idx} for expression:\n{symbol.printHierarchy()}'))
 		
