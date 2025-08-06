@@ -10,8 +10,8 @@
 @onKey CTRL_R
 @category CSE Operation
 
-(print nl)
-(print "[dodger_blue2]Refreshing Registrations to Registrars")
+(clear-console)
+(print "[dodger_blue2]Refreshing Registrations to Registrars[/]")
 
 (if (runs-in-tui)
   (if (tui-confirm "Do you want to refresh the registrations to the registrars?" "CSE Registration Refresh" "Refresh" )
