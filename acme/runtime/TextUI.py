@@ -180,6 +180,26 @@ class TextUI(object):
 			self.tuiApp.scriptClearConsole(scriptName)
 	
 
+	def scriptShowConfirmation(self, msg:str, 
+									 title:str, 
+									 confirmButtonText:Optional[str]='Confirm', 
+									 cancelButtonText:Optional[str]='Cancel') -> Optional[bool]:
+		"""	Show a confirmation dialog.
+
+			Args:
+				msg: Message to show.
+				title: Title of the dialog.
+				confirmButtonText: Text for the confirm button.
+				cancelButtonText: Text for the cancel button.
+
+			Returns:
+				True if the user confirmed, False if the user cancelled, None if TUI is not available.
+		"""
+		if self.tuiApp:
+			return self.tuiApp.showConfirmation(msg, title, confirmButtonText, cancelButtonText)
+		return None
+	
+
 	def scriptShowNotification(self, msg:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:
 		"""	Show a notification.
 

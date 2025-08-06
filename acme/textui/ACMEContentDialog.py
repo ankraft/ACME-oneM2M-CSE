@@ -25,7 +25,7 @@ class ACMEContentDialog(ModalScreen):
 			 	('escape', "dismiss", "Dismiss")]
 	"""	Key bindings for the dialog. """
 	
-	def __init__(self, content:str, title:Optional[str] = '', buttonEnabled:Optional[bool] = True) -> None:
+	def __init__(self, content:str, title:Optional[str]='', buttonEnabled:Optional[bool]=True) -> None:
 		"""	Initialize the dialog.
 
 			Args:
@@ -58,9 +58,9 @@ class ACMEContentDialog(ModalScreen):
 				The dialog content.
 		"""
 		content = Vertical(
-			ScrollableContainer(Label(Syntax(self.content, 'shell', theme = self._app.syntaxTheme)), id = 'dialog-content'),
-			Center(self.button, id = 'dialog-button'),
-			id='dialog-area'		
+			ScrollableContainer(Label(Syntax(self.content, 'shell', theme=self._app.syntaxTheme)), id='dialog-content'),
+			Center(self.button, id='dialog-button'),
+			id='dialog-area'
 		)
 		content.border_title = self.borderTitle
 		yield content
