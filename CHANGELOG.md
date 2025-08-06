@@ -25,7 +25,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added onboarding support for Service Provider registrations and storing the config settings in a Zookeeper service.
 - [SCRIPTS] Added "T" symbol to the script interpreter.
 - [SCRIPTS] Spaces in script arguments are now preserved when passing them in double quotes to the script interpreter.
-- [SCRIPTS] Adding *base64-decode* function to the script interpreter.
+- [SCRIPTS] Added *base64-decode*, *shutdown-cse*, *refresh-registrations* and *tui-confirm* functions to the script interpreter.
 - [MISC] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
 

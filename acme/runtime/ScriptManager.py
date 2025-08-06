@@ -27,6 +27,7 @@ from ..etc.ACMEUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
+from ..runtime import Management as Mgmt
 
 from ..helpers.interpreter.Interpreter import assertSymbol, valueFromArgument, resultFromArgument, getArgument
 from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
@@ -141,6 +142,7 @@ class ACMEPContext(PContext):
 							'print-json':				self.doPrintJSON,
 							'put-storage':				self.doPutStorage,
 							'query-resource':			self.doQueryResource,
+							'refresh-registrations':	self.doRefreshRegistrations,
 							'remove-storage':			self.doRemoveStorage,
 							'reset-cse':				self.doReset,
 							'retrieve-resource':		self.doRetrieveResource,
@@ -974,6 +976,26 @@ class ACMEPContext(PContext):
 		pcontext, _json = valueFromArgument(pcontext, symbol, 2, SType.tJson)
 
 		return pcontext.setResult(SBooleanSymbol(CSE.script.runComparisonQuery(_query, _json), symbol))
+
+
+	def doRefreshRegistrations(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Check and refresh the registrations to the registrars.
+
+			Example:
+				::
+
+					(refresh-registrations)
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+		"""
+		assertSymbol(pcontext, symbol, 1)
+		Mgmt.refreshRegistrations()
+		return pcontext.setResult(SNilSymbol(symbol))
 
 
 	def doRemoveStorage(self, pcontext:PContext, symbol:SSymbol) -> PContext:
