@@ -935,7 +935,7 @@ class Configuration(object):
 		attributeNames = [ k for k,v in getmembers(Configuration, isprop) if not k.startswith('_') ]
 		result = {}
 		for k in attributeNames:
-			attr = deepcopy(getattr(Configuration, k))
+			attr = getattr(Configuration, k)
 			match attr:
 				case pathlib.Path():
 					# Convert pathlib.Path to string
@@ -949,6 +949,7 @@ class Configuration(object):
 
 			# Replace underscores with dots in the key names
 			result[k.replace('_', '.')] = attr
+		result = deepcopy(result)	# make sure that the result is a deep copy of the configuration
 		return result
 
 
