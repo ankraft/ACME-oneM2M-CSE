@@ -152,6 +152,7 @@ class ACMEPContext(PContext):
 							'set-config':				self.doSetConfig,
 							'set-console-logging':		self.doSetLogging,
 							'schedule-next-script':		self.doScheduleNextScript,
+							'shutdown-cse':				self.doShutDown,
 							'tui-notify':				self.doTuiNotify,
 							'tui-refresh-resources':	self.doTuiRefreshResources,
 							'tui-visual-bell':			self.doTuiVisualBell,
@@ -1316,6 +1317,28 @@ class ACMEPContext(PContext):
 		L.enableScreenLogging = cast(bool, value)
 		return pcontext.setResult(SNilSymbol(symbol))
 
+
+	def doShutDown(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Shut down the CSE. This will stop the CSE and all running services.
+
+			This function returns normally, but the CSE will start to shut down after
+			returning. The script will be stopped at any time after this function returns.
+
+						Example:
+				::
+
+					(shutdown-cse) -> nil
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result. 
+		"""
+		assertSymbol(pcontext, symbol, 1)
+		CSE.shutdown()
+		return pcontext.setResult(SNilSymbol(symbol))
 
 	def doTuiNotify(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Show a TUI notification.
