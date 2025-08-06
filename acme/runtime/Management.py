@@ -59,6 +59,18 @@ def getLoglevel() -> str:
 	return L.logLevel.name
 
 
+def refreshRegistrations() -> str:
+	""" Force the CSE to immediately check the registrations with the remote registrar(s).
+
+		This is useful for testing purposes, e.g. when the CSE is started and the registration is not done automatically.
+		
+		Returns:
+			A message indicating the result of the registration.
+	"""
+	CSE.remote.checkConnectionsNow()
+	return "Registration(s) refresh triggered."
+
+
 def getRegistrations() -> str:
 	"""Get the current registration status of the CSE as a JSON string.
 
@@ -320,12 +332,12 @@ def setRequestRecording(param:str) -> str:
 			The new status of the request recording.
 	"""
 	match param.lower():
-		case 'enable':
+		case 'enable' | 'on':
 			L.isInfo and L.log('Enabling request recording')
 			Configuration.cse_operation_requests_enable = True
 			CSE.request.enableRequestRecording = True
 			return 'Request recording enabled'
-		case 'disable':
+		case 'disable' | 'off':
 			L.isInfo and L.log('Disabling request recording')
 			Configuration.cse_operation_requests_enable = False
 			CSE.request.enableRequestRecording = False

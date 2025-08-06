@@ -102,9 +102,19 @@ class RemoteCSEManager(object):
 	def restart(self) -> None:
 		"""	Restart the remote service monitor.
 		"""
+		self.checkConnectionsNow()	# Force the connection monitor to check the connections now
+		L.isDebug and L.logDebug('RemoteManager restarted')
+
+
+
+	def checkConnectionsNow(self) -> None:
+		"""	Force the connection monitor to check the connections now.
+
+			This is useful for testing purposes or when the CSE is started and the connection monitor
+			should be run immediately.
+		"""
 		if self.connectionMonitor:
 			self.connectionMonitor.workNow()
-		L.isDebug and L.logDebug('RemoteManager restarted')
 
 
 	def _assignConfig(self) -> None:

@@ -532,24 +532,61 @@ class HttpServer(object):
 					if param is None: # No parameter given, return the current log level
 						return Response(response=Mgmt.getLoglevel(), headers=self._responseHeaders)
 					else: # A parameter is given, try to set the log level
-						if (_n := Mgmt.setLogLevel(param)):
-							L.isInfo and L.log(f'Management request: loglevel set to {_n}')
-							return Response(response=f'Log level set to {_n}', headers=self._responseHeaders)
-						else:
-							L.isWarn and L.logWarn(f'Unknown log level: {param}')
-							return Response(response=f'Unknown log level: {param}.\nValid log levels are: {list(LogLevel.__members__.keys())}', 
-					   						status=422, 
-											headers=self._responseHeaders)
-				
+						match param.lower():
+							case 'info' | 'debug' | 'warning' | 'error' | 'off':
+								_n = Mgmt.setLogLevel(param)
+								return Response(response=f'Log level set to {_n}', headers=self._responseHeaders)
+							case _:
+								return Response(response=f'Unknown log level: {param}.\nValid log levels are: {list(LogLevel.__members__.keys())}', 
+												status=422, 
+												headers=self._responseHeaders)
+
 				case 'registrations':
-					return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self._responseHeaders)
-				
+					if param is None:
+						return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self._responseHeaders)
+					else:
+						match param.lower():
+							case 'refresh':
+								return Response(response=Mgmt.refreshRegistrations(), headers=self._responseHeaders)
+							case 'help':
+								return Response(response='''ACME oneM2M CSE Management Registrations Commands
+						
+(no command)  Get the current registrations
+refresh       Refresh the registrations
+help          Show this help message
+''',
+									status=200,
+									headers=self._responseHeaders)
+							case _:
+								L.isWarn and L.logWarn(f'Unknown management registrations command: {param}')
+								return Response(response=f'Unknown management registrations command: {param}.\nUse "registrations/help" for a list of commands.', 
+												status=422, 
+												headers=self._responseHeaders)
+
 				case 'requests':
 					if param is None:
 						return Response(response=Mgmt.getRequests(), mimetype='application/json', headers=self._responseHeaders)
 					else:
-						return Response(response=Mgmt.setRequestRecording(param), headers=self._responseHeaders)
-
+						match param.lower():
+							case 'enable' | 'on' | 'disable' | 'off' | 'status':
+								return Response(response=Mgmt.setRequestRecording(param), headers=self._responseHeaders)
+							case 'help':
+								return Response(response='''ACME oneM2M CSE Management Requests Commands
+						
+(no command)  Stream the current requests
+enable        Enable request recording
+disable       Disable request recording
+status        Get the current request recording status
+''',
+									status=200,
+									headers=self._responseHeaders)
+							case _:
+								L.isWarn and L.logWarn(f'Unknown management requests command: {param}')
+								return Response(response=f'Unknown management requests command: {param}.\nUse "requests/help" for a list of commands.', 
+												status=422, 
+												headers=self._responseHeaders)
+						
+						
 				case 'reset':
 					Mgmt.resetCSE()
 					return Response(response='CSE resetting', headers=self._responseHeaders)
@@ -567,14 +604,15 @@ class HttpServer(object):
 
 				case 'help':
 					return Response(response='''ACME oneM2M CSE Management Commands
-					
+
 config         Get the current configuration
 log            Stream the live log output
-loglevel       Get or set the log level (info, debug, warn, error, off)
-registrations  Get the current registrations
+loglevel       Get or set the log level (.../{info|debug|warning|error|off})
+registrations  Get or refresh the registrations (.../refresh)
+requests       Get or set the request recording (.../{on|off|status})
 reset          Reset the CSE
-restart        Shutdown the CSE to restart it (exit code 82)
-shutdown       Shutdown the CSE normally (exit code 0)
+restart        Shutdown the CSE with exit code 82 (indicating a restart)
+shutdown       Shutdown the CSE normally (with exit code 0)
 status         Get the current CSE status
 help           Show this help message
 ''',
