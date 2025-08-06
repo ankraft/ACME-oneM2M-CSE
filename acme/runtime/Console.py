@@ -285,6 +285,7 @@ class Console(object):
 			('l', 'Toggle screen logging on/off'),
 			('L', 'Toggle through log levels'),
 			('r', 'Show CSE registrations'),
+			('R', 'Run script'),
 			('s', 'Show statistics'),
 			('^S', 'Show & refresh statistics continuously'),
 			('t', 'Show resource tree'),
