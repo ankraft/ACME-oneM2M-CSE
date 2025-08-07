@@ -145,6 +145,7 @@ class ACMEPContext(PContext):
 							'refresh-registrations':	self.doRefreshRegistrations,
 							'remove-storage':			self.doRemoveStorage,
 							'reset-cse':				self.doReset,
+							'restart-cse':				self.doRestart,
 							'retrieve-resource':		self.doRetrieveResource,
 							'run-script':				self.doRunScript,
 							'runs-in-ipython':			self.doRunsInIPython,
@@ -1053,6 +1054,34 @@ class ACMEPContext(PContext):
 		CSE.resetCSE()
 		return pcontext.setResult(SNilSymbol(symbol))
 	
+
+	def doRestart(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Restart the CSE. This will stop the CSE and all running services.
+
+			This function returns normally, but the CSE will start to shut down after
+			returning. The script will be stopped at any time after this function returns.
+
+			The difference to the `shutdown-cse` function is that this function will
+			quit with a return code of 82, while the `shutdown-cse` function will
+			quit with a return code of 0.
+
+						Example:
+				::
+
+					(restart-cse) -> nil
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result. 
+		"""
+		assertSymbol(pcontext, symbol, 1)
+		Mgmt.restartCSE()
+		return pcontext.setResult(SNilSymbol(symbol))
+
+
 
 	def doRetrieveResource(self, pcontext:PContext, symbol:SSymbol) -> PContext:
 		"""	Execute a RETRIEVE request. 
