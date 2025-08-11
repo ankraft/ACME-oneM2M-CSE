@@ -3,6 +3,12 @@
 #
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
+""" S-Expression parser for the ACME CSE interpreter.
+This parser is used to parse S-Expressions, which are a way to represent data and code
+in a structured format. The parser can handle strings, numbers, symbols, lists, and JSON
+objects. It normalizes input strings, generates an abstract syntax tree (AST), and handles
+various syntax elements such as quotes, escape characters, and nested structures.
+"""
 
 from typing import Optional, cast
 from decimal import Decimal, InvalidOperation

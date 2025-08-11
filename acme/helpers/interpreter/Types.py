@@ -98,7 +98,7 @@ class SSymbol(object):
 
 	def __init__(self, typ:Optional[SType]=None,
 					   parent:Optional[SSymbol]=None) -> None:
-		"""	Initialization of a `SSymbol` object.
+		"""	Initialization of a `SSymbol` object or one of its sub-classes.
 			
 			Only one of the arguments must be passed to the function.
 			If no argument is given, then the symbol becomes a NIL object.
@@ -311,6 +311,8 @@ class SSymbol(object):
 	
 
 class SStringSymbol(SSymbol):
+	"""	A string symbol that can be used to store a string value.
+	"""
 
 	def __init__(self, string:str, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tString, parent=parent)
@@ -334,6 +336,8 @@ class SStringSymbol(SSymbol):
 
 
 class SBooleanSymbol(SSymbol):
+	"""	A boolean symbol that can be either "true" or "false". 
+	"""
 
 	def __init__(self, boolean:bool, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tBool, parent=parent)
@@ -355,6 +359,9 @@ class SBooleanSymbol(SSymbol):
 
 
 class SNumberSymbol(SSymbol):
+	"""	A number symbol that can be either an integer or a float.
+		It is stored as a "Decimal" object for precision.
+	"""
 
 	def __init__(self, number:Decimal, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tNumber, parent=parent)
@@ -363,6 +370,9 @@ class SNumberSymbol(SSymbol):
 
 
 class SSymbolSymbol(SSymbol):
+	"""	A symbol that is not quoted and can be used to store a symbol name.
+		It is used to store a symbol that can be referenced or evaluated later.
+	"""
 
 	def __init__(self, symbol:str, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tSymbol, parent=parent)
@@ -371,6 +381,9 @@ class SSymbolSymbol(SSymbol):
 
 
 class SSymbolQuoteSymbol(SSymbol):
+	"""	A quoted symbol that is not executed.
+		It is used to store a symbol that is not evaluated, but can be referenced later.
+	"""
 	
 	def __init__(self, symbol:str, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tSymbolQuote, parent=parent)
@@ -392,6 +405,9 @@ class SSymbolQuoteSymbol(SSymbol):
 
 
 class SListSymbol(SSymbol):
+	"""	A list of `SSymbol` objects that can be used to store a list of elements.
+		It is used to store a list of symbols, strings, numbers, or other lists.
+	"""
 
 	def __init__(self, lst:Optional[SSymbolsList]=[], parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tList, parent=parent)
@@ -429,6 +445,8 @@ class SListSymbol(SSymbol):
 
 
 class SListQuoteSymbol(SSymbol):
+	"""	A list of quoted elements that is not executed.
+	"""
 
 	def __init__(self, lstQuote:Optional[SSymbolsList]=[], parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tListQuote, parent=parent)
@@ -466,6 +484,9 @@ class SListQuoteSymbol(SSymbol):
 
 
 class SListCharSymbol(SSymbol):
+	"""	A list character symbol that can be either '(' or ')'.
+		It is used to mark the beginning and end of a list in the interpreter.
+	"""
 
 	def __init__(self, listChar:str, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(parent=parent)
@@ -475,6 +496,8 @@ class SListCharSymbol(SSymbol):
 
 
 class SLambdaSymbol(SSymbol):
+	"""	A lambda expression symbol that can be used to store an anonymous function definition.
+	"""
 
 	def __init__(self, lmbda:Tuple[list[str], SSymbol], parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tLambda, parent=parent)
@@ -498,6 +521,8 @@ class SLambdaSymbol(SSymbol):
 
 
 class SJsonSymbol(SSymbol):
+	"""	A JSON symbol that can be used to store dictionaries or lists.
+	"""
 	
 	def __init__(self, jsnString:Optional[str]=None,  jsn:Optional[dict]=None, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tJson, parent=parent)
@@ -519,6 +544,9 @@ class SJsonSymbol(SSymbol):
 
 
 class SNilSymbol(SSymbol):
+	"""	A NIL symbol that is used to represent the absence of a value.
+		It is used to indicate that a variable or symbol has no value.
+	"""
 	
 	def __init__(self, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tNIL, parent=parent)
@@ -540,6 +568,8 @@ class SNilSymbol(SSymbol):
 
 
 class STSymbol(SSymbol):
+	"""	A True symbol that is used to represent the boolean value "true".
+	"""
 	
 	def __init__(self, parent:Optional[SSymbol]=None) -> None:
 		super().__init__(SType.tT, parent=parent)

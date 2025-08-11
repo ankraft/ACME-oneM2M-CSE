@@ -1061,11 +1061,11 @@ class ACMEPContext(PContext):
 			This function returns normally, but the CSE will start to shut down after
 			returning. The script will be stopped at any time after this function returns.
 
-			The difference to the `shutdown-cse` function is that this function will
-			quit with a return code of 82, while the `shutdown-cse` function will
+			The difference to the "shutdown-cse" function is that this function will
+			quit with a return code of 82, while the "shutdown-cse" function will
 			quit with a return code of 0.
 
-						Example:
+			Example:
 				::
 
 					(restart-cse) -> nil
@@ -1376,7 +1376,7 @@ class ACMEPContext(PContext):
 			This function returns normally, but the CSE will start to shut down after
 			returning. The script will be stopped at any time after this function returns.
 
-						Example:
+			Example:
 				::
 
 					(shutdown-cse) -> nil

@@ -8,8 +8,10 @@
 """
 
 from __future__ import annotations
-from typing import cast, Any
+from typing import cast, Any, Optional
 from json import dumps
+from enum import Enum
+
 
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
@@ -19,46 +21,34 @@ from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 
 
-# TODO Add editing of configuration values
+def toDict(obj:Any, keepNone:Optional[bool]=False) -> dict|list|str|int|float|bool:
+	""" Recursively convert a configuration attribute to a dictionary or list representation.
 
-'''
-Generic object to dict converter. Recursively convert.
-Useful for testing and asserting objects with expectation.
-'''
+		Args:
+			obj: The object to convert.
+			keepNone: If True, keep None values in the output.
 
-# def todict(obj:Any, classkey:str=None) -> dict|list:
-from typing import Optional
-from enum import Enum
-def todict(obj:Any, keepNone:Optional[bool]=False) -> dict|list|str|int|float|bool:
+		Returns:
+			A dictionary, list, string, integer, float, or boolean representation of the object.
+
+	"""
 	if isinstance(obj, dict):
 		dct = {}
 		for (k, v) in obj.items():
-			# data[k] = todict(v, classkey)
 			if v is not None or keepNone:
-				r = todict(v, keepNone)
-				# if isinstance(r, (dict, list)) and (len(r) > 0 or keepNone):
+				r = toDict(v, keepNone)
 				if keepNone or \
 				   (isinstance(r, (dict, list, str)) and len(r) > 0):
 					dct[k] = r
 		return dct
 	elif isinstance(obj, Enum):
 		return obj.name
-	# elif hasattr(obj, "_ast"):
-	# 	return todict(obj._ast(), keepNone)
-	# elif hasattr(obj, "__iter__") and not isinstance(obj, str):
-	# 	# return [todict(v, classkey) for v in obj]
-	# 	return [todict(v, keepNone) for v in obj]
 	elif hasattr(obj, "__dict__"):
-		# data = dict([(key, todict(value, keepNone)) 
-		# 			 for key, value in obj.__dict__.items() 
-		# 			 if not callable(value) and not key.startswith('_') and (value is not None or keepNone)])
-		# return data
-		
 		lst = []
 		for key, value in obj.__dict__.items():
 			if callable(value) or key.startswith('_'):
 				continue
-			r = todict(value, keepNone)
+			r = toDict(value, keepNone)
 			if keepNone:
 				lst.append( (key, r) )
 				continue
@@ -71,8 +61,6 @@ def todict(obj:Any, keepNone:Optional[bool]=False) -> dict|list|str|int|float|bo
 				continue
 
 		return dict(lst)
-	# elif isinstance(obj, datetime):
-	# 	return obj.strftime("%Y-%m-%d %H:%M:%S%z")
 	else:
 		return obj
 
@@ -179,7 +167,7 @@ class ACMEConfigurationTree(TextualTree):
 			case list():
 				value = ', '.join(value)
 			case dict():
-				value = dumps(todict(value, False), indent=2)
+				value = dumps(toDict(value, False), indent=2)
 			case _:
 				pass	# Keep value as is
 		

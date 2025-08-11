@@ -49,8 +49,9 @@ class ACMEContentConfirmDialog(SystemModalScreen[bool]):
 
 		# Create the confirm button
 		self.confirmButton = Button(confirmButtonText, variant='success', id='dialog-confirm-button')
-		self.cancelButton = Button(cancelButtonText, variant='primary', id='dialog-cancel-button')
 		"""	The confirm button. """
+		self.cancelButton = Button(cancelButtonText, variant='primary', id='dialog-cancel-button')
+		"""	The cancel button. """
 
 		from .ACMETuiApp import ACMETuiApp
 		self._app = cast(ACMETuiApp, self.app)

@@ -4,6 +4,11 @@
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
+"""	Process context for a single script. 
+	This is the main runtime object for the interpreter.
+
+	To run a script, create a `PContext` object, and call its `run()` method.
+"""
 
 from __future__ import annotations
 

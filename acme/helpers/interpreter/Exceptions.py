@@ -4,6 +4,10 @@
 #	(c) 2023 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
+""" Exceptions for the ACME CSE interpreter.
+These exceptions are used to handle various error conditions
+that can occur during the execution of scripts in the ACME CSE interpreter.
+"""
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
