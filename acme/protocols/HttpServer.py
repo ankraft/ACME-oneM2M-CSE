@@ -83,12 +83,18 @@ class HttpServer(object):
 		'_eventHttpDelete',
 		'_eventResponseReceived',
 	)
+	""" The slots for the HttpServer class to optimize memory usage. """
 
 	def __init__(self) -> None:
+		"""	Initialize the HTTP server.
+			This sets up the Flask application, configures CORS, adds endpoints,
+			and initializes the web UI.
+		"""
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
 		self.flaskApp = Flask(RC.cseCsi)
+		""" The Flask application instance. """
 
 		# Get the configuration settings
 		self._assignConfig()
@@ -97,10 +103,16 @@ class HttpServer(object):
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		self.isStopped = False
-		self.backgroundActor:BackgroundWorker = None
+		""" Whether the HTTP server is stopped. """
 
-		self.serverID = f'ACME {Constants.version}' 	# The server's ID for http response headers
-		self._responseHeaders = {'Server' : self.serverID}	# Additional headers for other requests
+		self.backgroundActor:BackgroundWorker = None
+		""" The background worker for the HTTP server. """
+
+		self.serverID = f'ACME {Constants.version}' 
+		""" The server's ID for HTTP response headers. """
+
+		self._responseHeaders = {'Server' : self.serverID}
+		""" Additional headers for HTTP responses. """
 
 		L.isInfo and L.log(f'Registering http server root at: {Configuration.http_root}')
 		if Configuration.http_security_useTLS:
@@ -120,16 +132,23 @@ class HttpServer(object):
 		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePUT, methods = ['PUT'])
 		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleDELETE, methods = ['DELETE'])
 
+		self.httpActor:Optional[BackgroundWorker] = None
+		""" The background worker for the HTTP server. """
+
+		self.webuiDirectory:Optional[str] = None
+		""" The directory where the web UI is located. """
+
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
-						   defaultRI = RC.cseRi, 
-						   defaultOriginator = RC.cseOriginator, 
-						   root = Configuration.webui_root,
-						   webuiDirectory = self.webuiDirectory,
-						   redirectURL= f'{Configuration.http_address}{Configuration.http_root}' if Configuration.http_root else None,
-						   version = Constants.version,
-						   httpRoot = Configuration.http_root)
+						   defaultRI=RC.cseRi, 
+						   defaultOriginator=RC.cseOriginator, 
+						   root=Configuration.webui_root,
+						   webuiDirectory=self.webuiDirectory,
+						   redirectURL=f'{Configuration.http_address}{Configuration.http_root}' if Configuration.http_root else None,
+						   version=Constants.version,
+						   httpRoot=Configuration.http_root)
+		""" The web UI instance. """
 
 		# Enable the config endpoint
 		if Configuration.http_enableStructureEndpoint:
@@ -165,11 +184,22 @@ class HttpServer(object):
 
 		# Optimize event handling
 		self._eventHttpRetrieve =  CSE.event.httpRetrieve			# type: ignore [attr-defined]
+		""" Event for HTTP retrieve operations. """
+
 		self._eventHttpCreate = CSE.event.httpCreate				# type: ignore [attr-defined]
+		""" Event for HTTP create operations. """
+
 		self._eventHttpNotify =  CSE.event.httpNotify				# type: ignore [attr-defined]
+		""" Event for HTTP notify operations. """
+
 		self._eventHttpUpdate = CSE.event.httpUpdate				# type: ignore [attr-defined]
+		""" Event for HTTP update operations. """
+
 		self._eventHttpDelete = CSE.event.httpDelete				# type: ignore [attr-defined]
+		""" Event for HTTP delete operations. """
+
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
+		""" Event for HTTP response received. """
 
 
 	def _assignConfig(self) -> None:
@@ -243,6 +273,10 @@ class HttpServer(object):
 
 	
 	def _run(self) -> None:
+		"""	Run the http server.
+			This method is run in a separate thread.
+			It starts the Flask application and serves it.
+		"""
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 		# Run the http server. This runs forever.
@@ -289,6 +323,15 @@ class HttpServer(object):
 						  handler:Optional[FlaskHandler]=None, 
 						  methods:Optional[list[str]]=None, 
 						  strictSlashes:Optional[bool]=True) -> None:
+		"""	Add an endpoint to the Flask application.
+
+			Args:
+				endpoint: The endpoint URL.
+				endpoint_name: The name of the endpoint.
+				handler: The handler function for the endpoint.
+				methods: The HTTP methods allowed for this endpoint.
+				strictSlashes: Whether to enforce strict slashes in the URL.
+		"""
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
@@ -352,17 +395,27 @@ class HttpServer(object):
 
 
 	# @perfTimer('handleGet', L.logDebug)
-	def handleGET(self, path:Optional[str] = None) -> Response:
+	def handleGET(self, path:Optional[str]=None) -> Response:
+		"""	Handle a GET request.
+
+			Args:
+				path: The path of the request.
+		"""
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
-			return Response(status = 401)
+			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_R')
 		self._eventHttpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE, authResult)
 
 
-	def handlePOST(self, path:Optional[str] = None) -> Response:
+	def handlePOST(self, path:Optional[str]=None) -> Response:
+		"""	Handle a POST request.
+
+			Args:
+				path: The path of the request.
+		"""
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
-			return Response(status = 401)
+			return Response(status=401)
 		if self._hasContentType():
 			L.enableScreenLogging and renameThread('HT_C')
 			self._eventHttpCreate()
@@ -373,29 +426,42 @@ class HttpServer(object):
 			return self._handleRequest(path, Operation.NOTIFY, authResult)
 
 
-	def handlePUT(self, path:Optional[str] = None) -> Response:
+	def handlePUT(self, path:Optional[str]=None) -> Response:
+		"""	Handle a PUT request.
+
+			Args:
+				path: The path of the request.
+		"""
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
-			return Response(status = 401)
+			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_U')
 		self._eventHttpUpdate()
 		return self._handleRequest(path, Operation.UPDATE, authResult)
 
 
-	def handleDELETE(self, path:Optional[str] = None) -> Response:
+	def handleDELETE(self, path:Optional[str]=None) -> Response:
+		"""	Handle a DELETE request.
+
+			Args:
+				path: The path of the request.
+		"""
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
-			return Response(status = 401)
+			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
-	def handlePATCH(self, path:Optional[str] = None) -> Response:
-		"""	Support instead of DELETE for http/1.0.
+	def handlePATCH(self, path:Optional[str]=None) -> Response:
+		"""	Support PATCH instead of DELETE for http/1.0.
+
+			Args:
+				path: The path of the request.
 		"""
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
-			return Response(status = 401)
+			return Response(status=401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
-			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
+			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status=405)
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE, authResult)
@@ -409,32 +475,41 @@ class HttpServer(object):
 	# Redirect request to / to webui
 	def redirectRoot(self) -> Response:
 		"""	Redirect a request to the webroot to the web UI.
+
+			Return:
+				A redirect response to the web UI root.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status = 503)
-		return flask.redirect(Configuration.webui_root, code = 302)
+			return Response('Service not available', status=503)
+		return flask.redirect(Configuration.webui_root, code=302)
 
 
-	def handleStructure(self, path:Optional[str] = 'puml') -> Response:
+	def handleStructure(self, path:Optional[str]='puml') -> Response:
 		"""	Handle a structure request. Return a description of the CSE's current resource
 			and registrar / registree deployment.
 			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status = 503)
-		lvl = request.args.get('lvl', default = 0, type = int)
+			return Response('Service not available', status=503)
+		lvl = request.args.get('lvl', default=0, type=int)
 		if path == 'puml':
-			return Response(response = CSE.statistics.getStructurePuml(lvl), headers = self._responseHeaders)
+			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
 		if path == 'text':
-			return Response(response = CSE.console.getResourceTreeText(lvl), headers = self._responseHeaders)
-		return Response(response = 'unsupported', status = 422, headers = self._responseHeaders)
+			return Response(response=CSE.console.getResourceTreeText(lvl), headers=self._responseHeaders)
+		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
 	def handleUpperTester(self, path:Optional[str]=None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
+
+			Args:
+				path: The path of the request.
+
+			Return:
+				A response object.
 		"""
 		if self.isStopped:
-			return Response('Service not available', status = 503)
+			return Response('Service not available', status=503)
 
 		# Check, when authentication is enabled, the user is authorized, else return status 401
 		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
@@ -645,6 +720,7 @@ help           Show this help message
 		Operation.DELETE 	: requests.delete,
 		Operation.NOTIFY 	: requests.post
 	}
+	""" A mapping of operations to the corresponding HTTP methods. """
 
 
 	def sendHttpRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
@@ -1077,7 +1153,15 @@ help           Show this help message
 
 
 	_hdrArgument = re.compile(r'^\s*ty\s*=\s*', re.IGNORECASE)
+	"""	Regex to check if the request has a content type that is supported by the CSE."""
+
 	def _hasContentType(self) -> bool:
+		"""	Check if the request has a content type that is supported by the CSE.
+			This is used to determine if the request can be processed.
+			
+			Return:
+				True if the request has a content type that is supported, False otherwise.
+		"""
 		return (ct := request.content_type) is not None and any(re.match(self._hdrArgument, s) is not None for s in ct.split(';'))
 
 
@@ -1089,14 +1173,40 @@ help           Show this help message
 #
 
 class ACMERequestHandler(WSGIRequestHandler):
+	"""	ACMERequestHandler is a custom request handler for the ACME CSE HTTP server.
+		It extends the WSGIRequestHandler to provide custom logging.
+	"""
+
 	# Just like WSGIRequestHandler, but without "- -"
-	def log(self, type, message, *args): # type: ignore
+	def log(self, type:str, message:str, *args:Any) -> None:
+		"""	Log a message with the given type and arguments.
+			This is used to log HTTP requests and responses.
+
+			Args:
+				type: The type of the log message (e.g. "request", "response").
+				message: The log message format string.
+				*args: The values to interpolate into the message format string.
+		"""
 		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: {message % args}')
 
 	# Just like WSGIRequestHandler, but without "code"
-	def log_request(self, code='-', size='-'): 	# type: ignore
+	def log_request(self, code:Optional[str|int]='-', size:Optional[str|int]='-') -> None:
+		"""	Log an HTTP request with the given code and size.
+			This is used to log HTTP requests and responses.
+
+			Args:
+				code: The HTTP status code of the response.
+				size: The size of the response in bytes.
+		"""
 		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
 
-	def log_message(self, format, *args): 	# type: ignore
+	def log_message(self, format:str, *args:Any) -> None:
+		"""	Log a message with the given format and arguments.
+			This is used to log HTTP requests and responses.
+
+			Args:
+				format: The log message format string.
+				*args: The values to interpolate into the message format string.
+		"""
 		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: {format % args}')
 	

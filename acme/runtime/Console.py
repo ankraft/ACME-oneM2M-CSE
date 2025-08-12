@@ -87,9 +87,8 @@ class Console(object):
 
 		'_eventKeyboard',
 		'_exitFromTUI',
-
-		
 	)
+	""" The slots for the Console to optimize memory usage. """
 
 	def __init__(self) -> None:
 		"""	Initialization of a *Console* instance.
@@ -116,7 +115,10 @@ class Console(object):
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 
 		self._eventKeyboard = CSE.event.keyboard			# type: ignore [attr-defined]
+		""" The keyboard event handler. """
+
 		self._exitFromTUI = False
+		""" Indication whether the TUI should exit. """
 
 		L.isInfo and L.log('Console initialized')
 
@@ -246,7 +248,17 @@ class Console(object):
 	
 
 	def _postCommandHandler(self, key:str) -> str:
-		# TODO doc
+		"""	Post command handler for the console.
+
+			This is called after a command has been executed. It checks whether the TUI should exit
+			and returns a special character to indicate that.
+
+			Args:
+				key: The key that was pressed.
+
+			Return:
+				A special character if the TUI should exit, otherwise *None*.
+		"""
 		if self._exitFromTUI:
 			if key in ['Q', FunctionKey.CTRL_C]:
 				return '#'
@@ -312,7 +324,6 @@ class Console(object):
 
 	def about(self, key:str) -> None:
 		"""	Print QR-code for keyboard commands.
-
 
 		Args:
 			key: Input key. Ignored.
@@ -676,7 +687,16 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def doExportResource(self, ri:str, withChildResources:bool = False) -> Tuple[int, str]:
+	def doExportResource(self, ri:str, withChildResources:bool=False) -> Tuple[int, str]:
+		"""	Export a resource and its children to the tmp directory as a shell script with curl commands.
+
+			Args:
+				ri: Resource ID of the resource to export.
+				withChildResources: If *True*, also export child resources.
+
+			Return:
+				Tuple with the number of resources exported, and the filename of the exported file.
+		"""
 		try:
 
 			if withChildResources:
@@ -1784,8 +1804,15 @@ function createResource() {{
 		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
 
 
-	def getRequestsRich(self, id:Optional[str] = None) -> Tuple[Table, str]:
+	def getRequestsRich(self, id:Optional[str]=None) -> Tuple[Table, str]:
+		"""	Generate a Rich table with all requests and a PlantUML sequence diagram.
 
+			Args:
+				id: If set, then only the requests for this resource ID are returned.
+			
+			Return:
+				A tuple with a Rich Table object and a PlantUML sequence diagram string.
+		"""
 
 		table = Table(row_styles = [ '', L.tableRowStyle],  expand = True)
 		table.add_column(_markup('[u]Timestamp[/u]\n'), no_wrap = True)
@@ -1810,7 +1837,7 @@ skinparam BoxPadding 60
 		seqs = ''
 		origPrefix = '<originator>\\n'
 
-		for r in CSE.storage.getRequests(id, sortedByOt = True):
+		for r in CSE.storage.getRequests(id, sortedByOt=True):
 			req = r['req']
 			op = req['op']
 
@@ -1833,16 +1860,16 @@ skinparam BoxPadding 60
 				table.add_row(toISO8601Date(r['ts']), 
 							org,
 							Operation(op).name, 
-							Pretty(req, indent_size = 2),
-							Pretty(r['rsp'], indent_size = 2))
+							Pretty(req, indent_size=2),
+							Pretty(r['rsp'], indent_size=2))
 			else:
 				table.add_row(toISO8601Date(r['ts']), 
 							org,
 							Operation(op).name, 
-							ri, 
-							Pretty(req, indent_size = 2),
-							Pretty(r['rsp'], indent_size = 2))
-			
+							ri,
+							Pretty(req, indent_size=2),
+							Pretty(r['rsp'], indent_size=2))
+
 			if ri not in participants:
 				targets.add(ri)
 			tyn = ResourceTypes(ty).name if ResourceTypes.has(ty) else f'UNKNOWN_TYPE_{ty}'

@@ -85,7 +85,9 @@ class CNT(ContainerResource):
 
 	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
 		super().__init__(dct, create = create)
+		
 		self.__validating = False	# semaphore for validating
+		""" Semaphore to prevent recursive validation of children. """
 
 
 	def initialize(self, pi:str, originator:str) -> None:

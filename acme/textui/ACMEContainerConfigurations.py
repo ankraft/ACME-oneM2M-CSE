@@ -21,6 +21,8 @@ from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 
 
+# TODO Add editing of configuration values
+
 def toDict(obj:Any, keepNone:Optional[bool]=False) -> dict|list|str|int|float|bool:
 	""" Recursively convert a configuration attribute to a dictionary or list representation.
 

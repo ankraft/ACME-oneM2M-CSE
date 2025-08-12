@@ -4,8 +4,8 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Base class for all announceable resources
-#
+""" This module implements the base class for all announceable resources.
+"""
 
 from __future__ import annotations
 from typing import Optional, Tuple, Any
@@ -25,6 +25,8 @@ addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal
 
 
 class AnnounceableResource(Resource):
+	"""	Base class for all announceable resources.
+	"""
 
 	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
 		super().__init__(dct, create = create)
@@ -55,7 +57,15 @@ class AnnounceableResource(Resource):
 					 doValidateAttributes:Optional[bool] = True) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
+		""" Store the original announceableAttributes for later use in the update
+			so that we can check whether they are removed.
+		"""
+
 		self._origAT = self.at
+		""" Store the original at attribute for later use in the update
+			so that we can check whether it is removed.
+		"""
+		
 		super().update(dct, originator, doValidateAttributes)
 
 		# TODO handle update from announced resource. Check originator???

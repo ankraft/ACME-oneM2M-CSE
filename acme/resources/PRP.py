@@ -11,10 +11,11 @@ from __future__ import annotations
 
 from ..resources.Resource import Resource
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes
+from ..etc.Types import AttributePolicyDict, AttributePolicyDictList, ResourceTypes, Cardinality, BasicType
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 
 # TODO annc version
 # TODO add to UML diagram
@@ -75,35 +76,125 @@ class PRP(AnnounceableResource):
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
+		# TODO resourceIDs are not supported yet. Perhaps we should remove this attribute? Problem: How to handle resourceIDs with wildcards.
+
+		additions = self.adds							# listOfAttributes
+		deletions = self.dels							# m2m:attributelist
+		resourceTypes:list[ResourceTypes] = self.rtys	# m2m:resourceTypeList
+
 		# check if attributes in additions are not present in deletions
-		additions = self.adds
-		deletions = self.dels
 		# TODO move to separate function also for Update
 		if additions and deletions:
-			for add in additions:
-				nm = add.get('nm')
+			for attr in additions:
+				nm:str = attr.get('nm')
 				if nm in deletions:
-					raise BAD_REQUEST(L.logWarn(f'Attributes in adds must not be present in dels: {nm}'))
+					raise BAD_REQUEST(L.logDebug(f'Attributes in adds must not be present in dels: {nm}'))
 
-		# Check that certaion attributes are neither present in additions and deletions
+		# Check that certain attributes are neither present in additions and deletions
 		# TODO move to separate function also for Update
 		if additions:
-			for add in additions:
-				nm = add.get('nm')
+			for attr in additions:
+				nm = attr.get('nm')
 				if nm in notAllowedAttributes:
-					raise BAD_REQUEST(L.logWarn(f'Attribute must not be present in adds: {nm}'))
+					raise BAD_REQUEST(L.logDebug(f'Attribute must not be present in adds: {nm}'))
 		if deletions:
 			for del_ in deletions:
 				if del_ in notAllowedAttributes:
-					raise BAD_REQUEST(L.logWarn(f'Attribute must not be present in dels: {del_}'))
+					raise BAD_REQUEST(L.logDebug(f'Attribute must not be present in dels: {del_}'))
 
-		# 3) check that the attributes and values in additions are allowed for the resource(s) referenced by the resourceID attribute
-
+		# Check that the attributes in additions are allowed for the resourceTypes
 		if additions:
-			for add in additions:
-				# check that the attributes and values in additions are allowed for the resource(s) referenced by the resourceID attribute
-				# TODO
-				pass
+
+			# First, sort the attributes in additions into two lists: non-resource attributes and resource attributes
+			for attr in additions:
+				nm = attr.get('nm')
+				val = attr.get('val')
+
+				nonResourceAttributes:AttributePolicyDict = {}
+				resourceAttributes:AttributePolicyDictList = {}
+				if (policyList := CSE.validator.getAttributePoliciesByName(nm)):
+					resourceAttributes[nm] = policyList
+				elif (policy := CSE.validator.getAttributePolicy(ResourceTypes.REQUEST, nm, True)):
+					nonResourceAttributes[nm] = policy
+				elif (policy := CSE.validator.getAttributePolicy(ResourceTypes.RESPONSE, nm, True)):
+					nonResourceAttributes[nm] = policy
+				else:
+					raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} not found or not supported'))
+			
+			# Then check the values of the provided attributes in both lists
+
+			# Non-resource attributes ie. Request and Response attributes
+			for nm, policy in nonResourceAttributes.items():
+				# Check for non-complex type
+				if policy.type == BasicType.complex:
+					raise BAD_REQUEST(L.logDebug(f'Complex attribute not allowed in adds: {nm}'))
+
+				# Check the value and type
+				try:
+					CSE.validator.validateAttribute(nm, val, policy.type)
+				except BAD_REQUEST as e:
+					raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} failed validation: {e.dbg}'))
+
+			# Checks for Resource attributes
+			for nm, policyList in resourceAttributes.items():
+
+				for policy in policyList:	# This could be a list of policies for the same attribute
+					# Check for non-complex type
+					if policy.type == BasicType.complex:
+						raise BAD_REQUEST(L.logDebug(f'Complex attribute not allowed in adds: {nm}'))
+				
+					# TODO check for NP
+
+					# Check the value and type
+					try:
+						CSE.validator.validateAttribute(nm, val, policy.type)
+					except BAD_REQUEST as e:
+						raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} failed validation: {e.dbg}'))
+							
+				if resourceTypes:
+					# Test all entries in the rtys attribute
+					for rtype in resourceTypes:
+						# if the resource type is found in any of the policies, then the attribute is allowed
+						# Otherwise, raise a BAD_REQUEST exception at the end of the loop
+						for policy in policyList:
+							if rtype in policy.rtypes:
+								break
+						else:
+							raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} not allowed for resource type: {rtype}'))
+					
+			
+			# 
+			
+
+			# TODO get a list of resources from the resourceID attribute and check 
+			
+
+			# 	# Check all resource types for this attribute
+			# 	for rtype in resourceTypes:
+			# 		if (policy := CSE.validator.getAttributePolicy(rtype, nm, True)):
+			# 			# The following might raise a BAD_REQUEST exception if the attribute is not allowed for the resource type etc
+			# 			CSE.validator.validateAttribute(nm, val, policy.type, rtype)
+			# 		else:
+			# 			# If the attribute is not a resource attribute, add it to the list of non-resource attributes
+			# 			listOfNonResourceAttributes.append(nm)
+
+			# L.inspect(listOfNonResourceAttributes)
+			# # Now check the non-resource attributes - are they Request
+			# for nonResourceAttr in listOfNonResourceAttributes:
+			# 	if policy := CSE.validator.getAttributePolicy(ResourceTypes.REQUEST, nonResourceAttr):
+			# 		L.inspect(policy)
+			# 		# The following might raise a BAD_REQUEST exception if the attribute is not allowed for the resource type etc
+			# 		CSE.validator.validateAttribute(nm, val, policy.type, ResourceTypes.REQRESP)
+			# 	else:
+			# 		raise BAD_REQUEST(L.logDebug(f'Attribute: {nonResourceAttr} not found in attribute policies'))
+
+				# TODO test with rcn
+	
+				# for del_ in deletions:
+				# 		raise BAD_REQUEST(L.logDebug(f'Attribute: {del_} not allowed for resource type: {rtype}'))
+					# if Cardinality.isMandatory(policy.cardinality)
+					# 	raise BAD_REQUEST(L.logDebug(f'Attribute: {del_} is mandatory for resource type: {rtype}'))
+
 
 		# 4) check that the attributes values in deletions are allowed for the resource(s) referenced by the resourceID attribute
 
