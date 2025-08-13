@@ -306,7 +306,8 @@ def shutdown() -> None:
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	RC.cseStatus = CSEStatus.SHUTTINGDOWN
+	if RC.cseStatus != CSEStatus.SHUTTINGDOWNRESTART:	# only set this if we are not restarting
+		RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	if console:
 		console.stop()				# This will end the main run loop.
 	
