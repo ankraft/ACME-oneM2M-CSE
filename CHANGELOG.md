@@ -28,6 +28,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [SCRIPTS] Added *base64-decode*, *shutdown-cse*, *restart-cse*, *refresh-registrations* and *tui-confirm* functions to the script interpreter.
 - [MISC] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
 - [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
+- [MISC] Added exiting the CSE with an exit code of 82 when the CSE is shutdown for a restart.
+- [MISC] Added restart CSE support for the Docker container. The CSE will now restart automatically when it exits with an exit code of 82 without exiting the Docker container.
 
 ### Experimental
 
