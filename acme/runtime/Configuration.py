@@ -24,6 +24,7 @@ from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, CSERegistrar
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.Zookeeper import Zookeeper
+from ..helpers.ACMEConfiguration import ACMEConfiguration
 
 
 
@@ -812,10 +813,7 @@ class Configuration(object):
 				zk.disconnect()
 
 		# Read and parse the configuration file
-		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
-											# Convert csv to list, ignore empty elements
-											converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
-										  )
+		config = ACMEConfiguration()
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
@@ -857,8 +855,8 @@ class Configuration(object):
 		
 		try:
 			# Read the configuration files
-			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
-			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
+			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
+			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
 			
