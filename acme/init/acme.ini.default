@@ -67,8 +67,8 @@ flexBlockingPreference=blocking
 ; Default: 2a,3,4,5
 supportedReleaseVersions=2a,3,4,5
 ; The release version indicator for requests. Allowed values: 2a,3,4,5.
-; Default: 4
-releaseVersion=4
+; Default: 5
+releaseVersion=5
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
