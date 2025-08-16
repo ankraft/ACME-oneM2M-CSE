@@ -32,6 +32,8 @@ class ACMEConfiguration(configparser.ConfigParser):
 						 # Convert csv to list, ignore empty elements
 						 converters={'list': lambda x: [i.strip() for i in x.split(',') if i]}
 						)
+		# Ensure that option names are case-sensitive
+		self.optionxform = str 	# type:ignore [assignment]
 
 
 	def set(self, section:str, option:str, value:str|None = None) -> None:
