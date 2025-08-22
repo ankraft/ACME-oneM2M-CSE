@@ -396,6 +396,8 @@ class Configuration(object):
 	mqtt_topicPrefix:str
 	"""	The topic prefix for MQTT. """
 
+	mqtt_transport:str
+	"""	The transport protocol for MQTT. """
 
 	mqtt_security_allowedCredentialIDs:list[str]
 	"""	The allowed credential IDs for MQTT. """
@@ -415,6 +417,8 @@ class Configuration(object):
 	mqtt_security_verifyCertificate:bool
 	"""	Enable or disable certificate verification for MQTT. """
 
+	mqtt_websocket_path:str
+	"""	The WebSocket path for MQTT. """
 
 	resource_acp_selfPermission:int
 	"""	The self permission for ACP. """
