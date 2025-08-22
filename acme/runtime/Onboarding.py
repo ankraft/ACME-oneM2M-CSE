@@ -608,7 +608,22 @@ def buildUserConfigFile(configFile:Optional[str],
 							message = 'MQTT broker password:',
 							long_instruction = 'The password to connect to the MQTT broker. Leave empty for no authentication.',
 							amark = '✓', 
-						).execute()
+						).execute(),
+				'transport': (transport := inquirer.text(
+							message = 'MQTT transport protocol:',
+							default= 'tcp',
+							long_instruction = 'The transport protocol for mqtt only could be "tcp" or "websockets".',
+							validate = lambda result: result in ['tcp', 'websockets'] or _containsVariable(result),
+							amark = '✓',
+						).execute()),
+				**({
+					'websocketPath': inquirer.text(
+                message='WebSocket path:',
+                default='/',
+                long_instruction='The WebSocket path for MQTT over WebSockets connection.',
+                amark='✓',
+            ).execute()
+        		} if transport == 'websockets' or (_containsVariable(transport) and 'websockets' in transport) else {})
 			}
 		
 		if 'CoAP' in bindings:
@@ -857,6 +872,11 @@ f"""
 enable=true
 address={bindings['mqtt']['address']}
 port={bindings['mqtt']['port']}
+transport={bindings['mqtt']['transport']}
+websocketPath={bindings['mqtt']['websocketPath'] if bindings['mqtt']['transport'] == 'websockets' else 'None'}
+"""
+			if bindings['mqtt']['transport'] == 'tcp':
+				jcnf += f"""
 """
 			if bindings['mqtt']['username']:
 				jcnf += f"""
