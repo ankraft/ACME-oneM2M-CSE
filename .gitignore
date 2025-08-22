@@ -12,6 +12,7 @@ logs*/
 /*.py
 !setup.py
 /*.zip
+venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
