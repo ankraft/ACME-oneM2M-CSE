@@ -258,8 +258,8 @@ address=127.0.0.1
 ; Default: 1883, or 8883 for TLS
 port=1883
 ; Value for the MQTT connection's keep-alive parameter in seconds.
-; Default: 60 seconds
-keepalive=60
+; Default: 45 seconds
+keepalive=45
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
 ; Default: 0.0.0.0
 listenIF=${basic.config:networkInterface}
