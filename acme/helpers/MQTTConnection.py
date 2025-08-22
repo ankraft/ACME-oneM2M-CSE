@@ -170,6 +170,8 @@ class MQTTConnection(object):
 		'messageHandler',
 		'actor',
 		'subscribedTopics',
+		'transport',
+		'websocketPath',
 	)
 	"""	Slots of the class. """
 
@@ -190,7 +192,9 @@ class MQTTConnection(object):
 					   certfile:Optional[str] = None, 
 					   keyfile:Optional[str] = None,
 					   lowLevelLogging:bool = True,
-					   messageHandler:Optional[MQTTHandler] = None
+					   messageHandler:Optional[MQTTHandler] = None,
+					   transport: Literal["tcp", "websockets"] = "tcp",
+					   websocketPath: Optional[str] = None
 				) -> None:
 		"""	Constructor. Initialize the MQTT client.
 
@@ -209,6 +213,8 @@ class MQTTConnection(object):
 				keyfile: The key file for the MQTT client.
 				lowLevelLogging: Indicator whether to log MQTT messages.
 				messageHandler: The message handler.
+				transport: The transport protocol to use (tcp or websockets).
+				websocketPath: The websocket path to use (incase of websockets).
 		"""
 		
 		self.address								= address
@@ -255,6 +261,14 @@ class MQTTConnection(object):
 		self.subscribedTopics:dict[str, MQTTTopic]	= {}
 		""" The list of subscribed-to topics. """
 
+		transport = transport.lower()  # type: ignore
+		if transport not in ("websockets", "tcp"):
+			raise ValueError(
+				f'transport must be "websockets", "tcp", not {transport}')
+		self.transport								= transport
+		"""	The transport protocol to use (tcp or websockets). """
+		self.websocketPath							= websocketPath
+		""" The websocket path to use (incase of websockets). """
 	
 	def shutdown(self) -> bool:
 		"""	Shutting down the MQTT client.
@@ -285,11 +299,20 @@ class MQTTConnection(object):
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: client name: {self.clientID}')
 		self.mqttClient = MQTTClient(callback_api_version = mqtt.CallbackAPIVersion.VERSION2,
-							   		 client_id = self.clientID, 
-									 clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
+							   		 client_id = self.clientID,
+									 transport=self.transport, 
+									 clean_session = False if self.clientID else True
+									 )	# clean_session=False is defined by TS-0010
 
-		# Enable SSL see: https://pypi.org/project/paho-mqtt/
-		if self.useTLS:
+		# Configure TLS for WebSocket connections
+		if self.transport == "websockets":
+			if self.verifyCertificate:
+				self.mqttClient.tls_set()
+			else:
+				self.mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)  # Accept self-signed certificates 
+			self.mqttClient.ws_set_options(path=self.websocketPath if self.websocketPath else "/")
+		# Configure TLS for regular MQTT connections
+		elif self.useTLS:
 			self.mqttClient.tls_set(ca_certs = self.caFile, 
 									certfile = self.mqttsCertfile, 
 									keyfile = self.mqttsKeyfile, 
@@ -332,7 +355,20 @@ class MQTTConnection(object):
 		self.isStopped = False
 		self.messageHandler and self.messageHandler.logging(self, logging.INFO, 'MQTT: client started')
 		while not self.isStopped:
-			self.mqttClient.loop_forever()	# Will return when disconnect() is called
+			try:
+				self.mqttClient.loop_forever()	# Will return when disconnect() is called
+				# If loop_forever() returns without stopping, attempt reconnection
+				if not self.isStopped:
+					self.messageHandler and self.messageHandler.logging(self, logging.WARNING, 
+						'MQTT: Connection lost, attempting to reconnect...')
+					time.sleep(1)  # Brief delay before retry
+				
+			except Exception as e:
+				if not self.isStopped:
+					self.messageHandler and self.messageHandler.logging(self, logging.ERROR, 
+						f'MQTT: Error in connection loop: {str(e)}')
+					time.sleep(5)  # Longer delay on errors
+    
 		if self.messageHandler:
 			self.messageHandler.onShutdown(self)
 		return True
