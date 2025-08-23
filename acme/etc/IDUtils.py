@@ -410,10 +410,22 @@ def getIdFromOriginator(originator:str, idOnly:Optional[bool]=False) -> str:
 		Returns:
 			Resource ID.
 	"""
-	if idOnly:
-		return originator.split("/")[-1] if originator else originator
+	splits = originator.split('/')
+	if originator.startswith('//'):
+		# Absolute with SPID
+		return splits[2] if len(splits) > 2 else originator
+	elif originator.startswith('/'):
+		# SP-Relative
+		return splits[1] if len(splits) > 1 else originator
 	else:
-		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
+		return originator
+
+	# TODO check whether idonly is needed at all
+	
+	# if idOnly:
+	# 	return originator.split("/")[-1] if originator else originator
+	# else:
+	# 	return originator.split("/")[-1] if originator and originator.startswith('/') else originator
 
 
 def originatorToID(originator:str) -> str:
