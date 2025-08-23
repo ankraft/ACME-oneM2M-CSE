@@ -10,6 +10,9 @@
 #		- install_local
 #		- uninstall_local
 #
+# ATTENTION: Whether a normal or a development version of the package is built
+# depends on the presence of the "-dev" tag in the "setup.py" file.
+#
 
 SRCDIR = ../..
 SOURCE = acme
@@ -24,7 +27,7 @@ build: prepare _build finish
 
 _build:
 	cd ${SRCDIR} && python -m build -s
-	cd ${SRCDIR} && python -m build 
+	cd ${SRCDIR} && python -m build -w
 
 
 publish: build
