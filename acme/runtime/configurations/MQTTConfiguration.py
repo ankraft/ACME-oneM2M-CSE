@@ -42,6 +42,8 @@ class MQTTConfiguration(ModuleConfiguration):
 		config.mqtt_security_username = parser.get('mqtt.security', 'username', fallback = '')
 		config.mqtt_security_useTLS = parser.getboolean('mqtt.security', 'useTLS', fallback = False)
 		config.mqtt_security_verifyCertificate = parser.getboolean('mqtt.security', 'verifyCertificate', fallback = False)
+		config.mqtt_transport = parser.get('mqtt', 'transport', fallback = 'tcp')	# Transport protocol (tcp, websockets)
+		config.mqtt_websocket_path = parser.get('mqtt', 'websocketPath', fallback = None)
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
