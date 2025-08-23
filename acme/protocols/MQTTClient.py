@@ -332,7 +332,8 @@ class MQTTClient(object):
 													   port		= Configuration.mqtt_port,
 													   useTLS	= Configuration.mqtt_security_useTLS,
 													   username = Configuration.mqtt_security_username,
-													   password	= Configuration.mqtt_security_password)
+													   password	= Configuration.mqtt_security_password,
+													   transport= Configuration.mqtt_transport)
 		""" The MQTT connection. """
 
 		L.isInfo and L.log('MQTT Client initialized')
@@ -424,7 +425,7 @@ class MQTTClient(object):
 		return waitFor(Configuration.mqtt_timeout, lambda:self.mqttConnection.isConnected)
 
 
-	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:Optional[str], password:Optional[str]) -> Optional[MQTTConnection]:
+	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:Optional[str], password:Optional[str], transport:Optional[str]="tcp") -> Optional[MQTTConnection]:
 		"""	Connect to a oneM2M MQTT Broker. The connection is cached and reused. The key for identifying the
 			broker is a tupple (*address*, *port*). A new MQTTClientHandler() object be used for handling
 			requests.
@@ -442,7 +443,9 @@ class MQTTClient(object):
 												username 			= username,
 												password			= password,
 												lowLevelLogging 	= L.enableBindingsLogging,
-												messageHandler 		= MQTTClientHandler	(self))
+												messageHandler 		= MQTTClientHandler	(self),
+												transport			= Configuration.mqtt_transport,
+												websocketPath		= Configuration.mqtt_websocket_path)
 				if mqttConnection:
 					self.mqttConnections[(address, port)] = mqttConnection
 			return mqttConnection
