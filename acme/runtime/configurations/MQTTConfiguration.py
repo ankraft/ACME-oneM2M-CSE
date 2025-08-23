@@ -13,6 +13,7 @@ import configparser
 
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
+from ...helpers.NetworkTools import isValidPort
 
 
 class MQTTConfiguration(ModuleConfiguration):
@@ -42,8 +43,11 @@ class MQTTConfiguration(ModuleConfiguration):
 		config.mqtt_security_username = parser.get('mqtt.security', 'username', fallback = '')
 		config.mqtt_security_useTLS = parser.getboolean('mqtt.security', 'useTLS', fallback = False)
 		config.mqtt_security_verifyCertificate = parser.getboolean('mqtt.security', 'verifyCertificate', fallback = False)
-		config.mqtt_transport = parser.get('mqtt', 'transport', fallback = 'tcp')	# Transport protocol (tcp, websockets)
-		config.mqtt_websocket_path = parser.get('mqtt', 'websocketPath', fallback = None)
+
+		# MQTT Websocket Support
+		config.mqtt_websocket_enable = parser.getboolean('mqtt.websocket', 'enable', fallback=False)
+		config.mqtt_websocket_port = parser.getint('mqtt.websocket', 'port', fallback=8080)
+		config.mqtt_websocket_path = parser.get('mqtt.websocket', 'path', fallback='')
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
@@ -66,6 +70,11 @@ class MQTTConfiguration(ModuleConfiguration):
 			config.mqtt_port = 8883 if config.mqtt_security_useTLS else 1883
 		if not config.mqtt_security_username != (not config.mqtt_security_password):	# Hack: != -> either both are empty, or both are set
 			raise ConfigurationError(fr'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]')
+	
+		#	MQTT Websocket
+		if isValidPort(config.mqtt_websocket_port) is False:
+			raise ConfigurationError(fr'Configuration Error: Invalid port number {config.mqtt_websocket_port} for [i]\[mqtt.websocket].port[/i]')
+		
 		# remove empty cid from the list
 		config.mqtt_security_allowedCredentialIDs = [ cid for cid in config.mqtt_security_allowedCredentialIDs if len(cid) ]
 

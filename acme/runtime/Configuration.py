@@ -418,6 +418,12 @@ class Configuration(object):
 	mqtt_security_verifyCertificate:bool
 	"""	Enable or disable certificate verification for MQTT. """
 
+	mqtt_websocket_enable:bool
+	"""	Enable or disable the MQTT over WebSocket. """
+
+	mqtt_websocket_port:int
+	"""	The WebSocket port for MQTT. """
+
 	mqtt_websocket_path:str
 	"""	The WebSocket path for MQTT. """
 
