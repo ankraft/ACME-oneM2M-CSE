@@ -2,10 +2,10 @@ recursive-include acmecse/init *
 recursive-include acmecse/webui *
 recursive-include acmecse/resources *
 recursive-include acmecse/textui *
-recursive-include tools/notificationServer *
-recursive-include tools/hashcreds *
-recursive-include tools/Docker *
-recursive-include tools/pypi *
+#recursive-include tools/notificationServer *
+#recursive-include tools/hashcreds *
+#recursive-include tools/Docker *
+#recursive-include tools/pypi *
 include CHANGELOG.md
 include CITATION.cff
 include LICENSE
