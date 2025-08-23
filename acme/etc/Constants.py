@@ -22,6 +22,12 @@ class Constants(object):
 
 	logoColor = '#b42025'
 	"""	oneM2M logo colour """
+
+	secondaryLogoColor = '#F6921E'
+	"""	oneM2M secondary logo colour """
+
+	tertiaryLogoColor = '#005480'
+	"""	oneM2M tertiary logo colour """
 	
 	textLogo = f'[dim]\[[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
