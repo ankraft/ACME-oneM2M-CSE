@@ -647,6 +647,8 @@ class MQTTConnection(object):
 #	Utility functions
 #
 
+# TODO support Absolute IDs as well
+
 def idToMQTT(id:str) -> str:
 	"""	Convert a oneM2M ID to an MQTT compatible path element.
 

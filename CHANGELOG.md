@@ -21,7 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
 - [CSE] Added announcement via Mcc'.
 - [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
-- [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Currently, only a a "shutdown" command is implemented. Thanks to Egan Perais.
+- [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Thanks to Egan Perais for the idea.
 - [CSE] Added onboarding support for Service Provider registrations and storing the config settings in a Zookeeper service.
 - [MQTT] Added support for MQTT over WebSockets. Thanks to Mudassar Khan.
 - [SCRIPTS] Added "T" symbol to the script interpreter.
