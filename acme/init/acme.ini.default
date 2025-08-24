@@ -269,13 +269,22 @@ topicPrefix=
 ; Timeout when sending MQTT requests and waiting for responses.
 ; Default: see cse.requestExpirationDelta
 timeout=${cse:requestExpirationDelta}
-; Transport when you want to use websockets for mqtt
-; Default: tcp
-transport=tcp
-; WebsocketPath it is the enpoint where mqtt brokker is listening
-; Default is "" empty string
-websocketPath=
-;allow self signed certificate for websocket
+
+
+;
+;	MQTT WebSocket settings
+;
+
+[mqtt.websocket]
+; Enable the MQTT WebSocket binding.
+; Default: false
+enable=false
+; The port for the MQTT WebSocket server.
+; Default: 8080
+port=8080
+; Path it is the endpoint where the mqtt broker is accepting connections
+; Default is "" empty string (root path)
+path=
 
 ;
 ;	MQTT security settings

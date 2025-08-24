@@ -397,9 +397,6 @@ class Configuration(object):
 	mqtt_topicPrefix:str
 	"""	The topic prefix for MQTT. """
 
-	mqtt_transport:str
-	"""	The transport protocol for MQTT. """
-
 	mqtt_security_allowedCredentialIDs:list[str]
 	"""	The allowed credential IDs for MQTT. """
 
@@ -677,6 +674,42 @@ class Configuration(object):
 
 
 	@staticmethod
+	def initDirectories() -> bool:
+		"""	Initialize the directories for the configuration. This method must be called before accessing any configuration value.
+
+			Returns:
+				True on success, False otherwise.
+		"""
+
+		# The path to the ACME module directory
+		Configuration.moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
+		
+		# Test that the config filename is just a filename without a path. If it is then throw an error
+		if Configuration._args_configfile and os.path.dirname(Configuration._args_configfile):
+			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
+			return False
+
+		# Find out the path to the init directory
+		Configuration.initDirectory = Configuration.moduleDirectory / 'init'
+		if Configuration._args_initDirectory:	# Use the init directory if given as argument
+			Configuration.initDirectory = pathlib.Path(Configuration._args_initDirectory)
+
+		# Get the path to the runtime data directory
+		Configuration.baseDirectory = pathlib.Path(os.getcwd())
+		if Configuration._args_baseDirectory:	# Use the runtime data directory if given as argument
+			Configuration.baseDirectory = pathlib.Path(Configuration._args_baseDirectory)
+
+		# Set the default ini file and check if it exists and is readable
+		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
+		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
+		if not os.access(Configuration._defaultConfigFile, os.R_OK):
+			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+			return False
+
+		return True
+
+
+	@staticmethod
 	def init(args:Optional[argparse.Namespace] = None) -> bool:
 		"""	Initialize and read the configuration. This method must be called before accessing any configuration value.
 
@@ -748,29 +781,8 @@ class Configuration(object):
 		Configuration._args_zkPort				= args.zkPort if args and 'zkPort' in args else None
 		Configuration._args_zkRoot				= args.zkRoot if args and 'zkRoot' in args else None
 
-		# The path to the ACME module directory
-		Configuration.moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
-		
-		# Test that the config filename is just a filename without a path. If it is then throw an error
-		if os.path.dirname(Configuration._args_configfile):
-			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
-			return False
 
-		# Find out the path to the init directory
-		Configuration.initDirectory = Configuration.moduleDirectory / 'init'
-		if Configuration._args_initDirectory:	# Use the init directory if given as argument
-			Configuration.initDirectory = pathlib.Path(Configuration._args_initDirectory)
-
-		# Get the path to the runtime data directory
-		Configuration.baseDirectory = pathlib.Path(os.getcwd())
-		if Configuration._args_baseDirectory:	# Use the runtime data directory if given as argument
-			Configuration.baseDirectory = pathlib.Path(Configuration._args_baseDirectory)
-
-		# Set the default ini file and check if it exists and is readable
-		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
-		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
-		if not os.access(Configuration._defaultConfigFile, os.R_OK):
-			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+		if not Configuration.initDirectories():
 			return False
 
 		# The list of configuration files to read (significantly, the default config file is always the first one)
