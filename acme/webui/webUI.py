@@ -121,7 +121,7 @@ class WebUI(object):
 			Returns:
 				The response.
 		"""
-		print(f'Forwarding {request.method.upper()} request {request.url}')
+		# print(f'Forwarding {request.method.upper()} request {request.url}')
 		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code = 302)
 
 
