@@ -961,6 +961,8 @@ class Configuration(object):
 					# Convert pathlib.Path to string
 					attr = str(attr)
 				case dict():
+					# Don't change the original dict, so make a copy
+					attr = deepcopy(attr)
 					# Convert dict elements to instances dict, if necessary
 					for k2,v2 in attr.items():
 						if isinstance(v2, CSERegistrar):
@@ -969,8 +971,7 @@ class Configuration(object):
 
 			# Replace underscores with dots in the key names
 			result[k.replace('_', '.')] = attr
-		result = deepcopy(result)	# make sure that the result is a deep copy of the configuration
-		return result
+		return deepcopy(result) # make sure that the result is a deep copy of the configuration
 
 
 	@staticmethod
