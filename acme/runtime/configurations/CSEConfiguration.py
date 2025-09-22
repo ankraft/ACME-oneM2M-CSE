@@ -17,67 +17,49 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
-
 class CSEConfiguration(ModuleConfiguration):
 	""" CSE configurations
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the configuration from the configuration file.
-		
-			Args:
-				parser: The configuration parser
-				config: The configuration instance
-		"""
+			#	CSE
 
-		#	CSE
-
-		config.cse_asyncSubscriptionNotifications = parser.getboolean('cse', 'asyncSubscriptionNotifications', fallback = True)
-		config.cse_checkExpirationsInterval = parser.getint('cse', 'checkExpirationsInterval', fallback = 60)		# Seconds
-		config.cse_cseID = parser.get('cse', 'cseID', fallback = '/id-in')
-		config.cse_defaultSerialization = parser.get('cse', 'defaultSerialization', fallback = 'json')
-		config.cse_enableRemoteCSE = parser.getboolean('cse', 'enableRemoteCSE', fallback = True)
-		config.cse_enableResourceExpiration = parser.getboolean('cse', 'enableResourceExpiration', fallback = True)
-		config.cse_enableSubscriptionVerificationRequests = parser.getboolean('cse', 'enableSubscriptionVerificationRequests', fallback = True)
-		config.cse_flexBlockingPreference = parser.get('cse', 'flexBlockingPreference', fallback = 'blocking')
-		config.cse_maxExpirationDelta = parser.getint('cse', 'maxExpirationDelta', fallback = 60*60*24*365*5)	# 5 years, in seconds
-		config.cse_originator = parser.get('cse', 'originator', fallback = 'CAdmin')
-		config.cse_poa = parser.getlist('cse', 'poa', fallback = ['http://127.0.0.1:8080'])	 # type: ignore [attr-defined]
-		config.cse_releaseVersion = parser.get('cse', 'releaseVersion', fallback = '4')
-		config.cse_requestExpirationDelta = parser.getfloat('cse', 'requestExpirationDelta', fallback = 10.0)	# 10 seconds
-		config.cse_resourcesPath = parser.get('cse', 'resourcesPath', fallback = './init')
-		config.cse_resourceID = parser.get('cse', 'resourceID', fallback = 'id-in')
-		config.cse_resourceName = parser.get('cse', 'resourceName', fallback = 'cse-in')
-		config.cse_sendToFromInResponses = parser.getboolean('cse', 'sendToFromInResponses', fallback = True)
-		config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback = True)
-		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback = ['2a', '3', '4', '5']) # type: ignore [attr-defined]
-		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback = 'acme.example.com')
-		config.cse_type = parser.get('cse', 'type', fallback = 'IN')		# IN, MN, ASN
-		config.cse_idLength = parser.getint('cse', 'idLength', fallback = 10)
+		config.cse_asyncSubscriptionNotifications = parser.getboolean('cse', 'asyncSubscriptionNotifications', fallback=True)
+		config.cse_checkExpirationsInterval = parser.getint('cse', 'checkExpirationsInterval', fallback=60)		# Seconds
+		config.cse_cseID = parser.get('cse', 'cseID', fallback='/id-in')
+		config.cse_defaultSerialization = parser.get('cse', 'defaultSerialization', fallback='json')
+		config.cse_enableRemoteCSE = parser.getboolean('cse', 'enableRemoteCSE', fallback=True)
+		config.cse_enableResourceExpiration = parser.getboolean('cse', 'enableResourceExpiration', fallback=True)
+		config.cse_enableSubscriptionVerificationRequests = parser.getboolean('cse', 'enableSubscriptionVerificationRequests', fallback=True)
+		config.cse_flexBlockingPreference = parser.get('cse', 'flexBlockingPreference', fallback='blocking')
+		config.cse_maxExpirationDelta = parser.getint('cse', 'maxExpirationDelta', fallback=60*60*24*365*5)	# 5 years, in seconds
+		config.cse_originator = parser.get('cse', 'originator', fallback='CAdmin')
+		config.cse_poa = parser.getlist('cse', 'poa', fallback=['http://127.0.0.1:8080'])	 # type: ignore [attr-defined]
+		config.cse_releaseVersion = parser.get('cse', 'releaseVersion', fallback='4')
+		config.cse_requestExpirationDelta = parser.getfloat('cse', 'requestExpirationDelta', fallback=10.0)	# 10 seconds
+		config.cse_resourcesPath = parser.get('cse', 'resourcesPath', fallback='./init')
+		config.cse_resourceID = parser.get('cse', 'resourceID', fallback='id-in')
+		config.cse_resourceName = parser.get('cse', 'resourceName', fallback='cse-in')
+		config.cse_sendToFromInResponses = parser.getboolean('cse', 'sendToFromInResponses', fallback=True)
+		config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback=True)
+		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback=['2a', '3', '4', '5']) # type: ignore [attr-defined]
+		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='acme.example.com')
+		config.cse_type = parser.get('cse', 'type', fallback='IN')		# IN, MN, ASN
+		config.cse_idLength = parser.getint('cse', 'idLength', fallback=10)
 
 		#	CSE Operation : Jobs
 
-		config.cse_operation_jobs_balanceLatency = parser.getint('cse.operation.jobs', 'jobBalanceLatency', fallback = 1000)
-		config.cse_operation_jobs_balanceReduceFactor = parser.getfloat('cse.operation.jobs', 'jobBalanceReduceFactor', fallback = 2.0)
-		config.cse_operation_jobs_balanceTarget = parser.getfloat('cse.operation.jobs', 'jobBalanceTarget', fallback = 3.0)
+		config.cse_operation_jobs_balanceLatency = parser.getint('cse.operation.jobs', 'jobBalanceLatency', fallback=1000)
+		config.cse_operation_jobs_balanceReduceFactor = parser.getfloat('cse.operation.jobs', 'jobBalanceReduceFactor', fallback=2.0)
+		config.cse_operation_jobs_balanceTarget = parser.getfloat('cse.operation.jobs', 'jobBalanceTarget', fallback=3.0)
 
 		#	CSE Operation : Requests
 
-		config.cse_operation_requests_enable = parser.getboolean('cse.operation.requests', 'enable', fallback = False)
-		config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback = 1000)
+		config.cse_operation_requests_enable = parser.getboolean('cse.operation.requests', 'enable', fallback=False)
+		config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback=1000)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		""" Validate the configuration.
-		
-			Args:
-				config: The configuration object
-				initial: If True, this is the initial validation
-
-			Raises:
-				ConfigurationError if the configuration is invalid
-		"""
-
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
 		if Configuration._args_initDirectory is not None:
 			Configuration.cse_resourcesPath = Configuration._args_initDirectory

@@ -6,6 +6,7 @@
 #
 #	Logging configurations
 #
+""" This module contains the configuration for logging."""
 
 from __future__ import annotations
 from typing import Optional, cast
@@ -17,27 +18,27 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 class LoggingConfiguration(ModuleConfiguration):
-
+	""" Logging Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		#	Logging
 
-		config.logging_count = parser.getint('logging', 'count', fallback = 10)		# Number of log files
-		config.logging_enableBindingsLogging = parser.getboolean('logging', 'enableBindingsLogging', fallback = False)
-		config.logging_enableFileLogging = parser.getboolean('logging', 'enableFileLogging', fallback = False)
-		config.logging_enableScreenLogging = parser.getboolean('logging', 'enableScreenLogging', fallback = True)
-		config.logging_filter = parser.getlist('logging', 'filter', fallback = [])		# type: ignore [attr-defined]
-		config.logging_level = parser.get('logging', 'level', fallback = 'debug')
-		config.logging_maxLogMessageLength = parser.getint('logging', 'maxLogMessageLength', fallback = 1000)	# Max length of a log message
-		config.logging_path = parser.get('logging', 'path', fallback = './logs')
-		config.logging_queueSize = parser.getint('logging', 'queueSize', fallback = 5000)	# Size of the log queue
-		config.logging_size = parser.getint('logging', 'size', fallback = 100000)
-		config.logging_stackTraceOnError = parser.getboolean('logging', 'stackTraceOnError', fallback = True)
-		config.logging_enableUTCTimezone = parser.getboolean('logging', 'enableUTCTimezone', fallback = False)
+		config.logging_count = parser.getint('logging', 'count', fallback=10)		# Number of log files
+		config.logging_enableBindingsLogging = parser.getboolean('logging', 'enableBindingsLogging', fallback=False)
+		config.logging_enableFileLogging = parser.getboolean('logging', 'enableFileLogging', fallback=False)
+		config.logging_enableScreenLogging = parser.getboolean('logging', 'enableScreenLogging', fallback=True)
+		config.logging_filter = parser.getlist('logging', 'filter', fallback=[])		# type: ignore [attr-defined]
+		config.logging_level = parser.get('logging', 'level', fallback='debug')
+		config.logging_maxLogMessageLength = parser.getint('logging', 'maxLogMessageLength', fallback=1000)	# Max length of a log message
+		config.logging_path = parser.get('logging', 'path', fallback='./logs')
+		config.logging_queueSize = parser.getint('logging', 'queueSize', fallback=5000)	# Size of the log queue
+		config.logging_size = parser.getint('logging', 'size', fallback=100000)
+		config.logging_stackTraceOnError = parser.getboolean('logging', 'stackTraceOnError', fallback=True)
+		config.logging_enableUTCTimezone = parser.getboolean('logging', 'enableUTCTimezone', fallback=False)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		# Loglevel and various overrides from command line
 		logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.websocket_loglevel

@@ -6,6 +6,7 @@
 #
 #	HTTP Server Binding configurations
 #
+""" This module contains the configuration for the HTTP server."""
 
 from __future__ import annotations
 from typing import Optional
@@ -18,15 +19,9 @@ from ...etc.Utils import normalizeURL
 from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 
 class HTTPServerConfiguration(ModuleConfiguration):
+	"""	HTTP Server Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		"""	Read the configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser.
-				config: The configuration object.
-		"""
-
 		#	HTTP Server
 		config.http_address = parser.get('http', 'address', fallback='http://127.0.0.1:8080')
 		config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback=False)
@@ -63,13 +58,6 @@ class HTTPServerConfiguration(ModuleConfiguration):
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
-		"""	Validate the configuration.
-
-			Args:
-				config: The configuration object.
-				initial: If True, the configuration is validated for the first time.
-		"""
-
 		# override configuration with command line arguments
 		if Configuration._args_httpAddress is not None:
 			Configuration.http_address = Configuration._args_httpAddress

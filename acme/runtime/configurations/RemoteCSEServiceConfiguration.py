@@ -6,6 +6,7 @@
 #
 #	Remote CSE Manager configurations
 #
+""" This module contains the configuration for the Remote CSE Manager."""
 
 from __future__ import annotations
 from typing import Optional
@@ -21,6 +22,7 @@ from ...etc.IDUtils import isValidCSI, isValidSPID
 
 
 class RemoteCSEServiceConfiguration(ModuleConfiguration):
+	""" Remote CSE Service Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
@@ -28,28 +30,27 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			registrar._configurationSection = section # Set the configuration section for the registrar
 			# Parse a registrar configuration section and populate the registrar object
 			registrar.spID = parser.get(section, 'spID', fallback=None)
-			registrar.address = parser.get(section, 'address', fallback = None)
-			registrar.cseID = parser.get(section, 'cseID', fallback = None)
-			registrar.excludeCSRAttributes = parser.getlist(section, 'excludeCSRAttributes', fallback = [])		# type: ignore [attr-defined]
-			registrar.resourceName = parser.get(section, 'resourceName', fallback = '')
-			registrar.root = parser.get(section, 'root', fallback = '')
-			registrar.serialization = parser.get(section, 'serialization', fallback = 'json')
-			registrar.INCSEcseID = parser.get(section, 'INCSEcseID', fallback = None)
-			registrar.originator = parser.get(section, 'originator', fallback = None)
-			
+			registrar.address = parser.get(section, 'address', fallback=None)
+			registrar.cseID = parser.get(section, 'cseID', fallback=None)
+			registrar.excludeCSRAttributes = parser.getlist(section, 'excludeCSRAttributes', fallback=[])		# type: ignore [attr-defined]
+			registrar.resourceName = parser.get(section, 'resourceName', fallback='')
+			registrar.root = parser.get(section, 'root', fallback='')
+			registrar.serialization = parser.get(section, 'serialization', fallback='json')
+			registrar.INCSEcseID = parser.get(section, 'INCSEcseID', fallback=None)
+			registrar.originator = parser.get(section, 'originator', fallback=None)
 
 		def parseRegistrarSecurity(section:str, registrar:CSERegistrar) -> None:
 			# Parse the security section for a registrar and populate the security attributes
-			registrar.security.credentials.httpUsername = parser.get(section, 'httpUsername', fallback = None)
-			registrar.security.credentials.httpPassword = parser.get(section, 'httpPassword', fallback = None)
-			registrar.security.credentials.httpToken = parser.get(section, 'httpBearerToken', fallback = None)
-			registrar.security.credentials.wsUsername = parser.get(section, 'wsUsername', fallback = None)
-			registrar.security.credentials.wsPassword = parser.get(section, 'wsPassword', fallback = None)
-			registrar.security.credentials.wsToken = parser.get(section, 'wsBearerToken', fallback = None)
-			registrar.security.selfCredentials.httpUsername = parser.get(section, 'selfHttpUsername', fallback = None)
-			registrar.security.selfCredentials.httpPassword = parser.get(section, 'selfHttpPassword', fallback = None)
-			registrar.security.selfCredentials.wsUsername = parser.get(section, 'selfWsUsername', fallback = None)
-			registrar.security.selfCredentials.wsPassword = parser.get(section, 'selfWsPassword', fallback = None)
+			registrar.security.credentials.httpUsername = parser.get(section, 'httpUsername', fallback=None)
+			registrar.security.credentials.httpPassword = parser.get(section, 'httpPassword', fallback=None)
+			registrar.security.credentials.httpToken = parser.get(section, 'httpBearerToken', fallback=None)
+			registrar.security.credentials.wsUsername = parser.get(section, 'wsUsername', fallback=None)
+			registrar.security.credentials.wsPassword = parser.get(section, 'wsPassword', fallback=None)
+			registrar.security.credentials.wsToken = parser.get(section, 'wsBearerToken', fallback=None)
+			registrar.security.selfCredentials.httpUsername = parser.get(section, 'selfHttpUsername', fallback=None)
+			registrar.security.selfCredentials.httpPassword = parser.get(section, 'selfHttpPassword', fallback=None)
+			registrar.security.selfCredentials.wsUsername = parser.get(section, 'selfWsUsername', fallback=None)
+			registrar.security.selfCredentials.wsPassword = parser.get(section, 'selfWsPassword', fallback=None)
 
 
 		#	Registrar CSE
@@ -86,7 +87,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 					parseRegistrarSecurity(f'cse.sp.registrar.{spName}.security', registrar)
 				
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		# Validate CSE Type and remove default registrar if not IN
 		for spName, registrar in config.cse_registrars.copy().items():

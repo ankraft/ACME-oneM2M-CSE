@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: fanOutPoint (virtual resource)
-#
+""" Group fanOutPoint (GRP_FOPT) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -23,6 +22,7 @@ from ..resources.Resource import Resource
 # Only blockingRequest is supported
 
 class GRP_FOPT(VirtualResource):
+	""" Group fanOutPoint (GRP_FOPT) resource type. This is a virtual resource. """
 
 	resourceType = ResourceTypes.GRP_FOPT
 	""" The resource type """
@@ -39,12 +39,14 @@ class GRP_FOPT(VirtualResource):
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
+	""" The allowed child-resource types. None, this is a virtual resource. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
 		# None for virtual resources
 	}
+	""" Attributes and `AttributePolicy` for this resource type. """
 
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 

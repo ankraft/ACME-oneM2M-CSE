@@ -6,6 +6,7 @@
 #
 #	Scripting configurations
 #
+""" This module contains the configuration for scripting."""
 
 from __future__ import annotations
 from typing import Optional
@@ -16,15 +17,16 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 class ScriptingConfiguration(ModuleConfiguration):
+	""" Scripting Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		config.scripting_fileMonitoringInterval = parser.getfloat('scripting', 'fileMonitoringInterval', fallback = 2.0)
-		config.scripting_scriptDirectories = parser.getlist('scripting', 'scriptDirectories', fallback = []) # type: ignore[attr-defined]
-		config.scripting_verbose = parser.getboolean('scripting', 'verbose', fallback = False)
-		config.scripting_maxRuntime = parser.getfloat('scripting', 'maxRuntime', fallback = 60.0)
+		config.scripting_fileMonitoringInterval = parser.getfloat('scripting', 'fileMonitoringInterval', fallback=2.0)
+		config.scripting_scriptDirectories = parser.getlist('scripting', 'scriptDirectories', fallback=[]) # type: ignore[attr-defined]
+		config.scripting_verbose = parser.getboolean('scripting', 'verbose', fallback=False)
+		config.scripting_maxRuntime = parser.getfloat('scripting', 'maxRuntime', fallback=60.0)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		# Script settings
 		if config.scripting_fileMonitoringInterval < 0.0:

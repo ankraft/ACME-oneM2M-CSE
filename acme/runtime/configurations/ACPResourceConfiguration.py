@@ -21,27 +21,11 @@ class ACPResourceConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser
-				config: The configuration instance
-		"""
-
 		#	Defaults for Access Control Policies
 
-		config.resource_acp_selfPermission = parser.getint('resource.acp', 'selfPermission', fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE)
+		config.resource_acp_selfPermission = parser.getint('resource.acp', 'selfPermission', fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		""" Validate the configuration.
-
-			Args:
-				config: The configuration object
-				initial: If True, this is the initial validation
-
-			Raises:
-				ConfigurationError if the configuration is invalid
-		"""
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		pass
 

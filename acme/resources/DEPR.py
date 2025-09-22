@@ -6,6 +6,7 @@
 #
 #	ResourceType: Dependency
 #
+""" Dependency (DEPR) resource type. """
 
 from __future__ import annotations
 from typing import Optional
@@ -18,6 +19,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class DEPR(AnnounceableResource):
+	""" Dependency (DEPR) resource type. """
 
 	resourceType = ResourceTypes.DEPR
 	""" The resource type """
@@ -54,6 +56,7 @@ class DEPR(AnnounceableResource):
 		'evc': None,
 		'rri': None,
 	}
+	""" Attributes and `AttributePolicy` for this resource type. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

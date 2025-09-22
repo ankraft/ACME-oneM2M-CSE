@@ -6,6 +6,7 @@
 #
 #	TS Resource configurations
 #
+""" This module contains the configuration for TimeSeries resources."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,20 +18,20 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class TSResourceConfiguration(ModuleConfiguration):
-
+	""" TimeSeries Resource Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		#	Defaults for timeSeries Resources
 
-		config.resource_ts_enableLimits = parser.getboolean('resource.ts', 'enableLimits', fallback = False)
-		config.resource_ts_mbs = parser.getint('resource.ts', 'mbs', fallback = 10000)
-		config.resource_ts_mdn = parser.getint('resource.ts', 'mdn', fallback = 10)
-		config.resource_ts_mni = parser.getint('resource.ts', 'mni', fallback = 10)
-		config.resource_ts_mia = parser.getint('resource.ts', 'mia', fallback = 60*60*24*365*5)  # 5 years, in seconds
+		config.resource_ts_enableLimits = parser.getboolean('resource.ts', 'enableLimits', fallback=False)
+		config.resource_ts_mbs = parser.getint('resource.ts', 'mbs', fallback=10000)
+		config.resource_ts_mdn = parser.getint('resource.ts', 'mdn', fallback=10)
+		config.resource_ts_mni = parser.getint('resource.ts', 'mni', fallback=10)
+		config.resource_ts_mia = parser.getint('resource.ts', 'mia', fallback=60*60*24*365*5)  # 5 years, in seconds
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_ts_mbs <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.ts]:mbs[/i] must be > 0')
 		if config.resource_ts_mdn < 0:

@@ -6,6 +6,7 @@
 #
 #	TSB Resource configurations
 #
+""" This module contains the configuration for TimeSyncBeacon resources."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,18 +18,18 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class TSBResourceConfiguration(ModuleConfiguration):
-
+	""" TimeSyncBeacon Resource Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		#	Defaults for TimeSyncBeacon Resources
 
-		config.resource_tsb_bcni = parser.get('resource.tsb', 'bcni', fallback = 'PT1H')	# duration
-		config.resource_tsb_bcnt = parser.getfloat('resource.tsb', 'bcnt', fallback = 60.0)	# seconds
+		config.resource_tsb_bcni = parser.get('resource.tsb', 'bcni', fallback='PT1H')	# duration
+		config.resource_tsb_bcnt = parser.getfloat('resource.tsb', 'bcnt', fallback=60.0)	# seconds
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
+
 		# TimeSyncBeacon defaults
 		try:
 			isodate.parse_duration(Configuration.resource_tsb_bcni)

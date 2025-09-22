@@ -20,31 +20,15 @@ class CNTResourceConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the configuration from the configuration file.
-		
-			Args:
-				parser: The configuration parser
-				config: The configuration instance
-		"""
-
 		# 	Defaults for Container Resources
 
-		config.resource_cnt_enableLimits = parser.getboolean('resource.cnt', 'enableLimits', fallback = False)
-		config.resource_cnt_mni = parser.getint('resource.cnt', 'mni', fallback = 10)
-		config.resource_cnt_mbs = parser.getint('resource.cnt', 'mbs', fallback = 10000)
-		config.resource_cnt_mia = parser.getint('resource.cnt', 'mia', fallback = 60*60*24*365*5) # 5 years, in seconds
+		config.resource_cnt_enableLimits = parser.getboolean('resource.cnt', 'enableLimits', fallback=False)
+		config.resource_cnt_mni = parser.getint('resource.cnt', 'mni', fallback=10)
+		config.resource_cnt_mbs = parser.getint('resource.cnt', 'mbs', fallback=10000)
+		config.resource_cnt_mia = parser.getint('resource.cnt', 'mia', fallback=60*60*24*365*5) # 5 years, in seconds
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		""" Validate the configuration.
-
-			Args:
-				config: The configuration object
-				initial: If True, this is the initial validation
-
-			Raises:
-				ConfigurationError if the configuration is invalid
-		"""
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_cnt_mni <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mni[/i] must be > 0')
 		if config.resource_cnt_mbs <= 0:

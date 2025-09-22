@@ -6,6 +6,7 @@
 #
 #	WebSocket Binding configurations
 #
+""" This module contains the configuration for WebSocket bindings."""
 
 from __future__ import annotations
 from typing import Optional, cast
@@ -20,42 +21,30 @@ from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidate
 
 
 class WebSocketConfiguration(ModuleConfiguration):
+	""" WebSocket Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		"""	Read the configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser.
-				config: The configuration object.
-		"""
-
 		# Basic configs
-		config.websocket_enable = parser.getboolean('websocket', 'enable', fallback = False)
-		config.websocket_listenIF = parser.get('websocket', 'listenIF', fallback = '0.0.0.0')
-		config.websocket_port = parser.getint('websocket', 'port', fallback = 8180)
-		config.websocket_address = parser.get('websocket', 'address', fallback = 'ws://127.0.0.1:8180')
-		config.websocket_loglevel = parser.get('websocket', 'loglevel', fallback = 'debug')
-		config.websocket_timeout = parser.getfloat('websocket', 'timeout', fallback = 10.0)
+		config.websocket_enable = parser.getboolean('websocket', 'enable', fallback=False)
+		config.websocket_listenIF = parser.get('websocket', 'listenIF', fallback='0.0.0.0')
+		config.websocket_port = parser.getint('websocket', 'port', fallback=8180)
+		config.websocket_address = parser.get('websocket', 'address', fallback='ws://127.0.0.1:8180')
+		config.websocket_loglevel = parser.get('websocket', 'loglevel', fallback='debug')
+		config.websocket_timeout = parser.getfloat('websocket', 'timeout', fallback=10.0)
 
 		# Security configs
-		config.websocket_security_caCertificateFile = parser.get('websocket.security', 'caCertificateFile', fallback = None)
-		config.websocket_security_caPrivateKeyFile = parser.get('websocket.security', 'caPrivateKeyFile', fallback = None)
-		config.websocket_security_tlsVersion = parser.get('websocket.security', 'tlsVersion', fallback ='auto')
-		config.websocket_security_useTLS = parser.getboolean('websocket.security', 'useTLS', fallback = False)
-		config.websocket_security_verifyCertificate = parser.getboolean('websocket.security', 'verifyCertificate', fallback = False)
-		config.websocket_security_enableBasicAuth = parser.getboolean('websocket.security', 'enableBasicAuth', fallback = False)
-		config.websocket_security_enableTokenAuth = parser.getboolean('websocket.security', 'enableTokenAuth', fallback = False)
-		config.websocket_security_basicAuthFile = parser.get('websocket.security', 'basicAuthFile', fallback = './certs/ws_basic_auth.txt')
-		config.websocket_security_tokenAuthFile = parser	.get('websocket.security', 'tokenAuthFile', fallback = './certs/ws_token_auth.txt')
+		config.websocket_security_caCertificateFile = parser.get('websocket.security', 'caCertificateFile', fallback=None)
+		config.websocket_security_caPrivateKeyFile = parser.get('websocket.security', 'caPrivateKeyFile', fallback=None)
+		config.websocket_security_tlsVersion = parser.get('websocket.security', 'tlsVersion', fallback='auto')
+		config.websocket_security_useTLS = parser.getboolean('websocket.security', 'useTLS', fallback=False)
+		config.websocket_security_verifyCertificate = parser.getboolean('websocket.security', 'verifyCertificate', fallback=False)
+		config.websocket_security_enableBasicAuth = parser.getboolean('websocket.security', 'enableBasicAuth', fallback=False)
+		config.websocket_security_enableTokenAuth = parser.getboolean('websocket.security', 'enableTokenAuth', fallback=False)
+		config.websocket_security_basicAuthFile = parser.get('websocket.security', 'basicAuthFile', fallback='./certs/ws_basic_auth.txt')
+		config.websocket_security_tokenAuthFile = parser.get('websocket.security', 'tokenAuthFile', fallback='./certs/ws_token_auth.txt')
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		"""	Validate the configuration.
-
-			Args:
-				config: The configuration object.
-				initial: Flag whether this is the initial validation.
-		"""
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		config.websocket_address = normalizeURL(config.websocket_address)
 
 		# override configuration with command line arguments

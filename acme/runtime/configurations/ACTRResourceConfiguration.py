@@ -19,30 +19,13 @@ class ACTRResourceConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser
-				config: The configuration instance
-		"""
-
 		# 	Defaults for Actions
 
-		config.resource_actr_ecpContinuous = parser.getint('resource.actr', 'ecpContinuous', fallback = 1000)
-		config.resource_actr_ecpPeriodic = parser.getint('resource.actr', 'ecpPeriodic', fallback = 10000)
+		config.resource_actr_ecpContinuous = parser.getint('resource.actr', 'ecpContinuous', fallback=1000)
+		config.resource_actr_ecpPeriodic = parser.getint('resource.actr', 'ecpPeriodic', fallback=10000)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		""" Validate the configuration.
-
-			Args:
-				config: The configuration object
-				initial: If True, this is the initial validation
-
-			Raises:
-				ConfigurationError if the configuration is invalid
-		"""
-
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_actr_ecpContinuous <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[resource.actr]:ecpContinuous[/i] must be > 0')
 		if config.resource_actr_ecpPeriodic <= 0:
