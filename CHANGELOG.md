@@ -23,7 +23,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
 - [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Thanks to Egan Perais for the idea.
 - [CSE] Added onboarding support for Service Provider registrations and storing the config settings in a Zookeeper service.
-- [MQTT] Added support for MQTT over WebSockets. Thanks to Mudassar Khan.
+- [MQTT] Added support for MQTT over WebSockets. This is an ESTIMED project contribution. Thanks to Mudassar Khan.
 - [SCRIPTS] Added "T" symbol to the script interpreter.
 - [SCRIPTS] Spaces in script arguments are now preserved when passing them in double quotes to the script interpreter.
 - [SCRIPTS] Added *base64-decode*, *shutdown-cse*, *restart-cse*, *refresh-registrations* and *tui-confirm* functions to the script interpreter.
