@@ -96,6 +96,9 @@ class HttpServer(object):
 		self.flaskApp = Flask(RC.cseCsi)
 		""" The Flask application instance. """
 
+		self.webuiDirectory:Optional[str] = None
+		""" The directory where the web UI is located. """
+
 		# Get the configuration settings
 		self._assignConfig()
 
@@ -135,9 +138,7 @@ class HttpServer(object):
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
 
-		self.webuiDirectory:Optional[str] = None
-		""" The directory where the web UI is located. """
-
+		print(self.webuiDirectory)
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
@@ -205,7 +206,7 @@ class HttpServer(object):
 	def _assignConfig(self) -> None:
 		"""	Assign the configuration values to the http server.
 		"""
-		self.webuiDirectory 	= f'{Configuration.moduleDirectory}/webui'
+		self.webuiDirectory = f'{Configuration.moduleDirectory}/webui'
 
 
 	def configUpdate(self, name:str, 
