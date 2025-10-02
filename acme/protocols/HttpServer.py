@@ -138,7 +138,6 @@ class HttpServer(object):
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
 
-		print(self.webuiDirectory)
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
