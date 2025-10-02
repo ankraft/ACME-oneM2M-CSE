@@ -275,6 +275,11 @@ class ACMEContainerTree(Container):
 	"""	The *Resources* tree view for the ACME text UI.
 	"""
 
+	treeTabResourceID = 'tree-tab-resource'
+	"""	The ID of the resource tab. """
+
+	# TODO add other IDs here as well
+
 	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh'),
 				#   Binding('o', 'overlay', 'Overlay'),
 		  
@@ -359,7 +364,7 @@ class ACMEContainerTree(Container):
 		with Container():
 			yield self._treeView
 			with self._treeTabs:
-				with TabPane('Resource', id = 'tree-tab-resource'):
+				with TabPane('Resource', id=self.treeTabResourceID):
 					with self._resourceViewContainer:
 						yield self._resourceView
 
