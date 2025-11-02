@@ -9,11 +9,10 @@
 
 """	This module contains the ACME CSE implementation. It is the main module of the ACME CSE.
 """
-from typing import Generator
 
 import os, re, sys
-if sys.version_info < (3, 10):
-	print('Python version >= 3.10 is required')
+if sys.version_info < (3, 11):
+	print('Python version >= 3.11 is required')
 	quit(1)
 
 import argparse

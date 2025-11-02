@@ -40,7 +40,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Renamed the default ACP that is created during CSE initialization from *acpCreateAcps* to *acpCreateRootResources*.
 - [CSE] Changed the format of the configuration setting *\[[cse.registration].allowedCSROriginators* to correct SP-relative identifiers. This could be a breaking change if the configuration file is not adapted.
 - [CSE] Restructured and widely extended the onboarding manager to support more flexible onboarding configurations.
-- [MISC] Python 3.10 is now the minimum required version to run the CSE.
+- [MISC] Python 3.11 is now the minimum required version to run the CSE.
 - [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
 - [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
 - [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.

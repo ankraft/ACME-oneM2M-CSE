@@ -10,7 +10,7 @@ README = (HERE / 'tools/pypi/README.md').read_text()
 
 # Find directories that are modules and have __init__.py
 directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
-print(directories)
+#print(directories)
 
 setup(
 	name='acmecse-dev',
@@ -24,7 +24,7 @@ setup(
 	author_email='an.kraft@gmail.com',
 	classifiers=[
 		'License :: OSI Approved :: BSD License',
-		'Programming Language :: Python :: 3.10',
+		'Programming Language :: Python :: 3.11',
 	],
 	description='An open source CSE Middleware for Education',
 	entry_points={
