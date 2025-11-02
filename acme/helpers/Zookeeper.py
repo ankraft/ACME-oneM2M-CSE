@@ -47,7 +47,7 @@ class ZookeperNode():
 		_key = self.path if root else self.path.split('/')[-1]
 		_value = f' = {self.value}' if self.value else ' = <none>'
 		_color = 'blue' if self.isNode else 'none'
-		_ob = '\[' if self.isNode else ''
+		_ob = r'\[' if self.isNode else ''
 		_cb = ']' if self.isNode else ''
 		print(f'{_indent}[{_color}]{_ob}{_key}{_cb}{_value}[/{_color}]', highlight=False)
 

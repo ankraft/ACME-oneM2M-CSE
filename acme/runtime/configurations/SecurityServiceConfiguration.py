@@ -31,6 +31,6 @@ class SecurityServiceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if not config.cse_security_secret:
-			raise ConfigurationError('Configuration Error: Missing or empty [i]\[cse.security\]:secret[/i] configuration')
+			raise ConfigurationError(r'Configuration Error: Missing or empty [i]\[cse.security]:secret[/i] configuration')
 		if config.cse_security_secret == 'acme':
 			Configuration._print(r'[orange3]Configuration Warning: Using default [i]secret[/i] key. Consider changing this value for security reasons in \[cse.security].secret or \[basic.config].secret[/orange3]')

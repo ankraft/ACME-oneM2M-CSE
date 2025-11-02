@@ -40,5 +40,5 @@ class RegistrationServiceConfiguration(ModuleConfiguration):
 					# Valid originator
 					continue
 				# Invalid originator
-				raise ConfigurationError(f'Invalid originator: "{originator}" in \[cse.registration].allowedCSROriginators. Must be a CSE-ID in absolute or SP-relative form')
+				raise ConfigurationError(fr'Invalid originator: "{originator}" in \[cse.registration].allowedCSROriginators. Must be a CSE-ID in absolute or SP-relative form')
 
