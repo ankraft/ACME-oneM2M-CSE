@@ -411,6 +411,11 @@ def getIdFromOriginator(originator:str, idOnly:Optional[bool]=False) -> str:
 			Resource ID.
 	"""
 	splits = originator.split('/')
+
+	# Only the ID part, independent of the format
+	if idOnly:
+		return splits[-1] if len(splits) > 0 else originator
+
 	if originator.startswith('//'):
 		# Absolute with SPID
 		return splits[2] if len(splits) > 2 else originator
