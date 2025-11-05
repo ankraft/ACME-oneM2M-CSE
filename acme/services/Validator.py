@@ -178,7 +178,7 @@ class Validator(object):
 		# If this is a flexContainer then add the additional attributePolicies.
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
-		if ty in ( ResourceTypes.FCNT, ResourceTypes.FCI ) and typeShortname:
+		if ty in (ResourceTypes.FCNT, ResourceTypes.FCNTAnnc, ResourceTypes.FCI ) and typeShortname:
 			if (fca := flexContainerAttributes.get(typeShortname)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)

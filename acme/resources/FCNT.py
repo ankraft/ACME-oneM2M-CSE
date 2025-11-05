@@ -85,19 +85,24 @@ class FCNT(ContainerResource):
 
 
 
-	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:
+	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname
 
-		# TODO this could be optimized? copy to an internal attribute?
-		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		# TODO The following could be optimized? copy to internal attributes?
+		self.nonCustomAttributes = internalAttributes + list(self._attributes.keys())
 		"""	List of attributes that are not custom attributes. """
 
-		super().__init__(dct, create = create)
+		self.customAttributes: list[str] = []
+		"""	List of custom attributes defined for this particular FlexContainerSpecialization. """
+		if (policies := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)) is not None:
+			self.customAttributes = list(policies.keys())
+
+		super().__init__(dct, create=create)
 
 
 	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('cs', 0, overwrite = False)
-		self.setAttribute('st', 0, overwrite = False)
+		self.setAttribute('cs', 0, overwrite=False)
+		self.setAttribute('st', 0, overwrite=False)
 
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 

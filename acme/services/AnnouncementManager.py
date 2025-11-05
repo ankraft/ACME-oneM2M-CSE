@@ -268,7 +268,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		if targetID:
-			to = targetID if isSPRelative(targetID) else f'{announceTo}/{targetID}' # TODO
+			to = targetID if isSPRelative(targetID) else f'{announceTo}/{targetID}'
 		else:
 			# We don't know the name of the remote CSEBase, so we have to use the CSI + '-'
 			to = f'{announceTo}/-'
@@ -379,6 +379,8 @@ class AnnouncementManager(object):
 				if (csi := f'/{sp[1]}') == RC.cseCsi or csi.startswith(f'{RC.cseCsi}/'):	# Ignore own CSE as target
 					continue
 				CSIsFromAnnounceTo.append(csi)
+			else:
+				raise BAD_REQUEST(L.logErr(f'Invalid announcedTo entry: {announcedResourceID}'))
 
 		# Update the annoucned remote resources 
 		announcedCSIs = []

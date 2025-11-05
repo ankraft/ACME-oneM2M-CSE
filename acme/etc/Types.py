@@ -17,7 +17,7 @@ from dataclasses import dataclass, field, astuple
 from enum import auto
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..helpers.EventManager import Event
-from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..etc.ResponseStatusCodes import ResponseStatusCode, INTERNAL_SERVER_ERROR
 from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
@@ -262,7 +262,7 @@ class ResourceTypes(ACMEIntEnum):
 		return _ResourceTypesNames.get(self)
 
 
-	def announced(self, mgd:Optional[ResourceTypes] = None) -> ResourceTypes:
+	def announced(self, mgd:Optional[ResourceTypes]=None) -> ResourceTypes:
 		"""	Get the announced resource type for a resource type.
 		
 			Args:
@@ -271,18 +271,33 @@ class ResourceTypes(ACMEIntEnum):
 				The announced resource type, or UNKNOWN.
 		"""
 
-		if self != ResourceTypes.MGMTOBJ:
-			# Handling for non-mgmtObjs
-			if (r := _ResourceTypesAnnouncedMappings.get(self)):
-				return r
-		else:
-			# Handling for mgmtObjs
-			if mgd is not None:
-				if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+		match self:
+			case ResourceTypes.MGMTOBJ:
+				# Handling for mgmtObjs
+				if mgd is not None:
+					if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+						return r
+				else:
+					return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
+			case _:
+				# Handling for non-mgmtObjs
+				if (r := _ResourceTypesAnnouncedMappings.get(self)):
 					return r
-			else:
-				return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
 		return ResourceTypes.UNKNOWN
+
+
+		# if self != ResourceTypes.MGMTOBJ:
+		# 	# Handling for non-mgmtObjs
+		# 	if (r := _ResourceTypesAnnouncedMappings.get(self)):
+		# 		return r
+		# else:
+		# 	# Handling for mgmtObjs
+		# 	if mgd is not None:
+		# 		if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+		# 			return r
+		# 	else:
+		# 		return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
+		# return ResourceTypes.UNKNOWN
 
 
 	def fromAnnounced(self) -> ResourceTypes:

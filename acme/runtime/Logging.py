@@ -353,7 +353,7 @@ class Logging:
 			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{threadName:<10.10}\x04{msg}')
 		else:
 			try:
-				richInspect(msg, private = True, docs = False, dunder = False)
+				richInspect(msg, private=True, docs=False, dunder=False)
 			except:
 				pass
 			

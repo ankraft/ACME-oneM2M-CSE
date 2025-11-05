@@ -87,8 +87,9 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa:
 			# Check whether all the attributes in announcedAttributes are actually resource attributes
+			# For FCNT and FCI also check the customAttributes
 			for aa in self.aa:
-				if not aa in self._attributes:
+				if not (aa in self._attributes or (self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI) and aa in self.customAttributes)):
 					raise BAD_REQUEST(L.logDebug(f'Non-resource attribute in aa: {aa}'))
 
 			# deep-copy the announcedAttributes
@@ -118,7 +119,7 @@ class AnnounceableResource(Resource):
 			attributes.update(additionalAttributes)
 			return self._createAnnouncedDict(attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo))
 		# Normal behaviour for other resources
-		L.inspect(self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
+		# L.inspect(self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
 		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
 
 
@@ -154,7 +155,7 @@ class AnnounceableResource(Resource):
 			if value is None:
 				return None
 			
-			L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
+			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
 			match typ:
 				case BasicType.ID:
 					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
@@ -175,7 +176,10 @@ class AnnounceableResource(Resource):
 
 
 		# Stub
-		typeShortname = ResourceTypes(self.ty).announced(self.mgd).typeShortname()	# Hack, bc management objects do it a bit differently
+		if self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI):
+			typeShortname = f'{self.typeShortname}Annc'
+		else:
+			typeShortname = ResourceTypes(self.ty).announced(self.mgd).typeShortname()	# Hack, bc management objects do it a bit differently
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)
@@ -196,7 +200,7 @@ class AnnounceableResource(Resource):
 			# copy mandatoy and optional attributes
 			ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 			for attr in announcedAttributes:
-				policy = CSE.validator.getAttributePolicy(ty, attr)
+				policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
 				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
 				# body[attr] = self[attr]
 
@@ -295,9 +299,10 @@ class AnnounceableResource(Resource):
 		"""
 		mandatory = []
 		optional = []
-		announceableAttributes = []
-		if self.aa is not None:
-			announceableAttributes = self.aa
+		# announceableAttributes:Optional[list[str]] = None
+		# if self.aa is not None:
+		# 	announceableAttributes = self.aa
+		_aa = self.aa
 		for attr in attributes.keys():
 			if self.hasAttribute(attr):
 				if not (policy := attributes.get(attr)):
@@ -306,8 +311,8 @@ class AnnounceableResource(Resource):
 				match policy.announcement:
 					case Announced.MA:
 						mandatory.append(attr)
-					case Announced.OA if attr in announceableAttributes: # only add optional attributes that are also in aa
-						optional.append(attr)
+					case Announced.OA if _aa is not None and attr in _aa: # only add optional attributes that are also in aa
+						optional.append(attr)			
 					case Announced.NA:
 						# just ignore Announced.NA
 						pass

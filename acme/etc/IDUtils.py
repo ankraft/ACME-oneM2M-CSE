@@ -425,13 +425,6 @@ def getIdFromOriginator(originator:str, idOnly:Optional[bool]=False) -> str:
 	else:
 		return originator
 
-	# TODO check whether idonly is needed at all
-	
-	# if idOnly:
-	# 	return originator.split("/")[-1] if originator else originator
-	# else:
-	# 	return originator.split("/")[-1] if originator and originator.startswith('/') else originator
-
 
 def originatorToID(originator:str) -> str:
 	""" Convert an originator to a resource ID. The originator is expected to be in CSE-relative, SP-relative or absolute format.

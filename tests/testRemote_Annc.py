@@ -880,13 +880,24 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_announceFCNT(self) -> None:
 		""" Create announced <FCNT> """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+					'rr': 	True,
+				 	'srv': 	[ RELEASEVERSION ],
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		TestRemote_Annc.ae = r
+
 		dct = 	{ 'cod:tempe' : { 
 					'rn': 		fcntRN,
 					'cnd': 		CND,
 					'curT0':	23.0,
+					'aa': 		[ 'curT0' ],
 				 	'at': 		[ REMOTECSEID ],
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.FCNT, dct)
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.FCNT, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/at'), r)
 		self.assertIsInstance(findXPath(r, 'cod:tempe/at'), list, r)
@@ -897,11 +908,80 @@ class TestRemote_Annc(unittest.TestCase):
 		# retrieve announced resource
 		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteFcntRI}', CSEID)
 		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'cod:tempeAnnc/curT0'), r)
+		self.assertEqual(findXPath(r, 'cod:tempeAnnc/curT0'), 23.0, r)
 
 		# Delete the announced FCNT
-		r, rsc = DELETE(f'{cseURL}/{fcntRN}', ORIGINATOR)
+		r, rsc = DELETE(f'{aeURL}/{fcntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.DELETED)
 
+		# Delete the announced AE
+		r, rsc = DELETE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_announceFCNTUpdate(self) -> None:
+		""" Create and update announced <FCNT> """
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	APPID,
+					'rr': 	True,
+				 	'srv': 	[ RELEASEVERSION ],
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		TestRemote_Annc.ae = r
+
+		dct = 	{ 'cod:tempe' : { 
+					'rn': 		fcntRN,
+					'cnd': 		CND,
+					'curT0':	23.0,
+					'tarTe':	25.0,
+					'aa': 		[ 'curT0' ],
+				 	'at': 		[ REMOTECSEID ],
+				}}
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.FCNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/at'), r)
+		self.assertIsInstance(findXPath(r, 'cod:tempe/at'), list, r)
+		TestRemote_Annc.remoteFcntRI = findXPath(r, 'cod:tempe/at')[0]
+		self.assertTrue(TestRemote_Annc.remoteFcntRI.startswith(REMOTECSEID), r)
+		self.assertGreater(len(TestRemote_Annc.remoteFcntRI), len(REMOTECSEID), r)	# must be longer if succeeded
+
+		# retrieve announced resource
+		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteFcntRI}', CSEID)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'cod:tempeAnnc/curT0'), r)
+		self.assertEqual(findXPath(r, 'cod:tempeAnnc/curT0'), 23.0, r)
+		self.assertIsNone(findXPath(r, 'cod:tempeAnnc/tarTe'), r)
+
+		# Update the FCNT's announced attribute
+		dct = 	{ 'cod:tempe' : { 
+					'aa': 		[ 'curT0', 'tarTe' ],
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{fcntRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		# retrieve announced resource again
+		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteFcntRI}', CSEID)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'cod:tempeAnnc/curT0'), r)
+		self.assertEqual(findXPath(r, 'cod:tempeAnnc/curT0'), 23.0, r)
+		self.assertIsNotNone(findXPath(r, 'cod:tempeAnnc/tarTe'), r)
+		self.assertEqual(findXPath(r, 'cod:tempeAnnc/tarTe'), 25.0, r)
+
+
+		# Delete the announced FCNT
+		r, rsc = DELETE(f'{aeURL}/{fcntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+		# Delete the announced AE
+		r, rsc = DELETE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+# TODO test: update aa attribute with existing attribute
 
 # TODO Test: non-resource attribute in "aa" attribute
 
@@ -972,6 +1052,7 @@ def run(testFailFast:bool) -> TestResult:
 
 		# announcement with FCNT
 		'test_announceFCNT',
+		'test_announceFCNTUpdate',
 
 	])
 
