@@ -111,7 +111,7 @@ class HttpServer(object):
 		self.backgroundActor:BackgroundWorker = None
 		""" The background worker for the HTTP server. """
 
-		self.serverID = f'ACME {Constants.version}' 
+		self.serverID = f'ACME/{Constants.version}' 
 		""" The server's ID for HTTP response headers. """
 
 		self._responseHeaders = {'Server' : self.serverID}

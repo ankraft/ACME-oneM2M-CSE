@@ -44,6 +44,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
 - [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
 - [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.
+- [HTTP] Changed server ID format to use a slash instead of a space (ACME/version).
 
 
 ### Fixed
