@@ -76,12 +76,12 @@ class ACMEViewRequest(VerticalScroll):
 			  		   header:str, 
 					   originator:str,
 					   buttonLabel:str, 
-					   buttonVariant:Optional[ButtonVariant] = 'primary',
-					   callback:Optional[Callable] = None,
-					   enableEditor:bool = True,
-					   operation:Operation = Operation.CREATE,
-					   selectCallback:Optional[Callable] = None,
-					   responseView:Optional[ACMEViewResponse] = None
+					   buttonVariant:Optional[ButtonVariant]='primary',
+					   callback:Optional[Callable]=None,
+					   enableEditor:bool=True,
+					   operation:Operation=Operation.CREATE,
+					   selectCallback:Optional[Callable]=None,
+					   responseView:Optional[ACMEViewResponse]=None
 					   ):
 		"""	Initialize the view.
 
@@ -103,30 +103,32 @@ class ACMEViewRequest(VerticalScroll):
 		self.header = Label(header, classes = 'request-header-label')
 		"""	The header label. """
 
-		self.button = Button(buttonLabel, 
-					   		 variant = buttonVariant, 
-							 id = 'request-button', 
-							 classes = 'request-button',
-							 disabled = operation == Operation.CREATE)	# start disabled when CREATE operation
+		self.button = Button(buttonLabel,
+					   		 variant=buttonVariant,
+							 id='request-button',
+							 classes='request-button',
+							 disabled=operation == Operation.CREATE)	# start disabled when CREATE operation
 		"""	The button to submit the request. """
 		
 		self.childResources = Select([('None', 0), ('some', 1)], 
-							   		 prompt = 'Select resource type', 
-									 id = 'request-child-resources-select', 
-									 classes = 'request-child-resources-select'	)
+							   		 prompt='Select resource type', 
+									 id='request-child-resources-select', 
+									 classes='request-child-resources-select')
 		"""	The child resource select view. """
 
-		self.inputOriginator = ACMEFieldOriginator(originator, suggestions = [RC.cseOriginator, originator])
+		self.inputOriginator = ACMEFieldOriginator(originator, 
+											 	   suggestions=[RC.cseOriginator, originator], 
+												   requestView=self)
 		"""	The input originator. """
 
-		self.resourceTextArea = ACMETextArea('', 
-						 	 				 classes = 'request-resource-textarea', 
-											 language = 'json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
-											 soft_wrap = False,
-											 tab_behavior = 'indent',
-				  							 show_line_numbers = True,
-											 disabled = operation == Operation.CREATE,	# start disabled for CREATE operation
-											 theme = 'monokai')
+		self.resourceTextArea = ACMETextArea('',
+						 	 				 classes='request-resource-textarea',
+											 language='json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
+											 soft_wrap=False,
+											 tab_behavior='indent',
+				  							 show_line_numbers=True,
+											 disabled=operation == Operation.CREATE,	# start disabled for CREATE operation
+											 theme='monokai')
 		"""	The resource text area. """
 
 		self.border_title = title

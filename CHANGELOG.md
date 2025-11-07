@@ -51,6 +51,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.
 - [CSE] Added missing *creator* attribute in deletion notifications for &lt;crossResourceSubscription> resources.
 - [CSE] Fixed wrong handling of announced &lt;flexContainer> resources. Custom attributes were not announced correctly. Thanks to Alper Ramadan for reporting this issue.
+- [TUI] Fixed error message for *originator* field validation when creating an &lt;AE> resource. Thanks to Egan Perais for reporting this issue.
 
 
 
