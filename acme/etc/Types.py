@@ -2831,7 +2831,7 @@ class CSERegistrar:
 
 		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
 		if self.spID is not None and self.spID != RC.cseSPid:
-			self._registrarCSRRN = f'{RC.cseSPIDSlashLess}_{RC.cseCsi[1:]}'	# prefix: own SP-ID
+			self._registrarCSRRN = f'{RC.cseSPIDSlashLess}_{RC.cseCsiSlashLess}'	# prefix: own SP-ID
 			self._localCSRRN = f'{self.spID[2:]}_{self.cseID[1:]}'			# prefix: remote SP-ID
 		else:
 			self._registrarCSRRN = RC.cseCsi[1:]

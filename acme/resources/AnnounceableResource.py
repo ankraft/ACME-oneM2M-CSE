@@ -28,11 +28,11 @@ class AnnounceableResource(Resource):
 	"""	Base class for all announceable resources.
 	"""
 
-	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
-		super().__init__(dct, create = create)
+	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
+		super().__init__(dct, create=create)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
-		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)
+		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite=False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -52,9 +52,9 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator, parentResource)
 
 
-	def update(self, dct:JSON = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct:JSON=None, 
+					 originator:Optional[str]=None, 
+					 doValidateAttributes:Optional[bool]=True) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		""" Store the original announceableAttributes for later use in the update
