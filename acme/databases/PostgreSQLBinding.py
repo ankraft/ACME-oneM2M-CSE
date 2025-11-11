@@ -566,7 +566,7 @@ class PostgreSQLBinding(DBBinding):
 		# The prepared statement calls jsonb_strip_nulls to remove NULL values from the resource
 		# and this removes NULL values in complex attributes as well, which is not what we want.
 		_savedAttributes = { a: resource[a] for a in (C.attrModified,) if a in resource }
-		L.isDebug and L.logDebug(f'Saving attributes: {_savedAttributes}')
+		#L.isDebug and L.logDebug(f'Saving attributes: {_savedAttributes}')
 
 		# Update first
 		self._executePrepared('updateResource (%s, %s)', (PsyJson(resource), ri))
