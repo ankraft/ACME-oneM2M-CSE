@@ -2870,6 +2870,25 @@ class CSERegistrar:
 			result[k] = v
 		return result
 
+	def __deepcopy__(self, memo:Dict[int, Any]) -> 'CSERegistrar':
+		"""	Create a deep copy of the CSERegistrar object. This skips private attributes
+			and None values.
+		
+			Args:
+				memo: Memoization dictionary for deepcopy.
+			Return:
+				Deep copy of the CSERegistrar object.
+		"""
+		cls = self.__class__
+		result = cls.__new__(cls)
+		memo[id(self)] = result
+		for k, v in self.__dict__.items():
+			if k.startswith('_') or v is None:	# skip private attributes and None values
+				continue
+			setattr(result, k, deepcopy(v, memo))
+		return result
+
+
 
 	def __str__(self) -> str:
 		"""	String representation of the CSERegistrar object.
