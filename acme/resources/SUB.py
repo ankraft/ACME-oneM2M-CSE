@@ -200,9 +200,9 @@ class SUB(Resource):
 		CSE.notification.updateSubscription(self, previousNus, originator)
 
  
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator:Optional[str]=None, 
+					   dct:Optional[JSON]=None, 
+					   parentResource:Optional[Resource]=None) -> None:
 		super().validate(originator, dct, parentResource)
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
@@ -228,7 +228,7 @@ class SUB(Resource):
 		
 		# Apply default enc/net value.
 		if self['enc/net'] is None and self['enc/om'] is None:
-			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
+			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite=False)
 
 		# Check NotificationEventType
 		if (newNet := findXPath(attrs, 'enc/net')) is not None and not NotificationEventType.has(newNet):
@@ -297,8 +297,6 @@ class SUB(Resource):
 					# Check missing data structure
 					if (md := self['enc/md']) is None:	# enc/md is a boolean
 						raise BAD_REQUEST(L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
-					CSE.validator.validateAttribute('num', md.get('num'))
-					CSE.validator.validateAttribute('dur', md.get('dur'))
 		
 		# if nct is not provided, check that net contains only event types that have the same default nct
 		if nct is None and newNet is not None:
