@@ -47,7 +47,6 @@ class GRPAnnc(AnnouncedResource):
 		# Resource attributes
 		'mt': None,
 		'spty': None,
-		'cnm': None,
 		'mnm': None,
 		'mid': None,
 		'macp': None,
