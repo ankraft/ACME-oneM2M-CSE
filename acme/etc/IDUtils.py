@@ -95,10 +95,7 @@ def _randomID() -> str:
 		Return:
 			String with a random ID
 	"""
-	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = RC.idLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID
-			return result
+	return ''.join(random.choices(_randomIDCharSet, k=RC.idLength))
 
 
 def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
