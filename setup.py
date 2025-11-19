@@ -47,6 +47,7 @@ setup(
 		'plotext',
 		'psycopg2-binary',
 		'pyperclip',
+		'python-dotenv',
 		#'python3-dtls',
 		'rdflib',
 		'requests', 

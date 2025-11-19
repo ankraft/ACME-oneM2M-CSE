@@ -16,6 +16,7 @@ from typing import Any, Dict, Tuple, Optional, cast, Set
 import configparser, argparse, os, os.path, pathlib
 from copy import deepcopy
 from inspect import getmembers
+from dotenv import load_dotenv, find_dotenv
 
 from rich.console import Console
 
@@ -856,21 +857,34 @@ class Configuration(object):
 							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
+		# Load environment variables from .env file from the base directory, if it exists
+		load_dotenv(dotenv_path=f'{Configuration.baseDirectory}{os.path.sep}.env')
+
 		# Add environment variables to the defaults
 		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
 
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
 			for e in (
-					'ACME_MQTT_SECURITY_PASSWORD', 'ACME_MQTT_SECURITY_USERNAME',
+					'ACME_MQTT_SECURITY_PASSWORD', 
+					'ACME_MQTT_SECURITY_USERNAME',
 					'ACME_DATABASE_POSTGRESQL_PASSWORD',
-					'ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN',
-					'ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN',
-					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD',
-					'ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD', 
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD', 
+					'ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD',
 				)
 		}
 		_defaults['DEFAULT'].update(_envVariables)
+
+		# Print all environment variables
+		print(_defaults)
 
 		# Set the defaults
 		config.read_dict(_defaults)
