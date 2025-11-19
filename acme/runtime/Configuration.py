@@ -883,9 +883,6 @@ class Configuration(object):
 		}
 		_defaults['DEFAULT'].update(_envVariables)
 
-		# Print all environment variables
-		print(_defaults)
-
 		# Set the defaults
 		config.read_dict(_defaults)
 		
