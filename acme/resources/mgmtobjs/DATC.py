@@ -61,7 +61,6 @@ class DATC(MgmtObj):
 		'cntp': None,
 		'rpsc': None,
 		'mesc': None,
-		'rpil': None,
 		'meil': None,
 		'cmlk': None,
 	}
@@ -71,12 +70,6 @@ class DATC(MgmtObj):
 					   parentResource:Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
 		super().validate(originator, dct, parentResource)
-
-		# Test for unique occurence of either rpsc and rpil		
-		rpscNew = findXPath(dct, '{*}/rpsc')
-		rpilNew = findXPath(dct, '{*}/rpil')
-		if (rpscNew or self.rpsc) and (rpilNew or self.rpil):
-			raise BAD_REQUEST(L.logDebug(f'rpsc and rpil shall not be set together'))
 
 		# Test for unique occurence of either mesc and meil
 		mescNew = findXPath(dct, '{*}/mesc')		
