@@ -292,7 +292,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'rr': 	False,
 				 	'srv': 	[ RELEASEVERSION ],
 				 	'at': 	[ REMOTECSEID ],
-				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','acpi' ]
+				 	'aa': 	[ 'ri', 'pi', 'ct','lt','acpi' ]
 				}}
 		r, rsc = CREATE(f'{cseURL}?rcn={int(RCN.modifiedAttributes)}', 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.CREATED)

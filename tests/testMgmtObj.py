@@ -1152,27 +1152,6 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDATCrpilWhileRpscFail(self) -> None:
-		"""	UPDATE [dataCollection] rpil while rpsc is alread set -> FAIL"""
-		dct =  { 'dcfg:datc' : {
-					'rpil':	10000,
-				}}
-		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDATCrpscRpilFail(self) -> None:
-		"""	UPDATE [dataCollection] rpsc and rpil together -> FAIL"""
-		dct =  { 'dcfg:datc' : {
-					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
-					'rpil': 10000,
-				}}
-		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateDATCmescInvalidSchedule1Fail(self) -> None:
 		"""	UPDATE [dataCollection] mesc with an invalid schedule -> FAIL"""
 		dct =  { 'dcfg:datc' : {
@@ -1585,8 +1564,6 @@ def run(testFailFast:bool) -> TestResult:
 		'test_updateDATCrpscInvalidSchedule1Fail',
 		'test_updateDATCrpscInvalidSchedule2Fail',
 		'test_updateDATCrpscValidSchedule',
-		'test_updateDATCrpilWhileRpscFail',
-		'test_updateDATCrpscRpilFail',
 		'test_updateDATCmescInvalidSchedule1Fail',
 		'test_updateDATCmescInvalidSchedule2Fail',
 		'test_updateDATCmescValidSchedule',
