@@ -610,7 +610,7 @@ class Validator(object):
 		"""	Add a new attribute policy for normal resources. 
 		"""
 		if (rtype, attr) in attributePolicies:
-			L.logErr(f'Policy {(rtype, attr)} is already registered')
+			raise ValueError(f'Policy {(rtype.name if isinstance(rtype, ResourceTypes) else rtype, attr)} is already registered')
 		attributePolicies[(rtype, attr)] = attrPolicy
 
 		# Collect a list of attributes for complex types

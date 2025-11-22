@@ -427,10 +427,11 @@ class Importer(object):
 							return False
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
-							CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
-				
-					countAP += 1
-		
+							try:
+								CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
+							except ValueError as e:
+								L.logErr(str(e))
+								return False
 
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
