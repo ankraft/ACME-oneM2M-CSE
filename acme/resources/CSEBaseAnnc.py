@@ -67,7 +67,6 @@ class CSEBaseAnnc(AnnouncedResource):
 		'esi': None,
 		'nl': None,
 		'poa': None,
-		'srt': None,
 		'srv': None,
 	}
 	"""	Attributes and `AttributePolicy` for this resource type. """
