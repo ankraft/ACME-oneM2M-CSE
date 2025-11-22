@@ -184,59 +184,63 @@ class AnnounceableResource(Resource):
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)
 
-		if isCreate:
-			dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
-							'et'	: self.et,
-							'lnk'	: f'{RC.cseSPCsi}/{self.ri}' if isRemoteSP else f'{RC.cseCsi}/{self.ri}',
-						}
-				}
-			# Add more  attributes
-			body = dct[typeShortname]
+		match isCreate:
+			case True:
+				dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
+								'et'	: self.et,
+								'lnk'	: f'{RC.cseSPCsi}/{self.ri}' if isRemoteSP else f'{RC.cseCsi}/{self.ri}',
+							}
+					}
+				# Add more  attributes
+				body = dct[typeShortname]
 
-			# Conditional announced
-			if lbl := self.lbl:
-				body['lbl'] = deepcopy(lbl)
+				# Conditional announced
+				if lbl := self.lbl:
+					body['lbl'] = deepcopy(lbl)
 
-			# copy mandatoy and optional attributes
-			ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
-			for attr in announcedAttributes:
-				policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
-				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
-				# body[attr] = self[attr]
+				# copy mandatoy and optional attributes
+				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
+				for attr in announcedAttributes:
+					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
+					body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
+					# body[attr] = self[attr]
 
-			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				# acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi 
-				# 		 for acpi in self.acpi]	# set to local CSE.csi
-				acpi = [ toAbsolute(acpi, spId=RC.cseSPid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
-				body['acpi'] = acpi
+				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
+					# acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi 
+					# 		 for acpi in self.acpi]	# set to local CSE.csi
+					acpi = [ toAbsolute(acpi, spId=RC.cseSPid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
+					body['acpi'] = acpi
+				
+				# Set the resourceName explicitly for the CSEBase
+				if self.ty == int(ResourceTypes.CSEBase):
+					body['rn'] = f'{RC.cseSPIDSlashLess}_{self.rn}'
+
+			case False: # update. Works a bit different
+				if not (modifiedAttributes := self[Constants.attrModified]):
+					return None
+				dct = { typeShortname : { } } # with the announced variant of the typeShortname
+				body = dct[typeShortname]
 
 
-		else: # update. Works a bit different
-
-			if not (modifiedAttributes := self[Constants.attrModified]):
-				return None
-			dct = { typeShortname : { } } # with the announced variant of the typeShortname
-			body = dct[typeShortname]
-
-
-			# copy only the updated attributes
-			for attr in modifiedAttributes:
-				attributePolicy = attributes.get(attr)
-				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == Announced.MA):	# either announced or an MA attribute
-				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == Announced.MA):	# either announced or an MA attribute
-					body[attr] = self[attr]
-
-			# if aa was modified check also those attributes even when they are not modified
-			if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
-				for attr in modifiedAttributes['aa']:
-					if attr not in body:
+				# copy only the modified  attributes
+				for attr in modifiedAttributes:
+					attributePolicy = attributes.get(attr)
+					if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == Announced.MA):	# either announced or an MA attribute
+					# if attr in announcedAttributes or (attr in policies and policies[attr][5] == Announced.MA):	# either announced or an MA attribute
 						body[attr] = self[attr]
 
-			# now add the to-be-removed attributes with null in case they are removed from the aa or aa is None
-			if self._origAA:
-				for attr in self._origAA:
-					if attr not in announcedAttributes:
-						body[attr] = None
+				# if aa was modified check also those attributes even when they are not modified
+				if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
+					for attr in modifiedAttributes['aa']:
+						L.logWarn(attr)
+						if attr not in body:
+							body[attr] = self[attr]
+
+				# now add the to-be-removed attributes with null in case they are removed from the aa or aa is None
+				if self._origAA:
+					for attr in self._origAA:
+						if attr not in announcedAttributes:
+							body[attr] = None
 
 		return dct
 
