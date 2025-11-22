@@ -101,7 +101,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool = False) -> None:
+	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool=False) -> None:
 		"""	Validate a resource update dictionary. Besides of the attributes it also validates the resource type.
 
 			Args:
@@ -123,19 +123,19 @@ class Validator(object):
 									resource.typeShortname, 
 									resource.ty, 
 									resource._attributes, 
-									create = False, 
-									createdInternally = resource.isCreatedInternally(), 
-									isAnnounced = resource.isAnnounced())
+									create=False, 
+									createdInternally=resource.isCreatedInternally(), 
+									isAnnounced=resource.isAnnounced())
 
 
 	def	validateAttributes(self, resource:JSON, 
 								 typeShortname:str, 
-								 ty:Optional[ResourceTypes] = ResourceTypes.UNKNOWN, 
-								 attributes:Optional[AttributePolicyDict] = None, 
-								 create:Optional[bool] = True , 
-								 isImported:Optional[bool] = False, 
-								 createdInternally:Optional[bool] = False, 
-								 isAnnounced:Optional[bool] = False) -> None:
+								 ty:Optional[ResourceTypes]=ResourceTypes.UNKNOWN, 
+								 attributes:Optional[AttributePolicyDict]=None, 
+								 create:Optional[bool]=True, 
+								 isImported:Optional[bool]=False, 
+								 createdInternally:Optional[bool]=False, 
+								 isAnnounced:Optional[bool]=False) -> None:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -198,29 +198,36 @@ class Validator(object):
 				L.isWarn and L.logWarn(f'no attribute policy found for attribute: {attributeName}')
 				continue
 
-			# Get the correct tuple for a resource when there are more definitions
+			# Only for UPDATE checks attribute not in request so we can skip it
+			if not create and attributeName not in pureResDict:
+				continue
 
+			# Get the correct tuple for a resource when there are more definitions
 			# Used a couple of times below
 			policyOptional = policy.select(optionalIndex)
 
 			# Check whether the attribute is allowed or mandatory in the request
 			if (attributeValue := pureResDict.get(attributeName)) is None:	# ! might be an int, bool, so we need to check for None
+				# L.logWarn(f'attribute {attributeName} is None')
 
-				# check the the announced cases first
-				if isAnnounced:
-					# MA are not checked bc they are only present if they are present in the original resource
-					continue
-					
-				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
-					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute: {attributeName}'))
-
+				# check whether the attribute is mandatory or NP
 				if attributeName in pureResDict:
 					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
 						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
 
-				if policyOptional in ( RequestOptionality.NP, RequestOptionality.O ):		# Okay that the attribute is not in the dict, since it is provided or optional
+				# Ignore when the resource is already announced
+				if isAnnounced:
+					# MA are not checked bc they are only present if they are present in the original resource
+					continue
+
+				# Check whether this attribute is mandatory but absent
+				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
+					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute in request: {attributeName}'))
+
+				if policyOptional in ( RequestOptionality.NP, RequestOptionality.O ):		
+					# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
@@ -256,8 +263,8 @@ class Validator(object):
 
 	def validateAttribute(self, attribute:str, 
 								value:Any, 
-								attributeType:Optional[BasicType] = None, 
-								rtype:Optional[ResourceTypes] = ResourceTypes.ALL) -> Tuple[BasicType, Any]:
+								attributeType:Optional[BasicType]=None, 
+								rtype:Optional[ResourceTypes]=ResourceTypes.ALL) -> Tuple[BasicType, Any]:
 		""" Validate a single attribute. 
 		
 			Args:
@@ -275,8 +282,8 @@ class Validator(object):
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
-			return self._validateType(policy.type, value, True, policy = policy)
-		raise BAD_REQUEST(f'validation for attribute {attribute} not defined for resource type: {rtype}')
+			return self._validateType(policy.type, value, True, policy=policy)
+		raise BAD_REQUEST(f'validation for attribute {attribute} not defined for resource type: {rtype.name}')
 
 
 	#

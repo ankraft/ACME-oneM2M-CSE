@@ -332,7 +332,8 @@ class RegistrationManager(object):
 				raise CONFLICT(L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
-		cbA.setResourceName(uniqueRN(f'{cbA.typeShortname}_{getIdFromOriginator(originator)}'))
+		# TODO get infos from CBAnnc: spID and csi
+		# cbA.setResourceName(uniqueRN(f'{cbA.typeShortname}_{getIdFromOriginator(originator)}'))
 
 
 	#########################################################################
