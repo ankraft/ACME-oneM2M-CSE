@@ -34,6 +34,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [MISC] Added restart CSE support for the Docker container. The CSE will now restart automatically when it exits with an exit code of 82 without exiting the Docker container.
 
 ### Experimental
+- [CSE] Allow optional announcement of *resourceName* attribute in announced resources. Added discoverable naming of CSEBaseAnnc.
 
 ### Changed
 - [CSE] Changed the default *releaseVersion* from 4 to 5.
