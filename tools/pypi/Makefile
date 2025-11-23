@@ -39,7 +39,7 @@ install_local:				## Install the local wheel
 uninstall_local:			## Uninstall the local wheel
 	python -m pip uninstall `ls -t ${DISTDIR}/*.whl | head -1`
 
-clean: finish				## Remove all generated info files
+clean: _finish				## Remove all generated info files
 	rm -r ${SRCDIR}/*.egg-info
 
 
