@@ -1,6 +1,16 @@
-from setuptools import setup, find_packages
 
+from setuptools import setup, find_packages
 import pathlib, os, time
+
+
+
+#_name='acmecse-dev'
+#_version=time.strftime("%Y%m%d%H%M%S")
+
+_name='acmecse'
+_version='2025.11'
+
+
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -13,15 +23,12 @@ directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
 #print(directories)
 
 setup(
-	name='acmecse-dev',
-	version=time.strftime("%Y%m%d%H%M%S"),
-
-	# name='acmecse',
-	# version='2025.03.2',
-
+	name=_name,
+	version=_version,
 
 	author='Andreas Kraft',
 	author_email='an.kraft@gmail.com',
+
 	classifiers=[
 		'License :: OSI Approved :: BSD License',
 		'Programming Language :: Python :: 3.11',

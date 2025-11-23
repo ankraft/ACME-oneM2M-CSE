@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [2025.dev] - unreleased
+## [2025.11] - 2025-11-23
 
 ### Added
 - [CSE] Added support for notification target removal.
@@ -48,13 +48,11 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.
 - [HTTP] Changed server ID format to use a slash instead of a space (ACME/version).
 
-
 ### Fixed
 - [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.
 - [CSE] Added missing *creator* attribute in deletion notifications for &lt;crossResourceSubscription> resources.
 - [CSE] Fixed wrong handling of announced &lt;flexContainer> resources. Custom attributes were not announced correctly. Thanks to Alper Ramadan for reporting this issue.
 - [TUI] Fixed error message for *originator* field validation when creating an &lt;AE> resource. Thanks to Egan Perais for reporting this issue.
-
 
 
 ## [2025.03.2] - 2025-03-16
