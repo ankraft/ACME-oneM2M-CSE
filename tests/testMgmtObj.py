@@ -971,8 +971,8 @@ class TestMgmtObj(unittest.TestCase):
 						'enct': 8,
 						'unm': 'user',
 						'pwd': 'pwd',
-
-					}
+					},
+					'scan': False,
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
