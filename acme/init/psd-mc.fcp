@@ -1,0 +1,394 @@
+
+// Created by SDTTool
+// oneM2M Release: 5.6.0
+// Domain:         org.onem2m.publicsafety
+[
+
+    // ModuleClass: disseminator (dissr)
+    {
+        "type"      : "psd:dissr",
+        "lname"     : "disseminator",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.disseminator",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }, 
+            // DataPoint: repetitionPeriod
+            { "sname" : "repPd", "lname" : "repetitionPeriod", "type" : "integer", "car" : "1" }, 
+            // DataPoint: repetitionCount
+            { "sname" : "repCt", "lname" : "repetitionCount", "type" : "integer", "car" : "1" }
+        ],
+		"children"  : [
+            "psd:cancl",
+            "psd:dissrInst"
+        ]
+    },
+
+    // Action: cancel
+    {
+        "type"      : "psd:cancl",
+        "lname"     : "cancel",
+        "cnd"       : "org.onem2m.publicsafety.action.cancel",
+        "sdttype"   : "action",	
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: warningIdentifier
+            { "sname" : "warIr", "lname" : "warningIdentifier", "type" : "string", "car" : "1" }
+        ],
+		"children"  : [
+            "psd:canclInst"
+        ]
+    },
+
+    // ModuleClass Announced: disseminatorAnnc (dissrAnnc)
+    {
+        "type"      : "psd:dissrAnnc",
+        "lname"     : "disseminatorAnnc",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.disseminatorAnnc",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }, 
+            // DataPoint: repetitionPeriod
+            { "sname" : "repPd", "lname" : "repetitionPeriod", "type" : "integer", "car" : "1" }, 
+            // DataPoint: repetitionCount
+            { "sname" : "repCt", "lname" : "repetitionCount", "type" : "integer", "car" : "1" }
+        ], 
+        "children"  : [
+            "psd:cancl",
+            "psd:canclAnnc"
+        ]
+    }, 
+    // Action Announced: cancelAnnc
+    {
+        "type"      : "psd:canclAnnc",
+        "lname"     : "cancelAnnc",
+        "cnd"       : "org.onem2m.publicsafety.action.cancelAnnc",
+		"sdttype"	: "action",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: warningIdentifier
+            { "sname" : "warIr", "lname" : "warningIdentifier", "type" : "string", "car" : "1" }
+        ]
+    }
+, 
+
+    // ModuleClass Instance: disseminatorInst (dissrInst)
+    {
+        "type"      : "psd:dissrInst",
+        "lname"     : "disseminatorInst",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.disseminatorInst",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }, 
+            // DataPoint: repetitionPeriod
+            { "sname" : "repPd", "lname" : "repetitionPeriod", "type" : "integer", "car" : "1" }, 
+            // DataPoint: repetitionCount
+            { "sname" : "repCt", "lname" : "repetitionCount", "type" : "integer", "car" : "1" }
+        ]
+    }, 
+    // Action Instance: cancelInst
+    {
+        "type"      : "psd:canclInst",
+        "lname"     : "cancelInst",
+        "cnd"       : "org.onem2m.publicsafety.action.cancelInst",
+		"sdttype"	: "action",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: warningIdentifier
+            { "sname" : "warIr", "lname" : "warningIdentifier", "type" : "string", "car" : "1" }
+        ]
+    }
+, 
+
+
+    // ModuleClass: emergencyHandler (emeHr)
+    {
+        "type"      : "psd:emeHr",
+        "lname"     : "emergencyHandler",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.emergencyHandler",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: emergencyMode
+            { "sname" : "emeMe", "lname" : "emergencyMode", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }
+        ],
+		"children"  : [
+            "psd:emeHrInst"
+        ]
+    },
+
+    // ModuleClass Announced: emergencyHandlerAnnc (emeHrAnnc)
+    {
+        "type"      : "psd:emeHrAnnc",
+        "lname"     : "emergencyHandlerAnnc",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.emergencyHandlerAnnc",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: emergencyMode
+            { "sname" : "emeMe", "lname" : "emergencyMode", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass Instance: emergencyHandlerInst (emeHrInst)
+    {
+        "type"      : "psd:emeHrInst",
+        "lname"     : "emergencyHandlerInst",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.emergencyHandlerInst",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: emergencyMode
+            { "sname" : "emeMe", "lname" : "emergencyMode", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: identifier
+            { "sname" : "idenr", "lname" : "identifier", "type" : "string", "car" : "1" }, 
+            // DataPoint: sender
+            { "sname" : "sendr", "lname" : "sender", "type" : "string", "car" : "1" }, 
+            // DataPoint: sent
+            { "sname" : "sent", "lname" : "sent", "type" : "dateTime", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: msgType
+            { "sname" : "msgTe", "lname" : "msgType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: references
+            { "sname" : "refes", "lname" : "references", "type" : "list", "car" : "01" }, 
+            // DataPoint: urgency
+            { "sname" : "urgey", "lname" : "urgency", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: severity
+            { "sname" : "sevey", "lname" : "severity", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: certainty
+            { "sname" : "certy", "lname" : "certainty", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: eventCodes
+            { "sname" : "eveCs", "lname" : "eventCodes", "type" : "list", "car" : "1" }, 
+            // DataPoint: effective
+            { "sname" : "effee", "lname" : "effective", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: onset
+            { "sname" : "onset", "lname" : "onset", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: expires
+            { "sname" : "expis", "lname" : "expires", "type" : "dateTime", "car" : "01" }, 
+            // DataPoint: areaLatitude
+            { "sname" : "areLe", "lname" : "areaLatitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaLongitude
+            { "sname" : "areL0", "lname" : "areaLongitude", "type" : "float", "car" : "01" }, 
+            // DataPoint: areaRadius
+            { "sname" : "areRs", "lname" : "areaRadius", "type" : "float", "car" : "01" }
+        ]
+    }, 
+
+
+    // ModuleClass: settings (setts)
+    {
+        "type"      : "psd:setts",
+        "lname"     : "settings",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.settings",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: optoutStatus
+            { "sname" : "optSs", "lname" : "optoutStatus", "type" : "boolean", "car" : "1" }
+        ],
+		"children"  : [
+            "psd:settsInst"
+        ]
+    },
+
+    // ModuleClass Announced: settingsAnnc (settsAnnc)
+    {
+        "type"      : "psd:settsAnnc",
+        "lname"     : "settingsAnnc",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.settingsAnnc",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: optoutStatus
+            { "sname" : "optSs", "lname" : "optoutStatus", "type" : "boolean", "car" : "1" }
+        ]
+    }, 
+
+    // ModuleClass Instance: settingsInst (settsInst)
+    {
+        "type"      : "psd:settsInst",
+        "lname"     : "settingsInst",
+        "cnd"       : "org.onem2m.publicsafety.moduleclass.settingsInst",
+        "sdttype"   : "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: optoutStatus
+            { "sname" : "optSs", "lname" : "optoutStatus", "type" : "boolean", "car" : "1" }
+        ]
+    }
+
+
+
+]

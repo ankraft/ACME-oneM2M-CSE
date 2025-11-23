@@ -1,5 +1,6 @@
+
 // Created by SDTTool
-// oneM2M Release: 4.12.0
+// oneM2M Release: 5.6.0
 // Domain:         org.onem2m.railway
 [
 
@@ -274,10 +275,10 @@
             "cod:pusBn", 
             "cod:audVe", 
             "cod:pPCRr", 
-            "cod:traSr", 
+            "cod:croBr", 
             "cod:conny", 
             "cod:runSe", 
-            "cod:dirPl", 
+            "cod:heaSr", 
             "cod:color", 
             "cod:colSn", 
             "cod:brigs", 
@@ -311,14 +312,14 @@
             "cod:audVeAnnc", 
             "cod:pPCRr", 
             "cod:pPCRrAnnc", 
-            "cod:traSr", 
-            "cod:traSrAnnc", 
+            "cod:croBr", 
+            "cod:croBrAnnc", 
             "cod:conny", 
             "cod:connyAnnc", 
             "cod:runSe", 
             "cod:runSeAnnc", 
-            "cod:dirPl", 
-            "cod:dirPlAnnc", 
+            "cod:heaSr", 
+            "cod:heaSrAnnc", 
             "cod:color", 
             "cod:colorAnnc", 
             "cod:colSn", 
@@ -356,17 +357,18 @@
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
         "children"  : [
-            "cod:binSh", 
-            "cod:dooSs", 
-            "cod:binSh", 
-            "cod:pusBn", 
             "cod:audVe", 
-            "cod:traSr", 
-            "cod:conny", 
-            "cod:runSe", 
-            "cod:dirPl", 
+            "cod:binSh", 
+            "cod:binSh", 
+            "cod:brigs", 
+            "cod:color", 
             "cod:colSn", 
-            "cod:brigs"
+            "cod:conny", 
+            "cod:croBr", 
+            "cod:dooSs", 
+            "cod:heaSr", 
+            "cod:pusBn", 
+            "cod:runSe"
             ,"rad:dSSDrInst"
         ]
     },        
@@ -384,28 +386,30 @@
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
         "children"  : [
-            "cod:binSh", 
-            "cod:binShAnnc", 
-            "cod:dooSs", 
-            "cod:dooSsAnnc", 
-            "cod:binSh", 
-            "cod:binShAnnc", 
-            "cod:pusBn", 
-            "cod:pusBnAnnc", 
             "cod:audVe", 
             "cod:audVeAnnc", 
-            "cod:traSr", 
-            "cod:traSrAnnc", 
-            "cod:conny", 
-            "cod:connyAnnc", 
-            "cod:runSe", 
-            "cod:runSeAnnc", 
-            "cod:dirPl", 
-            "cod:dirPlAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc", 
+            "cod:color", 
+            "cod:colorAnnc", 
             "cod:colSn", 
             "cod:colSnAnnc", 
-            "cod:brigs", 
-            "cod:brigsAnnc"
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:croBr", 
+            "cod:croBrAnnc", 
+            "cod:dooSs", 
+            "cod:dooSsAnnc", 
+            "cod:heaSr", 
+            "cod:heaSrAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc"
         ]
     },
     // DeviceClass Instance: deviceSmartScreenDoorInst

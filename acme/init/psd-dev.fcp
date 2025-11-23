@@ -1,0 +1,109 @@
+
+// Created by SDTTool
+// oneM2M Release: 5.6.0
+// Domain:         org.onem2m.publicsafety
+[
+
+    // DeviceClass: devicePWSCenter
+    {
+        "type"      : "psd:dPWSC",
+        "lname"     : "devicePWSCenter",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "psd:dissr"
+            ,"psd:dPWSCInst"
+        ]
+    },        
+
+    // DeviceClass Announced: devicePWSCenterAnnc
+    {
+        "type"      : "psd:dPWSCAnnc",
+        "lname"     : "devicePWSCenterAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "psd:dissr", 
+            "psd:dissrAnnc"
+        ]
+    },
+    // DeviceClass Instance: devicePWSCenterInst
+    {
+        "type"      : "psd:dPWSCInst",
+        "lname"     : "devicePWSCenterInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenterInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // DeviceClass: devicePWSEquipment
+    {
+        "type"      : "psd:dPWSE",
+        "lname"     : "devicePWSEquipment",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipment",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "psd:emeHr", 
+            "psd:setts"
+            ,"psd:dPWSEInst"
+        ]
+    },        
+
+    // DeviceClass Announced: devicePWSEquipmentAnnc
+    {
+        "type"      : "psd:dPWSEAnnc",
+        "lname"     : "devicePWSEquipmentAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipmentAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "psd:emeHr", 
+            "psd:emeHrAnnc", 
+            "psd:setts", 
+            "psd:settsAnnc"
+        ]
+    },
+    // DeviceClass Instance: devicePWSEquipmentInst
+    {
+        "type"      : "psd:dPWSEInst",
+        "lname"     : "devicePWSEquipmentInst",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipmentInst",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ]
+    }
+
+
+]

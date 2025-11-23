@@ -1,13 +1,15 @@
+
 // Created by SDTTool
-// oneM2M Release: 4.12.0
+// oneM2M Release: 5.6.0
 // Domain:         org.onem2m.agriculture
 [
+
     // ModuleClass: cowActivityMonitor (coAMr)
     {
         "type"      : "agd:coAMr",
         "lname"     : "cowActivityMonitor",
         "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitor",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -28,7 +30,7 @@
         "type"      : "agd:coAMrAnnc",
         "lname"     : "cowActivityMonitorAnnc",
         "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitorAnnc",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -46,7 +48,7 @@
         "type"      : "agd:coAMrInst",
         "lname"     : "cowActivityMonitorInst",
         "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitorInst",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
