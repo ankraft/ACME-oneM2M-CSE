@@ -4,11 +4,11 @@ import pathlib, os, time
 
 
 
-#_name='acmecse-dev'
-#_version=time.strftime("%Y%m%d%H%M%S")
+_name='acmecse-dev'
+_version=time.strftime("%Y%m%d%H%M%S")
 
-_name='acmecse'
-_version='2025.11'
+# _name='acmecse'
+# _version='2025.11'
 
 
 

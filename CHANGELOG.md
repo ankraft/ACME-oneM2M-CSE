@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [2026.DEV] - unreleased 
+
+### Added
+
+### Experimental
+
+### Changed
+
+### Fixed
+
+### Removed
+
+
+
 ## [2025.11] - 2025-11-23
 
 ### Added
@@ -53,6 +67,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added missing *creator* attribute in deletion notifications for &lt;crossResourceSubscription> resources.
 - [CSE] Fixed wrong handling of announced &lt;flexContainer> resources. Custom attributes were not announced correctly. Thanks to Alper Ramadan for reporting this issue.
 - [TUI] Fixed error message for *originator* field validation when creating an &lt;AE> resource. Thanks to Egan Perais for reporting this issue.
+
 
 
 ## [2025.03.2] - 2025-03-16
