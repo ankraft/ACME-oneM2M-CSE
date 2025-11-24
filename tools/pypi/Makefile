@@ -3,13 +3,6 @@
 #
 #	To build the package and upload it to PyPi
 #
-#	Targets:
-#		- build (default)
-#		- publish
-#		- clean
-#		- install_local
-#		- uninstall_local
-#
 # ATTENTION: Whether a normal or a development version of the package is built
 # depends on the presence of the "-dev" tag in the "setup.py" file.
 #
@@ -44,7 +37,7 @@ clean: _finish				## Remove all generated info files
 
 
 help:					## Display this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make [command]\033[36m\033[0m\n\n  Commands:\n"} /^[$$()% a-zA-Z_-]+:.*?##/ { printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make [command]\033[36m\033[0m\n\n  Commands:\n"} /^[$$()% a-zA-Z0-9_-]+:.*?##/ { printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
 
@@ -62,14 +55,6 @@ _finish:
 		rm -r ${PACKAGECOPY}; \
 	fi
 
-
-
-
-#		- build (default)
-#		- publish
-#		- clean
-#		- install_local
-#		- uninstall_local
 
 # TODO remove dist ... directories
 
