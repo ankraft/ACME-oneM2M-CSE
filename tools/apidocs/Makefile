@@ -20,23 +20,26 @@ DASHDOCSET = ${DOCDIR}
 
 build: pydoctor
 
-pydoctor:
+pydoctor:				## Build API documentation (default)
 	pydoctor
 
-open:
+open:					## Open API documentation in the default web browser
 	open ${APIDOCS}/index.html
 
-open-missing:
+open-missing:				## Open a list of undocumented items in the default web browser
 	open ${APIDOCS}/undoccedSummary.html
 
-dash:
+dash:					## Generate a docset for Dash documentation
 	doc2dash "${APIDOCS}" -f -n "${TITLE}" -d "${DASHDOCSET}" -I index.html
 
-dash-install:
+dash-install:				## Install and open the generated docset in Dash
 	open "${DASHDOCSET}/${TITLE}.docset"
 
-clean:
+clean:					## Remove generated files
 	rm -r ${APIDOCS}
 	rm -r "${DASHDOCSET}.docset"
 
+
+help:					## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make [command]\033[36m\033[0m\n\n  Commands:\n"} /^[$$()% a-zA-Z0-9_-]+:.*?##/ { printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
